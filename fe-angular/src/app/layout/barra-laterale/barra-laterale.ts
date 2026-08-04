@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, model } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { ButtonDirective } from 'primeng/button';
 
 import { GruppoNavigazione, NAVIGAZIONE } from '../navigazione';
 import { Icona } from '@shared/ui/icona/icona';
@@ -15,7 +16,7 @@ import { SessioneStore } from '@core/auth/sessione-store';
  */
 @Component({
   selector: 'app-barra-laterale',
-  imports: [Icona, RouterLink, RouterLinkActive],
+  imports: [ButtonDirective, Icona, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './barra-laterale.html',
   styleUrl: './barra-laterale.scss',

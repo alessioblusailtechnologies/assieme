@@ -3,8 +3,11 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 
+import { Breadcrumb } from 'primeng/breadcrumb';
+import { ButtonDirective } from 'primeng/button';
+import { MenuItem } from 'primeng/api';
+
 import { Badge } from '@shared/ui/badge/badge';
-import { Briciola, Briciole } from '@shared/ui/briciole/briciole';
 import { DettaglioDocumento as Dettaglio, DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -23,7 +26,16 @@ import { etichettaTipologia } from '@shared/testi/etichette';
  */
 @Component({
   selector: 'app-dettaglio-documento',
-  imports: [Badge, Briciole, DatePipe, Icona, RouterLink, Scheletro, StatoVuoto],
+  imports: [
+    Badge,
+    Breadcrumb,
+    ButtonDirective,
+    DatePipe,
+    Icona,
+    RouterLink,
+    Scheletro,
+    StatoVuoto,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dettaglio-documento.html',
   styleUrl: './dettaglio-documento.scss',
@@ -52,10 +64,10 @@ export class DettaglioDocumento {
    * finiti. Finché il documento non è caricato resta un segnaposto neutro,
    * per non far saltare la riga quando arriva.
    */
-  protected readonly briciole = computed<Briciola[]>(() => [
-    { etichetta: 'Archivi' },
-    { etichetta: 'Pubblico', percorso: '/archivio/pubblico' },
-    { etichetta: this.documento()?.titolo ?? 'Documento' },
+  protected readonly briciole = computed<MenuItem[]>(() => [
+    { label: 'Archivi' },
+    { label: 'Pubblico', routerLink: '/archivio/pubblico' },
+    { label: this.documento()?.titolo ?? 'Documento' },
   ]);
 
   /** Le altre edizioni dello stesso documento, esclusa quella aperta. */

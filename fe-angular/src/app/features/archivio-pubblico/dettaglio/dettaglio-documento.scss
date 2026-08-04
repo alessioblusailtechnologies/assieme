@@ -165,25 +165,6 @@
   text-decoration: none;
 }
 
-/* ---------- Azione ---------- */
-
-.azione {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4);
-  background: var(--c-accent);
-  border: 0;
-  color: var(--c-text-oninverse);
-  font-size: var(--t-sm);
-  cursor: pointer;
-}
-
-.azione:hover {
-  background: #263c63;
-}
-
 @media (max-width: 1000px) {
   .colonne {
     grid-template-columns: 1fr;

@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { ButtonDirective } from 'primeng/button';
+
 import { ErroreSimulato, SviluppoStore } from './sviluppo-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { Ruolo } from '@core/models';
@@ -22,11 +24,14 @@ import { SessioneStore } from '@core/auth/sessione-store';
  */
 @Component({
   selector: 'app-pannello-sviluppo',
-  imports: [Icona],
+  imports: [ButtonDirective, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
+      pButton
       type="button"
+      size="small"
+      severity="contrast"
       class="maniglia"
       (click)="dev.pannelloAperto.set(!dev.pannelloAperto())"
       [attr.aria-expanded]="dev.pannelloAperto()"
@@ -90,23 +95,10 @@ import { SessioneStore } from '@core/auth/sessione-store';
     }
 
     .maniglia {
-      display: flex;
-      align-items: center;
-      gap: var(--sp-2);
-      padding: var(--sp-2) var(--sp-3);
-      background: var(--c-ink);
-      color: var(--c-text-oninverse-2);
-      border: 0;
       font-family: var(--f-mono);
       font-size: var(--t-mono);
       letter-spacing: var(--ls-mono);
       text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    .maniglia:hover {
-      background: var(--c-ink-raise);
-      color: var(--c-text-oninverse);
     }
 
     .pannello {

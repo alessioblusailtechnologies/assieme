@@ -60,11 +60,13 @@
 }
 
 .marchio__nome {
-  /* Non maiuscolo: il nome del prodotto è "Assieme". La spaziatura fa il
-     lavoro che farebbero le maiuscole, senza gridare. */
+  /* Non maiuscolo: il nome del prodotto è "Assieme". Il peso fa il lavoro
+     che farebbero le maiuscole, senza gridare. 600 è il massimo della
+     variabile Newsreader. */
   font-size: 16px;
+  font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -141,22 +143,25 @@
 
 /* ---------- Comprimi ---------- */
 
+/*
+ * Pulsante PrimeNG su fondo scuro.
+ *
+ * Il tema è tarato sulle superfici chiare: qui restano da riscrivere i soli
+ * colori, mentre struttura, spaziatura e anello di fuoco vengono dal
+ * componente. `!important` non serve grazie ai livelli CSS — il tema PrimeNG
+ * sta sotto ai nostri stili.
+ */
 .comprimi {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
   width: 100%;
+  justify-content: flex-start;
   padding: var(--sp-3);
   flex: none;
-  background: none;
-  border: 0;
   border-top: 1px solid var(--c-line-onink);
   color: var(--c-text-oninverse-mute);
   font-family: var(--f-mono);
   font-size: var(--t-mono);
   letter-spacing: var(--ls-mono);
   text-transform: uppercase;
-  cursor: pointer;
 }
 
 .comprimi:hover {

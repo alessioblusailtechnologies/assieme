@@ -59,7 +59,11 @@
 </nav>
 
 <button
+  pButton
   type="button"
+  severity="secondary"
+  size="small"
+  [text]="true"
   class="comprimi"
   (click)="compressa.set(!compressa())"
   [attr.aria-label]="compressa() ? 'Espandi la barra laterale' : 'Comprimi la barra laterale'"

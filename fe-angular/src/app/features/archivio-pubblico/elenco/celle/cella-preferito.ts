@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import type { ICellRendererAngularComp } from 'ag-grid-angular';
 import type { ICellRendererParams } from 'ag-grid-community';
 
+import { ButtonDirective } from 'primeng/button';
+
 import { DocumentoPubblico } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 
@@ -13,12 +15,16 @@ export interface ParametriCellaPreferito {
 /** RF-A-09: accesso rapido ai documenti di uso frequente. */
 @Component({
   selector: 'app-cella-preferito',
-  imports: [Icona],
+  imports: [ButtonDirective, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (documento(); as doc) {
       <button
+        pButton
         type="button"
+        severity="secondary"
+        size="small"
+        [text]="true"
         [class.is-attivo]="doc.preferito"
         (click)="alterna(doc)"
         [attr.aria-pressed]="doc.preferito"
@@ -37,16 +43,13 @@ export interface ParametriCellaPreferito {
       height: 100%;
     }
 
+    /* A riposo quasi invisibile: è un'azione secondaria e non deve competere
+       con il titolo del documento. Il pulsante PrimeNG porta struttura e
+       stati di fuoco; qui resta solo il colore, che è una scelta di
+       significato e non di componente. */
     button {
-      display: grid;
-      place-items: center;
       padding: var(--sp-1);
-      background: none;
-      border: 0;
-      /* A riposo quasi invisibile: è un'azione secondaria e non deve
-         competere con il titolo del documento. */
       color: var(--c-text-ghost);
-      cursor: pointer;
     }
 
     button:hover,

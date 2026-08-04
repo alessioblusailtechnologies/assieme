@@ -1,4 +1,6 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeIt from '@angular/common/locales/it';
 import { HttpInterceptorFn, provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -19,8 +21,21 @@ const interceptors: HttpInterceptorFn[] = environment.devTools
   ? [sviluppoInterceptor, erroreInterceptor]
   : [erroreInterceptor];
 
+/*
+ * Locale italiana registrata all'avvio.
+ *
+ * Angular parte da `en-US`: senza questa riga, date e numeri formattati
+ * senza schema esplicito uscirebbero all'americana — 8/4/2026 per il 4
+ * agosto. In un prodotto per il mercato italiano è il genere di dettaglio
+ * che non si nota finché non causa un fraintendimento su una data di
+ * decorrenza.
+ */
+registerLocaleData(localeIt);
+
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: LOCALE_ID, useValue: 'it-IT' },
+
     provideBrowserGlobalErrorListeners(),
 
     provideRouter(

@@ -130,11 +130,15 @@ describe('ElencoDocumenti', () => {
   it('mostra il percorso di navigazione', async () => {
     const dom = (await monta()).nativeElement as HTMLElement;
 
-    const briciole = dom.querySelector('ui-briciole');
+    const briciole = dom.querySelector('p-breadcrumb');
+    expect(briciole).toBeTruthy();
     expect(briciole?.textContent).toContain('Archivi');
     expect(briciole?.textContent).toContain('Pubblico');
-    /* L'ultima voce è la posizione corrente, non un collegamento. */
-    expect(briciole?.querySelector('[aria-current="page"]')?.textContent?.trim()).toBe('Pubblico');
+  });
+
+  it('non mostra più il badge di sola lettura', async () => {
+    const dom = (await monta()).nativeElement as HTMLElement;
+    expect(dom.textContent).not.toContain('sola lettura');
   });
 
   it('non disegna la griglia quando non ci sono risultati', async () => {

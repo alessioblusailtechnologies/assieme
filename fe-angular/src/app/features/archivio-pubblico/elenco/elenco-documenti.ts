@@ -11,16 +11,17 @@ import {
   Module,
   ValidationModule,
 } from 'ag-grid-community';
+import { Breadcrumb } from 'primeng/breadcrumb';
+import { ButtonDirective } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { IconField } from 'primeng/iconfield';
+import { MenuItem } from 'primeng/api';
 import { InputIcon } from 'primeng/inputicon';
 import { InputText } from 'primeng/inputtext';
 import { Paginator, PaginatorState } from 'primeng/paginator';
 import { Select } from 'primeng/select';
 
 import { ArchivioPubblicoStore } from '../archivio-pubblico-store';
-import { Badge } from '@shared/ui/badge/badge';
-import { Briciola, Briciole } from '@shared/ui/briciole/briciole';
 import { CellaEdizione } from './celle/cella-edizione';
 import { CellaPreferito, ParametriCellaPreferito } from './celle/cella-preferito';
 import { CellaTipologia } from './celle/cella-tipologia';
@@ -45,8 +46,8 @@ import { environment } from '@env';
   selector: 'app-elenco-documenti',
   imports: [
     AgGridAngular,
-    Badge,
-    Briciole,
+    Breadcrumb,
+    ButtonDirective,
     Checkbox,
     FormsModule,
     IconField,
@@ -67,9 +68,10 @@ export class ElencoDocumenti {
   protected readonly tipologie = TIPOLOGIE_PUBBLICHE;
   protected readonly tema = assiemeGridTheme;
 
-  protected readonly briciole: Briciola[] = [
-    { etichetta: 'Archivi' },
-    { etichetta: 'Pubblico' },
+  /* "Archivi" è un raggruppamento, non una schermata: nessun percorso. */
+  protected readonly briciole: MenuItem[] = [
+    { label: 'Archivi' },
+    { label: 'Pubblico', routerLink: '/archivio/pubblico' },
   ];
 
   /**

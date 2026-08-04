@@ -1,20 +1,14 @@
 <header class="testata">
-  <ui-briciole [voci]="briciole" />
+  <p-breadcrumb [model]="briciole" />
 
   <div class="testata__riga">
     <h1 class="serif">Archivio pubblico</h1>
 
     <!--
-      RF-A-05: l'archivio è gestito centralmente e non si può modificare.
-      Detto qui, evita che qualcuno cerchi il pulsante di caricamento.
-    -->
-    <ui-badge variante="neutro">sola lettura</ui-badge>
-
-    <!--
       Il conteggio sta nella testata e non sopra la griglia: è la risposta
-      alla domanda che l'utente si sta facendo mentre filtra, e va letta
-      nello stesso colpo d'occhio del titolo. Resta una regione viva perché
-      cambia senza che la pagina si ricarichi.
+      alla domanda che l'utente si sta facendo mentre filtra, e va letta nello
+      stesso colpo d'occhio del titolo. Resta una regione viva perché cambia
+      senza che la pagina si ricarichi.
     -->
     <span class="testata__conteggio mono" role="status" aria-live="polite">
       @if (store.inCaricamento()) {
@@ -93,9 +87,16 @@
   </div>
 
   @if (store.filtriAttivi()) {
-    <button type="button" class="filtri__azzera" (click)="store.azzeraFiltri()">
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      size="small"
+      [text]="true"
+      (click)="store.azzeraFiltri()"
+    >
       <ui-icon name="chiudi" [size]="14" />
-      Azzera
+      <span>Azzera</span>
     </button>
   }
 </section>
@@ -106,9 +107,9 @@
     titolo="Non siamo riusciti a caricare l'archivio"
     descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
   >
-    <button type="button" class="azione" (click)="store.riprova()">
+    <button pButton type="button" (click)="store.riprova()">
       <ui-icon name="riprova" [size]="15" />
-      Riprova
+      <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
 } @else if (store.inCaricamento() && !documenti().length) {
@@ -124,9 +125,9 @@
     descrizione="Prova ad allargare la ricerca: togli un filtro, oppure includi anche le edizioni non più correnti."
   >
     @if (store.filtriAttivi()) {
-      <button type="button" class="azione" (click)="store.azzeraFiltri()">
+      <button pButton type="button" (click)="store.azzeraFiltri()">
         <ui-icon name="chiudi" [size]="15" />
-        Azzera i filtri
+        <span>Azzera i filtri</span>
       </button>
     }
   </ui-stato-vuoto>

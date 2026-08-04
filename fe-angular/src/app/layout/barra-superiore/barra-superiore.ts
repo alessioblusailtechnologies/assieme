@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
 
 /**
- * Barra superiore: contesto a sinistra, identità a destra.
+ * Barra superiore: contesto a sinistra, data e identità a destra.
  *
  * Il nome del tenant è sempre in vista di proposito. RF-B-01 fonda il
  * prodotto sull'isolamento fra agenzie, e in una sessione condivisa o in
@@ -13,7 +14,7 @@ import { SessioneStore } from '@core/auth/sessione-store';
  */
 @Component({
   selector: 'app-barra-superiore',
-  imports: [Icona],
+  imports: [DatePipe, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contesto">
@@ -26,11 +27,16 @@ import { SessioneStore } from '@core/auth/sessione-store';
       }
     </div>
 
-    <div class="identita">
+    <div class="lato">
+      <time class="mono orologio" [attr.datetime]="adesso().toISOString()">
+        {{ adesso() | date: 'dd/MM/yyyy HH:mm' }}
+      </time>
+
       @if (sessione.utente(); as utente) {
-        <span class="mono identita__ruolo">{{ utente.ruolo }}</span>
-        <span class="identita__avatar" [title]="utente.nome + ' ' + utente.cognome">
-          {{ sessione.iniziali() }}
+        <span class="separatore" aria-hidden="true"></span>
+        <span class="identita">
+          <span class="identita__nome">{{ nomeBreve() }}</span>
+          <span class="identita__ruolo mono">{{ utente.ruolo }}</span>
         </span>
       }
     </div>
@@ -63,25 +69,43 @@ import { SessioneStore } from '@core/auth/sessione-store';
       text-overflow: ellipsis;
     }
 
-    .identita {
+    .lato {
       display: flex;
       align-items: center;
       gap: var(--sp-3);
+      flex: none;
+    }
+
+    /*
+     * Cifre a larghezza fissa: senza, l'orologio si allarga e si stringe al
+     * cambio di minuto e trascina con sé tutto ciò che ha accanto.
+     */
+    .orologio {
+      color: var(--c-text-3);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .separatore {
+      width: 1px;
+      height: 18px;
+      background: var(--c-line);
+    }
+
+    .identita {
+      display: flex;
+      align-items: baseline;
+      gap: var(--sp-2);
+      white-space: nowrap;
+    }
+
+    .identita__nome {
+      font-size: var(--t-sm);
+      color: var(--c-text);
     }
 
     .identita__ruolo {
       color: var(--c-text-3);
-    }
-
-    .identita__avatar {
-      display: grid;
-      place-items: center;
-      width: 28px;
-      height: 28px;
-      background: var(--c-accent-soft);
-      color: var(--c-accent);
-      font-size: var(--t-xs);
-      letter-spacing: 0.02em;
     }
 
     /* Scheletro invece di spinner: occupa lo spazio che occuperà il
@@ -96,4 +120,31 @@ import { SessioneStore } from '@core/auth/sessione-store';
 })
 export class BarraSuperiore {
   protected readonly sessione = inject(SessioneStore);
+
+  protected readonly adesso = signal(new Date());
+
+  /** Forma `m.ferrero`: la stessa con cui l'utente si riconosce nella posta. */
+  protected readonly nomeBreve = computed(() => {
+    const u = this.sessione.utente();
+    return u ? `${u.nome.charAt(0)}.${u.cognome}`.toLowerCase() : '';
+  });
+
+  constructor() {
+    /*
+     * Il segnale si aggiorna solo al cambio di minuto.
+     *
+     * L'orologio non mostra i secondi: scriverlo ogni secondo farebbe
+     * ridisegnare la barra sessanta volte al minuto senza che un pixel
+     * cambi. Il controllo al secondo serve solo a cogliere il passaggio
+     * appena avviene, invece di aspettare fino a un minuto.
+     */
+    const battito = setInterval(() => {
+      const ora = new Date();
+      if (ora.getMinutes() !== this.adesso().getMinutes()) {
+        this.adesso.set(ora);
+      }
+    }, 1000);
+
+    inject(DestroyRef).onDestroy(() => clearInterval(battito));
+  }
 }

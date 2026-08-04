@@ -232,4 +232,42 @@ export const AssiemePreset = definePreset(Nora, {
       color: '{surface.200}',
     },
   },
+
+  components: {
+    /*
+     * Il percorso di navigazione non è un componente a sé: è una riga di
+     * metadati sopra il titolo. Senza fondo, senza spaziatura propria e con
+     * il corpo più piccolo, si integra nella testata invece di sembrarci
+     * appoggiato sopra.
+     */
+    breadcrumb: {
+      root: {
+        padding: '0',
+        background: 'transparent',
+        gap: '0.5rem',
+      },
+      item: {
+        color: '{surface.600}',
+        hoverColor: '{primary.color}',
+        borderRadius: '0',
+        label: {
+          fontSize: '0.6875rem', // --t-mono
+        },
+      },
+      separator: {
+        color: '{surface.400}',
+      },
+    },
+
+    button: {
+      root: {
+        borderRadius: '0',
+        gap: '0.5rem',
+        paddingX: '0.875rem',
+        paddingY: '0.5rem',
+        sm: { fontSize: '0.75rem', paddingX: '0.625rem', paddingY: '0.3125rem' },
+        label: { fontWeight: '400' },
+      },
+    },
+  },
 });

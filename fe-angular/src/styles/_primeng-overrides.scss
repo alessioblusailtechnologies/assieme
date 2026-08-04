@@ -29,3 +29,16 @@
   text-transform: uppercase;
   color: var(--c-text-3);
 }
+
+/*
+ * Stessa ragione per il percorso di navigazione: è una riga di metadati, e
+ * nel design di ASSIEME i metadati parlano in mono maiuscolo. PrimeNG ha un
+ * token per la dimensione dell'etichetta ma non per la famiglia — quello è
+ * globale — quindi qui.
+ */
+.p-breadcrumb .p-breadcrumb-item-label,
+.p-breadcrumb .p-breadcrumb-separator {
+  font-family: var(--f-mono);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+}

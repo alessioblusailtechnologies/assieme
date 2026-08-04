@@ -1,4 +1,4 @@
-<ui-briciole [voci]="briciole()" />
+<p-breadcrumb [model]="briciole()" />
 
 @if (errore()) {
   <ui-stato-vuoto
@@ -6,9 +6,9 @@
     titolo="Non siamo riusciti ad aprire il documento"
     descrizione="Potrebbe essere stato ritirato dall'archivio, oppure il problema è temporaneo."
   >
-    <button type="button" class="azione" (click)="riprova()">
+    <button pButton type="button" (click)="riprova()">
       <ui-icon name="riprova" [size]="15" />
-      Riprova
+      <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
 } @else if (inCaricamento() && !documento()) {
@@ -20,7 +20,6 @@
   <header class="testata">
     <div class="testata__riga">
       <h1 class="serif">{{ doc.titolo }}</h1>
-      <ui-badge variante="neutro">sola lettura</ui-badge>
       @if (doc.edizione.corrente) {
         <ui-badge variante="corrente">edizione corrente</ui-badge>
       } @else {
