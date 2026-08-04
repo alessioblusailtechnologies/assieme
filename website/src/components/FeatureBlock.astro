@@ -1,0 +1,203 @@
+---
+export interface Props {
+  id?: string;
+  eyebrow: string;
+  title: string;
+  /** Righe termine/dettaglio, come nella sezione «Memoria» della homepage. */
+  rows?: { term: string; detail: string }[];
+  /** Inverte l'ordine: figura a destra invece che a sinistra. */
+  flip?: boolean;
+  tone?: 'light' | 'ink';
+}
+
+const { id, eyebrow, title, rows = [], flip = false, tone = 'light' } = Astro.props;
+const titleId = id ? `${id}-title` : undefined;
+---
+
+<section
+  class:list={['feature', `feature--${tone}`, flip && 'feature--flip']}
+  id={id}
+  aria-labelledby={titleId}
+>
+  <div class="feature__inner shell">
+    <div class="feature__figure hatch" aria-hidden="true">
+      <span class="mono">{eyebrow}</span>
+    </div>
+
+    <div class="feature__copy">
+      <p class="feature__eyebrow">{eyebrow}</p>
+      <h2 class="serif feature__title" id={titleId}>{title}</h2>
+      <div class="feature__body"><slot /></div>
+
+      {
+        rows.length > 0 && (
+          <dl class="feature__rows">
+            {rows.map((row) => (
+              <div class="feature__row">
+                <dt class="feature__term">{row.term}</dt>
+                <dd class="feature__detail">{row.detail}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+
+      <slot name="actions" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .feature {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .feature--ink {
+    background: var(--c-ink);
+    color: var(--c-text-oninverse);
+  }
+
+  .feature__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4.5rem;
+    align-items: center;
+  }
+
+  .feature--flip .feature__figure {
+    order: 2;
+  }
+
+  .feature__figure {
+    display: flex;
+    align-items: flex-end;
+    aspect-ratio: 4 / 3;
+    padding: 1rem;
+  }
+
+  .feature--ink .feature__figure {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--c-ink-raise) 0 8px,
+      var(--c-ink-raise-2) 8px 16px
+    );
+  }
+
+  .feature__figure .mono {
+    color: var(--c-text-4);
+  }
+
+  .feature--ink .feature__figure .mono {
+    color: var(--c-text-oninverse-mute);
+  }
+
+  .feature__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .feature__eyebrow {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: var(--ls-mono-wide);
+    text-transform: uppercase;
+    color: var(--c-text-3);
+  }
+
+  .feature--ink .feature__eyebrow {
+    color: var(--c-text-oninverse-mute);
+  }
+
+  .feature__title {
+    font-size: var(--t-h2);
+    line-height: 1.1;
+    letter-spacing: -0.018em;
+  }
+
+  .feature--ink .feature__title {
+    color: var(--c-text-oninverse);
+  }
+
+  .feature__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 34rem;
+    line-height: 1.65;
+    color: var(--c-text-2);
+  }
+
+  .feature--ink .feature__body {
+    color: var(--c-text-oninverse-3);
+  }
+
+  .feature__rows {
+    width: 100%;
+    margin: 0;
+  }
+
+  .feature__row {
+    display: grid;
+    grid-template-columns: 170px 1fr;
+    gap: 1.25rem;
+    align-items: baseline;
+    padding: 1rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .feature--ink .feature__row {
+    border-top-color: var(--c-line-dark);
+  }
+
+  .feature__row:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .feature--ink .feature__row:last-child {
+    border-bottom-color: var(--c-line-dark);
+  }
+
+  .feature__term {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+  }
+
+  .feature--ink .feature__term {
+    color: var(--c-accent-on-dark);
+  }
+
+  .feature__detail {
+    margin: 0;
+    font-size: var(--t-sm);
+    line-height: 1.55;
+    color: var(--c-text-2);
+  }
+
+  .feature--ink .feature__detail {
+    color: var(--c-text-oninverse-2);
+  }
+
+  @media (max-width: 1000px) {
+    .feature__inner {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .feature--flip .feature__figure,
+    .feature__figure {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .feature__row {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+  }
+</style>

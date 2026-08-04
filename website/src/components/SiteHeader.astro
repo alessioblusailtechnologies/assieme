@@ -1,0 +1,255 @@
+---
+import { APP_URL, primaryNav } from '~/config/site';
+import { isActivePath } from '~/utils/url';
+
+const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
+---
+
+<header class="site-header on-ink">
+  <div class="site-header__bar">
+    <a class="site-header__brand" href="/" aria-label="Assieme — home">
+      Assieme
+    </a>
+
+    <nav class="site-header__nav" aria-label="Navigazione principale">
+      <ul>
+        {
+          primaryNav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="site-header__actions">
+      <a class="btn btn--ghost btn--sm" href={APP_URL} rel="nofollow">Accedi</a>
+      <a class="btn btn--solid btn--sm" href="/demo">Richiedi una demo</a>
+    </div>
+
+    <button
+      class="site-header__toggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="menu-mobile"
+      data-menu-toggle
+    >
+      <span class="visually-hidden">Apri il menu</span>
+      <span class="site-header__burger" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div class="site-header__panel" id="menu-mobile" hidden data-menu-panel>
+    <nav aria-label="Navigazione principale, versione compatta">
+      <ul>
+        {
+          primaryNav.map((item) => (
+            <li>
+              <a
+                href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+    <div class="site-header__panel-actions">
+      <a class="btn btn--ghost" href={APP_URL} rel="nofollow">Accedi</a>
+      <a class="btn btn--solid" href="/demo">Richiedi una demo</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    background: var(--c-ink);
+    border-bottom: 1px solid var(--c-line-onink);
+  }
+
+  .site-header__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    height: 72px;
+    padding-inline: var(--gutter);
+  }
+
+  .site-header__brand {
+    font-family: var(--f-serif);
+    font-size: 1.625rem;
+    line-height: 1;
+    color: var(--c-text-oninverse);
+    flex-shrink: 0;
+  }
+
+  .site-header__brand:hover {
+    color: var(--c-accent-hover);
+  }
+
+  .site-header__nav ul {
+    display: flex;
+    gap: clamp(1rem, -0.6rem + 2vw, 1.875rem);
+  }
+
+  .site-header__nav a {
+    font-size: var(--t-sm);
+    color: #e3e6ea;
+  }
+
+  .site-header__nav a:hover,
+  .site-header__nav a[aria-current='page'] {
+    color: var(--c-accent-hover);
+  }
+
+  .site-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  /* --- Interruttore compatto --- */
+
+  .site-header__toggle {
+    display: none;
+    width: 44px;
+    height: 44px;
+    margin-right: -0.625rem;
+    place-items: center;
+  }
+
+  .site-header__burger,
+  .site-header__burger::before,
+  .site-header__burger::after {
+    display: block;
+    width: 22px;
+    height: 1px;
+    background: var(--c-text-oninverse);
+    transition: transform var(--dur-fast) ease, opacity var(--dur-fast) ease;
+  }
+
+  .site-header__burger::before,
+  .site-header__burger::after {
+    content: '';
+    position: relative;
+  }
+
+  .site-header__burger::before {
+    top: -7px;
+  }
+
+  .site-header__burger::after {
+    top: 6px;
+  }
+
+  [aria-expanded='true'] .site-header__burger {
+    background: transparent;
+  }
+
+  [aria-expanded='true'] .site-header__burger::before {
+    top: 1px;
+    transform: rotate(45deg);
+  }
+
+  [aria-expanded='true'] .site-header__burger::after {
+    top: 0;
+    transform: rotate(-45deg);
+  }
+
+  /* --- Pannello compatto --- */
+
+  .site-header__panel {
+    padding: 0.5rem var(--gutter) 1.75rem;
+    border-top: 1px solid var(--c-line-onink);
+  }
+
+  .site-header__panel[hidden] {
+    display: none;
+  }
+
+  .site-header__panel a {
+    color: var(--c-text-oninverse);
+  }
+
+  .site-header__panel nav ul {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .site-header__panel nav a {
+    display: block;
+    padding: 0.875rem 0;
+    font-size: 1.0625rem;
+    border-bottom: 1px solid var(--c-line-dark);
+  }
+
+  .site-header__panel nav a[aria-current='page'] {
+    color: var(--c-accent-hover);
+  }
+
+  .site-header__panel-actions {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 1080px) {
+    .site-header__nav,
+    .site-header__actions {
+      display: none;
+    }
+
+    .site-header__toggle {
+      display: grid;
+    }
+  }
+
+  @media (min-width: 1081px) {
+    .site-header__panel {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const panel = document.querySelector<HTMLElement>('[data-menu-panel]');
+
+  if (toggle && panel) {
+    const label = toggle.querySelector('.visually-hidden');
+
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      panel.hidden = !open;
+      if (label) label.textContent = open ? 'Chiudi il menu' : 'Apri il menu';
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !panel.hidden) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    // Tornando oltre il breakpoint il pannello non deve restare aperto
+    // sopra al layout desktop.
+    const wide = window.matchMedia('(min-width: 1081px)');
+    wide.addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
+    });
+  }
+</script>

@@ -1,0 +1,136 @@
+---
+import { stories } from '~/data/home';
+
+const LOGO_SLOTS = 6;
+---
+
+<section class="stories" aria-labelledby="stories-title">
+  <div class="stories__head">
+    <h2 class="stories__title" id="stories-title">
+      Tre dimostrazioni, su documenti veri
+    </h2>
+    <a class="btn btn--ghost btn--sm" href="/clienti">Vedi tutte le dimostrazioni</a>
+  </div>
+
+  <ul class="stories__grid">
+    {
+      stories.map((s) => (
+        <li class="stories__card hatch--ink">
+          <a class="stories__link" href={s.href}>
+            <span class="serif stories__card-title">{s.title}</span>
+            <span class="stories__play" aria-hidden="true">
+              ▶
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  <ul class="stories__logos" aria-label="Altri clienti">
+    {
+      Array.from({ length: LOGO_SLOTS }, (_, i) => (
+        <li class="stories__logo hatch--faint">
+          <span class="visually-hidden">Logo cliente {i + 1}</span>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .stories {
+    padding-top: 5rem;
+  }
+
+  .stories__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    padding-inline: var(--gutter);
+  }
+
+  .stories__title {
+    font-family: var(--f-sans);
+    font-size: clamp(1.25rem, 0.95rem + 1.1vw, 1.5rem);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--c-text-oninverse);
+  }
+
+  .stories__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 2.75rem var(--gutter) 0;
+  }
+
+  .stories__card {
+    position: relative;
+  }
+
+  .stories__link {
+    display: flex;
+    align-items: flex-end;
+    height: 280px;
+    padding: 1.5rem;
+    color: var(--c-text-oninverse);
+    transition: background-color var(--dur-fast) ease;
+  }
+
+  .stories__link:hover {
+    background: rgb(255 255 255 / 5%);
+    color: var(--c-text-oninverse);
+  }
+
+  .stories__card-title {
+    max-width: 80%;
+    font-size: 1.375rem;
+    line-height: 1.3;
+  }
+
+  .stories__play {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    font-size: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 50%);
+    border-radius: 50%;
+    transition: background-color var(--dur-fast) ease;
+  }
+
+  .stories__link:hover .stories__play {
+    background: rgb(255 255 255 / 12%);
+  }
+
+  .stories__logos {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.5rem;
+    padding: 3.5rem var(--gutter) 0;
+  }
+
+  .stories__logo {
+    height: 24px;
+  }
+
+  @media (max-width: 900px) {
+    .stories__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .stories__link {
+      height: 220px;
+    }
+
+    .stories__logos {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

@@ -1,0 +1,22 @@
+{
+  "name": "assieme-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sito istituzionale di Assieme — la piattaforma conversazionale AI per agenzie, broker e intermediari assicurativi.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "build:fast": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/sitemap": "^3.6.0",
+    "astro": "^5.16.2",
+    "typescript": "^5.9.3"
+  }
+}

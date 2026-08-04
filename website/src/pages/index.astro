@@ -1,0 +1,84 @@
+---
+import CtaBanner from '~/components/CtaBanner.astro';
+import Hero from '~/components/home/Hero.astro';
+import MemorySection from '~/components/home/MemorySection.astro';
+import ProductShot from '~/components/home/ProductShot.astro';
+import SecurityStrip from '~/components/home/SecurityStrip.astro';
+import Statement from '~/components/home/Statement.astro';
+import Stats from '~/components/home/Stats.astro';
+import Stories from '~/components/home/Stories.astro';
+import Testimonial from '~/components/home/Testimonial.astro';
+import UseCaseTicker from '~/components/home/UseCaseTicker.astro';
+import { SITE_URL, site } from '~/config/site';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITE_URL}/#software`,
+  name: site.name,
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'InsurTech',
+  operatingSystem: 'Web',
+  url: SITE_URL,
+  inLanguage: 'it-IT',
+  description:
+    'Assistente AI per agenzie assicurative, broker e intermediari: le condizioni delle compagnie già in archivio, i documenti dell’agenzia accanto ai loro, confronti e tabelle con la fonte sempre citata.',
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  audience: {
+    '@type': 'Audience',
+    audienceType:
+      'Agenzie assicurative, broker, intermediari e compagnie assicurative',
+    geographicArea: { '@type': 'Country', name: 'Italia' },
+  },
+  featureList: [
+    'Condizioni delle compagnie già in archivio: DIP, DIP Aggiuntivo e Condizioni di Assicurazione',
+    'Archivio dei documenti dell’agenzia, riservato e consultabile a fianco di quelli delle compagnie',
+    'Confronto fra polizze e preventivi con la fonte citata su ogni valore',
+    'Tabelle di analisi su decine di prodotti, con la fonte in ogni casella',
+    'Valutazione secondo i criteri della singola agenzia, scritti in italiano',
+    'Documenti per il cliente già impaginati in PDF, DOCX, XLSX e PPTX',
+    'Agenti che ripetono il lavoro ricorrente su pianificazione',
+    'Archivi raggiungibili anche dagli strumenti AI già in uso',
+    'Memoria delle prassi dell’agenzia, consultabile e cancellabile',
+  ],
+  offers: {
+    '@type': 'Offer',
+    availability: 'https://schema.org/InStock',
+    priceSpecification: {
+      '@type': 'PriceSpecification',
+      priceCurrency: 'EUR',
+      description: 'Preventivo su misura, dopo la demo.',
+    },
+  },
+};
+---
+
+<BaseLayout
+  title="Assieme — AI per agenzie assicurative, broker e intermediari"
+  description="L'assistente AI per agenzie, broker e intermediari: i set informativi già in archivio, i tuoi documenti accanto ai loro, ogni risposta con la fonte citata."
+  schema={[softwareSchema]}
+>
+  <Hero />
+  <Statement />
+  <ProductShot />
+  <MemorySection />
+  <UseCaseTicker />
+  <Testimonial />
+
+  {/* Da qui alla fine la pagina resta scura e prosegue senza stacchi nel
+      piè di pagina, come nel design. */}
+  <div class="closing section--ink on-ink">
+    <Stories />
+    <Stats />
+    <SecurityStrip />
+    <CtaBanner />
+  </div>
+</BaseLayout>
+
+<style>
+  .closing {
+    background: var(--c-ink);
+    color: var(--c-text-oninverse);
+  }
+</style>

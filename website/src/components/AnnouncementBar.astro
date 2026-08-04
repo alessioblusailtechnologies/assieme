@@ -1,0 +1,114 @@
+---
+import { announcements } from '~/config/site';
+
+// La marquee scorre duplicando la lista e traslando di -50%: la copia serve
+// solo a rendere il ciclo continuo, quindi va nascosta agli screen reader.
+---
+
+<aside class="announcement" aria-label="Novità dal prodotto">
+  <div class="announcement__track">
+    <ul class="announcement__set">
+      {
+        announcements.map((a) => (
+          <li class="announcement__item">
+            <span class="announcement__tag">{a.label}</span>
+            <span>{a.text}</span>
+            <span class="announcement__dot" aria-hidden="true">
+              ·
+            </span>
+          </li>
+        ))
+      }
+    </ul>
+    <ul class="announcement__set" aria-hidden="true">
+      {
+        announcements.map((a) => (
+          <li class="announcement__item">
+            <span class="announcement__tag">{a.label}</span>
+            <span>{a.text}</span>
+            <span class="announcement__dot">·</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</aside>
+
+<style>
+  .announcement {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: var(--c-surface);
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .announcement__track {
+    display: flex;
+    width: max-content;
+    white-space: nowrap;
+    animation: announcement-scroll 38s linear infinite;
+  }
+
+  .announcement__set {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding-right: 40px;
+    font-size: var(--t-xs);
+    color: var(--c-text-2);
+  }
+
+  /* Etichetta e testo restano attaccati; i 40 px separano solo il punto di
+     stacco dalla notizia precedente e da quella successiva. */
+  .announcement__item {
+    display: flex;
+    align-items: center;
+  }
+
+  .announcement__tag {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+    margin-right: 0.5rem;
+  }
+
+  .announcement__dot {
+    margin-left: 40px;
+    color: var(--c-accent-hairline);
+  }
+
+  @keyframes announcement-scroll {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* Ferma la marquee non basta: senza scorrimento il testo resterebbe
+     tagliato. Lo si rende quindi scorrevole a mano. */
+  @media (prefers-reduced-motion: reduce) {
+    .announcement {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .announcement::-webkit-scrollbar {
+      display: none;
+    }
+
+    .announcement__track {
+      animation: none;
+      padding-inline: var(--gutter);
+    }
+
+    .announcement__set[aria-hidden='true'] {
+      display: none;
+    }
+  }
+</style>

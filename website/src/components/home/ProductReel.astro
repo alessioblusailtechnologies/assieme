@@ -1,0 +1,222 @@
+---
+/**
+ * Filmato di prodotto, al posto della riproduzione statica dell'interfaccia.
+ *
+ * Sorgente: 1280×720, 5s, H.264, 24 fps. Va in ciclo continuo.
+ *
+ * Sull'avvio automatico, tre accorgimenti che sembrano ridondanti e non lo
+ * sono: `autoplay` nel markup (la via più affidabile, gestita dal browser),
+ * `muted` che è la condizione senza la quale ogni criterio di riproduzione
+ * automatica blocca il filmato, e nessun frammento `#t=` nell'URL — con
+ * `preload` limitato faceva scaricare quel tanto che basta a mostrare un
+ * fotogramma e fermarsi, che è esattamente l'effetto "immagine ferma".
+ */
+
+const SRC = '/video/assieme-piattaforma.mp4';
+---
+
+<section class="reel" aria-labelledby="reel-title">
+  <h2 class="visually-hidden" id="reel-title">
+    Assieme all'opera: dal documento al confronto
+  </h2>
+
+  <figure class="reel__figure">
+    <div class="reel__screen">
+      <video
+        class="reel__video"
+        src={SRC}
+        width="1280"
+        height="720"
+        autoplay
+        muted
+        loop
+        playsinline
+        disablepictureinpicture
+        aria-label="Assieme legge due capitolati assicurativi, ne estrae le garanzie e ne mette a confronto le condizioni."
+        data-reel></video>
+
+      {/*
+        Il filmato è in ciclo, quindi dura di fatto all'infinito: il criterio
+        WCAG 2.2.2 impone un modo per fermarlo.
+      */}
+      <button class="reel__toggle" type="button" data-reel-toggle>
+        <span data-reel-label>Pausa</span>
+      </button>
+    </div>
+
+    <figcaption class="reel__caption">
+      Due capitolati a confronto: garanzie allineate, differenze in evidenza e
+      ogni valore riconducibile all'articolo di origine.
+    </figcaption>
+  </figure>
+</section>
+
+<style>
+  .reel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 104px sotto, come nel design */
+    padding: 0 var(--gutter) clamp(3.5rem, 1.85rem + 6.6vw, 6.5rem);
+  }
+
+  .reel__figure {
+    width: 100%;
+    max-width: var(--shell-wide);
+    margin: 0;
+  }
+
+  .reel__screen {
+    position: relative;
+    /* Fondo scuro sotto al filmato: copre il vuoto finché il primo
+       fotogramma non è decodificato. */
+    background: var(--c-ink);
+    line-height: 0;
+  }
+
+  .reel__video {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  /* --- Comando di pausa --- */
+
+  .reel__toggle {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 6px 12px;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    line-height: 1.4;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-text-oninverse);
+    background: rgb(20 24 29 / 55%);
+    border: 1px solid var(--c-line-onink-strong);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    transition:
+      opacity var(--dur-fast) ease,
+      background-color var(--dur-fast) ease;
+  }
+
+  .reel__screen:hover .reel__toggle,
+  .reel__toggle:focus-visible {
+    opacity: 1;
+  }
+
+  .reel__toggle:hover {
+    background: rgb(20 24 29 / 80%);
+  }
+
+  /* Su schermi tattili non esiste hover: il comando resta sempre visibile,
+     altrimenti sarebbe irraggiungibile. */
+  @media (hover: none) {
+    .reel__toggle {
+      opacity: 1;
+    }
+  }
+
+  /* A movimento ridotto il filmato parte fermo: il comando è l'unico modo
+     per avviarlo, quindi deve essere in evidenza. */
+  @media (prefers-reduced-motion: reduce) {
+    .reel__toggle {
+      opacity: 1;
+    }
+  }
+
+  /* --- Didascalia --- */
+
+  .reel__caption {
+    margin-top: 0.875rem;
+    max-width: 44rem;
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    color: var(--c-text-4);
+  }
+</style>
+
+<script>
+  const video = document.querySelector<HTMLVideoElement>('[data-reel]');
+  const toggle = document.querySelector<HTMLButtonElement>('[data-reel-toggle]');
+  const label = document.querySelector<HTMLElement>('[data-reel-label]');
+
+  if (video && toggle && label) {
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    /* L'attributo `muted` da solo non basta sempre: alcuni browser valutano
+       la proprietà al momento della riproduzione, e se non è impostata il
+       criterio di avvio automatico rifiuta. Impostarla qui costa nulla. */
+    video.muted = true;
+
+    /** `true` quando è l'utente a comandare: da lì in poi lo script non tocca più nulla. */
+    let held = false;
+
+    const sync = () => {
+      const paused = video.paused;
+      label.textContent = paused ? 'Riproduci' : 'Pausa';
+      toggle.setAttribute(
+        'aria-label',
+        paused ? 'Riproduci il filmato' : 'Metti in pausa il filmato',
+      );
+    };
+
+    const play = () => {
+      if (held || calm.matches) return;
+      video.play().catch(() => {
+        /* Rifiutato (risparmio energetico, scheda in secondo piano):
+           resta il fotogramma fermo e il comando per avviarlo a mano. */
+      });
+    };
+
+    if (calm.matches) {
+      // `autoplay` è nel markup perché è la via più affidabile; qui lo si
+      // annulla subito per chi ha chiesto meno animazioni.
+      video.autoplay = false;
+      video.pause();
+    } else {
+      play();
+      // Se al primo tentativo i dati non bastavano, si riprova appena
+      // il browser ne ha abbastanza per partire.
+      video.addEventListener('loadeddata', play, { once: true });
+      video.addEventListener('canplay', play, { once: true });
+    }
+
+    toggle.addEventListener('click', () => {
+      if (video.paused) {
+        held = false;
+        video.play().catch(() => {});
+      } else {
+        held = true;
+        video.pause();
+      }
+      sync();
+    });
+
+    video.addEventListener('play', sync);
+    video.addEventListener('pause', sync);
+
+    // Fuori dallo schermo non serve decodificare fotogrammi.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (held) return;
+        if (entry?.isIntersecting) play();
+        else video.pause();
+      },
+      { rootMargin: '100px' },
+    );
+    io.observe(video);
+
+    calm.addEventListener('change', (event) => {
+      if (event.matches) video.pause();
+      else play();
+      sync();
+    });
+
+    sync();
+  }
+</script>

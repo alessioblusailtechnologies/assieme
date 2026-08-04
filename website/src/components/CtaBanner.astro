@@ -1,0 +1,37 @@
+---
+export interface Props {
+  title?: string;
+  cta?: string;
+  href?: string;
+}
+
+const {
+  title = "Porta l'AI professionale dentro la tua agenzia",
+  cta = 'Richiedi una demo',
+  href = '/demo',
+} = Astro.props;
+---
+
+<section class="cta" aria-labelledby="cta-title">
+  <h2 class="serif cta__title" id="cta-title">{title}</h2>
+  <a class="btn btn--solid" href={href}>{cta}</a>
+</section>
+
+<style>
+  .cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 2rem;
+    padding: 2.5rem var(--gutter);
+    border-top: 1px solid var(--c-line-dark);
+  }
+
+  .cta__title {
+    font-size: clamp(1.5rem, 1.05rem + 1.8vw, 1.875rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--c-text-oninverse);
+  }
+</style>

@@ -1,0 +1,140 @@
+---
+import { security } from '~/data/home';
+---
+
+<section class="sec" aria-labelledby="sec-title">
+  <div class="sec__head">
+    <h2 class="sec__title" id="sec-title">
+      {security.title[0]}<br />{security.title[1]}
+    </h2>
+    <div class="sec__copy">
+      <p class="sec__body">{security.body}</p>
+      <a class="btn btn--ghost btn--sm" href="/sicurezza">
+        Approfondisci la sicurezza
+      </a>
+    </div>
+  </div>
+
+  <ul class="sec__badges">
+    {
+      security.badges.map((b) => (
+        <li>
+          <a class="sec__badge" href={b.href}>
+            <span class="sec__mark" aria-hidden="true">
+              {b.mark}
+            </span>
+            <span class="sec__name">{b.name}</span>
+            <span class="sec__more" aria-hidden="true">
+              Dettagli →
+            </span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<style>
+  .sec {
+    padding-top: var(--sp-section);
+  }
+
+  .sec__head {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5rem;
+    padding-inline: var(--gutter);
+  }
+
+  .sec__title {
+    font-family: var(--f-sans);
+    font-size: clamp(1.25rem, 0.95rem + 1.1vw, 1.5rem);
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--c-text-oninverse);
+    text-wrap: initial;
+  }
+
+  .sec__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .sec__body {
+    max-width: 32.5rem;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--c-text-oninverse-3);
+  }
+
+  .sec__badges {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3.5rem 1.5rem;
+    padding: 4.5rem var(--gutter) var(--sp-section);
+  }
+
+  .sec__badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.875rem;
+    color: var(--c-text-oninverse);
+  }
+
+  /* Le diciture sono parole, non sigle: possono andare su due righe. */
+  .sec__mark {
+    display: grid;
+    place-items: center;
+    width: 96px;
+    height: 96px;
+    padding: 0 0.5rem;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    line-height: 1.4;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--c-text-oninverse-mute);
+    border: 1px solid var(--c-line-dark);
+    border-radius: 50%;
+    transition:
+      border-color var(--dur-fast) ease,
+      color var(--dur-fast) ease;
+  }
+
+  .sec__badge:hover .sec__mark {
+    border-color: var(--c-accent-on-dark);
+    color: var(--c-accent-on-dark);
+  }
+
+  .sec__name {
+    font-size: var(--t-xs);
+    text-align: center;
+  }
+
+  .sec__more {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-oninverse-mute);
+  }
+
+  @media (max-width: 900px) {
+    .sec__head {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+
+    .sec__badges {
+      gap: 2.5rem 1rem;
+    }
+
+    .sec__mark {
+      width: 76px;
+      height: 76px;
+    }
+  }
+</style>

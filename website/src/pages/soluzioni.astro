@@ -1,0 +1,105 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import FeatureBlock from '~/components/FeatureBlock.astro';
+import PageHero from '~/components/PageHero.astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+/**
+ * Niente automazioni su rinnovi, retention, sinistri o scadenzari: sono
+ * esplicitamente fuori dal perimetro della prima release (§5.5).
+ */
+---
+
+<BaseLayout
+  title="Soluzioni per agenzie, broker, intermediari e compagnie"
+  description="Un'agenzia, un broker plurimandatario e una direzione tecnica non leggono i documenti per le stesse ragioni. Assieme si adatta al mestiere."
+>
+  <PageHero
+    eyebrow="Soluzioni"
+    title="Lo stesso strumento, quattro mestieri diversi"
+    lead="Un'agenzia monomandataria, un broker con quaranta compagnie in portafoglio e una direzione tecnica non leggono gli stessi documenti per le stesse ragioni. Assieme si adatta al mestiere, non il contrario."
+  />
+
+  <Breadcrumbs trail={[{ label: 'Soluzioni', href: '/soluzioni' }]} />
+
+  <FeatureBlock
+    id="agenzie"
+    eyebrow="Agenzie"
+    title="Le condizioni dei tuoi prodotti, già in archivio"
+    rows={[
+      { term: 'Subito', detail: 'I prodotti che collochi sono già dentro: si comincia dalla prima domanda' },
+      { term: 'A fianco', detail: 'Il preventivo che il cliente porta da un concorrente, accanto alle tue condizioni' },
+      { term: 'A modo tuo', detail: "Le convenzioni e i testi dell'agenzia diventano il modo in cui Assieme ragiona" },
+    ]}
+  >
+    <p>
+      In agenzia il tempo non se ne va sulle decisioni difficili. Se ne va nel
+      ritrovare il documento giusto e nel rileggere trenta pagine per
+      verificare una clausola che già conosci.
+    </p>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="broker"
+    eyebrow="Broker"
+    title="Molti più di cinque documenti alla volta"
+    flip
+    rows={[
+      { term: 'Scala', detail: 'Decine di prodotti in una tabella sola, dove gli altri si fermano a cinque' },
+      { term: 'Criteri', detail: 'Massimali, franchigie, scoperti ed esclusioni, o le colonne che scrivi tu' },
+      { term: 'Consegna', detail: "Lo stesso lavoro esce come documento con il marchio dell'agenzia" },
+    ]}
+  >
+    <p>
+      Il valore del broker sta nel leggere quello che una tabella comparativa
+      non mostra: una retroattività ridotta, un'esclusione aggiunta in coda,
+      uno scoperto che cambia natura al danno.
+    </p>
+    <p>
+      Assieme fa il lavoro meccanico su un numero di documenti che a mano non
+      affronteresti. Quello che conta lo decidi comunque tu, ma partendo da un
+      tavolo già apparecchiato.
+    </p>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="intermediari"
+    eyebrow="Intermediari"
+    title="Struttura da studio grande, senza il reparto tecnico"
+    rows={[
+      { term: 'Avvio', detail: 'Nessun progetto di migrazione: si comincia il primo giorno' },
+      { term: 'Autonomia', detail: 'Si configura scrivendo in italiano, non programmando' },
+      { term: 'Continuità', detail: 'Quello che lo studio ha imparato resta, anche quando cambia chi ci lavora' },
+    ]}
+  >
+    <p>
+      Chi lavora in due o tre persone ha gli stessi obblighi documentali di una
+      rete strutturata, senza la stessa macchina dietro. Quello che nelle grandi
+      strutture è un manuale operativo, qui sono poche regole scritte una volta
+      e applicate sempre.
+    </p>
+  </FeatureBlock>
+
+  <FeatureBlock
+    id="compagnie"
+    eyebrow="Compagnie"
+    title="Come i tuoi testi vengono letti a valle"
+    flip
+    rows={[
+      { term: 'Rete', detail: 'Uno strumento comune per chi colloca i tuoi prodotti' },
+      { term: 'Edizioni', detail: "La rete lavora sempre sull'edizione corretta, non su quella scaricata due anni fa" },
+      { term: 'Segnale', detail: 'Le clausole che generano più domande emergono prima del contenzioso' },
+    ]}
+  >
+    <p>
+      Una compagnia scrive i testi; la rete li interpreta. Fra le due cose c'è
+      uno scarto che di solito si scopre in fase di liquidazione.
+    </p>
+  </FeatureBlock>
+
+  <Closing
+    title="Non sei sicuro di quale configurazione ti serva?"
+    cta="Parliamone in una demo"
+  />
+</BaseLayout>

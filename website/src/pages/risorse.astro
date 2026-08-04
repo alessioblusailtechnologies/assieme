@@ -1,0 +1,257 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import CardGrid from '~/components/CardGrid.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { STATUS_URL, site } from '~/config/site';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+const guide = [
+  {
+    id: 'guida-confronto',
+    eyebrow: 'Guida',
+    title: 'Leggere un set informativo senza perdere le esclusioni',
+    body: 'Come sono fatti DIP, DIP Aggiuntivo e Condizioni di Assicurazione, che cosa sta scritto solo in uno dei tre e in quale ordine conviene leggerli.',
+    href: '/demo',
+    linkLabel: 'Richiedi la guida',
+  },
+  {
+    id: 'guida-istruzioni',
+    eyebrow: 'Guida',
+    title: "Mettere per iscritto il metodo dell'agenzia",
+    body: "Come si spiega a uno strumento il modo in cui valuti le garanzie, con esempi di regole che funzionano e di regole che peggiorano le risposte.",
+    href: '/demo',
+    linkLabel: 'Richiedi la guida',
+  },
+  {
+    id: 'guida-ai',
+    eyebrow: 'Nota tecnica',
+    title: "AI in agenzia e responsabilità dell'intermediario",
+    body: "Dove finisce l'assistenza dello strumento e dove comincia la responsabilità professionale di chi firma la consulenza, alla luce degli obblighi di distribuzione.",
+    href: '/demo',
+    linkLabel: 'Richiedi la nota',
+  },
+];
+
+/* Glossario del mestiere, non del software: sono le parole che ricorrono
+   nelle domande dei clienti e nei documenti che si leggono ogni giorno.
+   Le uniche due voci di prodotto sono quelle che il sito usa davvero. */
+const glossario = [
+  {
+    term: 'Set informativo',
+    detail:
+      "I documenti che ogni compagnia deve pubblicare per legge su ciascun prodotto: DIP, DIP Aggiuntivo, Condizioni di Assicurazione e glossario. È il pacchetto che il cliente ha diritto di ricevere prima di firmare.",
+  },
+  {
+    term: 'DIP e DIP Aggiuntivo',
+    detail:
+      "Il Documento Informativo Precontrattuale in due versioni. Il primo è sintetico e uguale per tutti; il secondo è dove stanno davvero esclusioni, limitazioni e condizioni operative — ed è quello che quasi nessuno legge fino in fondo.",
+  },
+  {
+    term: 'Franchigia e scoperto',
+    detail:
+      "Due modi diversi di lasciare una parte del danno a carico dell'assicurato: la franchigia è un importo fisso, lo scoperto una percentuale. Vengono usati come sinonimi di continuo, e non lo sono.",
+  },
+  {
+    term: 'Massimale',
+    detail:
+      "Il tetto oltre il quale la compagnia non paga. Può essere unico per sinistro, per anno o distinto per singola garanzia: due polizze con lo stesso numero in copertina possono comportarsi in modo molto diverso.",
+  },
+  {
+    term: 'Retroattività',
+    detail:
+      "Nelle coperture claims made, quanto indietro nel tempo la polizza copre fatti avvenuti prima della firma. Illimitata o limitata a pochi anni: è una delle differenze che pesano di più e si vedono di meno.",
+  },
+  {
+    term: 'Claims made',
+    detail:
+      "La copertura opera in base alla data in cui arriva la richiesta di risarcimento, non a quella del fatto. È il regime che rende decisiva la retroattività, e il motivo per cui cambiare compagnia va valutato con attenzione.",
+  },
+  {
+    term: 'Esclusioni',
+    detail:
+      "Ciò che la polizza non copre. Stanno in fondo, spesso in un articolo unico, e sono il punto in cui due prodotti apparentemente identici smettono di esserlo.",
+  },
+  {
+    term: 'Adeguatezza',
+    detail:
+      "La verifica che il contratto proposto risponda alle esigenze del cliente, con l'obbligo per l'intermediario di motivarla e di poterla ricostruire anche a distanza di anni.",
+  },
+  {
+    term: 'Biblioteca',
+    detail:
+      "Come chiamiamo l'archivio delle condizioni delle compagnie che trovi già dentro Assieme al primo accesso. Non devi caricarlo tu: c'è.",
+  },
+  {
+    term: "DNA d'Agenzia",
+    detail:
+      "Come chiamiamo l'insieme di quello che rende Assieme diverso per ogni studio: le regole che gli detti, quello che impara lavorando con te e i documenti che tieni sempre a portata.",
+  },
+];
+---
+
+<BaseLayout
+  title="Risorse"
+  description="Guide sulla lettura dei set informativi, glossario dei termini che tornano ogni giorno nei documenti assicurativi e canali di assistenza."
+>
+  <PageHero
+    eyebrow="Risorse"
+    title="Materiali di lavoro, non brochure"
+    lead="Quello che pubblichiamo nasce dalle domande che ci arrivano dalle agenzie. Se una guida non ti fa risparmiare tempo il giorno stesso, non l'abbiamo scritta bene."
+  />
+
+  <Breadcrumbs trail={[{ label: 'Risorse', href: '/risorse' }]} />
+
+  <CardGrid
+    id="guide"
+    title="Guide e note tecniche"
+    lead="Documenti brevi, pensati per essere letti fra un appuntamento e l'altro."
+    cards={guide}
+  />
+
+  <section class="glossary" id="glossario" aria-labelledby="glossary-title">
+    <div class="shell">
+      <h2 class="serif glossary__title" id="glossary-title">Glossario</h2>
+      <p class="lead glossary__lead">
+        Le parole che tornano ogni giorno nei documenti e nelle domande dei
+        clienti — comprese quelle che vengono scambiate per sinonimi e non lo
+        sono.
+      </p>
+      <dl class="glossary__list">
+        {
+          glossario.map((g) => (
+            <div class="glossary__row">
+              <dt class="glossary__term">{g.term}</dt>
+              <dd class="glossary__detail">{g.detail}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="support" id="assistenza" aria-labelledby="support-title">
+    <div class="shell support__inner">
+      <div>
+        <h2 class="serif support__title" id="support-title">Assistenza</h2>
+        <p class="support__body">
+          Siamo una squadra piccola: chi risponde è chi costruisce il prodotto.
+          Scriviamo e rispondiamo in italiano, entro il giorno lavorativo
+          successivo.
+        </p>
+      </div>
+      <ul class="support__links">
+        <li>
+          <a class="btn btn--outline" href={`mailto:${site.email}`}>
+            {site.email}
+          </a>
+        </li>
+        <li>
+          <a
+            class="btn btn--outline"
+            href={STATUS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Stato del servizio
+            <span class="visually-hidden"> (si apre in una nuova scheda)</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <Closing title="Preferisci vederlo dal vivo?" cta="Richiedi una demo" />
+</BaseLayout>
+
+<style>
+  .glossary {
+    padding: 0 var(--gutter) var(--sp-section);
+  }
+
+  .glossary__title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+  }
+
+  .glossary__lead {
+    max-width: 42rem;
+    margin: 1rem 0 2.5rem;
+  }
+
+  .glossary__list {
+    margin: 0;
+  }
+
+  .glossary__row {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .glossary__row:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .glossary__term {
+    font-family: var(--f-serif);
+    font-size: 1.125rem;
+    color: var(--c-text);
+  }
+
+  .glossary__detail {
+    margin: 0;
+    max-width: 46rem;
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .support {
+    background: var(--c-page-alt);
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .support__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .support__title {
+    font-size: var(--t-h2);
+    margin-bottom: 1rem;
+  }
+
+  .support__body {
+    max-width: 38rem;
+    color: var(--c-text-2);
+    line-height: 1.65;
+  }
+
+  .support__links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 900px) {
+    .support__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .support__links {
+      align-items: flex-start;
+    }
+
+    .glossary__row {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+  }
+</style>

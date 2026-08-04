@@ -1,0 +1,12 @@
+[
+  { "id": "cmp-generali", "nome": "Generali Italia", "ultimoAggiornamento": "2026-07-28" },
+  { "id": "cmp-cattolica", "nome": "Cattolica Assicurazioni", "ultimoAggiornamento": "2026-07-28" },
+  { "id": "cmp-unipolsai", "nome": "UnipolSai Assicurazioni", "ultimoAggiornamento": "2026-07-21" },
+  { "id": "cmp-allianz", "nome": "Allianz Italia", "ultimoAggiornamento": "2026-07-14" },
+  { "id": "cmp-axa", "nome": "AXA Italia", "ultimoAggiornamento": "2026-06-30" },
+  { "id": "cmp-zurich", "nome": "Zurich Italia", "ultimoAggiornamento": "2026-06-30" },
+  { "id": "cmp-realemutua", "nome": "Reale Mutua Assicurazioni", "ultimoAggiornamento": "2026-05-19" },
+  { "id": "cmp-groupama", "nome": "Groupama Assicurazioni", "ultimoAggiornamento": "2026-05-12" },
+  { "id": "cmp-vittoria", "nome": "Vittoria Assicurazioni", "ultimoAggiornamento": "2026-04-27" },
+  { "id": "cmp-itas", "nome": "ITAS Mutua", "ultimoAggiornamento": "2026-03-16" }
+]

@@ -1,0 +1,330 @@
+---
+import { productShot as p } from '~/data/home';
+
+/**
+ * Riproduzione statica dell'interfaccia di confronto.
+ *
+ * Non è uno screenshot ma markup reale: la tabella resta leggibile agli
+ * screen reader e ai motori di ricerca, che così vedono descritto — in
+ * italiano e con nomi di garanzie veri — che cosa fa il prodotto.
+ */
+
+const toneClass = (tone?: string) =>
+  tone === 'neg' ? 'is-neg' : tone === 'pos' ? 'is-pos' : undefined;
+---
+
+<section class="shot" aria-labelledby="shot-title">
+  <h2 class="visually-hidden" id="shot-title">
+    Assieme all'opera: il confronto fra due proposte
+  </h2>
+
+  <figure class="shot__frame">
+    <div class="shot__screen">
+      <div class="shot__chrome">
+        <p class="mono shot__crumb">{p.breadcrumb}</p>
+        <div class="shot__tabs" aria-hidden="true">
+          <span class="shot__tab is-active">Confronto</span>
+          <span class="shot__tab">Esporta</span>
+        </div>
+      </div>
+
+      <div class="shot__body">
+        <div class="shot__main">
+          <p class="serif shot__title">{p.title}</p>
+
+          <table class="shot__table">
+            <caption class="visually-hidden">
+              Confronto delle condizioni fra la proposta Generali e la proposta
+              Unipol per una polizza RC Professionale.
+            </caption>
+            <thead>
+              <tr>
+                {
+                  p.columns.map((c, i) => (
+                    <th scope="col" class={i === 2 ? 'is-highlight' : undefined}>
+                      {c}
+                    </th>
+                  ))
+                }
+              </tr>
+            </thead>
+            <tbody>
+              {
+                p.rows.map((row) => (
+                  <tr>
+                    <th scope="row">{row.label}</th>
+                    <td class={toneClass(row.a.tone)}>{row.a.value}</td>
+                    <td class:list={['is-highlight', toneClass(row.b.tone)]}>
+                      {row.b.value}
+                    </td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+
+          <div class="shot__prompt" aria-hidden="true">
+            <span>Chiedi ad Assieme…</span>
+            <span class="shot__send">Invia</span>
+          </div>
+        </div>
+
+        <aside class="shot__aside">
+          <p class="mono">Sintesi</p>
+          <p class="serif shot__summary">{p.summary}</p>
+          <ul class="shot__cites">
+            {
+              p.citations.map((c) => (
+                <li class="shot__cite">{c}</li>
+              ))
+            }
+          </ul>
+        </aside>
+      </div>
+    </div>
+  </figure>
+
+  <figcaption class="visually-hidden">
+    Esempio di confronto generato da Assieme: ogni valore rimanda all'articolo
+    e alla pagina del documento da cui è stato estratto.
+  </figcaption>
+</section>
+
+<style>
+  .shot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 104px sotto, come nel design */
+    padding: 0 var(--gutter) clamp(3.5rem, 1.85rem + 6.6vw, 6.5rem);
+  }
+
+  .shot__frame {
+    width: 100%;
+    max-width: var(--shell-wide);
+    margin: 0;
+    padding: 12px;
+    background: var(--c-ink);
+  }
+
+  .shot__screen {
+    display: flex;
+    flex-direction: column;
+    background: var(--c-surface);
+  }
+
+  /* --- Barra superiore --- */
+
+  .shot__chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .shot__crumb {
+    margin: 0;
+  }
+
+  .shot__tabs {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .shot__tab {
+    padding: 4px 8px;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+    border: 1px solid var(--c-line);
+  }
+
+  .shot__tab.is-active {
+    color: var(--c-accent);
+    background: var(--c-accent-soft);
+    border-color: transparent;
+  }
+
+  /* --- Corpo --- */
+
+  .shot__body {
+    display: flex;
+  }
+
+  .shot__main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.875rem;
+    padding: 1.25rem;
+    border-right: 1px solid var(--c-line);
+    min-width: 0;
+  }
+
+  .shot__title {
+    font-size: 1.375rem;
+    line-height: 1.25;
+  }
+
+  /* --- Tabella di confronto --- */
+
+  .shot__table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  .shot__table th,
+  .shot__table td {
+    padding: 0.75rem 0.875rem;
+    font-weight: 400;
+    vertical-align: baseline;
+  }
+
+  .shot__table thead th {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+    border-bottom: 1px solid var(--c-line);
+    padding-block: 0.625rem;
+  }
+
+  .shot__table tbody th {
+    font-size: var(--t-sm);
+    color: var(--c-text-2);
+  }
+
+  .shot__table td {
+    font-size: var(--t-sm);
+  }
+
+  .shot__table tbody tr:not(:last-child) th,
+  .shot__table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--c-line-soft);
+  }
+
+  /* Colonna in evidenza: la proposta che l'utente sta valutando. */
+  .shot__table thead .is-highlight {
+    color: var(--c-accent);
+    background: var(--c-accent-soft);
+  }
+
+  .shot__table tbody .is-highlight {
+    background: var(--c-surface-tint);
+  }
+
+  .shot__table .is-neg {
+    color: var(--c-neg);
+  }
+
+  .shot__table .is-pos {
+    color: var(--c-pos);
+  }
+
+  /* La prima colonna porta le etichette: le serve più spazio. */
+  .shot__table th:first-child {
+    width: 38%;
+  }
+
+  /* --- Campo di richiesta --- */
+
+  .shot__prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.875rem;
+    border: 1px solid var(--c-line);
+    font-size: var(--t-xs);
+    color: var(--c-text-mute);
+  }
+
+  .shot__send {
+    padding: 6px 12px;
+    background: var(--c-accent);
+    color: var(--c-surface);
+    font-size: 0.75rem;
+  }
+
+  /* --- Pannello di sintesi --- */
+
+  .shot__aside {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 280px;
+    flex-shrink: 0;
+    padding: 1.25rem;
+    background: var(--c-surface-soft);
+  }
+
+  .shot__aside .mono {
+    margin: 0;
+    letter-spacing: var(--ls-mono);
+  }
+
+  .shot__summary {
+    font-size: 1.0625rem;
+    line-height: 1.45;
+    color: var(--c-text);
+  }
+
+  .shot__cites {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin-top: auto;
+    padding-top: 1rem;
+  }
+
+  .shot__cite {
+    padding: 5px 8px;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    color: var(--c-accent);
+    background: var(--c-accent-soft);
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 900px) {
+    .shot__body {
+      flex-direction: column;
+    }
+
+    .shot__main {
+      border-right: 0;
+      border-bottom: 1px solid var(--c-line);
+    }
+
+    .shot__aside {
+      width: 100%;
+    }
+
+    .shot__cites {
+      margin-top: 0;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .shot__frame {
+      padding: 8px;
+    }
+
+    .shot__table th,
+    .shot__table td {
+      padding: 0.625rem 0.5rem;
+      font-size: 0.8125rem;
+    }
+
+    .shot__table th:first-child {
+      width: 34%;
+    }
+  }
+</style>

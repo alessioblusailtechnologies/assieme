@@ -1,0 +1,71 @@
+---
+import AnnouncementBar from '~/components/AnnouncementBar.astro';
+import Seo from '~/components/Seo.astro';
+import SiteFooter from '~/components/SiteFooter.astro';
+import SiteHeader from '~/components/SiteHeader.astro';
+import { site } from '~/config/site';
+import '~/styles/global.css';
+
+export interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  image?: string;
+  imageAlt?: string;
+  ogType?: 'website' | 'article';
+  noindex?: boolean;
+  schema?: Record<string, unknown>[];
+  /** La barra annunci resta alla homepage e alle pagine di prodotto. */
+  announcement?: boolean;
+}
+
+const { announcement = true, ...seo } = Astro.props;
+---
+
+<!doctype html>
+<html lang={site.lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#14181D" />
+    <meta name="author" content={site.legalName} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <!-- I due tagli latini sono quelli che compongono ogni titolo above the
+         fold: precaricarli evita il salto tipografico al primo paint. -->
+    <link
+      rel="preload"
+      href="/fonts/newsreader-var-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/dm-mono-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <Seo {...seo} />
+  </head>
+
+  <body>
+    <a class="skip-link" href="#contenuto">Vai al contenuto principale</a>
+
+    {announcement && <AnnouncementBar />}
+    <SiteHeader />
+
+    <main id="contenuto">
+      <slot />
+    </main>
+
+    <SiteFooter />
+  </body>
+</html>

@@ -1,0 +1,392 @@
+{
+  "uuid": "a551e3e0-0000-4000-8000-000000000001",
+  "lastMigration": 33,
+  "name": "ASSIEME — API mock",
+  "port": 3000,
+  "hostname": "",
+  "endpointPrefix": "api",
+  "latency": 400,
+  "folders": [],
+  "routes": [
+    {
+      "uuid": "a551e3e0-0000-4000-8000-0000000000e0",
+      "type": "http",
+      "documentation": "Simulazione errori. Sta davanti a tutte le rotte e risponde solo quando il pannello di sviluppo ha impostato l'header X-Mock-Errore. Senza header nessuna regola combacia e, grazie a responseMode FALLBACK, la richiesta prosegue verso la rotta vera. È il motivo per cui la simulazione degli errori vive in un punto solo invece che ripetuta su ogni rotta.",
+      "method": "all",
+      "endpoint": "*",
+      "responses": [
+        {
+          "uuid": "a551e3e0-0000-4000-8000-0000000000e1",
+          "body": "",
+          "latency": 0,
+          "statusCode": 500,
+          "label": "Errore interno del server",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/errore-500.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Errore",
+              "value": "500",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-0000000000e2",
+          "body": "",
+          "latency": 0,
+          "statusCode": 403,
+          "label": "Permesso negato",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/errore-403.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Errore",
+              "value": "403",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-0000000000e3",
+          "body": "",
+          "latency": 0,
+          "statusCode": 429,
+          "label": "Quota di piano superata",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json" },
+            { "key": "Retry-After", "value": "45" }
+          ],
+          "bodyType": "FILE",
+          "filePath": "./data/errore-429.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Errore",
+              "value": "429",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-0000000000e4",
+          "body": "",
+          "latency": 8000,
+          "statusCode": 504,
+          "label": "Attesa lunga seguita da timeout",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/errore-504.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Errore",
+              "value": "timeout",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": "FALLBACK",
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a551e3e0-0000-4000-8000-000000000010",
+      "type": "http",
+      "documentation": "Sessione dell'utente corrente. L'autenticazione vera non esiste ancora: il ruolo arriva dall'header X-Assieme-Ruolo che il pannello di sviluppo imposta. Quando arriverà l'autenticazione vera cambierà solo chi risponde a questa rotta.",
+      "method": "get",
+      "endpoint": "sessione",
+      "responses": [
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000011",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Operatore",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/sessione-operatore.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Assieme-Ruolo",
+              "value": "operatore",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000012",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Amministratore di tenant (predefinito)",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/sessione-amministratore.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a551e3e0-0000-4000-8000-000000000020",
+      "type": "http",
+      "documentation": "Compagnie presenti nell'Archivio Pubblico, con data di ultimo aggiornamento (RF-A-07).",
+      "method": "get",
+      "endpoint": "compagnie",
+      "responses": [
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000021",
+          "body": "",
+          "latency": 3000,
+          "statusCode": 200,
+          "label": "Rete lenta",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/compagnie.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Latenza",
+              "value": "3000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000022",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Elenco compagnie",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/compagnie.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a551e3e0-0000-4000-8000-000000000030",
+      "type": "http",
+      "documentation": "Rami / aree di bisogno per la navigazione dell'archivio (RF-A-03).",
+      "method": "get",
+      "endpoint": "rami",
+      "responses": [
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000031",
+          "body": "",
+          "latency": 3000,
+          "statusCode": 200,
+          "label": "Rete lenta",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/rami.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Latenza",
+              "value": "3000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000032",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Elenco rami",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/rami.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    },
+    {
+      "uuid": "a551e3e0-0000-4000-8000-000000000040",
+      "type": "http",
+      "documentation": "Documenti dell'Archivio Pubblico. In Fase 0 restituisce l'insieme completo: il filtro vero per compagnia, ramo, tipologia ed edizione arriva in Fase 1 insieme alla schermata che lo usa.",
+      "method": "get",
+      "endpoint": "documenti",
+      "responses": [
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000041",
+          "body": "",
+          "latency": 3000,
+          "statusCode": 200,
+          "label": "Rete lenta",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/documenti-pubblici.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [
+            {
+              "target": "header",
+              "modifier": "X-Mock-Latenza",
+              "value": "3000",
+              "invert": false,
+              "operator": "equals"
+            }
+          ],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": false,
+          "crudKey": "id",
+          "callbacks": []
+        },
+        {
+          "uuid": "a551e3e0-0000-4000-8000-000000000042",
+          "body": "",
+          "latency": 0,
+          "statusCode": 200,
+          "label": "Elenco documenti",
+          "headers": [{ "key": "Content-Type", "value": "application/json" }],
+          "bodyType": "FILE",
+          "filePath": "./data/documenti-pubblici.json",
+          "databucketID": "",
+          "sendFileAsBody": true,
+          "rules": [],
+          "rulesOperator": "OR",
+          "disableTemplating": false,
+          "fallbackTo404": false,
+          "default": true,
+          "crudKey": "id",
+          "callbacks": []
+        }
+      ],
+      "responseMode": null,
+      "streamingMode": null,
+      "streamingInterval": 0
+    }
+  ],
+  "rootChildren": [
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-0000000000e0" },
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000010" },
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000020" },
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000030" },
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000040" }
+  ],
+  "proxyMode": false,
+  "proxyHost": "",
+  "proxyRemovePrefix": false,
+  "proxyReqHeaders": [{ "key": "", "value": "" }],
+  "proxyResHeaders": [{ "key": "", "value": "" }],
+  "tlsOptions": {
+    "enabled": false,
+    "type": "CERT",
+    "pfxPath": "",
+    "certPath": "",
+    "keyPath": "",
+    "caPath": "",
+    "passphrase": ""
+  },
+  "cors": true,
+  "headers": [{ "key": "Content-Type", "value": "application/json" }],
+  "data": [],
+  "callbacks": []
+}

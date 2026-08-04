@@ -1,0 +1,265 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { site } from '~/config/site';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+const values = [
+  {
+    term: 'La fonte',
+    detail:
+      "Nessuna risposta senza il passaggio che la sostiene. Se Assieme non può citare, dice che non sa — è meno impressionante in demo e molto più utile il martedì mattina.",
+  },
+  {
+    term: "L'ultima parola",
+    detail:
+      "Lo strumento prepara; l'intermediario decide e firma. In un settore vigilato non esiste automazione che possa assumersi una responsabilità professionale, e progettare come se esistesse è disonesto.",
+  },
+  {
+    term: 'La prassi',
+    detail:
+      "Non esiste un criterio di valutazione universale delle garanzie. Ogni agenzia ha il suo, ed è quello il valore che ha costruito: il software deve adattarsi a lei, non il contrario.",
+  },
+  {
+    term: 'Il mestiere',
+    detail:
+      "Costruiamo con chi sta in agenzia, non attorno a un'idea di agenzia. Ogni funzione nasce da un documento vero che qualcuno doveva leggere entro sera.",
+  },
+];
+
+const roles = [
+  {
+    title: 'Ingegneria — Retrieval e documenti',
+    detail:
+      'Estrazione strutturata da documenti assicurativi, riconoscimento ottico su scansioni, valutazione sistematica della qualità delle risposte.',
+  },
+  {
+    title: 'Prodotto — Dominio assicurativo',
+    detail:
+      'Chi arriva da agenzia o brokeraggio e vuole trasformare quel mestiere in prodotto. Esperienza tecnica non richiesta.',
+  },
+  {
+    title: 'Customer success — Agenzie pilota',
+    detail:
+      'Affiancamento alle prime agenzie: mettere per iscritto il loro metodo e portarle ai primi confronti in autonomia.',
+  },
+];
+---
+
+<BaseLayout
+  title="Azienda"
+  description="Assieme è un prodotto di Blusail Technologies. Come lavoriamo, perché lo costruiamo insieme alle agenzie e quali posizioni sono aperte."
+>
+  <PageHero
+    eyebrow="Azienda"
+    title="Un prodotto costruito dentro le agenzie, non attorno"
+    lead={`Assieme è sviluppato da ${site.legalName}. Nasce da un'osservazione fatta stando in agenzia, e viene messo a punto insieme a chi ci lavora tutti i giorni.`}
+  />
+
+  <Breadcrumbs trail={[{ label: 'Azienda', href: '/azienda' }]} />
+
+  <section class="story" aria-labelledby="story-title">
+    <div class="shell story__inner">
+      <h2 class="serif story__title" id="story-title">Da dove viene Assieme</h2>
+      <div class="story__body prose">
+        <p>
+          Il progetto nasce da due fastidi. Il primo: le condizioni delle
+          compagnie sono pubbliche per legge, eppure ogni strumento sul mercato
+          comincia chiedendoti di caricarle. Lo stesso lavoro, rifatto da capo
+          in ogni agenzia d'Italia.
+        </p>
+        <p>
+          Il secondo: quegli stessi strumenti valutano tutti allo stesso modo.
+          Ti segnalano come carenza una garanzia che tu copri di proposito in
+          un altro modo. È un giudizio che ignora chi lo riceve — e chi lo
+          riceve smette presto di fidarsi.
+        </p>
+        <p>
+          Assieme risponde a entrambi. Le condizioni ci sono già il primo
+          giorno; il modo di valutarle lo scrivi tu. Il resto — decidere,
+          consigliare, firmare — resta dove è sempre stato.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="values" aria-labelledby="values-title">
+    <div class="shell">
+      <h2 class="serif values__title" id="values-title">
+        Quattro criteri con cui decidiamo
+      </h2>
+      <dl class="values__list">
+        {
+          values.map((v) => (
+            <div class="values__row">
+              <dt class="values__term">{v.term}</dt>
+              <dd class="values__detail">{v.detail}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="jobs" id="lavora-con-noi" aria-labelledby="jobs-title">
+    <div class="shell">
+      <h2 class="serif jobs__title" id="jobs-title">Lavora con noi</h2>
+      <p class="lead jobs__lead">
+        Siamo una squadra piccola, con un modo di lavorare ibrido e una
+        preferenza netta per chi sa spiegare le cose in modo semplice.
+      </p>
+
+      <ul class="jobs__list">
+        {
+          roles.map((r) => (
+            <li class="jobs__row">
+              <h3 class="jobs__role">{r.title}</h3>
+              <p class="jobs__detail">{r.detail}</p>
+              <a
+                class="btn btn--text"
+                href={`mailto:${site.email}?subject=${encodeURIComponent(r.title)}`}
+              >
+                Candidati{' '}
+                <span class="btn__arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="jobs__note">
+        Non trovi il tuo ruolo? Scrivi comunque a{' '}
+        <a href={`mailto:${site.email}`}>{site.email}</a>: leggiamo tutto.
+      </p>
+    </div>
+  </section>
+
+  <Closing title="Vuoi capire se fa al caso tuo?" cta="Richiedi una demo" />
+</BaseLayout>
+
+<style>
+  .story,
+  .values,
+  .jobs {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .story__inner {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .story__title,
+  .values__title,
+  .jobs__title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+  }
+
+  .story__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1.125rem;
+    max-width: 42rem;
+    color: var(--c-text-2);
+    line-height: 1.7;
+  }
+
+  /* --- Criteri --- */
+
+  .values {
+    background: var(--c-page-alt);
+  }
+
+  .values__list {
+    margin: 2.5rem 0 0;
+  }
+
+  .values__row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 1.375rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .values__row:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .values__term {
+    font-family: var(--f-serif);
+    font-size: 1.25rem;
+    color: var(--c-text);
+  }
+
+  .values__detail {
+    margin: 0;
+    max-width: 46rem;
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  /* --- Posizioni --- */
+
+  .jobs__lead {
+    max-width: 42rem;
+    margin: 1rem 0 2.5rem;
+  }
+
+  .jobs__row {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr auto;
+    gap: 1.5rem 2rem;
+    align-items: baseline;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .jobs__list li:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .jobs__role {
+    font-size: 1.0625rem;
+    font-weight: 500;
+  }
+
+  .jobs__detail {
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .jobs__note {
+    margin-top: 1.75rem;
+    font-size: var(--t-sm);
+    color: var(--c-text-2);
+  }
+
+  @media (max-width: 1000px) {
+    .story__inner {
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+    }
+
+    .jobs__row {
+      grid-template-columns: 1fr;
+      gap: 0.625rem;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .values__row {
+      grid-template-columns: 1fr;
+      gap: 0.5rem;
+    }
+  }
+</style>

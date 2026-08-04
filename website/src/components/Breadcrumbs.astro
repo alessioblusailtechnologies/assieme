@@ -1,0 +1,94 @@
+---
+import { SITE_URL } from '~/config/site';
+
+export interface Props {
+  /** Percorso senza la voce «Home», che viene aggiunta qui. */
+  trail: { label: string; href: string }[];
+}
+
+const { trail } = Astro.props;
+const items = [{ label: 'Home', href: '/' }, ...trail];
+
+// Il markup visibile e i dati strutturati nascono dalla stessa lista: non
+// possono divergere, ed è esattamente ciò che i controlli di Search Console
+// segnalano quando invece divergono.
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name: item.label,
+    item: new URL(item.href, SITE_URL).href,
+  })),
+};
+---
+
+<nav class="crumbs" aria-label="Percorso di navigazione">
+  <ol>
+    {
+      items.map((item, i) => {
+        const last = i === items.length - 1;
+        return (
+          <li>
+            {last ? (
+              <span aria-current="page">{item.label}</span>
+            ) : (
+              <a href={item.href}>{item.label}</a>
+            )}
+            {!last && (
+              <span class="crumbs__sep" aria-hidden="true">
+                /
+              </span>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(schema)} />
+
+<style>
+  .crumbs {
+    padding: 1.25rem var(--gutter);
+    border-bottom: 1px solid var(--c-line);
+    background: var(--c-page);
+  }
+
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: var(--shell);
+    margin-inline: auto;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .crumbs li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .crumbs a {
+    color: var(--c-text-3);
+  }
+
+  .crumbs a:hover {
+    color: var(--c-ink);
+  }
+
+  .crumbs [aria-current='page'] {
+    color: var(--c-text);
+  }
+
+  .crumbs__sep {
+    color: var(--c-accent-hairline);
+  }
+</style>

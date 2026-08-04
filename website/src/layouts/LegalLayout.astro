@@ -1,0 +1,142 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  lead: string;
+  /** Data dell'ultimo aggiornamento in formato ISO (AAAA-MM-GG). */
+  updated: string;
+  crumb: string;
+  href: string;
+}
+
+const { title, description, lead, updated, crumb, href } = Astro.props;
+
+const updatedLabel = new Intl.DateTimeFormat('it-IT', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+}).format(new Date(updated));
+---
+
+<BaseLayout title={title} description={description} announcement={false}>
+  <PageHero eyebrow="Note legali" title={title} lead={lead} />
+
+  <Breadcrumbs
+    trail={[
+      { label: 'Note legali', href: '/legale/note-legali' },
+      { label: crumb, href },
+    ]}
+  />
+
+  <article class="legal">
+    <div class="legal__inner">
+      <p class="legal__updated">
+        Ultimo aggiornamento: <time datetime={updated}>{updatedLabel}</time>
+      </p>
+      <div class="legal__body prose">
+        <slot />
+      </div>
+    </div>
+  </article>
+
+  <Closing title="Domande su questo documento?" cta="Scrivici" href="/demo" />
+</BaseLayout>
+
+<style>
+  .legal {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .legal__inner {
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+
+  .legal__updated {
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .legal__body {
+    color: var(--c-text-2);
+    line-height: 1.75;
+  }
+
+  .legal__body :global(h2) {
+    margin: 2.75rem 0 1rem;
+    font-family: var(--f-serif);
+    font-size: 1.625rem;
+    line-height: 1.2;
+    color: var(--c-text);
+  }
+
+  .legal__body :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .legal__body :global(h3) {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--c-text);
+  }
+
+  .legal__body :global(p) {
+    margin-bottom: 1.125rem;
+  }
+
+  .legal__body :global(ul) {
+    margin: 0 0 1.125rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+
+  .legal__body :global(li) {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .legal__body :global(li)::marker {
+    color: var(--c-accent);
+  }
+
+  .legal__body :global(strong) {
+    color: var(--c-text);
+    font-weight: 500;
+  }
+
+  .legal__body :global(table) {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-collapse: collapse;
+    font-size: var(--t-sm);
+  }
+
+  .legal__body :global(th),
+  .legal__body :global(td) {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .legal__body :global(th) {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+  }
+</style>

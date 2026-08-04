@@ -1,0 +1,170 @@
+/*
+ * Token di design dell'applicazione.
+ *
+ * La prima sezione è copiata invariata da `website/src/styles/tokens.css`:
+ * stessi nomi, stessi valori. È voluto. Se un colore cambia sul sito deve
+ * poter essere riportato qui con un copia-incolla, senza tradurre nulla.
+ *
+ * Le sezioni successive sono ciò che al sito non serve e all'applicazione sì.
+ * La differenza di fondo: il sito è un documento che si legge una volta,
+ * ASSIEME è uno strumento che si usa otto ore al giorno. Cambia la densità,
+ * non la lingua visiva.
+ */
+
+:root {
+  /* ==========================================================
+   * 1. Ereditato dal sito — non modificare senza allinearlo là
+   * ========================================================== */
+
+  /* ---------- Superfici ---------- */
+  --c-ink: #14181d;
+  --c-page: #f4f5f7;
+  --c-page-alt: #eaecef;
+  --c-surface: #ffffff;
+  --c-surface-soft: #fbfcfd;
+  --c-surface-tint: #f5f8fc;
+
+  /* ---------- Superfici scure ---------- */
+  --c-ink-raise: #1b2027;
+  --c-ink-raise-2: #22282f;
+  --c-ink-hatch: #20262e;
+
+  /* ---------- Bordi ---------- */
+  --c-line: #dde0e5;
+  --c-line-soft: #eef0f3;
+  --c-line-dark: #2a3038;
+  --c-line-onink: rgb(255 255 255 / 8%);
+  --c-line-onink-strong: rgb(255 255 255 / 35%);
+
+  /* ---------- Testo ---------- */
+  --c-text: #14181d;
+  --c-text-2: #3a424c;
+  --c-text-3: #78818e;
+  --c-text-4: #8a929c;
+  --c-text-mute: #98a1ac;
+  --c-text-ghost: #bfc3c9;
+
+  --c-text-oninverse: #ffffff;
+  --c-text-oninverse-2: #c6ccd4;
+  --c-text-oninverse-3: #98a1ac;
+  --c-text-oninverse-4: #b4bcc6;
+  --c-text-oninverse-mute: #5b646f;
+  --c-text-oninverse-hatch: #6d7681;
+
+  /* ---------- Accento ---------- */
+  --c-accent: #2f4b7c;
+  --c-accent-soft: #e7edf7;
+  --c-accent-on-dark: #7f97c4;
+  --c-accent-hover: #9fb4d6;
+  --c-accent-hairline: #c9cfd8;
+
+  /* ---------- Semantico ---------- */
+  --c-neg: #a63d2f; /* condizione peggiorativa */
+  --c-pos: #2e6b4f; /* condizione migliorativa */
+
+  /* ---------- Tipografia ---------- */
+  --f-serif: 'Newsreader', georgia, 'Times New Roman', times, serif;
+  --f-sans: 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
+  --f-mono: 'DM Mono', ui-monospace, 'SF Mono', menlo, consolas, monospace;
+
+  --ls-tight: -0.02em;
+  --ls-snug: -0.012em;
+  --ls-mono: 0.14em;
+  --ls-mono-wide: 0.18em;
+
+  /* ---------- Motion ---------- */
+  --ease-brand: cubic-bezier(0.72, 0, 0.24, 1);
+  --ease-snap: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 0.18s;
+  --dur-slide: 0.78s;
+
+  /* ==========================================================
+   * 2. Estensioni applicative
+   * ========================================================== */
+
+  /* ---------- Scala tipografica da applicativo ----------
+   * Il sito interpola fino a 84px di titolo. Qui il testo più grande è un
+   * titolo di pagina e il corpo scende a 14px: densità da strumento di
+   * lavoro, non da pagina da leggere.
+   */
+  --t-page-title: 1.5rem; /* 24px — titolo di schermata, serif */
+  --t-section: 1.125rem; /* 18px — titolo di sezione */
+  --t-lead: 0.9375rem; /* 15px — testo introduttivo, risposte in chat */
+  --t-body: 0.875rem; /* 14px — corpo, il default dell'applicazione */
+  --t-sm: 0.8125rem; /* 13px — testo secondario, celle dense */
+  --t-xs: 0.75rem; /* 12px — didascalie */
+  --t-mono: 0.6875rem; /* 11px — etichette mono */
+  --t-mono-sm: 0.625rem; /* 10px — chip di citazione, badge */
+
+  /* ---------- Spaziatura ----------
+   * Scala a passo 4px. Il sito ragiona in sezioni da 96px, qui l'unità
+   * naturale è il padding di una cella di tabella.
+   */
+  --sp-1: 0.25rem; /* 4 */
+  --sp-2: 0.5rem; /* 8 */
+  --sp-3: 0.75rem; /* 12 */
+  --sp-4: 1rem; /* 16 */
+  --sp-5: 1.25rem; /* 20 */
+  --sp-6: 1.5rem; /* 24 */
+  --sp-8: 2rem; /* 32 */
+  --sp-10: 2.5rem; /* 40 */
+  --sp-12: 3rem; /* 48 */
+
+  /* ---------- Struttura ---------- */
+  --sidebar-w: 232px;
+  --sidebar-w-collapsed: 56px;
+  --topbar-h: 52px;
+  --content-max: 1400px;
+  --reading-max: 76ch; /* larghezza di lettura delle risposte in chat */
+
+  /* ---------- Angoli ----------
+   * Zero ovunque. Nel design originale non esiste un solo elemento
+   * arrotondato, ed è metà del carattere del prodotto: va imposto qui e nel
+   * preset PrimeNG, altrimenti riemerge componente per componente.
+   */
+  --radius: 0;
+
+  /* ---------- Stati semantici ----------
+   * Il sito ha solo peggiorativo/migliorativo. All'applicazione servono gli
+   * stati di lavorazione: documenti in elaborazione, esecuzioni di agenti.
+   */
+  --c-warn: #8a6116;
+  --c-warn-soft: #fbf3e2;
+  --c-info: #2f4b7c; /* coincide con l'accento: informativo non è un allarme */
+  --c-info-soft: #e7edf7;
+  --c-neg-soft: #f9eae7;
+  --c-pos-soft: #e8f1ec;
+
+  /* Stato di elaborazione documento (RF-B-05) ed esecuzione agente (RF-E-06).
+     Nomi per significato, non per colore: se domani "in coda" diventa grigio
+     si cambia qui e non in venti componenti. */
+  --c-stato-attesa: var(--c-text-3);
+  --c-stato-attesa-soft: var(--c-page-alt);
+  --c-stato-corso: var(--c-warn);
+  --c-stato-corso-soft: var(--c-warn-soft);
+  --c-stato-pronto: var(--c-pos);
+  --c-stato-pronto-soft: var(--c-pos-soft);
+  --c-stato-errore: var(--c-neg);
+  --c-stato-errore-soft: var(--c-neg-soft);
+
+  /* ---------- Provenienza (RF-D-05, RF-B-10, RF-G-03) ----------
+   * Tre segnali distinti che l'interfaccia deve saper mostrare senza
+   * diventare rumorosa: una risposta può dipendere da un'istruzione del
+   * tenant, dalla knowledge base o da un ricordo. Colori sobri e vicini fra
+   * loro: sono note a margine, non avvisi.
+   */
+  --c-prov-istruzione: #6b4d8a;
+  --c-prov-istruzione-soft: #f0ebf6;
+  --c-prov-kb: #2f6b7c;
+  --c-prov-kb-soft: #e5f0f3;
+  --c-prov-memoria: #7c5a2f;
+  --c-prov-memoria-soft: #f6efe5;
+
+  /* ---------- Livelli ---------- */
+  --z-sidebar: 20;
+  --z-topbar: 30;
+  --z-overlay: 100;
+  --z-dialog: 200;
+  --z-toast: 300;
+  --z-devtools: 900;
+}

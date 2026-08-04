@@ -1,0 +1,50 @@
+{
+  "name": "fe-angular",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "mock": "mockoon-cli start --data ../mocks/assieme.json --port 3000 --disable-log-to-file",
+    "mock:sse": "node ../mocks/sse-stub.mjs",
+    "dev": "concurrently -n mock,sse,ng -c blue,magenta,green \"npm:mock\" \"npm:mock:sse\" \"npm:start\"",
+    "lint": "ng lint"
+  },
+  "private": true,
+  "packageManager": "npm@11.17.0",
+  "dependencies": {
+    "@angular/cdk": "^22.1.0",
+    "@angular/common": "^22.1.0",
+    "@angular/compiler": "^22.1.0",
+    "@angular/core": "^22.1.0",
+    "@angular/forms": "^22.1.0",
+    "@angular/platform-browser": "^22.1.0",
+    "@angular/router": "^22.1.0",
+    "@hugeicons/angular": "^1.0.10",
+    "@hugeicons/core-free-icons": "^4.2.3",
+    "@primeuix/themes": "^3.0.0",
+    "ag-grid-angular": "^36.0.2",
+    "ag-grid-community": "^36.0.2",
+    "primeicons": "^8.0.0",
+    "primeng": "^22.0.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.1.2",
+    "@angular/cli": "^22.1.2",
+    "@angular/compiler-cli": "^22.1.0",
+    "@eslint/js": "^10.0.1",
+    "@mockoon/cli": "^9.8.0",
+    "angular-eslint": "22.1.0",
+    "concurrently": "^10.0.4",
+    "eslint": "^10.6.0",
+    "jsdom": "^28.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "8.62.1",
+    "vitest": "^4.0.8"
+  }
+}

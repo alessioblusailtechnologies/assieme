@@ -1,0 +1,92 @@
+---
+import { primaryNav } from '~/config/site';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Pagina non trovata"
+  description="La pagina che cercavi non esiste o è stata spostata. Torna alla home di Assieme oppure raggiungi la piattaforma, le soluzioni e la sicurezza."
+  announcement={false}
+  noindex
+>
+  <section class="nf on-ink" aria-labelledby="nf-title">
+    <div class="nf__inner">
+      <p class="eyebrow">Errore 404</p>
+      <h1 class="serif nf__title" id="nf-title">
+        Questa pagina non risulta in archivio
+      </h1>
+      <p class="nf__lead">
+        Il collegamento potrebbe essere vecchio, oppure l'indirizzo contiene un
+        refuso. Da qui puoi ripartire.
+      </p>
+
+      <nav class="nf__nav" aria-label="Sezioni del sito">
+        <ul>
+          <li><a href="/">Home</a></li>
+          {primaryNav.map((item) => <li><a href={item.href}>{item.label}</a></li>)}
+        </ul>
+      </nav>
+
+      <a class="btn btn--solid btn--lg nf__cta" href="/demo">
+        Richiedi una demo
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    display: flex;
+    align-items: center;
+    min-height: 60vh;
+    padding: clamp(4rem, 2rem + 8vw, 7rem) var(--gutter);
+    background:
+      linear-gradient(90deg, #14181d 0%, rgb(20 24 29 / 88%) 100%),
+      repeating-linear-gradient(135deg, #1b2027 0 10px, #20262e 10px 20px);
+  }
+
+  .nf__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    max-width: var(--shell);
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .nf__title {
+    max-width: 18ch;
+    font-size: clamp(2.25rem, 1.2rem + 4.2vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: var(--ls-tight);
+    color: var(--c-text-oninverse);
+  }
+
+  .nf__lead {
+    max-width: 34rem;
+    font-size: var(--t-lead);
+    line-height: 1.6;
+    color: var(--c-text-oninverse-2);
+  }
+
+  .nf__nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .nf__nav a {
+    font-size: var(--t-sm);
+    color: var(--c-accent-hover);
+  }
+
+  .nf__nav a:hover {
+    color: var(--c-text-oninverse);
+  }
+
+  .nf__cta {
+    margin-top: 0.75rem;
+  }
+</style>

@@ -1,0 +1,125 @@
+---
+import { site } from '~/config/site';
+import LegalLayout from '~/layouts/LegalLayout.astro';
+
+/**
+ * ⚠️ Testo di base, non un parere legale. Va rivisto dal responsabile della
+ * protezione dei dati e completato con i dati societari reali (P. IVA, sede,
+ * eventuale DPO, elenco aggiornato dei responsabili) prima della messa online.
+ */
+---
+
+<LegalLayout
+  title="Informativa privacy"
+  description="Come Blusail Technologies tratta i dati personali di chi visita il sito di Assieme e di chi richiede una demo, ai sensi del Regolamento UE 2016/679."
+  lead="Chi tratta i tuoi dati, per quali finalità, per quanto tempo e come puoi intervenire."
+  updated="2026-08-02"
+  crumb="Privacy"
+  href="/legale/privacy"
+>
+  <p>
+    La presente informativa è resa ai sensi degli articoli 13 e 14 del
+    Regolamento (UE) 2016/679 («GDPR») e riguarda i dati personali trattati
+    attraverso questo sito. Il trattamento dei dati contenuti nei documenti
+    caricati dai clienti all'interno della piattaforma è regolato separatamente
+    dall'accordo sul trattamento stipulato con ciascun cliente.
+  </p>
+
+  <h2>Titolare del trattamento</h2>
+  <p>
+    <strong>{site.legalName}</strong>, titolare del prodotto {site.name}.<br />
+    Contatto: <a href={`mailto:${site.email}`}>{site.email}</a>.
+  </p>
+  <p>
+    <em>
+      Da completare con sede legale, partita IVA, numero di iscrizione al
+      registro delle imprese e recapito del responsabile della protezione dei
+      dati, se designato.
+    </em>
+  </p>
+
+  <h2>Dati trattati e finalità</h2>
+
+  <h3>Navigazione del sito</h3>
+  <p>
+    I sistemi informatici acquisiscono, nel corso del normale funzionamento,
+    alcuni dati la cui trasmissione è implicita nell'uso dei protocolli di
+    comunicazione: indirizzi IP, tipo di browser, orario della richiesta.
+    Servono a garantire il funzionamento e la sicurezza del sito e sono trattati
+    sulla base del legittimo interesse del titolare (art. 6.1.f GDPR).
+  </p>
+  <p>
+    Il sito non utilizza cookie di profilazione né strumenti di analisi che
+    trasferiscano dati fuori dall'Unione Europea. I caratteri tipografici sono
+    ospitati sui nostri server: nessuna richiesta viene inoltrata a fornitori
+    terzi durante la navigazione. Per il dettaglio, vedi la
+    <a href="/legale/cookie">cookie policy</a>.
+  </p>
+
+  <h3>Richiesta di demo e contatti</h3>
+  <p>
+    I dati che inserisci nel modulo di richiesta — nome, ruolo, organizzazione,
+    e-mail, telefono e il testo del messaggio — sono trattati per rispondere
+    alla tua richiesta ed eventualmente organizzare una dimostrazione della
+    piattaforma. La base giuridica è l'esecuzione di misure precontrattuali
+    adottate su tua richiesta (art. 6.1.b GDPR).
+  </p>
+  <p>
+    Il conferimento dei campi contrassegnati come obbligatori è necessario per
+    dare seguito alla richiesta; senza di essi non possiamo ricontattarti.
+  </p>
+
+  <h2>Destinatari</h2>
+  <p>
+    I dati possono essere trattati da personale autorizzato del titolare e da
+    fornitori che agiscono in qualità di responsabili del trattamento
+    (infrastruttura di hosting, posta elettronica, gestione delle relazioni con
+    i clienti), nominati ai sensi dell'art. 28 GDPR. L'elenco aggiornato è
+    disponibile su richiesta.
+  </p>
+  <p>
+    I dati non sono diffusi né ceduti a terzi per finalità commerciali proprie
+    di questi ultimi.
+  </p>
+
+  <h2>Trasferimenti extra UE</h2>
+  <p>
+    Non sono previsti trasferimenti di dati personali verso paesi terzi.
+    L'archiviazione e l'elaborazione avvengono all'interno dell'Unione Europea.
+  </p>
+
+  <h2>Periodo di conservazione</h2>
+  <ul>
+    <li>
+      <strong>Dati di navigazione:</strong> conservati per il tempo strettamente
+      necessario alle finalità di sicurezza, di norma non oltre dodici mesi.
+    </li>
+    <li>
+      <strong>Richieste di contatto e demo:</strong> conservate per
+      ventiquattro mesi dall'ultimo contatto, salvo instaurazione di un rapporto
+      contrattuale, nel qual caso valgono i termini contrattuali e di legge.
+    </li>
+  </ul>
+
+  <h2>I tuoi diritti</h2>
+  <p>
+    Puoi esercitare in qualsiasi momento i diritti previsti dagli articoli
+    15–22 del GDPR: accesso ai dati, rettifica, cancellazione, limitazione del
+    trattamento, portabilità e opposizione. Le richieste vanno indirizzate a
+    <a href={`mailto:${site.email}`}>{site.email}</a> e ricevono riscontro entro
+    un mese.
+  </p>
+  <p>
+    Se ritieni che il trattamento violi la normativa, puoi proporre reclamo al
+    Garante per la protezione dei dati personali
+    (<a href="https://www.garanteprivacy.it" rel="noopener noreferrer" target="_blank">garanteprivacy.it</a>)
+    o all'autorità di controllo dello Stato membro in cui risiedi.
+  </p>
+
+  <h2>Modifiche</h2>
+  <p>
+    Questa informativa può essere aggiornata. La data in testa al documento
+    indica l'ultima revisione; le modifiche sostanziali vengono segnalate
+    attraverso i consueti canali di comunicazione ai clienti.
+  </p>
+</LegalLayout>

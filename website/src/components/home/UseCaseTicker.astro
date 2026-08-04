@@ -1,0 +1,204 @@
+---
+import { useCases } from '~/data/home';
+
+/**
+ * Ticker verticale dei casi d'uso.
+ *
+ * Nel design il movimento è pilotato da uno stato React che avanza di una
+ * riga ogni 2,4 s. Qui è tutto CSS: sette scatti da 2,4 s per un ciclo di
+ * 16,8 s che termina esattamente su una copia della prima voce, così l'anello
+ * si chiude senza salti e la pagina resta senza JavaScript.
+ *
+ * Il testo scorre in due strati sovrapposti e sincronizzati: quello di fondo
+ * in grigio, quello in evidenza ritagliato sulla riga centrale.
+ */
+
+const track = [...useCases, ...useCases];
+---
+
+<section class="ticker" aria-labelledby="ticker-title">
+  <h2 class="ticker__intro" id="ticker-title">
+    Le agenzie<br />usano Assieme per
+  </h2>
+
+  <div class="ticker__viewport">
+    <ul class="ticker__list">
+      {
+        track.map((item, i) => (
+          <li class="ticker__item" aria-hidden={i >= useCases.length ? 'true' : undefined}>
+            {item}
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="ticker__spotlight" aria-hidden="true">
+      <ul class="ticker__list">
+        {track.map((item) => <li class="ticker__item">{item}</li>)}
+      </ul>
+    </div>
+  </div>
+
+  <a class="btn btn--outline ticker__cta" href="/piattaforma">
+    Esplora la piattaforma
+  </a>
+</section>
+
+<style>
+  .ticker {
+    --row: 58px;
+    --cycle: 16.8s;
+
+    display: grid;
+    grid-template-columns: 240px 1fr 200px;
+    gap: 2.5rem;
+    align-items: center;
+    /* 104px sopra, 120px sotto, come nel design */
+    padding: clamp(3.5rem, 1.85rem + 6.6vw, 6.5rem) var(--gutter)
+      var(--sp-section-lg);
+  }
+
+  .ticker__intro {
+    font-family: var(--f-sans);
+    font-size: var(--t-sm);
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--c-text);
+  }
+
+  .ticker__viewport {
+    position: relative;
+    height: calc(var(--row) * 7);
+    overflow: hidden;
+    font-family: var(--f-serif);
+    font-size: var(--t-ticker);
+    letter-spacing: -0.015em;
+    /* Le voci in entrata e in uscita sfumano invece di essere tranciate. */
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 26%,
+      #000 74%,
+      transparent 100%
+    );
+  }
+
+  .ticker__item {
+    display: flex;
+    align-items: center;
+    height: var(--row);
+    color: var(--c-text-ghost);
+    font-weight: 400;
+  }
+
+  .ticker__list {
+    animation: ticker-advance var(--cycle) var(--ease-snap) infinite;
+    will-change: transform;
+  }
+
+  /* Strato in evidenza, ritagliato sulla sola riga centrale. */
+  .ticker__spotlight {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(calc(var(--row) * 3) 0 calc(var(--row) * 3) 0);
+  }
+
+  .ticker__spotlight .ticker__item {
+    color: var(--c-text);
+    font-weight: 600;
+    background: var(--c-page);
+  }
+
+  .ticker__cta {
+    justify-self: start;
+  }
+
+  /*
+   * Sette passi da 2,4 s su un ciclo di 16,8 s.
+   *
+   * Di ogni passo, 2,12 s sono fermo immagine e solo gli ultimi 0,28 s sono
+   * movimento: la riga sta immobile per l'88% del tempo e poi salta al posto
+   * successivo. È questo rapporto — non l'easing — a produrre lo scatto.
+   *
+   * Le percentuali: fine attesa = (k·2,4 − 0,28)/16,8 · 100
+   *                 arrivo      = (k·2,4)/16,8 · 100
+   */
+  @keyframes ticker-advance {
+    0%,
+    12.619% {
+      transform: translateY(0);
+    }
+    14.286%,
+    26.905% {
+      transform: translateY(calc(var(--row) * -1));
+    }
+    28.571%,
+    41.19% {
+      transform: translateY(calc(var(--row) * -2));
+    }
+    42.857%,
+    55.476% {
+      transform: translateY(calc(var(--row) * -3));
+    }
+    57.143%,
+    69.762% {
+      transform: translateY(calc(var(--row) * -4));
+    }
+    71.429%,
+    84.048% {
+      transform: translateY(calc(var(--row) * -5));
+    }
+    85.714%,
+    98.333% {
+      transform: translateY(calc(var(--row) * -6));
+    }
+    100% {
+      transform: translateY(calc(var(--row) * -7));
+    }
+  }
+
+  @media (max-width: 1000px) {
+    .ticker {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      justify-items: start;
+    }
+
+    .ticker__viewport {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .ticker {
+      --row: 40px;
+    }
+  }
+
+  /*
+   * Senza animazione lo scorrimento non ha senso: la lista diventa un elenco
+   * statico, tutte le voci leggibili, nessuna evidenziazione mobile.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .ticker__viewport {
+      height: auto;
+      mask-image: none;
+    }
+
+    .ticker__list {
+      animation: none;
+    }
+
+    .ticker__item[aria-hidden='true'] {
+      display: none;
+    }
+
+    .ticker__item {
+      color: var(--c-text);
+    }
+
+    .ticker__spotlight {
+      display: none;
+    }
+  }
+</style>

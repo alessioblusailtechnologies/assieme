@@ -1,0 +1,146 @@
+---
+export interface Card {
+  id?: string;
+  eyebrow?: string;
+  title: string;
+  body: string;
+  href?: string;
+  linkLabel?: string;
+}
+
+export interface Props {
+  id?: string;
+  title: string;
+  lead?: string;
+  cards: Card[];
+  columns?: 2 | 3;
+  tone?: 'light' | 'alt';
+}
+
+const { id, title, lead, cards, columns = 3, tone = 'light' } = Astro.props;
+const titleId = `${id ?? 'grid'}-title`;
+---
+
+<section
+  class:list={['cards', tone === 'alt' && 'cards--alt']}
+  id={id}
+  aria-labelledby={titleId}
+>
+  <div class="shell">
+    <div class="cards__head">
+      <h2 class="serif cards__title" id={titleId}>{title}</h2>
+      {lead && <p class="lead cards__lead">{lead}</p>}
+    </div>
+
+    <ul class:list={['cards__grid', `cards__grid--${columns}`]}>
+      {
+        cards.map((card) => (
+          <li class="card" id={card.id}>
+            {card.eyebrow && <p class="mono card__eyebrow">{card.eyebrow}</p>}
+            <h3 class="serif card__title">{card.title}</h3>
+            <p class="card__body">{card.body}</p>
+            {card.href && (
+              <a class="btn btn--text card__link" href={card.href}>
+                {card.linkLabel ?? 'Scopri di più'}{' '}
+                <span class="btn__arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .cards {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .cards--alt {
+    background: var(--c-page-alt);
+  }
+
+  .cards__head {
+    max-width: 46rem;
+    margin-bottom: 3rem;
+  }
+
+  .cards__title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+  }
+
+  .cards__lead {
+    margin-top: 1rem;
+  }
+
+  .cards__grid {
+    display: grid;
+    gap: 1px;
+    background: var(--c-line);
+    border: 1px solid var(--c-line);
+  }
+
+  .cards__grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .cards__grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Le celle sono separate dal fondo che traspare fra i gap: una griglia di
+     filetti da 1px senza doppi bordi agli incroci. */
+  .card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 2rem;
+    background: var(--c-page);
+  }
+
+  .cards--alt .card {
+    background: var(--c-page-alt);
+  }
+
+  .card__eyebrow {
+    color: var(--c-accent);
+  }
+
+  .card__title {
+    font-size: 1.375rem;
+    line-height: 1.25;
+  }
+
+  .card__body {
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .card__link {
+    margin-top: auto;
+    padding-top: 0.5rem;
+  }
+
+  @media (max-width: 1000px) {
+    .cards__grid--3 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 680px) {
+    .cards__grid--3,
+    .cards__grid--2 {
+      grid-template-columns: 1fr;
+    }
+
+    .card {
+      padding: 1.5rem;
+    }
+  }
+</style>

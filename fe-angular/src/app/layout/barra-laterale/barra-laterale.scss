@@ -1,0 +1,169 @@
+/*
+ * La barra laterale è l'unica superficie scura dell'applicazione.
+ *
+ * Nel design del sito il fondo `--c-ink` segna i momenti in cui il marchio
+ * parla in prima persona. Qui fa lo stesso lavoro in modo continuativo:
+ * separa nettamente la navigazione — che appartiene ad ASSIEME — dall'area
+ * di lavoro, che appartiene ai documenti dell'agenzia.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-w);
+  flex: none;
+  background: var(--c-ink);
+  color: var(--c-text-oninverse-2);
+  transition: width var(--dur-fast) var(--ease-brand);
+}
+
+:host(.is-compressa) {
+  width: var(--sidebar-w-collapsed);
+}
+
+/* ---------- Marchio ---------- */
+
+.marchio {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--sp-3);
+  border-bottom: 1px solid var(--c-line-onink);
+  flex: none;
+}
+
+.marchio__link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text-oninverse);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.marchio__link:hover {
+  text-decoration: none;
+}
+
+/* Quadrato pieno con l'iniziale: l'unico elemento di marchio che regge
+   anche a barra compressa, dove il nome per esteso non ci sta. */
+.marchio__segno {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  background: var(--c-accent);
+  color: var(--c-text-oninverse);
+  font-family: var(--f-serif);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.marchio__nome {
+  font-size: 15px;
+  letter-spacing: var(--ls-mono);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* ---------- Navigazione ---------- */
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4) 0;
+}
+
+.nav__gruppo + .nav__gruppo {
+  margin-top: var(--sp-5);
+}
+
+.nav__titolo {
+  margin: 0 0 var(--sp-2);
+  padding: 0 var(--sp-3);
+  color: var(--c-text-oninverse-mute);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono-wide);
+}
+
+.nav__voce {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--c-text-oninverse-2);
+  font-size: var(--t-body);
+  text-decoration: none;
+  /* Il filetto a sinistra è trasparente a riposo: lo spazio è già occupato,
+     così la voce attiva non sposta di 2px tutte le altre. */
+  border-left: 2px solid transparent;
+  transition: background var(--dur-fast) var(--ease-brand);
+}
+
+.nav__voce:hover {
+  background: var(--c-ink-raise);
+  color: var(--c-text-oninverse);
+  text-decoration: none;
+}
+
+.nav__voce.is-attiva {
+  background: var(--c-ink-raise-2);
+  border-left-color: var(--c-accent-on-dark);
+  color: var(--c-text-oninverse);
+}
+
+.nav__etichetta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host(.is-compressa) .nav__voce {
+  justify-content: center;
+  padding-inline: 0;
+  border-left-width: 0;
+}
+
+:host(.is-compressa) .nav__voce.is-attiva {
+  /* Senza etichetta il filetto laterale si legge male: a barra compressa
+     l'indicatore di stato attivo diventa il fondo pieno. */
+  background: var(--c-accent);
+}
+
+/* ---------- Comprimi ---------- */
+
+.comprimi {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-3);
+  flex: none;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--c-line-onink);
+  color: var(--c-text-oninverse-mute);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.comprimi:hover {
+  color: var(--c-text-oninverse-2);
+  background: var(--c-ink-raise);
+}
+
+:host(.is-compressa) .comprimi {
+  justify-content: center;
+}
+
+/* Il focus di sistema si perde sul fondo scuro. */
+.comprimi:focus-visible,
+.nav__voce:focus-visible,
+.marchio__link:focus-visible {
+  outline: 2px solid var(--c-accent-hover);
+  outline-offset: -2px;
+}

@@ -1,0 +1,17 @@
+{
+  "utente": {
+    "id": "utn-004",
+    "nome": "Davide",
+    "cognome": "Lo Bianco",
+    "email": "d.lobianco@assicurazionimeridiana.it",
+    "ruolo": "operatore",
+    "tenantId": "tnt-001",
+    "ultimoAccesso": "2026-08-04T09:40:00+02:00"
+  },
+  "tenant": {
+    "id": "tnt-001",
+    "nome": "Assicurazioni Meridiana S.r.l.",
+    "piano": "agenzia"
+  },
+  "permessi": ["archivio-privato.carica", "archivio-privato.elimina", "agenti.crea"]
+}

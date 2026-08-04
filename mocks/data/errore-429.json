@@ -1,0 +1,5 @@
+{
+  "codice": "QUOTA_SUPERATA",
+  "messaggio": "Limite di richieste del piano raggiunto.",
+  "ritentaTraSecondi": 45
+}

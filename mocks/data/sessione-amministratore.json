@@ -1,0 +1,27 @@
+{
+  "utente": {
+    "id": "utn-001",
+    "nome": "Marta",
+    "cognome": "Ferrero",
+    "email": "m.ferrero@assicurazionimeridiana.it",
+    "ruolo": "amministratore",
+    "tenantId": "tnt-001",
+    "ultimoAccesso": "2026-08-04T08:12:00+02:00"
+  },
+  "tenant": {
+    "id": "tnt-001",
+    "nome": "Assicurazioni Meridiana S.r.l.",
+    "piano": "agenzia"
+  },
+  "permessi": [
+    "archivio-privato.carica",
+    "archivio-privato.elimina",
+    "knowledge-base.gestisci",
+    "istruzioni.gestisci",
+    "template.gestisci",
+    "utenti.gestisci",
+    "modello-ai.configura",
+    "mcp.credenziali",
+    "agenti.crea"
+  ]
+}

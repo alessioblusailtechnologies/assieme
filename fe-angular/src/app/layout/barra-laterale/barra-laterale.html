@@ -1,0 +1,50 @@
+<div class="marchio">
+  <a class="marchio__link" routerLink="/chat" [attr.aria-label]="'ASSIEME — vai alla chat'">
+    <span class="marchio__segno" aria-hidden="true">A</span>
+    @if (!compressa()) {
+      <span class="marchio__nome serif">ASSIEME</span>
+    }
+  </a>
+</div>
+
+<nav class="nav" aria-label="Navigazione principale">
+  @for (gruppo of gruppi(); track gruppo.etichetta) {
+    <div class="nav__gruppo">
+      @if (!compressa()) {
+        <p class="mono nav__titolo">{{ gruppo.etichetta }}</p>
+      }
+
+      <ul>
+        @for (voce of gruppo.voci; track voce.percorso) {
+          <li>
+            <a
+              class="nav__voce"
+              [routerLink]="voce.percorso"
+              routerLinkActive="is-attiva"
+              [routerLinkActiveOptions]="{ exact: voce.percorso === '/archivio/privato' }"
+              [title]="compressa() ? voce.etichetta : ''"
+            >
+              <ui-icon [name]="voce.icona" [size]="18" />
+              @if (!compressa()) {
+                <span class="nav__etichetta">{{ voce.etichetta }}</span>
+              }
+            </a>
+          </li>
+        }
+      </ul>
+    </div>
+  }
+</nav>
+
+<button
+  type="button"
+  class="comprimi"
+  (click)="compressa.set(!compressa())"
+  [attr.aria-label]="compressa() ? 'Espandi la barra laterale' : 'Comprimi la barra laterale'"
+  [attr.aria-expanded]="!compressa()"
+>
+  <ui-icon name="comprimi-barra" [size]="16" />
+  @if (!compressa()) {
+    <span>Comprimi</span>
+  }
+</button>

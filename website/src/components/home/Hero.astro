@@ -1,0 +1,179 @@
+---
+import { hero } from '~/data/home';
+
+// La fascia loghi resta un segnaposto tratteggiato finché il reparto
+// marketing non fornisce i marchi cliente autorizzati.
+const LOGO_SLOTS = 8;
+---
+
+<section class="hero on-ink" aria-labelledby="hero-title">
+  <div class="hero__stage">
+    <p class="hero__credit mono" aria-hidden="true">
+      Fotografia — agenzia / cliente in riunione
+    </p>
+
+    <div class="hero__content">
+      <h1 class="hero__title serif" id="hero-title">
+        {hero.title[0]}<br />{hero.title[1]}
+      </h1>
+      <p class="hero__lead">{hero.lead}</p>
+      <a class="btn btn--solid btn--lg hero__cta" href="/demo">
+        Richiedi una demo
+      </a>
+    </div>
+  </div>
+
+  <div class="hero__proof">
+    <ul class="hero__logos" aria-label="Clienti che usano Assieme">
+      {
+        Array.from({ length: LOGO_SLOTS }, (_, i) => (
+          <li class="hero__logo hatch--faint">
+            <span class="visually-hidden">Logo cliente {i + 1}</span>
+            <span aria-hidden="true">logo</span>
+          </li>
+        ))
+      }
+    </ul>
+    <a class="btn btn--ghost btn--sm hero__proof-cta" href="/clienti">
+      I nostri clienti
+    </a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    background: var(--c-ink);
+  }
+
+  /* Sfondo a due strati: il tratteggio fa da segnaposto della fotografia, il
+     gradiente garantisce il contrasto del testo quando l'immagine arriverà. */
+  .hero__stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: 620px;
+    /* Il margine laterale sta qui, non su .hero__content: quest'ultimo deve
+       poter usare i suoi 720px interi per il testo (vedi sotto). */
+    padding: 4rem var(--gutter);
+    background:
+      linear-gradient(
+        90deg,
+        #14181d 0%,
+        rgb(20 24 29 / 92%) 42%,
+        rgb(20 24 29 / 55%) 70%,
+        rgb(20 24 29 / 45%) 100%
+      ),
+      repeating-linear-gradient(135deg, #1b2027 0 10px, #20262e 10px 20px);
+  }
+
+  .hero__credit {
+    position: absolute;
+    right: var(--gutter);
+    bottom: 6rem;
+    color: var(--c-text-oninverse-mute);
+    margin: 0;
+  }
+
+  /*
+   * 720px come nel design. Attenzione: lì il box è content-box e i 40px di
+   * margine si sommano ai 720; qui il reset impone border-box, quindi
+   * tenendo insieme max-width e padding il testo scenderebbe a 640px — e
+   * «fatta a regola d'arte», che a 84px misura circa 630px, andrebbe a capo
+   * per una manciata di pixel.
+   */
+  .hero__content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    align-items: flex-start;
+    max-width: 45rem;
+  }
+
+  .hero__title {
+    font-size: var(--t-display);
+    line-height: 1.02;
+    letter-spacing: var(--ls-tight);
+    color: var(--c-text-oninverse);
+    text-wrap: initial; /* le due righe sono decise a mano */
+  }
+
+  .hero__lead {
+    max-width: 28.75rem;
+    font-size: var(--t-lead);
+    line-height: 1.6;
+    color: var(--c-text-oninverse-2);
+  }
+
+  /* --- Fascia di riprova sociale --- */
+
+  .hero__proof {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    min-height: 74px;
+    padding: 1rem var(--gutter);
+    background: rgb(255 255 255 / 4%);
+    border-top: 1px solid var(--c-line-onink);
+  }
+
+  .hero__logos {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 1.25rem;
+  }
+
+  .hero__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    font-family: var(--f-mono);
+    font-size: 0.5625rem;
+    color: var(--c-text-oninverse-hatch);
+  }
+
+  .hero__proof-cta {
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 1080px) {
+    .hero__stage {
+      min-height: 32rem;
+    }
+
+    .hero__credit {
+      display: none;
+    }
+
+    .hero__logos {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero__stage {
+      min-height: 26rem;
+      background:
+        linear-gradient(90deg, #14181d 0%, rgb(20 24 29 / 82%) 100%),
+        repeating-linear-gradient(135deg, #1b2027 0 10px, #20262e 10px 20px);
+    }
+
+    .hero__proof {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.25rem;
+      padding-block: 1.5rem;
+    }
+
+    .hero__logos {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .hero__proof-cta {
+      align-self: flex-start;
+    }
+  }
+</style>

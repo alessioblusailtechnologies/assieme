@@ -1,0 +1,86 @@
+---
+import { site } from '~/config/site';
+import LegalLayout from '~/layouts/LegalLayout.astro';
+
+/**
+ * ⚠️ Il sito, così com'è consegnato, non installa alcun cookie: nessun
+ * banner è dovuto. Se in seguito verranno aggiunti strumenti di analisi o
+ * pixel pubblicitari, questa pagina va riscritta E va introdotto un
+ * meccanismo di raccolta del consenso preventivo.
+ */
+---
+
+<LegalLayout
+  title="Cookie policy"
+  description="Quali cookie usa il sito di Assieme e perché non è richiesto alcun banner di consenso."
+  lead="La versione breve: questo sito non ti profila e non installa cookie di terze parti."
+  updated="2026-08-02"
+  crumb="Cookie"
+  href="/legale/cookie"
+>
+  <h2>Che cosa sono i cookie</h2>
+  <p>
+    I cookie sono piccoli file di testo che i siti visitati inviano al
+    dispositivo dell'utente, dove vengono memorizzati per essere ritrasmessi
+    agli stessi siti alla visita successiva. Tecnologie analoghe — come il
+    <em>local storage</em> — sono soggette alle medesime regole.
+  </p>
+
+  <h2>Cookie utilizzati da questo sito</h2>
+  <p>
+    Il sito istituzionale di {site.name} <strong>non installa cookie</strong>,
+    né tecnici né di profilazione, e non utilizza il local storage del browser.
+    Di conseguenza non è richiesto alcun consenso preventivo ai sensi
+    dell'art. 122 del Codice privacy e delle Linee guida del Garante del 10
+    giugno 2021.
+  </p>
+  <p>
+    In particolare:
+  </p>
+  <ul>
+    <li>
+      <strong>Nessun cookie analitico.</strong> Non misuriamo il traffico con
+      strumenti che identificano il singolo visitatore.
+    </li>
+    <li>
+      <strong>Nessun cookie pubblicitario.</strong> Non usiamo pixel di
+      remarketing né piattaforme di advertising.
+    </li>
+    <li>
+      <strong>Nessuna risorsa da terze parti.</strong> Caratteri tipografici,
+      fogli di stile, script e immagini sono serviti dal nostro stesso dominio.
+      Aprendo questa pagina il tuo browser non contatta alcun server esterno,
+      e il tuo indirizzo IP non viene comunicato a nessuno.
+    </li>
+  </ul>
+
+  <h2>Contenuti esterni</h2>
+  <p>
+    Alcuni collegamenti conducono a servizi ospitati su altri domini — l'area
+    di accesso alla piattaforma, la pagina di stato del servizio, i profili
+    social. Una volta seguito il collegamento vale l'informativa del sito di
+    destinazione, sulla quale non abbiamo controllo.
+  </p>
+
+  <h2>L'applicativo è un'altra cosa</h2>
+  <p>
+    Questa pagina riguarda esclusivamente il sito istituzionale.
+    L'applicativo riservato ai clienti, raggiungibile da «Accedi», utilizza
+    cookie tecnici indispensabili al mantenimento della sessione autenticata:
+    sono descritti nell'informativa presentata al primo accesso.
+  </p>
+
+  <h2>Come controllare i cookie</h2>
+  <p>
+    Indipendentemente da questo sito, ogni browser consente di visualizzare,
+    bloccare o cancellare i cookie già memorizzati. Le istruzioni si trovano
+    nella documentazione del browser in uso, alla voce relativa alla privacy o
+    ai dati di navigazione.
+  </p>
+
+  <h2>Contatti</h2>
+  <p>
+    Per qualsiasi chiarimento: <a href={`mailto:${site.email}`}>{site.email}</a>.
+    Vedi anche l'<a href="/legale/privacy">informativa privacy</a>.
+  </p>
+</LegalLayout>

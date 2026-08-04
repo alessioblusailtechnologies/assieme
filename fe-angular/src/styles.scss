@@ -1,0 +1,18 @@
+/*
+ * Foglio di stile globale.
+ *
+ * L'ordine conta: i token devono esistere prima che qualcuno li usi.
+ *
+ * Il tema PrimeNG vero e proprio non sta qui: è definito in TypeScript
+ * (`styles/theme/assieme-preset.ts`) e iniettato a runtime da
+ * `providePrimeNG`. Qui restano solo le poche correzioni che i design token
+ * di PrimeNG non raggiungono.
+ *
+ * `primeicons.css` è caricato da `angular.json`: è CSS puro e mescolarlo agli
+ * `@use` di Sass complica soltanto.
+ */
+
+@use 'styles/tokens';
+@use 'styles/fonts';
+@use 'styles/base';
+@use 'styles/primeng-overrides';

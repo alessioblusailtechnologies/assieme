@@ -1,0 +1,173 @@
+---
+import { footerNav, legalNav, site } from '~/config/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer on-ink">
+  <div class="site-footer__grid">
+    <div class="site-footer__brand">
+      <span class="site-footer__mark" aria-hidden="true">A</span>
+      <p class="site-footer__claim">
+        {site.name} — {site.tagline}.
+      </p>
+    </div>
+
+    {
+      footerNav.map((column) => (
+        <nav class="site-footer__col" aria-label={column.title}>
+          {/* Etichetta di colonna, non titolo di sezione: il nome del blocco
+              è già esposto dall'aria-label del <nav>, e cinque h2 nel piè di
+              pagina sporcherebbero la struttura del documento. */}
+          <p class="site-footer__title">{column.title}</p>
+          <ul>
+            {column.items.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  rel={item.external ? 'noopener noreferrer' : undefined}
+                  target={item.external ? '_blank' : undefined}
+                >
+                  {item.label}
+                  {item.external && (
+                    <span class="visually-hidden"> (si apre in una nuova scheda)</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      ))
+    }
+  </div>
+
+  <div class="site-footer__base">
+    <p class="site-footer__legal-line">
+      © {year} {site.legalName.toUpperCase()} · Tutti i diritti riservati
+    </p>
+
+    <ul class="site-footer__legal">
+      {
+        legalNav.map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="site-footer__place">{site.city.toUpperCase()} · {site.country}</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    background: var(--c-ink);
+    color: var(--c-text-oninverse);
+    border-top: 1px solid var(--c-line-dark);
+  }
+
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: 1.2fr repeat(5, 1fr);
+    gap: 2rem;
+    padding: 3.5rem var(--gutter) 2.5rem;
+  }
+
+  .site-footer__mark {
+    display: block;
+    font-family: var(--f-serif);
+    font-size: 2.75rem;
+    line-height: 1;
+    color: var(--c-text-oninverse);
+  }
+
+  .site-footer__claim {
+    margin-top: 1rem;
+    max-width: 15rem;
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    color: var(--c-text-oninverse-mute);
+  }
+
+  .site-footer__title {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    font-weight: 400;
+    letter-spacing: var(--ls-mono);
+    text-transform: uppercase;
+    color: var(--c-text-oninverse-mute);
+    margin-bottom: 0.5625rem;
+  }
+
+  .site-footer__col ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5625rem;
+  }
+
+  .site-footer__col a {
+    font-size: var(--t-xs);
+    color: var(--c-text-oninverse-4);
+  }
+
+  .site-footer__col a:hover {
+    color: var(--c-text-oninverse);
+  }
+
+  .site-footer__base {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    padding: 0 var(--gutter) 2.5rem;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    color: var(--c-text-oninverse-mute);
+  }
+
+  .site-footer__legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  .site-footer__legal a {
+    color: var(--c-text-oninverse-mute);
+  }
+
+  .site-footer__legal a:hover {
+    color: var(--c-text-oninverse);
+  }
+
+  .site-footer__place {
+    margin-left: auto;
+  }
+
+  @media (max-width: 1080px) {
+    .site-footer__grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2.5rem 2rem;
+    }
+
+    .site-footer__brand {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .site-footer__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .site-footer__base {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .site-footer__place {
+      margin-left: 0;
+    }
+  }
+</style>

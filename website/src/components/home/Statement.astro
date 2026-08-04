@@ -1,0 +1,39 @@
+---
+import { statement } from '~/data/home';
+---
+
+<section class="statement" aria-labelledby="statement-title">
+  {/* Il posizionamento è lungo due frasi: come h2 sarebbe un titolo di 250
+      caratteri. Il titolo vero resta breve e nascosto, il testo è un
+      paragrafo — struttura corretta, e nulla cambia a schermo. */}
+  <h2 class="visually-hidden" id="statement-title">Che cos'è Assieme</h2>
+
+  <p class="statement__text">
+    <span class="statement__strong">{statement.strong}</span>{' '}
+    <span class="statement__muted">{statement.muted}</span>
+  </p>
+</section>
+
+<style>
+  .statement {
+    padding: var(--sp-section) var(--gutter) 4rem;
+  }
+
+  .statement__text {
+    max-width: 56.25rem;
+    font-family: var(--f-sans);
+    font-size: var(--t-statement);
+    font-weight: 400;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    text-wrap: pretty;
+  }
+
+  .statement__strong {
+    color: var(--c-text);
+  }
+
+  .statement__muted {
+    color: var(--c-text-4);
+  }
+</style>
