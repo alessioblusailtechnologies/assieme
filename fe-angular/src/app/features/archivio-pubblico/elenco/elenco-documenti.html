@@ -1,0 +1,197 @@
+<header class="testata">
+  <div class="testata__titolo">
+    <h1 class="serif">Archivio pubblico</h1>
+    <!--
+      RF-A-05: l'archivio è gestito centralmente e non si può modificare.
+      Detto subito, evita che qualcuno cerchi il pulsante di caricamento.
+    -->
+    <ui-badge variante="neutro">sola lettura</ui-badge>
+  </div>
+  <p class="testata__spiega">
+    Set informativi e documenti pubblici delle compagnie, precaricati e mantenuti aggiornati da
+    ASSIEME. Disponibili fin dal primo accesso, senza nulla da caricare.
+  </p>
+</header>
+
+<section class="filtri" aria-label="Filtri dell'archivio">
+  <p-iconfield class="filtri__ricerca">
+    <p-inputicon>
+      <ui-icon name="cerca" [size]="16" />
+    </p-inputicon>
+    <input
+      pInputText
+      type="search"
+      [(ngModel)]="store.ricerca"
+      placeholder="Cerca per titolo, prodotto, compagnia…"
+      aria-label="Cerca nell'archivio pubblico"
+    />
+  </p-iconfield>
+
+  <p-select
+    [(ngModel)]="store.compagniaId"
+    [options]="store.compagnie()"
+    optionLabel="nome"
+    optionValue="id"
+    placeholder="Tutte le compagnie"
+    [showClear]="true"
+    ariaLabel="Filtra per compagnia"
+    styleClass="filtri__campo"
+  />
+
+  <p-select
+    [(ngModel)]="store.ramoId"
+    [options]="store.rami()"
+    optionLabel="nome"
+    optionValue="id"
+    placeholder="Tutti i rami"
+    [showClear]="true"
+    ariaLabel="Filtra per ramo"
+    styleClass="filtri__campo"
+  />
+
+  <p-select
+    [(ngModel)]="store.tipologia"
+    [options]="tipologie"
+    optionLabel="etichetta"
+    optionValue="valore"
+    placeholder="Tutte le tipologie"
+    [showClear]="true"
+    ariaLabel="Filtra per tipologia di documento"
+    styleClass="filtri__campo"
+  />
+
+  <!--
+    L'etichetta punta con `for` all'input che PrimeNG genera con quell'id:
+    avvolgere il componente in un <label> non lo aggancerebbe, e il clic sul
+    testo non commuterebbe la casella.
+  -->
+  <div class="filtri__interruttore">
+    <p-checkbox [(ngModel)]="store.soloCorrenti" [binary]="true" inputId="solo-correnti" />
+    <label for="solo-correnti">Solo edizioni correnti</label>
+  </div>
+
+  <div class="filtri__interruttore">
+    <p-checkbox [(ngModel)]="store.soloPreferiti" [binary]="true" inputId="solo-preferiti" />
+    <label for="solo-preferiti">Solo preferiti</label>
+  </div>
+
+  @if (store.filtriAttivi()) {
+    <button type="button" class="filtri__azzera" (click)="store.azzeraFiltri()">
+      <ui-icon name="chiudi" [size]="14" />
+      Azzera
+    </button>
+  }
+</section>
+
+<div class="conteggio" role="status" aria-live="polite">
+  @if (store.inCaricamento()) {
+    <span class="mono">ricerca in corso…</span>
+  } @else if (!store.errore()) {
+    <span class="mono">
+      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+    </span>
+  }
+</div>
+
+@if (store.errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare l'archivio"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button type="button" class="azione" (click)="store.riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      Riprova
+    </button>
+  </ui-stato-vuoto>
+} @else if (store.inCaricamento() && !store.documenti().length) {
+  <div class="scheletri">
+    @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+      <ui-scheletro [numeroRighe]="1" />
+    }
+  </div>
+} @else if (!store.documenti().length) {
+  <ui-stato-vuoto
+    icona="cerca"
+    titolo="Nessun documento con questi criteri"
+    descrizione="Prova ad allargare la ricerca: togli un filtro, oppure includi anche le edizioni non più correnti."
+  >
+    @if (store.filtriAttivi()) {
+      <button type="button" class="azione" (click)="store.azzeraFiltri()">
+        <ui-icon name="chiudi" [size]="15" />
+        Azzera i filtri
+      </button>
+    }
+  </ui-stato-vuoto>
+} @else {
+  <div class="tabella-contenitore">
+    <table class="tabella">
+      <caption class="visually-hidden">
+        Documenti dell'Archivio Pubblico corrispondenti ai filtri selezionati
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col" class="col-preferito">
+            <span class="visually-hidden">Preferito</span>
+          </th>
+          <th scope="col">Documento</th>
+          <th scope="col">Compagnia</th>
+          <th scope="col">Ramo</th>
+          <th scope="col">Tipologia</th>
+          <th scope="col">Edizione</th>
+          <th scope="col" class="col-pagine">Pagine</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (documento of store.documenti(); track documento.id) {
+          @let doc = pubblico(documento);
+          <tr>
+            <td class="col-preferito">
+              <button
+                type="button"
+                class="preferito"
+                [class.is-attivo]="doc.preferito"
+                (click)="alternaPreferito(documento, $event)"
+                [attr.aria-pressed]="doc.preferito"
+                [attr.aria-label]="
+                  (doc.preferito ? 'Togli dai preferiti: ' : 'Aggiungi ai preferiti: ') + doc.titolo
+                "
+              >
+                <ui-icon name="preferito" [size]="15" />
+              </button>
+            </td>
+
+            <th scope="row" class="col-documento">
+              <a [routerLink]="['/archivio/pubblico', doc.id]" class="titolo">{{ doc.titolo }}</a>
+              <span class="prodotto">{{ doc.prodotto }}</span>
+            </th>
+
+            <td>{{ doc.compagnia.nome }}</td>
+            <td>{{ doc.ramo.nome }}</td>
+            <td>
+              <ui-badge variante="accento">{{ etichettaTipologia(doc.tipologia) }}</ui-badge>
+            </td>
+            <td class="col-edizione">
+              <span>{{ doc.edizione.etichetta }}</span>
+              @if (doc.edizione.corrente) {
+                <ui-badge variante="corrente">corrente</ui-badge>
+              } @else {
+                <ui-badge variante="storico">superata</ui-badge>
+              }
+            </td>
+            <td class="col-pagine">{{ doc.numeroPagine }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (store.totale() > store.perPagina()) {
+    <p-paginator
+      [first]="(store.pagina() - 1) * store.perPagina()"
+      [rows]="store.perPagina()"
+      [totalRecords]="store.totale()"
+      (onPageChange)="cambiaPagina($event)"
+    />
+  }
+}

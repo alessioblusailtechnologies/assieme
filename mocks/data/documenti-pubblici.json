@@ -1,368 +1,530 @@
-{
-  "elementi": [
-    {
-      "id": "doc-pub-001",
-      "archivio": "pubblico",
-      "titolo": "DIP — Active Veicoli AUTOPIÙ con Telematica",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-001/file",
-      "compagnia": { "id": "cmp-generali", "nome": "Generali Italia" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
-      "edizione": {
-        "id": "edz-001-b",
-        "etichetta": "ed. 04/2026",
-        "validaDal": "2026-04-01",
-        "corrente": true
-      },
-      "preferito": true
-    },
-    {
-      "id": "doc-pub-002",
-      "archivio": "pubblico",
-      "titolo": "DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica",
-      "tipologia": "dip-aggiuntivo",
-      "numeroPagine": 18,
-      "fileUrl": "/api/documenti/doc-pub-002/file",
-      "compagnia": { "id": "cmp-generali", "nome": "Generali Italia" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
-      "edizione": {
-        "id": "edz-001-b",
-        "etichetta": "ed. 04/2026",
-        "validaDal": "2026-04-01",
-        "corrente": true
-      },
-      "preferito": true
-    },
-    {
-      "id": "doc-pub-003",
-      "archivio": "pubblico",
-      "titolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
-      "tipologia": "condizioni-assicurazione",
-      "numeroPagine": 96,
-      "fileUrl": "/api/documenti/doc-pub-003/file",
-      "compagnia": { "id": "cmp-generali", "nome": "Generali Italia" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
-      "edizione": {
-        "id": "edz-001-b",
-        "etichetta": "ed. 04/2026",
-        "validaDal": "2026-04-01",
-        "corrente": true
-      },
-      "preferito": true
-    },
-    {
-      "id": "doc-pub-004",
-      "archivio": "pubblico",
-      "titolo": "Glossario — Active Veicoli AUTOPIÙ con Telematica",
-      "tipologia": "glossario",
-      "numeroPagine": 6,
-      "fileUrl": "/api/documenti/doc-pub-004/file",
-      "compagnia": { "id": "cmp-generali", "nome": "Generali Italia" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
-      "edizione": {
-        "id": "edz-001-b",
-        "etichetta": "ed. 04/2026",
-        "validaDal": "2026-04-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-005",
-      "archivio": "pubblico",
-      "titolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
-      "tipologia": "condizioni-assicurazione",
-      "numeroPagine": 94,
-      "fileUrl": "/api/documenti/doc-pub-005/file",
-      "compagnia": { "id": "cmp-generali", "nome": "Generali Italia" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
-      "edizione": {
-        "id": "edz-001-a",
-        "etichetta": "ed. 09/2025",
-        "validaDal": "2025-09-01",
-        "validaAl": "2026-03-31",
-        "corrente": false
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-006",
-      "archivio": "pubblico",
-      "titolo": "DIP — KM Sicuri Auto",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-006/file",
-      "compagnia": { "id": "cmp-unipolsai", "nome": "UnipolSai Assicurazioni" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "KM Sicuri Auto",
-      "edizione": {
-        "id": "edz-006-a",
-        "etichetta": "ed. 06/2026",
-        "validaDal": "2026-06-01",
-        "corrente": true
-      },
-      "preferito": true
-    },
-    {
-      "id": "doc-pub-007",
-      "archivio": "pubblico",
-      "titolo": "DIP Aggiuntivo — KM Sicuri Auto",
-      "tipologia": "dip-aggiuntivo",
-      "numeroPagine": 22,
-      "fileUrl": "/api/documenti/doc-pub-007/file",
-      "compagnia": { "id": "cmp-unipolsai", "nome": "UnipolSai Assicurazioni" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "KM Sicuri Auto",
-      "edizione": {
-        "id": "edz-006-a",
-        "etichetta": "ed. 06/2026",
-        "validaDal": "2026-06-01",
-        "corrente": true
-      },
-      "preferito": true
-    },
-    {
-      "id": "doc-pub-008",
-      "archivio": "pubblico",
-      "titolo": "Condizioni di Assicurazione — KM Sicuri Auto",
-      "tipologia": "condizioni-assicurazione",
-      "numeroPagine": 88,
-      "fileUrl": "/api/documenti/doc-pub-008/file",
-      "compagnia": { "id": "cmp-unipolsai", "nome": "UnipolSai Assicurazioni" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "KM Sicuri Auto",
-      "edizione": {
-        "id": "edz-006-a",
-        "etichetta": "ed. 06/2026",
-        "validaDal": "2026-06-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-009",
-      "archivio": "pubblico",
-      "titolo": "DIP — Cattolica&Auto",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-009/file",
-      "compagnia": { "id": "cmp-cattolica", "nome": "Cattolica Assicurazioni" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Cattolica&Auto",
-      "edizione": {
-        "id": "edz-009-a",
-        "etichetta": "ed. 01/2026",
-        "validaDal": "2026-01-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-010",
-      "archivio": "pubblico",
-      "titolo": "DIP Aggiuntivo — Cattolica&Auto",
-      "tipologia": "dip-aggiuntivo",
-      "numeroPagine": 20,
-      "fileUrl": "/api/documenti/doc-pub-010/file",
-      "compagnia": { "id": "cmp-cattolica", "nome": "Cattolica Assicurazioni" },
-      "ramo": { "id": "ram-auto", "nome": "RC Auto e veicoli", "codice": "rc-auto" },
-      "prodotto": "Cattolica&Auto",
-      "edizione": {
-        "id": "edz-009-a",
-        "etichetta": "ed. 01/2026",
-        "validaDal": "2026-01-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-011",
-      "archivio": "pubblico",
-      "titolo": "DIP — Allianz1 Business Infortuni",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-011/file",
-      "compagnia": { "id": "cmp-allianz", "nome": "Allianz Italia" },
-      "ramo": { "id": "ram-infortuni", "nome": "Infortuni", "codice": "infortuni" },
-      "prodotto": "Allianz1 Business Infortuni",
-      "edizione": {
-        "id": "edz-011-a",
-        "etichetta": "ed. 03/2026",
-        "validaDal": "2026-03-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-012",
-      "archivio": "pubblico",
-      "titolo": "Condizioni di Assicurazione — Allianz1 Business Infortuni",
-      "tipologia": "condizioni-assicurazione",
-      "numeroPagine": 52,
-      "fileUrl": "/api/documenti/doc-pub-012/file",
-      "compagnia": { "id": "cmp-allianz", "nome": "Allianz Italia" },
-      "ramo": { "id": "ram-infortuni", "nome": "Infortuni", "codice": "infortuni" },
-      "prodotto": "Allianz1 Business Infortuni",
-      "edizione": {
-        "id": "edz-011-a",
-        "etichetta": "ed. 03/2026",
-        "validaDal": "2026-03-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-013",
-      "archivio": "pubblico",
-      "titolo": "DIP — Protezione Casa Reale",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-013/file",
-      "compagnia": { "id": "cmp-realemutua", "nome": "Reale Mutua Assicurazioni" },
-      "ramo": { "id": "ram-casa", "nome": "Casa e patrimonio", "codice": "casa" },
-      "prodotto": "Protezione Casa Reale",
-      "edizione": {
-        "id": "edz-013-a",
-        "etichetta": "ed. 05/2026",
-        "validaDal": "2026-05-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-014",
-      "archivio": "pubblico",
-      "titolo": "DIP Aggiuntivo — Protezione Casa Reale",
-      "tipologia": "dip-aggiuntivo",
-      "numeroPagine": 26,
-      "fileUrl": "/api/documenti/doc-pub-014/file",
-      "compagnia": { "id": "cmp-realemutua", "nome": "Reale Mutua Assicurazioni" },
-      "ramo": { "id": "ram-casa", "nome": "Casa e patrimonio", "codice": "casa" },
-      "prodotto": "Protezione Casa Reale",
-      "edizione": {
-        "id": "edz-013-a",
-        "etichetta": "ed. 05/2026",
-        "validaDal": "2026-05-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-015",
-      "archivio": "pubblico",
-      "titolo": "DIP — AXA Protezione Professionisti",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-015/file",
-      "compagnia": { "id": "cmp-axa", "nome": "AXA Italia" },
-      "ramo": { "id": "ram-rc-prof", "nome": "RC Professionale", "codice": "rc-professionale" },
-      "prodotto": "AXA Protezione Professionisti",
-      "edizione": {
-        "id": "edz-015-a",
-        "etichetta": "ed. 02/2026",
-        "validaDal": "2026-02-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-016",
-      "archivio": "pubblico",
-      "titolo": "Condizioni di Assicurazione — AXA Protezione Professionisti",
-      "tipologia": "condizioni-assicurazione",
-      "numeroPagine": 64,
-      "fileUrl": "/api/documenti/doc-pub-016/file",
-      "compagnia": { "id": "cmp-axa", "nome": "AXA Italia" },
-      "ramo": { "id": "ram-rc-prof", "nome": "RC Professionale", "codice": "rc-professionale" },
-      "prodotto": "AXA Protezione Professionisti",
-      "edizione": {
-        "id": "edz-015-a",
-        "etichetta": "ed. 02/2026",
-        "validaDal": "2026-02-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-017",
-      "archivio": "pubblico",
-      "titolo": "DIP — Zurich Salute Più",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-017/file",
-      "compagnia": { "id": "cmp-zurich", "nome": "Zurich Italia" },
-      "ramo": { "id": "ram-salute", "nome": "Salute", "codice": "salute" },
-      "prodotto": "Zurich Salute Più",
-      "edizione": {
-        "id": "edz-017-a",
-        "etichetta": "ed. 06/2026",
-        "validaDal": "2026-06-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-018",
-      "archivio": "pubblico",
-      "titolo": "DIP Aggiuntivo — Zurich Salute Più",
-      "tipologia": "dip-aggiuntivo",
-      "numeroPagine": 24,
-      "fileUrl": "/api/documenti/doc-pub-018/file",
-      "compagnia": { "id": "cmp-zurich", "nome": "Zurich Italia" },
-      "ramo": { "id": "ram-salute", "nome": "Salute", "codice": "salute" },
-      "prodotto": "Zurich Salute Più",
-      "edizione": {
-        "id": "edz-017-a",
-        "etichetta": "ed. 06/2026",
-        "validaDal": "2026-06-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-019",
-      "archivio": "pubblico",
-      "titolo": "DIP — Groupama Tutela Legale Famiglia",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-019/file",
-      "compagnia": { "id": "cmp-groupama", "nome": "Groupama Assicurazioni" },
-      "ramo": { "id": "ram-tutela", "nome": "Tutela legale", "codice": "tutela-legale" },
-      "prodotto": "Groupama Tutela Legale Famiglia",
-      "edizione": {
-        "id": "edz-019-a",
-        "etichetta": "ed. 05/2026",
-        "validaDal": "2026-05-01",
-        "corrente": true
-      },
-      "preferito": false
-    },
-    {
-      "id": "doc-pub-020",
-      "archivio": "pubblico",
-      "titolo": "DIP — Vittoria Viaggi Sicuri",
-      "tipologia": "dip",
-      "numeroPagine": 4,
-      "fileUrl": "/api/documenti/doc-pub-020/file",
-      "compagnia": { "id": "cmp-vittoria", "nome": "Vittoria Assicurazioni" },
-      "ramo": { "id": "ram-viaggi", "nome": "Viaggi e assistenza", "codice": "viaggi" },
-      "prodotto": "Vittoria Viaggi Sicuri",
-      "edizione": {
-        "id": "edz-020-a",
-        "etichetta": "ed. 04/2026",
-        "validaDal": "2026-04-01",
-        "corrente": true
-      },
-      "preferito": false
-    }
-  ],
-  "totale": 20,
-  "pagina": 1,
-  "perPagina": 50
-}
+[
+  {
+    "id": "doc-pub-001",
+    "titolo": "DIP — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "dip",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-001-b", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-002",
+    "titolo": "DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 18,
+    "edizione": { "id": "edz-001-b", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-003",
+    "titolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 96,
+    "edizione": { "id": "edz-001-b", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-004",
+    "titolo": "Glossario — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "glossario",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 6,
+    "edizione": { "id": "edz-001-b", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-005",
+    "titolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 94,
+    "edizione": { "id": "edz-001-a", "etichetta": "ed. 09/2025", "validaDal": "2025-09-01", "validaAl": "2026-03-31", "corrente": false },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-006",
+    "titolo": "DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-auto",
+    "prodotto": "Active Veicoli AUTOPIÙ con Telematica",
+    "numeroPagine": 17,
+    "edizione": { "id": "edz-001-a", "etichetta": "ed. 09/2025", "validaDal": "2025-09-01", "validaAl": "2026-03-31", "corrente": false },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-007",
+    "titolo": "DIP — KM Sicuri Auto",
+    "tipologia": "dip",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-auto",
+    "prodotto": "KM Sicuri Auto",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-007-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-008",
+    "titolo": "DIP Aggiuntivo — KM Sicuri Auto",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-auto",
+    "prodotto": "KM Sicuri Auto",
+    "numeroPagine": 22,
+    "edizione": { "id": "edz-007-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-009",
+    "titolo": "Condizioni di Assicurazione — KM Sicuri Auto",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-auto",
+    "prodotto": "KM Sicuri Auto",
+    "numeroPagine": 88,
+    "edizione": { "id": "edz-007-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-010",
+    "titolo": "Glossario — KM Sicuri Auto",
+    "tipologia": "glossario",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-auto",
+    "prodotto": "KM Sicuri Auto",
+    "numeroPagine": 5,
+    "edizione": { "id": "edz-007-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-011",
+    "titolo": "DIP — Cattolica&Auto",
+    "tipologia": "dip",
+    "compagniaId": "cmp-cattolica",
+    "ramoId": "ram-auto",
+    "prodotto": "Cattolica&Auto",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-011-a", "etichetta": "ed. 01/2026", "validaDal": "2026-01-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-012",
+    "titolo": "DIP Aggiuntivo — Cattolica&Auto",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-cattolica",
+    "ramoId": "ram-auto",
+    "prodotto": "Cattolica&Auto",
+    "numeroPagine": 20,
+    "edizione": { "id": "edz-011-a", "etichetta": "ed. 01/2026", "validaDal": "2026-01-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-013",
+    "titolo": "Condizioni di Assicurazione — Cattolica&Auto",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-cattolica",
+    "ramoId": "ram-auto",
+    "prodotto": "Cattolica&Auto",
+    "numeroPagine": 76,
+    "edizione": { "id": "edz-011-a", "etichetta": "ed. 01/2026", "validaDal": "2026-01-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-014",
+    "titolo": "DIP — Allianz Ultra Auto",
+    "tipologia": "dip",
+    "compagniaId": "cmp-allianz",
+    "ramoId": "ram-auto",
+    "prodotto": "Allianz Ultra Auto",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-014-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-015",
+    "titolo": "DIP Aggiuntivo — Allianz Ultra Auto",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-allianz",
+    "ramoId": "ram-auto",
+    "prodotto": "Allianz Ultra Auto",
+    "numeroPagine": 24,
+    "edizione": { "id": "edz-014-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-016",
+    "titolo": "DIP — AXA Auto Protetta",
+    "tipologia": "dip",
+    "compagniaId": "cmp-axa",
+    "ramoId": "ram-auto",
+    "prodotto": "AXA Auto Protetta",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-016-a", "etichetta": "ed. 02/2026", "validaDal": "2026-02-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-017",
+    "titolo": "Condizioni di Assicurazione — AXA Auto Protetta",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-axa",
+    "ramoId": "ram-auto",
+    "prodotto": "AXA Auto Protetta",
+    "numeroPagine": 82,
+    "edizione": { "id": "edz-016-a", "etichetta": "ed. 02/2026", "validaDal": "2026-02-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-018",
+    "titolo": "DIP — Vittoria Strada Sicura",
+    "tipologia": "dip",
+    "compagniaId": "cmp-vittoria",
+    "ramoId": "ram-auto",
+    "prodotto": "Vittoria Strada Sicura",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-018-a", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-019",
+    "titolo": "DIP — Allianz1 Business Infortuni",
+    "tipologia": "dip",
+    "compagniaId": "cmp-allianz",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Allianz1 Business Infortuni",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-019-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-020",
+    "titolo": "DIP Aggiuntivo — Allianz1 Business Infortuni",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-allianz",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Allianz1 Business Infortuni",
+    "numeroPagine": 21,
+    "edizione": { "id": "edz-019-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-021",
+    "titolo": "Condizioni di Assicurazione — Allianz1 Business Infortuni",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-allianz",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Allianz1 Business Infortuni",
+    "numeroPagine": 52,
+    "edizione": { "id": "edz-019-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-022",
+    "titolo": "DIP — Generali Infortuni Persona",
+    "tipologia": "dip",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Generali Infortuni Persona",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-022-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": true
+  },
+  {
+    "id": "doc-pub-023",
+    "titolo": "DIP Aggiuntivo — Generali Infortuni Persona",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Generali Infortuni Persona",
+    "numeroPagine": 19,
+    "edizione": { "id": "edz-022-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-024",
+    "titolo": "DIP — Reale Infortuni Più",
+    "tipologia": "dip",
+    "compagniaId": "cmp-realemutua",
+    "ramoId": "ram-infortuni",
+    "prodotto": "Reale Infortuni Più",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-024-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-025",
+    "titolo": "DIP — Protezione Casa Reale",
+    "tipologia": "dip",
+    "compagniaId": "cmp-realemutua",
+    "ramoId": "ram-casa",
+    "prodotto": "Protezione Casa Reale",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-025-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-026",
+    "titolo": "DIP Aggiuntivo — Protezione Casa Reale",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-realemutua",
+    "ramoId": "ram-casa",
+    "prodotto": "Protezione Casa Reale",
+    "numeroPagine": 26,
+    "edizione": { "id": "edz-025-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-027",
+    "titolo": "Condizioni di Assicurazione — Protezione Casa Reale",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-realemutua",
+    "ramoId": "ram-casa",
+    "prodotto": "Protezione Casa Reale",
+    "numeroPagine": 68,
+    "edizione": { "id": "edz-025-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-028",
+    "titolo": "DIP — UnipolSai Casa&Servizi",
+    "tipologia": "dip",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-casa",
+    "prodotto": "UnipolSai Casa&Servizi",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-028-b", "etichetta": "ed. 07/2026", "validaDal": "2026-07-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-029",
+    "titolo": "DIP — UnipolSai Casa&Servizi",
+    "tipologia": "dip",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-casa",
+    "prodotto": "UnipolSai Casa&Servizi",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-028-a", "etichetta": "ed. 11/2025", "validaDal": "2025-11-01", "validaAl": "2026-06-30", "corrente": false },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-030",
+    "titolo": "DIP Aggiuntivo — UnipolSai Casa&Servizi",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-unipolsai",
+    "ramoId": "ram-casa",
+    "prodotto": "UnipolSai Casa&Servizi",
+    "numeroPagine": 30,
+    "edizione": { "id": "edz-028-b", "etichetta": "ed. 07/2026", "validaDal": "2026-07-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-031",
+    "titolo": "DIP — Groupama Casa Serena",
+    "tipologia": "dip",
+    "compagniaId": "cmp-groupama",
+    "ramoId": "ram-casa",
+    "prodotto": "Groupama Casa Serena",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-031-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-032",
+    "titolo": "DIP — Zurich Salute Più",
+    "tipologia": "dip",
+    "compagniaId": "cmp-zurich",
+    "ramoId": "ram-salute",
+    "prodotto": "Zurich Salute Più",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-032-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-033",
+    "titolo": "DIP Aggiuntivo — Zurich Salute Più",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-zurich",
+    "ramoId": "ram-salute",
+    "prodotto": "Zurich Salute Più",
+    "numeroPagine": 24,
+    "edizione": { "id": "edz-032-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-034",
+    "titolo": "Condizioni di Assicurazione — Zurich Salute Più",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-zurich",
+    "ramoId": "ram-salute",
+    "prodotto": "Zurich Salute Più",
+    "numeroPagine": 58,
+    "edizione": { "id": "edz-032-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-035",
+    "titolo": "DIP — ITAS Salute Serena",
+    "tipologia": "dip",
+    "compagniaId": "cmp-itas",
+    "ramoId": "ram-salute",
+    "prodotto": "ITAS Salute Serena",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-035-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-036",
+    "titolo": "DIP — AXA Protezione Professionisti",
+    "tipologia": "dip",
+    "compagniaId": "cmp-axa",
+    "ramoId": "ram-rc-prof",
+    "prodotto": "AXA Protezione Professionisti",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-036-a", "etichetta": "ed. 02/2026", "validaDal": "2026-02-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-037",
+    "titolo": "DIP Aggiuntivo — AXA Protezione Professionisti",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-axa",
+    "ramoId": "ram-rc-prof",
+    "prodotto": "AXA Protezione Professionisti",
+    "numeroPagine": 23,
+    "edizione": { "id": "edz-036-a", "etichetta": "ed. 02/2026", "validaDal": "2026-02-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-038",
+    "titolo": "Condizioni di Assicurazione — AXA Protezione Professionisti",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-axa",
+    "ramoId": "ram-rc-prof",
+    "prodotto": "AXA Protezione Professionisti",
+    "numeroPagine": 64,
+    "edizione": { "id": "edz-036-a", "etichetta": "ed. 02/2026", "validaDal": "2026-02-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-039",
+    "titolo": "DIP — Generali RC Professionale Sanitaria",
+    "tipologia": "dip",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-rc-prof",
+    "prodotto": "Generali RC Professionale Sanitaria",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-039-a", "etichetta": "ed. 07/2026", "validaDal": "2026-07-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-040",
+    "titolo": "DIP — Groupama Tutela Legale Famiglia",
+    "tipologia": "dip",
+    "compagniaId": "cmp-groupama",
+    "ramoId": "ram-tutela",
+    "prodotto": "Groupama Tutela Legale Famiglia",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-040-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-041",
+    "titolo": "DIP Aggiuntivo — Groupama Tutela Legale Famiglia",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-groupama",
+    "ramoId": "ram-tutela",
+    "prodotto": "Groupama Tutela Legale Famiglia",
+    "numeroPagine": 16,
+    "edizione": { "id": "edz-040-a", "etichetta": "ed. 05/2026", "validaDal": "2026-05-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-042",
+    "titolo": "DIP — Vittoria Viaggi Sicuri",
+    "tipologia": "dip",
+    "compagniaId": "cmp-vittoria",
+    "ramoId": "ram-viaggi",
+    "prodotto": "Vittoria Viaggi Sicuri",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-042-a", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-043",
+    "titolo": "Condizioni di Assicurazione — Vittoria Viaggi Sicuri",
+    "tipologia": "condizioni-assicurazione",
+    "compagniaId": "cmp-vittoria",
+    "ramoId": "ram-viaggi",
+    "prodotto": "Vittoria Viaggi Sicuri",
+    "numeroPagine": 44,
+    "edizione": { "id": "edz-042-a", "etichetta": "ed. 04/2026", "validaDal": "2026-04-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-044",
+    "titolo": "DIP — ITAS Viaggio Protetto",
+    "tipologia": "dip",
+    "compagniaId": "cmp-itas",
+    "ramoId": "ram-viaggi",
+    "prodotto": "ITAS Viaggio Protetto",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-044-a", "etichetta": "ed. 03/2026", "validaDal": "2026-03-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-045",
+    "titolo": "DIP — Generali Valore Futuro",
+    "tipologia": "dip",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-vita",
+    "prodotto": "Generali Valore Futuro",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-045-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-046",
+    "titolo": "DIP Aggiuntivo — Generali Valore Futuro",
+    "tipologia": "dip-aggiuntivo",
+    "compagniaId": "cmp-generali",
+    "ramoId": "ram-vita",
+    "prodotto": "Generali Valore Futuro",
+    "numeroPagine": 28,
+    "edizione": { "id": "edz-045-a", "etichetta": "ed. 06/2026", "validaDal": "2026-06-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-047",
+    "titolo": "DIP — Cattolica Risparmio Sicuro",
+    "tipologia": "dip",
+    "compagniaId": "cmp-cattolica",
+    "ramoId": "ram-vita",
+    "prodotto": "Cattolica Risparmio Sicuro",
+    "numeroPagine": 4,
+    "edizione": { "id": "edz-047-a", "etichetta": "ed. 01/2026", "validaDal": "2026-01-01", "corrente": true },
+    "preferito": false
+  },
+  {
+    "id": "doc-pub-048",
+    "titolo": "Glossario — Cattolica Risparmio Sicuro",
+    "tipologia": "glossario",
+    "compagniaId": "cmp-cattolica",
+    "ramoId": "ram-vita",
+    "prodotto": "Cattolica Risparmio Sicuro",
+    "numeroPagine": 7,
+    "edizione": { "id": "edz-047-a", "etichetta": "ed. 01/2026", "validaDal": "2026-01-01", "corrente": true },
+    "preferito": false
+  }
+]

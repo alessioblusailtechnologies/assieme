@@ -2,9 +2,9 @@
 
 Angular 22 · PrimeNG 22 · AG Grid 36 · Hugeicons · Mockoon
 
-Stato: **Fase 0 completata** (fondamenta). Le schermate sono segnaposto che
-dichiarano la fase in cui verranno costruite. Vedi
-[`../ASSIEME-piano-sviluppo-fe.md`](../ASSIEME-piano-sviluppo-fe.md).
+Stato: **Fase 0** (fondamenta) e **Fase 1** (Archivio Pubblico) completate.
+Le altre schermate sono segnaposto che dichiarano la fase in cui verranno
+costruite. Vedi [`../ASSIEME-piano-sviluppo-fe.md`](../ASSIEME-piano-sviluppo-fe.md).
 
 ---
 
@@ -19,16 +19,16 @@ npm run dev
 
 | Processo | Porta | Cosa fa |
 |---|---|---|
-| `mock` | 3000 | Mockoon: tutte le API REST |
-| `mock:sse` | 3001 | stub SSE: il solo streaming della chat |
+| `mock` | 3000 | Mockoon: dati fissi e regole |
+| `mock:api` | 3001 | stub Node: endpoint con logica e streaming |
 | `start` | 4200 | dev server Angular |
 
 Il front-end chiama sempre `/api/...`. Il proxy (`proxy.conf.json`) smista:
-`/api/stream` → 3001, tutto il resto → 3000. **Il codice applicativo non sa
-chi risponde** — è il punto di tutta l'impostazione: quando arriverà il
-backend cambia l'indirizzo nel proxy e nient'altro.
+`/api/stream` e `/api/documenti` → 3001, tutto il resto → 3000. **Il codice
+applicativo non sa chi risponde** — è il punto di tutta l'impostazione:
+quando arriverà il backend cambia l'indirizzo nel proxy e nient'altro.
 
-Comandi singoli: `npm run mock`, `npm run mock:sse`, `npm start`.
+Comandi singoli: `npm run mock`, `npm run mock:api`, `npm start`.
 
 ```bash
 npm run build   # build di produzione
@@ -47,18 +47,35 @@ lo avvia e vede rotte, header e forme di risposta attese.
 
 - `mocks/assieme.json` — ambiente Mockoon (rotte e regole)
 - `mocks/data/*.json` — fixture
-- `mocks/sse-stub.mjs` — streaming della chat
+- `mocks/api-stub.mjs` — endpoint con logica + streaming della chat
 
-### Perché uno stub separato per lo streaming
+### Dove sta un endpoint, e perché
 
-**Mockoon non supporta SSE** (issue #990 sul repository, bassa priorità).
-Supporta i WebSocket da v9, ma se il backend userà SSE — lo standard di fatto
-per lo streaming dei modelli linguistici — costruire la chat su WebSocket
-significherebbe riscrivere poi la parte più delicata dell'applicazione.
-Quaranta righe di Node tengono il trasporto identico a quello di produzione.
+| | |
+|---|---|
+| **Mockoon** | la risposta è un dato fisso, o dipende solo da regole su header e parametri — sessione, compagnie, rami, simulazione errori |
+| **`api-stub.mjs`** | la risposta richiede logica: filtrare, cercare, ordinare, paginare, mantenere stato — documenti, streaming |
 
-> **Decisione aperta col backend: SSE o WebSocket?** Se WebSocket, lo stub si
-> butta e si usa Mockoon.
+Due cose Mockoon non le sa fare, ed è il motivo dello stub:
+
+1. **Server-Sent Events.** Non supportati (issue #990 sul repository, bassa
+   priorità). Supporta i WebSocket da v9, ma se il backend userà SSE — lo
+   standard di fatto per lo streaming dei modelli — costruire la chat su
+   WebSocket significherebbe riscrivere poi la parte più delicata
+   dell'applicazione.
+2. **Interrogazioni vere.** L'helper `filter` di Mockoon fa solo uguaglianza
+   esatta: niente ricerca per sottostringa, niente filtri opzionali che si
+   ignorano se il parametro manca, niente paginazione. Si potrebbe forzare
+   con `jmesPath` costruendo l'espressione in Handlebars dentro una stringa
+   JSON, ma il risultato sarebbe illeggibile e indebuggabile.
+
+Lo stub onora gli **stessi header** di Mockoon (`X-Mock-Errore`,
+`X-Mock-Latenza`, `X-Assieme-Ruolo`) e la stessa latenza di base: il pannello
+di sviluppo si comporta allo stesso modo su tutte le rotte, altrimenti
+diventa uno strumento di cui non ci si fida.
+
+> **Decisione aperta col backend: SSE o WebSocket?** Se WebSocket, la parte
+> di streaming dello stub si butta e si usa Mockoon.
 
 ### Simulare rete lenta ed errori
 

@@ -8,8 +8,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "mock": "mockoon-cli start --data ../mocks/assieme.json --port 3000 --disable-log-to-file",
-    "mock:sse": "node ../mocks/sse-stub.mjs",
-    "dev": "concurrently -n mock,sse,ng -c blue,magenta,green \"npm:mock\" \"npm:mock:sse\" \"npm:start\"",
+    "mock:api": "node ../mocks/api-stub.mjs",
+    "dev": "concurrently -n mockoon,api,ng -c blue,magenta,green \"npm:mock\" \"npm:mock:api\" \"npm:start\"",
     "lint": "ng lint"
   },
   "private": true,

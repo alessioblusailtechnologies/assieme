@@ -392,9 +392,13 @@ Nessun requisito funzionale, ma tutto il resto poggia qui.
 - Autenticazione finta con selettore di ruolo (operatore / amministratore)
 - Pannello di sviluppo: ruolo, latenza, forzatura errori
 
-### Fase 1 — Archivio Pubblico · ~6 giorni · RF-A-01…A-05, A-07
+### ✅ Fase 1 — Archivio Pubblico — **completata** · RF-A-01…A-05, A-07, A-09
 
-Navigazione per compagnia/ramo/prodotto, ricerca, scheda documento con metadati ed edizioni, badge di sola lettura. Il visualizzatore PDF qui è un segnaposto: quello vero (pdf.js) arriva in Fase 3, dove serve davvero — RF-C-05 chiede l'apertura sul passaggio citato.
+Navigazione per compagnia/ramo/prodotto, ricerca per parola chiave insensibile agli accenti, filtro per tipologia, edizioni multiple con evidenza della corrente, preferiti, paginazione. Scheda documento con metadati completi, altre edizioni dello stesso prodotto e data di ultimo aggiornamento dell'archivio per compagnia.
+
+Il visualizzatore PDF resta un segnaposto: quello vero (pdf.js) arriva in Fase 3, dove serve davvero — RF-C-05 chiede l'apertura **sul passaggio citato**, e un visualizzatore che non sa farlo andrebbe rifatto.
+
+**Deviazione dal piano, da sapere:** l'endpoint dei documenti non sta in Mockoon ma in `mocks/api-stub.mjs`. L'helper `filter` di Mockoon fa solo uguaglianza esatta e non regge ricerca testuale, filtri opzionali e paginazione senza diventare un blob Handlebars dentro una stringa JSON. Lo stub onora gli stessi header di Mockoon, quindi il pannello di sviluppo funziona identico su tutte le rotte. La regola: **Mockoon per i dati fissi e le regole, stub per gli endpoint con logica.**
 
 ### Fase 2 — Archivio Privato e Knowledge Base · ~6 giorni · RF-B-01…B-05, B-09, B-07/B-10 (grafica)
 

@@ -46,15 +46,14 @@ export const routes: Routes = [
         },
       },
       {
+        /* Fase 1 — costruita. Le rotte della sezione stanno nella
+           funzionalità, così l'elenco e la scheda possono condividere lo
+           store dei filtri senza che questo file sappia come. */
         path: 'archivio/pubblico',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Archivio pubblico',
-          fase: 1,
-          descrizione:
-            'Set informativi precaricati e gestiti centralmente: navigazione per compagnia, ramo e prodotto, ricerca sui metadati, edizioni multiple con evidenza di quella corrente. In sola lettura per i tenant.',
-          requisiti: ['RF-A-01 … RF-A-05', 'RF-A-07'],
-        },
+        loadChildren: () =>
+          import('@features/archivio-pubblico/archivio-pubblico.routes').then(
+            (m) => m.ARCHIVIO_PUBBLICO_ROUTES,
+          ),
       },
       {
         path: 'archivio/privato',

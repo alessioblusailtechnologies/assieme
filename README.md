@@ -36,11 +36,16 @@ Dettagli, convenzioni e note sulle licenze: [`fe-angular/README.md`](fe-angular/
 
 ## Stato
 
-**Fase 0 completata** — fondamenta: tema, struttura applicativa, contratto
-dati, server mock, autenticazione simulata con selettore di ruolo. Le
-schermate sono segnaposto che dichiarano la fase in cui verranno costruite.
+**Fase 0 — fondamenta.** Tema, struttura applicativa, contratto dati, server
+mock, autenticazione simulata con selettore di ruolo.
 
-Le fasi successive e le decisioni ancora aperte sono nel piano di sviluppo.
+**Fase 1 — Archivio Pubblico.** Elenco con filtri per compagnia, ramo e
+tipologia, ricerca per parola chiave, edizioni multiple, preferiti,
+paginazione; scheda documento con metadati ed edizioni collegate.
+
+Le altre schermate sono segnaposto che dichiarano la fase in cui verranno
+costruite. Fasi successive e decisioni ancora aperte sono nel piano di
+sviluppo.
 
 ## Licenze di terze parti
 

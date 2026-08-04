@@ -1,0 +1,119 @@
+<a class="indietro" routerLink="/archivio/pubblico">
+  <ui-icon name="espandi-destra" [size]="14" />
+  Archivio pubblico
+</a>
+
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti ad aprire il documento"
+    descrizione="Potrebbe essere stato ritirato dall'archivio, oppure il problema è temporaneo."
+  >
+    <button type="button" class="azione" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      Riprova
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !documento()) {
+  <div class="caricamento">
+    <ui-scheletro [numeroRighe]="2" />
+    <ui-scheletro [numeroRighe]="5" />
+  </div>
+} @else if (documento(); as doc) {
+  <header class="testata">
+    <div class="testata__riga">
+      <h1 class="serif">{{ doc.titolo }}</h1>
+      <ui-badge variante="neutro">sola lettura</ui-badge>
+    </div>
+    <p class="testata__prodotto">{{ doc.compagnia.nome }} — {{ doc.prodotto }}</p>
+  </header>
+
+  <div class="colonne">
+    <div class="principale">
+      <!--
+        Segnaposto del visualizzatore. Il PDF vero arriva in Fase 3 insieme
+        alle citazioni: RF-C-05 chiede di aprirlo posizionato sul passaggio
+        citato, e un visualizzatore che non sa farlo andrebbe rifatto.
+      -->
+      <div class="visualizzatore" role="img" aria-label="Anteprima del documento non disponibile">
+        <ui-icon name="documento" [size]="32" />
+        <p class="visualizzatore__titolo">Anteprima del documento</p>
+        <p class="visualizzatore__nota">
+          Il visualizzatore arriva in Fase 3, insieme alle citazioni: dovrà aprire il documento
+          posizionato sul passaggio citato, non solo mostrarlo.
+        </p>
+        <p class="mono">{{ doc.numeroPagine }} pagine</p>
+      </div>
+    </div>
+
+    <aside class="lato">
+      <section class="riquadro">
+        <p class="mono">Metadati</p>
+        <dl class="metadati">
+          <dt>Compagnia</dt>
+          <dd>{{ doc.compagnia.nome }}</dd>
+
+          <dt>Ramo</dt>
+          <dd>{{ doc.ramo.nome }}</dd>
+
+          <dt>Prodotto</dt>
+          <dd>{{ doc.prodotto }}</dd>
+
+          <dt>Tipologia</dt>
+          <dd>{{ etichettaTipologia(doc.tipologia) }}</dd>
+
+          <dt>Edizione</dt>
+          <dd class="edizione">
+            <span>{{ doc.edizione.etichetta }}</span>
+            @if (doc.edizione.corrente) {
+              <ui-badge variante="corrente">corrente</ui-badge>
+            } @else {
+              <ui-badge variante="storico">superata</ui-badge>
+            }
+          </dd>
+
+          <dt>Validità</dt>
+          <dd>
+            dal {{ doc.edizione.validaDal | date: 'dd/MM/yyyy' }}
+            @if (doc.edizione.validaAl) {
+              al {{ doc.edizione.validaAl | date: 'dd/MM/yyyy' }}
+            }
+          </dd>
+
+          @if (doc.compagnia.ultimoAggiornamento) {
+            <!--
+              RF-A-07: la freschezza dei contenuti è un'informazione che
+              l'intermediario deve poter valutare da sé. Se l'ultimo
+              aggiornamento è di sei mesi fa, sa che vale la pena verificare.
+            -->
+            <dt>Archivio aggiornato al</dt>
+            <dd>{{ doc.compagnia.ultimoAggiornamento | date: 'dd/MM/yyyy' }}</dd>
+          }
+        </dl>
+      </section>
+
+      @if (altreEdizioni().length) {
+        <section class="riquadro">
+          <p class="mono">Altre edizioni</p>
+          <p class="riquadro__spiega">
+            Un contratto in essere è quasi sempre su un'edizione che non è più quella corrente.
+          </p>
+          <ul class="edizioni">
+            @for (ed of altreEdizioni(); track ed.documentoId) {
+              <li>
+                <a [routerLink]="['/archivio/pubblico', ed.documentoId]">
+                  <span>{{ ed.etichetta }}</span>
+                  @if (ed.corrente) {
+                    <ui-badge variante="corrente">corrente</ui-badge>
+                  } @else {
+                    <ui-badge variante="storico">superata</ui-badge>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    </aside>
+  </div>
+}

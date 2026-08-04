@@ -304,72 +304,13 @@
       "responseMode": null,
       "streamingMode": null,
       "streamingInterval": 0
-    },
-    {
-      "uuid": "a551e3e0-0000-4000-8000-000000000040",
-      "type": "http",
-      "documentation": "Documenti dell'Archivio Pubblico. In Fase 0 restituisce l'insieme completo: il filtro vero per compagnia, ramo, tipologia ed edizione arriva in Fase 1 insieme alla schermata che lo usa.",
-      "method": "get",
-      "endpoint": "documenti",
-      "responses": [
-        {
-          "uuid": "a551e3e0-0000-4000-8000-000000000041",
-          "body": "",
-          "latency": 3000,
-          "statusCode": 200,
-          "label": "Rete lenta",
-          "headers": [{ "key": "Content-Type", "value": "application/json" }],
-          "bodyType": "FILE",
-          "filePath": "./data/documenti-pubblici.json",
-          "databucketID": "",
-          "sendFileAsBody": true,
-          "rules": [
-            {
-              "target": "header",
-              "modifier": "X-Mock-Latenza",
-              "value": "3000",
-              "invert": false,
-              "operator": "equals"
-            }
-          ],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": false,
-          "crudKey": "id",
-          "callbacks": []
-        },
-        {
-          "uuid": "a551e3e0-0000-4000-8000-000000000042",
-          "body": "",
-          "latency": 0,
-          "statusCode": 200,
-          "label": "Elenco documenti",
-          "headers": [{ "key": "Content-Type", "value": "application/json" }],
-          "bodyType": "FILE",
-          "filePath": "./data/documenti-pubblici.json",
-          "databucketID": "",
-          "sendFileAsBody": true,
-          "rules": [],
-          "rulesOperator": "OR",
-          "disableTemplating": false,
-          "fallbackTo404": false,
-          "default": true,
-          "crudKey": "id",
-          "callbacks": []
-        }
-      ],
-      "responseMode": null,
-      "streamingMode": null,
-      "streamingInterval": 0
     }
   ],
   "rootChildren": [
     { "type": "route", "uuid": "a551e3e0-0000-4000-8000-0000000000e0" },
     { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000010" },
     { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000020" },
-    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000030" },
-    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000040" }
+    { "type": "route", "uuid": "a551e3e0-0000-4000-8000-000000000030" }
   ],
   "proxyMode": false,
   "proxyHost": "",
