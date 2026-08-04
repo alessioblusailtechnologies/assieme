@@ -106,10 +106,17 @@ export class ElencoDocumenti {
   );
 
   protected readonly opzioniGriglia: GridOptions<DocumentoPubblico> = {
-    /* La griglia cresce con le righe invece di avere un'altezza fissa: con
-       venti righe per pagina non serve scorrimento interno, e due barre di
-       scorrimento annidate sono il modo più rapido per disorientare. */
-    domLayout: 'autoHeight',
+    /*
+     * Nessun `domLayout: 'autoHeight'`: la griglia prende l'altezza dal
+     * contenitore, che a sua volta occupa lo spazio lasciato libero dalla
+     * finestra.
+     *
+     * La differenza pratica sta nelle intestazioni e nella paginazione: con
+     * l'altezza automatica scorreva la pagina intera, e a metà elenco non si
+     * vedeva più a quale colonna appartenesse un valore né come cambiare
+     * pagina. Ora scorrono solo le righe, mentre intestazioni, filtri e
+     * paginazione restano fermi dove l'utente li ha lasciati.
+     */
     rowHeight: 52,
     headerHeight: 40,
     animateRows: false,

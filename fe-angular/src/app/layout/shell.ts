@@ -60,6 +60,17 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
       outline: none;
     }
 
+    /*
+     * L'uscita del router resta nel DOM accanto al componente che ha
+     * caricato: nascondendola si evita che partecipi all'impaginazione. Conta
+     * per le schermate che si misurano sull'altezza della finestra — come
+     * l'elenco dell'archivio, dove la griglia prende lo spazio che avanza e
+     * qualche pixel di troppo la farebbe sbordare.
+     */
+    router-outlet {
+      display: none;
+    }
+
     .salta {
       position: absolute;
       top: var(--sp-2);

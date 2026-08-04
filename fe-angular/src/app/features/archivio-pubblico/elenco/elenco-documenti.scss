@@ -5,10 +5,21 @@
  * far leggere. Qui il contenuto è una tabella di lavoro: ogni pixel in più è
  * una colonna che si legge senza troncamenti, e su uno schermo largo il
  * margine vuoto ai lati è spazio sottratto al confronto fra documenti.
+ *
+ * Altezza piena e colonna flessibile: testata, filtri e paginazione prendono
+ * lo spazio che serve loro, la griglia si prende tutto il resto. È così che
+ * l'altezza della tabella dipende dallo schermo senza che nessuno calcoli
+ * pixel a mano.
  */
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
   padding: var(--sp-6);
+  /* Senza, un elemento flex non scende mai sotto la misura del proprio
+     contenuto e la griglia spingerebbe fuori la paginazione. */
+  min-height: 0;
 }
 
 /* ---------- Testata ---------- */
@@ -34,6 +45,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-3);
+  /* Testata, filtri e paginazione non si comprimono: a cedere è la griglia,
+     che è l'unica a poter scorrere al proprio interno. */
+  flex: none;
 }
 
 /* Stacco verticale fra il percorso e il resto: separa la navigazione
@@ -81,10 +95,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
-  margin-top: var(--sp-6);
   padding: var(--sp-4);
   background: var(--c-surface);
   border: 1px solid var(--c-line);
+  flex: none;
 }
 
 /* La ricerca ha la precedenza sugli altri filtri: è il gesto più frequente
@@ -118,21 +132,45 @@
 /* ---------- Scheletri ---------- */
 
 .scheletri {
-  margin-top: var(--sp-4);
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-4);
   background: var(--c-surface);
   border: 1px solid var(--c-line);
+  /* Occupa lo stesso spazio che occuperà la griglia: quando i dati
+     arrivano, la pagina non si riassesta sotto gli occhi. */
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------- Stati vuoto ed errore ---------- */
+
+/* Centrati nello spazio della griglia invece che appoggiati in alto: una
+   pagina quasi vuota con un messaggio incollato sotto i filtri sembra
+   interrotta a metà. */
+ui-stato-vuoto {
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
 }
 
 /* ---------- Griglia ---------- */
 
+/*
+ * L'altezza arriva da qui, e da nient'altro.
+ *
+ * `flex: 1` le assegna lo spazio che avanza nella colonna; `min-height: 0`
+ * le permette di rimpicciolirsi su schermi bassi invece di spingere la
+ * paginazione fuori dalla finestra. Sotto una certa misura si ferma: una
+ * griglia alta due righe non è consultabile, meglio far scorrere la pagina.
+ */
 .griglia {
   display: block;
   width: 100%;
-  margin-top: var(--sp-4);
+  flex: 1;
+  min-height: 240px;
 }
 
 /* Le colonne numeriche a destra con cifre a larghezza fissa: incolonnate,
@@ -141,6 +179,14 @@
   justify-content: flex-end;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* La paginazione resta sotto la griglia e non scorre con le righe: cambiare
+   pagina è il gesto che si fa dopo aver scorso fino in fondo, e doverlo
+   cercare risalendo è il modo più rapido per far sembrare lenta
+   un'applicazione. */
+p-paginator {
+  flex: none;
 }
 
 @media (max-width: 900px) {
