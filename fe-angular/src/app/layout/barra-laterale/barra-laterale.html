@@ -1,8 +1,30 @@
 <div class="marchio">
-  <a class="marchio__link" routerLink="/chat" [attr.aria-label]="'ASSIEME — vai alla chat'">
-    <span class="marchio__segno" aria-hidden="true">A</span>
+  <a class="marchio__link" routerLink="/chat" aria-label="Assieme — vai alla chat">
+    <!--
+      Il segno è un SVG e non una lettera in una scatola CSS.
+      Centrare otticamente una maiuscola con `place-items: center` non
+      funziona: la riga di testo riserva spazio ai discendenti che la "A" non
+      usa, e la lettera risulta alta di un paio di pixel. `dominant-baseline`
+      centra sul glifo, non sulla riga, e il risultato non dipende dalle
+      metriche del font.
+    -->
+    <svg class="marchio__segno" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+      <rect width="28" height="28" fill="var(--c-accent)" />
+      <text
+        x="14"
+        y="14"
+        text-anchor="middle"
+        dominant-baseline="central"
+        font-family="Newsreader, Georgia, serif"
+        font-size="18"
+        fill="#ffffff"
+      >
+        A
+      </text>
+    </svg>
+
     @if (!compressa()) {
-      <span class="marchio__nome serif">ASSIEME</span>
+      <span class="marchio__nome serif">Assieme</span>
     }
   </a>
 </div>

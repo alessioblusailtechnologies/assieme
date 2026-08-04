@@ -23,6 +23,11 @@
 
 /* ---------- Marchio ---------- */
 
+/*
+ * Il marchio occupa esattamente l'altezza della barra superiore, così il
+ * filetto sotto di esso e quello sotto la barra cadono sulla stessa
+ * orizzontale: è la prima cosa che si nota se non combacia.
+ */
 .marchio {
   height: var(--topbar-h);
   display: flex;
@@ -35,7 +40,7 @@
 .marchio__link {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   color: var(--c-text-oninverse);
   text-decoration: none;
   min-width: 0;
@@ -45,26 +50,29 @@
   text-decoration: none;
 }
 
-/* Quadrato pieno con l'iniziale: l'unico elemento di marchio che regge
-   anche a barra compressa, dove il nome per esteso non ci sta. */
+/* Quadrato pieno con l'iniziale: l'unico elemento di marchio che regge anche
+   a barra compressa, dove il nome per esteso non ci sta. */
 .marchio__segno {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
+  display: block;
+  width: 28px;
+  height: 28px;
   flex: none;
-  background: var(--c-accent);
-  color: var(--c-text-oninverse);
-  font-family: var(--f-serif);
-  font-size: 15px;
-  line-height: 1;
 }
 
 .marchio__nome {
-  font-size: 15px;
-  letter-spacing: var(--ls-mono);
+  /* Non maiuscolo: il nome del prodotto è "Assieme". La spaziatura fa il
+     lavoro che farebbero le maiuscole, senza gridare. */
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.06em;
   white-space: nowrap;
   overflow: hidden;
+}
+
+/* A barra compressa il segno resta centrato nella colonna stretta. */
+:host(.is-compressa) .marchio {
+  justify-content: center;
+  padding-inline: 0;
 }
 
 /* ---------- Navigazione ---------- */

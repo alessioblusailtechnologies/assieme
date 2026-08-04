@@ -1,7 +1,4 @@
-<a class="indietro" routerLink="/archivio/pubblico">
-  <ui-icon name="espandi-destra" [size]="14" />
-  Archivio pubblico
-</a>
+<ui-briciole [voci]="briciole()" />
 
 @if (errore()) {
   <ui-stato-vuoto
@@ -24,6 +21,11 @@
     <div class="testata__riga">
       <h1 class="serif">{{ doc.titolo }}</h1>
       <ui-badge variante="neutro">sola lettura</ui-badge>
+      @if (doc.edizione.corrente) {
+        <ui-badge variante="corrente">edizione corrente</ui-badge>
+      } @else {
+        <ui-badge variante="storico">edizione superata</ui-badge>
+      }
     </div>
     <p class="testata__prodotto">{{ doc.compagnia.nome }} — {{ doc.prodotto }}</p>
   </header>

@@ -20,6 +20,7 @@ import { Select } from 'primeng/select';
 
 import { ArchivioPubblicoStore } from '../archivio-pubblico-store';
 import { Badge } from '@shared/ui/badge/badge';
+import { Briciola, Briciole } from '@shared/ui/briciole/briciole';
 import { CellaEdizione } from './celle/cella-edizione';
 import { CellaPreferito, ParametriCellaPreferito } from './celle/cella-preferito';
 import { CellaTipologia } from './celle/cella-tipologia';
@@ -45,6 +46,7 @@ import { environment } from '@env';
   imports: [
     AgGridAngular,
     Badge,
+    Briciole,
     Checkbox,
     FormsModule,
     IconField,
@@ -64,6 +66,11 @@ export class ElencoDocumenti {
   protected readonly store = inject(ArchivioPubblicoStore);
   protected readonly tipologie = TIPOLOGIE_PUBBLICHE;
   protected readonly tema = assiemeGridTheme;
+
+  protected readonly briciole: Briciola[] = [
+    { etichetta: 'Archivi' },
+    { etichetta: 'Pubblico' },
+  ];
 
   /**
    * Moduli passati alla singola griglia invece che registrati globalmente.

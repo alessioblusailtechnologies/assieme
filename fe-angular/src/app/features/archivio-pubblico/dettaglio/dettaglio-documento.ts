@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 
 import { Badge } from '@shared/ui/badge/badge';
+import { Briciola, Briciole } from '@shared/ui/briciole/briciole';
 import { DettaglioDocumento as Dettaglio, DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -22,7 +23,7 @@ import { etichettaTipologia } from '@shared/testi/etichette';
  */
 @Component({
   selector: 'app-dettaglio-documento',
-  imports: [Badge, DatePipe, Icona, RouterLink, Scheletro, StatoVuoto],
+  imports: [Badge, Briciole, DatePipe, Icona, RouterLink, Scheletro, StatoVuoto],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dettaglio-documento.html',
   styleUrl: './dettaglio-documento.scss',
@@ -44,6 +45,18 @@ export class DettaglioDocumento {
   protected readonly errore = this.risorsa.error;
 
   protected readonly etichettaTipologia = etichettaTipologia;
+
+  /**
+   * L'ultima briciola porta il titolo del documento, non un'etichetta fissa:
+   * arrivando da un collegamento condiviso è la sola cosa che dice dove si è
+   * finiti. Finché il documento non è caricato resta un segnaposto neutro,
+   * per non far saltare la riga quando arriva.
+   */
+  protected readonly briciole = computed<Briciola[]>(() => [
+    { etichetta: 'Archivi' },
+    { etichetta: 'Pubblico', percorso: '/archivio/pubblico' },
+    { etichetta: this.documento()?.titolo ?? 'Documento' },
+  ]);
 
   /** Le altre edizioni dello stesso documento, esclusa quella aperta. */
   protected readonly altreEdizioni = computed(

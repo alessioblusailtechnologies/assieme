@@ -122,9 +122,19 @@ describe('ElencoDocumenti', () => {
     expect(testo).toContain('superata');
   });
 
-  it('mostra il conteggio dei risultati', async () => {
+  it('mostra il conteggio dei risultati nella testata', async () => {
     const dom = (await monta()).nativeElement as HTMLElement;
-    expect(dom.querySelector('.conteggio')?.textContent).toContain('2 documenti');
+    expect(dom.querySelector('.testata__conteggio')?.textContent).toContain('2 documenti');
+  });
+
+  it('mostra il percorso di navigazione', async () => {
+    const dom = (await monta()).nativeElement as HTMLElement;
+
+    const briciole = dom.querySelector('ui-briciole');
+    expect(briciole?.textContent).toContain('Archivi');
+    expect(briciole?.textContent).toContain('Pubblico');
+    /* L'ultima voce è la posizione corrente, non un collegamento. */
+    expect(briciole?.querySelector('[aria-current="page"]')?.textContent?.trim()).toBe('Pubblico');
   });
 
   it('non disegna la griglia quando non ci sono risultati', async () => {

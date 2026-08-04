@@ -6,39 +6,23 @@
   padding: var(--sp-6);
 }
 
-.indietro {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono);
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-  color: var(--c-text-3);
-  text-decoration: none;
-}
-
-.indietro:hover {
-  color: var(--c-accent);
-  text-decoration: none;
-}
-
-/* La freccia punta a destra nel registro delle icone: qui la giriamo invece
-   di aggiungere un secondo disegno per la stessa cosa. */
-.indietro ui-icon {
-  transform: rotate(180deg);
-}
-
 /* ---------- Testata ---------- */
 
 .testata {
-  margin: var(--sp-4) 0 var(--sp-6);
+  margin: var(--sp-3) 0 var(--sp-6);
 }
 
 .testata__riga {
   display: flex;
-  align-items: flex-start;
+  align-items: baseline;
+  flex-wrap: wrap;
   gap: var(--sp-3);
+}
+
+/* I badge tornano alla mezzeria del titolo: allineati alla linea di base
+   sembrerebbero appesi. */
+.testata__riga ui-badge {
+  align-self: center;
 }
 
 .testata__riga h1 {

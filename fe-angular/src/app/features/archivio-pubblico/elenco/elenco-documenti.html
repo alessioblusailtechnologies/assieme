@@ -1,15 +1,32 @@
 <header class="testata">
-  <div class="testata__titolo">
+  <ui-briciole [voci]="briciole" />
+
+  <div class="testata__riga">
     <h1 class="serif">Archivio pubblico</h1>
+
     <!--
       RF-A-05: l'archivio è gestito centralmente e non si può modificare.
-      Detto subito, evita che qualcuno cerchi il pulsante di caricamento.
+      Detto qui, evita che qualcuno cerchi il pulsante di caricamento.
     -->
     <ui-badge variante="neutro">sola lettura</ui-badge>
+
+    <!--
+      Il conteggio sta nella testata e non sopra la griglia: è la risposta
+      alla domanda che l'utente si sta facendo mentre filtra, e va letta
+      nello stesso colpo d'occhio del titolo. Resta una regione viva perché
+      cambia senza che la pagina si ricarichi.
+    -->
+    <span class="testata__conteggio mono" role="status" aria-live="polite">
+      @if (store.inCaricamento()) {
+        ricerca in corso…
+      } @else if (!store.errore()) {
+        {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+      }
+    </span>
   </div>
+
   <p class="testata__spiega">
-    Set informativi e documenti pubblici delle compagnie, precaricati e mantenuti aggiornati da
-    ASSIEME. Disponibili fin dal primo accesso, senza nulla da caricare.
+    Documenti pubblici delle compagnie, già caricati e mantenuti da Assieme.
   </p>
 </header>
 
@@ -82,16 +99,6 @@
     </button>
   }
 </section>
-
-<div class="conteggio" role="status" aria-live="polite">
-  @if (store.inCaricamento()) {
-    <span class="mono">ricerca in corso…</span>
-  } @else if (!store.errore()) {
-    <span class="mono">
-      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
-    </span>
-  }
-</div>
 
 @if (store.errore()) {
   <ui-stato-vuoto

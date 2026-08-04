@@ -19,13 +19,13 @@ export const ARCHIVIO_PUBBLICO_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () => import('./elenco/elenco-documenti').then((m) => m.ElencoDocumenti),
-        title: 'Archivio pubblico — ASSIEME',
+        title: 'Archivio pubblico — Assieme',
       },
       {
         path: ':id',
         loadComponent: () =>
           import('./dettaglio/dettaglio-documento').then((m) => m.DettaglioDocumento),
-        title: 'Documento — ASSIEME',
+        title: 'Documento — Assieme',
       },
     ],
   },
