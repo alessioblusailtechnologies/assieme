@@ -103,33 +103,9 @@ describe('ArchivioPubblicoStore', () => {
 
   it('espone elenco vuoto e nessun errore finché la risposta non arriva', () => {
     /* Il template legge questi segnali prima di qualsiasi risposta: se
-       `prodotti()` sollevasse un'eccezione qui, la schermata resterebbe
+       `documenti()` sollevasse un'eccezione qui, la schermata resterebbe
        bianca a ogni caricamento. */
-    expect(store.prodotti()).toEqual([]);
+    expect(store.documenti()).toEqual([]);
     expect(store.totale()).toBe(0);
-  });
-
-  it('apre e richiude un prodotto', () => {
-    expect(store.espanso('prd-1')).toBe(false);
-
-    store.alternaEspansione('prd-1');
-    expect(store.espanso('prd-1')).toBe(true);
-
-    store.alternaEspansione('prd-1');
-    expect(store.espanso('prd-1')).toBe(false);
-  });
-
-  it('tiene aperti più prodotti insieme', () => {
-    store.alternaEspansione('prd-1');
-    store.alternaEspansione('prd-2');
-
-    /* Confrontare due set informativi è il gesto per cui esiste questa
-       schermata: aprire il secondo non deve chiudere il primo. */
-    expect(store.espanso('prd-1')).toBe(true);
-    expect(store.espanso('prd-2')).toBe(true);
-
-    store.chiudiTutto();
-    expect(store.espanso('prd-1')).toBe(false);
-    expect(store.espanso('prd-2')).toBe(false);
   });
 });

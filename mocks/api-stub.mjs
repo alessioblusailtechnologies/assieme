@@ -76,132 +76,6 @@ const DOCUMENTI = leggi('documenti-pubblici.json').map((d) => {
 });
 
 // ---------------------------------------------------------------------------
-// Prodotti
-// ---------------------------------------------------------------------------
-
-/**
- * L'archivio si consulta per prodotto, non per documento.
- *
- * Un set informativo è fatto di quattro pezzi — DIP, DIP Aggiuntivo,
- * Condizioni, Glossario — che descrivono lo stesso prodotto e si leggono
- * insieme. Elencarli come righe separate significa mostrare quarantotto voci
- * dove l'intermediario ne ha in mente venti, e ripetere quattro volte
- * compagnia e ramo per dire ogni volta la stessa cosa.
- *
- * Il prodotto è l'unità con cui si ragiona: "la polizza auto di Generali",
- * non "il DIP Aggiuntivo della polizza auto di Generali". I documenti
- * restano, un livello sotto.
- */
-const chiaveProdotto = (d) =>
-  `prd-${d.compagnia.id}-${d.prodotto
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')}`;
-
-/** Preferiti a livello di prodotto, in memoria finché vive il server. */
-const PREFERITI = new Set();
-
-const PRODOTTI = (() => {
-  const per = new Map();
-
-  for (const documento of DOCUMENTI) {
-    const id = chiaveProdotto(documento);
-    if (!per.has(id)) {
-      per.set(id, {
-        id,
-        nome: documento.prodotto,
-        compagnia: documento.compagnia,
-        ramo: documento.ramo,
-        documenti: [],
-      });
-    }
-    per.get(id).documenti.push(documento);
-  }
-
-  /* I preferiti di partenza vengono dalle fixture: un prodotto nasce
-     preferito se lo era almeno uno dei suoi documenti. */
-  for (const prodotto of per.values()) {
-    if (prodotto.documenti.some((d) => d.preferito)) PREFERITI.add(prodotto.id);
-  }
-
-  return [...per.values()];
-})();
-
-/** Vista di un prodotto secondo i filtri correnti. */
-function componiProdotto(prodotto, documenti) {
-  const edizioni = new Map();
-  for (const d of prodotto.documenti) edizioni.set(d.edizione.id, d.edizione);
-  const corrente = [...edizioni.values()].find((e) => e.corrente);
-
-  return {
-    id: prodotto.id,
-    nome: prodotto.nome,
-    compagnia: prodotto.compagnia,
-    ramo: prodotto.ramo,
-    edizioneCorrente: corrente,
-    numeroEdizioni: edizioni.size,
-    numeroDocumenti: documenti.length,
-    preferito: PREFERITI.has(prodotto.id),
-    documenti: [...documenti].sort(confrontaDocumenti),
-  };
-}
-
-function elencoProdotti(url) {
-  const p = url.searchParams;
-  const vero = (nome) => p.get(nome) === 'true';
-
-  let risultati = [];
-
-  for (const prodotto of PRODOTTI) {
-    if (p.get('compagniaId') && prodotto.compagnia.id !== p.get('compagniaId')) continue;
-    if (p.get('ramoId') && prodotto.ramo.id !== p.get('ramoId')) continue;
-    if (vero('soloPreferiti') && !PREFERITI.has(prodotto.id)) continue;
-
-    /*
-     * I filtri sui documenti restringono ciò che si vede aprendo il
-     * prodotto, e fanno sparire il prodotto se non gli resta nulla. È la
-     * differenza fra "prodotti che hanno Condizioni di Assicurazione" e
-     * "tutti i prodotti, alcuni dei quali senza niente da mostrare".
-     */
-    let documenti = prodotto.documenti;
-    if (p.get('tipologia')) documenti = documenti.filter((d) => d.tipologia === p.get('tipologia'));
-    if (vero('soloCorrenti')) documenti = documenti.filter((d) => d.edizione.corrente);
-    if (!documenti.length) continue;
-
-    /* La ricerca guarda il prodotto e i suoi documenti: cercando il titolo
-       di un documento si trova il prodotto che lo contiene. */
-    if (p.get('q')) {
-      const testo = [prodotto.nome, prodotto.compagnia.nome, prodotto.ramo.nome].join(' ');
-      const trovato =
-        corrispondeTesto(testo, p.get('q')) ||
-        documenti.some((d) => corrisponde(d, p.get('q')));
-      if (!trovato) continue;
-    }
-
-    risultati.push(componiProdotto(prodotto, documenti));
-  }
-
-  risultati.sort(
-    (a, b) =>
-      a.compagnia.nome.localeCompare(b.compagnia.nome, 'it') ||
-      a.nome.localeCompare(b.nome, 'it'),
-  );
-
-  const perPagina = Math.min(Math.max(Number(p.get('perPagina')) || 20, 1), 100);
-  const pagina = Math.max(Number(p.get('pagina')) || 1, 1);
-  const da = (pagina - 1) * perPagina;
-
-  return {
-    elementi: risultati.slice(da, da + perPagina),
-    totale: risultati.length,
-    pagina,
-    perPagina,
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Ordinamento
 // ---------------------------------------------------------------------------
 
@@ -520,28 +394,7 @@ const server = createServer(async (req, res) => {
 
   if (await simulazione(req, res)) return;
 
-  // GET /api/prodotti — l'elenco con cui si consulta l'archivio
-  if (percorso === '/api/prodotti' && req.method === 'GET') {
-    inviaJson(res, 200, elencoProdotti(url));
-    return;
-  }
-
-  /* RF-A-09 — preferiti, a livello di prodotto: si mette da parte "la
-     polizza auto di Generali", non il suo DIP Aggiuntivo. */
-  const preferitoProdotto = percorso.match(/^\/api\/prodotti\/([^/]+)\/preferito$/);
-  if (preferitoProdotto && (req.method === 'PUT' || req.method === 'DELETE')) {
-    const prodotto = PRODOTTI.find((p) => p.id === preferitoProdotto[1]);
-    if (!prodotto) {
-      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Prodotto inesistente.' });
-      return;
-    }
-    if (req.method === 'PUT') PREFERITI.add(prodotto.id);
-    else PREFERITI.delete(prodotto.id);
-    inviaJson(res, 200, componiProdotto(prodotto, prodotto.documenti));
-    return;
-  }
-
-  // GET /api/documenti — resta per la referenziazione in chat (Fase 3)
+  // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
     return;
@@ -594,6 +447,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
-  console.log(`[api-stub] ${PRODOTTI.length} prodotti, ${DOCUMENTI.length} documenti pubblici`);
-  console.log('[api-stub] gestisce: /api/prodotti, /api/documenti, /api/stream');
+  console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
+  console.log('[api-stub] gestisce: /api/documenti, /api/stream');
 });

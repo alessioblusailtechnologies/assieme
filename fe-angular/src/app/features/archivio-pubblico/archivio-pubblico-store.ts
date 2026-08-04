@@ -3,7 +3,7 @@ import { httpResource } from '@angular/common/http';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
-import { Compagnia, FiltriDocumenti, Id, Paginato, Prodotto, Ramo, TipologiaDocumento } from '@core/models';
+import { Compagnia, Documento, FiltriDocumenti, Id, Paginato, Ramo, TipologiaDocumento } from '@core/models';
 import { DocumentiApi } from '@core/api/documenti-api';
 
 /**
@@ -95,8 +95,8 @@ export class ArchivioPubblicoStore {
 
   // --- Risorse ------------------------------------------------------------
 
-  private readonly risorsaElenco = httpResource<Paginato<Prodotto>>(() =>
-    this.api.urlProdotti(this.filtri()),
+  private readonly risorsaElenco = httpResource<Paginato<Documento>>(() =>
+    this.api.urlElenco(this.filtri()),
   );
   private readonly risorsaCompagnie = httpResource<Compagnia[]>(() => this.api.urlCompagnie());
   private readonly risorsaRami = httpResource<Ramo[]>(() => this.api.urlRami());
@@ -107,7 +107,7 @@ export class ArchivioPubblicoStore {
    * modifiche e lascerebbe una pagina bianca proprio quando qualcosa è già
    * andato storto. `hasValue()` è falso sia in caricamento sia in errore.
    */
-  readonly prodotti = computed(() =>
+  readonly documenti = computed(() =>
     this.risorsaElenco.hasValue() ? this.risorsaElenco.value().elementi : [],
   );
   readonly totale = computed(() =>
@@ -140,41 +140,13 @@ export class ArchivioPubblicoStore {
    * Marca o smarca un preferito e ricarica l'elenco.
    *
    * Non aggiorniamo la riga localmente prima della risposta: con il filtro
-   * "solo preferiti" attivo, smarcare un prodotto deve farlo sparire
+   * "solo preferiti" attivo, smarcare un documento deve farlo sparire
    * dall'elenco, e ricalcolarlo a mano qui sarebbe riscrivere sul client la
    * logica che il server ha già.
    */
-  cambiaPreferito(prodotto: Prodotto, preferito: boolean): void {
-    this.api.impostaPreferitoProdotto(prodotto.id, preferito).subscribe({
+  cambiaPreferito(documento: Documento, preferito: boolean): void {
+    this.api.impostaPreferito(documento.id, preferito).subscribe({
       next: () => this.risorsaElenco.reload(),
     });
-  }
-
-  // --- Espansione ---------------------------------------------------------
-
-  private readonly idEspansi = signal<ReadonlySet<Id>>(new Set());
-
-  readonly espansi = this.idEspansi.asReadonly();
-
-  espanso(id: Id): boolean {
-    return this.idEspansi().has(id);
-  }
-
-  /**
-   * Apre o chiude il prodotto.
-   *
-   * Lo stato vive nello store e non nella griglia: cambiando pagina o
-   * filtro AG Grid ricrea le righe, e un'espansione appesa al nodo si
-   * perderebbe. Qui invece un prodotto riaperto dopo un giro di filtri lo
-   * si ritrova com'era.
-   */
-  alternaEspansione(id: Id): void {
-    const attuali = new Set(this.idEspansi());
-    if (!attuali.delete(id)) attuali.add(id);
-    this.idEspansi.set(attuali);
-  }
-
-  chiudiTutto(): void {
-    this.idEspansi.set(new Set());
   }
 }

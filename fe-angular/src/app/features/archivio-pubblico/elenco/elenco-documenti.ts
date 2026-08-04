@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, LOCALE_ID, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { formatDate } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellStyleModule,
@@ -22,38 +23,28 @@ import { Paginator, PaginatorState } from 'primeng/paginator';
 import { Select } from 'primeng/select';
 
 import { ArchivioPubblicoStore } from '../archivio-pubblico-store';
+import { CellaAzione } from './celle/cella-azione';
 import { CellaEdizione } from './celle/cella-edizione';
-import { CellaEspansione, ParametriCellaEspansione } from './celle/cella-espansione';
-import { CellaPreferito, ParametriCellaPreferito } from './celle/cella-preferito';
-import { CellaProdotto } from './celle/cella-prodotto';
+import { CellaTipologia } from './celle/cella-tipologia';
+import { DocumentoPubblico } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
-import {
-  ALTEZZA_INTESTAZIONE_DOCUMENTI,
-  ALTEZZA_RIGA_DOCUMENTO,
-  RigaDocumenti,
-} from './celle/riga-documenti';
-import { RigaArchivio, idRiga } from './celle/riga-archivio';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { TIPOLOGIE_PUBBLICHE } from '@shared/testi/etichette';
 import { assiemeGridTheme } from '@theme/ag-grid-theme';
 import { environment } from '@env';
 
-/** Altezza di una riga di prodotto. */
-const ALTEZZA_PRODOTTO = 52;
-
 /**
- * Archivio Pubblico — elenco per prodotto.
+ * Archivio Pubblico — elenco dei documenti.
  *
- * RF-A-03 chiede la navigazione «per compagnia, ramo e **prodotto**»: la
- * griglia elenca prodotti, e ogni riga si apre sui documenti del suo set
- * informativo. Elencare i documenti uno per uno mostrerebbe quarantotto voci
- * dove l'intermediario ne ha in mente venti, ripetendo quattro volte
- * compagnia e ramo per dire ogni volta la stessa cosa.
+ * Una riga per documento: prodotto, compagnia, ramo, tipologia, edizione e
+ * data di decorrenza, con l'azione per aprirne la scheda. La tipologia in
+ * colonna è ciò che distingue le righe dello stesso prodotto — DIP, DIP
+ * Aggiuntivo, Condizioni, Glossario — quindi il titolo per esteso non serve
+ * e lascia spazio alle colonne che si confrontano davvero.
  *
- * L'espansione è fatta con le **righe a tutta larghezza**, non col
- * master/detail: quello è AG Grid Enterprise, queste sono Community e
- * bastano. Vedi `riga-archivio.ts`.
+ * RF-A-03: navigazione per compagnia, ramo e prodotto, e ricerca per parola
+ * chiave su titolo e metadati. RF-A-05: in sola lettura per i tenant.
  */
 @Component({
   selector: 'app-elenco-documenti',
@@ -78,6 +69,8 @@ const ALTEZZA_PRODOTTO = 52;
 })
 export class ElencoDocumenti {
   protected readonly store = inject(ArchivioPubblicoStore);
+  private readonly locale = inject(LOCALE_ID);
+
   protected readonly tipologie = TIPOLOGIE_PUBBLICHE;
   protected readonly tema = assiemeGridTheme;
 
@@ -114,22 +107,9 @@ export class ElencoDocumenti {
     ...(environment.production ? [] : [ValidationModule]),
   ];
 
-  /**
-   * Lista piatta: ogni prodotto, e subito dopo — se aperto — la riga con i
-   * suoi documenti. La gerarchia sta qui, non nella griglia.
-   */
-  protected readonly righe = computed<RigaArchivio[]>(() =>
-    this.store.prodotti().flatMap((prodotto) =>
-      this.store.espanso(prodotto.id)
-        ? [
-            { tipo: 'prodotto' as const, prodotto },
-            { tipo: 'documenti' as const, prodotto },
-          ]
-        : [{ tipo: 'prodotto' as const, prodotto }],
-    ),
-  );
+  protected readonly documenti = computed(() => this.store.documenti() as DocumentoPubblico[]);
 
-  protected readonly opzioniGriglia: GridOptions<RigaArchivio> = {
+  protected readonly opzioniGriglia: GridOptions<DocumentoPubblico> = {
     /*
      * Nessun `domLayout: 'autoHeight'`: la griglia prende l'altezza dal
      * contenitore, che a sua volta occupa lo spazio lasciato libero dalla
@@ -141,77 +121,75 @@ export class ElencoDocumenti {
      * pagina. Ora scorrono solo le righe, mentre intestazioni, filtri e
      * paginazione restano fermi dove l'utente li ha lasciati.
      */
+    rowHeight: 46,
     headerHeight: 40,
     animateRows: false,
     suppressCellFocus: true,
-    localeText: { noRowsToShow: 'Nessun prodotto' },
-
-    /* Le righe dei documenti non hanno colonne: occupano tutta la larghezza
-       e il loro contenuto lo decide un componente nostro. */
-    isFullWidthRow: (p) => p.rowNode.data?.tipo === 'documenti',
-    fullWidthCellRenderer: RigaDocumenti,
-
-    /* L'altezza della riga espansa dipende da quanti documenti mostra:
-       calcolarla qui evita sia il taglio sia lo spazio vuoto in fondo. */
-    getRowHeight: (p) =>
-      p.data?.tipo === 'documenti'
-        ? ALTEZZA_INTESTAZIONE_DOCUMENTI + p.data.prodotto.documenti.length * ALTEZZA_RIGA_DOCUMENTO
-        : ALTEZZA_PRODOTTO,
+    localeText: { noRowsToShow: 'Nessun documento' },
   };
 
-  protected readonly colonne: ColDef<RigaArchivio>[] = [
-    {
-      colId: 'espansione',
-      headerName: '',
-      cellRenderer: CellaEspansione,
-      cellRendererParams: {
-        espanso: (id) => this.store.espanso(id),
-        alterna: (id) => this.store.alternaEspansione(id),
-      } satisfies ParametriCellaEspansione,
-      width: 44,
-      minWidth: 44,
-      maxWidth: 44,
-      resizable: false,
-    },
-    {
-      colId: 'preferito',
-      headerName: '',
-      cellRenderer: CellaPreferito,
-      cellRendererParams: {
-        alterna: (prodotto, preferito) => this.store.cambiaPreferito(prodotto, preferito),
-      } satisfies ParametriCellaPreferito,
-      width: 48,
-      minWidth: 48,
-      maxWidth: 48,
-      resizable: false,
-    },
+  protected readonly colonne: ColDef<DocumentoPubblico>[] = [
     {
       colId: 'prodotto',
       headerName: 'Prodotto',
-      cellRenderer: CellaProdotto,
+      valueGetter: (p) => p.data?.prodotto,
       flex: 3,
-      minWidth: 280,
+      minWidth: 240,
+      cellClass: 'cella-primaria',
     },
     {
       colId: 'compagnia',
       headerName: 'Compagnia',
-      valueGetter: (p) => p.data?.prodotto.compagnia.nome,
+      valueGetter: (p) => p.data?.compagnia.nome,
       flex: 2,
       minWidth: 170,
     },
     {
       colId: 'ramo',
       headerName: 'Ramo',
-      valueGetter: (p) => p.data?.prodotto.ramo.nome,
+      valueGetter: (p) => p.data?.ramo.nome,
       flex: 2,
       minWidth: 150,
     },
     {
+      colId: 'tipologia',
+      headerName: 'Tipologia',
+      cellRenderer: CellaTipologia,
+      width: 160,
+      minWidth: 140,
+    },
+    {
       colId: 'edizione',
-      headerName: 'Edizione corrente',
+      headerName: 'Edizione',
       cellRenderer: CellaEdizione,
-      width: 210,
-      minWidth: 190,
+      width: 200,
+      minWidth: 180,
+    },
+    {
+      colId: 'decorrenza',
+      headerName: 'In vigore dal',
+      /*
+       * Data formattata nel `valueGetter` e non in un renderer: una cella di
+       * solo testo non ha bisogno di un componente Angular, e venti
+       * componenti in meno per pagina si sentono allo scorrimento.
+       */
+      valueGetter: (p) =>
+        p.data ? formatDate(p.data.edizione.validaDal, 'dd/MM/yyyy', this.locale) : '',
+      width: 130,
+      minWidth: 120,
+      cellClass: 'cella-numerica',
+    },
+    {
+      colId: 'azione',
+      headerName: '',
+      cellRenderer: CellaAzione,
+      width: 110,
+      minWidth: 110,
+      maxWidth: 110,
+      resizable: false,
+      /* Resta visibile anche scorrendo in orizzontale: l'azione della riga
+         non deve essere la cosa che si perde per prima. */
+      pinned: 'right',
     },
   ];
 
@@ -230,12 +208,9 @@ export class ElencoDocumenti {
     suppressMovable: true,
   };
 
-  protected readonly chiaveRiga = (p: { data: RigaArchivio }) => idRiga(p.data);
+  protected readonly chiaveRiga = (p: { data: DocumentoPubblico }) => p.data.id;
 
   protected cambiaPagina(evento: PaginatorState): void {
     this.store.pagina.set((evento.page ?? 0) + 1);
-    /* Cambiando pagina le espansioni aperte non hanno più senso: si
-       riferiscono a prodotti che non sono più a schermo. */
-    this.store.chiudiTutto();
   }
 }

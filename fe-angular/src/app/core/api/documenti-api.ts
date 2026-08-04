@@ -10,7 +10,6 @@ import {
   Edizione,
   FiltriDocumenti,
   Id,
-  Prodotto,
   Ramo,
 } from '@core/models';
 
@@ -49,7 +48,6 @@ export interface DettaglioDocumento extends DocumentoPubblico {
 export class DocumentiApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiBase}/documenti`;
-  private readonly prodotti = `${environment.apiBase}/prodotti`;
 
   /**
    * I parametri vuoti vengono omessi invece che inviati vuoti: l'URL resta
@@ -72,19 +70,6 @@ export class DocumentiApi {
     return query ? `${this.base}?${query}` : this.base;
   }
 
-  /**
-   * URL dell'elenco dei prodotti, con gli stessi filtri dei documenti.
-   *
-   * I filtri di documento (tipologia, sole edizioni correnti) restringono
-   * ciò che si vede aprendo un prodotto, e fanno sparire il prodotto se non
-   * gli resta nulla: è la differenza fra «prodotti che hanno le Condizioni
-   * di Assicurazione» e «tutti i prodotti, alcuni senza niente da mostrare».
-   */
-  urlProdotti(filtri: FiltriDocumenti): string {
-    const query = this.query(filtri);
-    return query ? `${this.prodotti}?${query}` : this.prodotti;
-  }
-
   urlDettaglio(id: Id): string {
     return `${this.base}/${id}`;
   }
@@ -101,12 +86,6 @@ export class DocumentiApi {
   impostaPreferito(id: Id, preferito: boolean): Observable<Documento> {
     const url = `${this.base}/${id}/preferito`;
     return preferito ? this.http.put<Documento>(url, {}) : this.http.delete<Documento>(url);
-  }
-
-  /** RF-A-09: si mette da parte il prodotto, non il suo DIP Aggiuntivo. */
-  impostaPreferitoProdotto(id: Id, preferito: boolean): Observable<Prodotto> {
-    const url = `${this.prodotti}/${id}/preferito`;
-    return preferito ? this.http.put<Prodotto>(url, {}) : this.http.delete<Prodotto>(url);
   }
 }
 

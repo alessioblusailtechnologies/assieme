@@ -17,7 +17,7 @@
   <span class="testata__stacco" aria-hidden="true"></span>
 
   <p class="testata__spiega">
-    Prodotti delle compagnie con i loro set informativi, mantenuti da Assieme.
+    Set informativi e documenti pubblici delle compagnie, mantenuti da Assieme.
   </p>
 
   <!--
@@ -29,7 +29,7 @@
     @if (store.inCaricamento()) {
       ricerca in corso…
     } @else if (!store.errore()) {
-      {{ store.totale() }} {{ store.totale() === 1 ? 'prodotto' : 'prodotti' }}
+      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
     }
   </span>
 </header>
@@ -122,16 +122,16 @@
       <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
-} @else if (store.inCaricamento() && !store.prodotti().length) {
+} @else if (store.inCaricamento() && !documenti().length) {
   <div class="scheletri">
     @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
       <ui-scheletro [numeroRighe]="1" />
     }
   </div>
-} @else if (!store.prodotti().length) {
+} @else if (!documenti().length) {
   <ui-stato-vuoto
     icona="cerca"
-    titolo="Nessun prodotto con questi criteri"
+    titolo="Nessun documento con questi criteri"
     descrizione="Prova ad allargare la ricerca: togli un filtro, oppure includi anche le edizioni non più correnti."
   >
     @if (store.filtriAttivi()) {
@@ -155,7 +155,7 @@
       [gridOptions]="opzioniGriglia"
       [columnDefs]="colonne"
       [defaultColDef]="colonnaPredefinita"
-      [rowData]="righe()"
+      [rowData]="documenti()"
       [getRowId]="chiaveRiga"
     />
 

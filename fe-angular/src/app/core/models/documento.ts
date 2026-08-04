@@ -116,33 +116,6 @@ export interface DocumentoPrivato extends DocumentoBase {
 
 export type Documento = DocumentoPubblico | DocumentoPrivato;
 
-/**
- * Prodotto assicurativo: l'unità con cui si consulta l'Archivio Pubblico.
- *
- * Un set informativo è fatto di quattro pezzi — DIP, DIP Aggiuntivo,
- * Condizioni, Glossario — che descrivono lo stesso prodotto e si leggono
- * insieme. Elencarli come voci separate significa mostrare quarantotto righe
- * dove l'intermediario ne ha in mente venti, e ripetere quattro volte
- * compagnia e ramo per dire ogni volta la stessa cosa.
- *
- * RF-A-03 lo dice già: la navigazione è «per compagnia, ramo e **prodotto**».
- * I documenti restano, un livello sotto.
- */
-export interface Prodotto {
-  id: Id;
-  nome: string;
-  compagnia: Compagnia;
-  ramo: Ramo;
-  /** Assente se del prodotto restano solo edizioni superate. */
-  edizioneCorrente?: Edizione;
-  numeroEdizioni: number;
-  /** Quanti documenti soddisfano i filtri correnti, non quanti ne esistono. */
-  numeroDocumenti: number;
-  /** RF-A-09: si mette da parte il prodotto, non il singolo documento. */
-  preferito: boolean;
-  documenti: DocumentoPubblico[];
-}
-
 /** Cartella dell'Archivio Privato (RF-B-04). */
 export interface Cartella {
   id: Id;
