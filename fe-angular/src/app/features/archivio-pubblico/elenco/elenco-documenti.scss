@@ -14,27 +14,46 @@
 /* ---------- Testata ---------- */
 
 /*
- * Tre righe con tre compiti distinti — percorso, identità della schermata,
- * spiegazione — invece del blocco unico di prima, dove titolo, stato e
- * paragrafo si leggevano come una frase sola.
+ * Una riga sola, allineata alla linea di base: percorso, titolo, spiegazione
+ * e conteggio hanno corpi diversi ma poggiano sulla stessa orizzontale, ed è
+ * ciò che li fa leggere come una frase unica invece che come quattro
+ * elementi accatastati.
+ *
+ * `flex-wrap` non è una resa: sotto una certa larghezza gli elementi vanno a
+ * capo nell'ordine in cui si leggono, e la testata resta sensata.
  */
-.testata__riga {
+.testata {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: var(--sp-3);
-  margin-top: var(--sp-2);
 }
 
-.testata__riga h1 {
+/* Il percorso non ha linea di base propria da allineare (è un componente
+   con la sua impaginazione): lo centriamo sull'altezza della riga. */
+.testata p-breadcrumb {
+  align-self: center;
+}
+
+/* Stacco verticale fra il percorso e il resto: separa la navigazione
+   dall'identità della schermata senza aggiungere una riga. */
+.testata__stacco {
+  align-self: center;
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__titolo {
   font-size: var(--t-page-title);
   line-height: 1.2;
 }
 
-/* I badge tornano alla mezzeria del titolo: allineati alla linea di base
-   sembrerebbero appesi. */
-.testata__riga ui-badge {
-  align-self: center;
+.testata__spiega {
+  /* Resta a misura di lettura anche quando la riga è lunghissima. */
+  max-width: 56ch;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
 }
 
 .testata__conteggio {
@@ -44,14 +63,6 @@
      riga non si muova. */
   min-width: 11ch;
   text-align: right;
-}
-
-.testata__spiega {
-  /* Il testo di servizio resta a misura di lettura anche se la pagina no. */
-  max-width: 68ch;
-  margin-top: var(--sp-1);
-  font-size: var(--t-sm);
-  color: var(--c-text-3);
 }
 
 /* ---------- Filtri ---------- */

@@ -1,27 +1,31 @@
+<!--
+  Testata su una riga sola: percorso, titolo, spiegazione e conteggio.
+  Tre righe impilate rubavano alla griglia una fascia di schermo che in un
+  archivio vale piu di quanto valga l'aria intorno al titolo.
+-->
 <header class="testata">
   <p-breadcrumb [model]="briciole" />
 
-  <div class="testata__riga">
-    <h1 class="serif">Archivio pubblico</h1>
+  <span class="testata__stacco" aria-hidden="true"></span>
 
-    <!--
-      Il conteggio sta nella testata e non sopra la griglia: è la risposta
-      alla domanda che l'utente si sta facendo mentre filtra, e va letta nello
-      stesso colpo d'occhio del titolo. Resta una regione viva perché cambia
-      senza che la pagina si ricarichi.
-    -->
-    <span class="testata__conteggio mono" role="status" aria-live="polite">
-      @if (store.inCaricamento()) {
-        ricerca in corso…
-      } @else if (!store.errore()) {
-        {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
-      }
-    </span>
-  </div>
+  <h1 class="serif testata__titolo">Archivio pubblico</h1>
 
   <p class="testata__spiega">
     Documenti pubblici delle compagnie, già caricati e mantenuti da Assieme.
   </p>
+
+  <!--
+    Il conteggio è la risposta alla domanda che l'utente si sta facendo
+    mentre filtra: va letto nello stesso colpo d'occhio del titolo. Resta una
+    regione viva perché cambia senza che la pagina si ricarichi.
+  -->
+  <span class="testata__conteggio mono" role="status" aria-live="polite">
+    @if (store.inCaricamento()) {
+      ricerca in corso…
+    } @else if (!store.errore()) {
+      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+    }
+  </span>
 </header>
 
 <section class="filtri" aria-label="Filtri dell'archivio">

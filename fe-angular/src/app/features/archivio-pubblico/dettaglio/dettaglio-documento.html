@@ -1,6 +1,6 @@
-<p-breadcrumb [model]="briciole()" />
-
 @if (errore()) {
+  <p-breadcrumb [model]="briciole" />
+
   <ui-stato-vuoto
     icona="errore"
     titolo="Non siamo riusciti ad aprire il documento"
@@ -12,21 +12,35 @@
     </button>
   </ui-stato-vuoto>
 } @else if (inCaricamento() && !documento()) {
+  <p-breadcrumb [model]="briciole" />
+
   <div class="caricamento">
     <ui-scheletro [numeroRighe]="2" />
     <ui-scheletro [numeroRighe]="5" />
   </div>
 } @else if (documento(); as doc) {
+  <!--
+    Testata su una riga sola, come nell'elenco: percorso, titolo, contesto e
+    stato dell'edizione poggiano sulla stessa linea di base.
+
+    Il percorso si ferma a "Pubblico" e non ripete il titolo del documento:
+    ce l'ha accanto, grande, e scriverlo due volte a mezzo centimetro di
+    distanza non aiuta nessuno.
+  -->
   <header class="testata">
-    <div class="testata__riga">
-      <h1 class="serif">{{ doc.titolo }}</h1>
-      @if (doc.edizione.corrente) {
-        <ui-badge variante="corrente">edizione corrente</ui-badge>
-      } @else {
-        <ui-badge variante="storico">edizione superata</ui-badge>
-      }
-    </div>
+    <p-breadcrumb [model]="briciole" />
+
+    <span class="testata__stacco" aria-hidden="true"></span>
+
+    <h1 class="serif testata__titolo">{{ doc.titolo }}</h1>
+
     <p class="testata__prodotto">{{ doc.compagnia.nome }} — {{ doc.prodotto }}</p>
+
+    @if (doc.edizione.corrente) {
+      <ui-badge variante="corrente">edizione corrente</ui-badge>
+    } @else {
+      <ui-badge variante="storico">edizione superata</ui-badge>
+    }
   </header>
 
   <div class="colonne">
@@ -64,14 +78,7 @@
           <dd>{{ etichettaTipologia(doc.tipologia) }}</dd>
 
           <dt>Edizione</dt>
-          <dd class="edizione">
-            <span>{{ doc.edizione.etichetta }}</span>
-            @if (doc.edizione.corrente) {
-              <ui-badge variante="corrente">corrente</ui-badge>
-            } @else {
-              <ui-badge variante="storico">superata</ui-badge>
-            }
-          </dd>
+          <dd>{{ doc.edizione.etichetta }}</dd>
 
           <dt>Validità</dt>
           <dd>

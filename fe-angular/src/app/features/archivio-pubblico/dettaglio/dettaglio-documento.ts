@@ -64,11 +64,17 @@ export class DettaglioDocumento {
    * finiti. Finché il documento non è caricato resta un segnaposto neutro,
    * per non far saltare la riga quando arriva.
    */
-  protected readonly briciole = computed<MenuItem[]>(() => [
+  /**
+   * Il percorso si ferma a "Pubblico".
+   *
+   * Il titolo del documento sta sulla stessa riga, subito accanto e in
+   * grande: ripeterlo nel percorso a mezzo centimetro di distanza non
+   * aggiunge nulla e allunga una riga già densa.
+   */
+  protected readonly briciole: MenuItem[] = [
     { label: 'Archivi' },
     { label: 'Pubblico', routerLink: '/archivio/pubblico' },
-    { label: this.documento()?.titolo ?? 'Documento' },
-  ]);
+  ];
 
   /** Le altre edizioni dello stesso documento, esclusa quella aperta. */
   protected readonly altreEdizioni = computed(
