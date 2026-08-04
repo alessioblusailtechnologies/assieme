@@ -1,0 +1,5 @@
+# La demo non va indicizzata: è il prodotto prima del lancio, non un sito.
+# Vale per i motori educati; l'indirizzo resta comunque da trattare come
+# riservato. Il server aggiunge anche X-Robots-Tag su ogni risposta.
+User-agent: *
+Disallow: /
