@@ -58,6 +58,69 @@
 }
 
 /* =========================================================================
+ * TT Turns — carattere commerciale in prova
+ * =========================================================================
+ *
+ * ⚠️ **Il file non è nel repository, ed è voluto.**
+ *
+ * La licenza trial di TypeType permette di installare e valutare il font sul
+ * proprio computer, ma vieta di usarlo in progetti finiti e di condividerlo
+ * con chiunque. Metterlo nel repository o servirlo dalla demo pubblica
+ * sarebbe distribuzione.
+ *
+ * Due lucchetti, perché uno solo si dimentica:
+ *   1. `.gitignore` esclude `public/fonts/prova-locale/`;
+ *   2. `angular.json` esclude la stessa cartella dagli asset, quindi il file
+ *      non entra in `dist/` nemmeno se esiste sul disco di chi compila.
+ *
+ * Conseguenza: queste regole restano nel repository ma puntano a un file che
+ * altrove non c'è. È innocuo — il browser ripiega sui caratteri successivi —
+ * e serve a non dover ricostruire il collegamento se la licenza si compra.
+ *
+ * Per provarlo serve la cartella locale con `TT_Turns_VF_Trial.woff2`.
+ */
+@font-face {
+  font-family: 'TT Turns Trial';
+  font-style: normal;
+  /* Variabile: tutti i pesi in un file solo. */
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/prova-locale/TT_Turns_VF_Trial.woff2') format('woff2-variations');
+}
+
+/*
+ * TT TURNS come sans — i titoli restano Newsreader.
+ *
+ * È l'accostamento più prudente: un grottesco contemporaneo per
+ * l'interfaccia, il serif editoriale per i titoli. Si vede cosa fa il
+ * carattere dove lavora di più, senza toccare l'identità.
+ */
+:root[data-prova-font='tt-turns'] {
+  --f-sans: 'TT Turns Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+}
+
+/*
+ * TT TURNS ovunque, titoli inclusi.
+ *
+ * L'ipotesi da valutare se il carattere si compra davvero: un solo font per
+ * tutto, niente serif. Interfaccia più compatta e contemporanea, ma
+ * l'applicazione smette di assomigliare al sito vetrina — che è costruito
+ * sul serif.
+ */
+:root[data-prova-font='tt-turns-tutto'] {
+  --f-sans: 'TT Turns Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --f-serif: 'TT Turns Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --t-page-title: 1.5rem;
+}
+
+:root[data-prova-font='tt-turns-tutto'] .serif,
+:root[data-prova-font='tt-turns-tutto'] h1 {
+  /* Senza le grazie il titolo ha bisogno di peso per restare un titolo. */
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* =========================================================================
  * Ridurre i caratteri scaricati
  * =========================================================================
  *

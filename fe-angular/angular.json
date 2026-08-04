@@ -27,7 +27,8 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public"
+                "input": "public",
+                "ignore": ["fonts/prova-locale/**"]
               }
             ],
             "styles": ["node_modules/primeicons/primeicons.css", "src/styles.scss"]

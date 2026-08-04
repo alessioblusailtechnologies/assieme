@@ -132,8 +132,23 @@ const server = createServer((req, res) => {
     return;
   }
 
-  /* Ripiego dell'applicazione a pagina singola: qualunque percorso non sia
-     un file è una rotta di Angular, e la risolve il router nel browser. */
+  /*
+   * Un file mancante è 404, non un ripiego.
+   *
+   * Il ripiego a pagina singola vale per i percorsi **senza estensione** —
+   * quelle sono rotte di Angular e le risolve il router nel browser. Un
+   * percorso che finisce in `.woff2` o `.js` è invece una richiesta di file:
+   * rispondere `index.html` con 200 le fa credere di aver ricevuto il file,
+   * e il browser prova a interpretare dell'HTML come font o come script.
+   * Sembra innocuo perché ripiega comunque, ma nasconde l'errore vero e
+   * rende difficile capire perché una risorsa non arrivi.
+   */
+  if (extname(percorso)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('File non trovato.');
+    return;
+  }
+
   const indice = join(DIST, 'index.html');
   if (existsSync(indice)) {
     serviFile(res, indice);

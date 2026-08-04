@@ -14,10 +14,14 @@ export type ProvaFont =
   | 'professionale'
   | 'solo-serif'
   | 'solo-mono'
-  | 'solo-sistema';
+  | 'solo-sistema'
+  | 'tt-turns'
+  | 'tt-turns-tutto';
 
 export const PROVE_FONT: { valore: ProvaFont; etichetta: string }[] = [
   { valore: 'attuale', etichetta: 'attuale — Newsreader + DM Mono (261 KB)' },
+  { valore: 'tt-turns', etichetta: 'TT Turns come sans — titoli Newsreader' },
+  { valore: 'tt-turns-tutto', etichetta: 'TT Turns ovunque — niente serif' },
   { valore: 'solo-serif', etichetta: 'solo serif — via DM Mono (213 KB)' },
   { valore: 'solo-mono', etichetta: 'solo mono — via Newsreader (48 KB)' },
   { valore: 'solo-sistema', etichetta: 'solo sistema — nessuno scaricato (0 KB)' },
