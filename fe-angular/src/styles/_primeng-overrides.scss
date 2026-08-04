@@ -42,3 +42,15 @@
   letter-spacing: var(--ls-mono);
   text-transform: uppercase;
 }
+
+/*
+ * E per gli stessi motivi ai tag: una tipologia di documento è un metadato,
+ * non contenuto. Colori, peso e spaziatura arrivano dal preset; qui resta
+ * solo ciò che PrimeNG non espone come token.
+ */
+.p-tag {
+  font-family: var(--f-mono);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  white-space: nowrap;
+}

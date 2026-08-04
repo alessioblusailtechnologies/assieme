@@ -269,5 +269,44 @@ export const AssiemePreset = definePreset(Nora, {
         label: { fontWeight: '400' },
       },
     },
+
+    /*
+     * Nora disegna i tag pieni e in grassetto: su una colonna di quarantotto
+     * righe sarebbero quarantotto blocchi di colore, e la tipologia — che è
+     * un'etichetta di servizio — griderebbe più del titolo.
+     *
+     * Qui diventano tenui e leggeri, come i badge nostri: fondo chiaro,
+     * testo scuro, peso normale. Il completamento (mono maiuscolo) sta in
+     * `_primeng-overrides.scss`, perché la famiglia del carattere non è un
+     * token di componente.
+     */
+    tag: {
+      root: {
+        fontSize: '0.625rem', // --t-mono-sm
+        fontWeight: '400',
+        padding: '2px 6px',
+        borderRadius: '0',
+      },
+      info: {
+        background: '{primary.100}',
+        color: '{primary.800}',
+      },
+      secondary: {
+        background: '{surface.200}',
+        color: '{surface.600}',
+      },
+      success: {
+        background: '#e8f1ec', // --c-pos-soft
+        color: '#2e6b4f', // --c-pos
+      },
+      danger: {
+        background: '#f9eae7', // --c-neg-soft
+        color: '#a63d2f', // --c-neg
+      },
+      warn: {
+        background: '#fbf3e2', // --c-warn-soft
+        color: '#8a6116', // --c-warn
+      },
+    },
   },
 });

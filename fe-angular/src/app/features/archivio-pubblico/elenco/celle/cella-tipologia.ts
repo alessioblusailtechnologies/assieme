@@ -1,13 +1,17 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { Tag } from 'primeng/tag';
 import type { ICellRendererAngularComp } from 'ag-grid-angular';
 import type { ICellRendererParams } from 'ag-grid-community';
 
-import { Badge } from '@shared/ui/badge/badge';
 import { DocumentoPubblico } from '@core/models';
 import { etichettaTipologiaBreve } from '@shared/testi/etichette';
 
 /**
- * Tipologia del documento come badge.
+ * Tipologia del documento.
+ *
+ * È la colonna che distingue le righe dello stesso prodotto: senza, DIP,
+ * DIP Aggiuntivo, Condizioni e Glossario di "Active Veicoli AUTOPIÙ"
+ * sarebbero quattro righe identiche. Per questo sta subito dopo il prodotto.
  *
  * In forma breve — "CdA" invece di "Condizioni di Assicurazione" — perché in
  * una colonna il nome per esteso manderebbe a capo ogni riga. Chi lavora nel
@@ -15,11 +19,16 @@ import { etichettaTipologiaBreve } from '@shared/testi/etichette';
  */
 @Component({
   selector: 'app-cella-tipologia',
-  imports: [Badge],
+  imports: [Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (etichetta(); as e) {
-      <ui-badge variante="accento">{{ e }}</ui-badge>
+      <!--
+        severity="info" non è una scelta semantica ma il gancio a cui il
+        preset appende il fondo tenue in accento: vedi components.tag nel
+        preset del tema.
+      -->
+      <p-tag severity="info" [value]="e" />
     }
   `,
   styles: `

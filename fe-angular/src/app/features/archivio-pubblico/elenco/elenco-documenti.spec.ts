@@ -117,24 +117,35 @@ describe('ElencoDocumenti', () => {
   });
 
   it('distingue le righe dello stesso prodotto con la tipologia', async () => {
-    const testo = ((await monta()).nativeElement as HTMLElement).textContent ?? '';
+    const dom = (await monta()).nativeElement as HTMLElement;
 
     /* È la tipologia a dire quale documento è la riga: senza, due righe
        dello stesso prodotto sarebbero indistinguibili. In forma breve,
        perché per esteso manderebbe a capo la colonna. */
-    expect(testo).toContain('DIP Agg.');
-    expect(testo).toContain('CdA');
+    const tag = Array.from(dom.querySelectorAll('p-tag')).map((t) => t.textContent?.trim());
+    expect(tag).toContain('DIP Agg.');
+    expect(tag).toContain('CdA');
   });
 
-  it('mostra edizione e stato, e la data di decorrenza in formato italiano', async () => {
+  it('mostra edizione e stato', async () => {
     const testo = ((await monta()).nativeElement as HTMLElement).textContent ?? '';
 
     expect(testo).toContain('ed. 04/2026');
     expect(testo).toContain('corrente');
     expect(testo).toContain('superata');
-    /* gg/mm/aaaa, non il formato americano. */
-    expect(testo).toContain('01/04/2026');
-    expect(testo).toContain('01/09/2025');
+  });
+
+  it('non mostra più la colonna della data di decorrenza', async () => {
+    const dom = (await monta()).nativeElement as HTMLElement;
+    const intestazioni = Array.from(dom.querySelectorAll('.ag-header-cell-text')).map((h) =>
+      h.textContent?.trim(),
+    );
+
+    expect(intestazioni).toContain('Prodotto');
+    expect(intestazioni).toContain('Tipologia');
+    expect(intestazioni).not.toContain('In vigore dal');
+    /* L'ordine conta: la tipologia si legge insieme al prodotto. */
+    expect(intestazioni.indexOf('Tipologia')).toBe(intestazioni.indexOf('Prodotto') + 1);
   });
 
   it('offre su ogni riga il collegamento per aprire il documento', async () => {

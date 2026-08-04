@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, LOCALE_ID, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { formatDate } from '@angular/common';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   CellStyleModule,
@@ -37,11 +36,11 @@ import { environment } from '@env';
 /**
  * Archivio Pubblico — elenco dei documenti.
  *
- * Una riga per documento: prodotto, compagnia, ramo, tipologia, edizione e
- * data di decorrenza, con l'azione per aprirne la scheda. La tipologia in
- * colonna è ciò che distingue le righe dello stesso prodotto — DIP, DIP
- * Aggiuntivo, Condizioni, Glossario — quindi il titolo per esteso non serve
- * e lascia spazio alle colonne che si confrontano davvero.
+ * Una riga per documento: prodotto, tipologia, compagnia, ramo ed edizione,
+ * con l'azione per aprirne la scheda. La tipologia sta subito dopo il
+ * prodotto perché è ciò che distingue le righe dello stesso prodotto — DIP,
+ * DIP Aggiuntivo, Condizioni, Glossario — quindi il titolo per esteso non
+ * serve e lascia spazio alle colonne che si confrontano davvero.
  *
  * RF-A-03: navigazione per compagnia, ramo e prodotto, e ricerca per parola
  * chiave su titolo e metadati. RF-A-05: in sola lettura per i tenant.
@@ -69,8 +68,6 @@ import { environment } from '@env';
 })
 export class ElencoDocumenti {
   protected readonly store = inject(ArchivioPubblicoStore);
-  private readonly locale = inject(LOCALE_ID);
-
   protected readonly tipologie = TIPOLOGIE_PUBBLICHE;
   protected readonly tema = assiemeGridTheme;
 
@@ -138,6 +135,16 @@ export class ElencoDocumenti {
       cellClass: 'cella-primaria',
     },
     {
+      /* Subito dopo il prodotto: è ciò che distingue le righe dello stesso
+         prodotto, quindi va letta insieme al nome e non tre colonne più in
+         là. */
+      colId: 'tipologia',
+      headerName: 'Tipologia',
+      cellRenderer: CellaTipologia,
+      width: 150,
+      minWidth: 130,
+    },
+    {
       colId: 'compagnia',
       headerName: 'Compagnia',
       valueGetter: (p) => p.data?.compagnia.nome,
@@ -152,32 +159,11 @@ export class ElencoDocumenti {
       minWidth: 150,
     },
     {
-      colId: 'tipologia',
-      headerName: 'Tipologia',
-      cellRenderer: CellaTipologia,
-      width: 160,
-      minWidth: 140,
-    },
-    {
       colId: 'edizione',
       headerName: 'Edizione',
       cellRenderer: CellaEdizione,
       width: 200,
       minWidth: 180,
-    },
-    {
-      colId: 'decorrenza',
-      headerName: 'In vigore dal',
-      /*
-       * Data formattata nel `valueGetter` e non in un renderer: una cella di
-       * solo testo non ha bisogno di un componente Angular, e venti
-       * componenti in meno per pagina si sentono allo scorrimento.
-       */
-      valueGetter: (p) =>
-        p.data ? formatDate(p.data.edizione.validaDal, 'dd/MM/yyyy', this.locale) : '',
-      width: 130,
-      minWidth: 120,
-      cellClass: 'cella-numerica',
     },
     {
       colId: 'azione',
