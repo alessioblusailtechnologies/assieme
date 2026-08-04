@@ -44,11 +44,6 @@
   background: var(--c-line);
 }
 
-.testata__titolo {
-  font-size: var(--t-page-title);
-  line-height: 1.2;
-}
-
 .testata__spiega {
   /* Resta a misura di lettura anche quando la riga è lunghissima. */
   max-width: 56ch;

@@ -1,14 +1,20 @@
 <!--
-  Testata su una riga sola: percorso, titolo, spiegazione e conteggio.
-  Tre righe impilate rubavano alla griglia una fascia di schermo che in un
-  archivio vale piu di quanto valga l'aria intorno al titolo.
+  Testata su una riga sola: percorso, spiegazione e conteggio.
+
+  Il titolo visibile non c'è più: il percorso finisce già con "Archivio
+  pubblico" e ripeterlo due centimetri più in là non aggiungeva nulla.
+
+  Resta però come intestazione nascosta. Non è formalità: una schermata senza
+  h1 non ha un titolo nella struttura del documento, e chi naviga per
+  intestazioni con uno screen reader — che è il modo normale di orientarsi in
+  una pagina densa — non trova più il punto d'ingresso.
 -->
 <header class="testata">
+  <h1 class="visually-hidden">Archivio pubblico</h1>
+
   <p-breadcrumb [model]="briciole" />
 
   <span class="testata__stacco" aria-hidden="true"></span>
-
-  <h1 class="serif testata__titolo">Archivio pubblico</h1>
 
   <p class="testata__spiega">
     Documenti pubblici delle compagnie, già caricati e mantenuti da Assieme.

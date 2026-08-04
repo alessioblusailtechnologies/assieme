@@ -143,6 +143,17 @@ describe('ElencoDocumenti', () => {
     expect(dom.textContent).not.toContain('sola lettura');
   });
 
+  it('conserva un h1 anche senza titolo a schermo', async () => {
+    const dom = (await monta()).nativeElement as HTMLElement;
+    const h1 = dom.querySelector('h1');
+
+    /* Il titolo non si vede — sarebbe una ripetizione del percorso — ma la
+       schermata deve avere un'intestazione: è il punto d'ingresso per chi
+       naviga la pagina per intestazioni. */
+    expect(h1?.textContent?.trim()).toBe('Archivio pubblico');
+    expect(h1?.classList.contains('visually-hidden')).toBe(true);
+  });
+
   it('non disegna la griglia quando non ci sono risultati', async () => {
     const dom = (await monta({ elementi: [], totale: 0, pagina: 1, perPagina: 20 })).nativeElement;
 
