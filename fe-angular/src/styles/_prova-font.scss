@@ -121,6 +121,85 @@
 }
 
 /* =========================================================================
+ * Saans — carattere commerciale in prova
+ * =========================================================================
+ *
+ * ⚠️ Stessa cartella locale di TT Turns, stessi due lucchetti: il file non
+ * entra nel repository né in `dist/`. I termini esatti della trial Displaay
+ * non sono pubblicati online, quindi vale la lettura più restrittiva —
+ * valutazione sul proprio computer, nessuna condivisione.
+ *
+ * **Un solo file per sans e mono.** La variabile ha tre assi:
+ *
+ *     MONO   0 → 100    proporzionale → semi-mono (50) → monospazio
+ *     wght   300 → 900
+ *     slnt   -10 → 0    inclinazione
+ *
+ * È la cosa che la rende interessante qui più di TT Turns. Le etichette di
+ * metadato sono monospaziate e il corpo del testo no, ma sono **lo stesso
+ * carattere**: stessa altezza dell'occhio medio, stessi spessori, stesso
+ * disegno. DM Mono accanto al sans di sistema è un accostamento riuscito ma
+ * casuale; qui l'intonazione è progettata.
+ *
+ * 155 KB per entrambi, contro i 261 KB di Newsreader + DM Mono di oggi.
+ */
+@font-face {
+  font-family: 'Saans Trial';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  src: url('/fonts/prova-locale/SaansCollectionVF-TRIAL.woff2') format('woff2-variations');
+}
+
+/*
+ * Il taglio monospaziato dello stesso file.
+ *
+ * `font-variation-settings` come descrittore di `@font-face` — non come
+ * regola su un elemento — è ciò che permette di avere due famiglie dallo
+ * stesso file: `--f-mono` punta a questa, `--f-sans` all'altra, e nessuno
+ * deve sapere che sono lo stesso carattere.
+ */
+@font-face {
+  font-family: 'Saans Trial Mono';
+  font-style: normal;
+  font-weight: 300 900;
+  font-display: swap;
+  font-variation-settings: 'MONO' 100;
+  src: url('/fonts/prova-locale/SaansCollectionVF-TRIAL.woff2') format('woff2-variations');
+}
+
+/*
+ * SAANS — sans e mono dalla stessa famiglia, titoli Newsreader.
+ *
+ * Sostituisce sia il sans di sistema sia DM Mono. Il serif editoriale resta
+ * sui titoli, quindi l'identità del sito vetrina non si perde.
+ */
+:root[data-prova-font='saans'] {
+  --f-sans: 'Saans Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --f-mono: 'Saans Trial Mono', ui-monospace, menlo, consolas, monospace;
+}
+
+/*
+ * SAANS ovunque — un solo carattere per tutto, 155 KB.
+ *
+ * Titoli inclusi, niente serif. È la configurazione più leggera di tutte
+ * quelle provate e la più coerente al suo interno, ma è anche quella che
+ * allontana di più l'applicazione dal sito vetrina.
+ */
+:root[data-prova-font='saans-tutto'] {
+  --f-sans: 'Saans Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --f-mono: 'Saans Trial Mono', ui-monospace, menlo, consolas, monospace;
+  --f-serif: 'Saans Trial', 'Helvetica Neue', helvetica, arial, sans-serif;
+  --t-page-title: 1.5rem;
+}
+
+:root[data-prova-font='saans-tutto'] .serif,
+:root[data-prova-font='saans-tutto'] h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* =========================================================================
  * Ridurre i caratteri scaricati
  * =========================================================================
  *

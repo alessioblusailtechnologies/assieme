@@ -16,10 +16,14 @@ export type ProvaFont =
   | 'solo-mono'
   | 'solo-sistema'
   | 'tt-turns'
-  | 'tt-turns-tutto';
+  | 'tt-turns-tutto'
+  | 'saans'
+  | 'saans-tutto';
 
 export const PROVE_FONT: { valore: ProvaFont; etichetta: string }[] = [
   { valore: 'attuale', etichetta: 'attuale — Newsreader + DM Mono (261 KB)' },
+  { valore: 'saans', etichetta: 'Saans sans+mono — titoli Newsreader (368 KB)' },
+  { valore: 'saans-tutto', etichetta: 'Saans ovunque — un solo file (155 KB)' },
   { valore: 'tt-turns', etichetta: 'TT Turns come sans — titoli Newsreader' },
   { valore: 'tt-turns-tutto', etichetta: 'TT Turns ovunque — niente serif' },
   { valore: 'solo-serif', etichetta: 'solo serif — via DM Mono (213 KB)' },
