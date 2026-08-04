@@ -127,12 +127,22 @@ describe('ElencoDocumenti', () => {
     expect(tag).toContain('CdA');
   });
 
-  it('mostra edizione e stato', async () => {
-    const testo = ((await monta()).nativeElement as HTMLElement).textContent ?? '';
+  it('non etichetta le edizioni correnti e marca solo le superate', async () => {
+    const dom = (await monta()).nativeElement as HTMLElement;
+    const testo = dom.textContent ?? '';
 
     expect(testo).toContain('ed. 04/2026');
-    expect(testo).toContain('corrente');
-    expect(testo).toContain('superata');
+    expect(testo).toContain('ed. 09/2025');
+
+    /* Con il filtro sulle sole correnti acceso di default, scrivere
+       "corrente" su ogni riga ripete quarantotto volte un'informazione che
+       non distingue nulla. Si marca l'eccezione. */
+    expect(testo).not.toContain('corrente');
+
+    /* E la si marca con il dato che serve davvero: fino a quando quel testo
+       è stato in vigore. */
+    expect(testo).toContain('fino al 31/03/2026');
+    expect(dom.querySelectorAll('.is-superata').length).toBe(1);
   });
 
   it('non mostra più la colonna della data di decorrenza', async () => {
