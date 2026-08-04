@@ -44,9 +44,24 @@
   background: var(--c-line);
 }
 
+/*
+ * Riga unica, mai a capo.
+ *
+ * Prima aveva `max-width: 56ch` per tenerla a misura di lettura: giusto per
+ * un paragrafo, sbagliato qui, perché la frase ne conta una settantina e
+ * l'ultima parola finiva sotto, spezzando la riga della testata.
+ *
+ * Se lo spazio non basta si accorcia con i puntini invece di andare a capo:
+ * è testo di servizio, e chi ha lo schermo stretto non perde nulla di
+ * essenziale. `min-width: 0` serve perché un elemento flex, di suo, si
+ * rifiuta di rimpicciolirsi sotto il proprio contenuto.
+ */
 .testata__spiega {
-  /* Resta a misura di lettura anche quando la riga è lunghissima. */
-  max-width: 56ch;
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--t-sm);
   color: var(--c-text-3);
 }
@@ -131,6 +146,14 @@
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
+  }
+
+  /* Su schermo stretto la testata deve dire dove si è e quanti risultati ci
+     sono. La frase di servizio e il suo stacco sono i primi a cedere il
+     posto, invece di ridursi a tre puntini. */
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
   }
 
   .filtri {
