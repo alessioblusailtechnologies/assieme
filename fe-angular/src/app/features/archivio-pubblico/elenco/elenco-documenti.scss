@@ -14,31 +14,31 @@
 /* ---------- Testata ---------- */
 
 /*
- * Una riga sola, allineata alla linea di base: percorso, titolo, spiegazione
- * e conteggio hanno corpi diversi ma poggiano sulla stessa orizzontale, ed è
- * ciò che li fa leggere come una frase unica invece che come quattro
- * elementi accatastati.
+ * Una riga sola, con tutto centrato verticalmente.
+ *
+ * Il primo tentativo usava `align-items: baseline`, che in teoria è la scelta
+ * giusta per del testo. In pratica no: `p-breadcrumb` è un componente con la
+ * propria impaginazione a flex e non espone una linea di base utile, così
+ * andava centrato a mano — e mescolare `baseline` con `align-self: center`
+ * dentro la stessa riga significa avere due riferimenti verticali diversi.
+ * Il risultato è il disallineamento che si vede.
+ *
+ * Con `center` il riferimento è uno solo per tutti, e corpi da 11px e da
+ * 24px stanno insieme senza correzioni per elemento.
  *
  * `flex-wrap` non è una resa: sotto una certa larghezza gli elementi vanno a
  * capo nell'ordine in cui si leggono, e la testata resta sensata.
  */
 .testata {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-3);
-}
-
-/* Il percorso non ha linea di base propria da allineare (è un componente
-   con la sua impaginazione): lo centriamo sull'altezza della riga. */
-.testata p-breadcrumb {
-  align-self: center;
 }
 
 /* Stacco verticale fra il percorso e il resto: separa la navigazione
    dall'identità della schermata senza aggiungere una riga. */
 .testata__stacco {
-  align-self: center;
   width: 1px;
   height: 16px;
   background: var(--c-line);
@@ -58,7 +58,6 @@
 
 .testata__conteggio {
   margin-left: auto;
-  align-self: center;
   /* Larghezza minima perché passando da "8 documenti" a "48 documenti" la
      riga non si muova. */
   min-width: 11ch;

@@ -41,12 +41,26 @@ import { NomeIcona, REGISTRO_ICONE } from './registro-icone';
   styles: `
     .ui-icon {
       display: inline-flex;
+      align-items: center;
+      justify-content: center;
       flex: none;
-      /* L'icona segue il colore e la riga del testo accanto a cui sta:
-         niente allineamenti a mano nei venti punti in cui compare. */
+      /* L'icona segue il colore del testo accanto a cui sta: niente
+         allineamenti a mano nei venti punti in cui compare. */
       color: inherit;
       line-height: 0;
-      vertical-align: middle;
+    }
+
+    /*
+     * L'SVG deve essere un blocco.
+     *
+     * Da elemento in linea poggerebbe sulla linea di base del testo, con
+     * sotto lo spazio riservato ai discendenti: dentro un pulsante o accanto
+     * a un'etichetta risulta spostata verso l'alto di due o tre pixel. È il
+     * classico disallineamento che si insegue nel contenitore mentre la
+     * causa è qui.
+     */
+    .ui-icon ::ng-deep svg {
+      display: block;
     }
   `,
 })

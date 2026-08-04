@@ -68,10 +68,16 @@ export class ElencoDocumenti {
   protected readonly tipologie = TIPOLOGIE_PUBBLICHE;
   protected readonly tema = assiemeGridTheme;
 
-  /* "Archivi" è un raggruppamento, non una schermata: nessun percorso. */
+  /**
+   * Le etichette sono le stesse della barra laterale.
+   *
+   * Se la voce di menu dice "Archivio pubblico", il percorso deve dire
+   * "Archivio pubblico": chiamare in due modi la stessa schermata è il tipo
+   * di incoerenza che nessuno segnala e tutti notano.
+   */
   protected readonly briciole: MenuItem[] = [
-    { label: 'Archivi' },
-    { label: 'Pubblico', routerLink: '/archivio/pubblico' },
+    { label: 'Home', routerLink: '/' },
+    { label: 'Archivio pubblico', routerLink: '/archivio/pubblico' },
   ];
 
   /**

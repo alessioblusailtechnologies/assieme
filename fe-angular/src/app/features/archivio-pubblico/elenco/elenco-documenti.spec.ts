@@ -132,8 +132,10 @@ describe('ElencoDocumenti', () => {
 
     const briciole = dom.querySelector('p-breadcrumb');
     expect(briciole).toBeTruthy();
-    expect(briciole?.textContent).toContain('Archivi');
-    expect(briciole?.textContent).toContain('Pubblico');
+    expect(briciole?.textContent).toContain('Home');
+    /* Stessa etichetta della voce nella barra laterale: chiamare in due modi
+       la stessa schermata è il tipo di incoerenza che tutti notano. */
+    expect(briciole?.textContent).toContain('Archivio pubblico');
   });
 
   it('non mostra più il badge di sola lettura', async () => {

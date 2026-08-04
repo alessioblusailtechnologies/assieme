@@ -34,9 +34,25 @@ import { SessioneStore } from '@core/auth/sessione-store';
 
       @if (sessione.utente(); as utente) {
         <span class="separatore" aria-hidden="true"></span>
+
         <span class="identita">
           <span class="identita__nome">{{ nomeBreve() }}</span>
           <span class="identita__ruolo mono">{{ utente.ruolo }}</span>
+        </span>
+
+        <!--
+          L'avatar porta le iniziali e non un'immagine: non c'è una foto da
+          mostrare, e due lettere si riconoscono a colpo d'occhio meglio di
+          una sagoma generica uguale per tutti. Il nome per esteso resta nel
+          title e nell'etichetta accessibile.
+        -->
+        <span
+          class="avatar"
+          role="img"
+          [title]="utente.nome + ' ' + utente.cognome"
+          [attr.aria-label]="'Utente collegato: ' + utente.nome + ' ' + utente.cognome"
+        >
+          {{ sessione.iniziali() }}
         </span>
       }
     </div>
@@ -106,6 +122,22 @@ import { SessioneStore } from '@core/auth/sessione-store';
 
     .identita__ruolo {
       color: var(--c-text-3);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      flex: none;
+      background: var(--c-accent-soft);
+      color: var(--c-accent);
+      font-size: var(--t-xs);
+      /* Le iniziali sono due maiuscole senza discendenti: interlinea a 1 le
+         tiene centrate nel quadrato senza correzioni. */
+      line-height: 1;
+      letter-spacing: 0.02em;
+      user-select: none;
     }
 
     /* Scheletro invece di spinner: occupa lo spazio che occuperà il

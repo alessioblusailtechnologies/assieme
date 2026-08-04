@@ -9,28 +9,19 @@
 /* ---------- Testata ---------- */
 
 /*
- * Una riga sola, come nell'elenco: percorso, titolo, contesto e stato
- * dell'edizione poggiano sulla stessa linea di base. Corpi diversi, stessa
- * orizzontale — è ciò che li fa leggere come una frase invece che come
- * quattro elementi accatastati.
+ * Una riga sola con tutto centrato verticalmente, come nell'elenco: un solo
+ * riferimento verticale per corpi che vanno da 11px a 24px. Vedi la nota in
+ * `elenco-documenti.scss` sul perché `baseline` qui non funziona.
  */
 .testata {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-3);
   margin-bottom: var(--sp-6);
 }
 
-/* Percorso e badge non hanno una linea di base da allineare: si centrano
-   sull'altezza della riga, altrimenti sembrerebbero appesi. */
-.testata p-breadcrumb,
-.testata ui-badge {
-  align-self: center;
-}
-
 .testata__stacco {
-  align-self: center;
   width: 1px;
   height: 16px;
   background: var(--c-line);

@@ -65,15 +65,14 @@ export class DettaglioDocumento {
    * per non far saltare la riga quando arriva.
    */
   /**
-   * Il percorso si ferma a "Pubblico".
-   *
-   * Il titolo del documento sta sulla stessa riga, subito accanto e in
-   * grande: ripeterlo nel percorso a mezzo centimetro di distanza non
-   * aggiunge nulla e allunga una riga già densa.
+   * Stesse etichette della barra laterale, e il percorso si ferma
+   * all'archivio: il titolo del documento sta sulla stessa riga, subito
+   * accanto e in grande, e ripeterlo a mezzo centimetro di distanza allunga
+   * una riga già densa senza aggiungere nulla.
    */
   protected readonly briciole: MenuItem[] = [
-    { label: 'Archivi' },
-    { label: 'Pubblico', routerLink: '/archivio/pubblico' },
+    { label: 'Home', routerLink: '/' },
+    { label: 'Archivio pubblico', routerLink: '/archivio/pubblico' },
   ];
 
   /** Le altre edizioni dello stesso documento, esclusa quella aperta. */
