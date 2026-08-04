@@ -74,9 +74,16 @@ export const assiemeGridTheme = themeQuartz
     headerTextColor: t.testoMeta,
     headerBackgroundColor: t.superficie,
 
-    /* ---------- Righe ---------- */
-    rowHeight: 40,
-    headerHeight: 38,
+    /*
+     * ---------- Righe ----------
+     *
+     * Niente `rowHeight` e `headerHeight` qui: sono decisioni della singola
+     * griglia, non del tema. La tabella di analisi della Fase 4 avrà celle
+     * con citazione e vorrà righe ben più alte di un elenco documentale, e
+     * un valore piantato nel tema comune si trasformerebbe in un
+     * `gridOptions` che lo contraddice — con il dubbio, ogni volta, su quale
+     * dei due stia vincendo.
+     */
     oddRowBackgroundColor: t.superficie,
     rowHoverColor: t.superficieTint,
     selectedRowBackgroundColor: t.accentoSoft,

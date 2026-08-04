@@ -104,13 +104,13 @@
       Riprova
     </button>
   </ui-stato-vuoto>
-} @else if (store.inCaricamento() && !store.documenti().length) {
+} @else if (store.inCaricamento() && !documenti().length) {
   <div class="scheletri">
     @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
       <ui-scheletro [numeroRighe]="1" />
     }
   </div>
-} @else if (!store.documenti().length) {
+} @else if (!documenti().length) {
   <ui-stato-vuoto
     icona="cerca"
     titolo="Nessun documento con questi criteri"
@@ -124,67 +124,16 @@
     }
   </ui-stato-vuoto>
 } @else {
-  <div class="tabella-contenitore">
-    <table class="tabella">
-      <caption class="visually-hidden">
-        Documenti dell'Archivio Pubblico corrispondenti ai filtri selezionati
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col" class="col-preferito">
-            <span class="visually-hidden">Preferito</span>
-          </th>
-          <th scope="col">Documento</th>
-          <th scope="col">Compagnia</th>
-          <th scope="col">Ramo</th>
-          <th scope="col">Tipologia</th>
-          <th scope="col">Edizione</th>
-          <th scope="col" class="col-pagine">Pagine</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (documento of store.documenti(); track documento.id) {
-          @let doc = pubblico(documento);
-          <tr>
-            <td class="col-preferito">
-              <button
-                type="button"
-                class="preferito"
-                [class.is-attivo]="doc.preferito"
-                (click)="alternaPreferito(documento, $event)"
-                [attr.aria-pressed]="doc.preferito"
-                [attr.aria-label]="
-                  (doc.preferito ? 'Togli dai preferiti: ' : 'Aggiungi ai preferiti: ') + doc.titolo
-                "
-              >
-                <ui-icon name="preferito" [size]="15" />
-              </button>
-            </td>
-
-            <th scope="row" class="col-documento">
-              <a [routerLink]="['/archivio/pubblico', doc.id]" class="titolo">{{ doc.titolo }}</a>
-              <span class="prodotto">{{ doc.prodotto }}</span>
-            </th>
-
-            <td>{{ doc.compagnia.nome }}</td>
-            <td>{{ doc.ramo.nome }}</td>
-            <td>
-              <ui-badge variante="accento">{{ etichettaTipologia(doc.tipologia) }}</ui-badge>
-            </td>
-            <td class="col-edizione">
-              <span>{{ doc.edizione.etichetta }}</span>
-              @if (doc.edizione.corrente) {
-                <ui-badge variante="corrente">corrente</ui-badge>
-              } @else {
-                <ui-badge variante="storico">superata</ui-badge>
-              }
-            </td>
-            <td class="col-pagine">{{ doc.numeroPagine }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  <ag-grid-angular
+    class="griglia"
+    [theme]="tema"
+    [modules]="moduli"
+    [gridOptions]="opzioniGriglia"
+    [columnDefs]="colonne"
+    [defaultColDef]="colonnaPredefinita"
+    [rowData]="documenti()"
+    [getRowId]="chiaveRiga"
+  />
 
   @if (store.totale() > store.perPagina()) {
     <p-paginator

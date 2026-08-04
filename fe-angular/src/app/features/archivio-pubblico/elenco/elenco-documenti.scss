@@ -1,6 +1,13 @@
+/*
+ * Larghezza piena, senza il tetto di `--content-max`.
+ *
+ * Quel token viene dal sito vetrina, dove limitare la misura di riga serve a
+ * far leggere. Qui il contenuto è una tabella di lavoro: ogni pixel in più è
+ * una colonna che si legge senza troncamenti, e su uno schermo largo il
+ * margine vuoto ai lati è spazio sottratto al confronto fra documenti.
+ */
 :host {
   display: block;
-  max-width: var(--content-max);
   padding: var(--sp-6);
 }
 
@@ -17,6 +24,7 @@
 }
 
 .testata__spiega {
+  /* Il testo di servizio resta a misura di lettura anche se la pagina no. */
   max-width: 68ch;
   margin-top: var(--sp-2);
   color: var(--c-text-2);
@@ -98,118 +106,19 @@
   border: 1px solid var(--c-line);
 }
 
-/* ---------- Tabella ---------- */
+/* ---------- Griglia ---------- */
 
-/* La tabella scorre dentro il proprio contenitore: la pagina non deve mai
-   scorrere in orizzontale, nemmeno con la barra laterale espansa. */
-.tabella-contenitore {
-  overflow-x: auto;
-  background: var(--c-surface);
-  border: 1px solid var(--c-line);
-}
-
-.tabella {
+.griglia {
+  display: block;
   width: 100%;
-  border-collapse: collapse;
-  text-align: left;
 }
 
-.tabella th,
-.tabella td {
-  padding: var(--sp-3) var(--sp-4);
-  font-weight: 400;
-  vertical-align: baseline;
-  white-space: nowrap;
-}
-
-.tabella thead th {
-  font-family: var(--f-mono);
-  font-size: var(--t-mono);
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-  color: var(--c-text-3);
-  border-bottom: 1px solid var(--c-line);
-  padding-block: var(--sp-2);
-}
-
-.tabella tbody tr:not(:last-child) th,
-.tabella tbody tr:not(:last-child) td {
-  border-bottom: 1px solid var(--c-line-soft);
-}
-
-.tabella tbody tr:hover {
-  background: var(--c-surface-tint);
-}
-
-.tabella td {
-  font-size: var(--t-sm);
-  color: var(--c-text-2);
-}
-
-/* ---------- Colonne ---------- */
-
-.col-documento {
-  /* L'unica colonna a cui è concesso andare a capo: i titoli dei set
-     informativi sono lunghi e troncarli renderebbe due documenti dello
-     stesso prodotto indistinguibili. */
-  white-space: normal;
-  min-width: 320px;
-  max-width: 460px;
-}
-
-.titolo {
-  display: block;
-  font-size: var(--t-body);
-  color: var(--c-text);
-  text-decoration: none;
-}
-
-.titolo:hover {
-  color: var(--c-accent);
-  text-decoration: underline;
-}
-
-.prodotto {
-  display: block;
-  margin-top: 2px;
-  font-size: var(--t-xs);
-  color: var(--c-text-3);
-}
-
-.col-edizione {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.col-pagine {
+/* Le colonne numeriche a destra con cifre a larghezza fissa: incolonnate,
+   il numero di pagine si confronta a colpo d'occhio. */
+:host ::ng-deep .cella-numerica {
+  justify-content: flex-end;
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-.col-preferito {
-  width: 40px;
-  padding-right: 0;
-}
-
-.preferito {
-  display: grid;
-  place-items: center;
-  padding: var(--sp-1);
-  background: none;
-  border: 0;
-  /* A riposo è quasi invisibile: è un'azione secondaria, non deve competere
-     con il titolo del documento. */
-  color: var(--c-text-ghost);
-  cursor: pointer;
-}
-
-.preferito:hover {
-  color: var(--c-accent);
-}
-
-.preferito.is-attivo {
-  color: var(--c-accent);
 }
 
 /* ---------- Azione negli stati vuoti ---------- */

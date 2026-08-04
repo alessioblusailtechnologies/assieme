@@ -1,6 +1,8 @@
+/* Larghezza piena come l'elenco: il visualizzatore del documento guadagna
+   da ogni pixel, e passare da una schermata larga a una stretta dà
+   l'impressione che l'applicazione salti. */
 :host {
   display: block;
-  max-width: var(--content-max);
   padding: var(--sp-6);
 }
 
@@ -47,6 +49,13 @@
 .testata__prodotto {
   margin-top: var(--sp-2);
   color: var(--c-text-2);
+}
+
+/* Il titolo resta a misura di lettura anche quando la pagina è larga: un
+   titolo lungo steso su 2000px è illeggibile. */
+.testata__riga h1,
+.testata__prodotto {
+  max-width: 90ch;
 }
 
 /* ---------- Impaginazione ---------- */
