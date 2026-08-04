@@ -56,3 +56,65 @@
 :root[data-prova-font='professionale'] h1 {
   font-weight: 400;
 }
+
+/* =========================================================================
+ * Ridurre i caratteri scaricati
+ * =========================================================================
+ *
+ * Oggi ne scarichiamo due: Newsreader (213 KB) e DM Mono (48 KB). Il corpo
+ * del testo usa il sans di sistema, che non costa nulla.
+ *
+ * Chi fa cosa:
+ *   Newsreader — titoli di schermata, nome del prodotto, titoli degli stati
+ *                vuoti. Pochi punti, ma sono quelli che danno il carattere:
+ *                è la stessa tipografia del sito vetrina.
+ *   DM Mono    — etichette di metadato, percorso di navigazione, tag,
+ *                intestazioni di tabella, orologio. Molti punti, tutti
+ *                piccoli, tutti in maiuscolo e spaziati.
+ */
+
+/*
+ * SOLO SERIF — resta Newsreader, via DM Mono (−48 KB)
+ *
+ * Le etichette passano al sans di sistema. Restano maiuscole e spaziate,
+ * quindi continuano a leggersi come metadati: buona parte di ciò che
+ * attribuiamo al mono in realtà lo fanno le maiuscole e la spaziatura.
+ * Si perde l'incolonnamento delle cifre, ma i numeri incolonnati sono già
+ * gestiti a parte con `font-variant-numeric`.
+ *
+ * È la riduzione che conserva il marchio: il serif dei titoli resta.
+ */
+:root[data-prova-font='solo-serif'] {
+  --f-mono: var(--f-sans);
+}
+
+/*
+ * SOLO MONO — resta DM Mono, via Newsreader (−213 KB)
+ *
+ * Il risparmio maggiore, e la trasformazione più radicale: i titoli passano
+ * al monospazio e l'interfaccia prende un'aria da terminale. Distintiva, ma
+ * lontana dal sito vetrina — sito e applicazione smetterebbero di
+ * assomigliarsi.
+ */
+:root[data-prova-font='solo-mono'] {
+  --f-serif: 'DM Mono', ui-monospace, menlo, consolas, monospace;
+}
+
+:root[data-prova-font='solo-mono'] .serif,
+:root[data-prova-font='solo-mono'] h1 {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * SOLO SISTEMA — nessun carattere scaricato (−261 KB)
+ *
+ * Il minimo assoluto: tutto con i caratteri già presenti sul dispositivo.
+ * Zero byte, zero attese, zero sfarfallio al caricamento — e zero
+ * riconoscibilità. Serve come termine di paragone: guardando questa si
+ * capisce quanto stiano lavorando gli altri due.
+ */
+:root[data-prova-font='solo-sistema'] {
+  --f-serif: var(--f-sans);
+  --f-mono: var(--f-sans);
+}
