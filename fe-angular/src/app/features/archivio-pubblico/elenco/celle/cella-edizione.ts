@@ -44,17 +44,30 @@ import { DocumentoPubblico } from '@core/models';
     }
   `,
   styles: `
+    /*
+     * I due pezzi stanno incolonnati, non affiancati.
+     *
+     * In linea servivano più di 220px e la colonna ne ha 200: la data usciva
+     * dalla cella. Allargare la colonna avrebbe tolto spazio a prodotto e
+     * compagnia per un'informazione che riguarda una riga su venti. Su due
+     * righe ci stanno entrambi con margine, e le edizioni correnti — che
+     * hanno una riga sola — restano centrate.
+     */
     :host {
       display: flex;
-      align-items: baseline;
-      gap: var(--sp-2);
+      flex-direction: column;
+      justify-content: center;
       height: 100%;
+      min-width: 0;
+      line-height: 1.3;
     }
 
     .etichetta {
       font-size: var(--t-sm);
       color: var(--c-text);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       font-variant-numeric: tabular-nums;
     }
 
@@ -73,6 +86,8 @@ import { DocumentoPubblico } from '@core/models';
       text-transform: uppercase;
       color: var(--c-neg);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   `,
 })

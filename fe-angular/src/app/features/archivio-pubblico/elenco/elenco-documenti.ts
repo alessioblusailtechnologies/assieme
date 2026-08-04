@@ -162,8 +162,10 @@ export class ElencoDocumenti {
       colId: 'edizione',
       headerName: 'Edizione',
       cellRenderer: CellaEdizione,
-      width: 200,
-      minWidth: 180,
+      /* Larghezza sufficiente alla riga più lunga — "fino al 31/03/2026" in
+         mono spaziato — senza sottrarne a prodotto e compagnia. */
+      width: 180,
+      minWidth: 165,
     },
     {
       colId: 'azione',
