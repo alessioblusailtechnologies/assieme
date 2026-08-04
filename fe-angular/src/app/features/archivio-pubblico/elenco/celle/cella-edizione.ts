@@ -1,29 +1,32 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import type { ICellRendererAngularComp } from 'ag-grid-angular';
 import type { ICellRendererParams } from 'ag-grid-community';
 
 import { Badge } from '@shared/ui/badge/badge';
-import { DocumentoPubblico } from '@core/models';
+import { RigaArchivio } from './riga-archivio';
 
 /**
- * Edizione con lo stato accanto.
+ * Edizione corrente del prodotto.
  *
- * RF-A-04: a parità di prodotto coesistono più edizioni, e sapere quale si
- * sta guardando è metà del lavoro dell'intermediario. Un'etichetta come
- * "ed. 09/2025" da sola non dice se sia ancora quella in vigore.
+ * RF-A-04: a parità di prodotto coesistono più edizioni, e sapere quale sia
+ * quella in vigore è metà del lavoro dell'intermediario. Un'etichetta come
+ * "ed. 09/2025" da sola non lo dice.
  */
 @Component({
   selector: 'app-cella-edizione',
   imports: [Badge],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
-      <span class="etichetta">{{ doc.edizione.etichetta }}</span>
-      @if (doc.edizione.corrente) {
-        <ui-badge variante="corrente">corrente</ui-badge>
-      } @else {
-        <ui-badge variante="storico">superata</ui-badge>
-      }
+    @if (edizione(); as ed) {
+      <span class="etichetta">{{ ed.etichetta }}</span>
+      <ui-badge variante="corrente">corrente</ui-badge>
+    } @else if (riga()) {
+      <!--
+        Del prodotto restano solo edizioni superate: succede quando i filtri
+        escludono quella corrente, o quando la compagnia ha ritirato il
+        prodotto. Dirlo è più utile che lasciare la cella vuota.
+      -->
+      <ui-badge variante="storico">nessuna corrente</ui-badge>
     }
   `,
   styles: `
@@ -38,18 +41,20 @@ import { DocumentoPubblico } from '@core/models';
       font-size: var(--t-sm);
       color: var(--c-text-2);
       white-space: nowrap;
+      font-variant-numeric: tabular-nums;
     }
   `,
 })
 export class CellaEdizione implements ICellRendererAngularComp {
-  protected readonly documento = signal<DocumentoPubblico | undefined>(undefined);
+  protected readonly riga = signal<RigaArchivio | undefined>(undefined);
+  protected readonly edizione = computed(() => this.riga()?.prodotto.edizioneCorrente);
 
-  agInit(params: ICellRendererParams<DocumentoPubblico>): void {
-    this.documento.set(params.data);
+  agInit(params: ICellRendererParams<RigaArchivio>): void {
+    this.riga.set(params.data);
   }
 
-  refresh(params: ICellRendererParams<DocumentoPubblico>): boolean {
-    this.documento.set(params.data);
+  refresh(params: ICellRendererParams<RigaArchivio>): boolean {
+    this.riga.set(params.data);
     return true;
   }
 }

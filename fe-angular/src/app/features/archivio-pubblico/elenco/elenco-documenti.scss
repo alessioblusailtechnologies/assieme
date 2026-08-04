@@ -156,21 +156,45 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* ---------- Griglia ---------- */
+/* ---------- Griglia e paginazione ---------- */
 
 /*
  * L'altezza arriva da qui, e da nient'altro.
  *
- * `flex: 1` le assegna lo spazio che avanza nella colonna; `min-height: 0`
- * le permette di rimpicciolirsi su schermi bassi invece di spingere la
- * paginazione fuori dalla finestra. Sotto una certa misura si ferma: una
- * griglia alta due righe non è consultabile, meglio far scorrere la pagina.
+ * `flex: 1` assegna al blocco dei risultati lo spazio che avanza nella
+ * colonna; al suo interno la griglia si prende tutto tranne la paginazione.
+ * `min-height: 0` gli permette di rimpicciolirsi su schermi bassi invece di
+ * spingere la paginazione fuori dalla finestra.
+ *
+ * Nessuno spazio fra i due: la paginazione appartiene alla tabella, e
+ * staccarla la faceva sembrare un elemento a sé della pagina.
  */
+.risultati {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 240px;
+}
+
 .griglia {
   display: block;
   width: 100%;
   flex: 1;
-  min-height: 240px;
+  min-height: 0;
+}
+
+/* La paginazione resta sotto la griglia e non scorre con le righe: cambiare
+   pagina è il gesto che si fa dopo aver scorso fino in fondo, e doverlo
+   cercare risalendo è il modo più rapido per far sembrare lenta
+   un'applicazione. */
+.risultati p-paginator {
+  flex: none;
+}
+
+:host ::ng-deep .risultati .p-paginator {
+  /* Il bordo superiore manca perché lo fornisce già la griglia sopra: due
+     filetti adiacenti si leggono come una linea spessa e sbagliata. */
+  border-top: 0;
 }
 
 /* Le colonne numeriche a destra con cifre a larghezza fissa: incolonnate,
@@ -181,13 +205,6 @@ ui-stato-vuoto {
   font-variant-numeric: tabular-nums;
 }
 
-/* La paginazione resta sotto la griglia e non scorre con le righe: cambiare
-   pagina è il gesto che si fa dopo aver scorso fino in fondo, e doverlo
-   cercare risalendo è il modo più rapido per far sembrare lenta
-   un'applicazione. */
-p-paginator {
-  flex: none;
-}
 
 @media (max-width: 900px) {
   :host {

@@ -17,7 +17,7 @@
   <span class="testata__stacco" aria-hidden="true"></span>
 
   <p class="testata__spiega">
-    Documenti pubblici delle compagnie, già caricati e mantenuti da Assieme.
+    Prodotti delle compagnie con i loro set informativi, mantenuti da Assieme.
   </p>
 
   <!--
@@ -29,7 +29,7 @@
     @if (store.inCaricamento()) {
       ricerca in corso…
     } @else if (!store.errore()) {
-      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+      {{ store.totale() }} {{ store.totale() === 1 ? 'prodotto' : 'prodotti' }}
     }
   </span>
 </header>
@@ -122,16 +122,16 @@
       <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
-} @else if (store.inCaricamento() && !documenti().length) {
+} @else if (store.inCaricamento() && !store.prodotti().length) {
   <div class="scheletri">
     @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
       <ui-scheletro [numeroRighe]="1" />
     }
   </div>
-} @else if (!documenti().length) {
+} @else if (!store.prodotti().length) {
   <ui-stato-vuoto
     icona="cerca"
-    titolo="Nessun documento con questi criteri"
+    titolo="Nessun prodotto con questi criteri"
     descrizione="Prova ad allargare la ricerca: togli un filtro, oppure includi anche le edizioni non più correnti."
   >
     @if (store.filtriAttivi()) {
@@ -142,23 +142,30 @@
     }
   </ui-stato-vuoto>
 } @else {
-  <ag-grid-angular
-    class="griglia"
-    [theme]="tema"
-    [modules]="moduli"
-    [gridOptions]="opzioniGriglia"
-    [columnDefs]="colonne"
-    [defaultColDef]="colonnaPredefinita"
-    [rowData]="documenti()"
-    [getRowId]="chiaveRiga"
-  />
-
-  @if (store.totale() > store.perPagina()) {
-    <p-paginator
-      [first]="(store.pagina() - 1) * store.perPagina()"
-      [rows]="store.perPagina()"
-      [totalRecords]="store.totale()"
-      (onPageChange)="cambiaPagina($event)"
+  <!--
+    Griglia e paginazione stanno nello stesso blocco, senza spazio in mezzo:
+    la paginazione appartiene alla tabella, e staccarla la faceva sembrare un
+    elemento a sé della pagina.
+  -->
+  <div class="risultati">
+    <ag-grid-angular
+      class="griglia"
+      [theme]="tema"
+      [modules]="moduli"
+      [gridOptions]="opzioniGriglia"
+      [columnDefs]="colonne"
+      [defaultColDef]="colonnaPredefinita"
+      [rowData]="righe()"
+      [getRowId]="chiaveRiga"
     />
-  }
+
+    @if (store.totale() > store.perPagina()) {
+      <p-paginator
+        [first]="(store.pagina() - 1) * store.perPagina()"
+        [rows]="store.perPagina()"
+        [totalRecords]="store.totale()"
+        (onPageChange)="cambiaPagina($event)"
+      />
+    }
+  </div>
 }

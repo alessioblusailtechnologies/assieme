@@ -4,32 +4,38 @@ import type { ICellRendererParams } from 'ag-grid-community';
 
 import { ButtonDirective } from 'primeng/button';
 
-import { DocumentoPubblico } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
+import { Prodotto } from '@core/models';
+import { RigaArchivio } from './riga-archivio';
 
 /** Parametri che la colonna passa a questa cella. */
 export interface ParametriCellaPreferito {
-  alterna: (documento: DocumentoPubblico, preferito: boolean) => void;
+  alterna: (prodotto: Prodotto, preferito: boolean) => void;
 }
 
-/** RF-A-09: accesso rapido ai documenti di uso frequente. */
+/**
+ * RF-A-09: accesso rapido a ciò che si usa spesso.
+ *
+ * Il preferito sta sul **prodotto** e non sul singolo documento: si mette da
+ * parte "la polizza auto di Generali", non il suo DIP Aggiuntivo.
+ */
 @Component({
   selector: 'app-cella-preferito',
   imports: [ButtonDirective, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
+    @if (prodotto(); as p) {
       <button
         pButton
         type="button"
         severity="secondary"
         size="small"
         [text]="true"
-        [class.is-attivo]="doc.preferito"
-        (click)="alterna(doc)"
-        [attr.aria-pressed]="doc.preferito"
+        [class.is-attivo]="p.preferito"
+        (click)="alterna(p)"
+        [attr.aria-pressed]="p.preferito"
         [attr.aria-label]="
-          (doc.preferito ? 'Togli dai preferiti: ' : 'Aggiungi ai preferiti: ') + doc.titolo
+          (p.preferito ? 'Togli dai preferiti: ' : 'Aggiungi ai preferiti: ') + p.nome
         "
       >
         <ui-icon name="preferito" [size]="15" />
@@ -59,20 +65,20 @@ export interface ParametriCellaPreferito {
   `,
 })
 export class CellaPreferito implements ICellRendererAngularComp {
-  protected readonly documento = signal<DocumentoPubblico | undefined>(undefined);
+  protected readonly prodotto = signal<Prodotto | undefined>(undefined);
   private parametri?: ParametriCellaPreferito;
 
-  agInit(params: ICellRendererParams<DocumentoPubblico> & ParametriCellaPreferito): void {
-    this.documento.set(params.data);
+  agInit(params: ICellRendererParams<RigaArchivio> & ParametriCellaPreferito): void {
+    this.prodotto.set(params.data?.prodotto);
     this.parametri = params;
   }
 
-  refresh(params: ICellRendererParams<DocumentoPubblico>): boolean {
-    this.documento.set(params.data);
+  refresh(params: ICellRendererParams<RigaArchivio>): boolean {
+    this.prodotto.set(params.data?.prodotto);
     return true;
   }
 
-  protected alterna(doc: DocumentoPubblico): void {
-    this.parametri?.alterna(doc, !doc.preferito);
+  protected alterna(prodotto: Prodotto): void {
+    this.parametri?.alterna(prodotto, !prodotto.preferito);
   }
 }
