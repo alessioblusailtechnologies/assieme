@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
 import { ButtonDirective } from 'primeng/button';
 
-import { ErroreSimulato, SviluppoStore } from './sviluppo-store';
+import { ErroreSimulato, PROVE_FONT, ProvaFont, SviluppoStore } from './sviluppo-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { Ruolo } from '@core/models';
 import { SessioneStore } from '@core/auth/sessione-store';
@@ -71,6 +71,15 @@ import { SessioneStore } from '@core/auth/sessione-store';
             <option value="403">permesso negato (403)</option>
             <option value="429">quota superata (429)</option>
             <option value="timeout">attesa lunga poi timeout (504)</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label class="mono" for="dev-font">Tipografia</label>
+          <select id="dev-font" [value]="dev.provaFont()" (change)="cambiaFont($event)">
+            @for (p of prove; track p.valore) {
+              <option [value]="p.valore">{{ p.etichetta }}</option>
+            }
           </select>
         </div>
 
@@ -144,6 +153,8 @@ export class PannelloSviluppo {
   protected readonly dev = inject(SviluppoStore);
   private readonly sessione = inject(SessioneStore);
 
+  protected readonly prove = PROVE_FONT;
+
   protected cambiaRuolo(e: Event): void {
     this.dev.ruolo.set((e.target as HTMLSelectElement).value as Ruolo);
     /* Il ruolo viaggia come header, quindi cambiarlo non fa scattare da solo
@@ -157,5 +168,19 @@ export class PannelloSviluppo {
 
   protected cambiaErrore(e: Event): void {
     this.dev.erroreProssimaChiamata.set((e.target as HTMLSelectElement).value as ErroreSimulato);
+  }
+
+  /**
+   * L'attributo va sull'elemento radice e non su un contenitore: gli overlay
+   * di PrimeNG — tendine, dialoghi — sono montati in fondo al body, fuori
+   * dall'albero dell'applicazione, e da un contenitore non li raggiungerebbe.
+   */
+  protected cambiaFont(e: Event): void {
+    const scelta = (e.target as HTMLSelectElement).value as ProvaFont;
+    this.dev.provaFont.set(scelta);
+
+    const radice = document.documentElement;
+    if (scelta === 'attuale') radice.removeAttribute('data-prova-font');
+    else radice.setAttribute('data-prova-font', scelta);
   }
 }

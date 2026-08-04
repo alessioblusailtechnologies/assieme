@@ -6,6 +6,17 @@ import { Ruolo } from '@core/models';
 export type ErroreSimulato = 'nessuno' | '500' | '403' | '429' | 'timeout';
 
 /**
+ * Tipografia in uso e sua alternativa in valutazione.
+ * Vedi `styles/_prova-font.scss`.
+ */
+export type ProvaFont = 'attuale' | 'professionale';
+
+export const PROVE_FONT: { valore: ProvaFont; etichetta: string }[] = [
+  { valore: 'attuale', etichetta: 'attuale — Newsreader + sistema' },
+  { valore: 'professionale', etichetta: 'alternativa — Source Serif + Source Sans' },
+];
+
+/**
  * Stato del pannello di sviluppo.
  *
  * Non è un vezzo: gli stati che rompono un'interfaccia — latenza alta,
@@ -31,6 +42,9 @@ export class SviluppoStore {
   readonly erroreProssimaChiamata = signal<ErroreSimulato>('nessuno');
 
   readonly pannelloAperto = signal(false);
+
+  /** Tipografia: quella in uso, o l'alternativa in valutazione. */
+  readonly provaFont = signal<ProvaFont>('attuale');
 
   consumaErrore(): ErroreSimulato {
     const e = this.erroreProssimaChiamata();

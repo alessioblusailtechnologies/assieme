@@ -14,12 +14,16 @@ import { iconOverrides, themeQuartz } from 'ag-grid-community';
  */
 
 /*
- * I valori sono i token del design, scritti per esteso.
+ * I **colori** sono scritti per esteso e non come `var(--c-line)`: AG Grid ne
+ * calcola dei derivati (contrasti, trasparenze) e su una `var()` non può
+ * farlo. Il duplicato è voluto e va tenuto allineato a `_tokens.scss` — sono
+ * una dozzina di valori, e sbagliarne uno si vede a colpo d'occhio.
  *
- * Non possiamo passare `var(--c-line)` a tutti i parametri: AG Grid calcola
- * alcuni derivati (contrasti, trasparenze) e su una `var()` non può farlo.
- * Il duplicato è voluto e va tenuto allineato a `_tokens.scss` — sono una
- * dozzina di valori, e sbagliarne uno si vede a colpo d'occhio.
+ * I **caratteri** invece passano dalle variabili CSS, perché lì non c'è nulla
+ * da calcolare: AG Grid si limita a inoltrare il valore. Scriverli per
+ * esteso — come facevo prima — significa che la griglia resta l'unica parte
+ * dell'applicazione sorda a un cambio di tipografia. Difetto trovato
+ * provando le accoppiate: tutto cambiava tranne la tabella.
  */
 const t = {
   accento: '#2f4b7c',
@@ -30,8 +34,8 @@ const t = {
   superficieTint: '#f5f8fc',
   testo: '#14181d',
   testoMeta: '#78818e',
-  sans: "'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif",
-  mono: "'DM Mono', ui-monospace, 'SF Mono', menlo, consolas, monospace",
+  sans: 'var(--f-sans)',
+  mono: 'var(--f-mono)',
 };
 
 /*

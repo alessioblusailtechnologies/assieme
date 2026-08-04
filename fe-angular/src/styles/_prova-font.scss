@@ -1,0 +1,58 @@
+/*
+ * Alternativa tipografica in valutazione.
+ *
+ * Dopo la prova su nove accoppiate la scelta è: si resta su **Newsreader +
+ * sans di sistema + DM Mono**, la tipografia con cui è disegnato il sito
+ * vetrina. Coerenza fra sito e applicazione, zero caratteri in più da
+ * scaricare, e il carattere editoriale che il prodotto ha già.
+ *
+ * Resta in piedi una seconda scelta, **Source Serif 4 + Source Sans 3**,
+ * perché è quella che regge meglio il confronto e vale la pena poterla
+ * riguardare senza rifare tutto il lavoro. È una superfamiglia Adobe
+ * disegnata per la lettura prolungata su schermo: il serif ha un asse di
+ * dimensione ottica, il sans è tarato sulle stesse proporzioni. Nessuna
+ * personalità gridata — la scelta che nessuno noterà e nessuno criticherà.
+ *
+ * Si prova dal pannello di sviluppo, voce "Tipografia". In produzione il
+ * pannello non esiste, quindi vale sempre la scelta attuale.
+ *
+ * Quando la decisione sarà definitiva: se resta l'attuale, si cancellano
+ * questo file, `public/fonts/prova/` e la voce nel pannello; se passa
+ * l'alternativa, i due `@font-face` si spostano in `_fonts.scss` e i due
+ * caratteri nei token.
+ *
+ * Entrambi i caratteri sono sotto SIL Open Font License: uso commerciale
+ * libero, nessun costo, nessuna chiave. Self-hosted come gli altri —
+ * nessuna chiamata a fonts.googleapis.com, coerentemente con il
+ * posizionamento sulla residenza europea del dato.
+ */
+
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/prova/source-serif-0.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/prova/source-sans-0.woff2') format('woff2');
+}
+
+:root[data-prova-font='professionale'] {
+  --f-serif: 'Source Serif 4', georgia, serif;
+  --f-sans: 'Source Sans 3', 'Helvetica Neue', helvetica, arial, sans-serif;
+
+  /* Il titolo cresce un poco: un serif da display sotto i 24px non mostra
+     quello che sa fare, e si finirebbe per giudicare il carattere sbagliato. */
+  --t-page-title: 1.75rem;
+}
+
+:root[data-prova-font='professionale'] .serif,
+:root[data-prova-font='professionale'] h1 {
+  font-weight: 400;
+}
