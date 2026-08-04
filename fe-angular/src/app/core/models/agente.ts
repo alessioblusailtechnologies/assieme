@@ -34,7 +34,7 @@ export interface Agente {
 export type FonteAgente =
   | { tipo: 'documento'; documentoId: Id }
   | { tipo: 'selezione'; archivio: 'pubblico' | 'privato'; ramoId?: Id; compagniaId?: Id }
-  | { tipo: 'knowledge-base' };
+  | { tipo: 'documenti-riferimento' };
 
 export interface Pianificazione {
   frequenza: 'giornaliera' | 'settimanale' | 'mensile';

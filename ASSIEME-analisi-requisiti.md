@@ -3,8 +3,8 @@
 | Campo | Valore |
 |---|---|
 | Prodotto | ASSIEME |
-| Versione documento | 0.8 (bozza) |
-| Data | 03/08/2026 |
+| Versione documento | 0.9 (bozza) |
+| Data | 04/08/2026 |
 | Stato | In lavorazione |
 | Autore | Blusail Technologies S.R.L.S. |
 
@@ -14,7 +14,7 @@
 
 ### 1.1 Scopo del documento
 
-Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di ASSIEME, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia** con la **knowledge base interna**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, e alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con sistemi esterni) saranno oggetto di versioni future del documento.
+Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di ASSIEME, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni, che comprendono sia regole scritte sia documenti di riferimento — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, e alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con sistemi esterni) saranno oggetto di versioni future del documento.
 
 ### 1.2 Ambito del prodotto
 
@@ -27,7 +27,7 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 3. un'interfaccia conversazionale in cui i documenti di entrambi gli archivi sono cittadini di prima classe, richiamabili esplicitamente e confrontabili su larga scala tramite tabelle di analisi;
 4. la possibilità di personalizzare il modo in cui l'AI ragiona, adattandolo alla prassi operativa della singola agenzia — l'esatto limite riscontrato in Navisio, che valuta i documenti secondo criteri fissi non modificabili dall'utente;
 5. output pronti per la consegna al cliente finale, generati su template graficamente coerenti e brandizzabili dall'agenzia;
-6. il DNA d'Agenzia: istruzioni personalizzate, memoria persistente e knowledge base interna formano uno strato di personalizzazione che si accumula conversazione dopo conversazione, rendendo il sistema sempre più preciso — mentre i tool concorrenti ripartono da zero a ogni sessione.
+6. il DNA d'Agenzia: istruzioni personalizzate — regole scritte e documenti di riferimento — e memoria persistente formano uno strato di personalizzazione che si accumula conversazione dopo conversazione, rendendo il sistema sempre più preciso — mentre i tool concorrenti ripartono da zero a ogni sessione.
 
 ### 1.3 Definizioni e glossario
 
@@ -46,11 +46,11 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 | Template di output | Modello grafico precaricato (PDF, DOCX, XLSX, PPTX) con struttura, stili e segnaposto, usato per generare documenti a partire dai contenuti prodotti da chat e agenti. |
 | Output client-ready | Documento generato su template, graficamente coerente e pronto per la consegna al cliente finale dell'agenzia. |
 | Tabella di analisi | Tabella strutturata generata dall'AI su un insieme di documenti selezionati (righe) e criteri di estrazione (colonne), con citazione per ogni cella; interrogabile, salvabile ed esportabile. |
-| Knowledge base di agenzia | Area dell'Archivio Privato con i documenti di riferimento interni del tenant (convenzioni, note tecniche, casistica, testi tipo), consultata automaticamente dall'AI in ogni conversazione ed esecuzione. |
+| Documenti di riferimento | Documenti interni del tenant (convenzioni, note tecniche, casistica, testi tipo) che il tenant designa come contesto permanente: l'AI li consulta automaticamente, senza referenziazione esplicita. Risiedono nelle Istruzioni (Modulo D) insieme alle regole scritte, e come queste hanno un ambito di validità. *In versione 0.8 erano un'area dell'Archivio Privato chiamata "knowledge base di agenzia" (ex RF-B-09).* |
 | MCP (Model Context Protocol) | Protocollo standard che permette a client AI esterni (es. Claude, ChatGPT) di utilizzare strumenti e dati esposti da un server terzo. |
 | Server MCP di ASSIEME | Componente della piattaforma che espone le capacità di ASSIEME (ricerca e interrogazione degli archivi) come tool MCP richiamabili dai client AI del tenant. |
 | Memoria persistente | Insieme di informazioni durevoli che l'assistente apprende dalle interazioni (prassi, contesto su clienti e pratiche, preferenze) e riutilizza automaticamente nelle conversazioni ed esecuzioni successive del tenant. |
-| DNA d'Agenzia | Nome collettivo dello strato di personalizzazione del tenant: istruzioni personalizzate (Modulo D), memoria persistente (Modulo G) e knowledge base di agenzia (RF-B-09). È ciò che rende le risposte di ASSIEME uniche per ciascuna agenzia. |
+| DNA d'Agenzia | Nome collettivo dello strato di personalizzazione del tenant: le istruzioni personalizzate del Modulo D — regole scritte (RF-D-04) e documenti di riferimento (RF-D-14) — e la memoria persistente del Modulo G. È ciò che rende le risposte di ASSIEME uniche per ciascuna agenzia. |
 
 ### 1.4 Attori
 
@@ -68,11 +68,20 @@ Il sistema si articola in tre moduli fortemente integrati:
 
 **Modulo A — Archivio Pubblico.** Libreria documentale precaricata, uguale per tutti i tenant, contenente i set informativi e i documenti pubblici delle polizze delle principali compagnie operanti sul mercato italiano. L'utente la trova già popolata al primo accesso: è il "catalogo" su cui interrogare il sistema fin da subito, senza alcun onere di caricamento.
 
-**Modulo B — Archivio Privato.** Spazio documentale isolato per tenant, in cui gli utenti caricano documenti propri: preventivi, polizze emesse, appendici, corrispondenza tecnica e qualunque altro documento utile al lavoro quotidiano. Al suo interno vive la knowledge base di agenzia: un'area di documenti di riferimento — convenzioni attive, note tecniche, casistica risolta, testi tipo — considerati contesto permanente e consultati automaticamente dall'AI in tutte le conversazioni ed esecuzioni del tenant, senza bisogno di referenziarli.
+**Modulo B — Archivio Privato.** Spazio documentale isolato per tenant, in cui gli utenti caricano documenti propri: preventivi, polizze emesse, appendici, corrispondenza tecnica e qualunque altro documento utile al lavoro quotidiano. Un documento dell'Archivio Privato può essere promosso a documento di riferimento (Modulo D), diventando così contesto permanente per tutte le conversazioni del tenant.
 
 **Modulo C — Chat conversazionale con referenziazione documentale.** Interfaccia di dialogo in linguaggio naturale. I documenti di entrambi gli archivi possono essere richiamati esplicitamente nei messaggi; le risposte del sistema si fondano sul contenuto dei documenti referenziati (ed eventualmente su quelli recuperati automaticamente), con citazioni verificabili. Il modulo comprende anche le tabelle di analisi — confronti strutturati multi-documento con citazione per ogni cella, interrogabili a loro volta in chat — e la condivisione di conversazioni e tabelle con gli altri utenti del tenant.
 
-**Modulo D — Impostazioni e personalizzazione.** Sezione di configurazione in cui il tenant sceglie il modello e il provider AI utilizzati dal sistema e definisce le istruzioni personalizzate che governano la metodologia di ragionamento dell'AI. Le istruzioni allineano le analisi alla prassi dell'agenzia: il caso emblematico è la garanzia infortuni del conducente, che un'analisi a criteri fissi segnalerebbe come mancanza grave, mentre un'agenzia può ometterla deliberatamente perché abbina sempre una polizza infortuni personale. Nelle Impostazioni risiede anche la libreria dei template di output: modelli grafici precaricati nei formati PDF, DOCX, XLSX e PPTX che danno coerenza visiva ai documenti generati dalla chat e dagli agenti, personalizzabili con l'identità dell'agenzia.
+**Modulo D — Impostazioni e personalizzazione.** Sezione di configurazione in cui il tenant sceglie il modello e il provider AI utilizzati dal sistema e definisce le **istruzioni** che governano la metodologia di ragionamento dell'AI.
+
+Le istruzioni sono di due nature, distinte ma governate allo stesso modo — deliberate, curate dall'amministratore, sempre attive salvo sospensione:
+
+- **Regole scritte** in linguaggio naturale, che condizionano il *giudizio*. Il caso emblematico è la garanzia infortuni del conducente, che un'analisi a criteri fissi segnalerebbe come mancanza grave, mentre un'agenzia può ometterla deliberatamente perché abbina sempre una polizza infortuni personale.
+- **Documenti di riferimento** — convenzioni attive, note tecniche, casistica risolta, testi tipo — che forniscono *fonti*: a differenza delle regole possono essere citati, e la citazione è ciò su cui poggia la verificabilità del sistema (RF-C-04).
+
+Entrambi hanno un ambito di validità (generale, per ramo, per compagnia): un documento di riferimento entra nel contesto solo quando è pertinente, e non a ogni interrogazione. È il presidio contro il costo del contesto permanente (punto aperto §6.12, RNF-05).
+
+Nelle Impostazioni risiede anche la libreria dei template di output: modelli grafici precaricati nei formati PDF, DOCX, XLSX e PPTX che danno coerenza visiva ai documenti generati dalla chat e dagli agenti, personalizzabili con l'identità dell'agenzia.
 
 **Modulo E — Agenti.** Sezione in cui l'utente crea e gestisce agenti: task AI definiti una volta — istruzioni, fonti documentali, output atteso — ed eseguibili sia manualmente su richiesta, sia in modo ricorrente tramite pianificazione. Gli agenti estendono ASSIEME da strumento interrogativo a strumento operativo: attività ripetitive dell'agenzia (es. verifica periodica di nuove edizioni dei set informativi, riepiloghi ricorrenti sui documenti in archivio) vengono automatizzate e producono risultati consultabili e notificati.
 
@@ -80,7 +89,9 @@ Il sistema si articola in tre moduli fortemente integrati:
 
 **Modulo G — Memoria persistente.** L'assistente non riparte da zero a ogni conversazione: apprende e conserva le informazioni durevoli che emergono dal lavoro quotidiano — le prassi dell'agenzia, il contesto su clienti e pratiche ricorrenti, le decisioni già prese, le preferenze di formato — e le riutilizza automaticamente in chat e nelle esecuzioni degli agenti. Con il tempo il sistema conosce l'agenzia come un collaboratore storico: è il meccanismo che rende ASSIEME più prezioso a ogni settimana d'uso e progressivamente più difficile da sostituire. La memoria è trasparente per costruzione: consultabile, modificabile e cancellabile dall'utente.
 
-I tre meccanismi di personalizzazione — le istruzioni personalizzate (Modulo D), la memoria persistente (Modulo G) e la knowledge base di agenzia (RF-B-09) — formano insieme il **DNA d'Agenzia**: le regole dette, il contesto appreso e i documenti di riferimento che rendono le risposte di ASSIEME uniche per ciascun tenant. Il DNA d'Agenzia cresce con l'uso, non è replicabile da un concorrente che parte da zero e costituisce il principale valore accumulato dal cliente sulla piattaforma.
+I meccanismi di personalizzazione — le istruzioni del Modulo D, nelle loro due nature di regole scritte (RF-D-04) e documenti di riferimento (RF-D-14), e la memoria persistente del Modulo G — formano insieme il **DNA d'Agenzia**: le regole dette, i documenti di riferimento e il contesto appreso che rendono le risposte di ASSIEME uniche per ciascun tenant. Il DNA d'Agenzia cresce con l'uso, non è replicabile da un concorrente che parte da zero e costituisce il principale valore accumulato dal cliente sulla piattaforma.
+
+La linea di separazione è il **modo in cui nascono**: le istruzioni sono deliberate e autorevoli — qualcuno le ha scritte o caricate — mentre la memoria è dedotta e fallibile. Da qui discende la precedenza sancita da RF-G-04: in caso di conflitto vincono le istruzioni. E da qui discende anche il criterio pratico con cui l'utente sceglie dove mettere una cosa: se è una regola su *come giudicare* è una regola scritta; se è un contenuto che va citato, o è più lungo di una pagina, è un documento di riferimento.
 
 Il flusso d'uso tipico: l'operatore riceve un preventivo dal cliente → lo carica nell'Archivio Privato → in chat lo referenzia insieme al set informativo (già presente nell'Archivio Pubblico) del prodotto concorrente → chiede un confronto tra garanzie, massimali, franchigie ed esclusioni → ottiene una risposta strutturata con riferimenti puntuali ai passaggi dei documenti, valutata secondo le istruzioni personalizzate della propria agenzia.
 
@@ -117,8 +128,7 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | RF-B-06 | Il sistema DEVE gestire documenti scansionati tramite OCR, oppure — in prima release — segnalare esplicitamente all'utente i documenti non leggibili automaticamente. | S |
 | RF-B-07 | L'amministratore di tenant DOVREBBE poter definire la visibilità dei documenti privati: condivisi con tutto il tenant oppure riservati al singolo utente caricante. | S |
 | RF-B-08 | Il sistema DOVREBBE applicare limiti configurabili per tenant (spazio complessivo, dimensione massima per file) coerenti con il piano commerciale. | S |
-| RF-B-09 | L'Archivio Privato DEVE comprendere un'area "knowledge base di agenzia": i documenti che vi appartengono (convenzioni, note tecniche, casistica, testi tipo) sono considerati contesto permanente e consultati automaticamente dall'AI in tutte le conversazioni ed esecuzioni del tenant, senza referenziazione esplicita. | M |
-| RF-B-10 | L'inclusione di un documento nella knowledge base DOVREBBE essere riservata all'amministratore di tenant, con possibilità di attivare/disattivare i singoli contenuti; la chat DOVREBBE indicare quando una risposta attinge alla knowledge base. | S |
+| RF-B-09 | L'utente DEVE poter promuovere un documento dell'Archivio Privato a documento di riferimento (RF-D-14) senza ricaricarlo, e la scheda del documento DEVE indicare se lo è. | M |
 
 ### 3.3 Modulo C — Chat conversazionale e referenziazione
 
@@ -157,6 +167,9 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | RF-D-11 | Ogni template DEVE definire struttura, stili tipografici, intestazione/piè di pagina e segnaposto per i contenuti generati (titolo, destinatario, data, corpo, tabelle comparative), così che documenti diversi risultino graficamente coerenti tra loro. | M |
 | RF-D-12 | Il tenant DOVREBBE poter personalizzare i template con la propria identità visiva (logo, colori, dati di contatto, firma) e caricare template propri conformi allo schema dei segnaposto. | S |
 | RF-D-13 | L'amministratore di tenant DOVREBBE poter associare un template predefinito a ciascuna tipologia di output (es. confronto polizze → template comparativo; riepilogo garanzie → template scheda prodotto). | S |
+| RF-D-14 | Le istruzioni DEVONO poter comprendere **documenti di riferimento** (convenzioni, note tecniche, casistica, testi tipo), caricati direttamente o promossi dall'Archivio Privato: sono contesto permanente, consultato automaticamente dall'AI senza referenziazione esplicita. Come le regole scritte hanno un ambito (RF-D-06) e sono attivabili singolarmente. *Sostituisce RF-B-09 della versione 0.8.* | M |
+| RF-D-15 | La gestione dei documenti di riferimento DOVREBBE essere riservata all'amministratore di tenant; la chat DOVREBBE indicare quando una risposta vi attinge, distinguendolo dagli altri segnali di provenienza (RF-D-05, RF-G-03). *Sostituisce RF-B-10 della versione 0.8.* | S |
+| RF-D-16 | La sezione DEVE mostrare quanti documenti di riferimento sono attivi e il loro peso complessivo: essendo contesto permanente incidono sul costo di ogni interrogazione (punto aperto §6.12, RNF-05), e l'interfaccia deve scoraggiarne l'accumulo invece di favorirlo. | S |
 
 ### 3.5 Modulo E — Agenti
 
@@ -236,13 +249,47 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | 5 | **Granularità della visibilità nell'Archivio Privato (RF-B-07):** serve davvero il livello per-utente in prima release o basta il livello tenant? Da validare col cliente pilota. | Scope prima release. |
 | 6 | **Gestione documenti scansionati (RF-B-06):** OCR in prima release o rimandato? | Scope prima release. |
 | 7 | **Provider e modelli supportati al lancio (RF-D-02):** quali provider/modelli offrire in prima release e con quale granularità di scelta (solo a livello tenant o anche per singola conversazione)? Gestione delle chiavi API: incluse nel servizio ASSIEME o "bring your own key"? Impatta direttamente RNF-05 e il pricing. | Decisione di prodotto e commerciale. |
-| 8 | **Governance delle istruzioni personalizzate (RF-D-04):** chi può crearle e modificarle (solo l'amministratore?), serve un flusso di approvazione, e come intercettare istruzioni mal formulate che degradano la qualità delle risposte? | Qualità e responsabilità professionale. |
+| 8 | **Governance delle istruzioni (RF-D-04, RF-D-14):** chi può crearle e modificarle (solo l'amministratore?), serve un flusso di approvazione, e come intercettare istruzioni mal formulate che degradano la qualità delle risposte? Vale per le regole scritte quanto per i documenti di riferimento. | Qualità e responsabilità professionale. |
 | 9 | **Sostenibilità delle esecuzioni schedulate (RF-E-04, RF-E-09):** le esecuzioni ricorrenti consumano AI anche senza utente attivo; da definire i limiti di piano (frequenza minima, numero di run mensili inclusi) per non erodere la marginalità del canone. | Sostenibilità economica (RNF-05). |
 | 10 | **Canali di notifica degli agenti (RF-E-07):** solo in-app o anche email/altri canali? Da validare col cliente pilota. | UX e scope prima release. |
 | 11 | **Set di template al lancio (RF-D-10):** quali tipologie servono in prima release (confronto polizze, riepilogo garanzie, proposta di rinnovo, report interno) e in quali formati prioritari? La generazione fedele ha complessità tecnica molto diversa per formato: PDF/DOCX più lineari, XLSX e PPTX più onerosi. | Scope prima release ed effort tecnico. |
-| 12 | **Dimensionamento di tabelle e knowledge base (RF-C-11, RF-B-09):** limiti su documenti × colonne per tabella e sull'ampiezza della knowledge base "sempre in contesto", che incide sul costo di ogni singola query. Da definire in coerenza con RNF-05. | Sostenibilità economica e UX. |
+| 12 | **Dimensionamento di tabelle e documenti di riferimento (RF-C-11, RF-D-14):** limiti su documenti × colonne per tabella e sull'ampiezza del contesto permanente, che incide sul costo di ogni singola query. L'ambito di validità (RF-D-06) mitiga il problema — un documento entra in contesto solo quando pertinente — ma non lo elimina. Da definire in coerenza con RNF-05. | Sostenibilità economica e UX. |
 | 13 | **Perimetro e pricing dell'accesso MCP (Modulo F):** quali tool esporre al lancio, come conteggiare e prezzare le interazioni provenienti dai client esterni (incluse nel canone? pacchetto dedicato?), e policy di sicurezza per l'accesso programmatico all'Archivio Privato. | Decisione di prodotto, commerciale e di sicurezza. |
 | 14 | **Regole di apprendimento e perimetro privacy della memoria (Modulo G):** cosa merita di essere memorizzato e cosa no (dati dei clienti finali, basi giuridiche GDPR, retention), come prevenire ricordi errati o obsoleti che degradano le risposte, e come comunicare al tenant il funzionamento della memoria in modo che generi fiducia e non diffidenza. | Privacy, qualità e fiducia. |
+
+---
+
+## 7. Storico delle revisioni
+
+### 0.9 — 04/08/2026
+
+**La knowledge base di agenzia confluisce nelle Istruzioni (Modulo D).**
+
+Non esiste più come area dell'Archivio Privato. I documenti di riferimento
+diventano una delle due nature delle istruzioni, accanto alle regole scritte.
+
+*Perché.* Istruzioni e documenti di riferimento hanno lo stesso modello di
+governo — deliberati, curati dall'amministratore, sempre attivi — mentre la
+memoria persistente è l'unica automatica e fallibile. Il taglio precedente
+separava due cose uguali e le teneva lontane dalla terza. In più, con
+l'utente costretto a scegliere fra tre contenitori dai confini sottili, lo
+stesso contenuto sarebbe finito in due posti diversi, con l'inevitabile
+divergenza a seguire.
+
+*Conseguenza che vale da sola la modifica.* I documenti di riferimento
+ereditano l'**ambito di validità** delle istruzioni (RF-D-06), che la
+knowledge base non aveva: entrano nel contesto solo quando pertinenti,
+invece che a ogni interrogazione. Il costo del contesto permanente — punto
+aperto §6.12, vincolo RNF-05 — passa da fisso a condizionato.
+
+| Cambiamento | |
+|---|---|
+| RF-B-09 | riscritto: ora è la promozione di un documento dell'Archivio Privato a documento di riferimento |
+| RF-B-10 | rimosso, confluito in RF-D-15 |
+| RF-D-14 | nuovo — documenti di riferimento (sostituisce l'ex RF-B-09) |
+| RF-D-15 | nuovo — governo e segnale di provenienza (sostituisce l'ex RF-B-10) |
+| RF-D-16 | nuovo — visibilità del peso del contesto permanente |
+| §1.1, §1.3, §2, §6.8, §6.12 | allineati |
 
 ---
 

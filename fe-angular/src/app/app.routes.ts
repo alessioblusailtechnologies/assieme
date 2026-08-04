@@ -62,19 +62,8 @@ export const routes: Routes = [
           titolo: 'Archivio privato',
           fase: 2,
           descrizione:
-            "Documenti dell'agenzia: caricamento singolo e multiplo, coda di elaborazione con stato visibile, cartelle ed etichette, classificazione assistita correggibile. Isolato da ogni altro tenant.",
-          requisiti: ['RF-B-01 … RF-B-05', 'RF-B-07'],
-        },
-      },
-      {
-        path: 'archivio/privato/kb',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Knowledge base di agenzia',
-          fase: 2,
-          descrizione:
-            "Convenzioni, note tecniche, casistica e testi tipo: contesto permanente, consultato automaticamente dall'AI in ogni conversazione ed esecuzione senza bisogno di referenziarlo. Uno dei tre pilastri del DNA d'Agenzia.",
-          requisiti: ['RF-B-09', 'RF-B-10'],
+            "Documenti dell'agenzia: caricamento singolo e multiplo, coda di elaborazione con stato visibile, etichette, classificazione assistita correggibile. Isolato da ogni altro tenant. Da qui un documento può essere promosso a documento di riferimento nelle Istruzioni.",
+          requisiti: ['RF-B-01 … RF-B-05', 'RF-B-07', 'RF-B-09'],
         },
       },
       {
@@ -106,8 +95,8 @@ export const routes: Routes = [
           titolo: 'Impostazioni',
           fase: 5,
           descrizione:
-            'Provider e modello AI, istruzioni personalizzate che governano il ragionamento, libreria dei template di output, credenziali MCP. Visibilità e permessi differenziati per ruolo.',
-          requisiti: ['RF-D-01 … RF-D-13', 'RF-F-02', 'RF-F-04'],
+            "Provider e modello AI; le Istruzioni, con le due schede Regole e Documenti di riferimento — le prime condizionano il giudizio, i secondi forniscono fonti citabili; libreria dei template di output; credenziali MCP. Visibilità e permessi differenziati per ruolo.",
+          requisiti: ['RF-D-01 … RF-D-16', 'RF-F-02', 'RF-F-04'],
         },
       },
     ],

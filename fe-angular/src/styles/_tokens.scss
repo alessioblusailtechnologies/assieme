@@ -147,16 +147,16 @@
   --c-stato-errore: var(--c-neg);
   --c-stato-errore-soft: var(--c-neg-soft);
 
-  /* ---------- Provenienza (RF-D-05, RF-B-10, RF-G-03) ----------
+  /* ---------- Provenienza (RF-D-05, RF-D-15, RF-G-03) ----------
    * Tre segnali distinti che l'interfaccia deve saper mostrare senza
-   * diventare rumorosa: una risposta può dipendere da un'istruzione del
-   * tenant, dalla knowledge base o da un ricordo. Colori sobri e vicini fra
-   * loro: sono note a margine, non avvisi.
+   * diventare rumorosa: una risposta può dipendere da una regola del tenant,
+   * da un documento di riferimento o da un ricordo. Colori sobri e vicini
+   * fra loro: sono note a margine, non avvisi.
    */
-  --c-prov-istruzione: #6b4d8a;
-  --c-prov-istruzione-soft: #f0ebf6;
-  --c-prov-kb: #2f6b7c;
-  --c-prov-kb-soft: #e5f0f3;
+  --c-prov-regola: #6b4d8a;
+  --c-prov-regola-soft: #f0ebf6;
+  --c-prov-riferimento: #2f6b7c;
+  --c-prov-riferimento-soft: #e5f0f3;
   --c-prov-memoria: #7c5a2f;
   --c-prov-memoria-soft: #f6efe5;
 

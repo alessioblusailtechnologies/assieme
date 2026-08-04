@@ -64,7 +64,7 @@ import User03Icon from '@hugeicons/core-free-icons/User03Icon';
  * diverso, o se Hugeicons viene sostituito, l'applicazione non se ne accorge.
  *
  * La seconda: chi scrive un template non deve sfogliare un catalogo di 5442
- * icone per chiedersi quale rappresenti la knowledge base. Il vocabolario
+ * icone per chiedersi quale rappresenti i documenti di riferimento. Il vocabolario
  * dell'interfaccia coincide con quello dei requisiti.
  */
 export const REGISTRO_ICONE = {
@@ -72,7 +72,7 @@ export const REGISTRO_ICONE = {
   chat: BubbleChatIcon,
   'archivio-pubblico': LibraryIcon,
   'archivio-privato': Folder01Icon,
-  'knowledge-base': FolderLibraryIcon,
+  riferimenti: FolderLibraryIcon,
   tabelle: Table01Icon,
   agente: BotIcon,
   memoria: Brain02Icon,

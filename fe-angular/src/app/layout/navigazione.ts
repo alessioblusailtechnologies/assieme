@@ -39,7 +39,6 @@ export const NAVIGAZIONE: GruppoNavigazione[] = [
     voci: [
       { percorso: '/archivio/pubblico', etichetta: 'Archivio pubblico', icona: 'archivio-pubblico' },
       { percorso: '/archivio/privato', etichetta: 'Archivio privato', icona: 'archivio-privato' },
-      { percorso: '/archivio/privato/kb', etichetta: 'Knowledge base', icona: 'knowledge-base' },
     ],
   },
   {

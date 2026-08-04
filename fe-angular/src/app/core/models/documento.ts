@@ -103,13 +103,15 @@ export interface DocumentoPrivato extends DocumentoBase {
   ramo?: Ramo;
   riferimentoCliente?: string;
   /**
-   * RF-B-09: se vero il documento è contesto permanente, consultato
-   * automaticamente in ogni conversazione ed esecuzione del tenant senza che
+   * RF-B-09: il documento è stato promosso a **documento di riferimento**
+   * (RF-D-14), quindi è contesto permanente e l'AI lo consulta senza che
    * l'utente debba referenziarlo.
+   *
+   * Il documento resta nell'Archivio Privato: la promozione non lo sposta,
+   * gli aggiunge un ruolo. Governo e sospensione stanno nelle Istruzioni,
+   * dove il documento compare accanto alle regole scritte.
    */
-  inKnowledgeBase: boolean;
-  /** RF-B-10: un contenuto in knowledge base può essere sospeso senza toglierlo. */
-  kbAttivo?: boolean;
+  documentoDiRiferimento: boolean;
   /** RF-B-07: condiviso col tenant o riservato a chi l'ha caricato. */
   visibilita: 'tenant' | 'personale';
 }

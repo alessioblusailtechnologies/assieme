@@ -11,8 +11,8 @@ import { Id, IsoDateTime } from './comune';
  * - `operatore` — RF-1.4: agente, subagente, impiegato, broker. Consulta gli
  *   archivi e usa la chat.
  * - `amministratore` — ha tutto ciò che ha l'operatore, più la gestione di
- *   utenti, istruzioni personalizzate (RF-D-01), knowledge base (RF-B-10) e
- *   template (RF-D-13).
+ *   utenti, istruzioni — regole e documenti di riferimento (RF-D-01,
+ *   RF-D-15) — e template (RF-D-13).
  *
  * L'inclusione è voluta: `amministratore` ⊃ `operatore`. Un permesso non si
  * chiede mai come "sei amministratore?" ma tramite `puo()` in
@@ -25,8 +25,8 @@ export type Ruolo = 'operatore' | 'amministratore';
 export type Permesso =
   | 'archivio-privato.carica'
   | 'archivio-privato.elimina'
-  | 'knowledge-base.gestisci'
   | 'istruzioni.gestisci'
+  | 'riferimenti.gestisci'
   | 'template.gestisci'
   | 'utenti.gestisci'
   | 'modello-ai.configura'

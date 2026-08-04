@@ -3,9 +3,9 @@
 | Campo | Valore |
 |---|---|
 | Documento | Piano di sviluppo FE |
-| Versione | 0.2 — recepisce le scelte su PrimeNG, AG Grid, Hugeicons, Mockoon |
+| Versione | 0.3 — la knowledge base confluisce nelle Istruzioni |
 | Data | 04/08/2026 |
-| Riferimento | `ASSIEME-analisi-requisiti.md` v0.8 |
+| Riferimento | `ASSIEME-analisi-requisiti.md` v0.9 |
 | Progetto | `fe-angular/` — Angular 22.1.x |
 
 ---
@@ -125,7 +125,7 @@ PrimeNG copre form, overlay, menu, notifiche, upload, calendario. Restano nostri
 - **selettore `@` di referenziazione documentale**
 - **bolla di messaggio in streaming**
 - **badge di stato** (elaborazione documento, esecuzione agente)
-- **indicatore di provenienza** (istruzione / knowledge base / ricordo — §7)
+- **indicatore di provenienza** (regola / documento di riferimento / ricordo — §7)
 
 Vivono in `shared/ui`, costruiti sopra le primitive PrimeNG e CDK dove serve.
 
@@ -260,7 +260,7 @@ Sotto `mocks/data/`, referenziati dalle rotte dell'ambiente:
 |---|---|
 | `compagnie.json`, `rami.json` | tassonomia di navigazione (RF-A-03) |
 | `documenti-pubblici.json` | ~50 documenti su 8–10 compagnie, con metadati RF-A-02 completi ed edizioni multiple (RF-A-04) |
-| `documenti-privati.json` | preventivi, polizze, appendici del tenant + knowledge base (RF-B-09) |
+| `documenti-privati.json` | preventivi, polizze, appendici e corrispondenza del tenant |
 | `conversazioni.json`, `messaggi.json` | conversazioni con documenti referenziati, citazioni, casi di non-copertura (RF-C-08) |
 | `tabelle.json` | tabelle di analisi complete di citazione per cella e caselle "non presente" |
 | `agenti.json`, `esecuzioni.json` | agenti con pianificazione e storico, incluse esecuzioni fallite |
@@ -300,7 +300,7 @@ I modelli in `core/models/` e le rotte Mockoon **sono** la specifica per il back
 Due scelte trasversali da fare subito, perché toccano ogni schermata:
 
 - **Come si rappresenta l'incertezza.** RF-C-08 e RF-C-12 impongono che il sistema dichiari quando un dato non è supportato dai documenti. Non è un caso d'errore: è un valore di prima classe nel modello, con un suo trattamento grafico ovunque compaia.
-- **Come si rappresenta la provenienza.** RF-D-05 (risposta influenzata da un'istruzione), RF-B-10 (attinge alla knowledge base), RF-G-03 (fondata su un ricordo). Tre segnali diversi che l'interfaccia deve mostrare senza diventare rumorosa: vanno progettati insieme, una volta sola.
+- **Come si rappresenta la provenienza.** RF-D-05 (risposta influenzata da una regola), RF-D-15 (attinge a un documento di riferimento), RF-G-03 (fondata su un ricordo). Tre segnali diversi che l'interfaccia deve mostrare senza diventare rumorosa: vanno progettati insieme, una volta sola. Il modello li codifica già dalla Fase 0 — `Provenienza` ha esattamente questi tre tipi.
 
 ---
 
@@ -355,7 +355,7 @@ Regola: **`features/` non importa mai da un altro `features/`**. Ciò che serve 
 /archivio/pubblico             navigazione compagnia / ramo / prodotto (RF-A-03)
 /archivio/pubblico/:id         scheda documento + visualizzatore
 /archivio/privato              documenti del tenant
-/archivio/privato/kb           knowledge base di agenzia (RF-B-09)
+/archivio/privato/:id          scheda documento
 /tabelle                       tabelle di analisi salvate
 /tabelle/:id                   tabella
 /agenti                        elenco agenti
@@ -400,11 +400,21 @@ Il visualizzatore PDF resta un segnaposto: quello vero (pdf.js) arriva in Fase 3
 
 **Deviazione dal piano, da sapere:** l'endpoint dei documenti non sta in Mockoon ma in `mocks/api-stub.mjs`. L'helper `filter` di Mockoon fa solo uguaglianza esatta e non regge ricerca testuale, filtri opzionali e paginazione senza diventare un blob Handlebars dentro una stringa JSON. Lo stub onora gli stessi header di Mockoon, quindi il pannello di sviluppo funziona identico su tutte le rotte. La regola: **Mockoon per i dati fissi e le regole, stub per gli endpoint con logica.**
 
-### Fase 2 — Archivio Privato e Knowledge Base · ~6 giorni · RF-B-01…B-05, B-09, B-07/B-10 (grafica)
+### Fase 2 — Archivio Privato · ~5 giorni · RF-B-01…B-05, B-07, B-09
 
-Upload con trascinamento (`p-fileupload`), coda di elaborazione con transizioni di stato via polling, cartelle ed etichette, form metadati con classificazione assistita, area knowledge base con attivazione per contenuto.
+**È la prima fase in cui l'utente scrive.** Finora leggeva soltanto, e questo cambia tre cose ovunque: compaiono le operazioni che possono fallire a metà, compare il tempo (un documento caricato non è subito utilizzabile), e i permessi iniziano a contare davvero.
 
-È la fase giusta per il primo form con **Signal Forms**: abbastanza reale da essere un test vero, abbastanza contenuto da poter tornare indietro. Se convince, si estende; se no, il resto va con i Reactive Forms.
+Caricamento con trascinamento e multiplo, coda di elaborazione con transizioni di stato, etichette, form metadati con classificazione assistita, scheda documento modificabile, promozione a documento di riferimento (RF-B-09).
+
+Tre punti delicati:
+
+- **La coda.** Dopo aver lasciato dieci file l'utente non deve trovarsi davanti a una finestra modale che nasconde l'archivio: le righe compaiono in cima all'elenco con il loro stato, e si continua a lavorare mentre i file salgono.
+- **L'interrogazione periodica** dello stato va solo finché esistono documenti non assestati, e si ferma da sola. Un polling che continua a vuoto è il difetto che nessuno nota finché non guarda il pannello di rete.
+- **Le proposte di classificazione devono vedersi come provvisorie.** In ambito assicurativo una compagnia sbagliata su un documento è un problema vero, e un campo precompilato che sembra confermato è peggio di un campo vuoto.
+
+Il caricamento e la coda si costruiscono in `shared/`, non dentro la funzionalità: la Fase 5 li riusa per i documenti di riferimento, e due implementazioni della stessa macchina divergono sempre.
+
+È anche la fase giusta per il primo form con **Signal Forms**: abbastanza reale da essere un test vero, abbastanza contenuto da poter tornare indietro. Se convince si estende; se no, il resto va con i Reactive Forms.
 
 ### Fase 3 — Chat, referenziazione, citazioni · ~11 giorni · RF-C-01…C-10 — **il cuore**
 
@@ -423,9 +433,19 @@ Costruttore righe (documenti) × colonne (criteri predefiniti o in linguaggio na
 
 Qui si verifica se qualche funzionalità Enterprise serve davvero (§4).
 
-### Fase 5 — Impostazioni e personalizzazione · ~6 giorni · RF-D-01…D-13
+### Fase 5 — Impostazioni e personalizzazione · ~7 giorni · RF-D-01…D-16
 
-Scelta provider/modello con schede informative, editor delle istruzioni con ambiti e attivazione singola, storico modifiche, libreria template con anteprima e personalizzazione dell'identità visiva.
+Scelta provider/modello con schede informative, storico modifiche, libreria template con anteprima e personalizzazione dell'identità visiva.
+
+**La sezione Istruzioni con due schede** (v0.9 dei requisiti):
+
+- **Regole** — testo in linguaggio naturale, con ambito e attivazione singola (RF-D-04, RF-D-06).
+- **Documenti di riferimento** — caricati qui o promossi dall'Archivio Privato, stesso ambito e stessa attivazione (RF-D-14). Riusa il caricamento e la coda costruiti in Fase 2.
+
+Due cose che la sezione deve fare e che non sono ovvie:
+
+- **Dire in una riga cosa va in ciascuna scheda.** È il modo più economico di evitare che lo stesso contenuto finisca in due posti. Il criterio: se è una regola su *come giudicare* è una regola scritta; se va citato, o è più lungo di una pagina, è un documento.
+- **Mostrare il peso del contesto permanente** (RF-D-16). Ogni documento attivo si paga a ogni interrogazione: la schermata deve scoraggiare l'accumulo, e l'interruttore attivo/sospeso va presentato come igiene ordinaria, non come funzione nascosta.
 
 ### Fase 6 — Agenti · ~7 giorni · RF-E-01…E-13
 
@@ -437,7 +457,7 @@ Pannello memoria consultabile, modificabile e cancellabile; distinzione tenant v
 
 Il **Modulo F ha superficie FE minima**: generazione e revoca credenziali, stato connessioni, istruzioni di configurazione. Il valore del modulo è tutto nel backend.
 
-**Totale indicativo: ~52 giorni-uomo** (~11 settimane per una persona).
+**Totale indicativo: ~52 giorni-uomo** (~11 settimane per una persona). La confluenza della knowledge base nelle Istruzioni sposta un giorno dalla Fase 2 alla Fase 5, non ne aggiunge.
 
 ---
 
@@ -501,7 +521,7 @@ In ordine di urgenza. Diverse voci rimandano ai punti aperti §6 dell'analisi.
 | 9 | **Formati template al lancio** (punto aperto §6.11) | Fase 5 | La scelta del template ha interfacce diverse per formato |
 | 10 | **Canali di notifica agenti** — solo in-app o anche email? (punto aperto §6.10) | Fase 6 | Preferenze di notifica nelle impostazioni |
 
-Sul punto 3: il modello dei ruoli è dato per rimandato nell'analisi, ma il front-end non può aspettarlo. Se non arriva in tempo procedo con l'assunzione minima — **due ruoli, operatore e amministratore di tenant, con l'amministratore che ha i permessi dell'operatore più la gestione di utenti, istruzioni, knowledge base e template** — e la segnalo come debito da rivedere.
+Sul punto 3: il modello dei ruoli è dato per rimandato nell'analisi, ma il front-end non può aspettarlo. Se non arriva in tempo procedo con l'assunzione minima — **due ruoli, operatore e amministratore di tenant, con l'amministratore che ha i permessi dell'operatore più la gestione di utenti, istruzioni e template** — e la segnalo come debito da rivedere.
 
 ---
 

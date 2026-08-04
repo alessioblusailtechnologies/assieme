@@ -60,15 +60,20 @@ export interface CitazioneBreve {
  * Da dove viene ciò che l'AI ha detto, oltre ai documenti citati.
  *
  * Tre requisiti distinti chiedono di renderlo riconoscibile all'utente:
- * RF-D-05 (risposta influenzata da un'istruzione del tenant), RF-B-10
- * (risposta che attinge alla knowledge base di agenzia), RF-G-03 (risposta
- * fondata su un ricordo). Sono i tre pilastri del DNA d'Agenzia: se l'utente
- * non li vede all'opera, la personalizzazione resta invisibile e il
- * differenziale del prodotto non si percepisce.
+ * RF-D-05 (risposta influenzata da una regola del tenant), RF-D-15 (risposta
+ * che attinge a un documento di riferimento), RF-G-03 (risposta fondata su un
+ * ricordo). Formano il DNA d'Agenzia: se l'utente non li vede all'opera, la
+ * personalizzazione resta invisibile e il differenziale del prodotto non si
+ * percepisce.
+ *
+ * I tre non sono intercambiabili, ed è il motivo per cui restano segnali
+ * distinti: una **regola** cambia il giudizio, un **documento di
+ * riferimento** fornisce una fonte citabile, un **ricordo** è un'inferenza
+ * fallibile che cede il passo alle regole (RF-G-04).
  */
 export interface Provenienza {
-  tipo: 'istruzione' | 'knowledge-base' | 'memoria';
-  /** Id dell'istruzione, del documento di knowledge base o del ricordo. */
+  tipo: 'regola' | 'documento-riferimento' | 'memoria';
+  /** Id della regola, del documento di riferimento o del ricordo. */
   origineId: Id;
   /** Testo breve da mostrare, es. `valutato secondo la regola "Infortuni conducente"`. */
   etichetta: string;

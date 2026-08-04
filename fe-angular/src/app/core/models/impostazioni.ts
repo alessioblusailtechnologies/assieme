@@ -25,18 +25,18 @@ export interface ModelloAI {
 }
 
 /**
- * Istruzione personalizzata (RF-D-04).
+ * Regola scritta (RF-D-04).
  *
  * L'esempio dell'analisi vale più di una definizione: "non segnalare come
  * carenza l'assenza della garanzia infortuni del conducente, l'agenzia la
  * copre con polizza dedicata". Un'analisi a criteri fissi la segnalerebbe
  * come mancanza grave; è esattamente il limite di Navisio che ASSIEME supera.
  *
- * RF-D-08 pone il confine: le istruzioni orientano il giudizio, **non
- * alterano i fatti documentali**. L'obbligo di citazione e la dichiarazione
- * di non-copertura restano attivi comunque.
+ * RF-D-08 pone il confine: le regole orientano il giudizio, **non alterano i
+ * fatti documentali**. L'obbligo di citazione e la dichiarazione di
+ * non-copertura restano attivi comunque.
  */
-export interface IstruzionePersonalizzata {
+export interface RegolaIstruzione {
   id: Id;
   titolo: string;
   testo: string;
@@ -45,6 +45,32 @@ export interface IstruzionePersonalizzata {
   attiva: boolean;
   creataDa: Id;
   aggiornataIl: IsoDateTime;
+}
+
+/**
+ * Documento di riferimento (RF-D-14).
+ *
+ * L'altra natura delle istruzioni. Stesso governo di una regola — ambito,
+ * attivazione, cura dell'amministratore — ma una differenza sostanziale:
+ * **può essere citato**. Una regola dice come giudicare, un documento dice
+ * cosa c'è scritto, e la citazione è ciò su cui poggia la verificabilità del
+ * sistema (RF-C-04, RNF-01).
+ *
+ * Può essere caricato qui o promosso da un documento dell'Archivio Privato
+ * (RF-B-09), che in quel caso resta dov'è e acquisisce un ruolo in più.
+ */
+export interface DocumentoRiferimento {
+  id: Id;
+  titolo: string;
+  /** Valorizzato quando nasce da un documento dell'Archivio Privato. */
+  documentoPrivatoId?: Id;
+  ambito: AmbitoIstruzione;
+  attivo: boolean;
+  numeroPagine?: number;
+  /** RF-D-16: il peso conta, perché è contesto permanente a ogni query. */
+  dimensioneByte: number;
+  caricatoDa: Id;
+  aggiornatoIl: IsoDateTime;
 }
 
 export type AmbitoIstruzione =
@@ -59,7 +85,7 @@ export interface VoceStoricoImpostazioni {
   utenteId: Id;
   utenteNome: string;
   azione: 'creazione' | 'modifica' | 'attivazione' | 'disattivazione' | 'eliminazione';
-  oggetto: 'istruzione' | 'modello' | 'template' | 'knowledge-base';
+  oggetto: 'regola' | 'documento-riferimento' | 'modello' | 'template';
   descrizione: string;
 }
 

@@ -94,8 +94,12 @@ describe('Shell', () => {
 
     expect(etichette).toContain('Chat');
     expect(etichette).toContain('Archivio pubblico');
-    expect(etichette).toContain('Knowledge base');
+    expect(etichette).toContain('Archivio privato');
     expect(etichette).toContain('Memoria');
+
+    /* La knowledge base non è più una sezione a sé: i documenti di
+       riferimento vivono nelle Istruzioni (requisiti v0.9). */
+    expect(etichette).not.toContain('Knowledge base');
   });
 
   it('mostra il nome del tenant quando la sessione arriva', async () => {
