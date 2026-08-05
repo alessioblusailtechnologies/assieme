@@ -43,6 +43,7 @@ import {
   trovaDocumento as trovaDocumentoPrivato,
 } from './archivio-privato.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
+import { gestisci as gestisciTabelle } from './tabelle.mjs';
 import { generaPdf } from './pdf.mjs';
 
 const PORTA = 3001;
@@ -306,6 +307,12 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  /* Tabelle di analisi: costruzione, generazione progressiva cella per
+     cella, esportazione. Altra macchina a stati, altro modulo. */
+  if (await gestisciTabelle(req, res, url, { inviaJson, leggiCorpo, trovaDocumento })) {
+    return;
+  }
+
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
@@ -381,6 +388,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle',
   );
 });

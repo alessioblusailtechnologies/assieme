@@ -1,0 +1,360 @@
+[
+  {
+    "id": "tab-001",
+    "titolo": "Confronto RC Auto — AUTOPIÙ vs preventivo UnipolSai",
+    "creataIl": "2026-08-03T15:20:00+02:00",
+    "aggiornataIl": "2026-08-04T09:05:00+02:00",
+    "autoreId": "utn-004",
+    "condivisa": false,
+    "stato": "completa",
+    "colonne": [
+      { "id": "col-101", "intestazione": "Massimale RC", "origine": "predefinita" },
+      { "id": "col-102", "intestazione": "Franchigia furto e incendio", "origine": "predefinita" },
+      { "id": "col-103", "intestazione": "Infortuni del conducente", "origine": "predefinita" },
+      { "id": "col-104", "intestazione": "Assistenza stradale", "origine": "predefinita" }
+    ],
+    "righe": [
+      {
+        "documentoId": "doc-pub-003",
+        "archivio": "pubblico",
+        "etichetta": "Generali — Active Veicoli AUTOPIÙ con Telematica",
+        "celle": {
+          "col-101": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "6.450.000 € per sinistro, di cui 1.300.000 € per danni a cose",
+            "citazioni": [
+              {
+                "id": "cit-t101",
+                "documentoId": "doc-pub-003",
+                "documentoTitolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 14,
+                  "articolo": "12",
+                  "sezione": "Responsabilità civile",
+                  "evidenzia": { "x": 0.09, "y": 0.31, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "Il massimale per sinistro è pari a euro 6.450.000, di cui euro 1.300.000 per danni a cose."
+              }
+            ]
+          },
+          "col-102": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Franchigia fissa di 250 € per sinistro",
+            "citazioni": [
+              {
+                "id": "cit-t102",
+                "documentoId": "doc-pub-003",
+                "documentoTitolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 41,
+                  "articolo": "27",
+                  "sezione": "Furto e incendio",
+                  "evidenzia": { "x": 0.09, "y": 0.45, "larghezza": 0.82, "altezza": 0.08 }
+                },
+                "estratto": "La garanzia è prestata con applicazione di una franchigia fissa di euro 250 per ciascun sinistro."
+              }
+            ]
+          },
+          "col-103": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Inclusa — massimale 100.000 €",
+            "citazioni": [
+              {
+                "id": "cit-t103",
+                "documentoId": "doc-pub-003",
+                "documentoTitolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 52,
+                  "articolo": "35",
+                  "sezione": "Infortuni del conducente",
+                  "evidenzia": { "x": 0.09, "y": 0.22, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "La garanzia infortuni del conducente è prestata con un massimale di euro 100.000 per persona."
+              }
+            ]
+          },
+          "col-104": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Traino fino a 50 km dal luogo del fermo",
+            "citazioni": [
+              {
+                "id": "cit-t104",
+                "documentoId": "doc-pub-003",
+                "documentoTitolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 78,
+                  "sezione": "Assistenza stradale",
+                  "evidenzia": { "x": 0.09, "y": 0.55, "larghezza": 0.82, "altezza": 0.06 }
+                },
+                "estratto": "Il traino del veicolo è garantito fino a 50 km dal luogo del fermo."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "documentoId": "doc-priv-001",
+        "archivio": "privato",
+        "etichetta": "Preventivo UnipolSai — Fiat 500X targa GK492ZR",
+        "celle": {
+          "col-101": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "6.450.000 € per sinistro, di cui 1.300.000 € per danni a cose",
+            "citazioni": [
+              {
+                "id": "cit-t105",
+                "documentoId": "doc-priv-001",
+                "documentoTitolo": "Preventivo UnipolSai — Fiat 500X targa GK492ZR",
+                "archivio": "privato",
+                "posizione": {
+                  "pagina": 2,
+                  "sezione": "Responsabilità civile",
+                  "evidenzia": { "x": 0.09, "y": 0.34, "larghezza": 0.82, "altezza": 0.06 }
+                },
+                "estratto": "Massimale unico per sinistro euro 6.450.000, di cui euro 1.300.000 per danni a cose."
+              }
+            ]
+          },
+          "col-102": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Scoperto 10% con minimo di 500 € per sinistro",
+            "citazioni": [
+              {
+                "id": "cit-t106",
+                "documentoId": "doc-priv-001",
+                "documentoTitolo": "Preventivo UnipolSai — Fiat 500X targa GK492ZR",
+                "archivio": "privato",
+                "posizione": {
+                  "pagina": 3,
+                  "sezione": "Garanzie accessorie",
+                  "evidenzia": { "x": 0.09, "y": 0.6, "larghezza": 0.82, "altezza": 0.06 }
+                },
+                "estratto": "Furto e Incendio: scoperto 10% con il minimo di euro 500 per ciascun sinistro."
+              }
+            ]
+          },
+          "col-103": {
+            "stato": "pronta",
+            "esito": "non-presente",
+            "nota": "La garanzia non compare nel preventivo né nelle condizioni da esso richiamate."
+          },
+          "col-104": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Traino illimitato, veicolo sostitutivo fino a 7 giorni",
+            "citazioni": [
+              {
+                "id": "cit-t107",
+                "documentoId": "doc-priv-001",
+                "documentoTitolo": "Preventivo UnipolSai — Fiat 500X targa GK492ZR",
+                "archivio": "privato",
+                "posizione": {
+                  "pagina": 3,
+                  "sezione": "Assistenza stradale",
+                  "evidenzia": { "x": 0.09, "y": 0.72, "larghezza": 0.82, "altezza": 0.06 }
+                },
+                "estratto": "Assistenza stradale con traino senza limiti di distanza e veicolo sostitutivo fino a 7 giorni."
+              }
+            ]
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id": "tab-002",
+    "titolo": "Garanzie casa — tre proposte a confronto",
+    "creataIl": "2026-07-28T11:40:00+02:00",
+    "aggiornataIl": "2026-07-30T16:10:00+02:00",
+    "autoreId": "utn-001",
+    "condivisa": true,
+    "stato": "completa",
+    "colonne": [
+      { "id": "col-201", "intestazione": "Incendio fabbricato", "origine": "predefinita" },
+      { "id": "col-202", "intestazione": "Furto contenuto", "origine": "predefinita" },
+      { "id": "col-203", "intestazione": "RC della vita privata", "origine": "predefinita" }
+    ],
+    "righe": [
+      {
+        "documentoId": "doc-pub-026",
+        "archivio": "pubblico",
+        "etichetta": "Reale Mutua — Protezione Casa Reale",
+        "celle": {
+          "col-201": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Valore di ricostruzione a nuovo, massimale 400.000 €",
+            "citazioni": [
+              {
+                "id": "cit-t201",
+                "documentoId": "doc-pub-026",
+                "documentoTitolo": "DIP Aggiuntivo — Protezione Casa Reale",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 6,
+                  "articolo": "4",
+                  "sezione": "Danni al fabbricato",
+                  "evidenzia": { "x": 0.09, "y": 0.28, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "Il fabbricato è assicurato al valore di ricostruzione a nuovo, con massimale di euro 400.000."
+              }
+            ]
+          },
+          "col-202": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Massimale 15.000 €, scoperto 10%",
+            "citazioni": [
+              {
+                "id": "cit-t202",
+                "documentoId": "doc-pub-026",
+                "documentoTitolo": "DIP Aggiuntivo — Protezione Casa Reale",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 11,
+                  "articolo": "9",
+                  "sezione": "Furto",
+                  "evidenzia": { "x": 0.09, "y": 0.4, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "Il contenuto è assicurato contro il furto fino a euro 15.000, con scoperto del 10%."
+              }
+            ]
+          },
+          "col-203": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Massimale 1.000.000 € per sinistro",
+            "citazioni": [
+              {
+                "id": "cit-t203",
+                "documentoId": "doc-pub-026",
+                "documentoTitolo": "DIP Aggiuntivo — Protezione Casa Reale",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 14,
+                  "articolo": "12",
+                  "sezione": "Responsabilità civile",
+                  "evidenzia": { "x": 0.09, "y": 0.5, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "La responsabilità civile della vita privata è prestata con massimale di euro 1.000.000 per sinistro."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "documentoId": "doc-pub-030",
+        "archivio": "pubblico",
+        "etichetta": "UnipolSai — Casa&Servizi",
+        "celle": {
+          "col-201": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Somma assicurata dichiarata in polizza, limite 500.000 €",
+            "citazioni": [
+              {
+                "id": "cit-t204",
+                "documentoId": "doc-pub-030",
+                "documentoTitolo": "DIP Aggiuntivo — UnipolSai Casa&Servizi",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 7,
+                  "articolo": "5",
+                  "sezione": "Incendio",
+                  "evidenzia": { "x": 0.09, "y": 0.33, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "La somma assicurata per il fabbricato è quella dichiarata in polizza, con il limite di euro 500.000."
+              }
+            ]
+          },
+          "col-202": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Massimale 20.000 €, franchigia 200 €",
+            "citazioni": [
+              {
+                "id": "cit-t205",
+                "documentoId": "doc-pub-030",
+                "documentoTitolo": "DIP Aggiuntivo — UnipolSai Casa&Servizi",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 12,
+                  "articolo": "8",
+                  "sezione": "Furto",
+                  "evidenzia": { "x": 0.09, "y": 0.46, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "La garanzia furto del contenuto opera fino a euro 20.000 con franchigia di euro 200."
+              }
+            ]
+          },
+          "col-203": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Massimale 1.500.000 € per sinistro",
+            "citazioni": [
+              {
+                "id": "cit-t206",
+                "documentoId": "doc-pub-030",
+                "documentoTitolo": "DIP Aggiuntivo — UnipolSai Casa&Servizi",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 16,
+                  "articolo": "11",
+                  "sezione": "Responsabilità civile",
+                  "evidenzia": { "x": 0.09, "y": 0.27, "larghezza": 0.82, "altezza": 0.07 }
+                },
+                "estratto": "Il massimale della responsabilità civile della vita privata è di euro 1.500.000 per sinistro."
+              }
+            ]
+          }
+        }
+      },
+      {
+        "documentoId": "doc-pub-031",
+        "archivio": "pubblico",
+        "etichetta": "Groupama — Casa Serena",
+        "celle": {
+          "col-201": {
+            "stato": "pronta",
+            "esito": "presente",
+            "valore": "Prevista — forma a primo rischio assoluto",
+            "citazioni": [
+              {
+                "id": "cit-t207",
+                "documentoId": "doc-pub-031",
+                "documentoTitolo": "DIP — Groupama Casa Serena",
+                "archivio": "pubblico",
+                "posizione": {
+                  "pagina": 2,
+                  "sezione": "Danni al fabbricato",
+                  "evidenzia": { "x": 0.09, "y": 0.3, "larghezza": 0.82, "altezza": 0.06 }
+                },
+                "estratto": "La garanzia incendio del fabbricato è prestata nella forma a primo rischio assoluto."
+              }
+            ]
+          },
+          "col-202": {
+            "stato": "pronta",
+            "esito": "non-presente",
+            "nota": "Il DIP non riporta la garanzia furto: verificare le Condizioni di Assicurazione del prodotto."
+          },
+          "col-203": {
+            "stato": "pronta",
+            "esito": "non-determinabile",
+            "motivo": "Il DIP sintetico non indica il massimale: servono le Condizioni di Assicurazione del prodotto."
+          }
+        }
+      }
+    ]
+  }
+]

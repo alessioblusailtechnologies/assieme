@@ -1,0 +1,179 @@
+<header class="testata">
+  <ui-briciole [voci]="briciole" />
+  <span class="testata__stacco" aria-hidden="true"></span>
+  <h1 class="serif testata__titolo">Nuova tabella di analisi</h1>
+</header>
+
+<div class="corpo">
+  <!-- 1 · Documenti -->
+  <section class="passo" aria-labelledby="passo-documenti">
+    <p class="mono" id="passo-documenti">1 · Documenti — le righe</p>
+    <p class="passo__spiega">
+      Scegli i documenti da confrontare, da entrambi gli archivi. Con due o più il confronto
+      rende di più, ma anche un documento solo si può interrogare.
+    </p>
+
+    <div class="cerca">
+      <label class="ui-campo-icona cerca__campo">
+        <ui-icon name="cerca" [size]="16" />
+        <input
+          uiCampo
+          type="search"
+          [value]="ricerca()"
+          (input)="aggiornaRicerca($event)"
+          (focus)="pannelloAperto.set(true)"
+          (blur)="chiudiPannello()"
+          (keydown)="suTasto($event)"
+          placeholder="Cerca per compagnia, prodotto o titolo…"
+          role="combobox"
+          aria-label="Cerca un documento da aggiungere"
+          [attr.aria-expanded]="pannelloAperto()"
+          aria-controls="selettore-documenti"
+          aria-autocomplete="list"
+          [attr.aria-activedescendant]="idOpzioneAttiva()"
+        />
+      </label>
+
+      @if (pannelloAperto()) {
+        <ui-selettore-documenti
+          class="cerca__pannello"
+          [query]="ricerca()"
+          [esclusi]="idDocumenti()"
+          (scelto)="aggiungiDocumento($event)"
+          (chiuso)="chiudiPannello()"
+        />
+      }
+    </div>
+
+    @if (documenti().length) {
+      <ul class="scelti" aria-label="Documenti scelti">
+        @for (doc of documenti(); track doc.id) {
+          <li class="scelto">
+            <ui-icon
+              [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+              [size]="14"
+            />
+            <span class="scelto__titolo">{{ doc.titolo }}</span>
+            <button
+              type="button"
+              class="scelto__togli"
+              (click)="rimuoviDocumento(doc.id)"
+              [attr.aria-label]="'Togli ' + doc.titolo"
+            >
+              <ui-icon name="chiudi" [size]="12" />
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="passo__vuoto">Nessun documento scelto.</p>
+    }
+  </section>
+
+  <!-- 2 · Criteri -->
+  <section class="passo" aria-labelledby="passo-criteri">
+    <p class="mono" id="passo-criteri">2 · Criteri — le colonne</p>
+
+    @if (!documenti().length) {
+      <p class="passo__vuoto">
+        Scegli prima i documenti: i criteri predefiniti dipendono dal loro ramo.
+      </p>
+    } @else {
+      <p class="passo__spiega">
+        Spunta i criteri predefiniti del ramo, o scrivi colonne tue in linguaggio naturale.
+      </p>
+
+      <ul class="criteri" aria-label="Criteri predefiniti">
+        @for (criterio of criteri(); track criterio.id) {
+          <li class="criterio">
+            <ui-checkbox
+              [valore]="criteriScelti().has(criterio.id)"
+              (valoreChange)="alternaCriterio(criterio.id, $event)"
+              [inputId]="'criterio-' + criterio.id"
+            />
+            <label class="criterio__testo" [for]="'criterio-' + criterio.id">
+              <span class="criterio__nome">{{ criterio.intestazione }}</span>
+              <span class="criterio__spiega">{{ criterio.descrizione }}</span>
+            </label>
+          </li>
+        }
+      </ul>
+
+      @if (personalizzate().length) {
+        <ul class="scelti" aria-label="Colonne personalizzate">
+          @for (criterio of personalizzate(); track criterio) {
+            <li class="scelto">
+              <ui-icon name="modifica" [size]="13" />
+              <span class="scelto__titolo">{{ criterio }}</span>
+              <button
+                type="button"
+                class="scelto__togli"
+                (click)="rimuoviPersonalizzata(criterio)"
+                [attr.aria-label]="'Togli la colonna ' + criterio"
+              >
+                <ui-icon name="chiudi" [size]="12" />
+              </button>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="personalizzata">
+        <input
+          uiCampo
+          type="text"
+          [value]="bozzaPersonalizzata()"
+          (input)="bozzaPersonalizzata.set($any($event.target).value)"
+          (keydown.enter)="aggiungiPersonalizzata()"
+          placeholder="es. Il carrozziere è a scelta libera o convenzionato?"
+          aria-label="Nuova colonna in linguaggio naturale"
+        />
+        <button
+          uiBottone
+          type="button"
+          (click)="aggiungiPersonalizzata()"
+          [disabled]="!bozzaPersonalizzata().trim()"
+        >
+          <ui-icon name="aggiungi" [size]="14" />
+          <span>Aggiungi colonna</span>
+        </button>
+      </div>
+    }
+  </section>
+
+  <!-- 3 · Titolo -->
+  <section class="passo" aria-labelledby="passo-titolo">
+    <p class="mono" id="passo-titolo">3 · Titolo — facoltativo</p>
+    <input
+      uiCampo
+      type="text"
+      class="passo__titolo"
+      [value]="titolo()"
+      (input)="titolo.set($any($event.target).value)"
+      placeholder="es. Confronto RC Auto — AUTOPIÙ vs preventivo UnipolSai"
+      aria-label="Titolo della tabella"
+    />
+    <p class="passo__vuoto">Se lo lasci vuoto lo ricaviamo dai documenti scelti.</p>
+  </section>
+
+  <footer class="azioni">
+    <button
+      uiBottone
+      variante="primario"
+      type="button"
+      [disabled]="!pronta() || inCreazione()"
+      (click)="crea()"
+    >
+      <ui-icon name="tabelle" [size]="15" />
+      <span>{{ inCreazione() ? 'Creazione…' : 'Crea e genera' }}</span>
+    </button>
+
+    <a uiBottone variante="testo" routerLink="/tabelle">
+      <span>Annulla</span>
+    </a>
+
+    @if (documenti().length && !numeroColonne()) {
+      <p class="azioni__nota" role="status">Serve almeno una colonna.</p>
+    }
+  </footer>
+</div>

@@ -1,3 +1,5 @@
+import { Citazione } from './citazione';
+import { Archivio } from './documento';
 import { Id, IsoDateTime, ValoreEstratto } from './comune';
 
 /**
@@ -15,12 +17,33 @@ export interface TabellaAnalisi {
   creataIl: IsoDateTime;
   aggiornataIl: IsoDateTime;
   autoreId: Id;
+  /**
+   * RF-C-15: visibile agli altri utenti del tenant, in sola lettura. Chi
+   * vuole proseguirci sopra la duplica; la copia è sua e nasce non condivisa.
+   */
   condivisa: boolean;
-  documentiIds: Id[];
   colonne: ColonnaTabella[];
+  /** I documenti stanno qui, uno per riga: non esiste un elenco separato che possa divergere. */
   righe: RigaTabella[];
   /** La generazione è progressiva: la tabella si popola sotto gli occhi. */
   stato: 'in-generazione' | 'completa' | 'errore';
+}
+
+/**
+ * La riga di elenco: quanto basta a scegliere quale tabella aprire, senza
+ * trascinarsi dietro righe e celle — che su una tabella vera sono chili di
+ * citazioni.
+ */
+export interface TabellaRiepilogo {
+  id: Id;
+  titolo: string;
+  creataIl: IsoDateTime;
+  aggiornataIl: IsoDateTime;
+  autoreId: Id;
+  condivisa: boolean;
+  stato: TabellaAnalisi['stato'];
+  numeroDocumenti: number;
+  numeroColonne: number;
 }
 
 /**
@@ -41,6 +64,8 @@ export interface ColonnaTabella {
 
 export interface RigaTabella {
   documentoId: Id;
+  /** Da quale archivio viene: serve al collegamento verso la scheda. */
+  archivio: Archivio;
   /** Etichetta di riga già pronta: compagnia + prodotto, o titolo del privato. */
   etichetta: string;
   /** Chiave = `ColonnaTabella.id`. */
@@ -55,12 +80,41 @@ export interface RigaTabella {
  * volta. Progettarla senza questo stato significa dover rifare la schermata
  * quando ci si accorge che una tabella da 12 documenti × 8 colonne non
  * compare tutta insieme.
+ *
+ * La citazione è quella **completa**, con posizione ed estratto: da ogni
+ * cella si apre il documento sul passaggio di origine, come dai messaggi
+ * della chat (RF-C-12 insieme a RF-C-05).
  */
-export type CellaTabella = { stato: 'in-attesa' } | ({ stato: 'pronta' } & ValoreEstratto);
+export type CellaTabella =
+  | { stato: 'in-attesa' }
+  | ({ stato: 'pronta' } & ValoreEstratto<string, Citazione>);
+
+/**
+ * Un criterio dei set predefiniti (RF-C-11): il server li propone in base ai
+ * rami dei documenti scelti, e l'utente li spunta invece di riscriverli.
+ */
+export interface CriterioPredefinito {
+  id: Id;
+  intestazione: string;
+  /** Cosa estrae, mostrato come aiuto alla scelta. */
+  descrizione: string;
+  /** Assente sui criteri validi per qualunque ramo. */
+  ramoId?: Id;
+}
+
+/** Colonna così come la manda il client: l'id lo assegna il server. */
+export type NuovaColonna = Omit<ColonnaTabella, 'id'>;
 
 /** Corpo della richiesta di creazione. */
 export interface NuovaTabella {
-  titolo: string;
+  /** Se manca, il server lo ricava dai documenti scelti. */
+  titolo?: string;
   documentiIds: Id[];
-  colonne: Omit<ColonnaTabella, 'id'>[];
+  colonne: NuovaColonna[];
+}
+
+/** Corpo del PATCH: rinomina (RF-C-14) e condivisione nel tenant (RF-C-15). */
+export interface ModificheTabella {
+  titolo?: string;
+  condivisa?: boolean;
 }

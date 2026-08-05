@@ -464,11 +464,20 @@ Chat con risposta in streaming SSE, storico e rinomina; selettore `@` su entramb
 - **L'evento `inizio` porta anche `messaggioUtenteId`**: il client riconcilia la propria copia ottimistica e un ricaricamento a stream aperto non duplica nulla. Il messaggio dell'assistente si persiste solo a risposta completa: uno stream interrotto non lascia mezzi messaggi nello storico.
 - **Il mock genera file veri.** PDF multi-pagina per il visualizzatore (`mocks/pdf.mjs`, scritti a mano: catalogo, xref, Helvetica non incorporata), DOCX/XLSX minimi ma apribili per l'esportazione (`mocks/ufficio.mjs`, zip in modalità store). Le risposte della chat sono **scenari deterministici** guidati dal testo della domanda (`mocks/chat.mjs`) — «grandine» produce la non-copertura, «franchig» la risposta breve con due citazioni, il resto il confronto del caso pilota.
 
-### Fase 4 — Tabelle di analisi · ~6 giorni · RF-C-11…C-15
+### ✅ Fase 4 — Tabelle di analisi — **completata** · RF-C-11…C-15
 
-Costruttore righe (documenti) × colonne (criteri predefiniti o in linguaggio naturale), griglia AG Grid con *cell renderer* per citazione e "non presente", popolamento progressivo, salvataggio e riapertura, esportazione via backend, condivisione nel tenant.
+Costruttore in due scelte (prima i documenti dai due archivi, poi i criteri — riusa il selettore `@` della chat), griglia sulla `.ui-tabella` del design system con la cella `ValoreEstratto` (valore + citazioni, «non presente», «non determinabile»), popolamento progressivo con celle in attesa che pulsano e avanzamento in testata, salvataggio, rinomina, aggiunta/rimozione di documenti e colonne a generazione anche in corso, esportazione su template via backend, condivisione nel tenant con apertura in sola lettura e «Duplica» per proseguire (RF-C-15).
 
-Qui si verifica se qualche funzionalità Enterprise serve davvero (§4).
+**Decisioni di contratto da sapere:**
+
+- **Il popolamento è polling, non streaming.** La tabella nasce con le celle `in-attesa` e il FE richiede `GET /api/tabelle/:id` a intervalli finché `stato === 'in-generazione'`; il polling si ferma da solo. È lo schema già collaudato dell'elaborazione documenti (RF-B-05): una cella al secondo non è una risposta di chat, e il contratto resta a una sola forma di risposta.
+- **La cella porta la citazione completa**, non la `CitazioneBreve`: da ogni cella si apre il visualizzatore sul passaggio (RF-C-12 con RF-C-05), e per farlo servono pagina, articolo e riquadro. `ValoreEstratto` ha ora un secondo parametro generico per il tipo di citazione; la forma breve resta per elenchi ed esiti.
+- **I criteri predefiniti sono un endpoint**, non una costante nel FE: `GET /api/tabelle/criteri?documenti=…` — il server risolve i rami dei documenti scelti e propone i set pertinenti (RF-C-11). Fixture in `mocks/data/criteri-tabella.json`.
+- **RF-C-13 (interrogare la tabella in chat) è un ponte, non una chat nuova:** «Interroga in chat» crea una conversazione con gli stessi documenti nel contesto e ci naviga. La domanda si fa lì, con le citazioni di risposta.
+- **Le mutazioni restituiscono la tabella aggiornata** e il FE la applica senza ricaricare; le etichette di riga escono già pronte dal server, come il contesto idratato della chat.
+- **Il mock genera celle deterministiche** (`mocks/tabelle.mjs`): per i documenti del caso pilota gli stessi numeri e le stesse posizioni degli scenari della chat, per il resto valori stabili da un hash di documento + colonna. Il «non presente» compare con regole fisse — un DIP sintetico non elenca le esclusioni — perché l'interfaccia deve mostrarlo davvero.
+
+La verifica prevista qui («serve qualche funzionalità Enterprise di AG Grid?») è decaduta con AG Grid: la `.ui-tabella` con prima colonna fissa ha coperto tutto il necessario.
 
 ### Fase 5 — Impostazioni e personalizzazione · ~7 giorni · RF-D-01…D-16
 

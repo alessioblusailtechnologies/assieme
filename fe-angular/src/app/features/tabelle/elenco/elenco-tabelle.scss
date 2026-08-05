@@ -1,0 +1,114 @@
+/* Stessa impalcatura degli archivi: testata fissa, griglia che si prende il
+   resto e scorre al proprio interno. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: var(--sp-6);
+  min-height: 0;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__spiega {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__conteggio {
+  margin-left: auto;
+  min-width: 9ch;
+  text-align: right;
+}
+
+/* ---------- Stati ---------- */
+
+.scheletri {
+  display: flex;
+  border-radius: var(--radius);
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+ui-stato-vuoto {
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ---------- Griglia ---------- */
+
+.griglia {
+  flex: 1;
+  min-height: 240px;
+}
+
+.titolo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--f-sans);
+}
+
+.cella-numerica {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.col-numero {
+  width: 110px;
+  text-align: right;
+}
+
+.col-stato {
+  width: 150px;
+}
+
+.col-aggiornata {
+  width: 130px;
+}
+
+.col-azione {
+  width: 110px;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
+  }
+
+  .col-numero {
+    display: none;
+  }
+}

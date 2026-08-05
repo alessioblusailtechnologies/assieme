@@ -29,15 +29,9 @@ export const routes: Routes = [
         loadChildren: () => import('@features/chat/chat.routes').then((m) => m.CHAT_ROUTES),
       },
       {
+        /* Fase 4 — costruita. */
         path: 'tabelle',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Tabelle di analisi',
-          fase: 4,
-          descrizione:
-            'Confronto strutturato multi-documento su AG Grid: documenti in riga, criteri in colonna, una citazione per ogni cella e “non presente” dichiarato dove il dato manca. La griglia si popola progressivamente, cella per cella.',
-          requisiti: ['RF-C-11 … RF-C-15'],
-        },
+        loadChildren: () => import('@features/tabelle/tabelle.routes').then((m) => m.TABELLE_ROUTES),
       },
       {
         /* Fase 1 — costruita. Le rotte della sezione stanno nella

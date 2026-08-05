@@ -39,9 +39,14 @@ export interface Paginato<T> {
  * Modellarlo come unione discriminata rende impossibile leggere un valore
  * senza aver prima gestito l'assenza — il compilatore non lascia scampo, e
  * nessuno può dimenticarsene per distrazione in una schermata su venti.
+ *
+ * Il secondo parametro dice quanto pesa la citazione: `CitazioneBreve` dove
+ * il riferimento si legge e basta (elenchi, esiti degli agenti), `Citazione`
+ * completa dove dal valore si deve aprire il documento sul passaggio — è il
+ * caso delle celle della tabella di analisi (RF-C-12 insieme a RF-C-05).
  */
-export type ValoreEstratto<T = string> =
-  | { esito: 'presente'; valore: T; citazioni: CitazioneBreve[] }
+export type ValoreEstratto<T = string, C = CitazioneBreve> =
+  | { esito: 'presente'; valore: T; citazioni: C[] }
   | { esito: 'non-presente'; nota?: string }
   | { esito: 'non-determinabile'; motivo: string };
 

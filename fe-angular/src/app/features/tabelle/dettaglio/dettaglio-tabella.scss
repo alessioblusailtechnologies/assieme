@@ -1,0 +1,324 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: var(--sp-6);
+  min-height: 0;
+}
+
+.caricamento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.testata__matita {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.testata__matita:hover {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+.testata__rinomina {
+  flex: 1 1 320px;
+  max-width: 560px;
+}
+
+/* ---------- Generazione ---------- */
+
+.generazione {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  flex: none;
+}
+
+.generazione__icona {
+  color: var(--c-accent);
+  animation: rotazione 1.2s linear infinite;
+}
+
+@keyframes rotazione {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .generazione__icona {
+    animation: none;
+  }
+}
+
+.generazione__barra {
+  flex: 1;
+  max-width: 220px;
+  height: 4px;
+  margin-left: auto;
+  background: var(--c-page-alt);
+}
+
+.generazione__pieno {
+  display: block;
+  height: 100%;
+  background: var(--c-accent);
+  transition: width var(--dur-fast) var(--ease-brand);
+}
+
+/* ---------- Azioni ---------- */
+
+.azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  flex: none;
+}
+
+.azioni__spazio {
+  flex: 1;
+}
+
+/* ---------- Griglia ---------- */
+
+.griglia {
+  flex: 1;
+  min-height: 240px;
+}
+
+/* La prima colonna resta ferma mentre le altre scorrono: su otto criteri
+   senza etichetta di riga non si sa più cosa si sta leggendo. */
+.col-documento {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 220px;
+  max-width: 300px;
+  background: var(--c-surface);
+}
+
+.ui-tabella thead .col-documento {
+  z-index: 2;
+  background: var(--c-surface-soft);
+}
+
+/* Il th di riga eredita l'aspetto delle celle, non delle intestazioni. */
+.ui-tabella tbody th.riga {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-line-soft);
+  vertical-align: middle;
+  font-weight: 400;
+  text-align: left;
+}
+
+.ui-tabella tbody tr:last-child th.riga {
+  border-bottom: 0;
+}
+
+.riga__documento {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.riga__documento:hover span {
+  color: var(--c-accent);
+  text-decoration: underline;
+}
+
+.riga__documento ui-icon {
+  color: var(--c-text-3);
+  flex: none;
+}
+
+.riga__togli,
+.criterio__togli {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-mute);
+  cursor: pointer;
+}
+
+.riga__togli:hover,
+.criterio__togli:hover {
+  background: var(--c-page-alt);
+  color: var(--c-neg, var(--c-text));
+}
+
+.col-criterio {
+  min-width: 200px;
+  vertical-align: top;
+}
+
+.criterio {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.criterio__nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+.col-azioni {
+  width: 44px;
+}
+
+.nota-lettura {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  flex: none;
+}
+
+/* ---------- Cassetti ---------- */
+
+.citazione-dettaglio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  height: 100%;
+}
+
+.citazione-dettaglio__estratto {
+  padding: var(--sp-3);
+  border-left: 2px solid var(--c-accent);
+  background: var(--c-page);
+  font-family: var(--f-lettura);
+  color: var(--c-text-2);
+}
+
+.citazione-dettaglio__pdf {
+  flex: 1;
+  min-height: 320px;
+}
+
+.citazione-dettaglio a,
+.citazione-dettaglio a:hover {
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.aggiungi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.aggiungi__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.aggiungi input {
+  width: 100%;
+}
+
+.aggiungi__personalizzata {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.aggiungi__personalizzata input {
+  flex: 1;
+  min-width: 0;
+}
+
+.aggiungi__gruppo {
+  margin-top: var(--sp-2);
+}
+
+.aggiungi__criteri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.aggiungi__criterio {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--c-page);
+}
+
+.aggiungi__testo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-sm);
+}
+
+.aggiungi__descrizione {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .col-documento {
+    min-width: 160px;
+  }
+
+  .col-criterio {
+    min-width: 160px;
+  }
+}

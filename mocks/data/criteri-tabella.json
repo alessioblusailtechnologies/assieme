@@ -1,0 +1,108 @@
+[
+  {
+    "id": "crit-garanzie",
+    "intestazione": "Garanzie incluse",
+    "descrizione": "Le garanzie comprese nella formulazione base del prodotto."
+  },
+  {
+    "id": "crit-massimali",
+    "intestazione": "Massimali",
+    "descrizione": "I massimali delle garanzie principali, per sinistro e per periodo."
+  },
+  {
+    "id": "crit-franchigie",
+    "intestazione": "Franchigie",
+    "descrizione": "Le franchigie fisse applicate, garanzia per garanzia."
+  },
+  {
+    "id": "crit-scoperti",
+    "intestazione": "Scoperti",
+    "descrizione": "Gli scoperti percentuali e i relativi minimi."
+  },
+  {
+    "id": "crit-esclusioni",
+    "intestazione": "Esclusioni principali",
+    "descrizione": "Le esclusioni che più spesso generano contestazioni in fase di sinistro."
+  },
+
+  {
+    "id": "crit-auto-massimale-rc",
+    "intestazione": "Massimale RC",
+    "descrizione": "Massimale per sinistro della responsabilità civile, con il sottolimite per danni a cose.",
+    "ramoId": "ram-auto"
+  },
+  {
+    "id": "crit-auto-furto",
+    "intestazione": "Franchigia furto e incendio",
+    "descrizione": "Franchigia o scoperto applicati alla garanzia furto e incendio.",
+    "ramoId": "ram-auto"
+  },
+  {
+    "id": "crit-auto-cristalli",
+    "intestazione": "Cristalli",
+    "descrizione": "Massimale e franchigia della garanzia cristalli.",
+    "ramoId": "ram-auto"
+  },
+  {
+    "id": "crit-auto-infortuni",
+    "intestazione": "Infortuni del conducente",
+    "descrizione": "Presenza e massimale della garanzia infortuni del conducente.",
+    "ramoId": "ram-auto"
+  },
+  {
+    "id": "crit-auto-assistenza",
+    "intestazione": "Assistenza stradale",
+    "descrizione": "Prestazioni di assistenza: traino, veicolo sostitutivo, limiti chilometrici.",
+    "ramoId": "ram-auto"
+  },
+  {
+    "id": "crit-auto-eventi",
+    "intestazione": "Eventi atmosferici",
+    "descrizione": "Copertura di grandine, tempesta e altri eventi naturali.",
+    "ramoId": "ram-auto"
+  },
+
+  {
+    "id": "crit-casa-incendio",
+    "intestazione": "Incendio fabbricato",
+    "descrizione": "Forma di copertura e massimale per i danni al fabbricato.",
+    "ramoId": "ram-casa"
+  },
+  {
+    "id": "crit-casa-furto",
+    "intestazione": "Furto contenuto",
+    "descrizione": "Massimale, franchigie e scoperti per il furto del contenuto.",
+    "ramoId": "ram-casa"
+  },
+  {
+    "id": "crit-casa-rc",
+    "intestazione": "RC della vita privata",
+    "descrizione": "Massimale della responsabilità civile del nucleo familiare.",
+    "ramoId": "ram-casa"
+  },
+  {
+    "id": "crit-casa-assistenza",
+    "intestazione": "Assistenza abitativa",
+    "descrizione": "Prestazioni di assistenza: artigiani in urgenza, spese di albergo.",
+    "ramoId": "ram-casa"
+  },
+
+  {
+    "id": "crit-inf-invalidita",
+    "intestazione": "Invalidità permanente",
+    "descrizione": "Capitale assicurato e franchigia sull'invalidità permanente.",
+    "ramoId": "ram-infortuni"
+  },
+  {
+    "id": "crit-inf-diaria",
+    "intestazione": "Diaria da ricovero",
+    "descrizione": "Importo giornaliero e durata massima della diaria.",
+    "ramoId": "ram-infortuni"
+  },
+  {
+    "id": "crit-inf-morte",
+    "intestazione": "Caso morte",
+    "descrizione": "Capitale liquidato ai beneficiari in caso di morte da infortunio.",
+    "ramoId": "ram-infortuni"
+  }
+]

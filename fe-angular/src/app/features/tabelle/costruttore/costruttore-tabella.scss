@@ -1,0 +1,199 @@
+:host {
+  display: block;
+  height: 100%;
+  padding: var(--sp-6);
+  overflow-y: auto;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+/* ---------- Passi ---------- */
+
+/* Un costruttore si legge dall'alto in basso: colonna stretta, non un
+   modulo largo quanto lo schermo. */
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 860px;
+}
+
+.passo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+.passo__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.passo__vuoto {
+  font-size: var(--t-sm);
+  color: var(--c-text-mute);
+}
+
+.passo__titolo {
+  width: 100%;
+}
+
+/* ---------- Ricerca documenti ---------- */
+
+.cerca {
+  position: relative;
+}
+
+.cerca__campo {
+  display: block;
+}
+
+.cerca__campo input {
+  width: 100%;
+}
+
+.cerca__pannello {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: var(--z-overlay);
+}
+
+/* ---------- Scelte (documenti e colonne personalizzate) ---------- */
+
+.scelti {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.scelto {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--c-page);
+  color: var(--c-text-3);
+}
+
+.scelto__titolo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-sm);
+  color: var(--c-text);
+}
+
+.scelto__togli {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.scelto__togli:hover {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+/* ---------- Criteri ---------- */
+
+.criteri {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.criterio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.criterio__testo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.criterio__nome {
+  font-size: var(--t-sm);
+}
+
+.criterio__spiega {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.personalizzata {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.personalizzata input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- Azioni ---------- */
+
+.azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.azioni__nota {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.azioni a,
+.azioni a:hover {
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .criteri {
+    grid-template-columns: 1fr;
+  }
+}

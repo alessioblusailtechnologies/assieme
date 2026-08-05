@@ -1,10 +1,11 @@
 # ASSIEME — Front-end
 
-Angular 22 · PrimeNG 22 · AG Grid 36 · Hugeicons · Mockoon
+Angular 22 · design system proprio · Hugeicons · Mockoon
 
-Stato: **Fase 0** (fondamenta) e **Fase 1** (Archivio Pubblico) completate.
-Le altre schermate sono segnaposto che dichiarano la fase in cui verranno
-costruite. Vedi [`../ASSIEME-piano-sviluppo-fe.md`](../ASSIEME-piano-sviluppo-fe.md).
+Stato: **Fasi 0–4** costruite — fondamenta, Archivio Pubblico, Archivio
+Privato, Chat con citazioni, Tabelle di analisi. Le altre schermate sono
+segnaposto che dichiarano la fase in cui verranno costruite.
+Vedi [`../ASSIEME-piano-sviluppo-fe.md`](../ASSIEME-piano-sviluppo-fe.md).
 
 ---
 
@@ -240,13 +241,20 @@ la **licenza commerciale**, 599 USD per sviluppatore fino al 31/12/2026, poi
 componenti PRO — fra cui lo Scheduler, che potrebbe servire per la
 pianificazione degli agenti (RF-E-04).
 
-## AG Grid
+## Tabelle di analisi
 
-Community, non Enterprise. **L'esportazione XLSX è una funzionalità
-Enterprise** (da 999 USD per sviluppatore) e non la compriamo: RF-C-14
-rimanda a RF-D-10, cioè esportazione su template grafico dell'agenzia — un
-XLSX brandizzato non lo produce un pulsante della griglia, lo produce il
-backend.
+> AG Grid è stato rimosso in v0.4 insieme a PrimeNG: la griglia è la
+> `.ui-tabella` del design system, HTML semantico. Le avvertenze sulle
+> licenze Enterprise decadono.
 
-AG Grid va importato **solo** dentro `features/tabelle/`, che è in lazy
-loading: nel bundle iniziale non deve entrare.
+La tabella di analisi (`features/tabelle/`) si popola **progressivamente**:
+nasce con le celle in attesa e il dettaglio viene interrogato a intervalli
+finché `stato === 'in-generazione'` — lo stesso schema del polling
+dell'elaborazione documenti, niente streaming. Ogni cella è un
+`ValoreEstratto` con la **citazione completa** (posizione compresa): da lì
+si apre il visualizzatore sul passaggio, come in chat.
+
+L'esportazione XLSX resta **del backend**: RF-C-14 rimanda a RF-D-10, cioè
+esportazione su template grafico dell'agenzia — un XLSX brandizzato non lo
+produce la griglia. Nel mock la genera `mocks/tabelle.mjs` su
+`POST /api/tabelle/:id/esporta`.
