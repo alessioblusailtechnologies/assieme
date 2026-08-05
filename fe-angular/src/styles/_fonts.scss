@@ -1,0 +1,43 @@
+/*
+ * TWK Ghost (Weltkern) — il sans dell'applicazione, self-ospitato.
+ *
+ * Quattro pesi soltanto: il corpo (400), il medio degli stati attivi e delle
+ * voci in evidenza (500), il grassetto del testo generato (700) e il corsivo
+ * del regular. Gli altri tagli della famiglia restano fuori dal bundle
+ * finché nessuno li usa: ~85 KB a file si pagano solo se servono.
+ *
+ * Nessuna chiamata a servizi di font esterni: il file parte dal nostro
+ * stesso host, coerente con il posizionamento sulla residenza del dato.
+ */
+
+@font-face {
+  font-family: 'TWK Ghost';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/TWKGhost-Regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'TWK Ghost';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/TWKGhost-Italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'TWK Ghost';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/TWKGhost-Medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'TWK Ghost';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/TWKGhost-Bold.woff2') format('woff2');
+}

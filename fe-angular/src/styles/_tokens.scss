@@ -93,11 +93,14 @@
   --c-pos: #2e6b4f; /* condizione migliorativa */
 
   /* ---------- Tipografia ----------
-   * Solo font di sistema: nessun file scaricato, nessun font custom.
+   * Un solo carattere per tutto: TWK Ghost (self-ospitato, `_fonts.scss`) —
+   * lo stesso del riferimento Harvey. I tre ruoli restano token distinti:
+   * se domani titoli o etichette torneranno ad avere una voce propria,
+   * cambierà questa sezione e non i componenti.
    */
-  --f-serif: georgia, 'Times New Roman', times, serif;
-  --f-sans: 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
-  --f-mono: ui-monospace, 'SF Mono', menlo, consolas, monospace;
+  --f-serif: 'TWK Ghost', georgia, 'Times New Roman', times, serif;
+  --f-sans: 'TWK Ghost', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
+  --f-mono: 'TWK Ghost', ui-monospace, 'SF Mono', menlo, consolas, monospace;
 
   --ls-tight: -0.02em;
   --ls-snug: -0.012em;
