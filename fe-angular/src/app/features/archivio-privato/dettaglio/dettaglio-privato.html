@@ -57,100 +57,149 @@
     <div class="avviso is-proposta">
       <ui-icon name="informazione" [size]="16" />
       <p>
-        La classificazione qui sotto è <strong>proposta dal sistema</strong> a partire dal nome del
-        file. Controllala e salva per confermarla.
+        La classificazione qui a fianco è <strong>proposta dal sistema</strong> a partire dal nome
+        del file. Controllala e salva per confermarla.
       </p>
     </div>
   }
 
   <div class="colonne">
-    <section class="riquadro modulo">
-      <p class="mono">Metadati</p>
-
-      <label class="campo">
-        <span class="campo__nome">Titolo</span>
-        <input pInputText type="text" [(ngModel)]="titolo" name="titolo" />
-      </label>
-
+    <!--
+      Il documento tiene la colonna principale, come nell'archivio pubblico:
+      è quello che si guarda mentre si compilano i metadati accanto. Resta
+      appiccicato in alto perché la colonna dei metadati è più lunga, e
+      scorrendola il documento sparirebbe proprio mentre serve.
+    -->
+    <div class="principale">
       <!--
-        L'etichetta punta con `for` all'input che PrimeNG genera: avvolgere
-        il componente in un <label> non lo aggancerebbe, e il clic sul testo
-        non aprirebbe la tendina.
+        Segnaposto del visualizzatore. Il PDF vero arriva in Fase 3 insieme
+        alle citazioni: RF-C-05 chiede di aprirlo posizionato sul passaggio
+        citato, e un visualizzatore che non sa farlo andrebbe rifatto.
+
+        Qui però il segnaposto ha tre facce e non una: nell'archivio privato
+        un documento può ancora essere in lavorazione o illeggibile, e uno
+        spazio vuoto identico nei tre casi lascerebbe credere a un guasto.
       -->
-      <div class="campo">
-        <label class="campo__nome" for="campo-tipologia">Tipologia</label>
-        <p-select
-          [(ngModel)]="tipologia"
-          [options]="tipologie"
-          optionLabel="etichetta"
-          optionValue="valore"
-          name="tipologia"
-          inputId="campo-tipologia"
-          styleClass="campo__largo"
-        />
-      </div>
-
-      <label class="campo">
-        <span class="campo__nome">Cliente o pratica</span>
-        <input
-          pInputText
-          type="text"
-          [(ngModel)]="cliente"
-          name="cliente"
-          placeholder="es. Rossi Mario"
-        />
-      </label>
-
-      <div class="campo">
-        <span class="campo__nome">Etichette</span>
-
-        <div class="etichette">
-          @for (e of etichette(); track e) {
-            <span class="etichetta">
-              {{ e }}
-              <button
-                type="button"
-                class="etichetta__togli"
-                (click)="togliEtichetta(e)"
-                [attr.aria-label]="'Togli l\'etichetta ' + e"
-              >
-                <ui-icon name="chiudi" [size]="11" />
-              </button>
-            </span>
-          } @empty {
-            <span class="etichette__vuote">Nessuna etichetta</span>
+      <div
+        class="visualizzatore"
+        [class.is-nonleggibile]="doc.stato === 'errore'"
+        [class.is-attesa]="doc.stato !== 'errore' && doc.stato !== 'pronto'"
+      >
+        @switch (doc.stato) {
+          @case ('errore') {
+            <ui-icon name="errore" [size]="32" />
+            <p class="visualizzatore__titolo">Documento non leggibile</p>
+            <p class="visualizzatore__nota">{{ doc.erroreElaborazione }}</p>
+            <p class="mono">{{ dimensione(doc.dimensioneByte) }}</p>
           }
-        </div>
-
-        <input
-          pInputText
-          type="text"
-          [(ngModel)]="nuovaEtichetta"
-          name="nuovaEtichetta"
-          placeholder="Aggiungi un'etichetta e premi Invio"
-          (keydown.enter)="aggiungiEtichetta()"
-        />
+          @case ('pronto') {
+            <ui-icon name="documento" [size]="32" />
+            <p class="visualizzatore__titolo">Anteprima del documento</p>
+            <p class="visualizzatore__nota">
+              Il visualizzatore arriva in Fase 3, insieme alle citazioni: dovrà aprire il documento
+              posizionato sul passaggio citato, non solo mostrarlo.
+            </p>
+            <p class="mono">
+              @if (doc.numeroPagine) {
+                {{ doc.numeroPagine }} pagine ·
+              }
+              {{ dimensione(doc.dimensioneByte) }}
+            </p>
+          }
+          @default {
+            <ui-icon name="in-corso" [size]="32" />
+            <p class="visualizzatore__titolo">Elaborazione in corso</p>
+            <p class="visualizzatore__nota">
+              Stiamo leggendo il documento. Quando avrà finito sarà consultabile qui e
+              referenziabile in chat.
+            </p>
+            <p class="mono">{{ dimensione(doc.dimensioneByte) }}</p>
+          }
+        }
       </div>
-
-      @if (modificato()) {
-        <div class="azioni">
-          <button pButton type="button" [disabled]="salvataggioInCorso()" (click)="salva()">
-            <span>{{ salvataggioInCorso() ? 'Salvataggio…' : 'Salva' }}</span>
-          </button>
-          <button
-            pButton
-            type="button"
-            severity="secondary"
-            [text]="true"
-            (click)="annulla()"
-          >
-            <span>Annulla</span>
-          </button>
-        </div>
-      }
-    </section>
+    </div>
 
     <aside class="lato">
+      <section class="riquadro modulo">
+        <p class="mono">Metadati</p>
+
+        <label class="campo">
+          <span class="campo__nome">Titolo</span>
+          <input pInputText type="text" [(ngModel)]="titolo" name="titolo" />
+        </label>
+
+        <!--
+          L'etichetta punta con `for` all'input che PrimeNG genera: avvolgere
+          il componente in un <label> non lo aggancerebbe, e il clic sul testo
+          non aprirebbe la tendina.
+        -->
+        <div class="campo">
+          <label class="campo__nome" for="campo-tipologia">Tipologia</label>
+          <p-select
+            [(ngModel)]="tipologia"
+            [options]="tipologie"
+            optionLabel="etichetta"
+            optionValue="valore"
+            name="tipologia"
+            inputId="campo-tipologia"
+            styleClass="campo__largo"
+          />
+        </div>
+
+        <label class="campo">
+          <span class="campo__nome">Cliente o pratica</span>
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="cliente"
+            name="cliente"
+            placeholder="es. Rossi Mario"
+          />
+        </label>
+
+        <div class="campo">
+          <span class="campo__nome">Etichette</span>
+
+          <div class="etichette">
+            @for (e of etichette(); track e) {
+              <span class="etichetta">
+                {{ e }}
+                <button
+                  type="button"
+                  class="etichetta__togli"
+                  (click)="togliEtichetta(e)"
+                  [attr.aria-label]="'Togli l\'etichetta ' + e"
+                >
+                  <ui-icon name="chiudi" [size]="11" />
+                </button>
+              </span>
+            } @empty {
+              <span class="etichette__vuote">Nessuna etichetta</span>
+            }
+          </div>
+
+          <input
+            pInputText
+            type="text"
+            [(ngModel)]="nuovaEtichetta"
+            name="nuovaEtichetta"
+            placeholder="Aggiungi un'etichetta e premi Invio"
+            (keydown.enter)="aggiungiEtichetta()"
+          />
+        </div>
+
+        @if (modificato()) {
+          <div class="azioni">
+            <button pButton type="button" [disabled]="salvataggioInCorso()" (click)="salva()">
+              <span>{{ salvataggioInCorso() ? 'Salvataggio…' : 'Salva' }}</span>
+            </button>
+            <button pButton type="button" severity="secondary" [text]="true" (click)="annulla()">
+              <span>Annulla</span>
+            </button>
+          </div>
+        }
+      </section>
+
       <section class="riquadro">
         <p class="mono">Documento</p>
         <dl class="dati">
@@ -158,7 +207,7 @@
           <dd>{{ doc.caricatoIl | date: 'dd/MM/yyyy HH:mm' }}</dd>
 
           <dt>Dimensione</dt>
-          <dd>{{ (doc.dimensioneByte / 1024 / 1024).toFixed(1) }} MB</dd>
+          <dd>{{ dimensione(doc.dimensioneByte) }}</dd>
 
           @if (doc.numeroPagine) {
             <dt>Pagine</dt>
@@ -192,7 +241,9 @@
           (click)="alternaRiferimento()"
         >
           <ui-icon name="riferimenti" [size]="15" />
-          <span>{{ doc.documentoDiRiferimento ? 'Togli dai riferimenti' : 'Usa come riferimento' }}</span>
+          <span>{{
+            doc.documentoDiRiferimento ? 'Togli dai riferimenti' : 'Usa come riferimento'
+          }}</span>
         </button>
         @if (doc.stato !== 'pronto') {
           <p class="riquadro__nota">
