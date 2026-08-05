@@ -23,6 +23,7 @@
   padding: var(--sp-3) var(--sp-4);
   background: var(--c-page-alt);
   color: var(--c-text);
+  font-family: var(--f-lettura);
   font-size: var(--t-body);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -76,7 +77,10 @@
   border: 1px solid var(--c-line-soft);
 }
 
+/* La lettura lunga è della voce di lettura: qui si leggono clausole per
+   ore, e serve un carattere da testo, non quello di marca. */
 .testo {
+  font-family: var(--f-lettura);
   font-size: var(--t-lead);
   line-height: 1.6;
   color: var(--c-text);

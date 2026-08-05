@@ -175,10 +175,13 @@
   white-space: nowrap;
 }
 
+/* I dati si leggono nella voce di lettura; Ghost resta nelle intestazioni,
+   che sono interfaccia. */
 .ui-tabella tbody td {
   padding: var(--sp-2) var(--sp-3);
   border-bottom: 1px solid var(--c-line-soft);
   vertical-align: middle;
+  font-family: var(--f-lettura);
 }
 
 .ui-tabella tbody tr:last-child td {

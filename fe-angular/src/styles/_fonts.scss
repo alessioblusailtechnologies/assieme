@@ -41,3 +41,29 @@
   font-display: swap;
   src: url('/fonts/TWKGhost-Bold.woff2') format('woff2');
 }
+
+/*
+ * Geist Sans (Vercel, licenza OFL) — la voce di lettura.
+ *
+ * Ghost dà il carattere all'interfaccia; qui si legge a lungo e in denso —
+ * le risposte della chat, le celle di tabella — e serve un tratto leggero e
+ * arioso che a parità di corpo non pesi più del resto. Font **variabile**:
+ * due file coprono tutti i pesi da 100 a 900, grassetti compresi.
+ */
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistVF.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistVF-Italic.woff2') format('woff2');
+}
+
