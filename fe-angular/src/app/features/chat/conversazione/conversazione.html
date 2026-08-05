@@ -1,0 +1,211 @@
+@if (!id()) {
+  <!-- Nuova conversazione: la stessa pagina, prima della prima domanda. -->
+  <div class="benvenuto">
+    <div class="benvenuto__centro">
+      <h1 class="serif benvenuto__titolo">Di cosa hai bisogno?</h1>
+      <p class="benvenuto__spiega">
+        Fai una domanda in italiano e referenzia con «@» i documenti dei due archivi: la risposta
+        arriverà con le citazioni ai passaggi da cui è tratta.
+      </p>
+
+      <app-composer />
+
+      <div class="benvenuto__suggerimenti">
+        @for (s of suggerimenti; track s) {
+          <button type="button" class="suggerimento" (click)="usaSuggerimento(s)">
+            {{ s }}
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+} @else {
+  <header class="testata">
+    @if (inRinomina()) {
+      <input
+        pInputText
+        class="testata__rinomina"
+        [value]="titoloBozza()"
+        (input)="titoloBozza.set($any($event.target).value)"
+        (keydown.enter)="confermaRinomina()"
+        (keydown.escape)="inRinomina.set(false)"
+        (blur)="confermaRinomina()"
+        aria-label="Nuovo titolo della conversazione"
+        #campoRinomina
+      />
+    } @else {
+      <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
+      <button
+        type="button"
+        class="testata__azione"
+        (click)="avviaRinomina()"
+        aria-label="Rinomina la conversazione"
+        title="Rinomina"
+      >
+        <ui-icon name="modifica" [size]="15" />
+      </button>
+    }
+
+    @if (store.attiva()?.condivisa) {
+      <span class="testata__condivisa" title="Condivisa con l'agenzia">
+        <ui-icon name="condividi" [size]="13" />
+        condivisa
+      </span>
+    }
+
+    <span class="testata__spazio"></span>
+
+    @if (confermaEliminazione()) {
+      <button pButton type="button" severity="danger" size="small" (click)="elimina()">
+        Elimina davvero?
+      </button>
+      <button
+        pButton
+        type="button"
+        size="small"
+        [text]="true"
+        (click)="confermaEliminazione.set(false)"
+      >
+        Annulla
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="testata__azione"
+        (click)="elimina()"
+        aria-label="Elimina la conversazione"
+        title="Elimina"
+      >
+        <ui-icon name="elimina" [size]="15" />
+      </button>
+    }
+  </header>
+
+  <!--
+    RF-C-03: il contesto documentale è della conversazione, non del singolo
+    messaggio. Sta sotto la testata perché l'utente deve sempre sapere su
+    quali documenti l'assistente sta ragionando — e poterli togliere.
+  -->
+  <div class="contesto" [class.is-vuoto]="!contesto().length">
+    <span class="mono contesto__etichetta">Contesto</span>
+    @if (contesto().length) {
+      @for (doc of contesto(); track doc.id) {
+        <span class="contesto__doc">
+          <ui-icon
+            [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+            [size]="12"
+          />
+          <span class="contesto__titolo">{{ doc.titolo }}</span>
+          <button
+            type="button"
+            class="contesto__togli"
+            (click)="store.rimuoviDalContesto(doc.id)"
+            [attr.aria-label]="'Togli dal contesto ' + doc.titolo"
+          >
+            <ui-icon name="chiudi" [size]="11" />
+          </button>
+        </span>
+      }
+    } @else {
+      <span class="contesto__nessuno">
+        nessun documento — referenzia con «@» per risposte fondate e citabili
+      </span>
+    }
+  </div>
+
+  <div class="filo" #filo (scroll)="suScorrimento()">
+    @if (store.erroreMessaggi()) {
+      <ui-stato-vuoto
+        icona="errore"
+        titolo="La conversazione non si è caricata"
+        [descrizione]="store.erroreMessaggi()?.messaggio"
+      >
+        <button pButton type="button" (click)="store.ricaricaMessaggi()">
+          <ui-icon name="riprova" [size]="15" />
+          <span>Riprova</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else if (store.messaggiInCaricamento() && !store.messaggi().length) {
+      <div class="filo__scheletri">
+        <ui-scheletro [numeroRighe]="2" />
+        <ui-scheletro [numeroRighe]="5" />
+      </div>
+    } @else {
+      <div class="filo__messaggi">
+        @for (m of store.messaggi(); track m.id) {
+          <app-bolla-messaggio
+            [messaggio]="m"
+            [contesto]="contesto()"
+            (apriCitazione)="apriCitazione($event)"
+          >
+            <!--
+              RF-C-10: l'esportazione su template, accanto alla copia rapida.
+              Solo per le risposte consolidate: una risposta interrotta o
+              caduta a metà non è un documento da consegnare a un cliente.
+            -->
+            @if (m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
+              <button
+                azioni-extra
+                type="button"
+                class="azione-esporta"
+                (click)="apriEsporta($event, m.id)"
+                aria-haspopup="menu"
+                aria-label="Esporta la risposta su un template"
+              >
+                <ui-icon name="esporta" [size]="13" />
+                <span>Esporta</span>
+              </button>
+            }
+          </app-bolla-messaggio>
+        }
+      </div>
+      <p-menu #menuEsporta [model]="vociEsporta()" [popup]="true" appendTo="body" />
+    }
+  </div>
+
+  <div class="fondo">
+    <app-composer [giaInContesto]="idContesto()" />
+  </div>
+}
+
+<!--
+  RF-C-05: la citazione si apre accanto alla conversazione, non al suo
+  posto — si verifica la fonte senza perdere il filo del discorso.
+-->
+<p-drawer
+  [visible]="!!citazioneAperta()"
+  (visibleChange)="!$event && citazioneAperta.set(undefined)"
+  position="right"
+  styleClass="pannello-citazione"
+  [header]="citazioneAperta()?.documentoTitolo ?? ''"
+>
+  @if (citazioneAperta(); as c) {
+    <div class="citazione-dettaglio">
+      <p class="mono">
+        pagina {{ c.posizione.pagina }}
+        @if (c.posizione.articolo) {
+          · art. {{ c.posizione.articolo }}
+        }
+        @if (c.posizione.sezione) {
+          · {{ c.posizione.sezione }}
+        }
+      </p>
+      <blockquote class="citazione-dettaglio__estratto">«{{ c.estratto }}»</blockquote>
+
+      <ui-visualizzatore-pdf
+        class="citazione-dettaglio__pdf"
+        [fileUrl]="urlFile(c)"
+        [posizione]="c.posizione"
+      />
+
+      <a
+        pButton
+        [outlined]="true"
+        [routerLink]="['/archivio', c.archivio === 'pubblico' ? 'pubblico' : 'privato', c.documentoId]"
+      >
+        <ui-icon name="apri-esterno" [size]="15" />
+        <span>Apri la scheda del documento</span>
+      </a>
+    </div>
+  }
+</p-drawer>

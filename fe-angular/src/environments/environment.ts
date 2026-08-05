@@ -9,8 +9,6 @@
 export const environment = {
   production: true,
   apiBase: '/api',
-  /** Endpoint SSE dello streaming di chat (in sviluppo: mocks/sse-stub.mjs). */
-  streamBase: '/api/stream',
   /** Il pannello di sviluppo non deve mai comparire in produzione. */
   devTools: false,
 

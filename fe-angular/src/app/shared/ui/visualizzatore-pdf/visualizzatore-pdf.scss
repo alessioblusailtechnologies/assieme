@@ -1,0 +1,128 @@
+:host {
+  display: block;
+}
+
+.visualizzatore {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--c-line);
+  background: var(--c-page-alt);
+}
+
+/* ---------- Barra ---------- */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-line);
+  flex: none;
+}
+
+.barra__pulsante {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.barra__pulsante:hover:not(:disabled),
+.barra__pulsante:focus-visible {
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
+.barra__pulsante:disabled {
+  color: var(--c-text-ghost);
+  cursor: default;
+}
+
+.ruota-sinistra {
+  transform: rotate(180deg);
+}
+
+.barra__pagina {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+}
+
+.barra__campo {
+  width: 3.5ch;
+  padding: 2px 4px;
+  border: 1px solid var(--c-line);
+  text-align: right;
+  font-family: var(--f-mono);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+
+.barra__totale {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  letter-spacing: 0.04em;
+  color: var(--c-text-3);
+  white-space: nowrap;
+}
+
+.barra__spazio {
+  flex: 1;
+}
+
+/* ---------- Pagina ---------- */
+
+.pagina {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-3);
+}
+
+.pagina__foglio {
+  position: relative;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: 100%;
+  box-shadow: 0 1px 6px rgb(20 24 29 / 12%);
+  line-height: 0;
+}
+
+.pagina__foglio canvas {
+  max-width: 100%;
+}
+
+/*
+ * L'evidenza del passaggio citato: un velo d'accento, non un pennarello.
+ * `mix-blend-mode` la tiene leggibile sopra il testo nero.
+ */
+.pagina__evidenzia {
+  position: absolute;
+  background: var(--c-accent);
+  opacity: 0.18;
+  outline: 2px solid var(--c-accent);
+  pointer-events: none;
+}
+
+.pagina__stato {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-10) var(--sp-4);
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+}
+
+.pagina__scheletro {
+  padding: var(--sp-4);
+  background: var(--c-surface);
+}

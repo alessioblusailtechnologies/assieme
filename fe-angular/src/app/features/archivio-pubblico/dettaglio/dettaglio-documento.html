@@ -45,20 +45,7 @@
 
   <div class="colonne">
     <div class="principale">
-      <!--
-        Segnaposto del visualizzatore. Il PDF vero arriva in Fase 3 insieme
-        alle citazioni: RF-C-05 chiede di aprirlo posizionato sul passaggio
-        citato, e un visualizzatore che non sa farlo andrebbe rifatto.
-      -->
-      <div class="visualizzatore" role="img" aria-label="Anteprima del documento non disponibile">
-        <ui-icon name="documento" [size]="32" />
-        <p class="visualizzatore__titolo">Anteprima del documento</p>
-        <p class="visualizzatore__nota">
-          Il visualizzatore arriva in Fase 3, insieme alle citazioni: dovrà aprire il documento
-          posizionato sul passaggio citato, non solo mostrarlo.
-        </p>
-        <p class="mono">{{ doc.numeroPagine }} pagine</p>
-      </div>
+      <ui-visualizzatore-pdf [fileUrl]="doc.fileUrl" />
     </div>
 
     <aside class="lato">

@@ -1,7 +1,6 @@
 export const environment = {
   production: false,
   apiBase: '/api',
-  streamBase: '/api/stream',
   devTools: true,
   /** Vedi il commento in `environment.ts`. Community, scade il 02/08/2027. */
   primeuiLicense:

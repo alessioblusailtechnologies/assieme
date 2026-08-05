@@ -24,15 +24,9 @@ export const routes: Routes = [
       { path: '', redirectTo: 'chat', pathMatch: 'full' },
 
       {
+        /* Fase 3 — costruita. */
         path: 'chat',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Chat',
-          fase: 3,
-          descrizione:
-            'Il cuore del prodotto: conversazione in linguaggio naturale, referenziazione dei documenti con “@” su entrambi gli archivi, citazioni verificabili con apertura sul passaggio, dichiarazione esplicita quando la risposta non è supportata dai documenti.',
-          requisiti: ['RF-C-01 … RF-C-10'],
-        },
+        loadChildren: () => import('@features/chat/chat.routes').then((m) => m.CHAT_ROUTES),
       },
       {
         path: 'tabelle',

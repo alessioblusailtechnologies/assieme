@@ -1,9 +1,23 @@
 import { Citazione } from './citazione';
+import { Archivio } from './documento';
 import { Id, IsoDateTime, Provenienza } from './comune';
 
 /**
  * Chat conversazionale (Modulo C).
  */
+
+/**
+ * Riferimento compatto a un documento nel contesto di una conversazione.
+ *
+ * Idratato dall'API — id, titolo e archivio, non il documento intero: la
+ * barra del contesto deve mostrare *cosa* c'è dentro senza una chiamata per
+ * documento, e non le serve altro.
+ */
+export interface RiferimentoDocumento {
+  id: Id;
+  titolo: string;
+  archivio: Archivio;
+}
 
 export interface Conversazione {
   id: Id;
@@ -16,7 +30,7 @@ export interface Conversazione {
    * l'utente non li rimuove. È un attributo della conversazione, non del
    * singolo messaggio.
    */
-  documentiInContesto: Id[];
+  documentiInContesto: RiferimentoDocumento[];
   /** RF-C-15: condivisa in sola lettura con gli altri utenti del tenant. */
   condivisa: boolean;
   autoreId: Id;
@@ -55,7 +69,12 @@ export interface Messaggio {
  * indicatori di provenienza.
  */
 export type EventoStream =
-  | { tipo: 'inizio'; messaggioId: Id }
+  /**
+   * `messaggioUtenteId` è l'id con cui il server ha registrato il messaggio
+   * appena inviato: il client lo usa per riconciliare la propria copia
+   * ottimistica, così un ricaricamento a stream aperto non la duplica.
+   */
+  | { tipo: 'inizio'; messaggioId: Id; messaggioUtenteId: Id }
   | { tipo: 'testo'; delta: string }
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }

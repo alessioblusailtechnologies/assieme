@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, model, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonDirective } from 'primeng/button';
 
 import { GruppoNavigazione, NAVIGAZIONE } from '../navigazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
+import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 
 /**
  * Barra laterale di navigazione.
@@ -13,6 +14,11 @@ import { SessioneStore } from '@core/auth/sessione-store';
  * spazio di lettura, e 232px recuperati si vedono. Da compressa restano le
  * sole icone, con il titolo nel `title` — è il motivo per cui il registro
  * delle icone usa nomi di dominio e non di disegno.
+ *
+ * La voce Chat è l'unica con un sotto-elenco: lo **storico delle
+ * conversazioni** (RF-C-01) sta qui e non dentro la sezione, così è
+ * raggiungibile da qualunque punto dell'applicazione e la conversazione
+ * aperta tiene tutta la larghezza per sé.
  */
 @Component({
   selector: 'app-barra-laterale',
@@ -26,8 +32,12 @@ import { SessioneStore } from '@core/auth/sessione-store';
 })
 export class BarraLaterale {
   private readonly sessione = inject(SessioneStore);
+  protected readonly storico = inject(StoricoConversazioni);
 
   readonly compressa = model(false);
+
+  /** Lo storico si ripiega senza uscire dalla chat: è una preferenza, non navigazione. */
+  protected readonly conversazioniEspanse = signal(true);
 
   /**
    * Le voci senza permesso sono per tutti; quelle con permesso compaiono

@@ -1,0 +1,45 @@
+<div class="pannello" role="listbox" id="selettore-documenti" aria-label="Documenti referenziabili">
+  @if (!voci().length) {
+    <p class="vuoto">
+      @if (inCaricamento()) {
+        Cerco nei due archivi…
+      } @else if (query()) {
+        Nessun documento per «{{ query() }}». Prova con il nome della compagnia o del prodotto.
+      } @else {
+        Nessun documento referenziabile.
+      }
+    </p>
+  } @else {
+    @for (gruppo of gruppi(); track gruppo.etichetta) {
+      <p class="mono gruppo">{{ gruppo.etichetta }}</p>
+      @for (voce of gruppo.voci; track voce.riferimento.id) {
+        <button
+          type="button"
+          class="voce"
+          role="option"
+          [id]="'selettore-doc-' + voce.riferimento.id"
+          [class.is-attiva]="voci()[indiceAttivo()] === voce"
+          [attr.aria-selected]="voci()[indiceAttivo()] === voce"
+          (click)="scegli(voce)"
+          (mousedown)="$event.preventDefault()"
+          (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
+        >
+          <ui-icon
+            [name]="voce.riferimento.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+            [size]="15"
+          />
+          <span class="voce__testo">
+            <span class="voce__titolo">{{ voce.riferimento.titolo }}</span>
+            <span class="voce__dettaglio">
+              {{ voce.dettaglio }}
+              @if (voce.storico) {
+                <span class="voce__storico">edizione superata</span>
+              }
+            </span>
+          </span>
+        </button>
+      }
+    }
+    <p class="istruzioni" aria-hidden="true">↑↓ scorri · Invio referenzia · Esc chiude</p>
+  }
+</div>

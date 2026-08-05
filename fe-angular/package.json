@@ -29,6 +29,7 @@
     "@primeuix/themes": "^3.0.0",
     "ag-grid-angular": "^36.0.2",
     "ag-grid-community": "^36.0.2",
+    "pdfjs-dist": "^6.2.108",
     "primeicons": "^8.0.0",
     "primeng": "^22.0.0",
     "rxjs": "~7.8.0",

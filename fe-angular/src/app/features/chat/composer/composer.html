@@ -1,0 +1,87 @@
+<div class="composer">
+  @if (selettoreAperto()) {
+    <ui-selettore-documenti
+      class="selettore"
+      [query]="menzione()?.query ?? ''"
+      [esclusi]="esclusi()"
+      (scelto)="referenzia($event)"
+      (chiuso)="chiudiSelettore()"
+    />
+  }
+
+  @if (store.riferimentiBozza().length) {
+    <div class="riferimenti" aria-label="Documenti referenziati nel messaggio">
+      @for (doc of store.riferimentiBozza(); track doc.id) {
+        <span class="riferimento">
+          <ui-icon
+            [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+            [size]="12"
+          />
+          <span class="riferimento__titolo">{{ doc.titolo }}</span>
+          <button
+            type="button"
+            class="riferimento__togli"
+            (click)="store.rimuoviRiferimento(doc.id)"
+            [attr.aria-label]="'Togli il riferimento a ' + doc.titolo"
+          >
+            <ui-icon name="chiudi" [size]="11" />
+          </button>
+        </span>
+      }
+    </div>
+  }
+
+  <div class="campo">
+    <button
+      type="button"
+      class="campo__allega"
+      (click)="apriDaPulsante()"
+      aria-label="Referenzia un documento"
+      title="Referenzia un documento (@)"
+    >
+      <ui-icon name="referenzia" [size]="17" />
+    </button>
+
+    <textarea
+      #area
+      class="campo__testo"
+      rows="1"
+      placeholder="Fai una domanda sui documenti — «@» per referenziarli"
+      [value]="store.bozza()"
+      (input)="aggiorna($event)"
+      (keydown)="suTasto($event)"
+      (keyup)="aggiornaCursore()"
+      (click)="aggiornaCursore()"
+      (blur)="chiudiSelettore()"
+      role="combobox"
+      aria-label="Messaggio"
+      [attr.aria-expanded]="selettoreAperto()"
+      aria-controls="selettore-documenti"
+      aria-autocomplete="list"
+      [attr.aria-activedescendant]="idOpzioneAttiva()"
+    ></textarea>
+
+    @if (store.inRisposta()) {
+      <button
+        type="button"
+        class="campo__invia is-ferma"
+        (click)="store.ferma()"
+        aria-label="Ferma la risposta"
+        title="Ferma la risposta"
+      >
+        <ui-icon name="ferma" [size]="16" />
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="campo__invia"
+        (click)="invia()"
+        [disabled]="!store.bozza().trim()"
+        aria-label="Invia il messaggio"
+        title="Invia (Invio)"
+      >
+        <ui-icon name="invia" [size]="16" />
+      </button>
+    }
+  </div>
+</div>

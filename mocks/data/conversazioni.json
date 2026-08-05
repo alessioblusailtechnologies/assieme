@@ -1,0 +1,38 @@
+[
+  {
+    "id": "cnv-001",
+    "titolo": "Confronto AUTOPIÙ / preventivo UnipolSai — Fiat 500X",
+    "creataIl": "2026-08-04T09:12:00+02:00",
+    "aggiornataIl": "2026-08-04T09:15:40+02:00",
+    "documentiInContesto": ["doc-pub-002", "doc-pub-003", "doc-priv-001"],
+    "condivisa": false,
+    "autoreId": "utn-004"
+  },
+  {
+    "id": "cnv-002",
+    "titolo": "Franchigie e scoperti Cattolica&Auto",
+    "creataIl": "2026-08-03T15:02:00+02:00",
+    "aggiornataIl": "2026-08-03T15:04:10+02:00",
+    "documentiInContesto": ["doc-pub-012", "doc-pub-013"],
+    "condivisa": false,
+    "autoreId": "utn-004"
+  },
+  {
+    "id": "cnv-003",
+    "titolo": "Copertura grandine su KM Sicuri",
+    "creataIl": "2026-07-31T11:20:00+02:00",
+    "aggiornataIl": "2026-07-31T11:21:30+02:00",
+    "documentiInContesto": ["doc-pub-008", "doc-pub-009"],
+    "condivisa": false,
+    "autoreId": "utn-004"
+  },
+  {
+    "id": "cnv-004",
+    "titolo": "Massimali RC professionale — studio Bianchi",
+    "creataIl": "2026-07-28T17:45:00+02:00",
+    "aggiornataIl": "2026-07-28T17:47:20+02:00",
+    "documentiInContesto": ["doc-priv-006", "doc-pub-038"],
+    "condivisa": true,
+    "autoreId": "utn-001"
+  }
+]

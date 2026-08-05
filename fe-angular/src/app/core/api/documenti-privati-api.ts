@@ -48,6 +48,11 @@ export class DocumentiPrivatiApi {
     return `${this.base}/${id}`;
   }
 
+  /** Il PDF del documento; il server risponde 409 finché non è elaborato. */
+  urlFile(id: Id): string {
+    return `${this.base}/${id}/file`;
+  }
+
   urlEtichette(): string {
     return `${environment.apiBase}/etichette`;
   }

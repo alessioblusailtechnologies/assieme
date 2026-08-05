@@ -12,6 +12,7 @@ import type { IconSvgObject } from '@hugeicons/angular';
  */
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
+import AtIcon from '@hugeicons/core-free-icons/AtIcon';
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon';
 import Attachment01Icon from '@hugeicons/core-free-icons/Attachment01Icon';
@@ -27,6 +28,7 @@ import Copy01Icon from '@hugeicons/core-free-icons/Copy01Icon';
 import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import Download03Icon from '@hugeicons/core-free-icons/Download03Icon';
 import File02Icon from '@hugeicons/core-free-icons/File02Icon';
+import FileExportIcon from '@hugeicons/core-free-icons/FileExportIcon';
 import FilterIcon from '@hugeicons/core-free-icons/FilterIcon';
 import Folder01Icon from '@hugeicons/core-free-icons/Folder01Icon';
 import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
@@ -45,10 +47,12 @@ import PlusSignIcon from '@hugeicons/core-free-icons/PlusSignIcon';
 import QuotesIcon from '@hugeicons/core-free-icons/QuotesIcon';
 import RefreshIcon from '@hugeicons/core-free-icons/RefreshIcon';
 import Search01Icon from '@hugeicons/core-free-icons/Search01Icon';
+import SentIcon from '@hugeicons/core-free-icons/SentIcon';
 import Settings02Icon from '@hugeicons/core-free-icons/Settings02Icon';
 import Share08Icon from '@hugeicons/core-free-icons/Share08Icon';
 import SidebarLeft01Icon from '@hugeicons/core-free-icons/SidebarLeft01Icon';
 import StarIcon from '@hugeicons/core-free-icons/StarIcon';
+import StopIcon from '@hugeicons/core-free-icons/StopIcon';
 import Table01Icon from '@hugeicons/core-free-icons/Table01Icon';
 import Upload03Icon from '@hugeicons/core-free-icons/Upload03Icon';
 import User03Icon from '@hugeicons/core-free-icons/User03Icon';
@@ -100,6 +104,10 @@ export const REGISTRO_ICONE = {
   allega: Attachment01Icon,
   esegui: PlayIcon,
   sospendi: PauseIcon,
+  invia: SentIcon,
+  ferma: StopIcon,
+  referenzia: AtIcon,
+  esporta: FileExportIcon,
   riprova: RefreshIcon,
   chiudi: Cancel01Icon,
   esci: Logout03Icon,

@@ -1,0 +1,154 @@
+[
+  {
+    "id": "msg-001",
+    "conversazioneId": "cnv-001",
+    "autore": "utente",
+    "testo": "Confronta il set informativo AUTOPIÙ con il preventivo UnipolSai per la Fiat 500X: quali differenze contano davvero per il cliente?",
+    "inviatoIl": "2026-08-04T09:12:20+02:00",
+    "documentiReferenziati": ["doc-pub-002", "doc-pub-003", "doc-priv-001"],
+    "citazioni": [],
+    "provenienze": []
+  },
+  {
+    "id": "msg-002",
+    "conversazioneId": "cnv-001",
+    "autore": "assistente",
+    "testo": "Ho confrontato le due proposte sulle voci che incidono di più sul premio e sulla tutela dell'assicurato.\n\n**Massimale RC** — Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.\n\n**Franchigia furto e incendio** — Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 €. Su un sinistro da 8.000 € significa 250 € contro 800 €.\n\n**Garanzia infortuni del conducente** — Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai.\n\n**Assistenza stradale** — Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.\n\nIn sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla persona del conducente; quella UnipolSai è più conveniente sull'assistenza. La scelta dipende dall'uso prevalente del veicolo.",
+    "inviatoIl": "2026-08-04T09:15:40+02:00",
+    "documentiReferenziati": [],
+    "citazioni": [
+      {
+        "id": "cit-001",
+        "documentoId": "doc-pub-002",
+        "documentoTitolo": "DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica",
+        "archivio": "pubblico",
+        "posizione": {
+          "pagina": 8,
+          "articolo": "12",
+          "sezione": "Responsabilità civile",
+          "evidenzia": { "x": 0.09, "y": 0.28, "larghezza": 0.82, "altezza": 0.08 }
+        },
+        "estratto": "Il massimale per sinistro è pari a euro 6.450.000, di cui euro 1.300.000 per danni a cose."
+      },
+      {
+        "id": "cit-002",
+        "documentoId": "doc-pub-003",
+        "documentoTitolo": "Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica",
+        "archivio": "pubblico",
+        "posizione": {
+          "pagina": 41,
+          "articolo": "27",
+          "sezione": "Furto e incendio",
+          "evidenzia": { "x": 0.09, "y": 0.45, "larghezza": 0.82, "altezza": 0.08 }
+        },
+        "estratto": "La garanzia è prestata con applicazione di una franchigia fissa di euro 250 per ciascun sinistro."
+      },
+      {
+        "id": "cit-003",
+        "documentoId": "doc-priv-001",
+        "documentoTitolo": "Preventivo UnipolSai — Fiat 500X targa GK492ZR",
+        "archivio": "privato",
+        "posizione": {
+          "pagina": 3,
+          "sezione": "Garanzie accessorie",
+          "evidenzia": { "x": 0.09, "y": 0.6, "larghezza": 0.82, "altezza": 0.06 }
+        },
+        "estratto": "Furto e Incendio: scoperto 10% con il minimo di euro 500 per ciascun sinistro."
+      }
+    ],
+    "provenienze": [
+      {
+        "tipo": "regola",
+        "origineId": "ist-003",
+        "etichetta": "valutato secondo la regola \"Infortuni del conducente\""
+      }
+    ]
+  },
+  {
+    "id": "msg-003",
+    "conversazioneId": "cnv-002",
+    "autore": "utente",
+    "testo": "Che franchigie prevede Cattolica&Auto sulla garanzia furto e incendio?",
+    "inviatoIl": "2026-08-03T15:02:30+02:00",
+    "documentiReferenziati": ["doc-pub-012", "doc-pub-013"],
+    "citazioni": [],
+    "provenienze": []
+  },
+  {
+    "id": "msg-004",
+    "conversazioneId": "cnv-002",
+    "autore": "assistente",
+    "testo": "La garanzia furto e incendio di Cattolica&Auto è prestata con uno **scoperto del 5% con minimo di 300 €** per ciascun sinistro. Lo scoperto si dimezza se il veicolo è dotato di sistema di antifurto satellitare attivo al momento del sinistro.\n\nPer i sinistri avvenuti all'estero lo scoperto sale al 10% con lo stesso minimo.",
+    "inviatoIl": "2026-08-03T15:04:10+02:00",
+    "documentiReferenziati": [],
+    "citazioni": [
+      {
+        "id": "cit-004",
+        "documentoId": "doc-pub-013",
+        "documentoTitolo": "Condizioni di Assicurazione — Cattolica&Auto",
+        "archivio": "pubblico",
+        "posizione": { "pagina": 37, "articolo": "24", "sezione": "Furto e incendio" },
+        "estratto": "La garanzia è prestata con scoperto del 5% con il minimo di euro 300; lo scoperto è ridotto della metà se il veicolo è dotato di antifurto satellitare attivo."
+      }
+    ],
+    "provenienze": []
+  },
+  {
+    "id": "msg-005",
+    "conversazioneId": "cnv-003",
+    "autore": "utente",
+    "testo": "KM Sicuri copre i danni da grandine?",
+    "inviatoIl": "2026-07-31T11:20:30+02:00",
+    "documentiReferenziati": ["doc-pub-008", "doc-pub-009"],
+    "citazioni": [],
+    "provenienze": []
+  },
+  {
+    "id": "msg-006",
+    "conversazioneId": "cnv-003",
+    "autore": "assistente",
+    "testo": "Nei documenti referenziati non ho trovato una garanzia che copra i danni da grandine, né un richiamo agli eventi atmosferici nelle garanzie accessorie. Non posso quindi dare una risposta fondata sui documenti disponibili.\n\nSe il prodotto prevede una garanzia eventi naturali, potrebbe stare in un'appendice o in un'edizione diversa del set informativo: referenziala e ripeti la domanda.",
+    "inviatoIl": "2026-07-31T11:21:30+02:00",
+    "documentiReferenziati": [],
+    "citazioni": [],
+    "provenienze": [],
+    "nonSupportato": true
+  },
+  {
+    "id": "msg-007",
+    "conversazioneId": "cnv-004",
+    "autore": "utente",
+    "testo": "Qual è il massimale RC nel preventivo Allianz per lo studio Bianchi? È adeguato rispetto a quanto chiede il DIP AXA?",
+    "inviatoIl": "2026-07-28T17:45:30+02:00",
+    "documentiReferenziati": ["doc-priv-006", "doc-pub-038"],
+    "citazioni": [],
+    "provenienze": []
+  },
+  {
+    "id": "msg-008",
+    "conversazioneId": "cnv-004",
+    "autore": "assistente",
+    "testo": "Il preventivo Allianz per lo studio Bianchi indica un **massimale RC di 1.000.000 € per sinistro e per anno assicurativo**, con franchigia fissa di 1.000 € per sinistro.\n\nIl prodotto AXA di confronto prevede massimali a scelta da 500.000 € a 2.000.000 €: il preventivo Allianz si colloca quindi nella fascia intermedia dell'offerta di mercato per uno studio professionale di quelle dimensioni.",
+    "inviatoIl": "2026-07-28T17:47:20+02:00",
+    "documentiReferenziati": [],
+    "citazioni": [
+      {
+        "id": "cit-005",
+        "documentoId": "doc-priv-006",
+        "documentoTitolo": "Preventivo Allianz — RC Professionale studio Bianchi",
+        "archivio": "privato",
+        "posizione": { "pagina": 2, "sezione": "Massimali e franchigie" },
+        "estratto": "Massimale per sinistro e per anno assicurativo: euro 1.000.000. Franchigia fissa: euro 1.000 per sinistro."
+      },
+      {
+        "id": "cit-006",
+        "documentoId": "doc-pub-038",
+        "documentoTitolo": "Condizioni di Assicurazione — AXA Protezione Professionisti",
+        "archivio": "pubblico",
+        "posizione": { "pagina": 12, "articolo": "8", "sezione": "Massimali" },
+        "estratto": "Il massimale è pattuito tra le parti tra un minimo di euro 500.000 e un massimo di euro 2.000.000."
+      }
+    ],
+    "provenienze": []
+  }
+]

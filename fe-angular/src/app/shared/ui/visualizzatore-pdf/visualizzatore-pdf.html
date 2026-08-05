@@ -1,0 +1,81 @@
+<div class="visualizzatore">
+  @if (documento()) {
+    <div class="barra">
+      <button
+        type="button"
+        class="barra__pulsante"
+        (click)="vai(-1)"
+        [disabled]="paginaCorrente() <= 1"
+        aria-label="Pagina precedente"
+      >
+        <ui-icon name="espandi-destra" [size]="14" class="ruota-sinistra" />
+      </button>
+
+      <span class="barra__pagina">
+        <input
+          class="barra__campo"
+          type="text"
+          inputmode="numeric"
+          [value]="paginaCorrente()"
+          (change)="vaiA($any($event.target).value)"
+          aria-label="Numero di pagina"
+        />
+        <span class="barra__totale">di {{ numeroPagine() }}</span>
+      </span>
+
+      <button
+        type="button"
+        class="barra__pulsante"
+        (click)="vai(1)"
+        [disabled]="paginaCorrente() >= numeroPagine()"
+        aria-label="Pagina successiva"
+      >
+        <ui-icon name="espandi-destra" [size]="14" />
+      </button>
+
+      <span class="barra__spazio"></span>
+
+      <a
+        class="barra__pulsante"
+        [href]="fileUrl()"
+        target="_blank"
+        rel="noopener"
+        aria-label="Apri il PDF in una nuova scheda"
+        title="Apri in una nuova scheda"
+      >
+        <ui-icon name="apri-esterno" [size]="14" />
+      </a>
+    </div>
+  }
+
+  <div class="pagina" #contenitore>
+    @if (errore()) {
+      <div class="pagina__stato">
+        <ui-icon name="errore" [size]="24" />
+        <p>L'anteprima del documento non è disponibile.</p>
+      </div>
+    } @else if (!documento()) {
+      <div class="pagina__scheletro">
+        <ui-scheletro [numeroRighe]="8" />
+      </div>
+    } @else {
+      <div class="pagina__foglio">
+        <canvas #tela></canvas>
+        @if (evidenzia(); as ev) {
+          <!--
+            RF-C-05: il passaggio citato. Coordinate normalizzate sulla
+            pagina, quindi in percentuale: il riquadro segue lo zoom da sé.
+          -->
+          <div
+            class="pagina__evidenzia"
+            [style.left.%]="ev.x * 100"
+            [style.top.%]="ev.y * 100"
+            [style.width.%]="ev.larghezza * 100"
+            [style.height.%]="ev.altezza * 100"
+            aria-hidden="true"
+          ></div>
+        }
+      </div>
+    }
+  </div>
+</div>

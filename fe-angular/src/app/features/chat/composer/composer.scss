@@ -1,0 +1,133 @@
+:host {
+  display: block;
+}
+
+.composer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Il selettore si apre sopra il campo: il composer sta in fondo alla pagina. */
+.selettore {
+  position: absolute;
+  bottom: calc(100% + var(--sp-1));
+  left: 0;
+  right: 0;
+  z-index: var(--z-overlay);
+}
+
+/* ---------- Chip dei riferimenti in attesa (RF-C-02) ---------- */
+
+.riferimenti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.riferimento {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 40ch;
+  padding: 2px 4px 2px 8px;
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  font-size: var(--t-xs);
+}
+
+.riferimento__titolo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.riferimento__togli {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.riferimento__togli:hover {
+  opacity: 1;
+}
+
+/* ---------- Campo ---------- */
+
+.campo {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  transition: border-color var(--dur-fast) var(--ease-brand);
+}
+
+.campo:focus-within {
+  border-color: var(--c-accent);
+}
+
+.campo__testo {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: var(--sp-2);
+  font: inherit;
+  font-size: var(--t-body);
+  line-height: 1.5;
+  color: var(--c-text);
+  max-height: 168px;
+}
+
+.campo__testo::placeholder {
+  color: var(--c-text-mute);
+}
+
+.campo__allega,
+.campo__invia {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  cursor: pointer;
+}
+
+.campo__allega {
+  background: transparent;
+  color: var(--c-text-3);
+}
+
+.campo__allega:hover,
+.campo__allega:focus-visible {
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
+.campo__invia {
+  background: var(--c-accent);
+  color: #fff;
+}
+
+.campo__invia:disabled {
+  background: var(--c-page-alt);
+  color: var(--c-text-mute);
+  cursor: default;
+}
+
+.campo__invia.is-ferma {
+  background: var(--c-ink);
+}

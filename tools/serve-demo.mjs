@@ -37,10 +37,11 @@ const DIST = resolve(QUI, '..', 'fe-angular', 'dist', 'fe-angular', 'browser');
 
 /** Stessa suddivisione del proxy di sviluppo: chi ha logica sta sul 3001. */
 const INSTRADAMENTO = [
-  { prefisso: '/api/stream', porta: 3001 },
   { prefisso: '/api/documenti', porta: 3001 },
   { prefisso: '/api/etichette', porta: 3001 },
   { prefisso: '/api/spazio', porta: 3001 },
+  { prefisso: '/api/conversazioni', porta: 3001 },
+  { prefisso: '/api/template', porta: 3001 },
   { prefisso: '/api', porta: 3000 },
 ];
 
@@ -164,6 +165,6 @@ const server = createServer((req, res) => {
 server.listen(PORTA, () => {
   console.log(`[demo] build servita da ${DIST}`);
   console.log(`[demo] in ascolto su http://localhost:${PORTA}`);
-  console.log('[demo] /api -> 3000 (Mockoon), /api/documenti e /api/stream -> 3001');
+  console.log('[demo] /api -> 3000 (Mockoon); documenti, conversazioni e template -> 3001');
   console.log('[demo] nessuna autenticazione: trattare l\'indirizzo come riservato');
 });

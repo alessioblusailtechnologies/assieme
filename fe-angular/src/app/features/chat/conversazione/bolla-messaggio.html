@@ -1,0 +1,91 @@
+@if (messaggio(); as m) {
+  @if (m.autore === 'utente') {
+    <div class="utente">
+      <div class="utente__testo">{{ m.testo }}</div>
+      @if (referenziati().length) {
+        <div class="utente__riferimenti">
+          @for (doc of referenziati(); track doc.id) {
+            <span class="riferimento">
+              <ui-icon name="documento" [size]="11" />
+              <span class="riferimento__titolo">{{ doc.titolo }}</span>
+            </span>
+          }
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="assistente">
+      <!--
+        RF-C-08: la non-copertura non è un errore ma una risposta legittima,
+        e il segnale sta sopra il testo: chi legge deve saperlo prima di
+        leggere, non scoprirlo dopo aver copiato la risposta in una mail.
+      -->
+      @if (m.nonSupportato) {
+        <p class="non-supportato">
+          <ui-icon name="avviso" [size]="14" />
+          <span>Risposta non fondata sui documenti disponibili</span>
+        </p>
+      }
+
+      @if (!m.testo && m.inCorso) {
+        <p class="attesa" aria-live="polite">
+          <span class="attesa__punto"></span><span class="attesa__punto"></span
+          ><span class="attesa__punto"></span>
+          <span class="attesa__testo">Sto leggendo i documenti…</span>
+        </p>
+      } @else {
+        <div
+          class="testo"
+          [class.is-in-corso]="m.inCorso"
+          [innerHTML]="html()"
+          aria-live="polite"
+        ></div>
+      }
+
+      @if (m.erroreStream) {
+        <p class="errore-stream">
+          <ui-icon name="errore" [size]="14" />
+          <span>{{ m.erroreStream }} Il testo qui sopra è incompleto: riprova a inviare.</span>
+        </p>
+      }
+      @if (m.interrotto) {
+        <p class="interrotta">Risposta interrotta: non è stata salvata nella conversazione.</p>
+      }
+
+      @if (m.citazioni.length) {
+        <div class="citazioni">
+          <p class="mono citazioni__etichetta">Fonti</p>
+          @for (c of m.citazioni; track c.id) {
+            <ui-chip-citazione [citazione]="c" (apri)="apriCitazione.emit($event)" />
+          }
+        </div>
+      }
+
+      @if (m.provenienze.length) {
+        <div class="provenienze">
+          @for (p of m.provenienze; track p.origineId) {
+            <span class="provenienza" [class]="'is-' + p.tipo">
+              <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
+              {{ p.etichetta }}
+            </span>
+          }
+        </div>
+      }
+
+      @if (!m.inCorso && m.testo) {
+        <div class="azioni">
+          <button
+            type="button"
+            class="azione"
+            (click)="copia()"
+            [attr.aria-label]="copiato() ? 'Testo copiato' : 'Copia il testo della risposta'"
+          >
+            <ui-icon [name]="copiato() ? 'pronto' : 'duplica'" [size]="13" />
+            <span>{{ copiato() ? 'Copiato' : 'Copia' }}</span>
+          </button>
+          <ng-content select="[azioni-extra]" />
+        </div>
+      }
+    </div>
+  }
+}

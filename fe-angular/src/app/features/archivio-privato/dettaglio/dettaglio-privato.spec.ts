@@ -62,17 +62,9 @@ describe('DettaglioPrivato', () => {
     const dom = await monta(documento('pronto'));
 
     /* Il documento è il motivo per cui si apre la scheda: senza, restano
-       solo dei campi da compilare alla cieca. */
-    expect(dom.querySelector('.visualizzatore')).toBeTruthy();
-    expect(dom.querySelector('.visualizzatore__titolo')?.textContent).toContain('Anteprima');
-  });
-
-  it('riporta pagine e peso sotto l anteprima', async () => {
-    const dom = await monta(documento('pronto'));
-    const testo = dom.querySelector('.visualizzatore')?.textContent ?? '';
-
-    expect(testo).toContain('12 pagine');
-    expect(testo).toContain('1.8 MB');
+       solo dei campi da compilare alla cieca. Da questa fase l'anteprima è
+       il visualizzatore vero (RF-C-05), non più un segnaposto. */
+    expect(dom.querySelector('ui-visualizzatore-pdf')).toBeTruthy();
   });
 
   it('al posto dell anteprima dice che il documento non è leggibile', async () => {

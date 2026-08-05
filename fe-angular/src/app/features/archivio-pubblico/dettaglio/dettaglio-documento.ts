@@ -12,6 +12,7 @@ import { DettaglioDocumento as Dettaglio, DocumentiApi } from '@core/api/documen
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
+import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { etichettaTipologia } from '@shared/testi/etichette';
 
 /**
@@ -19,10 +20,6 @@ import { etichettaTipologia } from '@shared/testi/etichette';
  *
  * RF-A-02 (metadati strutturati), RF-A-04 (edizioni multiple con evidenza
  * della corrente), RF-A-07 (freschezza dei contenuti per compagnia).
- *
- * Il visualizzatore PDF è ancora un segnaposto: arriva in Fase 3, dove serve
- * davvero, perché RF-C-05 chiede di aprire il documento **posizionato sul
- * passaggio citato**. Costruirlo qui significherebbe costruirlo due volte.
  */
 @Component({
   selector: 'app-dettaglio-documento',
@@ -35,6 +32,7 @@ import { etichettaTipologia } from '@shared/testi/etichette';
     RouterLink,
     Scheletro,
     StatoVuoto,
+    VisualizzatorePdf,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dettaglio-documento.html',

@@ -38,7 +38,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { gestisci as gestisciArchivioPrivato } from './archivio-privato.mjs';
+import {
+  gestisci as gestisciArchivioPrivato,
+  trovaDocumento as trovaDocumentoPrivato,
+} from './archivio-privato.mjs';
+import { gestisci as gestisciChat } from './chat.mjs';
+import { generaPdf } from './pdf.mjs';
 
 const PORTA = 3001;
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -261,127 +266,14 @@ function elencoDocumenti(url) {
 }
 
 // ---------------------------------------------------------------------------
-// Endpoint: streaming della chat (SSE)
-// ---------------------------------------------------------------------------
-
-/** Ritmo di emissione: abbastanza lento da vedere il testo comparire. */
-const MS_PER_BLOCCO = 45;
-
-/*
- * Risposta di esempio sul caso pilota indicato nell'analisi dei requisiti
- * (§5.3): confronto ramo auto fra il set informativo Generali e il
- * preventivo UnipolSai sullo stesso veicolo.
- *
- * Il testo è verosimile ma inventato. Diventerà fedele quando arriveranno i
- * PDF reali del cliente pilota.
- */
-const RISPOSTA = `Ho confrontato le due proposte sulle voci che incidono di più sul premio e sulla tutela dell'assicurato.
-
-**Massimale RC** — Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.
-
-**Franchigia furto e incendio** — Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 €. Su un sinistro da 8.000 € significa 250 € contro 800 €.
-
-**Garanzia infortuni del conducente** — Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai.
-
-**Assistenza stradale** — Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.
-
-In sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla persona del conducente; quella UnipolSai è più conveniente sull'assistenza. La scelta dipende dall'uso prevalente del veicolo.`;
-
-const CITAZIONI = [
-  {
-    id: 'cit-001',
-    documentoId: 'doc-pub-002',
-    documentoTitolo: 'DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica',
-    archivio: 'pubblico',
-    posizione: { pagina: 8, articolo: '12', sezione: 'Responsabilità civile' },
-    estratto:
-      'Il massimale per sinistro è pari a euro 6.450.000, di cui euro 1.300.000 per danni a cose.',
-  },
-  {
-    id: 'cit-002',
-    documentoId: 'doc-pub-003',
-    documentoTitolo: 'Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica',
-    archivio: 'pubblico',
-    posizione: { pagina: 41, articolo: '27', sezione: 'Furto e incendio' },
-    estratto:
-      'La garanzia è prestata con applicazione di una franchigia fissa di euro 250 per ciascun sinistro.',
-  },
-  {
-    id: 'cit-003',
-    documentoId: 'doc-priv-014',
-    documentoTitolo: 'Preventivo UnipolSai — Fiat 500X targa GK492ZR',
-    archivio: 'privato',
-    posizione: { pagina: 3, sezione: 'Garanzie accessorie' },
-    estratto: 'Furto e Incendio: scoperto 10% con il minimo di euro 500 per ciascun sinistro.',
-  },
-];
-
-/*
- * RF-D-05: quando una risposta è influenzata da un'istruzione personalizzata
- * del tenant, il sistema deve renderlo esplicito. Lo stub lo emette perché
- * l'interfaccia della Fase 3 dovrà saperlo mostrare fin dal primo giorno.
- */
-const PROVENIENZE = [
-  {
-    tipo: 'istruzione',
-    origineId: 'ist-003',
-    etichetta: 'valutato secondo la regola "Infortuni del conducente"',
-  },
-];
-
-async function streamingChat(req, res) {
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    /* Senza questo, un eventuale reverse proxy bufferizza e lo streaming
-       arriva tutto insieme: il difetto più insidioso da diagnosticare. */
-    'X-Accel-Buffering': 'no',
-    'Access-Control-Allow-Origin': '*',
-  });
-
-  /** Un evento del contratto `EventoStream` (core/models/conversazione.ts). */
-  const invia = (evento) => res.write(`data: ${JSON.stringify(evento)}\n\n`);
-
-  let interrotto = false;
-  req.on('close', () => {
-    interrotto = true;
-  });
-
-  invia({ tipo: 'inizio', messaggioId: `msg-${Date.now()}` });
-
-  /* Pausa iniziale: il modello vero ci mette un attimo prima del primo
-     token, e l'interfaccia deve mostrare qualcosa in quel vuoto. */
-  await attendi(700);
-
-  for (const blocco of RISPOSTA.match(/\S+\s*/g) ?? []) {
-    if (interrotto) return;
-    invia({ tipo: 'testo', delta: blocco });
-    await attendi(MS_PER_BLOCCO);
-  }
-
-  /* Citazioni e provenienze arrivano in coda, come farebbe un backend che le
-     consolida a risposta completa. Se il backend vero le emetterà via via,
-     l'interfaccia deve reggere entrambi i casi: è il motivo per cui sono
-     eventi separati e non campi di un unico oggetto finale. */
-  for (const citazione of CITAZIONI) {
-    if (interrotto) return;
-    invia({ tipo: 'citazione', citazione });
-    await attendi(120);
-  }
-  for (const provenienza of PROVENIENZE) {
-    if (interrotto) return;
-    invia({ tipo: 'provenienza', provenienza });
-    await attendi(120);
-  }
-
-  invia({ tipo: 'fine' });
-  res.end();
-}
-
-// ---------------------------------------------------------------------------
 // Instradamento
 // ---------------------------------------------------------------------------
+
+/**
+ * Ricerca puntuale su entrambi gli archivi: il contesto documentale della
+ * chat referenzia documenti pubblici e privati senza distinguere (RF-C-02).
+ */
+const trovaDocumento = (id) => DOCUMENTI.find((d) => d.id === id) ?? trovaDocumentoPrivato(id);
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? '/', `http://localhost:${PORTA}`);
@@ -397,9 +289,11 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  // Lo streaming non passa dalla simulazione: la latenza è già nel suo ritmo.
-  if (percorso.startsWith('/api/stream')) {
-    await streamingChat(req, res);
+  /* Chat e template: il modulo applica da sé la simulazione, perché lo
+     streaming non deve passarci — la latenza è già nel suo ritmo. */
+  if (
+    await gestisciChat(req, res, url, { inviaJson, leggiCorpo, simulazione, trovaDocumento })
+  ) {
     return;
   }
 
@@ -415,6 +309,26 @@ const server = createServer(async (req, res) => {
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
+    return;
+  }
+
+  /* Il file del documento: un PDF generato, col numero di pagine dichiarato
+     nei metadati — il visualizzatore deve poter aprire «pagina 41» davvero. */
+  const file = percorso.match(/^\/api\/documenti\/([^/]+)\/file$/);
+  if (file && req.method === 'GET') {
+    const documento = DOCUMENTI.find((d) => d.id === file[1]);
+    if (!documento) {
+      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Documento inesistente.' });
+      return;
+    }
+    const pdf = generaPdf(documento.titolo, documento.numeroPagine);
+    res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdf.length,
+      'Content-Disposition': 'inline',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(pdf);
     return;
   }
 
@@ -467,6 +381,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/stream',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template',
   );
 });

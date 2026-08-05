@@ -69,6 +69,12 @@ describe('Shell', () => {
       richiesta.flush({ codice: 'ERRORE', messaggio: 'ko' }, { status: 500, statusText: 'KO' });
     }
 
+    /* Anche la barra laterale ha la sua risorsa: lo storico delle
+       conversazioni sotto la voce Chat (RF-C-01). */
+    http
+      .match('/api/conversazioni')
+      .forEach((r) => r.flush({ elementi: [], totale: 0, pagina: 1, perPagina: 50 }));
+
     fixture.detectChanges();
     await fixture.whenStable();
     return fixture;

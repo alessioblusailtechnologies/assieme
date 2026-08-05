@@ -1,9 +1,10 @@
 {
   "//": "L'ordine conta: le chiavi piu' specifiche vanno prima di /api, altrimenti le cattura tutte.",
-  "/api/stream": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/documenti": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/documenti-privati": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/etichette": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/spazio": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/conversazioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/template": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api": { "target": "http://localhost:3000", "secure": false, "changeOrigin": true }
 }

@@ -350,7 +350,7 @@ Regola: **`features/` non importa mai da un altro `features/`**. Ciò che serve 
 ## 9. Mappa delle rotte
 
 ```
-/chat                          elenco conversazioni + nuova
+/chat                          nuova conversazione (lo storico sta nella barra laterale)
 /chat/:id                      conversazione
 /archivio/pubblico             navigazione compagnia / ramo / prodotto (RF-A-03)
 /archivio/pubblico/:id         scheda documento + visualizzatore
@@ -396,7 +396,7 @@ Nessun requisito funzionale, ma tutto il resto poggia qui.
 
 Navigazione per compagnia/ramo/prodotto, ricerca per parola chiave insensibile agli accenti, filtro per tipologia, edizioni multiple con evidenza della corrente, preferiti, paginazione. Scheda documento con metadati completi, altre edizioni dello stesso prodotto e data di ultimo aggiornamento dell'archivio per compagnia.
 
-Il visualizzatore PDF resta un segnaposto: quello vero (pdf.js) arriva in Fase 3, dove serve davvero — RF-C-05 chiede l'apertura **sul passaggio citato**, e un visualizzatore che non sa farlo andrebbe rifatto.
+Il visualizzatore PDF è nato come segnaposto ed è stato sostituito in Fase 3 da quello vero (pdf.js), che sa aprirsi sul passaggio citato (RF-C-05) — il motivo per cui non era stato costruito prima.
 
 **Deviazione dal piano, da sapere:** l'endpoint dei documenti non sta in Mockoon ma in `mocks/api-stub.mjs`. L'helper `filter` di Mockoon fa solo uguaglianza esatta e non regge ricerca testuale, filtri opzionali e paginazione senza diventare un blob Handlebars dentro una stringa JSON. Lo stub onora gli stessi header di Mockoon, quindi il pannello di sviluppo funziona identico su tutte le rotte. La regola: **Mockoon per i dati fissi e le regole, stub per gli endpoint con logica.**
 
@@ -416,16 +416,16 @@ Il caricamento e la coda si costruiscono in `shared/`, non dentro la funzionalit
 
 È anche la fase giusta per il primo form con **Signal Forms**: abbastanza reale da essere un test vero, abbastanza contenuto da poter tornare indietro. Se convince si estende; se no, il resto va con i Reactive Forms.
 
-### Fase 3 — Chat, referenziazione, citazioni · ~11 giorni · RF-C-01…C-10 — **il cuore**
+### ✅ Fase 3 — Chat, referenziazione, citazioni — **completata** · RF-C-01…C-10
 
-- Chat con risposta in streaming (SSE), storico conversazioni, rinomina
-- **Selettore `@` di referenziazione** su entrambi gli archivi (RF-C-02): componente più delicato dell'applicazione — completamento, tastiera, accessibilità, tenuta su archivi grandi. Costruito su `p-autocomplete` o su CDK Overlay, da valutare al momento
-- Contesto documentale persistente e rimovibile (RF-C-03)
-- Resa delle citazioni e apertura sul passaggio (RF-C-04/05) → qui entra pdf.js
-- Trattamento grafico della non-copertura (RF-C-08)
-- Esportazione su template: scelta e download simulato (RF-C-10)
+Chat con risposta in streaming SSE, storico e rinomina; selettore `@` su entrambi gli archivi con navigazione da tastiera e senza mai perdere il fuoco dal campo (costruito a mano, non su `p-autocomplete`: il pannello è passivo, digitazione e tasti restano al composer); contesto documentale persistente e rimovibile; citazioni con apertura del PDF sul passaggio evidenziato (pdf.js, caricato solo alla prima resa); trattamento grafico della non-copertura; esportazione su template con download vero e copia rapida. **Nessun limite di documenti per conversazione** in questa fase: il valore verrà dai test (punto aperto §6.4), e il contratto non lo prevede finché non c'è.
 
-Fase lunga e ad alto rischio. Propongo di aprirla con **due o tre giorni sul solo selettore `@` e sulla resa delle citazioni**, da validare col cliente pilota prima di costruirci sopra.
+**Decisioni di contratto da sapere:**
+
+- **Lo streaming è la risposta al `POST /api/conversazioni/:id/messaggi`** — un giro solo, come fanno i backend dei modelli. Nel FE passa da `HttpClient` col backend fetch (eventi di progresso con `partialText`), non da `EventSource`: lo stream attraversa gli stessi interceptor di tutte le altre chiamate, pannello di sviluppo compreso. Il framing SSE è interpretato in `core/api/sse.ts`, con test sui tagli fra pacchetti.
+- **Il contesto della conversazione esce idratato** (`RiferimentoDocumento`: id, titolo, archivio): la barra del contesto non fa una chiamata per documento.
+- **L'evento `inizio` porta anche `messaggioUtenteId`**: il client riconcilia la propria copia ottimistica e un ricaricamento a stream aperto non duplica nulla. Il messaggio dell'assistente si persiste solo a risposta completa: uno stream interrotto non lascia mezzi messaggi nello storico.
+- **Il mock genera file veri.** PDF multi-pagina per il visualizzatore (`mocks/pdf.mjs`, scritti a mano: catalogo, xref, Helvetica non incorporata), DOCX/XLSX minimi ma apribili per l'esportazione (`mocks/ufficio.mjs`, zip in modalità store). Le risposte della chat sono **scenari deterministici** guidati dal testo della domanda (`mocks/chat.mjs`) — «grandine» produce la non-copertura, «franchig» la risposta breve con due citazioni, il resto il confronto del caso pilota.
 
 ### Fase 4 — Tabelle di analisi · ~6 giorni · RF-C-11…C-15
 

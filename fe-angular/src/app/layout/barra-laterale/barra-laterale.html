@@ -39,18 +39,80 @@
       <ul>
         @for (voce of gruppo.voci; track voce.percorso) {
           <li>
-            <a
-              class="nav__voce"
-              [routerLink]="voce.percorso"
-              routerLinkActive="is-attiva"
-              [routerLinkActiveOptions]="{ exact: voce.percorso === '/archivio/privato' }"
-              [title]="compressa() ? voce.etichetta : ''"
-            >
-              <ui-icon [name]="voce.icona" [size]="18" />
-              @if (!compressa()) {
-                <span class="nav__etichetta">{{ voce.etichetta }}</span>
+            <div class="nav__riga">
+              <a
+                class="nav__voce"
+                [routerLink]="voce.percorso"
+                routerLinkActive="is-attiva"
+                [routerLinkActiveOptions]="{
+                  exact: voce.percorso === '/archivio/privato' ||
+                    (voce.percorso === '/chat' && !compressa()),
+                }"
+                [title]="compressa() ? voce.etichetta : ''"
+              >
+                <ui-icon [name]="voce.icona" [size]="18" />
+                @if (!compressa()) {
+                  <span class="nav__etichetta">{{ voce.etichetta }}</span>
+                }
+              </a>
+
+              @if (voce.percorso === '/chat' && !compressa()) {
+                <button
+                  type="button"
+                  class="nav__espandi"
+                  (click)="conversazioniEspanse.set(!conversazioniEspanse())"
+                  [attr.aria-expanded]="conversazioniEspanse()"
+                  aria-controls="storico-conversazioni"
+                  [attr.aria-label]="
+                    conversazioniEspanse() ? 'Ripiega le conversazioni' : 'Mostra le conversazioni'
+                  "
+                >
+                  <ui-icon
+                    [name]="conversazioniEspanse() ? 'espandi-giu' : 'espandi-destra'"
+                    [size]="14"
+                  />
+                </button>
               }
-            </a>
+            </div>
+
+            <!--
+              RF-C-01: lo storico sta nella navigazione, non dentro la
+              sezione — raggiungibile da ovunque, e la conversazione aperta
+              tiene tutta la larghezza per sé.
+            -->
+            @if (voce.percorso === '/chat' && !compressa() && conversazioniEspanse()) {
+              <ul class="conversazioni" id="storico-conversazioni" aria-label="Storico conversazioni">
+                @if (storico.errore()) {
+                  <li class="conversazioni__stato">
+                    Lo storico non si è caricato.
+                    <button type="button" class="conversazioni__riprova" (click)="storico.ricarica()">
+                      Riprova
+                    </button>
+                  </li>
+                } @else if (!storico.conversazioni().length) {
+                  <li class="conversazioni__stato">
+                    @if (storico.inCaricamento()) {
+                      …
+                    } @else {
+                      Ancora nessuna conversazione.
+                    }
+                  </li>
+                } @else {
+                  @for (c of storico.conversazioni(); track c.id) {
+                    <li>
+                      <a
+                        class="conversazioni__voce"
+                        [routerLink]="['/chat', c.id]"
+                        routerLinkActive="is-attiva"
+                        [title]="c.titolo"
+                      >
+                        {{ c.titolo }}
+                      </a>
+                    </li>
+                  }
+                }
+              </ul>
+            }
           </li>
         }
       </ul>

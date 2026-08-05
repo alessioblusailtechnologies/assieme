@@ -74,6 +74,11 @@ export class DocumentiApi {
     return `${this.base}/${id}`;
   }
 
+  /** Il PDF del documento, per il visualizzatore (RF-C-05). */
+  urlFile(id: Id): string {
+    return `${this.base}/${id}/file`;
+  }
+
   urlCompagnie(): string {
     return `${environment.apiBase}/compagnie`;
   }

@@ -13,6 +13,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { generaPdf } from './pdf.mjs';
+
 const QUI = dirname(fileURLToPath(import.meta.url));
 
 /** RF-B-08: limite di spazio del piano, per progettare lo stato «quota superata». */
@@ -241,6 +243,16 @@ function elenco(url, corrispondeTesto) {
   };
 }
 
+/**
+ * Ricerca puntuale per la chat: il contesto documentale di una conversazione
+ * referenzia anche documenti privati, e la chat deve poterli risolvere e
+ * verificarne lo stato di elaborazione senza conoscere questo modulo.
+ */
+export function trovaDocumento(id) {
+  const documento = DOCUMENTI.find((d) => d.id === id);
+  return documento ? componi(documento) : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // Instradamento
 // ---------------------------------------------------------------------------
@@ -346,12 +358,35 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
     return true;
   }
 
-  const conId = percorso.match(/^\/api\/documenti-privati\/([^/]+)(\/riferimento)?$/);
+  const conId = percorso.match(/^\/api\/documenti-privati\/([^/]+)(\/riferimento|\/file)?$/);
   if (!conId) return false;
 
   const documento = DOCUMENTI.find((d) => d.id === conId[1]);
   if (!documento) {
     inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Documento inesistente.' });
+    return true;
+  }
+
+  /* Il file del documento, come nell'Archivio Pubblico: un PDF generato con
+     le pagine dichiarate. I documenti non ancora elaborati un'anteprima non
+     ce l'hanno, ed è giusto che il visualizzatore lo scopra. */
+  if (conId[2] === '/file') {
+    if (req.method !== 'GET') return false;
+    if (documento.stato !== 'pronto') {
+      inviaJson(res, 409, {
+        codice: 'NON_PRONTO',
+        messaggio: "L'anteprima è disponibile solo a elaborazione conclusa.",
+      });
+      return true;
+    }
+    const pdf = generaPdf(documento.titolo, documento.numeroPagine);
+    res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdf.length,
+      'Content-Disposition': 'inline',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(pdf);
     return true;
   }
 

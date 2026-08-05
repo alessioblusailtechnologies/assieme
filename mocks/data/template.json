@@ -1,0 +1,41 @@
+[
+  {
+    "id": "tpl-001",
+    "nome": "Confronto di garanzie",
+    "formato": "pdf",
+    "descrizione": "Tabella comparativa delle garanzie con citazioni a piè di pagina, pronta da consegnare al cliente.",
+    "personalizzato": false,
+    "tipologiaPredefinita": "confronto"
+  },
+  {
+    "id": "tpl-002",
+    "nome": "Riepilogo garanzie cliente",
+    "formato": "docx",
+    "descrizione": "Sintesi discorsiva delle coperture di una posizione, modificabile prima dell'invio.",
+    "personalizzato": false,
+    "tipologiaPredefinita": "riepilogo-garanzie"
+  },
+  {
+    "id": "tpl-003",
+    "nome": "Proposta di rinnovo",
+    "formato": "docx",
+    "descrizione": "Lettera di rinnovo con confronto fra condizioni in scadenza e nuova offerta.",
+    "personalizzato": false,
+    "tipologiaPredefinita": "proposta-rinnovo"
+  },
+  {
+    "id": "tpl-004",
+    "nome": "Report interno",
+    "formato": "xlsx",
+    "descrizione": "Dati estratti in forma tabellare per elaborazioni successive in agenzia.",
+    "personalizzato": false,
+    "tipologiaPredefinita": "report-interno"
+  },
+  {
+    "id": "tpl-005",
+    "nome": "Carta intestata Meridiana",
+    "formato": "pdf",
+    "descrizione": "Documento su carta intestata dell'agenzia, con firma e recapiti in calce.",
+    "personalizzato": true
+  }
+]

@@ -129,6 +129,84 @@
   text-overflow: ellipsis;
 }
 
+/* ---------- Voce con sotto-elenco (Chat) ---------- */
+
+.nav__riga {
+  display: flex;
+  align-items: stretch;
+}
+
+.nav__riga .nav__voce {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav__espandi {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--c-text-oninverse-mute);
+  cursor: pointer;
+  flex: none;
+}
+
+.nav__espandi:hover {
+  color: var(--c-text-oninverse);
+  background: var(--c-ink-raise);
+}
+
+/*
+ * Lo storico delle conversazioni (RF-C-01): rientrato sotto la voce Chat,
+ * più piccolo delle voci di navigazione — sono contenuti, non sezioni.
+ */
+.conversazioni {
+  margin: var(--sp-1) 0 var(--sp-2);
+}
+
+.conversazioni__voce {
+  display: block;
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) calc(var(--sp-3) + 18px + var(--sp-3));
+  color: var(--c-text-oninverse-3);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px solid transparent;
+}
+
+.conversazioni__voce:hover {
+  background: var(--c-ink-raise);
+  color: var(--c-text-oninverse);
+  text-decoration: none;
+}
+
+.conversazioni__voce.is-attiva {
+  background: var(--c-ink-raise-2);
+  border-left-color: var(--c-accent-on-dark);
+  color: var(--c-text-oninverse);
+}
+
+.conversazioni__stato {
+  padding: var(--sp-1) var(--sp-3) var(--sp-1) calc(var(--sp-3) + 18px + var(--sp-3));
+  color: var(--c-text-oninverse-mute);
+  font-size: var(--t-xs);
+}
+
+.conversazioni__riprova {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--c-accent-on-dark);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
 :host(.is-compressa) .nav__voce {
   justify-content: center;
   padding-inline: 0;
@@ -176,6 +254,8 @@
 /* Il focus di sistema si perde sul fondo scuro. */
 .comprimi:focus-visible,
 .nav__voce:focus-visible,
+.nav__espandi:focus-visible,
+.conversazioni__voce:focus-visible,
 .marchio__link:focus-visible {
   outline: 2px solid var(--c-accent-hover);
   outline-offset: -2px;
