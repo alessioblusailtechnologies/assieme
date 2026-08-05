@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { Badge } from '@shared/ui/badge/badge';
+import { Tag } from '@shared/ui/tag/tag';
 import { TipologiaDocumento } from '@core/models';
 import { etichettaTipologiaBreve } from '@shared/testi/etichette';
 
@@ -17,9 +17,9 @@ import { etichettaTipologiaBreve } from '@shared/testi/etichette';
  */
 @Component({
   selector: 'app-cella-tipologia',
-  imports: [Badge],
+  imports: [Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<ui-badge variante="accento">{{ etichetta() }}</ui-badge>`,
+  template: `<ui-tag>{{ etichetta() }}</ui-tag>`,
   styles: `
     :host {
       display: flex;

@@ -39,7 +39,11 @@ import { NomeIcona, REGISTRO_ICONE } from './registro-icone';
     '[attr.aria-hidden]': 'etichetta() ? null : "true"',
   },
   styles: `
-    .ui-icon {
+    /* \`:host\` e non \`.ui-icon\`: con l'incapsulamento degli stili una
+       classe nel foglio del componente non raggiunge l'elemento ospite, e
+       la regola resterebbe lettera morta — l'icona resterebbe in linea,
+       disallineata di due o tre pixel in ogni contenitore centrato. */
+    :host {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -50,16 +54,9 @@ import { NomeIcona, REGISTRO_ICONE } from './registro-icone';
       line-height: 0;
     }
 
-    /*
-     * L'SVG deve essere un blocco.
-     *
-     * Da elemento in linea poggerebbe sulla linea di base del testo, con
-     * sotto lo spazio riservato ai discendenti: dentro un pulsante o accanto
-     * a un'etichetta risulta spostata verso l'alto di due o tre pixel. È il
-     * classico disallineamento che si insegue nel contenitore mentre la
-     * causa è qui.
-     */
-    .ui-icon ::ng-deep svg {
+    /* L'SVG come blocco: da elemento in linea poggerebbe sulla linea di
+       base del testo, con sotto lo spazio riservato ai discendenti. */
+    :host ::ng-deep svg {
       display: block;
     }
   `,

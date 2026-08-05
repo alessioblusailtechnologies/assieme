@@ -93,27 +93,47 @@
   letter-spacing: var(--ls-mono-wide);
 }
 
+/*
+ * L'unità interattiva è la riga (`.nav__riga`), non il solo collegamento:
+ * per la voce Chat contiene anche la freccia dello storico, e le due parti
+ * devono leggersi come un unico elemento — un solo rettangolo, un solo
+ * hover, la freccia dentro.
+ */
+.nav__riga {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-sm);
+  transition: background var(--dur-fast) var(--ease-brand);
+}
+
+.nav__riga:hover {
+  background: var(--c-page-alt);
+}
+
+/* Il rettangolo grigio della voce attiva: si vede, non grida. */
+.nav__riga:has(.nav__voce.is-attiva) {
+  background: var(--c-page-alt);
+}
+
 .nav__voce {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
   padding: var(--sp-2) var(--sp-2);
   border-radius: var(--radius-sm);
   color: var(--c-text-2);
   font-size: var(--t-body);
   text-decoration: none;
-  transition: background var(--dur-fast) var(--ease-brand);
 }
 
 .nav__voce:hover {
-  background: var(--c-page-alt);
   color: var(--c-text);
   text-decoration: none;
 }
 
-/* Il rettangolo grigio della voce attiva: si vede, non grida. */
 .nav__voce.is-attiva {
-  background: var(--c-page-alt);
   color: var(--c-text);
   font-weight: 500;
 }
@@ -129,24 +149,12 @@
   padding-inline: 0;
 }
 
-/* ---------- Voce con sotto-elenco (Chat) ---------- */
-
-.nav__riga {
-  display: flex;
-  align-items: stretch;
-  gap: 2px;
-}
-
-.nav__riga .nav__voce {
-  flex: 1;
-  min-width: 0;
-}
-
+/* La freccia dello storico: parte dell'item, si accende con lui. */
 .nav__espandi {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
+  width: 28px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -155,27 +163,33 @@
   flex: none;
 }
 
+.nav__riga:hover .nav__espandi {
+  color: var(--c-text-2);
+}
+
 .nav__espandi:hover {
   color: var(--c-text);
-  background: var(--c-page-alt);
 }
 
 /*
- * Lo storico delle conversazioni (RF-C-01): rientrato sotto la voce Chat,
- * più piccolo delle voci di navigazione — sono contenuti, non sezioni.
+ * Lo storico delle conversazioni (RF-C-01): allineato alle voci di
+ * navigazione, senza rientro — è la spaziatura a dirne la gerarchia, non
+ * lo spostamento. Voci più ariose delle etichette che sono.
  */
 .conversazioni {
-  margin: var(--sp-1) 0 var(--sp-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin: var(--sp-2) 0 var(--sp-3);
 }
 
 .conversazioni__voce {
   display: block;
-  margin-left: calc(18px + var(--sp-3));
-  padding: var(--sp-1) var(--sp-2);
+  padding: var(--sp-2) var(--sp-2);
   border-radius: var(--radius-sm);
   color: var(--c-text-3);
   font-size: var(--t-sm);
-  line-height: 1.4;
+  line-height: 1.45;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -195,8 +209,7 @@
 }
 
 .conversazioni__stato {
-  margin-left: calc(18px + var(--sp-3));
-  padding: var(--sp-1) var(--sp-2);
+  padding: var(--sp-2) var(--sp-2);
   color: var(--c-text-mute);
   font-size: var(--t-xs);
 }

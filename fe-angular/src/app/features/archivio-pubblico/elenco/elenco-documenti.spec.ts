@@ -112,7 +112,7 @@ describe('ElencoDocumenti', () => {
     /* È la tipologia a dire quale documento è la riga: senza, due righe
        dello stesso prodotto sarebbero indistinguibili. In forma breve,
        perché per esteso manderebbe a capo la colonna. */
-    const tag = Array.from(dom.querySelectorAll('ui-badge')).map((t) => t.textContent?.trim());
+    const tag = Array.from(dom.querySelectorAll('ui-tag')).map((t) => t.textContent?.trim());
     expect(tag).toContain('DIP Agg.');
     expect(tag).toContain('CdA');
   });

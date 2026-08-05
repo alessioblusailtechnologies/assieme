@@ -62,12 +62,12 @@ describe('BarraSuperiore', () => {
     expect(dom.querySelector('.identita__ruolo')?.textContent?.trim()).toBe('amministratore');
   });
 
-  it('mostra l avatar con le iniziali e il nome per esteso', async () => {
+  it('mostra l icona utente con il nome per esteso raggiungibile', async () => {
     const dom = (await monta()).nativeElement as HTMLElement;
     const avatar = dom.querySelector('.avatar');
 
-    expect(avatar?.textContent?.trim()).toBe('MF');
-    /* Due lettere non dicono nulla a chi non vede: il nome per esteso deve
+    expect(avatar?.querySelector('ui-icon')).toBeTruthy();
+    /* Un'icona non dice nulla a chi non vede: il nome per esteso deve
        restare raggiungibile. */
     expect(avatar?.getAttribute('aria-label')).toContain('Marta Ferrero');
   });

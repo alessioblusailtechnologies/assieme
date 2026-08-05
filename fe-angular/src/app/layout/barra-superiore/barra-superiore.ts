@@ -35,16 +35,9 @@ import { SessioneStore } from '@core/auth/sessione-store';
       @if (sessione.utente(); as utente) {
         <span class="separatore" aria-hidden="true"></span>
 
-        <span class="identita">
-          <span class="identita__nome">{{ nomeBreve() }}</span>
-          <span class="identita__ruolo mono">{{ utente.ruolo }}</span>
-        </span>
-
         <!--
-          L'avatar porta le iniziali e non un'immagine: non c'è una foto da
-          mostrare, e due lettere si riconoscono a colpo d'occhio meglio di
-          una sagoma generica uguale per tutti. Il nome per esteso resta nel
-          title e nell'etichetta accessibile.
+          Ordine di lettura: chi sei (icona + nome), cosa puoi (ruolo).
+          Il nome per esteso resta nel title e nell'etichetta accessibile.
         -->
         <span
           class="avatar"
@@ -52,7 +45,12 @@ import { SessioneStore } from '@core/auth/sessione-store';
           [title]="utente.nome + ' ' + utente.cognome"
           [attr.aria-label]="'Utente collegato: ' + utente.nome + ' ' + utente.cognome"
         >
-          {{ sessione.iniziali() }}
+          <ui-icon name="utente" [size]="15" />
+        </span>
+
+        <span class="identita">
+          <span class="identita__nome">{{ nomeBreve() }}</span>
+          <span class="identita__ruolo mono">{{ utente.ruolo }}</span>
         </span>
       }
     </div>
@@ -130,13 +128,9 @@ import { SessioneStore } from '@core/auth/sessione-store';
       width: 28px;
       height: 28px;
       flex: none;
+      border-radius: var(--radius-pieno);
       background: var(--c-page-alt);
       color: var(--c-text-2);
-      font-size: var(--t-xs);
-      /* Le iniziali sono due maiuscole senza discendenti: interlinea a 1 le
-         tiene centrate nel quadrato senza correzioni. */
-      line-height: 1;
-      letter-spacing: 0.02em;
       user-select: none;
     }
 
