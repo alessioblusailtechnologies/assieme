@@ -1,0 +1,164 @@
+@if (!puoGestire()) {
+  <ui-stato-vuoto
+    icona="utente"
+    titolo="Sezione riservata all'amministratore"
+    descrizione="La gestione degli utenti del tenant richiede il permesso dedicato. Se ti serve un accesso o un cambio di ruolo, chiedi a chi amministra l'agenzia."
+  />
+} @else {
+  <header class="testata">
+    <h1 class="serif testata__titolo">Utenti</h1>
+    <p class="testata__spiega">
+      Chi accede ad ASSIEME per la tua agenzia e con quale ruolo. Un utente non si elimina: si
+      sospende — ciò che ha creato resta firmato col suo nome.
+    </p>
+    <button uiBottone variante="primario" type="button" class="testata__invita" (click)="apriInvito()">
+      <ui-icon name="aggiungi" [size]="15" />
+      <span>Invita un utente</span>
+    </button>
+  </header>
+
+  @if (errore()) {
+    <ui-stato-vuoto
+      icona="errore"
+      titolo="Non siamo riusciti a caricare gli utenti"
+      descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+    >
+      <button uiBottone variante="primario" type="button" (click)="riprova()">
+        <ui-icon name="riprova" [size]="15" />
+        <span>Riprova</span>
+      </button>
+    </ui-stato-vuoto>
+  } @else if (inCaricamento() && !utenti().length) {
+    <div class="scheletri">
+      @for (i of [1, 2, 3]; track i) {
+        <ui-scheletro [numeroRighe]="1" />
+      }
+    </div>
+  } @else {
+    <div class="ui-tabella-contenitore">
+      <table class="ui-tabella">
+        <thead>
+          <tr>
+            <th>Utente</th>
+            <th>Email</th>
+            <th class="col-ruolo">Ruolo</th>
+            <th class="col-stato">Stato</th>
+            <th class="col-accesso">Ultimo accesso</th>
+            <th class="col-azione"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (utente of utenti(); track utente.id) {
+            <tr [class.is-sospeso]="utente.stato === 'sospeso'">
+              <td>
+                <span class="nome">
+                  {{ utente.nome }} {{ utente.cognome }}
+                  @if (utente.id === ioStesso()) {
+                    <ui-tag variante="accento">sei tu</ui-tag>
+                  }
+                </span>
+              </td>
+              <td class="email">{{ utente.email }}</td>
+              <td class="col-ruolo">
+                @if (utente.id === ioStesso()) {
+                  {{ utente.ruolo }}
+                } @else {
+                  <ui-select
+                    [valore]="utente.ruolo"
+                    (valoreChange)="cambiaRuolo(utente, $event)"
+                    [opzioni]="ruoli"
+                    campoEtichetta="etichetta"
+                    campoValore="valore"
+                    [ariaLabel]="'Ruolo di ' + utente.nome + ' ' + utente.cognome"
+                  />
+                }
+              </td>
+              <td class="col-stato">
+                @switch (utente.stato) {
+                  @case ('invitato') {
+                    <ui-badge variante="attesa">invitato</ui-badge>
+                  }
+                  @case ('sospeso') {
+                    <ui-badge variante="negativo">sospeso</ui-badge>
+                  }
+                  @default {
+                    <ui-badge variante="positivo">attivo</ui-badge>
+                  }
+                }
+              </td>
+              <td class="col-accesso cella-numerica">
+                @if (utente.ultimoAccesso) {
+                  {{ utente.ultimoAccesso | date: 'dd/MM/yyyy' }}
+                } @else {
+                  <span class="mai">mai</span>
+                }
+              </td>
+              <td class="col-azione">
+                @if (utente.id !== ioStesso()) {
+                  <button
+                    uiBottone
+                    dimensione="piccolo"
+                    variante="testo"
+                    type="button"
+                    (click)="alternaStato(utente)"
+                  >
+                    <ui-icon [name]="utente.stato === 'sospeso' ? 'esegui' : 'sospendi'" [size]="13" />
+                    <span>{{ utente.stato === 'sospeso' ? 'Riattiva' : 'Sospendi' }}</span>
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+<ui-cassetto [(aperto)]="cassettoInvito" titolo="Invita un utente" larghezza="min(440px, 94vw)">
+  @if (cassettoInvito()) {
+    <div class="invito">
+      <label class="campo">
+        <span class="campo__nome">Nome</span>
+        <input uiCampo type="text" [value]="bozzaNome()" (input)="bozzaNome.set($any($event.target).value)" />
+      </label>
+      <label class="campo">
+        <span class="campo__nome">Cognome</span>
+        <input uiCampo type="text" [value]="bozzaCognome()" (input)="bozzaCognome.set($any($event.target).value)" />
+      </label>
+      <label class="campo">
+        <span class="campo__nome">Email</span>
+        <input uiCampo type="email" [value]="bozzaEmail()" (input)="bozzaEmail.set($any($event.target).value)" placeholder="nome@agenzia.it" />
+      </label>
+      <div class="campo">
+        <label class="campo__nome" for="ruolo-invito">Ruolo</label>
+        <ui-select
+          [(valore)]="bozzaRuolo"
+          [opzioni]="ruoli"
+          campoEtichetta="etichetta"
+          campoValore="valore"
+          ariaLabel="Ruolo del nuovo utente"
+        />
+        <p class="campo__aiuto">
+          L'amministratore ha tutto ciò che ha l'operatore, più utenti, istruzioni, template e
+          modello AI.
+        </p>
+      </div>
+
+      <div class="invito__azioni">
+        <button
+          uiBottone
+          variante="primario"
+          type="button"
+          [disabled]="!invitoValido() || inInvito()"
+          (click)="invita()"
+        >
+          <span>{{ inInvito() ? 'Invio…' : 'Invita' }}</span>
+        </button>
+        <button uiBottone variante="testo" type="button" (click)="cassettoInvito.set(false)">
+          <span>Annulla</span>
+        </button>
+      </div>
+    </div>
+  }
+</ui-cassetto>

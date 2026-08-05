@@ -1,0 +1,204 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Template di output</h1>
+  <p class="testata__spiega">
+    I documenti che escono da ASSIEME — esportazioni della chat, tabelle, output degli agenti —
+    si generano su questi template, con l'identità dell'agenzia.
+  </p>
+  <p class="mono testata__formati">Formati al lancio: PDF · DOCX · XLSX — PPTX in valutazione</p>
+</header>
+
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare i template"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !template().length) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="3" />
+    <ui-scheletro [numeroRighe]="3" />
+  </div>
+} @else {
+  <ul class="griglia-template">
+    @for (t of template(); track t.id) {
+      <li class="template">
+        <div class="template__testa">
+          <span class="mono template__formato">{{ t.formato }}</span>
+          @if (t.personalizzato) {
+            <ui-tag variante="accento">dell'agenzia</ui-tag>
+          }
+        </div>
+
+        <h2 class="template__nome">{{ t.nome }}</h2>
+        <p class="template__descrizione">{{ t.descrizione }}</p>
+
+        <div class="template__tipologia">
+          @if (puoGestire()) {
+            <ui-select
+              [valore]="t.tipologiaPredefinita ?? ''"
+              (valoreChange)="cambiaTipologia(t, $event)"
+              [opzioni]="tipologie"
+              campoEtichetta="etichetta"
+              campoValore="valore"
+              [ariaLabel]="'Tipologia predefinita per ' + t.nome"
+            />
+          } @else if (t.tipologiaPredefinita) {
+            <ui-tag>predefinito per {{ t.tipologiaPredefinita }}</ui-tag>
+          }
+        </div>
+
+        <div class="template__azioni">
+          <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(t)">
+            <ui-icon name="documento" [size]="14" />
+            <span>Anteprima</span>
+          </button>
+
+          @if (puoGestire() && t.personalizzato) {
+            @if (confermaEliminazione() === t.id) {
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="pericolo"
+                type="button"
+                (click)="elimina(t)"
+              >
+                <span>Elimina davvero</span>
+              </button>
+            } @else {
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="testo"
+                type="button"
+                (click)="elimina(t)"
+              >
+                <ui-icon name="elimina" [size]="13" />
+                <span>Elimina</span>
+              </button>
+            }
+          }
+        </div>
+      </li>
+    }
+  </ul>
+
+  @if (puoGestire()) {
+    <section class="carica" aria-label="Carica un template dell'agenzia">
+      <p class="mono">Template propri (RF-D-12)</p>
+      <p class="carica__spiega" ngNonBindable>
+        Un template proprio deve rispettare lo schema dei segnaposto:
+        <code>{{titolo}}</code>, <code>{{destinatario}}</code>, <code>{{data}}</code>,
+        <code>{{corpo}}</code>, <code>{{tabella}}</code>.
+      </p>
+      <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx,.pptx" />
+      @if (coda().length) {
+        <ui-coda-caricamento [file]="coda()" (chiudi)="svuotaCoda()" />
+      }
+    </section>
+
+    <section class="identita" aria-label="Identità visiva dell'agenzia">
+      <p class="mono">Identità visiva (RF-D-12)</p>
+      <p class="identita__spiega">
+        Applicata da tutti i template alla generazione: intestazione, colori, recapiti e firma.
+      </p>
+
+      <div class="identita__campi">
+        <label class="campo campo--colore">
+          <span class="campo__nome">Colore primario</span>
+          <span class="colore">
+            <input
+              type="color"
+              [value]="colore()"
+              (input)="colore.set($any($event.target).value)"
+              aria-label="Colore primario dei documenti"
+            />
+            <input
+              uiCampo
+              type="text"
+              [value]="colore()"
+              (input)="colore.set($any($event.target).value)"
+              aria-label="Colore primario in esadecimale"
+            />
+          </span>
+        </label>
+
+        <label class="campo">
+          <span class="campo__nome">Recapiti in calce</span>
+          <textarea
+            uiCampo
+            rows="2"
+            [value]="recapiti()"
+            (input)="recapiti.set($any($event.target).value)"
+          ></textarea>
+        </label>
+
+        <label class="campo">
+          <span class="campo__nome">Firma</span>
+          <input
+            uiCampo
+            type="text"
+            [value]="firma()"
+            (input)="firma.set($any($event.target).value)"
+          />
+        </label>
+
+        <div class="campo">
+          <span class="campo__nome">Logo</span>
+          <div class="logo">
+            @if (logoUrl(); as url) {
+              <img class="logo__anteprima" [src]="url" alt="Logo dell'agenzia" />
+            } @else {
+              <span class="logo__vuoto">Nessun logo caricato</span>
+            }
+            <input
+              #campoLogo
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml"
+              hidden
+              (change)="caricaLogo($event)"
+            />
+            <button uiBottone dimensione="piccolo" type="button" (click)="campoLogo.click()">
+              <ui-icon name="carica" [size]="13" />
+              <span>{{ logoUrl() ? 'Sostituisci' : 'Carica il logo' }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      @if (identitaModificata()) {
+        <div class="identita__azioni">
+          <button
+            uiBottone
+            variante="primario"
+            type="button"
+            [disabled]="salvataggioIdentita()"
+            (click)="salvaIdentita()"
+          >
+            <span>{{ salvataggioIdentita() ? 'Salvataggio…' : 'Salva' }}</span>
+          </button>
+          <button uiBottone variante="testo" type="button" (click)="annullaIdentita()">
+            <span>Annulla</span>
+          </button>
+        </div>
+      }
+    </section>
+  }
+}
+
+<!-- Anteprima dell'impaginazione (RF-D-11), sempre come PDF -->
+<ui-cassetto
+  [aperto]="!!anteprima()"
+  (apertoChange)="!$event && anteprima.set(undefined)"
+  [titolo]="anteprima() ? 'Anteprima — ' + anteprima()!.nome : ''"
+>
+  @if (anteprima(); as t) {
+    <div class="anteprima">
+      <ui-visualizzatore-pdf class="anteprima__pdf" [fileUrl]="urlAnteprima(t)" />
+    </div>
+  }
+</ui-cassetto>

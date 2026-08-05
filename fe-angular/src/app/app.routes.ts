@@ -74,15 +74,10 @@ export const routes: Routes = [
         },
       },
       {
+        /* Fase 5 — costruita (il figlio `mcp` resta segnaposto, Fase 7). */
         path: 'impostazioni',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Impostazioni',
-          fase: 5,
-          descrizione:
-            "Provider e modello AI; le Istruzioni, con le due schede Regole e Documenti di riferimento — le prime condizionano il giudizio, i secondi forniscono fonti citabili; libreria dei template di output; credenziali MCP. Visibilità e permessi differenziati per ruolo.",
-          requisiti: ['RF-D-01 … RF-D-16', 'RF-F-02', 'RF-F-04'],
-        },
+        loadChildren: () =>
+          import('@features/impostazioni/impostazioni.routes').then((m) => m.IMPOSTAZIONI_ROUTES),
       },
     ],
   },

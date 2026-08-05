@@ -1,0 +1,207 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  max-width: 980px;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.testata__spiega {
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__formati {
+  color: var(--c-text-3);
+}
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* ---------- Griglia dei template ---------- */
+
+.griglia-template {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-4);
+}
+
+.template {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+.template__testa {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.template__formato {
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  border: 1px solid var(--c-line);
+  padding: 1px 6px;
+}
+
+.template__nome {
+  font-family: var(--f-serif);
+  font-size: var(--t-lead);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.template__descrizione {
+  flex: 1;
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.template__tipologia {
+  min-height: 1px;
+}
+
+.template__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ---------- Caricamento e identità ---------- */
+
+.carica,
+.identita {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+.carica__spiega,
+.identita__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  max-width: 72ch;
+}
+
+code {
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  background: var(--c-page-alt);
+  padding: 1px 4px;
+}
+
+.identita__campi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 560px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.campo__nome {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.colore {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.colore input[type='color'] {
+  width: 36px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  cursor: pointer;
+}
+
+.colore input[type='text'] {
+  width: 110px;
+  font-family: var(--f-mono);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.logo__anteprima {
+  max-height: 48px;
+  max-width: 180px;
+  border: 1px solid var(--c-line-soft);
+  padding: var(--sp-1);
+  background: #fff;
+}
+
+.logo__vuoto {
+  font-size: var(--t-sm);
+  color: var(--c-text-mute);
+}
+
+.identita__azioni {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ---------- Anteprima ---------- */
+
+.anteprima {
+  height: 100%;
+  display: flex;
+}
+
+.anteprima__pdf {
+  flex: 1;
+  min-height: 420px;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+}

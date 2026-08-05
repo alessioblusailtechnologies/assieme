@@ -2,9 +2,10 @@
 
 Angular 22 · design system proprio · Hugeicons · Mockoon
 
-Stato: **Fasi 0–4** costruite — fondamenta, Archivio Pubblico, Archivio
-Privato, Chat con citazioni, Tabelle di analisi. Le altre schermate sono
-segnaposto che dichiarano la fase in cui verranno costruite.
+Stato: **Fasi 0–5** costruite — fondamenta, Archivio Pubblico, Archivio
+Privato, Chat con citazioni, Tabelle di analisi, Impostazioni (modello AI,
+istruzioni, template, utenti). Le altre schermate sono segnaposto che
+dichiarano la fase in cui verranno costruite.
 Vedi [`../ASSIEME-piano-sviluppo-fe.md`](../ASSIEME-piano-sviluppo-fe.md).
 
 ---

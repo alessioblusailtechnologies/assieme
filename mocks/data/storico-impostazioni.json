@@ -1,0 +1,47 @@
+[
+  {
+    "id": "sto-005",
+    "istante": "2026-07-25T14:20:00+02:00",
+    "utenteId": "utn-001",
+    "utenteNome": "Marta Ferrero",
+    "azione": "disattivazione",
+    "oggetto": "documento-riferimento",
+    "descrizione": "Sospeso «Casistica risolta — sinistri con veicolo in leasing»"
+  },
+  {
+    "id": "sto-004",
+    "istante": "2026-07-18T17:00:00+02:00",
+    "utenteId": "utn-001",
+    "utenteNome": "Marta Ferrero",
+    "azione": "disattivazione",
+    "oggetto": "regola",
+    "descrizione": "Sospesa la regola «Convenzione Generali dipendenti pubblici»"
+  },
+  {
+    "id": "sto-003",
+    "istante": "2026-07-02T11:10:00+02:00",
+    "utenteId": "utn-001",
+    "utenteNome": "Marta Ferrero",
+    "azione": "creazione",
+    "oggetto": "regola",
+    "descrizione": "Creata la regola «Infortuni del conducente»"
+  },
+  {
+    "id": "sto-002",
+    "istante": "2026-06-20T10:15:00+02:00",
+    "utenteId": "utn-001",
+    "utenteNome": "Marta Ferrero",
+    "azione": "creazione",
+    "oggetto": "documento-riferimento",
+    "descrizione": "Caricato «Testo tipo — lettera di disdetta per il cliente»"
+  },
+  {
+    "id": "sto-001",
+    "istante": "2026-05-15T09:00:00+02:00",
+    "utenteId": "utn-001",
+    "utenteNome": "Marta Ferrero",
+    "azione": "modifica",
+    "oggetto": "modello",
+    "descrizione": "Scelto il modello Claude Sonnet 5 (Anthropic)"
+  }
+]

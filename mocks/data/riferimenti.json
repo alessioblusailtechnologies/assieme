@@ -1,0 +1,36 @@
+[
+  {
+    "id": "rif-001",
+    "titolo": "Testo tipo — lettera di disdetta per il cliente",
+    "ambito": { "tipo": "generale" },
+    "attivo": true,
+    "numeroPagine": 2,
+    "dimensioneByte": 84992,
+    "caricatoDa": "utn-001",
+    "aggiornatoIl": "2026-06-20T10:15:00+02:00"
+  },
+  {
+    "id": "rif-doc-priv-003",
+    "documentoPrivatoId": "doc-priv-003",
+    "ambito": { "tipo": "compagnia", "compagniaId": "cmp-generali" },
+    "attivo": true,
+    "caricatoDa": "utn-001",
+    "aggiornatoIl": "2026-07-05T09:00:00+02:00"
+  },
+  {
+    "id": "rif-doc-priv-004",
+    "documentoPrivatoId": "doc-priv-004",
+    "ambito": { "tipo": "ramo", "ramoId": "ram-auto" },
+    "attivo": true,
+    "caricatoDa": "utn-001",
+    "aggiornatoIl": "2026-07-11T16:40:00+02:00"
+  },
+  {
+    "id": "rif-doc-priv-008",
+    "documentoPrivatoId": "doc-priv-008",
+    "ambito": { "tipo": "ramo", "ramoId": "ram-auto" },
+    "attivo": false,
+    "caricatoDa": "utn-001",
+    "aggiornatoIl": "2026-07-25T14:20:00+02:00"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "ist-001",
+    "titolo": "Massimali RC prudenziali",
+    "testo": "Nei confronti RC auto considera adeguato solo un massimale pari o superiore a 10 milioni per sinistro. Il minimo di legge va sempre segnalato come tale, non come una copertura equivalente alle altre.",
+    "ambito": { "tipo": "ramo", "ramoId": "ram-auto" },
+    "attiva": true,
+    "creataDa": "utn-001",
+    "aggiornataIl": "2026-06-12T09:30:00+02:00"
+  },
+  {
+    "id": "ist-002",
+    "titolo": "Linguaggio per il cliente finale",
+    "testo": "Nei documenti destinati al cliente usa un linguaggio piano: sciogli le sigle al primo uso (RC, IVASS, CVT) e spiega franchigie e scoperti con un esempio numerico.",
+    "ambito": { "tipo": "generale" },
+    "attiva": true,
+    "creataDa": "utn-001",
+    "aggiornataIl": "2026-05-28T15:45:00+02:00"
+  },
+  {
+    "id": "ist-003",
+    "titolo": "Infortuni del conducente",
+    "testo": "Non segnalare come carenza l'assenza della garanzia infortuni del conducente: l'agenzia la copre sempre con una polizza infortuni dedicata. Indica invece se la garanzia è presente e con quale massimale, come informazione neutra.",
+    "ambito": { "tipo": "ramo", "ramoId": "ram-auto" },
+    "attiva": true,
+    "creataDa": "utn-001",
+    "aggiornataIl": "2026-07-02T11:10:00+02:00"
+  },
+  {
+    "id": "ist-004",
+    "titolo": "Convenzione Generali dipendenti pubblici",
+    "testo": "Quando il cliente è un dipendente pubblico, verifica sempre l'applicabilità della convenzione Generali 2026 prima di proporre il listino ordinario.",
+    "ambito": { "tipo": "compagnia", "compagniaId": "cmp-generali" },
+    "attiva": false,
+    "creataDa": "utn-001",
+    "aggiornataIl": "2026-07-18T17:00:00+02:00"
+  }
+]

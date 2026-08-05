@@ -7,5 +7,10 @@
   "/api/conversazioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/tabelle": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/template": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/modelli": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/istruzioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/utenti": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/identita-visiva": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/impostazioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api": { "target": "http://localhost:3000", "secure": false, "changeOrigin": true }
 }

@@ -172,8 +172,11 @@ function classifica(nomeFile) {
  *
  * Parser minimo, non una libreria: riconosce le sole parti con `filename`,
  * che è tutto ciò che il front-end invia.
+ *
+ * Esportato: i caricamenti dei documenti di riferimento e dei template
+ * (Fase 5) usano lo stesso multipart.
  */
-function leggiMultipart(corpo, contentType) {
+export function leggiMultipart(corpo, contentType) {
   const confine = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType ?? '');
   if (!confine) return [];
 
@@ -251,6 +254,23 @@ function elenco(url, corrispondeTesto) {
 export function trovaDocumento(id) {
   const documento = DOCUMENTI.find((d) => d.id === id);
   return documento ? componi(documento) : undefined;
+}
+
+/**
+ * I documenti promossi a riferimento (RF-B-09): la sezione Istruzioni li
+ * elenca accanto a quelli caricati direttamente, con lo stesso governo.
+ */
+export function documentiPromossi() {
+  return DOCUMENTI.filter((d) => d.documentoDiRiferimento).map(componi);
+}
+
+/**
+ * Toglie il ruolo di riferimento senza toccare il documento: l'eliminazione
+ * dalle Istruzioni non è un'eliminazione dall'archivio (RF-D-14).
+ */
+export function rimuoviRuoloRiferimento(id) {
+  const documento = DOCUMENTI.find((d) => d.id === id);
+  if (documento) documento.documentoDiRiferimento = false;
 }
 
 // ---------------------------------------------------------------------------

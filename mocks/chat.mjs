@@ -34,13 +34,13 @@ import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdfDaTesto } from './pdf.mjs';
+import { trovaTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const leggi = (nome) => JSON.parse(readFileSync(join(QUI, 'data', nome), 'utf8'));
 
 const CONVERSAZIONI = leggi('conversazioni.json');
 const MESSAGGI = leggi('messaggi.json');
-const TEMPLATE = leggi('template.json');
 
 /** Ritmo di emissione: abbastanza lento da vedere il testo comparire. */
 const MS_PER_BLOCCO = 45;
@@ -357,7 +357,9 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
 // ---------------------------------------------------------------------------
 
 /**
- * Gestisce le rotte della chat e dei template di output.
+ * Gestisce le rotte della chat. I template di output stanno nel modulo
+ * impostazioni (Fase 5), che ne è il pannello di governo: qui si usano
+ * soltanto, per l'esportazione (RF-C-10).
  * Restituisce `true` se ha risposto, `false` se la rotta non è sua.
  */
 export async function gestisci(req, res, url, deps) {
@@ -365,7 +367,7 @@ export async function gestisci(req, res, url, deps) {
   const percorso = url.pathname;
   const esporta = (conversazione) => componi(conversazione, trovaDocumento);
 
-  if (!percorso.startsWith('/api/conversazioni') && percorso !== '/api/template') {
+  if (!percorso.startsWith('/api/conversazioni')) {
     return false;
   }
 
@@ -374,12 +376,6 @@ export async function gestisci(req, res, url, deps) {
   /* Lo streaming non passa dalla simulazione — la latenza è già nel suo
      ritmo, e l'errore a metà risposta è gestito dentro lo stream. */
   if (!streaming && (await simulazione(req, res))) return true;
-
-  // RF-C-10 / RF-D-10: i template disponibili per l'esportazione
-  if (percorso === '/api/template' && req.method === 'GET') {
-    inviaJson(res, 200, TEMPLATE);
-    return true;
-  }
 
   // RF-C-01: lo storico, la più recente in cima
   if (percorso === '/api/conversazioni' && req.method === 'GET') {
@@ -430,7 +426,7 @@ export async function gestisci(req, res, url, deps) {
       return true;
     }
     const corpo = JSON.parse((await leggiCorpo(req)).toString('utf8') || '{}');
-    const template = TEMPLATE.find((t) => t.id === corpo.templateId);
+    const template = trovaTemplate(corpo.templateId);
     if (!template) {
       inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Template inesistente.' });
       return true;

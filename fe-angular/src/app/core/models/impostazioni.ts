@@ -78,6 +78,15 @@ export type AmbitoIstruzione =
   | { tipo: 'ramo'; ramoId: Id }
   | { tipo: 'compagnia'; compagniaId: Id };
 
+/** Corpo di creazione di una regola; l'id e la firma li mette il server. */
+export type NuovaRegola = Pick<RegolaIstruzione, 'titolo' | 'testo' | 'ambito'>;
+
+/** Corpo del PATCH di una regola: ogni campo è indipendente. */
+export type ModificheRegola = Partial<Pick<RegolaIstruzione, 'titolo' | 'testo' | 'ambito' | 'attiva'>>;
+
+/** Corpo del PATCH di un documento di riferimento: governo, non contenuto. */
+export type ModificheRiferimento = Partial<Pick<DocumentoRiferimento, 'ambito' | 'attivo'>>;
+
 /** RF-D-07: storico delle modifiche, per audit e diagnosi di risposte inattese. */
 export interface VoceStoricoImpostazioni {
   id: Id;
@@ -106,7 +115,29 @@ export interface TemplateOutput {
   /** RF-D-12: caricato dal tenant invece che precaricato dalla piattaforma. */
   personalizzato: boolean;
   /** RF-D-13: template predefinito per una tipologia di output. */
-  tipologiaPredefinita?: 'confronto' | 'riepilogo-garanzie' | 'proposta-rinnovo' | 'report-interno';
+  tipologiaPredefinita?: TipologiaOutput;
+}
+
+/**
+ * Le tipologie di output a cui si associa un template predefinito (RF-D-13).
+ * Sono le quattro dell'analisi (punto aperto §6.11); PPTX come formato è
+ * rimandato, ma la tipologia non dipende dal formato.
+ */
+export type TipologiaOutput = 'confronto' | 'riepilogo-garanzie' | 'proposta-rinnovo' | 'report-interno';
+
+/**
+ * RF-D-12: l'identità visiva del tenant, applicata dai template alla
+ * generazione. Il logo viaggia come URL perché a caricarlo è una rotta
+ * dedicata, come per i documenti.
+ */
+export interface IdentitaVisiva {
+  logoUrl?: string;
+  /** Esadecimale, es. `#2f4b7c`. */
+  colorePrimario: string;
+  /** Recapiti in calce ai documenti generati: indirizzo, telefono, email. */
+  recapiti: string;
+  /** Firma in chiusura, es. `Assicurazioni Meridiana S.r.l.`. */
+  firma: string;
 }
 
 /** RF-F-02: credenziali per l'accesso via MCP, generabili e revocabili. */

@@ -41,7 +41,17 @@ export interface Utente {
   ruolo: Ruolo;
   tenantId: Id;
   ultimoAccesso?: IsoDateTime;
+  /**
+   * Ciclo di vita nella gestione utenti (RF-D-01). Facoltativo perché la
+   * sessione non ne ha bisogno: chi è dentro è per forza attivo.
+   * `sospeso` e non eliminato: un utente che se ne va lascia conversazioni,
+   * tabelle e regole firmate col suo nome.
+   */
+  stato?: 'attivo' | 'invitato' | 'sospeso';
 }
+
+/** Corpo dell'invito di un nuovo utente (RF-D-01). */
+export type NuovoUtente = Pick<Utente, 'nome' | 'cognome' | 'email' | 'ruolo'>;
 
 /** Unità organizzativa cliente: agenzia, broker, intermediario. */
 export interface Tenant {

@@ -1,0 +1,127 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  max-width: 980px;
+}
+
+.testata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.testata__spiega {
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__invita {
+  align-self: flex-start;
+}
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+ui-stato-vuoto {
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ---------- Tabella ---------- */
+
+.nome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--f-sans);
+}
+
+.email {
+  color: var(--c-text-3);
+}
+
+tr.is-sospeso td {
+  opacity: 0.6;
+}
+
+.cella-numerica {
+  font-variant-numeric: tabular-nums;
+}
+
+.mai {
+  color: var(--c-text-mute);
+}
+
+.col-ruolo {
+  width: 190px;
+}
+
+.col-stato {
+  width: 110px;
+}
+
+.col-accesso {
+  width: 130px;
+}
+
+.col-azione {
+  width: 130px;
+  text-align: right;
+}
+
+/* ---------- Invito ---------- */
+
+.invito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.campo__nome {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.campo__aiuto {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.invito__azioni {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .col-accesso,
+  .email {
+    display: none;
+  }
+}

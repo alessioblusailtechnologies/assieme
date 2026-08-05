@@ -1,0 +1,89 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Modello AI</h1>
+  <p class="testata__spiega">
+    Il modello con cui ASSIEME legge i documenti e risponde. La scelta vale per tutta l'agenzia.
+  </p>
+  @if (!puoConfigurare()) {
+    <p class="testata__nota">
+      <ui-icon name="informazione" [size]="14" />
+      La scelta del modello è riservata all'amministratore: qui vedi con che cosa stai lavorando.
+    </p>
+  }
+</header>
+
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare i modelli"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !modelli().length) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="3" />
+    <ui-scheletro [numeroRighe]="3" />
+  </div>
+} @else {
+  <ul class="modelli">
+    @for (modello of modelli(); track modello.id) {
+      <li
+        class="modello"
+        [class.is-attivo]="modello.id === attivo()?.id"
+        [class.is-indisponibile]="!modello.disponibile"
+      >
+        <div class="modello__testa">
+          <p class="mono modello__provider">{{ modello.provider }}</p>
+          @if (modello.id === attivo()?.id) {
+            <ui-tag variante="accento">in uso</ui-tag>
+          } @else if (!modello.disponibile) {
+            <ui-tag>in arrivo</ui-tag>
+          }
+        </div>
+
+        <h2 class="modello__nome">{{ modello.nome }}</h2>
+        <p class="modello__descrizione">{{ modello.descrizione }}</p>
+
+        <div class="modello__piede">
+          <ui-badge [variante]="modello.adeguatezzaDocumentale === 'alta' ? 'positivo' : 'neutro'">
+            {{ etichettaAdeguatezza(modello) }}
+          </ui-badge>
+          @if (modello.notaCosti) {
+            <p class="modello__costi">{{ modello.notaCosti }}</p>
+          }
+        </div>
+
+        @if (puoConfigurare() && modello.disponibile && modello.id !== attivo()?.id) {
+          <button
+            uiBottone
+            type="button"
+            [disabled]="!!inSalvataggio()"
+            (click)="scegli(modello)"
+          >
+            <span>{{ inSalvataggio() === modello.id ? 'Attivazione…' : 'Usa questo modello' }}</span>
+          </button>
+        }
+      </li>
+    }
+  </ul>
+
+  <section class="storico" aria-label="Storico delle modifiche al modello">
+    <p class="mono">Storico modifiche</p>
+    @if (storico().length) {
+      <ul class="storico__voci">
+        @for (voce of storico(); track voce.id) {
+          <li class="storico__voce">
+            <span class="mono storico__quando">{{ voce.istante | date: 'dd/MM/yyyy HH:mm' }}</span>
+            <span class="storico__cosa">{{ voce.descrizione }}</span>
+            <span class="storico__chi">{{ voce.utenteNome }}</span>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="storico__vuoto">Nessuna modifica registrata.</p>
+    }
+  </section>
+}

@@ -1,0 +1,350 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Istruzioni</h1>
+  <p class="testata__spiega">
+    Ciò che rende le risposte di ASSIEME quelle della tua agenzia: regole di giudizio e documenti
+    di riferimento, applicati a ogni conversazione del tenant.
+  </p>
+
+  <!--
+    La riga che evita il contenuto nel posto sbagliato. Criterio del piano:
+    se è una regola su *come giudicare* è una regola scritta; se va citato,
+    o è più lungo di una pagina, è un documento.
+  -->
+  <p class="testata__guida">
+    <ui-icon name="informazione" [size]="14" />
+    <span>
+      Se dice <strong>come giudicare</strong>, scrivila come regola. Se va <strong>citato</strong> o
+      è più lungo di una pagina, è un documento di riferimento.
+    </span>
+  </p>
+
+  @if (!store.puoGestire()) {
+    <p class="testata__nota">
+      La gestione delle istruzioni è riservata all'amministratore: qui vedi che cosa condiziona le
+      risposte che ricevi.
+    </p>
+  }
+</header>
+
+<div class="schede" role="tablist" aria-label="Le due nature delle istruzioni">
+  <button
+    type="button"
+    role="tab"
+    class="scheda"
+    [class.is-attiva]="scheda() === 'regole'"
+    [attr.aria-selected]="scheda() === 'regole'"
+    (click)="cambiaScheda('regole')"
+  >
+    Regole
+    <span class="mono scheda__conteggio">{{ store.regole().length }}</span>
+  </button>
+  <button
+    type="button"
+    role="tab"
+    class="scheda"
+    [class.is-attiva]="scheda() === 'riferimenti'"
+    [attr.aria-selected]="scheda() === 'riferimenti'"
+    (click)="cambiaScheda('riferimenti')"
+  >
+    Documenti di riferimento
+    <span class="mono scheda__conteggio">{{ store.riferimenti().length }}</span>
+  </button>
+</div>
+
+@if (store.errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare le istruzioni"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="store.riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (store.inCaricamento() && !store.regole().length && !store.riferimenti().length) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="2" />
+    <ui-scheletro [numeroRighe]="2" />
+  </div>
+} @else if (scheda() === 'regole') {
+  <!-- ================= Regole (RF-D-04/06) ================= -->
+
+  @if (store.puoGestire()) {
+    <div class="azioni-scheda">
+      <button uiBottone variante="primario" type="button" (click)="apriNuovaRegola()">
+        <ui-icon name="aggiungi" [size]="15" />
+        <span>Nuova regola</span>
+      </button>
+    </div>
+  }
+
+  @if (!store.regole().length) {
+    <ui-stato-vuoto
+      icona="modifica"
+      titolo="Ancora nessuna regola"
+      descrizione="Una regola dice all'AI come giudicare: «non segnalare come carenza l'assenza della garanzia infortuni del conducente — la copriamo con polizza dedicata»."
+    >
+      @if (store.puoGestire()) {
+        <button uiBottone variante="primario" type="button" (click)="apriNuovaRegola()">
+          <ui-icon name="aggiungi" [size]="15" />
+          <span>Scrivi la prima regola</span>
+        </button>
+      }
+    </ui-stato-vuoto>
+  } @else {
+    <ul class="voci">
+      @for (regola of store.regole(); track regola.id) {
+        <li class="voce" [class.is-sospesa]="!regola.attiva">
+          <div class="voce__testa">
+            <h2 class="voce__titolo">{{ regola.titolo }}</h2>
+            <ui-tag>{{ ambito(regola) }}</ui-tag>
+            @if (!regola.attiva) {
+              <ui-tag>sospesa</ui-tag>
+            }
+
+            @if (store.puoGestire()) {
+              <span class="voce__spazio" aria-hidden="true"></span>
+              <div class="voce__interruttore">
+                <ui-checkbox
+                  [valore]="regola.attiva"
+                  (valoreChange)="store.modificaRegola(regola.id, { attiva: $event })"
+                  [inputId]="'attiva-' + regola.id"
+                />
+                <label [for]="'attiva-' + regola.id">attiva</label>
+              </div>
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="testo"
+                type="button"
+                (click)="apriModificaRegola(regola)"
+              >
+                <ui-icon name="modifica" [size]="13" />
+                <span>Modifica</span>
+              </button>
+              @if (confermaEliminazione() === regola.id) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="pericolo"
+                  type="button"
+                  (click)="eliminaRegola(regola)"
+                >
+                  <span>Elimina davvero</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="eliminaRegola(regola)"
+                >
+                  <ui-icon name="elimina" [size]="13" />
+                  <span>Elimina</span>
+                </button>
+              }
+            }
+          </div>
+          <p class="voce__testo">{{ regola.testo }}</p>
+          <p class="mono voce__meta">aggiornata il {{ regola.aggiornataIl | date: 'dd/MM/yyyy' }}</p>
+        </li>
+      }
+    </ul>
+
+    <p class="garanzia">
+      <ui-icon name="informazione" [size]="13" />
+      Le regole orientano il giudizio, non i fatti: citazioni obbligatorie e dichiarazione di
+      non-copertura restano sempre attive (RF-D-08).
+    </p>
+  }
+} @else {
+  <!-- ============ Documenti di riferimento (RF-D-14/15/16) ============ -->
+
+  <!--
+    RF-D-16: il contesto permanente si paga a ogni interrogazione. Il conto
+    sta sopra l'elenco, e l'interruttore attivo/sospeso è igiene ordinaria.
+  -->
+  <div class="contesto" role="status">
+    <ui-icon name="riferimenti" [size]="15" />
+    <span>{{ store.contesto().testo }}</span>
+    <span class="contesto__monito">
+      Ogni documento attivo entra nel contesto di ogni domanda: tieni attivo solo ciò che serve
+      davvero, sospendi il resto.
+    </span>
+  </div>
+
+  @if (store.puoGestire()) {
+    <ui-zona-caricamento (scelti)="store.carica($event)" formati=".pdf,.docx,.doc,.txt" />
+    @if (store.coda().length) {
+      <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
+    }
+  }
+
+  @if (!store.riferimenti().length) {
+    <ui-stato-vuoto
+      icona="riferimenti"
+      titolo="Nessun documento di riferimento"
+      descrizione="Convenzioni, note tecniche, casistiche, testi tipo: caricali qui o promuovili dall'Archivio Privato — l'AI li consulterà da sola, e potrà citarli."
+    />
+  } @else {
+    <ul class="voci">
+      @for (riferimento of store.riferimenti(); track riferimento.id) {
+        <li class="voce" [class.is-sospesa]="!riferimento.attivo">
+          <div class="voce__testa">
+            <h2 class="voce__titolo">{{ riferimento.titolo }}</h2>
+            @if (riferimento.documentoPrivatoId) {
+              <a
+                class="voce__origine"
+                [routerLink]="['/archivio/privato', riferimento.documentoPrivatoId]"
+              >
+                dall'Archivio Privato
+              </a>
+            }
+
+            <span class="voce__spazio" aria-hidden="true"></span>
+
+            @if (store.puoGestire()) {
+              <div class="voce__interruttore">
+                <ui-checkbox
+                  [valore]="riferimento.attivo"
+                  (valoreChange)="store.modificaRiferimento(riferimento.id, { attivo: $event })"
+                  [inputId]="'attivo-' + riferimento.id"
+                />
+                <label [for]="'attivo-' + riferimento.id">attivo</label>
+              </div>
+              @if (confermaEliminazione() === riferimento.id) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="pericolo"
+                  type="button"
+                  (click)="eliminaRiferimento(riferimento)"
+                >
+                  <span>{{ riferimento.documentoPrivatoId ? 'Togli davvero' : 'Elimina davvero' }}</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="eliminaRiferimento(riferimento)"
+                >
+                  <ui-icon name="elimina" [size]="13" />
+                  <span>{{ riferimento.documentoPrivatoId ? 'Togli il ruolo' : 'Elimina' }}</span>
+                </button>
+              }
+            } @else {
+              <ui-tag>{{ riferimento.attivo ? 'attivo' : 'sospeso' }}</ui-tag>
+            }
+          </div>
+
+          <div class="voce__dettagli">
+            @if (store.puoGestire()) {
+              <ui-select
+                class="voce__ambito"
+                [valore]="ambitoCodificato(riferimento)"
+                (valoreChange)="cambiaAmbito(riferimento, $event)"
+                [opzioni]="opzioni()"
+                campoEtichetta="etichetta"
+                campoValore="valore"
+                ariaLabel="Ambito di validità del documento"
+              />
+            } @else {
+              <ui-tag>{{ ambito(riferimento) }}</ui-tag>
+            }
+            <span class="mono voce__meta">
+              {{ misura(riferimento.dimensioneByte) }}
+              @if (riferimento.numeroPagine) {
+                · {{ riferimento.numeroPagine }} pagine
+              }
+            </span>
+          </div>
+        </li>
+      }
+    </ul>
+  }
+}
+
+<!-- Storico comune alle due schede (RF-D-07) -->
+<section class="storico" aria-label="Storico delle modifiche alle istruzioni">
+  <p class="mono">Storico modifiche</p>
+  @if (store.storico().length) {
+    <ul class="storico__voci">
+      @for (voce of store.storico(); track voce.id) {
+        <li class="storico__voce">
+          <span class="mono storico__quando">{{ voce.istante | date: 'dd/MM/yyyy HH:mm' }}</span>
+          <span class="storico__cosa">{{ voce.descrizione }}</span>
+          <span class="storico__chi">{{ voce.utenteNome }}</span>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="storico__vuoto">Nessuna modifica registrata.</p>
+  }
+</section>
+
+<!-- Cassetto del form regola: creazione e modifica, uno solo -->
+<ui-cassetto
+  [(aperto)]="cassettoRegola"
+  [titolo]="regolaInModifica() ? 'Modifica la regola' : 'Nuova regola'"
+  larghezza="min(520px, 94vw)"
+>
+  @if (cassettoRegola()) {
+    <div class="form-regola">
+      <label class="campo">
+        <span class="campo__nome">Titolo</span>
+        <input
+          uiCampo
+          type="text"
+          [value]="bozzaTitolo()"
+          (input)="bozzaTitolo.set($any($event.target).value)"
+          placeholder="es. Infortuni del conducente"
+        />
+      </label>
+
+      <label class="campo">
+        <span class="campo__nome">La regola, in linguaggio naturale</span>
+        <textarea
+          uiCampo
+          rows="6"
+          [value]="bozzaTesto()"
+          (input)="bozzaTesto.set($any($event.target).value)"
+          placeholder="es. Non segnalare come carenza l'assenza della garanzia infortuni del conducente: l'agenzia la copre con una polizza dedicata."
+        ></textarea>
+      </label>
+
+      <div class="campo">
+        <label class="campo__nome" for="ambito-regola">Ambito di validità</label>
+        <ui-select
+          [(valore)]="bozzaAmbito"
+          [opzioni]="opzioni()"
+          campoEtichetta="etichetta"
+          campoValore="valore"
+          ariaLabel="Ambito di validità della regola"
+        />
+        <p class="campo__aiuto">
+          Una regola vale solo dove è pertinente: legarla al ramo o alla compagnia evita che pesi
+          su ogni domanda.
+        </p>
+      </div>
+
+      <div class="form-regola__azioni">
+        <button
+          uiBottone
+          variante="primario"
+          type="button"
+          [disabled]="!bozzaValida() || inSalvataggio()"
+          (click)="salvaRegola()"
+        >
+          <span>{{ inSalvataggio() ? 'Salvataggio…' : 'Salva la regola' }}</span>
+        </button>
+        <button uiBottone variante="testo" type="button" (click)="cassettoRegola.set(false)">
+          <span>Annulla</span>
+        </button>
+      </div>
+    </div>
+  }
+</ui-cassetto>

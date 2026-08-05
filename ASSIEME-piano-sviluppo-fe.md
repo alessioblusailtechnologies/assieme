@@ -479,19 +479,19 @@ Costruttore in due scelte (prima i documenti dai due archivi, poi i criteri — 
 
 La verifica prevista qui («serve qualche funzionalità Enterprise di AG Grid?») è decaduta con AG Grid: la `.ui-tabella` con prima colonna fissa ha coperto tutto il necessario.
 
-### Fase 5 — Impostazioni e personalizzazione · ~7 giorni · RF-D-01…D-16
+### ✅ Fase 5 — Impostazioni e personalizzazione — **completata** · RF-D-01…D-16
 
-Scelta provider/modello con schede informative, storico modifiche, libreria template con anteprima e personalizzazione dell'identità visiva.
+Sezione con shell propria e navigazione secondaria: **Modello AI** (schede informative, adeguatezza documentale, nota costi, storico modifiche), **Istruzioni** con le due schede — Regole in linguaggio naturale con ambito e attivazione (RF-D-04/06), Documenti di riferimento con caricamento riusato dalla Fase 2 e fusione dei promossi dall'Archivio Privato (RF-D-14) — **Template di output** (anteprima PDF dell'impaginazione, predefinito per tipologia, template propri, identità visiva con logo), **Utenti** (invito, ruolo, sospensione — mai eliminazione). La riga di guida («se dice *come giudicare* è una regola; se va citato è un documento») sta in testa alle schede; il peso del contesto permanente (RF-D-16) sta sopra l'elenco, con l'interruttore attivo/sospeso come igiene ordinaria.
 
-**La sezione Istruzioni con due schede** (v0.9 dei requisiti):
+**Decisioni di contratto da sapere:**
 
-- **Regole** — testo in linguaggio naturale, con ambito e attivazione singola (RF-D-04, RF-D-06).
-- **Documenti di riferimento** — caricati qui o promossi dall'Archivio Privato, stesso ambito e stessa attivazione (RF-D-14). Riusa il caricamento e la coda costruiti in Fase 2.
-
-Due cose che la sezione deve fare e che non sono ovvie:
-
-- **Dire in una riga cosa va in ciascuna scheda.** È il modo più economico di evitare che lo stesso contenuto finisca in due posti. Il criterio: se è una regola su *come giudicare* è una regola scritta; se va citato, o è più lungo di una pagina, è un documento.
-- **Mostrare il peso del contesto permanente** (RF-D-16). Ogni documento attivo si paga a ogni interrogazione: la schermata deve scoraggiare l'accumulo, e l'interruttore attivo/sospeso va presentato come igiene ordinaria, non come funzione nascosta.
+- **I permessi sono applicati due volte.** Le voci e i controlli compaiono con `puo()`; il mock rifiuta comunque le scritture senza `X-Assieme-Ruolo: amministratore` (403) — il pannello di sviluppo mostra davvero l'interfaccia dell'operatore, e il server resta l'ultima linea. L'operatore **vede** modello, istruzioni e template in lettura: sapere cosa condiziona le risposte è trasparenza, non privilegio.
+- **I documenti di riferimento sono un elenco unico con due origini.** I promossi dall'Archivio Privato si idratano dall'archivio a ogni lettura (titolo e peso restano veri); il governo — ambito, attivazione — vive nelle Istruzioni. `DELETE` su un promosso toglie il ruolo e il documento resta nell'archivio; su un caricato diretto lo elimina.
+- **Lo storico (RF-D-07) è un endpoint solo**, `GET /api/impostazioni/storico?oggetti=…`: ogni schermata mostra le voci sue, il modello (`VoceStoricoImpostazioni`) è comune. Ogni mutazione del mock registra chi, cosa e quando.
+- **L'anteprima dei template è sempre PDF** (`GET /api/template/:id/anteprima`), qualunque sia il formato di generazione: mostra impaginazione e segnaposto (RF-D-11), non il file. Il predefinito per tipologia (RF-D-13) è unico: assegnarlo lo toglie a chi lo portava.
+- **Formati al lancio: PDF, DOCX, XLSX; PPTX rimandato** (punto aperto §6.11) — la tipologia di output però non dipende dal formato, quindi il contratto non cambierà.
+- **Utenti: niente eliminazione, si sospende**; su sé stessi né ruolo né stato (409). L'invito nasce `invitato` e diventa attivo al primo accesso.
+- Rimandati con motivo: **RF-D-09** (modalità di prova di una regola — priorità C, ha senso con l'AI vera) e la **revoca credenziali MCP** (Fase 7, con il Modulo F).
 
 ### Fase 6 — Agenti · ~7 giorni · RF-E-01…E-13
 
