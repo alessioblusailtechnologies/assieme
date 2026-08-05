@@ -1,30 +1,30 @@
 @if (errore()) {
-  <p-breadcrumb [model]="briciole" />
+  <ui-briciole [voci]="briciole" />
 
   <ui-stato-vuoto
     icona="errore"
     titolo="Non siamo riusciti ad aprire il documento"
     descrizione="Potrebbe essere stato eliminato da un collega, oppure il problema è temporaneo."
   >
-    <button pButton type="button" (click)="riprova()">
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
       <ui-icon name="riprova" [size]="15" />
       <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
 } @else if (inCaricamento() && !documento()) {
-  <p-breadcrumb [model]="briciole" />
+  <ui-briciole [voci]="briciole" />
   <div class="caricamento">
     <ui-scheletro [numeroRighe]="2" />
     <ui-scheletro [numeroRighe]="5" />
   </div>
 } @else if (documento(); as doc) {
   <header class="testata">
-    <p-breadcrumb [model]="briciole" />
+    <ui-briciole [voci]="briciole" />
     <span class="testata__stacco" aria-hidden="true"></span>
     <h1 class="serif testata__titolo">{{ doc.titolo }}</h1>
 
     @if (doc.documentoDiRiferimento) {
-      <p-tag severity="info" value="documento di riferimento" />
+      <ui-badge variante="accento">documento di riferimento</ui-badge>
     }
   </header>
 
@@ -109,31 +109,29 @@
 
         <label class="campo">
           <span class="campo__nome">Titolo</span>
-          <input pInputText type="text" [(ngModel)]="titolo" name="titolo" />
+          <input uiCampo type="text" [(ngModel)]="titolo" name="titolo" />
         </label>
 
         <!--
-          L'etichetta punta con `for` all'input che PrimeNG genera: avvolgere
+          L'etichetta punta con `for` all'input del componente: avvolgere
           il componente in un <label> non lo aggancerebbe, e il clic sul testo
           non aprirebbe la tendina.
         -->
         <div class="campo">
           <label class="campo__nome" for="campo-tipologia">Tipologia</label>
-          <p-select
-            [(ngModel)]="tipologia"
-            [options]="tipologie"
-            optionLabel="etichetta"
-            optionValue="valore"
-            name="tipologia"
-            inputId="campo-tipologia"
-            styleClass="campo__largo"
+          <ui-select
+            [(valore)]="tipologia"
+            [opzioni]="tipologie"
+            campoEtichetta="etichetta"
+            campoValore="valore"
+            ariaLabel="Tipologia del documento"
           />
         </div>
 
         <label class="campo">
           <span class="campo__nome">Cliente o pratica</span>
           <input
-            pInputText
+            uiCampo
             type="text"
             [(ngModel)]="cliente"
             name="cliente"
@@ -163,7 +161,7 @@
           </div>
 
           <input
-            pInputText
+            uiCampo
             type="text"
             [(ngModel)]="nuovaEtichetta"
             name="nuovaEtichetta"
@@ -174,10 +172,10 @@
 
         @if (modificato()) {
           <div class="azioni">
-            <button pButton type="button" [disabled]="salvataggioInCorso()" (click)="salva()">
+            <button uiBottone variante="primario" type="button" [disabled]="salvataggioInCorso()" (click)="salva()">
               <span>{{ salvataggioInCorso() ? 'Salvataggio…' : 'Salva' }}</span>
             </button>
-            <button pButton type="button" severity="secondary" [text]="true" (click)="annulla()">
+            <button uiBottone variante="testo" type="button" (click)="annulla()">
               <span>Annulla</span>
             </button>
           </div>
@@ -217,10 +215,8 @@
           conversazione senza che tu debba richiamarli. Si gestiscono nelle Istruzioni.
         </p>
         <button
-          pButton
+          uiBottone
           type="button"
-          severity="secondary"
-          [outlined]="true"
           [disabled]="doc.stato !== 'pronto'"
           (click)="alternaRiferimento()"
         >
@@ -241,10 +237,8 @@
         <p class="mono">Elimina</p>
         @if (!confermaEliminazione()) {
           <button
-            pButton
+            uiBottone
             type="button"
-            severity="danger"
-            [outlined]="true"
             (click)="confermaEliminazione.set(true)"
           >
             <ui-icon name="elimina" [size]="15" />
@@ -255,14 +249,13 @@
             L'eliminazione è definitiva. Le conversazioni che lo citano perderanno la fonte.
           </p>
           <div class="azioni">
-            <button pButton type="button" severity="danger" (click)="elimina()">
+            <button uiBottone variante="pericolo" type="button" (click)="elimina()">
               <span>Elimina davvero</span>
             </button>
             <button
-              pButton
+              uiBottone
+              variante="testo"
               type="button"
-              severity="secondary"
-              [text]="true"
               (click)="confermaEliminazione.set(false)"
             >
               <span>Annulla</span>

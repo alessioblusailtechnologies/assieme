@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { ButtonDirective } from 'primeng/button';
+import { Bottone } from '@shared/ui/bottone/bottone';
 
 import { Icona } from '@shared/ui/icona/icona';
 
@@ -23,7 +23,7 @@ export interface FileInCoda {
  */
 @Component({
   selector: 'ui-coda-caricamento',
-  imports: [ButtonDirective, Icona],
+  imports: [Bottone, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="testata">
@@ -31,11 +31,10 @@ export interface FileInCoda {
 
       @if (!inCorso()) {
         <button
-          pButton
+          uiBottone
+          variante="testo"
+          dimensione="piccolo"
           type="button"
-          severity="secondary"
-          size="small"
-          [text]="true"
           (click)="chiudi.emit()"
         >
           <ui-icon name="chiudi" [size]="13" />

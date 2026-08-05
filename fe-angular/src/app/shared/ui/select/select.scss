@@ -1,0 +1,105 @@
+:host {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.innesco {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: 0.4375rem 0.625rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--c-text);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--dur-fast) var(--ease-brand);
+}
+
+.innesco:hover {
+  border-color: var(--c-text-ghost);
+}
+
+.innesco.is-aperto,
+.innesco:focus-visible {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+.innesco__testo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.innesco__testo.is-segnaposto {
+  color: var(--c-text-mute);
+}
+
+.innesco__azzera {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  color: var(--c-text-mute);
+  border-radius: var(--radius-sm);
+}
+
+.innesco__azzera:hover {
+  color: var(--c-text);
+  background: var(--c-page-alt);
+}
+
+.innesco__freccia {
+  flex: none;
+  color: var(--c-text-mute);
+}
+
+.tendina {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: var(--z-overlay);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: var(--sp-1);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(28 26 21 / 10%);
+}
+
+.tendina__voce {
+  display: block;
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--c-text);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tendina__voce.is-attiva {
+  background: var(--c-page-alt);
+}
+
+.tendina__voce[aria-selected='true'] {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+  font-weight: 500;
+}

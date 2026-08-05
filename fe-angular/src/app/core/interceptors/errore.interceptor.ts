@@ -1,9 +1,9 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { MessageService } from 'primeng/api';
 import { catchError, throwError } from 'rxjs';
 
 import { ErroreApi } from '@core/models';
+import { NotificheStore } from '@core/notifiche/notifiche-store';
 
 /**
  * Messaggi d'errore per l'utente.
@@ -62,13 +62,13 @@ function messaggioPerUtente(err: HttpErrorResponse): { titolo: string; dettaglio
  * al login. Segnalarlo qui come errore generico sarebbe rumore.
  */
 export const erroreInterceptor: HttpInterceptorFn = (req, next) => {
-  const messaggi = inject(MessageService);
+  const notifiche = inject(NotificheStore);
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
       if (err.status !== 401) {
         const { titolo, dettaglio } = messaggioPerUtente(err);
-        messaggi.add({ severity: 'error', summary: titolo, detail: dettaglio, life: 6000 });
+        notifiche.aggiungi({ gravita: 'errore', titolo, dettaglio });
       }
       return throwError(() => err);
     }),

@@ -12,13 +12,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ButtonDirective } from 'primeng/button';
-import { Drawer } from 'primeng/drawer';
-import { InputText } from 'primeng/inputtext';
-import { Menu } from 'primeng/menu';
-import { MenuItem } from 'primeng/api';
-
 import { BollaMessaggio } from './bolla-messaggio';
+import { Bottone } from '@shared/ui/bottone/bottone';
+import { Campo } from '@shared/ui/campo/campo';
+import { Cassetto } from '@shared/ui/cassetto/cassetto';
+import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { ChatStore } from '../chat-store';
 import { Citazione } from '@core/models';
 import { Composer } from '../composer/composer';
@@ -44,12 +42,12 @@ const SOGLIA_FONDO_PX = 120;
   selector: 'app-conversazione',
   imports: [
     BollaMessaggio,
-    ButtonDirective,
+    Bottone,
+    Campo,
+    Cassetto,
     Composer,
-    Drawer,
     Icona,
-    InputText,
-    Menu,
+    MenuAzioni,
     RouterLink,
     Scheletro,
     StatoVuoto,
@@ -159,7 +157,7 @@ export class Conversazione {
 
   // --- Esportazione su template (RF-C-10) ---------------------------------
 
-  private readonly menuEsporta = viewChild<Menu>('menuEsporta');
+  private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
 
   /** Il messaggio su cui è stato chiesto «esporta», finché il menu è aperto. */
   private messaggioDaEsportare?: string;
@@ -168,11 +166,11 @@ export class Conversazione {
    * Un solo menu per tutto il filo, non uno per messaggio: si aggancia al
    * pulsante premuto e ricorda per quale messaggio è stato aperto.
    */
-  protected readonly vociEsporta = computed<MenuItem[]>(() =>
+  protected readonly vociEsporta = computed<VoceMenu[]>(() =>
     this.store.template().map((template) => ({
-      label: template.nome,
-      badge: template.formato,
-      command: () => {
+      etichetta: template.nome,
+      dettaglio: template.formato,
+      azione: () => {
         if (this.messaggioDaEsportare) this.store.esporta(this.messaggioDaEsportare, template);
       },
     })),
@@ -180,7 +178,7 @@ export class Conversazione {
 
   protected apriEsporta(evento: Event, messaggioId: string): void {
     this.messaggioDaEsportare = messaggioId;
-    this.menuEsporta()?.toggle(evento);
+    this.menuEsporta()?.apri(evento);
   }
 
   /** I suggerimenti della schermata vuota: domande vere, pronte da inviare. */

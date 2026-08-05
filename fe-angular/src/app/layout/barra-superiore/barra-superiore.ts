@@ -130,8 +130,8 @@ import { SessioneStore } from '@core/auth/sessione-store';
       width: 28px;
       height: 28px;
       flex: none;
-      background: var(--c-accent-soft);
-      color: var(--c-accent);
+      background: var(--c-page-alt);
+      color: var(--c-text-2);
       font-size: var(--t-xs);
       /* Le iniziali sono due maiuscole senza discendenti: interlinea a 1 le
          tiene centrate nel quadrato senza correzioni. */

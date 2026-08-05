@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { Toast } from 'primeng/toast';
 
 import { environment } from '@env';
+import { Notifiche } from '@shared/ui/notifiche/notifiche';
 import { PannelloSviluppo } from '@core/sviluppo/pannello-sviluppo';
 
 /**
@@ -16,7 +16,7 @@ import { PannelloSviluppo } from '@core/sviluppo/pannello-sviluppo';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Toast, PannelloSviluppo],
+  imports: [RouterOutlet, Notifiche, PannelloSviluppo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.scss',

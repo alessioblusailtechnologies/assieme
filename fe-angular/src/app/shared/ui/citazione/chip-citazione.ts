@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
-import { Tooltip } from 'primeng/tooltip';
-
 import { Citazione } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
+import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 
 /**
  * Chip di citazione — il componente su cui poggia la verificabilità.
@@ -18,14 +17,13 @@ import { Icona } from '@shared/ui/icona/icona';
  */
 @Component({
   selector: 'ui-chip-citazione',
-  imports: [Icona, Tooltip],
+  imports: [Icona, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <button
       type="button"
       class="chip"
-      [pTooltip]="'«' + citazione().estratto + '»'"
-      tooltipPosition="top"
+      [uiSuggerimento]="'«' + citazione().estratto + '»'"
       (click)="apri.emit(citazione())"
     >
       <ui-icon name="citazione" [size]="11" />
@@ -41,6 +39,7 @@ import { Icona } from '@shared/ui/icona/icona';
       max-width: 100%;
       padding: 3px 8px;
       border: 1px solid var(--c-line);
+      border-radius: var(--radius-pieno);
       background: var(--c-surface);
       color: var(--c-text-2);
       font-size: var(--t-xs);

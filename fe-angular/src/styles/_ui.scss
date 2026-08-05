@@ -1,0 +1,233 @@
+/*
+ * Il design system di ASSIEME: le classi dei componenti `ui-*`.
+ *
+ * Le direttive e i componenti in `shared/ui` applicano queste classi; lo
+ * stile vive qui, in un punto solo, perché è il modo in cui un design system
+ * resta un sistema — un bottone è uguale ovunque perché è *lo stesso* CSS,
+ * non perché venti componenti lo hanno copiato bene.
+ *
+ * Ogni regola legge solo token semantici (`_tokens.scss`): niente valori
+ * diretti, niente gradini della scala primitiva.
+ */
+
+/* ==========================================================
+ * Bottone
+ * ========================================================== */
+
+.ui-bottone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 0.5rem 0.875rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--t-body);
+  line-height: 1.25;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background var(--dur-fast) var(--ease-brand),
+    border-color var(--dur-fast) var(--ease-brand),
+    color var(--dur-fast) var(--ease-brand);
+}
+
+.ui-bottone:hover {
+  text-decoration: none;
+}
+
+.ui-bottone:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* L'azione principale: scura e piena, una per schermata. */
+.ui-bottone.is-primario {
+  background: var(--c-azione);
+  color: var(--c-azione-testo);
+}
+
+.ui-bottone.is-primario:hover:not(:disabled) {
+  background: var(--c-azione-hover);
+}
+
+.ui-bottone.is-secondario {
+  background: var(--c-surface);
+  border-color: var(--c-line);
+  color: var(--c-text);
+}
+
+.ui-bottone.is-secondario:hover:not(:disabled) {
+  border-color: var(--c-text-mute);
+  background: var(--c-surface-soft);
+}
+
+.ui-bottone.is-testo {
+  background: transparent;
+  color: var(--c-text-3);
+}
+
+.ui-bottone.is-testo:hover:not(:disabled) {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+.ui-bottone.is-pericolo {
+  background: var(--c-neg);
+  color: #ffffff;
+}
+
+.ui-bottone.is-pericolo:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.ui-bottone.is-piccolo {
+  padding: 0.3125rem 0.625rem;
+  font-size: var(--t-xs);
+}
+
+/* ==========================================================
+ * Campo di testo
+ * ========================================================== */
+
+.ui-campo {
+  width: 100%;
+  padding: 0.4375rem 0.625rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--t-body);
+  color: var(--c-text);
+  transition: border-color var(--dur-fast) var(--ease-brand);
+}
+
+.ui-campo::placeholder {
+  color: var(--c-text-mute);
+}
+
+.ui-campo:hover {
+  border-color: var(--c-text-ghost);
+}
+
+.ui-campo:focus {
+  outline: none;
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 3px var(--c-accent-soft);
+}
+
+/* Campo con icona: l'icona sta dentro, il testo le fa spazio. */
+.ui-campo-icona {
+  position: relative;
+  display: block;
+}
+
+.ui-campo-icona > ui-icon {
+  position: absolute;
+  left: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--c-text-mute);
+  pointer-events: none;
+}
+
+.ui-campo-icona > .ui-campo {
+  padding-left: 2.125rem;
+}
+
+/* ==========================================================
+ * Tabella
+ * ========================================================== */
+
+/*
+ * Il contenitore fa il bordo e lo scorrimento; la tabella dentro è HTML
+ * semantico puro. Intestazioni ferme, righe che scorrono.
+ */
+.ui-tabella-contenitore {
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  overflow: auto;
+}
+
+.ui-tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-body);
+}
+
+.ui-tabella thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-surface-soft);
+  border-bottom: 1px solid var(--c-line);
+  text-align: left;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  font-weight: 400;
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  white-space: nowrap;
+}
+
+.ui-tabella tbody td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-line-soft);
+  vertical-align: middle;
+}
+
+.ui-tabella tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.ui-tabella tbody tr:hover {
+  background: var(--c-surface-tint);
+}
+
+/* ==========================================================
+ * Suggerimento (tooltip)
+ * ========================================================== */
+
+/*
+ * Interamente in CSS, agganciato a `data-suggerimento` (posato dalla
+ * direttiva `uiSuggerimento`): niente overlay da gestire, funziona su hover
+ * e su fuoco da tastiera.
+ */
+[data-suggerimento] {
+  position: relative;
+}
+
+[data-suggerimento]::after {
+  content: attr(data-suggerimento);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-overlay);
+  width: max-content;
+  max-width: min(340px, 80vw);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--c-ink);
+  color: var(--c-text-oninverse);
+  border-radius: var(--radius-sm);
+  font-size: var(--t-xs);
+  font-family: var(--f-sans);
+  letter-spacing: normal;
+  text-transform: none;
+  line-height: 1.45;
+  white-space: normal;
+  text-align: left;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-brand);
+}
+
+[data-suggerimento]:hover::after,
+[data-suggerimento]:focus-visible::after {
+  opacity: 1;
+}

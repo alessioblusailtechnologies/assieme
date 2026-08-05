@@ -52,6 +52,15 @@ Da aggiungere: `angular-eslint`, `ng generate environments`, `concurrently` (per
 
 ## 3. Interfaccia: PrimeNG tematizzato
 
+> **Superato (08/2026):** su indicazione del committente PrimeNG è stato
+> rimosso del tutto. L'interfaccia è il **design system proprio di ASSIEME**,
+> ispirato a quello di Harvey (harvey.ai): scala di neutri caldi con token
+> semantici nominati per intento (`styles/_tokens.scss`), classi dei
+> componenti in `styles/_ui.scss`, componenti `ui-*` in `shared/ui` (bottone,
+> campo, select, checkbox, briciole, paginazione, tabella, suggerimento,
+> cassetto, menù, notifiche). Font di sistema, nessuna dipendenza di
+> componenti, nessuna licenza. Questa sezione resta come storia.
+
 PrimeNG 22 usa il **modo stilizzato a design token** su tre livelli — primitivi (palette), semantici (`primary.color`), di componente (`inputtext.background`). È esattamente la struttura che serve per portarci sopra i token di ASSIEME: si sovrascrivono i token, non si combatte il CSS.
 
 ### Preset di base: Nora
@@ -132,6 +141,12 @@ Vivono in `shared/ui`, costruiti sopra le primitive PrimeNG e CDK dove serve.
 ---
 
 ## 4. Tabelle: AG Grid 36
+
+> **Superato (08/2026):** su indicazione del committente AG Grid è stato
+> rimosso; con l'uscita di PrimeNG anche `p-table`. Gli elenchi usano la
+> **tabella del design system** (`.ui-tabella` in `styles/_ui.scss`, HTML
+> semantico); la tabella di analisi (Fase 4) andrà costruita lì sopra. Le
+> avvertenze sulle licenze decadono.
 
 Usiamo AG Grid per la **tabella di analisi** (RF-C-11…C-14) e per gli elenchi documentali densi.
 

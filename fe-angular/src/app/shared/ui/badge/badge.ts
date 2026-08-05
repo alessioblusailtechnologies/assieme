@@ -50,8 +50,9 @@ export type VarianteBadge =
     }
 
     .is-accento {
-      background: var(--c-accent-soft);
-      color: var(--c-accent);
+      background: var(--c-surface);
+      border-color: var(--c-line);
+      color: var(--c-text-2);
     }
 
     .is-corrente {

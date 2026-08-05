@@ -1,6 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import type { ICellRendererAngularComp } from 'ag-grid-angular';
-import type { ICellRendererParams } from 'ag-grid-community';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DocumentoPrivato } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
@@ -18,32 +16,26 @@ import { Icona } from '@shared/ui/icona/icona';
   imports: [Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
-      <span class="titolo">
-        {{ doc.titolo }}
-        @if (doc.documentoDiRiferimento) {
-          <!--
-            RF-B-09: il documento è anche contesto permanente. Sta qui e non
-            in una colonna sua perché riguarda poche righe: una colonna
-            quasi sempre vuota è spazio sprecato su tutte le altre.
-          -->
-          <ui-icon
-            name="riferimenti"
-            [size]="13"
-            etichetta="Usato come documento di riferimento"
-          />
-        }
-      </span>
+    <span class="titolo">
+      {{ documento().titolo }}
+      @if (documento().documentoDiRiferimento) {
+        <!--
+          RF-B-09: il documento è anche contesto permanente. Sta qui e non
+          in una colonna sua perché riguarda poche righe: una colonna
+          quasi sempre vuota è spazio sprecato su tutte le altre.
+        -->
+        <ui-icon name="riferimenti" [size]="13" etichetta="Usato come documento di riferimento" />
+      }
+    </span>
 
-      <span class="sotto">
-        @if (doc.riferimentoCliente) {
-          <span class="cliente">{{ doc.riferimentoCliente }}</span>
-        }
-        @for (e of doc.etichette; track e) {
-          <span class="etichetta">{{ e }}</span>
-        }
-      </span>
-    }
+    <span class="sotto">
+      @if (documento().riferimentoCliente) {
+        <span class="cliente">{{ documento().riferimentoCliente }}</span>
+      }
+      @for (e of documento().etichette; track e) {
+        <span class="etichetta">{{ e }}</span>
+      }
+    </span>
   `,
   styles: `
     :host {
@@ -51,7 +43,6 @@ import { Icona } from '@shared/ui/icona/icona';
       flex-direction: column;
       justify-content: center;
       gap: 2px;
-      height: 100%;
       min-width: 0;
       line-height: 1.3;
     }
@@ -96,15 +87,6 @@ import { Icona } from '@shared/ui/icona/icona';
     }
   `,
 })
-export class CellaDocumento implements ICellRendererAngularComp {
-  protected readonly documento = signal<DocumentoPrivato | undefined>(undefined);
-
-  agInit(params: ICellRendererParams<DocumentoPrivato>): void {
-    this.documento.set(params.data);
-  }
-
-  refresh(params: ICellRendererParams<DocumentoPrivato>): boolean {
-    this.documento.set(params.data);
-    return true;
-  }
+export class CellaDocumento {
+  readonly documento = input.required<DocumentoPrivato>();
 }

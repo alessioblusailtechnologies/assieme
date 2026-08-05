@@ -6,33 +6,6 @@ import { Ruolo } from '@core/models';
 export type ErroreSimulato = 'nessuno' | '500' | '403' | '429' | 'timeout';
 
 /**
- * Tipografia in uso e sua alternativa in valutazione.
- * Vedi `styles/_prova-font.scss`.
- */
-export type ProvaFont =
-  | 'attuale'
-  | 'professionale'
-  | 'solo-serif'
-  | 'solo-mono'
-  | 'solo-sistema'
-  | 'tt-turns'
-  | 'tt-turns-tutto'
-  | 'saans'
-  | 'saans-tutto';
-
-export const PROVE_FONT: { valore: ProvaFont; etichetta: string }[] = [
-  { valore: 'attuale', etichetta: 'attuale — Newsreader + DM Mono (261 KB)' },
-  { valore: 'saans', etichetta: 'Saans sans+mono — titoli Newsreader (368 KB)' },
-  { valore: 'saans-tutto', etichetta: 'Saans ovunque — un solo file (155 KB)' },
-  { valore: 'tt-turns', etichetta: 'TT Turns come sans — titoli Newsreader' },
-  { valore: 'tt-turns-tutto', etichetta: 'TT Turns ovunque — niente serif' },
-  { valore: 'solo-serif', etichetta: 'solo serif — via DM Mono (213 KB)' },
-  { valore: 'solo-mono', etichetta: 'solo mono — via Newsreader (48 KB)' },
-  { valore: 'solo-sistema', etichetta: 'solo sistema — nessuno scaricato (0 KB)' },
-  { valore: 'professionale', etichetta: 'alternativa — Source Serif + Source Sans' },
-];
-
-/**
  * Stato del pannello di sviluppo.
  *
  * Non è un vezzo: gli stati che rompono un'interfaccia — latenza alta,
@@ -58,9 +31,6 @@ export class SviluppoStore {
   readonly erroreProssimaChiamata = signal<ErroreSimulato>('nessuno');
 
   readonly pannelloAperto = signal(false);
-
-  /** Tipografia: quella in uso, o l'alternativa in valutazione. */
-  readonly provaFont = signal<ProvaFont>('attuale');
 
   consumaErrore(): ErroreSimulato {
     const e = this.erroreProssimaChiamata();

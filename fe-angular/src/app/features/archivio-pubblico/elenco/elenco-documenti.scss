@@ -92,6 +92,7 @@
 
 .filtri {
   display: flex;
+  border-radius: var(--radius);
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-3);
@@ -112,7 +113,7 @@
   width: 100%;
 }
 
-:host ::ng-deep .filtri__campo {
+.filtri__campo {
   min-width: 190px;
 }
 
@@ -133,6 +134,7 @@
 
 .scheletri {
   display: flex;
+  border-radius: var(--radius);
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-4);
@@ -176,35 +178,38 @@ ui-stato-vuoto {
   min-height: 240px;
 }
 
+/* La tabella riempie il blocco e scorre al proprio interno: le intestazioni
+   sono appiccicose, la paginazione resta ferma sotto. */
 .griglia {
-  display: block;
-  width: 100%;
   flex: 1;
   min-height: 0;
+}
+
+/* La colonna d'identità della riga: un filo più presente delle altre. */
+.cella-primaria {
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+.col-tipologia {
+  width: 150px;
+}
+
+.col-edizione {
+  width: 180px;
+}
+
+.col-azione {
+  width: 110px;
 }
 
 /* La paginazione resta sotto la griglia e non scorre con le righe: cambiare
    pagina è il gesto che si fa dopo aver scorso fino in fondo, e doverlo
    cercare risalendo è il modo più rapido per far sembrare lenta
    un'applicazione. */
-.risultati p-paginator {
+.risultati ui-paginazione {
   flex: none;
 }
-
-:host ::ng-deep .risultati .p-paginator {
-  /* Il bordo superiore manca perché lo fornisce già la griglia sopra: due
-     filetti adiacenti si leggono come una linea spessa e sbagliata. */
-  border-top: 0;
-}
-
-/* Le colonne numeriche a destra con cifre a larghezza fissa: incolonnate,
-   il numero di pagine si confronta a colpo d'occhio. */
-:host ::ng-deep .cella-numerica {
-  justify-content: flex-end;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 
 @media (max-width: 900px) {
   :host {
@@ -224,7 +229,7 @@ ui-stato-vuoto {
     align-items: stretch;
   }
 
-  :host ::ng-deep .filtri__campo {
+  .filtri__campo {
     width: 100%;
   }
 }

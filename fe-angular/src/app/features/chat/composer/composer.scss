@@ -28,12 +28,13 @@
 
 .riferimento {
   display: inline-flex;
+  border-radius: var(--radius-pieno);
   align-items: center;
   gap: var(--sp-1);
   max-width: 40ch;
   padding: 2px 4px 2px 8px;
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
+  background: var(--c-page-alt);
+  color: var(--c-text-2);
   font-size: var(--t-xs);
 }
 
@@ -63,6 +64,7 @@
 
 .campo {
   display: flex;
+  border-radius: var(--radius);
   align-items: flex-end;
   gap: var(--sp-2);
   padding: var(--sp-2);
@@ -96,6 +98,7 @@
 
 .campo__allega,
 .campo__invia {
+  border-radius: var(--radius-sm);
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -113,13 +116,17 @@
 
 .campo__allega:hover,
 .campo__allega:focus-visible {
-  color: var(--c-accent);
-  background: var(--c-accent-soft);
+  color: var(--c-text);
+  background: var(--c-page-alt);
 }
 
 .campo__invia {
-  background: var(--c-accent);
-  color: #fff;
+  background: var(--c-azione);
+  color: var(--c-azione-testo);
+}
+
+.campo__invia:hover:not(:disabled) {
+  background: var(--c-azione-hover);
 }
 
 .campo__invia:disabled {

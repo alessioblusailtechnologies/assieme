@@ -15,7 +15,7 @@
         y="14"
         text-anchor="middle"
         dominant-baseline="central"
-        font-family="Newsreader, Georgia, serif"
+        font-family="Georgia, serif"
         font-size="18"
         fill="#ffffff"
       >
@@ -121,11 +121,7 @@
 </nav>
 
 <button
-  pButton
   type="button"
-  severity="secondary"
-  size="small"
-  [text]="true"
   class="comprimi"
   (click)="compressa.set(!compressa())"
   [attr.aria-label]="compressa() ? 'Espandi la barra laterale' : 'Comprimi la barra laterale'"

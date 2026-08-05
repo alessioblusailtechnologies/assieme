@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { ButtonDirective } from 'primeng/button';
+import { Bottone } from '@shared/ui/bottone/bottone';
 
 import { Icona } from '@shared/ui/icona/icona';
 
@@ -16,7 +16,7 @@ import { Icona } from '@shared/ui/icona/icona';
  */
 @Component({
   selector: 'ui-zona-caricamento',
-  imports: [ButtonDirective, Icona],
+  imports: [Bottone, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <input
@@ -36,7 +36,7 @@ import { Icona } from '@shared/ui/icona/icona';
         <span class="oppure">oppure</span>
       </p>
 
-      <button pButton type="button" severity="secondary" [outlined]="true" (click)="campo.click()">
+      <button uiBottone type="button" (click)="campo.click()">
         <span>Scegli dal computer</span>
       </button>
 
@@ -81,8 +81,8 @@ import { Icona } from '@shared/ui/icona/icona';
     .zona.is-sopra {
       border-color: var(--c-accent);
       border-style: solid;
-      background: var(--c-accent-soft);
-      color: var(--c-accent);
+      background: var(--c-page-alt);
+      color: var(--c-text-2);
     }
 
     .invito {

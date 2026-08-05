@@ -1,0 +1,51 @@
+<button
+  type="button"
+  class="innesco"
+  [class.is-aperto]="aperto()"
+  (click)="commuta()"
+  (keydown)="suTasto($event)"
+  role="combobox"
+  [attr.aria-expanded]="aperto()"
+  [attr.aria-label]="ariaLabel() || placeholder()"
+  aria-haspopup="listbox"
+  aria-controls="tendina-opzioni"
+>
+  @if (etichettaScelta(); as etichetta) {
+    <span class="innesco__testo">{{ etichetta }}</span>
+  } @else {
+    <span class="innesco__testo is-segnaposto">{{ placeholder() }}</span>
+  }
+
+  @if (azzerabile() && etichettaScelta()) {
+    <span
+      class="innesco__azzera"
+      role="button"
+      tabindex="-1"
+      (click)="azzera($event)"
+      aria-label="Azzera la scelta"
+    >
+      <ui-icon name="chiudi" [size]="12" />
+    </span>
+  }
+  <ui-icon class="innesco__freccia" name="espandi-giu" [size]="14" />
+</button>
+
+@if (aperto()) {
+  <ul class="tendina" id="tendina-opzioni" role="listbox">
+    @for (opzione of opzioni(); track $index) {
+      <li>
+        <button
+          type="button"
+          class="tendina__voce"
+          role="option"
+          [class.is-attiva]="indiceAttivo() === $index"
+          [attr.aria-selected]="valoreDi(opzione) === valore()"
+          (click)="scegli(opzione)"
+          (mouseenter)="indiceAttivo.set($index)"
+        >
+          {{ etichettaDi(opzione) }}
+        </button>
+      </li>
+    }
+  </ul>
+}

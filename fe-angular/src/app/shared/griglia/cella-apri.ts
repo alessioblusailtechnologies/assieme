@@ -1,19 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ButtonDirective } from 'primeng/button';
-import type { ICellRendererAngularComp } from 'ag-grid-angular';
-import type { ICellRendererParams } from 'ag-grid-community';
 
+import { Bottone } from '@shared/ui/bottone/bottone';
 import { Icona } from '@shared/ui/icona/icona';
 
 interface ConIdETitolo {
   id: string;
   titolo: string;
-}
-
-/** La colonna passa il percorso di base della sezione. */
-export interface ParametriCellaApri {
-  base: string;
 }
 
 /**
@@ -30,29 +23,24 @@ export interface ParametriCellaApri {
  */
 @Component({
   selector: 'app-cella-apri',
-  imports: [ButtonDirective, Icona, RouterLink],
+  imports: [Bottone, Icona, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
-      <a
-        pButton
-        severity="secondary"
-        size="small"
-        [outlined]="true"
-        [routerLink]="percorso()"
-        [attr.aria-label]="'Apri ' + doc.titolo"
-      >
-        <span>Apri</span>
-        <ui-icon name="espandi-destra" [size]="14" />
-      </a>
-    }
+    <a
+      uiBottone
+      dimensione="piccolo"
+      [routerLink]="percorso()"
+      [attr.aria-label]="'Apri ' + documento().titolo"
+    >
+      <span>Apri</span>
+      <ui-icon name="espandi-destra" [size]="14" />
+    </a>
   `,
   styles: `
     :host {
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      height: 100%;
     }
 
     a,
@@ -61,19 +49,10 @@ export interface ParametriCellaApri {
     }
   `,
 })
-export class CellaApri implements ICellRendererAngularComp {
-  protected readonly documento = signal<ConIdETitolo | undefined>(undefined);
-  private readonly base = signal('/');
+export class CellaApri {
+  /** Percorso di base della sezione, es. \`/archivio/pubblico\`. */
+  readonly base = input.required<string>();
+  readonly documento = input.required<ConIdETitolo>();
 
-  protected readonly percorso = computed(() => [this.base(), this.documento()?.id ?? '']);
-
-  agInit(params: ICellRendererParams<ConIdETitolo> & ParametriCellaApri): void {
-    this.base.set(params.base);
-    this.documento.set(params.data);
-  }
-
-  refresh(params: ICellRendererParams<ConIdETitolo>): boolean {
-    this.documento.set(params.data);
-    return true;
-  }
+  protected readonly percorso = computed(() => [this.base(), this.documento().id]);
 }

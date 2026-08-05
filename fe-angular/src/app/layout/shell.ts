@@ -50,10 +50,12 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
      * quaranta righe è la differenza fra sapere sempre dove ci si trova e
      * doverlo ritrovare.
      */
+    /* L'area di lavoro è bianca sul contorno avorio: il contenuto è il
+       foglio, la navigazione è il tavolo. */
     .contenuto {
       flex: 1;
       overflow: auto;
-      background: var(--c-page);
+      background: var(--c-surface);
     }
 
     .contenuto:focus {

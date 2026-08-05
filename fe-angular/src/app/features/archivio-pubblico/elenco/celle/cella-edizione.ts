@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import type { ICellRendererAngularComp } from 'ag-grid-angular';
-import type { ICellRendererParams } from 'ag-grid-community';
 
 import { DocumentoPubblico } from '@core/models';
 
@@ -27,37 +25,27 @@ import { DocumentoPubblico } from '@core/models';
   imports: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
-      <span class="etichetta" [class.is-superata]="!doc.edizione.corrente">
-        {{ doc.edizione.etichetta }}
-      </span>
+    <span class="etichetta" [class.is-superata]="!documento().edizione.corrente">
+      {{ documento().edizione.etichetta }}
+    </span>
 
-      @if (!doc.edizione.corrente) {
-        <span class="validita">
-          @if (doc.edizione.validaAl) {
-            fino al {{ doc.edizione.validaAl | date: 'dd/MM/yyyy' }}
-          } @else {
-            non più in vigore
-          }
-        </span>
-      }
+    @if (!documento().edizione.corrente) {
+      <span class="validita">
+        @if (documento().edizione.validaAl) {
+          fino al {{ documento().edizione.validaAl | date: 'dd/MM/yyyy' }}
+        } @else {
+          non più in vigore
+        }
+      </span>
     }
   `,
   styles: `
-    /*
-     * I due pezzi stanno incolonnati, non affiancati.
-     *
-     * In linea servivano più di 220px e la colonna ne ha 200: la data usciva
-     * dalla cella. Allargare la colonna avrebbe tolto spazio a prodotto e
-     * compagnia per un'informazione che riguarda una riga su venti. Su due
-     * righe ci stanno entrambi con margine, e le edizioni correnti — che
-     * hanno una riga sola — restano centrate.
-     */
+    /* I due pezzi stanno incolonnati, non affiancati: in linea servirebbe
+       più larghezza di quanta la colonna possa cederne. */
     :host {
       display: flex;
       flex-direction: column;
       justify-content: center;
-      height: 100%;
       min-width: 0;
       line-height: 1.3;
     }
@@ -91,15 +79,6 @@ import { DocumentoPubblico } from '@core/models';
     }
   `,
 })
-export class CellaEdizione implements ICellRendererAngularComp {
-  protected readonly documento = signal<DocumentoPubblico | undefined>(undefined);
-
-  agInit(params: ICellRendererParams<DocumentoPubblico>): void {
-    this.documento.set(params.data);
-  }
-
-  refresh(params: ICellRendererParams<DocumentoPubblico>): boolean {
-    this.documento.set(params.data);
-    return true;
-  }
+export class CellaEdizione {
+  readonly documento = input.required<DocumentoPubblico>();
 }

@@ -1,71 +1,103 @@
 /*
- * Token di design dell'applicazione.
+ * Token di design di ASSIEME.
  *
- * La prima sezione è copiata invariata da `website/src/styles/tokens.css`:
- * stessi nomi, stessi valori. È voluto. Se un colore cambia sul sito deve
- * poter essere riportato qui con un copia-incolla, senza tradurre nulla.
+ * Impostazione ripresa dal design system di Harvey (harvey.ai): una scala di
+ * **neutri caldi** — tinta ferma sui ~90°, bianchi puliti in alto e scuri
+ * senza deriva marrone in basso — e token **semantici, nominati per intento**
+ * e non per apparenza: i componenti leggono `--c-line` o `--c-azione`, mai un
+ * gradino della scala primitiva. Cambiare la palette è cambiare questa
+ * sezione, non i componenti.
  *
- * Le sezioni successive sono ciò che al sito non serve e all'applicazione sì.
- * La differenza di fondo: il sito è un documento che si legge una volta,
- * ASSIEME è uno strumento che si usa otto ore al giorno. Cambia la densità,
- * non la lingua visiva.
+ * L'estetica: fondo avorio, superfici bianche con bordi tenui e angoli
+ * arrotondati, un'unica azione primaria scura per schermata, accento blu
+ * ASSIEME per collegamenti, selezioni e stati attivi.
  */
 
 :root {
   /* ==========================================================
-   * 1. Ereditato dal sito — non modificare senza allinearlo là
+   * 1. Primitivi — la scala dei neutri caldi
+   * ========================================================== */
+
+  --n-0: #ffffff;
+  --n-50: #fdfcfb;
+  --n-100: #faf9f7; /* il fondo: appena caldo, quasi bianco */
+  --n-150: #f5f4f1;
+  --n-200: #eeedea;
+  --n-300: #e4e2dd;
+  --n-400: #cfccc4;
+  --n-500: #9b978b;
+  --n-600: #767268;
+  --n-700: #45423a;
+  --n-800: #2e2b24;
+  --n-900: #24221c;
+  --n-950: #1c1a15; /* l'inchiostro caldo */
+
+  /* ==========================================================
+   * 2. Semantici — nominati per intento
    * ========================================================== */
 
   /* ---------- Superfici ---------- */
-  --c-ink: #14181d;
-  --c-page: #f4f5f7;
-  --c-page-alt: #eaecef;
-  --c-surface: #ffffff;
-  --c-surface-soft: #fbfcfd;
-  --c-surface-tint: #f5f8fc;
+  --c-ink: var(--n-950);
+  --c-page: var(--n-100);
+  --c-page-alt: var(--n-200);
+  --c-surface: var(--n-0);
+  --c-surface-soft: var(--n-50);
+  --c-surface-tint: var(--n-150);
 
   /* ---------- Superfici scure ---------- */
-  --c-ink-raise: #1b2027;
-  --c-ink-raise-2: #22282f;
-  --c-ink-hatch: #20262e;
+  --c-ink-raise: var(--n-900);
+  --c-ink-raise-2: var(--n-800);
+  --c-ink-hatch: var(--n-900);
 
   /* ---------- Bordi ---------- */
-  --c-line: #dde0e5;
-  --c-line-soft: #eef0f3;
-  --c-line-dark: #2a3038;
-  --c-line-onink: rgb(255 255 255 / 8%);
+  --c-line: var(--n-300);
+  --c-line-soft: var(--n-200);
+  --c-line-dark: var(--n-700);
+  --c-line-onink: rgb(255 255 255 / 10%);
   --c-line-onink-strong: rgb(255 255 255 / 35%);
 
   /* ---------- Testo ---------- */
-  --c-text: #14181d;
-  --c-text-2: #3a424c;
-  --c-text-3: #78818e;
-  --c-text-4: #8a929c;
-  --c-text-mute: #98a1ac;
-  --c-text-ghost: #bfc3c9;
+  --c-text: var(--n-950);
+  --c-text-2: var(--n-700);
+  --c-text-3: var(--n-600);
+  --c-text-4: #86827a;
+  --c-text-mute: var(--n-500);
+  --c-text-ghost: var(--n-400);
 
   --c-text-oninverse: #ffffff;
-  --c-text-oninverse-2: #c6ccd4;
-  --c-text-oninverse-3: #98a1ac;
-  --c-text-oninverse-4: #b4bcc6;
-  --c-text-oninverse-mute: #5b646f;
-  --c-text-oninverse-hatch: #6d7681;
+  --c-text-oninverse-2: #d9d6cd;
+  --c-text-oninverse-3: #a5a196;
+  --c-text-oninverse-4: #b9b6ac;
+  --c-text-oninverse-mute: #6f6b60;
+  --c-text-oninverse-hatch: #7d7970;
 
-  /* ---------- Accento ---------- */
+  /* ---------- Azione primaria ----------
+   * Una per schermata, scura e piena — il gesto principale si riconosce
+   * prima di leggerlo. È l'inchiostro, non un colore di marca.
+   */
+  --c-azione: var(--c-ink);
+  --c-azione-hover: var(--n-800);
+  --c-azione-testo: #ffffff;
+
+  /* ---------- Accento ----------
+   * Il blu ASSIEME: collegamenti, fuoco, selezioni, stati attivi.
+   */
   --c-accent: #2f4b7c;
-  --c-accent-soft: #e7edf7;
+  --c-accent-soft: #e9eef6;
   --c-accent-on-dark: #7f97c4;
-  --c-accent-hover: #9fb4d6;
-  --c-accent-hairline: #c9cfd8;
+  --c-accent-hover: #263c63;
+  --c-accent-hairline: #cfccc2;
 
   /* ---------- Semantico ---------- */
   --c-neg: #a63d2f; /* condizione peggiorativa */
   --c-pos: #2e6b4f; /* condizione migliorativa */
 
-  /* ---------- Tipografia ---------- */
-  --f-serif: 'Newsreader', georgia, 'Times New Roman', times, serif;
+  /* ---------- Tipografia ----------
+   * Solo font di sistema: nessun file scaricato, nessun font custom.
+   */
+  --f-serif: georgia, 'Times New Roman', times, serif;
   --f-sans: 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
-  --f-mono: 'DM Mono', ui-monospace, 'SF Mono', menlo, consolas, monospace;
+  --f-mono: ui-monospace, 'SF Mono', menlo, consolas, monospace;
 
   --ls-tight: -0.02em;
   --ls-snug: -0.012em;
@@ -78,15 +110,7 @@
   --dur-fast: 0.18s;
   --dur-slide: 0.78s;
 
-  /* ==========================================================
-   * 2. Estensioni applicative
-   * ========================================================== */
-
-  /* ---------- Scala tipografica da applicativo ----------
-   * Il sito interpola fino a 84px di titolo. Qui il testo più grande è un
-   * titolo di pagina e il corpo scende a 14px: densità da strumento di
-   * lavoro, non da pagina da leggere.
-   */
+  /* ---------- Scala tipografica da applicativo ---------- */
   --t-page-title: 1.5rem; /* 24px — titolo di schermata, serif */
   --t-section: 1.125rem; /* 18px — titolo di sezione */
   --t-lead: 0.9375rem; /* 15px — testo introduttivo, risposte in chat */
@@ -96,10 +120,7 @@
   --t-mono: 0.6875rem; /* 11px — etichette mono */
   --t-mono-sm: 0.625rem; /* 10px — chip di citazione, badge */
 
-  /* ---------- Spaziatura ----------
-   * Scala a passo 4px. Il sito ragiona in sezioni da 96px, qui l'unità
-   * naturale è il padding di una cella di tabella.
-   */
+  /* ---------- Spaziatura — scala a passo 4px ---------- */
   --sp-1: 0.25rem; /* 4 */
   --sp-2: 0.5rem; /* 8 */
   --sp-3: 0.75rem; /* 12 */
@@ -111,33 +132,26 @@
   --sp-12: 3rem; /* 48 */
 
   /* ---------- Struttura ---------- */
-  --sidebar-w: 232px;
+  --sidebar-w: 240px;
   --sidebar-w-collapsed: 56px;
   --topbar-h: 52px;
   --content-max: 1400px;
   --reading-max: 76ch; /* larghezza di lettura delle risposte in chat */
 
-  /* ---------- Angoli ----------
-   * Zero ovunque. Nel design originale non esiste un solo elemento
-   * arrotondato, ed è metà del carattere del prodotto: va imposto qui e nel
-   * preset PrimeNG, altrimenti riemerge componente per componente.
-   */
-  --radius: 0;
+  /* ---------- Angoli ---------- */
+  --radius: 8px; /* pannelli, schede, sovrapposizioni */
+  --radius-sm: 6px; /* campi, bottoni, voci */
+  --radius-pieno: 999px; /* pillole */
 
-  /* ---------- Stati semantici ----------
-   * Il sito ha solo peggiorativo/migliorativo. All'applicazione servono gli
-   * stati di lavorazione: documenti in elaborazione, esecuzioni di agenti.
-   */
+  /* ---------- Stati semantici ---------- */
   --c-warn: #8a6116;
-  --c-warn-soft: #fbf3e2;
-  --c-info: #2f4b7c; /* coincide con l'accento: informativo non è un allarme */
-  --c-info-soft: #e7edf7;
-  --c-neg-soft: #f9eae7;
-  --c-pos-soft: #e8f1ec;
+  --c-warn-soft: #f9f1de;
+  --c-info: var(--c-accent);
+  --c-info-soft: var(--c-accent-soft);
+  --c-neg-soft: #f8eae6;
+  --c-pos-soft: #e9f1ec;
 
-  /* Stato di elaborazione documento (RF-B-05) ed esecuzione agente (RF-E-06).
-     Nomi per significato, non per colore: se domani "in coda" diventa grigio
-     si cambia qui e non in venti componenti. */
+  /* Stato di elaborazione documento (RF-B-05) ed esecuzione agente (RF-E-06). */
   --c-stato-attesa: var(--c-text-3);
   --c-stato-attesa-soft: var(--c-page-alt);
   --c-stato-corso: var(--c-warn);
@@ -147,18 +161,13 @@
   --c-stato-errore: var(--c-neg);
   --c-stato-errore-soft: var(--c-neg-soft);
 
-  /* ---------- Provenienza (RF-D-05, RF-D-15, RF-G-03) ----------
-   * Tre segnali distinti che l'interfaccia deve saper mostrare senza
-   * diventare rumorosa: una risposta può dipendere da una regola del tenant,
-   * da un documento di riferimento o da un ricordo. Colori sobri e vicini
-   * fra loro: sono note a margine, non avvisi.
-   */
+  /* ---------- Provenienza (RF-D-05, RF-D-15, RF-G-03) ---------- */
   --c-prov-regola: #6b4d8a;
-  --c-prov-regola-soft: #f0ebf6;
+  --c-prov-regola-soft: #f1ecf6;
   --c-prov-riferimento: #2f6b7c;
-  --c-prov-riferimento-soft: #e5f0f3;
+  --c-prov-riferimento-soft: #e7f0f2;
   --c-prov-memoria: #7c5a2f;
-  --c-prov-memoria-soft: #f6efe5;
+  --c-prov-memoria-soft: #f6efe3;
 
   /* ---------- Livelli ---------- */
   --z-sidebar: 20;

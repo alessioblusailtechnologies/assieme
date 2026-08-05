@@ -17,7 +17,7 @@ body {
 /*
  * `color-scheme: light` non è pro forma.
  *
- * I preset di PrimeNG esprimono quasi ogni colore con la funzione CSS
+ * Molte librerie esprimono i colori con la funzione CSS
  * `light-dark(chiaro, scuro)`, che sceglie in base a `color-scheme` — non in
  * base al selettore di tema. Senza questa riga, un utente con il sistema
  * operativo in modalità scura vedrebbe i valori scuri anche se la modalità

@@ -3,11 +3,9 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 
-import { Breadcrumb } from 'primeng/breadcrumb';
-import { ButtonDirective } from 'primeng/button';
-import { MenuItem } from 'primeng/api';
-
 import { Badge } from '@shared/ui/badge/badge';
+import { Bottone } from '@shared/ui/bottone/bottone';
+import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { DettaglioDocumento as Dettaglio, DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -25,8 +23,8 @@ import { etichettaTipologia } from '@shared/testi/etichette';
   selector: 'app-dettaglio-documento',
   imports: [
     Badge,
-    Breadcrumb,
-    ButtonDirective,
+    Bottone,
+    Briciole,
     DatePipe,
     Icona,
     RouterLink,
@@ -68,9 +66,9 @@ export class DettaglioDocumento {
    * accanto e in grande, e ripeterlo a mezzo centimetro di distanza allunga
    * una riga già densa senza aggiungere nulla.
    */
-  protected readonly briciole: MenuItem[] = [
-    { label: 'Home', routerLink: '/' },
-    { label: 'Archivio pubblico', routerLink: '/archivio/pubblico' },
+  protected readonly briciole: VoceBriciola[] = [
+    { etichetta: 'Home', percorso: '/' },
+    { etichetta: 'Archivio pubblico', percorso: '/archivio/pubblico' },
   ];
 
   /** Le altre edizioni dello stesso documento, esclusa quella aperta. */

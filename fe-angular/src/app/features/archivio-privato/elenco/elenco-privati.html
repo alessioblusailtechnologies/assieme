@@ -1,7 +1,7 @@
 <header class="testata">
   <h1 class="visually-hidden">Archivio privato</h1>
 
-  <p-breadcrumb [model]="briciole" />
+  <ui-briciole [voci]="briciole" />
 
   <span class="testata__stacco" aria-hidden="true"></span>
 
@@ -41,66 +41,58 @@
 }
 
 <section class="filtri" aria-label="Filtri dell'archivio">
-  <p-iconfield class="filtri__ricerca">
-    <p-inputicon>
-      <ui-icon name="cerca" [size]="16" />
-    </p-inputicon>
+  <label class="ui-campo-icona filtri__ricerca">
+    <ui-icon name="cerca" [size]="16" />
     <input
-      pInputText
+      uiCampo
       type="search"
-      [(ngModel)]="store.ricerca"
+      [value]="store.ricerca()"
+      (input)="store.ricerca.set($any($event.target).value)"
       placeholder="Cerca per titolo, cliente, etichetta…"
       aria-label="Cerca nell'archivio privato"
     />
-  </p-iconfield>
+  </label>
 
-  <p-select
-    [(ngModel)]="store.tipologia"
-    [options]="tipologie"
-    optionLabel="etichetta"
-    optionValue="valore"
+  <ui-select
+    class="filtri__campo"
+    [(valore)]="store.tipologia"
+    [opzioni]="tipologie"
+    campoEtichetta="etichetta"
+    campoValore="valore"
     placeholder="Tutte le tipologie"
-    [showClear]="true"
+    [azzerabile]="true"
     ariaLabel="Filtra per tipologia"
-    styleClass="filtri__campo"
   />
 
-  <p-select
-    [(ngModel)]="store.stato"
-    [options]="stati"
-    optionLabel="etichetta"
-    optionValue="valore"
+  <ui-select
+    class="filtri__campo"
+    [(valore)]="store.stato"
+    [opzioni]="stati"
+    campoEtichetta="etichetta"
+    campoValore="valore"
     placeholder="Tutti gli stati"
-    [showClear]="true"
+    [azzerabile]="true"
     ariaLabel="Filtra per stato di elaborazione"
-    styleClass="filtri__campo"
   />
 
-  <p-select
-    [(ngModel)]="store.etichetta"
-    [options]="store.etichette()"
-    optionLabel="nome"
-    optionValue="nome"
+  <ui-select
+    class="filtri__campo"
+    [(valore)]="store.etichetta"
+    [opzioni]="store.etichette()"
+    campoEtichetta="nome"
+    campoValore="nome"
     placeholder="Tutte le etichette"
-    [showClear]="true"
+    [azzerabile]="true"
     ariaLabel="Filtra per etichetta"
-    styleClass="filtri__campo"
   />
 
   <div class="filtri__interruttore">
-    <p-checkbox [(ngModel)]="store.soloRiferimenti" [binary]="true" inputId="solo-riferimenti" />
+    <ui-checkbox [(valore)]="store.soloRiferimenti" inputId="solo-riferimenti" />
     <label for="solo-riferimenti">Solo documenti di riferimento</label>
   </div>
 
   @if (store.filtriAttivi()) {
-    <button
-      pButton
-      type="button"
-      severity="secondary"
-      size="small"
-      [text]="true"
-      (click)="store.azzeraFiltri()"
-    >
+    <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="store.azzeraFiltri()">
       <ui-icon name="chiudi" [size]="14" />
       <span>Azzera</span>
     </button>
@@ -113,7 +105,7 @@
     titolo="Non siamo riusciti a caricare l'archivio"
     descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
   >
-    <button pButton type="button" (click)="store.riprova()">
+    <button uiBottone variante="primario" type="button" (click)="store.riprova()">
       <ui-icon name="riprova" [size]="15" />
       <span>Riprova</span>
     </button>
@@ -135,7 +127,7 @@
     "
   >
     @if (store.filtriAttivi()) {
-      <button pButton type="button" (click)="store.azzeraFiltri()">
+      <button uiBottone variante="primario" type="button" (click)="store.azzeraFiltri()">
         <ui-icon name="chiudi" [size]="15" />
         <span>Azzera i filtri</span>
       </button>
@@ -143,23 +135,39 @@
   </ui-stato-vuoto>
 } @else {
   <div class="risultati">
-    <ag-grid-angular
-      class="griglia"
-      [theme]="tema"
-      [modules]="moduli"
-      [gridOptions]="opzioniGriglia"
-      [columnDefs]="colonne"
-      [defaultColDef]="colonnaPredefinita"
-      [rowData]="documenti()"
-      [getRowId]="chiaveRiga"
-    />
+    <div class="ui-tabella-contenitore griglia">
+      <table class="ui-tabella">
+        <thead>
+          <tr>
+            <th class="col-documento">Documento</th>
+            <th class="col-tipologia">Tipologia</th>
+            <th class="col-stato">Stato</th>
+            <th class="col-caricato">Caricato il</th>
+            <th class="col-azione"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (doc of documenti(); track doc.id) {
+            <tr>
+              <td class="col-documento"><app-cella-documento [documento]="doc" /></td>
+              <td class="col-tipologia"><app-cella-tipologia [tipologia]="doc.tipologia" /></td>
+              <td class="col-stato"><app-cella-stato [documento]="doc" /></td>
+              <td class="col-caricato cella-numerica">{{ doc.caricatoIl | date: 'dd/MM/yyyy' }}</td>
+              <td class="col-azione">
+                <app-cella-apri base="/archivio/privato" [documento]="doc" />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     @if (store.totale() > store.perPagina()) {
-      <p-paginator
-        [first]="(store.pagina() - 1) * store.perPagina()"
-        [rows]="store.perPagina()"
-        [totalRecords]="store.totale()"
-        (onPageChange)="cambiaPagina($event)"
+      <ui-paginazione
+        [pagina]="store.pagina()"
+        [perPagina]="store.perPagina()"
+        [totale]="store.totale()"
+        (cambiaPagina)="store.pagina.set($event)"
       />
     }
   </div>

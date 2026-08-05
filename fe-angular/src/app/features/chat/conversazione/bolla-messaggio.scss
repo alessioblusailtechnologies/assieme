@@ -19,8 +19,9 @@
 }
 
 .utente__testo {
+  border-radius: var(--radius);
   padding: var(--sp-3) var(--sp-4);
-  background: var(--c-accent-soft);
+  background: var(--c-page-alt);
   color: var(--c-text);
   font-size: var(--t-body);
   line-height: 1.5;
@@ -37,6 +38,7 @@
 
 .riferimento {
   display: inline-flex;
+  border-radius: var(--radius-pieno);
   align-items: center;
   gap: var(--sp-1);
   max-width: 32ch;
@@ -64,6 +66,7 @@
  */
 .assistente {
   display: flex;
+  border-radius: var(--radius);
   flex-direction: column;
   gap: var(--sp-3);
   max-width: 85%;
@@ -156,6 +159,7 @@
 
 .non-supportato {
   display: flex;
+  border-radius: var(--radius-sm);
   align-items: center;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
@@ -169,6 +173,7 @@
 
 .errore-stream {
   display: flex;
+  border-radius: var(--radius-sm);
   align-items: flex-start;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
@@ -249,6 +254,7 @@
 
 .azione {
   display: inline-flex;
+  border-radius: var(--radius-sm);
   align-items: center;
   gap: var(--sp-1);
   padding: 3px 8px;

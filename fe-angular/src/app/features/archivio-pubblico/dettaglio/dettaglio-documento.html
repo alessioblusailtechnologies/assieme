@@ -1,18 +1,18 @@
 @if (errore()) {
-  <p-breadcrumb [model]="briciole" />
+  <ui-briciole [voci]="briciole" />
 
   <ui-stato-vuoto
     icona="errore"
     titolo="Non siamo riusciti ad aprire il documento"
     descrizione="Potrebbe essere stato ritirato dall'archivio, oppure il problema è temporaneo."
   >
-    <button pButton type="button" (click)="riprova()">
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
       <ui-icon name="riprova" [size]="15" />
       <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
 } @else if (inCaricamento() && !documento()) {
-  <p-breadcrumb [model]="briciole" />
+  <ui-briciole [voci]="briciole" />
 
   <div class="caricamento">
     <ui-scheletro [numeroRighe]="2" />
@@ -28,7 +28,7 @@
     distanza non aiuta nessuno.
   -->
   <header class="testata">
-    <p-breadcrumb [model]="briciole" />
+    <ui-briciole [voci]="briciole" />
 
     <span class="testata__stacco" aria-hidden="true"></span>
 

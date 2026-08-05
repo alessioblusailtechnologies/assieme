@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
-import { MessageService } from 'primeng/api';
 
 import { App } from './app';
 
@@ -11,9 +10,9 @@ import { App } from './app';
  *
  * Non verifica funzionalità — non ce ne sono ancora. Verifica che
  * l'applicazione **si accenda**: che il grafo di iniezione si chiuda, che il
- * router accetti la mappa delle rotte, che i componenti PrimeNG trovino le
- * proprie dipendenze. Sono esattamente gli errori che la compilazione non
- * vede e che si manifestano solo alla prima apertura del browser.
+ * router accetti la mappa delle rotte, che i componenti trovino le proprie
+ * dipendenze. Sono esattamente gli errori che la compilazione non vede e che
+ * si manifestano solo alla prima apertura del browser.
  */
 describe('App', () => {
   beforeEach(async () => {
@@ -27,7 +26,6 @@ describe('App', () => {
         provideRouter([]),
         provideHttpClient(),
         provideHttpClientTesting(),
-        MessageService,
       ],
     }).compileComponents();
   });
@@ -42,8 +40,9 @@ describe('App', () => {
     fixture.detectChanges();
 
     const dom = fixture.nativeElement as HTMLElement;
-    /* Il toast globale è nell'albero: è il canale su cui l'interceptor
-       degli errori scrive, e se manca gli errori restano invisibili. */
-    expect(dom.querySelector('p-toast')).toBeTruthy();
+    /* Le notifiche globali sono nell'albero: sono il canale su cui
+       l'interceptor degli errori scrive, e se mancano gli errori restano
+       invisibili. */
+    expect(dom.querySelector('ui-notifiche')).toBeTruthy();
   });
 });

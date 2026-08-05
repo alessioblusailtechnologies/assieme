@@ -47,6 +47,7 @@
 
 .suggerimento {
   padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
   border: 1px solid var(--c-line);
   background: var(--c-surface);
   color: var(--c-text-2);
@@ -89,6 +90,7 @@
 
 .testata__azione {
   display: inline-flex;
+  border-radius: var(--radius-sm);
   align-items: center;
   padding: var(--sp-1);
   border: 0;
@@ -157,6 +159,7 @@
 
 .contesto__doc {
   display: flex;
+  border-radius: var(--radius-sm);
   align-items: flex-start;
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
@@ -228,7 +231,7 @@
 .fondo {
   flex: none;
   padding: var(--sp-3) var(--sp-6) var(--sp-4);
-  background: var(--c-page);
+  background: var(--c-surface);
 }
 
 .fondo app-composer {
@@ -239,6 +242,7 @@
    si stila da chi lo proietta. */
 .azione-esporta {
   display: inline-flex;
+  border-radius: var(--radius-sm);
   align-items: center;
   gap: var(--sp-1);
   padding: 3px 8px;
@@ -257,11 +261,6 @@
 
 /* ---------- Pannello citazione ---------- */
 
-/* Largo abbastanza da leggere una pagina A4 senza zoomare col naso. */
-:host ::ng-deep .pannello-citazione {
-  width: min(640px, 94vw);
-}
-
 .citazione-dettaglio {
   display: flex;
   flex-direction: column;
@@ -270,6 +269,7 @@
 
 .citazione-dettaglio__estratto {
   margin: 0;
+  border-radius: var(--radius-sm);
   padding: var(--sp-3) var(--sp-4);
   border-left: 2px solid var(--c-accent);
   background: var(--c-surface-tint);

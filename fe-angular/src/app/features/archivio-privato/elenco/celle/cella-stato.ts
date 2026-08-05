@@ -1,11 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-import { Tooltip } from 'primeng/tooltip';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { DocumentoPrivato } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
-import type { ICellRendererAngularComp } from 'ag-grid-angular';
-import type { ICellRendererParams } from 'ag-grid-community';
 import { NomeIcona } from '@shared/ui/icona/registro-icone';
+import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 
 /**
  * Stato di elaborazione del documento (RF-B-05).
@@ -21,27 +19,22 @@ import { NomeIcona } from '@shared/ui/icona/registro-icone';
  */
 @Component({
   selector: 'app-cella-stato',
-  imports: [Icona, Tooltip],
+  imports: [Icona, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (documento(); as doc) {
-      <span
-        class="stato"
-        [class]="'is-' + doc.stato"
-        [pTooltip]="doc.erroreElaborazione ?? ''"
-        tooltipPosition="top"
-        [tooltipDisabled]="!doc.erroreElaborazione"
-      >
-        <ui-icon [name]="icona()" [size]="14" />
-        {{ testo() }}
-      </span>
-    }
+    <span
+      class="stato"
+      [class]="'is-' + documento().stato"
+      [uiSuggerimento]="documento().erroreElaborazione ?? ''"
+    >
+      <ui-icon [name]="icona()" [size]="14" />
+      {{ testo() }}
+    </span>
   `,
   styles: `
     :host {
       display: flex;
       align-items: center;
-      height: 100%;
     }
 
     .stato {
@@ -87,11 +80,11 @@ import { NomeIcona } from '@shared/ui/icona/registro-icone';
     }
   `,
 })
-export class CellaStato implements ICellRendererAngularComp {
-  protected readonly documento = signal<DocumentoPrivato | undefined>(undefined);
+export class CellaStato {
+  readonly documento = input.required<DocumentoPrivato>();
 
   protected readonly testo = computed(() => {
-    switch (this.documento()?.stato) {
+    switch (this.documento().stato) {
       case 'in-coda':
         return 'in coda';
       case 'in-elaborazione':
@@ -104,7 +97,7 @@ export class CellaStato implements ICellRendererAngularComp {
   });
 
   protected readonly icona = computed<NomeIcona>(() => {
-    switch (this.documento()?.stato) {
+    switch (this.documento().stato) {
       case 'in-coda':
         return 'attesa';
       case 'in-elaborazione':
@@ -115,13 +108,4 @@ export class CellaStato implements ICellRendererAngularComp {
         return 'pronto';
     }
   });
-
-  agInit(params: ICellRendererParams<DocumentoPrivato>): void {
-    this.documento.set(params.data);
-  }
-
-  refresh(params: ICellRendererParams<DocumentoPrivato>): boolean {
-    this.documento.set(params.data);
-    return true;
-  }
 }

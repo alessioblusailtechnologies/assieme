@@ -27,8 +27,7 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public",
-                "ignore": ["fonts/prova-locale/**"]
+                "input": "public"
               },
               {
                 "glob": "pdf.worker.min.mjs",
@@ -41,7 +40,7 @@
                 "output": "/pdfjs/standard-fonts"
               }
             ],
-            "styles": ["node_modules/primeicons/primeicons.css", "src/styles.scss"]
+            "styles": ["src/styles.scss"]
           },
           "configurations": {
             "production": {

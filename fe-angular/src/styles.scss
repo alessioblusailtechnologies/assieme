@@ -2,21 +2,11 @@
  * Foglio di stile globale.
  *
  * L'ordine conta: i token devono esistere prima che qualcuno li usi.
- *
- * Il tema PrimeNG vero e proprio non sta qui: è definito in TypeScript
- * (`styles/theme/assieme-preset.ts`) e iniettato a runtime da
- * `providePrimeNG`. Qui restano solo le poche correzioni che i design token
- * di PrimeNG non raggiungono.
- *
- * `primeicons.css` è caricato da `angular.json`: è CSS puro e mescolarlo agli
- * `@use` di Sass complica soltanto.
+ * `_ui.scss` è il design system — le classi dei componenti `ui-*` di
+ * `shared/ui`. Nessuna libreria di componenti esterna: tutto ciò che si
+ * vede è definito qui e nei componenti.
  */
 
 @use 'styles/tokens';
-@use 'styles/fonts';
 @use 'styles/base';
-@use 'styles/primeng-overrides';
-
-/* Alternativa tipografica in valutazione, provabile dal pannello di
-   sviluppo. Vedi il commento in testa al file. */
-@use 'styles/prova-font';
+@use 'styles/ui';

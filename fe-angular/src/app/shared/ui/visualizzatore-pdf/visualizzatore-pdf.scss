@@ -35,8 +35,8 @@
 
 .barra__pulsante:hover:not(:disabled),
 .barra__pulsante:focus-visible {
-  color: var(--c-accent);
-  background: var(--c-accent-soft);
+  color: var(--c-text);
+  background: var(--c-page-alt);
 }
 
 .barra__pulsante:disabled {

@@ -1,41 +1,23 @@
-import { ChangeDetectionStrategy, Component, LOCALE_ID, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { formatDate } from '@angular/common';
-import { AgGridAngular } from 'ag-grid-angular';
-import {
-  CellStyleModule,
-  ClientSideRowModelModule,
-  ColDef,
-  ColumnAutoSizeModule,
-  GridOptions,
-  LocaleModule,
-  Module,
-  TooltipModule,
-  ValidationModule,
-} from 'ag-grid-community';
-import { Breadcrumb } from 'primeng/breadcrumb';
-import { ButtonDirective } from 'primeng/button';
-import { Checkbox } from 'primeng/checkbox';
-import { IconField } from 'primeng/iconfield';
-import { InputIcon } from 'primeng/inputicon';
-import { InputText } from 'primeng/inputtext';
-import { MenuItem } from 'primeng/api';
-import { Paginator, PaginatorState } from 'primeng/paginator';
-import { Select } from 'primeng/select';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { DatePipe } from '@angular/common';
 
 import { ArchivioPrivatoStore } from '../archivio-privato-store';
-import { CellaApri, ParametriCellaApri } from '@shared/griglia/cella-apri';
+import { Bottone } from '@shared/ui/bottone/bottone';
+import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
+import { Campo } from '@shared/ui/campo/campo';
+import { CellaApri } from '@shared/griglia/cella-apri';
 import { CellaDocumento } from './celle/cella-documento';
 import { CellaStato } from './celle/cella-stato';
 import { CellaTipologia } from '@shared/griglia/cella-tipologia';
+import { Checkbox } from '@shared/ui/checkbox/checkbox';
 import { CodaCaricamento } from '@shared/caricamento/coda-caricamento';
-import { DocumentoPrivato, StatoElaborazione, TipologiaDocumento } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
+import { Paginazione } from '@shared/ui/paginazione/paginazione';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
+import { Select } from '@shared/ui/select/select';
+import { StatoElaborazione, TipologiaDocumento } from '@core/models';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
-import { assiemeGridTheme } from '@theme/ag-grid-theme';
-import { environment } from '@env';
 
 const STATI: { valore: StatoElaborazione; etichetta: string }[] = [
   { valore: 'pronto', etichetta: 'Pronti' },
@@ -63,17 +45,18 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
 @Component({
   selector: 'app-elenco-privati',
   imports: [
-    AgGridAngular,
-    Breadcrumb,
-    ButtonDirective,
+    Bottone,
+    Briciole,
+    Campo,
+    CellaApri,
+    CellaDocumento,
+    CellaStato,
+    CellaTipologia,
     Checkbox,
     CodaCaricamento,
-    FormsModule,
-    IconField,
+    DatePipe,
     Icona,
-    InputIcon,
-    InputText,
-    Paginator,
+    Paginazione,
     Scheletro,
     Select,
     StatoVuoto,
@@ -85,26 +68,13 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
 })
 export class ElencoPrivati {
   protected readonly store = inject(ArchivioPrivatoStore);
-  private readonly locale = inject(LOCALE_ID);
 
-  protected readonly tema = assiemeGridTheme;
   protected readonly stati = STATI;
   protected readonly tipologie = TIPOLOGIE_PRIVATE;
 
-  protected readonly briciole: MenuItem[] = [
-    { label: 'Home', routerLink: '/' },
-    { label: 'Archivio privato', routerLink: '/archivio/privato' },
-  ];
-
-  protected readonly moduli: Module[] = [
-    ClientSideRowModelModule,
-    ColumnAutoSizeModule,
-    CellStyleModule,
-    LocaleModule,
-    /* Il motivo per cui un documento non è leggibile sta in un suggerimento:
-       è una frase, e una colonna non è il posto per una frase. */
-    TooltipModule,
-    ...(environment.production ? [] : [ValidationModule]),
+  protected readonly briciole: VoceBriciola[] = [
+    { etichetta: 'Home', percorso: '/' },
+    { etichetta: 'Archivio privato' },
   ];
 
   protected readonly documenti = computed(() => this.store.documenti());
@@ -123,69 +93,4 @@ export class ElencoPrivati {
       limiteFileByte: s.limiteFileByte,
     };
   });
-
-  protected readonly opzioniGriglia: GridOptions<DocumentoPrivato> = {
-    rowHeight: 52,
-    headerHeight: 40,
-    animateRows: false,
-    suppressCellFocus: true,
-    localeText: { noRowsToShow: 'Nessun documento' },
-  };
-
-  protected readonly colonne: ColDef<DocumentoPrivato>[] = [
-    {
-      colId: 'documento',
-      headerName: 'Documento',
-      cellRenderer: CellaDocumento,
-      flex: 4,
-      minWidth: 300,
-    },
-    {
-      colId: 'tipologia',
-      headerName: 'Tipologia',
-      cellRenderer: CellaTipologia,
-      width: 150,
-      minWidth: 130,
-    },
-    {
-      colId: 'stato',
-      headerName: 'Stato',
-      cellRenderer: CellaStato,
-      width: 160,
-      minWidth: 140,
-    },
-    {
-      colId: 'caricato',
-      headerName: 'Caricato il',
-      valueGetter: (p) => (p.data ? formatDate(p.data.caricatoIl, 'dd/MM/yyyy', this.locale) : ''),
-      width: 130,
-      minWidth: 120,
-      cellClass: 'cella-numerica',
-    },
-    {
-      colId: 'azione',
-      headerName: '',
-      cellRenderer: CellaApri,
-      cellRendererParams: { base: '/archivio/privato' } satisfies ParametriCellaApri,
-      width: 110,
-      minWidth: 110,
-      maxWidth: 110,
-      resizable: false,
-      pinned: 'right',
-    },
-  ];
-
-  protected readonly colonnaPredefinita: ColDef = {
-    /* Come nell'archivio pubblico: la paginazione è lato server e ordinare
-       la sola pagina corrente farebbe credere di aver ordinato tutto. */
-    sortable: false,
-    resizable: true,
-    suppressMovable: true,
-  };
-
-  protected readonly chiaveRiga = (p: { data: DocumentoPrivato }) => p.data.id;
-
-  protected cambiaPagina(evento: PaginatorState): void {
-    this.store.pagina.set((evento.page ?? 0) + 1);
-  }
 }

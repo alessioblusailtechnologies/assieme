@@ -23,7 +23,7 @@
   <header class="testata">
     @if (inRinomina()) {
       <input
-        pInputText
+        uiCampo
         class="testata__rinomina"
         [value]="titoloBozza()"
         (input)="titoloBozza.set($any($event.target).value)"
@@ -56,14 +56,14 @@
     <span class="testata__spazio"></span>
 
     @if (confermaEliminazione()) {
-      <button pButton type="button" severity="danger" size="small" (click)="elimina()">
+      <button uiBottone variante="pericolo" dimensione="piccolo" type="button" (click)="elimina()">
         Elimina davvero?
       </button>
       <button
-        pButton
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
         type="button"
-        size="small"
-        [text]="true"
         (click)="confermaEliminazione.set(false)"
       >
         Annulla
@@ -90,7 +90,7 @@
             titolo="La conversazione non si è caricata"
             [descrizione]="store.erroreMessaggi()?.messaggio"
           >
-            <button pButton type="button" (click)="store.ricaricaMessaggi()">
+            <button uiBottone variante="primario" type="button" (click)="store.ricaricaMessaggi()">
               <ui-icon name="riprova" [size]="15" />
               <span>Riprova</span>
             </button>
@@ -129,7 +129,7 @@
               </app-bolla-messaggio>
             }
           </div>
-          <p-menu #menuEsporta [model]="vociEsporta()" [popup]="true" appendTo="body" />
+          <ui-menu-azioni #menuEsporta [voci]="vociEsporta()" />
         }
       </div>
 
@@ -179,12 +179,10 @@
   RF-C-05: la citazione si apre accanto alla conversazione, non al suo
   posto — si verifica la fonte senza perdere il filo del discorso.
 -->
-<p-drawer
-  [visible]="!!citazioneAperta()"
-  (visibleChange)="!$event && citazioneAperta.set(undefined)"
-  position="right"
-  styleClass="pannello-citazione"
-  [header]="citazioneAperta()?.documentoTitolo ?? ''"
+<ui-cassetto
+  [aperto]="!!citazioneAperta()"
+  (apertoChange)="!$event && citazioneAperta.set(undefined)"
+  [titolo]="citazioneAperta()?.documentoTitolo ?? ''"
 >
   @if (citazioneAperta(); as c) {
     <div class="citazione-dettaglio">
@@ -206,8 +204,7 @@
       />
 
       <a
-        pButton
-        [outlined]="true"
+        uiBottone
         [routerLink]="['/archivio', c.archivio === 'pubblico' ? 'pubblico' : 'privato', c.documentoId]"
       >
         <ui-icon name="apri-esterno" [size]="15" />
@@ -215,4 +212,4 @@
       </a>
     </div>
   }
-</p-drawer>
+</ui-cassetto>

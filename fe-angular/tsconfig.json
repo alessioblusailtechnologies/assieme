@@ -20,7 +20,6 @@
       "@shared/*": ["./src/app/shared/*"],
       "@layout/*": ["./src/app/layout/*"],
       "@features/*": ["./src/app/features/*"],
-      "@theme/*": ["./src/styles/theme/*"],
       "@env": ["./src/environments/environment"]
     }
   },
