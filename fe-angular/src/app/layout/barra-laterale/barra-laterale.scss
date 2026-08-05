@@ -175,12 +175,20 @@
  * Lo storico delle conversazioni (RF-C-01): allineato alle voci di
  * navigazione, senza rientro — è la spaziatura a dirne la gerarchia, non
  * lo spostamento. Voci più ariose delle etichette che sono.
+ *
+ * Altezza a tetto fisso e scorrimento interno: uno storico lungo non deve
+ * spingere Archivi e Impostazioni fuori dallo schermo — scorre lui, non la
+ * navigazione.
  */
 .conversazioni {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
   margin: var(--sp-2) 0 var(--sp-3);
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .conversazioni__voce {

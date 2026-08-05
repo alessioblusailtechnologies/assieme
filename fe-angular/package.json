@@ -12,6 +12,7 @@
     "dev": "concurrently -n mockoon,api,ng -c blue,magenta,green \"npm:mock\" \"npm:mock:api\" \"npm:start\"",
     "demo:serve": "node ../tools/serve-demo.mjs",
     "demo": "ng build && concurrently -n mockoon,api,demo -c blue,magenta,cyan \"npm:mock\" \"npm:mock:api\" \"npm:demo:serve\"",
+    "demo:tunnel": "node ../tools/tunnel.mjs",
     "lint": "ng lint"
   },
   "private": true,

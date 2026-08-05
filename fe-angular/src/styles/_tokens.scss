@@ -72,11 +72,11 @@
   --c-text-oninverse-hatch: #7d7970;
 
   /* ---------- Azione primaria ----------
-   * Una per schermata, scura e piena — il gesto principale si riconosce
-   * prima di leggerlo. È l'inchiostro, non un colore di marca.
+   * Una per schermata, piena, nel blu del marchio — lo stesso del quadrato
+   * del logo. Il gesto principale si riconosce prima di leggerlo.
    */
-  --c-azione: var(--c-ink);
-  --c-azione-hover: var(--n-800);
+  --c-azione: var(--c-accent);
+  --c-azione-hover: var(--c-accent-hover);
   --c-azione-testo: #ffffff;
 
   /* ---------- Accento ----------
