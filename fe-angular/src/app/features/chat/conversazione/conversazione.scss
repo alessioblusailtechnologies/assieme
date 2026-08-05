@@ -19,19 +19,24 @@
 .benvenuto__centro {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-4);
-  width: min(680px, 100%);
+  gap: var(--sp-6);
+  width: min(880px, 100%);
 }
 
 .benvenuto__titolo {
-  font-size: var(--t-page-title);
+  font-size: 2.25rem; /* più grande del titolo di schermata: è l'invito, non un'etichetta */
   letter-spacing: var(--ls-tight);
 }
 
 .benvenuto__spiega {
-  font-size: var(--t-sm);
+  font-size: var(--t-lead);
   color: var(--c-text-3);
-  max-width: 56ch;
+  max-width: 64ch;
+}
+
+/* Il campo parte già alto: invita a scrivere una domanda vera, non una riga. */
+.benvenuto app-composer ::ng-deep .campo__testo {
+  min-height: 84px;
 }
 
 .benvenuto__suggerimenti {
@@ -112,43 +117,70 @@
   flex: 1;
 }
 
+/* ---------- Corpo: conversazione a sinistra, contesto a destra ---------- */
+
+.corpo {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.principale {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
 /* ---------- Contesto (RF-C-03) ---------- */
 
 .contesto {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-6);
-  border-bottom: 1px solid var(--c-line-soft);
-  background: var(--c-surface-soft);
   flex: none;
+  width: 300px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sp-4);
+  border-left: 1px solid var(--c-line-soft);
+  background: var(--c-surface-soft);
 }
 
 .contesto__etichetta {
-  margin-right: var(--sp-1);
+  margin-bottom: var(--sp-3);
+}
+
+.contesto__elenco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
 }
 
 .contesto__doc {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  max-width: 38ch;
-  padding: 2px 4px 2px 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
   border: 1px solid var(--c-line);
   background: var(--c-surface);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   color: var(--c-text-2);
 }
 
+.contesto__doc ui-icon {
+  flex: none;
+  margin-top: 2px;
+  color: var(--c-text-3);
+}
+
 .contesto__titolo {
+  flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  overflow-wrap: break-word;
 }
 
 .contesto__togli {
+  flex: none;
   display: inline-flex;
   align-items: center;
   padding: 2px;
@@ -163,12 +195,15 @@
 }
 
 .contesto__nessuno {
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
+  line-height: 1.5;
   color: var(--c-text-mute);
 }
 
 /* ---------- Filo ---------- */
 
+/* A tutta larghezza: la colonna del contesto sta accanto, non sopra, e il
+   filo si prende tutto lo spazio che resta. */
 .filo {
   flex: 1;
   min-height: 0;
@@ -180,16 +215,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
-  max-width: var(--reading-max);
-  margin-inline: auto;
 }
 
 .filo__messaggi {
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
-  max-width: calc(var(--reading-max) + var(--sp-12));
-  margin-inline: auto;
 }
 
 /* ---------- Composer ---------- */
@@ -202,8 +233,6 @@
 
 .fondo app-composer {
   display: block;
-  max-width: calc(var(--reading-max) + var(--sp-12));
-  margin-inline: auto;
 }
 
 /* Stesso disegno del pulsante «Copia» della bolla: il contenuto proiettato
@@ -255,8 +284,33 @@
 }
 
 @media (max-width: 900px) {
-  .testata,
+  /* Lo schermo stretto non ha spazio per due colonne: il contesto torna a
+     fascia compatta sopra il filo, coi documenti uno accanto all'altro. */
+  .corpo {
+    flex-direction: column;
+  }
+
   .contesto {
+    width: auto;
+    order: -1;
+    flex: none;
+    max-height: 30vh;
+    border-left: 0;
+    border-bottom: 1px solid var(--c-line-soft);
+    padding: var(--sp-2) var(--sp-4);
+  }
+
+  .contesto__elenco {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .contesto__doc {
+    max-width: 34ch;
+    font-size: var(--t-xs);
+  }
+
+  .testata {
     padding-inline: var(--sp-4);
   }
 

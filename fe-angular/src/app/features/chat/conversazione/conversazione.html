@@ -81,90 +81,97 @@
     }
   </header>
 
-  <!--
-    RF-C-03: il contesto documentale è della conversazione, non del singolo
-    messaggio. Sta sotto la testata perché l'utente deve sempre sapere su
-    quali documenti l'assistente sta ragionando — e poterli togliere.
-  -->
-  <div class="contesto" [class.is-vuoto]="!contesto().length">
-    <span class="mono contesto__etichetta">Contesto</span>
-    @if (contesto().length) {
-      @for (doc of contesto(); track doc.id) {
-        <span class="contesto__doc">
-          <ui-icon
-            [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
-            [size]="12"
-          />
-          <span class="contesto__titolo">{{ doc.titolo }}</span>
-          <button
-            type="button"
-            class="contesto__togli"
-            (click)="store.rimuoviDalContesto(doc.id)"
-            [attr.aria-label]="'Togli dal contesto ' + doc.titolo"
+  <div class="corpo">
+    <div class="principale">
+      <div class="filo" #filo (scroll)="suScorrimento()">
+        @if (store.erroreMessaggi()) {
+          <ui-stato-vuoto
+            icona="errore"
+            titolo="La conversazione non si è caricata"
+            [descrizione]="store.erroreMessaggi()?.messaggio"
           >
-            <ui-icon name="chiudi" [size]="11" />
-          </button>
-        </span>
-      }
-    } @else {
-      <span class="contesto__nessuno">
-        nessun documento — referenzia con «@» per risposte fondate e citabili
-      </span>
-    }
-  </div>
-
-  <div class="filo" #filo (scroll)="suScorrimento()">
-    @if (store.erroreMessaggi()) {
-      <ui-stato-vuoto
-        icona="errore"
-        titolo="La conversazione non si è caricata"
-        [descrizione]="store.erroreMessaggi()?.messaggio"
-      >
-        <button pButton type="button" (click)="store.ricaricaMessaggi()">
-          <ui-icon name="riprova" [size]="15" />
-          <span>Riprova</span>
-        </button>
-      </ui-stato-vuoto>
-    } @else if (store.messaggiInCaricamento() && !store.messaggi().length) {
-      <div class="filo__scheletri">
-        <ui-scheletro [numeroRighe]="2" />
-        <ui-scheletro [numeroRighe]="5" />
-      </div>
-    } @else {
-      <div class="filo__messaggi">
-        @for (m of store.messaggi(); track m.id) {
-          <app-bolla-messaggio
-            [messaggio]="m"
-            [contesto]="contesto()"
-            (apriCitazione)="apriCitazione($event)"
-          >
-            <!--
-              RF-C-10: l'esportazione su template, accanto alla copia rapida.
-              Solo per le risposte consolidate: una risposta interrotta o
-              caduta a metà non è un documento da consegnare a un cliente.
-            -->
-            @if (m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
-              <button
-                azioni-extra
-                type="button"
-                class="azione-esporta"
-                (click)="apriEsporta($event, m.id)"
-                aria-haspopup="menu"
-                aria-label="Esporta la risposta su un template"
+            <button pButton type="button" (click)="store.ricaricaMessaggi()">
+              <ui-icon name="riprova" [size]="15" />
+              <span>Riprova</span>
+            </button>
+          </ui-stato-vuoto>
+        } @else if (store.messaggiInCaricamento() && !store.messaggi().length) {
+          <div class="filo__scheletri">
+            <ui-scheletro [numeroRighe]="2" />
+            <ui-scheletro [numeroRighe]="5" />
+          </div>
+        } @else {
+          <div class="filo__messaggi">
+            @for (m of store.messaggi(); track m.id) {
+              <app-bolla-messaggio
+                [messaggio]="m"
+                [contesto]="contesto()"
+                (apriCitazione)="apriCitazione($event)"
               >
-                <ui-icon name="esporta" [size]="13" />
-                <span>Esporta</span>
-              </button>
+                <!--
+                  RF-C-10: l'esportazione su template, accanto alla copia rapida.
+                  Solo per le risposte consolidate: una risposta interrotta o
+                  caduta a metà non è un documento da consegnare a un cliente.
+                -->
+                @if (m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
+                  <button
+                    azioni-extra
+                    type="button"
+                    class="azione-esporta"
+                    (click)="apriEsporta($event, m.id)"
+                    aria-haspopup="menu"
+                    aria-label="Esporta la risposta su un template"
+                  >
+                    <ui-icon name="esporta" [size]="13" />
+                    <span>Esporta</span>
+                  </button>
+                }
+              </app-bolla-messaggio>
             }
-          </app-bolla-messaggio>
+          </div>
+          <p-menu #menuEsporta [model]="vociEsporta()" [popup]="true" appendTo="body" />
         }
       </div>
-      <p-menu #menuEsporta [model]="vociEsporta()" [popup]="true" appendTo="body" />
-    }
-  </div>
 
-  <div class="fondo">
-    <app-composer [giaInContesto]="idContesto()" />
+      <div class="fondo">
+        <app-composer [giaInContesto]="idContesto()" />
+      </div>
+    </div>
+
+    <!--
+      RF-C-03: il contesto documentale è della conversazione, non del singolo
+      messaggio. Colonna a destra, sempre in vista: l'utente deve sapere su
+      quali documenti l'assistente sta ragionando — e poterli togliere.
+    -->
+    <aside class="contesto" aria-label="Contesto documentale della conversazione">
+      <p class="mono contesto__etichetta">Contesto</p>
+      @if (contesto().length) {
+        <ul class="contesto__elenco">
+          @for (doc of contesto(); track doc.id) {
+            <li class="contesto__doc">
+              <ui-icon
+                [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+                [size]="14"
+              />
+              <span class="contesto__titolo">{{ doc.titolo }}</span>
+              <button
+                type="button"
+                class="contesto__togli"
+                (click)="store.rimuoviDalContesto(doc.id)"
+                [attr.aria-label]="'Togli dal contesto ' + doc.titolo"
+              >
+                <ui-icon name="chiudi" [size]="12" />
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="contesto__nessuno">
+          Nessun documento. Referenzia con «@» dal campo del messaggio: le risposte diventano
+          fondate e citabili.
+        </p>
+      }
+    </aside>
   </div>
 }
 

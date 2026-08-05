@@ -56,11 +56,21 @@
 
 /* ---------- Risposta ---------- */
 
+/*
+ * Domanda e risposta stanno su corsie distinte e non si intersecano mai: la
+ * domanda è un blocco rientrato a destra, la risposta un blocco delimitato a
+ * sinistra che non supera l'85% della colonna. La superficie con bordo fa il
+ * resto: si vede dove finisce l'una e dove comincia l'altra.
+ */
 .assistente {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  max-width: var(--reading-max);
+  max-width: 85%;
+  margin-right: auto;
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line-soft);
 }
 
 .testo {
