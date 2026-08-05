@@ -3,8 +3,8 @@
 | Campo | Valore |
 |---|---|
 | Documento | Piano di sviluppo FE |
-| Versione | 0.3 — la knowledge base confluisce nelle Istruzioni |
-| Data | 04/08/2026 |
+| Versione | 0.4 — design system proprio, via PrimeNG e AG Grid |
+| Data | 05/08/2026 |
 | Riferimento | `ASSIEME-analisi-requisiti.md` v0.9 |
 | Progetto | `fe-angular/` — Angular 22.1.x |
 
@@ -33,13 +33,13 @@ Non è un prototipo usa-e-getta: è il front-end definitivo, che parla HTTP vero
 | Angular | 22.1.x | standalone, niente NgModule |
 | TypeScript | 6.0.x | |
 | Change detection | **zoneless** | default in v22, `zone.js` non è installato → **la reattività passa obbligatoriamente dai signal** |
-| PrimeNG | **22.0.0** | allineato ad Angular 22; richiede `@angular/cdk` ^22 |
-| `@primeuix/themes` | 3.0.0 | motore di temi a design token |
-| AG Grid | **36.0.2** (`ag-grid-angular` + `ag-grid-community`) | supporta Angular ≥ 20 |
-| Hugeicons | `@hugeicons/angular` 1.0.10 + `@hugeicons/core-free-icons` 4.2.3 | peer range `>=17.1.0 <23.0.0` → **Angular 22 coperto** |
+| Componenti UI | **design system proprio** | `shared/ui` + `styles/_ui.scss`; nessuna libreria di componenti (v0.4 — prima PrimeNG, poi rimosso) |
+| Tipografia | TWK Ghost + Geist | self-ospitati; Ghost (licenza Weltkern) è la voce dell'interfaccia, Geist (OFL, variabile) la voce di lettura |
+| pdf.js | `pdfjs-dist` 6.x | visualizzatore con apertura sul passaggio citato (RF-C-05), caricato pigramente |
+| Hugeicons | `@hugeicons/angular` 1.0.10 + `@hugeicons/core-free-icons` 4.2.3 | unico set di icone dell'applicazione |
 | Mockoon CLI | 9.8.0 | server mock |
 | Test | Vitest 4 | nuovo default Angular 22 |
-| Node | 24.19.0 LTS | aggiornato oggi |
+| Node | 24.19.0 LTS | |
 
 Due API di Angular 22 verificate nei tipi installati, entrambe **API pubblica stabile** (`@publicApi 22.0`):
 
@@ -54,12 +54,18 @@ Da aggiungere: `angular-eslint`, `ng generate environments`, `concurrently` (per
 
 > **Superato (08/2026):** su indicazione del committente PrimeNG è stato
 > rimosso del tutto. L'interfaccia è il **design system proprio di ASSIEME**,
-> ispirato a quello di Harvey (harvey.ai): scala di neutri caldi con token
-> semantici nominati per intento (`styles/_tokens.scss`), classi dei
-> componenti in `styles/_ui.scss`, componenti `ui-*` in `shared/ui` (bottone,
-> campo, select, checkbox, briciole, paginazione, tabella, suggerimento,
-> cassetto, menù, notifiche). Font di sistema, nessuna dipendenza di
-> componenti, nessuna licenza. Questa sezione resta come storia.
+> ispirato a quello di Harvey (harvey.ai): scala di neutri caldi quasi
+> bianchi con token semantici nominati per intento (`styles/_tokens.scss`),
+> classi dei componenti in `styles/_ui.scss`, componenti `ui-*` in
+> `shared/ui` (bottone, campo, select, checkbox, briciole, paginazione,
+> tabella, tag, suggerimento, cassetto, menù, notifiche). Barra laterale
+> chiara, angoli 8px, azione primaria nel blu del marchio (#2f4b7c), blu
+> come segnale e mai come fondo decorativo. Tipografia a due voci,
+> self-ospitata: **TWK Ghost** (interfaccia, titoli, etichette — il
+> carattere del riferimento Harvey, licenza Weltkern: i sorgenti stanno
+> fuori dal repository) e **Geist variabile** (lettura lunga: chat e celle
+> dati, licenza OFL). Nessuna dipendenza di componenti, nessuna licenza di
+> librerie UI. Questa sezione resta come storia.
 
 PrimeNG 22 usa il **modo stilizzato a design token** su tre livelli — primitivi (palette), semantici (`primary.color`), di componente (`inputtext.background`). È esattamente la struttura che serve per portarci sopra i token di ASSIEME: si sovrascrivono i token, non si combatte il CSS.
 
@@ -199,19 +205,17 @@ Le incapsuliamo in un componente nostro, così che dimensioni e colori restino c
 <ui-icon name="fileAttachment" size="18" />
 ```
 
-### La regola di convivenza fra tre set di icone
+### Un solo set
 
-PrimeNG porta PrimeIcons per i propri elementi interni (freccia della tendina, calendario, chiusura). AG Grid ha il proprio set. Sostituirli tutti è un lavoro lungo e poco visibile. La regola:
+Con l'uscita di PrimeNG e AG Grid (v0.4) è decaduta anche la vecchia regola
+di convivenza fra tre set di icone: **Hugeicons è l'unico set
+dell'applicazione**, sempre attraverso `ui-icon` e il registro dei nomi di
+dominio. I componenti del design system che hanno bisogno di un segno lo
+prendono da lì o lo disegnano in CSS (la spunta della checkbox è un
+`clip-path`, non un'icona caricata).
 
-| Dove | Set | Perché |
-|---|---|---|
-| Navigazione, azioni, stati vuoti, barra laterale, pulsanti | **Hugeicons** | è tutto ciò che l'utente riconosce come "l'interfaccia di ASSIEME" |
-| Elementi interni ai componenti PrimeNG | **PrimeIcons**, salvo eccezioni | dove stona si sostituisce con il template icona del singolo componente |
-| Griglia AG Grid | **Hugeicons via `iconOverrides`** | poche icone, la Theming API le sostituisce in blocco |
-
-Il costo è una piccola incoerenza in punti secondari; il beneficio è non spendere giorni a inseguire ogni chevron. Se in revisione grafica dà fastidio, si sostituisce mirando ai casi che si vedono davvero.
-
-**Da verificare in Fase 0:** che il set **free** copra le icone che ci servono (documento, cartella, filtro, agente, pianificazione, memoria, MCP). Hugeicons ha anche un catalogo Pro a licenza: meglio scoprire subito se ci serve.
+Il set free ha coperto finora tutto il necessario; se un'icona mancasse, la
+scelta fra catalogo Pro e SVG proprio si fa caso per caso.
 
 ---
 
@@ -264,6 +268,10 @@ Tre strade:
 | C | Simulare a blocchi lato client | Da evitare: la parte più rischiosa dell'applicazione resterebbe non esercitata fino all'arrivo del backend. |
 
 **Decisione che serve da voi: il backend userà SSE o WebSocket per lo streaming della chat?** Se SSE — l'ipotesi più probabile — la strada A è quasi obbligata, e costa mezza giornata.
+
+> **Risolto in Fase 3:** strada A. Lo streaming vive in `mocks/chat.mjs`
+> come risposta SSE del `POST /api/conversazioni/:id/messaggi`; il contratto
+> è `EventoStream` in `core/models/conversazione.ts`.
 
 **2. Mockoon non fa la vera elaborazione asincrona.** RF-B-05 chiede che un documento caricato transiti fra *in coda → pronto → errore*. Si simula con regole di risposta a rotazione o con un contatore in data bucket: il polling successivo restituisce lo stato avanzato. Funziona, ma va progettato invece che dato per scontato.
 
@@ -325,35 +333,49 @@ Due scelte trasversali da fare subito, perché toccano ogni schermata:
 assieme/
 ├── fe-angular/
 │   ├── proxy.conf.json
+│   ├── public/fonts/        # TWK Ghost + Geist, self-ospitati
 │   └── src/
 │       ├── app/
 │       │   ├── core/
 │       │   │   ├── api/          # un servizio per dominio — il contratto verso il BE
 │       │   │   ├── models/       # interfacce = specifica per il BE
 │       │   │   ├── auth/         # sessione e ruolo (finti in questa fase)
-│       │   │   └── interceptors/ # errori, correlation id, autenticazione
+│       │   │   ├── chat/         # storico conversazioni (condiviso con la barra laterale)
+│       │   │   ├── notifiche/    # store delle notifiche a schermo
+│       │   │   └── interceptors/ # errori, pannello di sviluppo
 │       │   ├── shared/
-│       │   │   ├── ui/           # ui-icon, chip-citazione, badge-stato,
-│       │   │   │                 # selettore-documenti, stato-vuoto, skeleton
-│       │   │   ├── pipes/
-│       │   │   └── directives/
+│       │   │   ├── ui/           # il design system: bottone, campo, select,
+│       │   │   │                 # checkbox, briciole, paginazione, tag, badge,
+│       │   │   │                 # suggerimento, cassetto, menu-azioni, notifiche,
+│       │   │   │                 # icona, chip-citazione, selettore-documenti,
+│       │   │   │                 # visualizzatore-pdf, stato-vuoto, scheletro
+│       │   │   ├── caricamento/  # zona e coda di caricamento
+│       │   │   ├── griglia/      # celle condivise delle tabelle
+│       │   │   └── testi/        # etichette, misure, resa markdown minimo
 │       │   ├── layout/           # shell, barra laterale, barra superiore
 │       │   └── features/         # una cartella per modulo, in lazy loading
 │       │       ├── chat/
 │       │       ├── archivio-pubblico/
 │       │       ├── archivio-privato/
-│       │       ├── tabelle/       # unico punto che importa AG Grid
+│       │       ├── tabelle/       # Fase 4, su .ui-tabella
 │       │       ├── agenti/
 │       │       └── impostazioni/
 │       └── styles/
-│           ├── theme/assieme-preset.ts   # preset PrimeNG
-│           ├── theme/ag-grid-theme.ts    # tema AG Grid
-│           ├── _tokens.scss              # token dal sito + estensioni applicative
+│           ├── _tokens.scss     # primitivi (neutri caldi) + semantici per intento
+│           ├── _ui.scss         # le classi del design system
+│           ├── _fonts.scss      # @font-face di Ghost e Geist
 │           └── styles.scss
-└── mocks/
-    ├── assieme.json         # ambiente Mockoon (versionato)
-    ├── data/*.json          # fixture
-    └── sse-stub.mjs         # stub streaming chat (se strada A)
+├── mocks/
+│   ├── assieme.json         # ambiente Mockoon (versionato)
+│   ├── data/*.json          # fixture
+│   ├── api-stub.mjs         # endpoint con logica (ricerca, paginazione)
+│   ├── archivio-privato.mjs # macchina a stati dell'elaborazione
+│   ├── chat.mjs             # conversazioni, streaming SSE, esportazione
+│   ├── pdf.mjs              # PDF generati per visualizzatore ed export
+│   └── ufficio.mjs          # DOCX/XLSX minimi per l'esportazione
+└── tools/
+    ├── serve-demo.mjs       # demo self-contained su 8080
+    └── tunnel.mjs           # quick tunnel Cloudflare per la demo
 ```
 
 `mocks/` sta **fuori** da `fe-angular/`: non è codice front-end, è il contratto condiviso col backend. Lì lo troverà chi lo cerca.
