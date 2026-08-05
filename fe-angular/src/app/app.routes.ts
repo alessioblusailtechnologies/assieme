@@ -56,15 +56,12 @@ export const routes: Routes = [
           ),
       },
       {
+        /* Fase 2 — costruita. */
         path: 'archivio/privato',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Archivio privato',
-          fase: 2,
-          descrizione:
-            "Documenti dell'agenzia: caricamento singolo e multiplo, coda di elaborazione con stato visibile, etichette, classificazione assistita correggibile. Isolato da ogni altro tenant. Da qui un documento può essere promosso a documento di riferimento nelle Istruzioni.",
-          requisiti: ['RF-B-01 … RF-B-05', 'RF-B-07', 'RF-B-09'],
-        },
+        loadChildren: () =>
+          import('@features/archivio-privato/archivio-privato.routes').then(
+            (m) => m.ARCHIVIO_PRIVATO_ROUTES,
+          ),
       },
       {
         path: 'agenti',

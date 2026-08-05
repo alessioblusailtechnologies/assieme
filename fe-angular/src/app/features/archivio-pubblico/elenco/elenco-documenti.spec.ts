@@ -160,7 +160,7 @@ describe('ElencoDocumenti', () => {
 
   it('offre su ogni riga il collegamento per aprire il documento', async () => {
     const dom = (await monta()).nativeElement as HTMLElement;
-    const azioni = dom.querySelectorAll('app-cella-azione a');
+    const azioni = dom.querySelectorAll('app-cella-apri a');
 
     expect(azioni.length).toBe(2);
     /* Un collegamento e non un pulsante: in un archivio si confrontano

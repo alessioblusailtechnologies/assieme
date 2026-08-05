@@ -22,9 +22,9 @@ import { Paginator, PaginatorState } from 'primeng/paginator';
 import { Select } from 'primeng/select';
 
 import { ArchivioPubblicoStore } from '../archivio-pubblico-store';
-import { CellaAzione } from './celle/cella-azione';
+import { CellaApri, ParametriCellaApri } from '@shared/griglia/cella-apri';
 import { CellaEdizione } from './celle/cella-edizione';
-import { CellaTipologia } from './celle/cella-tipologia';
+import { CellaTipologia } from '@shared/griglia/cella-tipologia';
 import { DocumentoPubblico } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -170,7 +170,8 @@ export class ElencoDocumenti {
     {
       colId: 'azione',
       headerName: '',
-      cellRenderer: CellaAzione,
+      cellRenderer: CellaApri,
+      cellRendererParams: { base: '/archivio/pubblico' } satisfies ParametriCellaApri,
       width: 110,
       minWidth: 110,
       maxWidth: 110,

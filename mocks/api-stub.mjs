@@ -38,6 +38,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { gestisci as gestisciArchivioPrivato } from './archivio-privato.mjs';
+
 const PORTA = 3001;
 const QUI = dirname(fileURLToPath(import.meta.url));
 
@@ -150,6 +152,15 @@ function corrisponde(documento, termine) {
 // ---------------------------------------------------------------------------
 
 const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Raccoglie il corpo della richiesta. Serve al caricamento dei documenti. */
+const leggiCorpo = (req) =>
+  new Promise((risolvi, rifiuta) => {
+    const pezzi = [];
+    req.on('data', (p) => pezzi.push(p));
+    req.on('end', () => risolvi(Buffer.concat(pezzi)));
+    req.on('error', rifiuta);
+  });
 
 function inviaJson(res, stato, corpo, headerExtra = {}) {
   const testo = JSON.stringify(corpo);
@@ -394,6 +405,13 @@ const server = createServer(async (req, res) => {
 
   if (await simulazione(req, res)) return;
 
+  /* Archivio Privato: elenco, caricamento, modifica, eliminazione, spazio ed
+     etichette. Sta in un modulo a sé perché è la prima parte del mock con una
+     macchina a stati e un ciclo di vita. */
+  if (await gestisciArchivioPrivato(req, res, url, { inviaJson, leggiCorpo, corrispondeTesto })) {
+    return;
+  }
+
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
@@ -448,5 +466,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
-  console.log('[api-stub] gestisce: /api/documenti, /api/stream');
+  console.log(
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/stream',
+  );
 });

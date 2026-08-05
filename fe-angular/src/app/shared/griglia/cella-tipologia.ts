@@ -3,19 +3,24 @@ import { Tag } from 'primeng/tag';
 import type { ICellRendererAngularComp } from 'ag-grid-angular';
 import type { ICellRendererParams } from 'ag-grid-community';
 
-import { DocumentoPubblico } from '@core/models';
+import { TipologiaDocumento } from '@core/models';
 import { etichettaTipologiaBreve } from '@shared/testi/etichette';
+
+/** Tutto ciò che serve a questa cella: vale per i documenti di ogni archivio. */
+interface ConTipologia {
+  tipologia: TipologiaDocumento;
+}
 
 /**
  * Tipologia del documento.
  *
- * È la colonna che distingue le righe dello stesso prodotto: senza, DIP,
- * DIP Aggiuntivo, Condizioni e Glossario di "Active Veicoli AUTOPIÙ"
- * sarebbero quattro righe identiche. Per questo sta subito dopo il prodotto.
- *
  * In forma breve — "CdA" invece di "Condizioni di Assicurazione" — perché in
  * una colonna il nome per esteso manderebbe a capo ogni riga. Chi lavora nel
  * ramo riconosce le sigle; il nome completo sta nella scheda.
+ *
+ * Sta in `shared/` perché serve identica ai due archivi, e tipizzata sul
+ * minimo indispensabile invece che su `DocumentoPubblico`: una cella che
+ * mostra la tipologia non ha motivo di sapere in quale archivio si trova.
  */
 @Component({
   selector: 'app-cella-tipologia',
@@ -42,16 +47,16 @@ import { etichettaTipologiaBreve } from '@shared/testi/etichette';
 export class CellaTipologia implements ICellRendererAngularComp {
   protected readonly etichetta = signal<string | undefined>(undefined);
 
-  agInit(params: ICellRendererParams<DocumentoPubblico>): void {
+  agInit(params: ICellRendererParams<ConTipologia>): void {
     this.aggiorna(params);
   }
 
-  refresh(params: ICellRendererParams<DocumentoPubblico>): boolean {
+  refresh(params: ICellRendererParams<ConTipologia>): boolean {
     this.aggiorna(params);
     return true;
   }
 
-  private aggiorna(params: ICellRendererParams<DocumentoPubblico>): void {
+  private aggiorna(params: ICellRendererParams<ConTipologia>): void {
     this.etichetta.set(params.data ? etichettaTipologiaBreve(params.data.tipologia) : undefined);
   }
 }

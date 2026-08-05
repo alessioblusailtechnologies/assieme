@@ -39,6 +39,8 @@ const DIST = resolve(QUI, '..', 'fe-angular', 'dist', 'fe-angular', 'browser');
 const INSTRADAMENTO = [
   { prefisso: '/api/stream', porta: 3001 },
   { prefisso: '/api/documenti', porta: 3001 },
+  { prefisso: '/api/etichette', porta: 3001 },
+  { prefisso: '/api/spazio', porta: 3001 },
   { prefisso: '/api', porta: 3000 },
 ];
 

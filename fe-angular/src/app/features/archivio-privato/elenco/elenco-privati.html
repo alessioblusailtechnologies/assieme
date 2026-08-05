@@ -1,0 +1,166 @@
+<header class="testata">
+  <h1 class="visually-hidden">Archivio privato</h1>
+
+  <p-breadcrumb [model]="briciole" />
+
+  <span class="testata__stacco" aria-hidden="true"></span>
+
+  <p class="testata__spiega">
+    I documenti della tua agenzia. Nessun altro tenant può vederli.
+  </p>
+
+  @if (spazio(); as s) {
+    <!--
+      RF-B-08: lo spazio non è lì per essere guardato ogni giorno, ma perché
+      il giorno in cui finisce l'utente lo abbia già visto avvicinarsi.
+    -->
+    <span class="spazio" [class.is-esaurimento]="s.inEsaurimento">
+      <span class="spazio__barra" aria-hidden="true">
+        <span class="spazio__pieno" [style.width.%]="s.percentuale"></span>
+      </span>
+      <span class="mono">{{ s.testo }}</span>
+    </span>
+  }
+
+  <span class="testata__conteggio mono" role="status" aria-live="polite">
+    @if (store.inCaricamento() && !documenti().length) {
+      ricerca in corso…
+    } @else if (!store.errore()) {
+      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+    }
+  </span>
+</header>
+
+<ui-zona-caricamento
+  [limiteFileByte]="spazio()?.limiteFileByte"
+  (scelti)="store.carica($event)"
+/>
+
+@if (store.coda().length) {
+  <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
+}
+
+<section class="filtri" aria-label="Filtri dell'archivio">
+  <p-iconfield class="filtri__ricerca">
+    <p-inputicon>
+      <ui-icon name="cerca" [size]="16" />
+    </p-inputicon>
+    <input
+      pInputText
+      type="search"
+      [(ngModel)]="store.ricerca"
+      placeholder="Cerca per titolo, cliente, etichetta…"
+      aria-label="Cerca nell'archivio privato"
+    />
+  </p-iconfield>
+
+  <p-select
+    [(ngModel)]="store.tipologia"
+    [options]="tipologie"
+    optionLabel="etichetta"
+    optionValue="valore"
+    placeholder="Tutte le tipologie"
+    [showClear]="true"
+    ariaLabel="Filtra per tipologia"
+    styleClass="filtri__campo"
+  />
+
+  <p-select
+    [(ngModel)]="store.stato"
+    [options]="stati"
+    optionLabel="etichetta"
+    optionValue="valore"
+    placeholder="Tutti gli stati"
+    [showClear]="true"
+    ariaLabel="Filtra per stato di elaborazione"
+    styleClass="filtri__campo"
+  />
+
+  <p-select
+    [(ngModel)]="store.etichetta"
+    [options]="store.etichette()"
+    optionLabel="nome"
+    optionValue="nome"
+    placeholder="Tutte le etichette"
+    [showClear]="true"
+    ariaLabel="Filtra per etichetta"
+    styleClass="filtri__campo"
+  />
+
+  <div class="filtri__interruttore">
+    <p-checkbox [(ngModel)]="store.soloRiferimenti" [binary]="true" inputId="solo-riferimenti" />
+    <label for="solo-riferimenti">Solo documenti di riferimento</label>
+  </div>
+
+  @if (store.filtriAttivi()) {
+    <button
+      pButton
+      type="button"
+      severity="secondary"
+      size="small"
+      [text]="true"
+      (click)="store.azzeraFiltri()"
+    >
+      <ui-icon name="chiudi" [size]="14" />
+      <span>Azzera</span>
+    </button>
+  }
+</section>
+
+@if (store.errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare l'archivio"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button pButton type="button" (click)="store.riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (store.inCaricamento() && !documenti().length) {
+  <div class="scheletri">
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+      <ui-scheletro [numeroRighe]="1" />
+    }
+  </div>
+} @else if (!documenti().length) {
+  <ui-stato-vuoto
+    icona="archivio-privato"
+    [titolo]="store.filtriAttivi() ? 'Nessun documento con questi criteri' : 'Archivio vuoto'"
+    [descrizione]="
+      store.filtriAttivi()
+        ? 'Prova ad allargare la ricerca togliendo un filtro.'
+        : 'Trascina qui i primi documenti: preventivi, polizze, appendici. Saranno referenziabili in chat appena elaborati.'
+    "
+  >
+    @if (store.filtriAttivi()) {
+      <button pButton type="button" (click)="store.azzeraFiltri()">
+        <ui-icon name="chiudi" [size]="15" />
+        <span>Azzera i filtri</span>
+      </button>
+    }
+  </ui-stato-vuoto>
+} @else {
+  <div class="risultati">
+    <ag-grid-angular
+      class="griglia"
+      [theme]="tema"
+      [modules]="moduli"
+      [gridOptions]="opzioniGriglia"
+      [columnDefs]="colonne"
+      [defaultColDef]="colonnaPredefinita"
+      [rowData]="documenti()"
+      [getRowId]="chiaveRiga"
+    />
+
+    @if (store.totale() > store.perPagina()) {
+      <p-paginator
+        [first]="(store.pagina() - 1) * store.perPagina()"
+        [rows]="store.perPagina()"
+        [totalRecords]="store.totale()"
+        (onPageChange)="cambiaPagina($event)"
+      />
+    }
+  </div>
+}

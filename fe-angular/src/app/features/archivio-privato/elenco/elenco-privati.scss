@@ -1,0 +1,192 @@
+/*
+ * Stessa impalcatura dell'archivio pubblico: colonna flessibile alta quanto
+ * la finestra, testata e filtri fissi, griglia che si prende il resto.
+ *
+ * In più ci sono zona di caricamento e coda, che stanno fra i filtri e la
+ * griglia e non si comprimono: sono il gesto principale della schermata.
+ */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  height: 100%;
+  padding: var(--sp-6);
+  min-height: 0;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__spiega {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__conteggio {
+  min-width: 11ch;
+  text-align: right;
+}
+
+/* Lo spazio precede il conteggio e lo spinge a destra. */
+.spazio {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  color: var(--c-text-3);
+}
+
+.spazio__barra {
+  display: block;
+  width: 72px;
+  height: 4px;
+  background: var(--c-page-alt);
+}
+
+.spazio__pieno {
+  display: block;
+  height: 100%;
+  background: var(--c-text-mute);
+}
+
+.spazio.is-esaurimento {
+  color: var(--c-warn);
+}
+
+.spazio.is-esaurimento .spazio__pieno {
+  background: var(--c-warn);
+}
+
+/* ---------- Caricamento ---------- */
+
+ui-zona-caricamento,
+ui-coda-caricamento {
+  flex: none;
+}
+
+/* ---------- Filtri ---------- */
+
+.filtri {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  flex: none;
+}
+
+.filtri__ricerca {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.filtri__ricerca input {
+  width: 100%;
+}
+
+:host ::ng-deep .filtri__campo {
+  min-width: 180px;
+}
+
+.filtri__interruttore {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.filtri__interruttore label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ---------- Scheletri e stati ---------- */
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+ui-stato-vuoto {
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ---------- Griglia e paginazione ---------- */
+
+.risultati {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 240px;
+}
+
+.griglia {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+:host ::ng-deep .cella-numerica {
+  justify-content: flex-end;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.risultati p-paginator {
+  flex: none;
+}
+
+:host ::ng-deep .risultati .p-paginator {
+  border-top: 0;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
+  }
+
+  .filtri {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  :host ::ng-deep .filtri__campo {
+    width: 100%;
+  }
+}

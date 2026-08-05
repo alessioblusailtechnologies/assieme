@@ -1,0 +1,240 @@
+@if (errore()) {
+  <p-breadcrumb [model]="briciole" />
+
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti ad aprire il documento"
+    descrizione="Potrebbe essere stato eliminato da un collega, oppure il problema è temporaneo."
+  >
+    <button pButton type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !documento()) {
+  <p-breadcrumb [model]="briciole" />
+  <div class="caricamento">
+    <ui-scheletro [numeroRighe]="2" />
+    <ui-scheletro [numeroRighe]="5" />
+  </div>
+} @else if (documento(); as doc) {
+  <header class="testata">
+    <p-breadcrumb [model]="briciole" />
+    <span class="testata__stacco" aria-hidden="true"></span>
+    <h1 class="serif testata__titolo">{{ doc.titolo }}</h1>
+
+    @if (doc.documentoDiRiferimento) {
+      <p-tag severity="info" value="documento di riferimento" />
+    }
+  </header>
+
+  @if (doc.stato === 'errore') {
+    <!--
+      RF-B-05/B-06: il motivo sta in evidenza, non in un suggerimento.
+      Un documento non leggibile non è referenziabile in chat, e l'utente
+      deve sapere subito che deve rifarne una versione leggibile.
+    -->
+    <div class="avviso is-errore" role="alert">
+      <ui-icon name="errore" [size]="16" />
+      <p>{{ doc.erroreElaborazione }}</p>
+    </div>
+  } @else if (doc.stato !== 'pronto') {
+    <div class="avviso is-attesa" role="status">
+      <ui-icon name="in-corso" [size]="16" />
+      <p>
+        Elaborazione in corso: il documento sarà referenziabile in chat fra qualche istante.
+      </p>
+    </div>
+  }
+
+  @if (daConfermare()) {
+    <!--
+      RF-B-03: le proposte devono vedersi come tali. Un campo precompilato
+      che sembra confermato è peggio di un campo vuoto: in ambito
+      assicurativo una compagnia sbagliata su un documento è un problema
+      vero, non un refuso.
+    -->
+    <div class="avviso is-proposta">
+      <ui-icon name="informazione" [size]="16" />
+      <p>
+        La classificazione qui sotto è <strong>proposta dal sistema</strong> a partire dal nome del
+        file. Controllala e salva per confermarla.
+      </p>
+    </div>
+  }
+
+  <div class="colonne">
+    <section class="riquadro modulo">
+      <p class="mono">Metadati</p>
+
+      <label class="campo">
+        <span class="campo__nome">Titolo</span>
+        <input pInputText type="text" [(ngModel)]="titolo" name="titolo" />
+      </label>
+
+      <!--
+        L'etichetta punta con `for` all'input che PrimeNG genera: avvolgere
+        il componente in un <label> non lo aggancerebbe, e il clic sul testo
+        non aprirebbe la tendina.
+      -->
+      <div class="campo">
+        <label class="campo__nome" for="campo-tipologia">Tipologia</label>
+        <p-select
+          [(ngModel)]="tipologia"
+          [options]="tipologie"
+          optionLabel="etichetta"
+          optionValue="valore"
+          name="tipologia"
+          inputId="campo-tipologia"
+          styleClass="campo__largo"
+        />
+      </div>
+
+      <label class="campo">
+        <span class="campo__nome">Cliente o pratica</span>
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="cliente"
+          name="cliente"
+          placeholder="es. Rossi Mario"
+        />
+      </label>
+
+      <div class="campo">
+        <span class="campo__nome">Etichette</span>
+
+        <div class="etichette">
+          @for (e of etichette(); track e) {
+            <span class="etichetta">
+              {{ e }}
+              <button
+                type="button"
+                class="etichetta__togli"
+                (click)="togliEtichetta(e)"
+                [attr.aria-label]="'Togli l\'etichetta ' + e"
+              >
+                <ui-icon name="chiudi" [size]="11" />
+              </button>
+            </span>
+          } @empty {
+            <span class="etichette__vuote">Nessuna etichetta</span>
+          }
+        </div>
+
+        <input
+          pInputText
+          type="text"
+          [(ngModel)]="nuovaEtichetta"
+          name="nuovaEtichetta"
+          placeholder="Aggiungi un'etichetta e premi Invio"
+          (keydown.enter)="aggiungiEtichetta()"
+        />
+      </div>
+
+      @if (modificato()) {
+        <div class="azioni">
+          <button pButton type="button" [disabled]="salvataggioInCorso()" (click)="salva()">
+            <span>{{ salvataggioInCorso() ? 'Salvataggio…' : 'Salva' }}</span>
+          </button>
+          <button
+            pButton
+            type="button"
+            severity="secondary"
+            [text]="true"
+            (click)="annulla()"
+          >
+            <span>Annulla</span>
+          </button>
+        </div>
+      }
+    </section>
+
+    <aside class="lato">
+      <section class="riquadro">
+        <p class="mono">Documento</p>
+        <dl class="dati">
+          <dt>Caricato il</dt>
+          <dd>{{ doc.caricatoIl | date: 'dd/MM/yyyy HH:mm' }}</dd>
+
+          <dt>Dimensione</dt>
+          <dd>{{ (doc.dimensioneByte / 1024 / 1024).toFixed(1) }} MB</dd>
+
+          @if (doc.numeroPagine) {
+            <dt>Pagine</dt>
+            <dd>{{ doc.numeroPagine }}</dd>
+          }
+
+          @if (doc.compagnia) {
+            <dt>Compagnia</dt>
+            <dd>{{ doc.compagnia.nome }}</dd>
+          }
+
+          @if (doc.ramo) {
+            <dt>Ramo</dt>
+            <dd>{{ doc.ramo.nome }}</dd>
+          }
+        </dl>
+      </section>
+
+      <section class="riquadro">
+        <p class="mono">Documento di riferimento</p>
+        <p class="riquadro__spiega">
+          I documenti di riferimento sono contesto permanente: l'AI li consulta in ogni
+          conversazione senza che tu debba richiamarli. Si gestiscono nelle Istruzioni.
+        </p>
+        <button
+          pButton
+          type="button"
+          severity="secondary"
+          [outlined]="true"
+          [disabled]="doc.stato !== 'pronto'"
+          (click)="alternaRiferimento()"
+        >
+          <ui-icon name="riferimenti" [size]="15" />
+          <span>{{ doc.documentoDiRiferimento ? 'Togli dai riferimenti' : 'Usa come riferimento' }}</span>
+        </button>
+        @if (doc.stato !== 'pronto') {
+          <p class="riquadro__nota">
+            Disponibile quando l'elaborazione è conclusa: non può diventare contesto permanente
+            finché l'AI non riesce a leggerlo.
+          </p>
+        }
+      </section>
+
+      <section class="riquadro riquadro--pericolo">
+        <p class="mono">Elimina</p>
+        @if (!confermaEliminazione()) {
+          <button
+            pButton
+            type="button"
+            severity="danger"
+            [outlined]="true"
+            (click)="confermaEliminazione.set(true)"
+          >
+            <ui-icon name="elimina" [size]="15" />
+            <span>Elimina documento</span>
+          </button>
+        } @else {
+          <p class="riquadro__spiega">
+            L'eliminazione è definitiva. Le conversazioni che lo citano perderanno la fonte.
+          </p>
+          <div class="azioni">
+            <button pButton type="button" severity="danger" (click)="elimina()">
+              <span>Elimina davvero</span>
+            </button>
+            <button
+              pButton
+              type="button"
+              severity="secondary"
+              [text]="true"
+              (click)="confermaEliminazione.set(false)"
+            >
+              <span>Annulla</span>
+            </button>
+          </div>
+        }
+      </section>
+    </aside>
+  </div>
+}

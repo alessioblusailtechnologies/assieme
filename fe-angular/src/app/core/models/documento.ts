@@ -92,16 +92,31 @@ export interface Edizione {
 export interface DocumentoPrivato extends DocumentoBase {
   archivio: 'privato';
   stato: StatoElaborazione;
-  /** Presente solo quando `stato === 'errore'`. */
+  /** Presente solo quando `stato === 'errore'`, e spiega cosa fare. */
   erroreElaborazione?: string;
   caricatoDa: Id;
   caricatoIl: IsoDateTime;
-  cartellaId?: Id;
+  dimensioneByte: number;
+  /**
+   * RF-B-04. Etichette e non cartelle: un documento sta in una cartella sola,
+   * ma il lavoro reale è per cliente **e** per ramo — due assi ortogonali che
+   * le cartelle non sanno rappresentare.
+   */
   etichette: string[];
   /** Classificazione assistita (RF-B-03), sempre correggibile dall'utente. */
   compagnia?: Compagnia;
   ramo?: Ramo;
   riferimentoCliente?: string;
+  /**
+   * RF-B-03: finché è vero la classificazione è una **proposta** del sistema,
+   * e l'interfaccia deve mostrarla come tale.
+   *
+   * In ambito assicurativo una compagnia sbagliata su un documento è un
+   * problema vero: un campo precompilato che sembra confermato è peggio di un
+   * campo vuoto. Diventa falso appena l'utente tocca i metadati — averli
+   * guardati e corretti è la conferma.
+   */
+  classificazioneDaConfermare?: boolean;
   /**
    * RF-B-09: il documento è stato promosso a **documento di riferimento**
    * (RF-D-14), quindi è contesto permanente e l'AI lo consulta senza che
@@ -118,11 +133,18 @@ export interface DocumentoPrivato extends DocumentoBase {
 
 export type Documento = DocumentoPubblico | DocumentoPrivato;
 
-/** Cartella dell'Archivio Privato (RF-B-04). */
-export interface Cartella {
-  id: Id;
+/** Etichetta con quanti documenti la portano, per il completamento. */
+export interface Etichetta {
   nome: string;
-  genitoreId?: Id;
+  documenti: number;
+}
+
+/** RF-B-08: limiti di spazio del piano commerciale. */
+export interface SpazioTenant {
+  usatoByte: number;
+  limiteByte: number;
+  /** Oltre questa misura il singolo file viene rifiutato. */
+  limiteFileByte: number;
   numeroDocumenti: number;
 }
 
@@ -136,7 +158,17 @@ export interface FiltriDocumenti {
   q?: string;
   soloCorrenti?: boolean;
   soloPreferiti?: boolean;
-  cartellaId?: Id;
+  pagina?: number;
+  perPagina?: number;
+}
+
+/** Filtri dell'Archivio Privato: stati ed etichette al posto delle edizioni. */
+export interface FiltriDocumentiPrivati {
+  q?: string;
+  tipologia?: TipologiaDocumento;
+  stato?: StatoElaborazione;
+  etichetta?: string;
+  soloRiferimenti?: boolean;
   pagina?: number;
   perPagina?: number;
 }
