@@ -57,10 +57,11 @@
 }
 
 .marchio__nome {
-  /* Serif, come il wordmark: è l'unico posto dove il marchio parla. */
+  /* Il wordmark: con un solo carattere in famiglia, parla col Medium — il
+     600 non esiste fra i tagli caricati e scatterebbe al Bold. */
   font-family: var(--f-serif);
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   letter-spacing: 0.02em;
   white-space: nowrap;

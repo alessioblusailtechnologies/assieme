@@ -185,9 +185,9 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* La colonna d'identità della riga: un filo più presente delle altre. */
+/* La colonna d'identità della riga: piena dove le altre sono attenuate.
+   Basta il colore — il Medium di Ghost a 14px leggeva come un grassetto. */
 .cella-primaria {
-  font-weight: 500;
   color: var(--c-text);
 }
 
