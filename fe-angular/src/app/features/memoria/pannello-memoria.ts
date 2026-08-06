@@ -4,7 +4,6 @@ import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 
 import { Id, ModificheRicordo, Ricordo } from '@core/models';
-import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
@@ -45,7 +44,6 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
 @Component({
   selector: 'app-pannello-memoria',
   imports: [
-    Badge,
     Bottone,
     Briciole,
     Campo,

@@ -211,6 +211,24 @@ ui-stato-vuoto {
   background: var(--c-line);
 }
 
+/* Lo stato: come sta il ricordo. Chip pieno con il segno, la stessa lingua
+   degli stati di elaborazione — un segnale fatto apposta, non una scritta.
+   Compare solo quando c'è qualcosa da dire: un ricordo attivo tace. */
+.ricordo__stato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  white-space: nowrap;
+}
+
 /* La lettura è della voce di lettura, come in chat: la memoria si legge.
    `flex: 1` spinge il piè di scheda in basso, pari con i vicini di riga. */
 .ricordo__testo {
@@ -218,6 +236,13 @@ ui-stato-vuoto {
   font-family: var(--f-lettura);
   font-size: var(--t-sm);
   line-height: 1.55;
+}
+
+/* La sospensione parla anche con la scheda: bordo tratteggiato e testo
+   smorzato — si vede da lontano che questo ricordo dorme. */
+.ricordo.is-sospeso {
+  border-style: dashed;
+  background: var(--c-page);
 }
 
 .is-sospeso .ricordo__testo {
