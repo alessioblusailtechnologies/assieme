@@ -21,9 +21,11 @@ export interface Ricordo {
   ambito: 'tenant' | 'personale';
   categoria: 'prassi' | 'cliente' | 'preferenza' | 'decisione' | 'altro';
   /**
-   * RF-G-01 (appreso automaticamente) contro RF-G-07 (registrato
-   * esplicitamente dall'utente). Va distinto: un ricordo dettato dall'utente
-   * ha un'autorevolezza che uno dedotto non ha.
+   * Come è nato: dedotto dal sistema (RF-G-01) o dettato da una persona.
+   * La registrazione esplicita non ha più un'interfaccia (RF-G-07 rimosso su
+   * indicazione del committente), ma la distinzione resta nel contratto: i
+   * ricordi dettati in passato — o da flussi futuri del backend — hanno
+   * un'autorevolezza che un'inferenza non ha, e l'interfaccia la mostra.
    */
   origine: 'appreso' | 'esplicito';
   /** Da quale conversazione o esecuzione è emerso, per poterlo verificare. */
@@ -32,12 +34,6 @@ export interface Ricordo {
   aggiornatoIl: IsoDateTime;
   /** Un ricordo si può sospendere senza cancellarlo. */
   attivo: boolean;
-}
-
-export interface NuovoRicordo {
-  testo: string;
-  ambito: Ricordo['ambito'];
-  categoria: Ricordo['categoria'];
 }
 
 /**

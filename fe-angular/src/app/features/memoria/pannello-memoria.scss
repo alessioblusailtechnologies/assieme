@@ -40,24 +40,58 @@
   text-align: right;
 }
 
-/* ---------- Guida (RF-G-04) ---------- */
+/* ---------- La memoria viva (la figura del sito) ---------- */
 
-.guida {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-line);
+/* Fondo inchiostro come la sezione del sito: il grafo è disegnato su
+   #14181d e la carta scura è parte della figura, non un tema alternativo. */
+.figura {
+  display: grid;
+  grid-template-columns: minmax(220px, 340px) 1fr;
+  gap: var(--sp-6);
+  align-items: center;
+  padding: var(--sp-5) var(--sp-6);
   border-radius: var(--radius);
-  background: var(--c-surface);
-  font-size: var(--t-sm);
-  color: var(--c-text-2);
+  background: #14181d;
 }
 
-.guida ui-icon {
-  flex: none;
-  align-self: center;
-  color: var(--c-text-3);
+.figura__grafo {
+  width: 100%;
+  max-width: 340px;
+  justify-self: center;
+}
+
+.figura__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 56ch;
+}
+
+.figura__occhiello {
+  color: #9fb4d6;
+}
+
+.figura__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+  color: #f4f5f7;
+}
+
+.figura__testo {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  color: rgb(244 245 247 / 72%);
+}
+
+.figura__guida {
+  font-size: var(--t-sm);
+  line-height: 1.6;
+  color: rgb(244 245 247 / 55%);
+}
+
+.figura__guida a {
+  color: #9fb4d6;
 }
 
 /* ---------- Stati ---------- */
@@ -182,30 +216,6 @@ ui-stato-vuoto {
   max-width: 78ch;
 }
 
-/* ---------- Cassetto nuovo ricordo ---------- */
-
-.nuovo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-
-.nuovo__spiega {
-  font-size: var(--t-sm);
-  color: var(--c-text-3);
-}
-
-.nuovo textarea {
-  width: 100%;
-  font-family: var(--f-lettura);
-}
-
-.nuovo__azioni {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
@@ -214,6 +224,15 @@ ui-stato-vuoto {
   .testata__spiega,
   .testata__stacco {
     display: none;
+  }
+
+  .figura {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+
+  .figura__grafo {
+    max-width: 280px;
   }
 
   .filtri__cerca {

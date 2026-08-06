@@ -1,5 +1,5 @@
 /**
- * Memoria: la parte del mock che ricorda (Modulo G, RF-G-01…G-07).
+ * Memoria: la parte del mock che ricorda (Modulo G, RF-G-01…G-06).
  *
  * I ricordi stanno in memoria come tutto il resto. Due cose da sapere:
  *
@@ -8,9 +8,10 @@
  *    corrente — mai quelli personali dei colleghi. La fixture tiene
  *    `_utenteId` come campo interno, che non esce mai dal contratto.
  *
- * 2. **`registraRicordo` è esportata per la chat** (RF-G-07): lo scenario
- *    «ricordati che…» di `chat.mjs` la chiama e il ricordo compare davvero
- *    nel pannello — la conferma del salvataggio non è una finzione.
+ * 2. **Non esiste una POST**: la memoria si alimenta solo imparando
+ *    (RF-G-01) — la registrazione esplicita di RF-G-07 è stata rimossa su
+ *    indicazione del committente. Il mock rappresenta l'apprendimento con le
+ *    fixture; l'utente governa: corregge, sospende, elimina.
  */
 
 import { readFileSync } from 'node:fs';
@@ -19,9 +20,6 @@ import { fileURLToPath } from 'node:url';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RICORDI = JSON.parse(readFileSync(join(QUI, 'data', 'ricordi.json'), 'utf8'));
-
-/* Il contatore parte alto per non collidere con gli id delle fixture. */
-let prossimoRicordo = 100;
 
 const utenteCorrente = (req) =>
   req?.headers['x-assieme-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
@@ -33,46 +31,6 @@ const CATEGORIE = ['prassi', 'cliente', 'preferenza', 'decisione', 'altro'];
 function risposta(ricordo) {
   const { _utenteId, ...pulito } = ricordo;
   return pulito;
-}
-
-/**
- * La categoria di un ricordo dettato: si riconosce dalle parole, come le
- * famiglie dei criteri delle tabelle. Sbagliarla non è grave — si corregge
- * dal pannello — ma indovinarla spesso rende la demo credibile.
- */
-function categoriaDaTesto(testo) {
-  const t = testo.toLowerCase();
-  if (t.includes('cliente') || t.includes('ditta') || t.includes('sig')) return 'cliente';
-  if (t.includes('preferis') || t.includes('preferenz')) return 'preferenza';
-  if (t.includes('deciso') || t.includes('decision')) return 'decisione';
-  return 'prassi';
-}
-
-/**
- * Registrazione esplicita (RF-G-07), dalla chat o dal pannello.
- * Un ricordo dettato in chat nasce nella memoria di tenant: gli esempi del
- * requisito sono prassi d'agenzia, e dal pannello si può sempre spostare.
- */
-export function registraRicordo(testo, req, ambito = 'tenant') {
-  const adesso = new Date().toISOString();
-  const ricordo = {
-    id: `ric-${prossimoRicordo++}`,
-    testo,
-    ambito,
-    categoria: categoriaDaTesto(testo),
-    origine: 'esplicito',
-    creatoIl: adesso,
-    aggiornatoIl: adesso,
-    attivo: true,
-    ...(ambito === 'personale' ? { _utenteId: utenteCorrente(req) } : {}),
-  };
-  RICORDI.push(ricordo);
-  return risposta(ricordo);
-}
-
-export function trovaRicordo(id) {
-  const ricordo = RICORDI.find((r) => r.id === id);
-  return ricordo ? risposta(ricordo) : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -97,24 +55,6 @@ export async function gestisci(req, res, url, deps) {
   if (percorso === '/api/ricordi' && req.method === 'GET') {
     const ordinati = [...visibili()].sort((a, b) => b.aggiornatoIl.localeCompare(a.aggiornatoIl));
     inviaJson(res, 200, ordinati.map(risposta));
-    return true;
-  }
-
-  // POST /api/ricordi — registrazione esplicita dal pannello (RF-G-07)
-  if (percorso === '/api/ricordi' && req.method === 'POST') {
-    const corpo = JSON.parse((await leggiCorpo(req)).toString('utf8') || '{}');
-    if (!corpo.testo?.trim()) {
-      inviaJson(res, 400, { codice: 'RICORDO_VUOTO', messaggio: 'Al ricordo manca il testo.' });
-      return true;
-    }
-    const ambito = AMBITI.includes(corpo.ambito) ? corpo.ambito : 'tenant';
-    const nuovo = registraRicordo(corpo.testo.trim(), req, ambito);
-    if (CATEGORIE.includes(corpo.categoria)) {
-      const interno = RICORDI.find((r) => r.id === nuovo.id);
-      interno.categoria = corpo.categoria;
-      nuovo.categoria = corpo.categoria;
-    }
-    inviaJson(res, 201, nuovo);
     return true;
   }
 

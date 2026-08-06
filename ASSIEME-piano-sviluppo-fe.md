@@ -511,12 +511,19 @@ Elenco come plancia (stato, pianificazione, esito dell'ultima esecuzione) con i 
 
 ### ✅ Fase 7 — Memoria e MCP — **completata** · RF-G-01…G-07, RF-F-02/F-04
 
-Pannello `/memoria` con i ricordi consultabili, correggibili in linea, sospendibili e cancellabili (RF-G-03); due livelli con filtro e spostamento fra memoria dell'agenzia e personale (RF-G-02); origine distinta — «appreso» contro «dettato» — con collegamento alla conversazione da cui il ricordo è emerso; registrazione esplicita dal pannello e dalla chat con «ricordati che…» (RF-G-07); riga di guida sulla precedenza delle istruzioni (RF-G-04) e nota di retention (RF-G-05). In chat i segnali di provenienza sono diventati collegamenti al pannello che li governa. **Accesso MCP** in Impostazioni (RF-F-02/04): credenziali con token mostrato una sola volta, revoca definitiva, stato delle connessioni attive, configurazione d'esempio per i client e l'avvertenza di RF-F-05 accanto.
+Pannello `/memoria` con i ricordi consultabili, correggibili in linea, sospendibili e cancellabili (RF-G-03); in testa il **grafo della memoria viva** — la stessa figura del sito, portata da `website/src/scripts/memory-graph.ts`: seme fisso, un fotogramma solo con `prefers-reduced-motion`, animazione sospesa fuori dal viewport; due livelli con filtro e spostamento fra memoria dell'agenzia e personale (RF-G-02); origine distinta — «appreso» contro «dettato» — con collegamento alla conversazione da cui il ricordo è emerso; precedenza delle istruzioni dichiarata nella figura (RF-G-04) e nota di retention (RF-G-05). In chat i segnali di provenienza sono diventati collegamenti al pannello che li governa. **Accesso MCP** in Impostazioni (RF-F-02/04): credenziali con token mostrato una sola volta, revoca definitiva, stato delle connessioni attive, configurazione d'esempio per i client e l'avvertenza di RF-F-05 accanto.
+
+> **RF-G-07 rimosso (08/2026):** su indicazione del committente la memoria si
+> alimenta **solo imparando** — niente registrazione esplicita, né dal
+> pannello né con «ricordati che…» in chat. L'utente governa ciò che il
+> sistema ha appreso: corregge, sospende, elimina. `origine: 'esplicito'`
+> resta nel contratto per i ricordi storici e per eventuali flussi futuri
+> del backend.
 
 **Decisioni di contratto da sapere:**
 
 - **La separazione degli ambiti la fa il server** (RF-G-02): `GET /api/ricordi` restituisce i ricordi del tenant più i personali dell'utente corrente, mai quelli dei colleghi. Nessun parametro client: è la sessione a decidere.
-- **«Ricordati che…» non è un contratto nuovo**: è uno scenario della chat che registra un ricordo vero — compare nel pannello — e la conferma del salvataggio (RF-G-07) è la risposta stessa più il segnale di provenienza `memoria` puntato al ricordo appena nato. Lo stream SSE resta a sette tipi di evento.
+- **Non esiste una `POST /api/ricordi`**: senza registrazione esplicita il contratto della memoria è lettura e governo — `GET`, `PATCH`, `DELETE`. Lo stream SSE resta a sette tipi di evento.
 - **La cancellazione è effettiva** (RF-G-05), la sospensione è la via reversibile: `attivo: false` tiene il ricordo nel pannello ma fuori dalle risposte. Spostare un ricordo da personale a tenant lo condivide; il contrario lo assegna a chi lo sposta.
 - **Il token MCP esce in chiaro una volta sola** (`CredenzialeGenerata`, RF-F-02): il server ne conserva solo la forma mascherata, come farà il backend con l'hash. La revoca è definitiva e chiude le connessioni della credenziale; tutte le rotte `/api/mcp` pretendono l'amministratore (403 vero dal mock).
 - Con la Fase 7 **il segnaposto di fase è stato rimosso**: ogni rotta dell'applicazione carica la funzionalità vera.

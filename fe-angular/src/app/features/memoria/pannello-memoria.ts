@@ -8,7 +8,7 @@ import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
-import { Cassetto } from '@shared/ui/cassetto/cassetto';
+import { GrafoMemoria } from './grafo-memoria';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
@@ -37,13 +37,15 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
  * Il pannello della memoria (RF-G-03): ciò che il sistema ha imparato,
  * consultabile, modificabile e cancellabile ricordo per ricordo. È uno dei
  * tre pilastri del DNA d'Agenzia, e sta al primo livello proprio perché una
- * personalizzazione che non si vede non genera fiducia.
+ * personalizzazione che non si vede non genera fiducia. In testa, il grafo
+ * della memoria viva — la stessa figura del sito.
  *
  * Due livelli (RF-G-02): la memoria dell'agenzia, condivisa, e quella
- * personale — il server mostra solo la propria. L'origine distingue ciò che
- * il sistema ha dedotto da ciò che è stato dettato (RF-G-01 vs RF-G-07); in
- * caso di conflitto le istruzioni scritte prevalgono comunque (RF-G-04), e
- * la riga di guida in testa lo dice.
+ * personale — il server mostra solo la propria. La memoria si alimenta
+ * **solo imparando** (RF-G-01, registrazione esplicita rimossa su
+ * indicazione del committente): qui la si governa — si corregge, si sospende,
+ * si elimina. In caso di conflitto le istruzioni scritte prevalgono comunque
+ * (RF-G-04), e la figura in testa lo dice.
  */
 @Component({
   selector: 'app-pannello-memoria',
@@ -52,8 +54,8 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
     Bottone,
     Briciole,
     Campo,
-    Cassetto,
     DatePipe,
+    GrafoMemoria,
     Icona,
     RouterLink,
     Scheletro,
@@ -128,11 +130,6 @@ export class PannelloMemoria {
     if (ambito !== ricordo.ambito) this.applica(ricordo.id, { ambito });
   }
 
-  protected cambiaCategoria(ricordo: Ricordo, valore: unknown): void {
-    const categoria = valore as Ricordo['categoria'];
-    if (categoria !== ricordo.categoria) this.applica(ricordo.id, { categoria });
-  }
-
   /** Sospendere ferma il ricordo senza perderlo: la via reversibile. */
   protected alternaAttivo(ricordo: Ricordo): void {
     this.applica(ricordo.id, { attivo: !ricordo.attivo });
@@ -155,34 +152,4 @@ export class PannelloMemoria {
     this.api.elimina(ricordo.id).subscribe({ next: () => this.risorsa.reload() });
   }
 
-  // --- Registrazione esplicita (RF-G-07) ----------------------------------
-
-  protected readonly cassettoNuovo = signal(false);
-  protected readonly bozzaTesto = signal('');
-  protected readonly bozzaAmbito = signal<Ricordo['ambito']>('tenant');
-  protected readonly bozzaCategoria = signal<Ricordo['categoria']>('prassi');
-  protected readonly inRegistrazione = signal(false);
-
-  protected apriNuovo(): void {
-    this.bozzaTesto.set('');
-    this.bozzaAmbito.set('tenant');
-    this.bozzaCategoria.set('prassi');
-    this.cassettoNuovo.set(true);
-  }
-
-  protected registra(): void {
-    const testo = this.bozzaTesto().trim();
-    if (!testo || this.inRegistrazione()) return;
-    this.inRegistrazione.set(true);
-    this.api
-      .crea({ testo, ambito: this.bozzaAmbito(), categoria: this.bozzaCategoria() })
-      .subscribe({
-        next: () => {
-          this.risorsa.reload();
-          this.inRegistrazione.set(false);
-          this.cassettoNuovo.set(false);
-        },
-        error: () => this.inRegistrazione.set(false),
-      });
-  }
 }

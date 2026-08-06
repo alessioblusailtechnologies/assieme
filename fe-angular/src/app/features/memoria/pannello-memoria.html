@@ -17,22 +17,30 @@
       {{ ricordi().length }} {{ ricordi().length === 1 ? 'ricordo' : 'ricordi' }}
     }
   </span>
-
-  <button uiBottone variante="primario" type="button" (click)="apriNuovo()">
-    <ui-icon name="aggiungi" [size]="15" />
-    <span>Registra un ricordo</span>
-  </button>
 </header>
 
-<!-- RF-G-04: la gerarchia va detta dove si governa la memoria, non scoperta. -->
-<p class="guida">
-  <ui-icon name="informazione" [size]="14" />
-  <span>
-    I ricordi integrano le regole scritte, non le sostituiscono: in caso di conflitto prevalgono
-    sempre le <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>. Un ricordo
-    sospeso resta qui ma non condiziona più le risposte.
-  </span>
-</p>
+<!--
+  La memoria viva, la stessa figura del sito: nodi che si addensano in temi.
+  Il testo accanto dice le due cose da sapere prima di toccare qualsiasi
+  ricordo: la memoria impara da sola (RF-G-01) e le istruzioni scritte
+  prevalgono sempre (RF-G-04).
+-->
+<section class="figura" aria-labelledby="figura-occhiello">
+  <app-grafo-memoria class="figura__grafo" />
+  <div class="figura__copy">
+    <p class="mono figura__occhiello" id="figura-occhiello">Memoria viva</p>
+    <h2 class="serif figura__titolo">Quello che il sistema ha imparato, sotto i tuoi occhi</h2>
+    <p class="figura__testo">
+      Ogni punto è qualcosa che è stato letto o appreso — documenti, prassi, casistica risolta —
+      e i legami sono ciò che li tiene insieme. La memoria si alimenta da sola, lavorando: qui
+      sotto la governi ricordo per ricordo — correggi, sospendi, elimini.
+    </p>
+    <p class="figura__guida">
+      I ricordi integrano le regole scritte, non le sostituiscono: in caso di conflitto
+      prevalgono sempre le <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>.
+    </p>
+  </div>
+</section>
 
 @if (errore()) {
   <ui-stato-vuoto
@@ -55,13 +63,8 @@
   <ui-stato-vuoto
     icona="memoria"
     titolo="La memoria è ancora vuota"
-    descrizione="Il sistema imparerà dalle conversazioni e dalle esecuzioni degli agenti; puoi anche dettare un ricordo qui, o scrivere «ricordati che…» in chat."
-  >
-    <button uiBottone variante="primario" type="button" (click)="apriNuovo()">
-      <ui-icon name="aggiungi" [size]="15" />
-      <span>Registra il primo ricordo</span>
-    </button>
-  </ui-stato-vuoto>
+    descrizione="Il sistema impara da solo, lavorando: dalle conversazioni e dalle esecuzioni degli agenti. I primi ricordi compariranno qui, pronti da verificare."
+  />
 } @else {
   <div class="filtri">
     <div class="filtri__ambiti" role="group" aria-label="Filtra per ambito">
@@ -228,58 +231,3 @@
     sanitari) né informazioni eccedenti la finalità. L'eliminazione è effettiva e immediata.
   </p>
 }
-
-<!-- Registrazione esplicita (RF-G-07): la stessa che in chat fa «ricordati che…». -->
-<ui-cassetto [(aperto)]="cassettoNuovo" titolo="Registra un ricordo" larghezza="min(460px, 94vw)">
-  @if (cassettoNuovo()) {
-    <div class="nuovo">
-      <p class="nuovo__spiega">
-        Scrivilo come lo diresti a un collega nuovo: «l'agenzia fa così», «questo cliente vuole
-        così». In chat puoi ottenere lo stesso con «ricordati che…».
-      </p>
-
-      <textarea
-        uiCampo
-        rows="4"
-        [value]="bozzaTesto()"
-        (input)="bozzaTesto.set($any($event.target).value)"
-        placeholder="es. La ditta Bianchi & Figli rinnova sempre a dicembre…"
-        aria-label="Testo del ricordo"
-      ></textarea>
-
-      <ui-select
-        [opzioni]="ambiti"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [valore]="bozzaAmbito()"
-        (valoreChange)="bozzaAmbito.set($any($event))"
-        ariaLabel="Ambito del ricordo"
-      />
-
-      <ui-select
-        [opzioni]="categorie"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [valore]="bozzaCategoria()"
-        (valoreChange)="bozzaCategoria.set($any($event))"
-        ariaLabel="Categoria del ricordo"
-      />
-
-      <footer class="nuovo__azioni">
-        <button
-          uiBottone
-          variante="primario"
-          type="button"
-          [disabled]="!bozzaTesto().trim() || inRegistrazione()"
-          (click)="registra()"
-        >
-          <ui-icon name="memoria" [size]="15" />
-          <span>{{ inRegistrazione() ? 'Registrazione…' : 'Registra' }}</span>
-        </button>
-        <button uiBottone variante="testo" type="button" (click)="cassettoNuovo.set(false)">
-          <span>Annulla</span>
-        </button>
-      </footer>
-    </div>
-  }
-</ui-cassetto>

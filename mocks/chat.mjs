@@ -34,7 +34,6 @@ import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdfDaTesto } from './pdf.mjs';
-import { registraRicordo } from './memoria.mjs';
 import { trovaTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -146,32 +145,6 @@ Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è qu
   };
 }
 
-/**
- * RF-G-07: «ricordati che…» registra un ricordo vero — compare nel pannello
- * Memoria — e la conferma del salvataggio è la risposta stessa, con il
- * segnale di provenienza che punta al ricordo appena nato.
- */
-const SCHEMA_RICORDATI = /^\s*(?:ricordati|ricorda)\s+(?:che\s+|di\s+)?(.+)$/is;
-
-function scenarioRegistraRicordo(testoDomanda, req) {
-  const estratto = SCHEMA_RICORDATI.exec(testoDomanda)?.[1]?.trim() ?? testoDomanda.trim();
-  const testo = estratto.charAt(0).toUpperCase() + estratto.slice(1);
-  const ricordo = registraRicordo(testo.endsWith('.') ? testo : `${testo}.`, req);
-  return {
-    testo: `Registrato: **${ricordo.testo}**
-
-D'ora in poi ne terrò conto nelle risposte e nelle esecuzioni degli agenti. Il ricordo è nella memoria dell'agenzia: dal pannello **Memoria** puoi correggerlo, spostarlo fra memoria personale e di agenzia, sospenderlo o eliminarlo.`,
-    citazioni: [],
-    provenienze: [
-      {
-        tipo: 'memoria',
-        origineId: ricordo.id,
-        etichetta: 'ricordo registrato nella memoria dell’agenzia',
-      },
-    ],
-  };
-}
-
 /** Il caso pilota dell'analisi (§5.3): Generali AUTOPIÙ contro preventivo UnipolSai. */
 function scenarioConfronto() {
   return {
@@ -204,10 +177,8 @@ In sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla pers
   };
 }
 
-function scegliScenario(testo, documentiInContesto, req) {
+function scegliScenario(testo, documentiInContesto) {
   const t = testo.toLowerCase();
-  /* Prima di tutto: dettare un ricordo non richiede documenti (RF-G-07). */
-  if (SCHEMA_RICORDATI.test(testo)) return scenarioRegistraRicordo(testo, req);
   if (!documentiInContesto.length) return scenarioSenzaDocumenti();
   if (t.includes('grandine') || t.includes('cristalli')) return scenarioNonCoperto();
   if (t.includes('franchig') || t.includes('scopert')) return scenarioFranchigie();
@@ -321,7 +292,7 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     interrotto = true;
   });
 
-  const scenario = scegliScenario(nuovoMessaggio.testo, conversazione.documentiInContesto, req);
+  const scenario = scegliScenario(nuovoMessaggio.testo, conversazione.documentiInContesto);
   const messaggioId = `msg-${prossimoMessaggio++}`;
 
   invia({ tipo: 'inizio', messaggioId, messaggioUtenteId: messaggioUtente.id });

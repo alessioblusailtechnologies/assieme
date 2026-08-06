@@ -3,16 +3,21 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env';
-import { Id, ModificheRicordo, NuovoRicordo, Ricordo } from '@core/models';
+import { Id, ModificheRicordo, Ricordo } from '@core/models';
 
 /**
- * Accesso alla memoria (RF-G-01…G-07).
+ * Accesso alla memoria (RF-G-01…G-06).
  *
  * Come gli altri servizi di `core/api`, **è il contratto** verso il backend.
  *
  * L'elenco restituisce i ricordi di tenant più quelli personali dell'utente
  * corrente — mai quelli personali dei colleghi (RF-G-02): la separazione la
  * fa il server sulla sessione, non un parametro del client.
+ *
+ * Niente creazione: su indicazione del committente la memoria si alimenta
+ * **solo imparando** (RF-G-01) — la registrazione esplicita di RF-G-07 è
+ * stata rimossa. L'utente governa ciò che il sistema ha appreso: corregge,
+ * sospende, elimina.
  */
 @Injectable({ providedIn: 'root' })
 export class MemoriaApi {
@@ -21,11 +26,6 @@ export class MemoriaApi {
 
   urlElenco(): string {
     return this.base;
-  }
-
-  /** RF-G-07 dal pannello: la registrazione esplicita nasce `origine: 'esplicito'`. */
-  crea(nuovo: NuovoRicordo): Observable<Ricordo> {
-    return this.http.post<Ricordo>(this.base, nuovo);
   }
 
   /** RF-G-03: modificabile — testo, ambito, categoria — e sospendibile. */
