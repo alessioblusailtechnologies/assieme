@@ -1,9 +1,10 @@
+/* A tutta larghezza, come gli elenchi: il blocco della memoria viva è la
+   scena d'apertura e l'elenco sotto respira su tutta la pagina. */
 :host {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
   min-height: 100%;
-  max-width: 1180px;
   padding: var(--sp-6);
   overflow-y: auto;
 }
@@ -40,46 +41,97 @@
   text-align: right;
 }
 
-/* ---------- Le due colonne: ricordi a sinistra, figura a destra ---------- */
+/* ---------- La memoria viva: la scena d'apertura ---------- */
 
-.corpo {
-  display: grid;
-  grid-template-columns: 1fr minmax(260px, 320px);
-  gap: var(--sp-4);
-  align-items: start;
+/* Carta chiara a tutta larghezza. La figura sborda oltre il bordo destro e
+   il velo la sfuma verso il testo: i puntini si vedono vivere, il testo
+   resta leggibile. Il canvas ha il fondo trasparente ed eredita la carta. */
+.vivo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 320px;
+  padding: var(--sp-7, 40px) var(--sp-6);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  overflow: hidden;
 }
+
+.vivo__grafo {
+  position: absolute;
+  top: 50%;
+  right: -6%;
+  width: min(620px, 58%);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.vivo__velo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--c-surface) 34%,
+    rgb(255 255 255 / 55%) 56%,
+    transparent 78%
+  );
+  pointer-events: none;
+}
+
+.vivo__copy {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 58ch;
+}
+
+.vivo__occhiello {
+  color: var(--c-accent);
+}
+
+.vivo__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.vivo__testo {
+  font-size: var(--t-sm);
+  line-height: 1.65;
+  color: var(--c-text-2);
+}
+
+.vivo__numeri {
+  display: flex;
+  gap: var(--sp-6);
+  margin-top: var(--sp-2);
+}
+
+.numero {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+}
+
+.numero__valore {
+  font-size: 2rem;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.numero__etichetta {
+  color: var(--c-text-3);
+}
+
+/* ---------- L'elenco, a tutta larghezza sotto la scena ---------- */
 
 .elenco {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
   min-width: 0;
-}
-
-/* La figura del sito, ma su carta chiara come il resto del pannello: il
-   canvas ha il fondo trasparente e prende questo. Sticky: la memoria viva
-   resta sott'occhio mentre si scorre l'elenco. */
-.figura {
-  position: sticky;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  padding: var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-}
-
-.figura__grafo {
-  width: 100%;
-}
-
-.figura__testo,
-.figura__guida {
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: var(--c-text-3);
 }
 
 /* ---------- Stati ---------- */
@@ -214,14 +266,29 @@ ui-stato-vuoto {
     display: none;
   }
 
-  /* Sotto i 900px la colonna sparisce: la figura è un orientamento, i
-     ricordi sono il lavoro — e sullo schermo stretto vince il lavoro. */
-  .corpo {
-    grid-template-columns: 1fr;
+  /* Sullo schermo stretto la figura arretra a fondale pieno, tenue, e i
+     numeri si stringono: la scena resta, ma vince il lavoro. */
+  .vivo {
+    min-height: 0;
+    padding: var(--sp-5) var(--sp-4);
   }
 
-  .figura {
-    display: none;
+  .vivo__grafo {
+    right: -20%;
+    width: 420px;
+    opacity: 0.35;
+  }
+
+  .vivo__velo {
+    background: linear-gradient(90deg, var(--c-surface) 15%, rgb(255 255 255 / 40%) 100%);
+  }
+
+  .vivo__numeri {
+    gap: var(--sp-4);
+  }
+
+  .numero__valore {
+    font-size: 1.5rem;
   }
 
   .filtri__cerca {

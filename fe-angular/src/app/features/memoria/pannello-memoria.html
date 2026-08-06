@@ -19,9 +19,46 @@
   </span>
 </header>
 
-<div class="corpo">
-  <!-- A sinistra: i ricordi, con i loro stati. -->
-  <div class="elenco">
+<!--
+  La memoria viva a tutta larghezza: la figura del sito sborda a destra
+  dietro un velo, il testo e i numeri stanno sopra. Dice le due cose da
+  sapere prima di toccare qualsiasi ricordo: la memoria impara da sola
+  (RF-G-01) e le istruzioni scritte prevalgono sempre (RF-G-04).
+-->
+<section class="vivo" aria-labelledby="vivo-occhiello">
+  <app-grafo-memoria class="vivo__grafo" aria-hidden="true" />
+  <div class="vivo__velo" aria-hidden="true"></div>
+
+  <div class="vivo__copy">
+    <p class="mono vivo__occhiello" id="vivo-occhiello">Memoria viva</p>
+    <h2 class="serif vivo__titolo">Quello che il sistema ha imparato, sotto i tuoi occhi</h2>
+    <p class="vivo__testo">
+      Ogni punto è qualcosa che è stato letto o appreso — documenti, prassi, casistica risolta —
+      e i legami sono ciò che li tiene insieme. La memoria si alimenta da sola, lavorando; qui
+      la governi ricordo per ricordo. In caso di conflitto prevalgono sempre le
+      <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>.
+    </p>
+
+    @if (ricordi().length) {
+      <dl class="vivo__numeri">
+        <div class="numero">
+          <dt class="numero__etichetta mono">dell'agenzia</dt>
+          <dd class="numero__valore serif">{{ quantiAgenzia() }}</dd>
+        </div>
+        <div class="numero">
+          <dt class="numero__etichetta mono">personali</dt>
+          <dd class="numero__valore serif">{{ quantiPersonali() }}</dd>
+        </div>
+        <div class="numero">
+          <dt class="numero__etichetta mono">sospesi</dt>
+          <dd class="numero__valore serif">{{ quantiSospesi() }}</dd>
+        </div>
+      </dl>
+    }
+  </div>
+</section>
+
+<div class="elenco">
     @if (errore()) {
       <ui-stato-vuoto
         icona="errore"
@@ -211,25 +248,4 @@
         sanitari) né informazioni eccedenti la finalità. L'eliminazione è effettiva e immediata.
       </p>
     }
-  </div>
-
-  <!--
-    A destra: la memoria viva, la stessa figura del sito ma su carta chiara.
-    Il testo sotto dice le due cose da sapere prima di toccare qualsiasi
-    ricordo: la memoria impara da sola (RF-G-01) e le istruzioni scritte
-    prevalgono sempre (RF-G-04).
-  -->
-  <aside class="figura" aria-labelledby="figura-occhiello">
-    <p class="mono figura__occhiello" id="figura-occhiello">Memoria viva</p>
-    <app-grafo-memoria class="figura__grafo" />
-    <p class="figura__testo">
-      Ogni punto è qualcosa che è stato letto o appreso — documenti, prassi, casistica risolta —
-      e i legami sono ciò che li tiene insieme. La memoria si alimenta da sola, lavorando; qui
-      la governi ricordo per ricordo.
-    </p>
-    <p class="figura__guida">
-      I ricordi integrano le regole scritte, non le sostituiscono: in caso di conflitto
-      prevalgono sempre le <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>.
-    </p>
-  </aside>
 </div>

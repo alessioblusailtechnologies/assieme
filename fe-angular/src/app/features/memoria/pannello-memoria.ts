@@ -37,9 +37,9 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
  * Il pannello della memoria (RF-G-03): ciò che il sistema ha imparato,
  * consultabile, modificabile e cancellabile ricordo per ricordo. È uno dei
  * tre pilastri del DNA d'Agenzia, e sta al primo livello proprio perché una
- * personalizzazione che non si vede non genera fiducia. I ricordi stanno a
- * sinistra; a destra, su carta chiara, il grafo della memoria viva — la
- * stessa figura del sito.
+ * personalizzazione che non si vede non genera fiducia. Si apre con la scena
+ * della memoria viva — il grafo del sito a tutta larghezza, su carta chiara,
+ * con i numeri dei ricordi — e sotto l'elenco, a tutta larghezza anche lui.
  *
  * Due livelli (RF-G-02): la memoria dell'agenzia, condivisa, e quella
  * personale — il server mostra solo la propria. La memoria si alimenta
@@ -94,6 +94,17 @@ export class PannelloMemoria {
 
   protected readonly filtroAmbito = signal<FiltroAmbito>('tutti');
   protected readonly ricerca = signal('');
+
+  /* I numeri del blocco in testa: la memoria raccontata in tre cifre. */
+  protected readonly quantiAgenzia = computed(
+    () => this.ricordi().filter((r) => r.ambito === 'tenant').length,
+  );
+  protected readonly quantiPersonali = computed(
+    () => this.ricordi().filter((r) => r.ambito === 'personale').length,
+  );
+  protected readonly quantiSospesi = computed(
+    () => this.ricordi().filter((r) => !r.attivo).length,
+  );
 
   protected readonly filtrati = computed(() => {
     const ambito = this.filtroAmbito();
