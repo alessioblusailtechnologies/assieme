@@ -15,6 +15,19 @@ import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 
 /**
+ * Un file allegato dal composer, nel tratto di strada fra la scelta e il
+ * contesto: mentre sale è un chip in attesa, appena il server risponde
+ * **sparisce da qui** perché è diventato un riferimento del contesto come
+ * gli altri. Resta solo se qualcosa va storto.
+ */
+export interface AllegatoInCorso {
+  chiave: number;
+  nome: string;
+  stato: 'caricamento' | 'errore';
+  messaggio?: string;
+}
+
+/**
  * Un messaggio in streaming è un messaggio con due informazioni in più che il
  * contratto non ha, perché esistono solo mentre il flusso è aperto: l'errore
  * arrivato a metà risposta e l'interruzione chiesta dall'utente.
@@ -180,6 +193,48 @@ export class ChatStore {
 
   rimuoviRiferimento(id: Id): void {
     this.riferimentiBozza.update((r) => r.filter((d) => d.id !== id));
+  }
+
+  // --- Allegati (RF-C-02) -------------------------------------------------
+
+  private progressivoAllegato = 0;
+
+  /**
+   * Un file allegato in chat **non entra negli archivi**: è materiale della
+   * conversazione — un preventivo appena ricevuto, una mail — e vive con
+   * lei. Il server risponde con il riferimento (`archivio: 'conversazione'`)
+   * e da lì il documento sta nel contesto come gli altri. Ciò che invece
+   * deve restare al tenant si carica nell'Archivio Privato, dov'è sempre
+   * stato.
+   */
+  readonly allegati = signal<AllegatoInCorso[]>([]);
+
+  allega(file: File[]): void {
+    for (const f of file) {
+      const chiave = ++this.progressivoAllegato;
+      this.allegati.update((a) => [...a, { chiave, nome: f.name, stato: 'caricamento' }]);
+
+      this.api.caricaAllegato(f).subscribe({
+        next: (riferimento) => {
+          this.rimuoviAllegato(chiave);
+          this.aggiungiAlContesto(riferimento);
+        },
+        error: (err: HttpErrorResponse) => {
+          const messaggio =
+            (err.error as ErroreApi | null)?.messaggio ?? 'Caricamento non riuscito.';
+          this.allegati.update((a) =>
+            a.map((allegato) =>
+              allegato.chiave === chiave ? { ...allegato, stato: 'errore', messaggio } : allegato,
+            ),
+          );
+        },
+      });
+    }
+  }
+
+  /** Solo per gli allegati falliti: quelli sani se ne vanno da soli. */
+  rimuoviAllegato(chiave: number): void {
+    this.allegati.update((a) => a.filter((allegato) => allegato.chiave !== chiave));
   }
 
   /**

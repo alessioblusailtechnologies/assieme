@@ -60,6 +60,33 @@
   opacity: 1;
 }
 
+/* ---------- Allegati in salita (RF-C-02) ---------- */
+
+.riferimento.is-errore {
+  background: var(--c-neg-soft);
+  color: var(--c-neg);
+}
+
+.riferimento__stato {
+  flex: none;
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-3);
+}
+
+.riferimento.is-errore .riferimento__stato {
+  color: inherit;
+}
+
+.riferimento ui-icon.gira {
+  animation: gira 1.8s linear infinite;
+}
+
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ---------- Campo ---------- */
 
 .campo {

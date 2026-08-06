@@ -12,11 +12,17 @@ import { Id, IsoDateTime, Provenienza } from './comune';
  * Idratato dall'API — id, titolo e archivio, non il documento intero: la
  * barra del contesto deve mostrare *cosa* c'è dentro senza una chiamata per
  * documento, e non le serve altro.
+ *
+ * `conversazione` è il terzo posto da cui un documento può venire: un file
+ * **allegato** dal composer, che vive con la conversazione e non entra negli
+ * archivi (RF-C-02). Il tipo sta qui e non in `Archivio`, perché negli
+ * archivi — selettori, tabelle, fonti degli agenti — un allegato non
+ * comparirà mai.
  */
 export interface RiferimentoDocumento {
   id: Id;
   titolo: string;
-  archivio: Archivio;
+  archivio: Archivio | 'conversazione';
 }
 
 export interface Conversazione {

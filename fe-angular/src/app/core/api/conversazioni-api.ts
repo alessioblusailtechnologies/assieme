@@ -13,6 +13,7 @@ import {
   Id,
   Messaggio,
   NuovoMessaggio,
+  RiferimentoDocumento,
   TemplateOutput,
 } from '@core/models';
 import { leggiBlocchiSse } from './sse';
@@ -78,6 +79,24 @@ export class ConversazioniApi {
 
   rimuoviDalContesto(id: Id, documentoId: Id): Observable<Conversazione> {
     return this.http.delete<Conversazione>(`${this.base}/${id}/contesto/${documentoId}`);
+  }
+
+  /**
+   * RF-C-02: un file allegato dal composer. Non entra negli archivi — vive
+   * con la conversazione: il server risponde con il riferimento
+   * (`archivio: 'conversazione'`) pronto per il contesto. Chi vuole invece
+   * un documento del tenant lo carica nell'Archivio Privato, dov'è sempre
+   * stato.
+   */
+  caricaAllegato(file: File): Observable<RiferimentoDocumento> {
+    const corpo = new FormData();
+    corpo.append('file', file, file.name);
+    return this.http.post<RiferimentoDocumento>(`${this.base}/allegati`, corpo);
+  }
+
+  /** Il file di un allegato, per il visualizzatore. */
+  urlFileAllegato(id: Id): string {
+    return `${this.base}/allegati/${id}/file`;
   }
 
   /**

@@ -126,7 +126,19 @@ export class Composer {
     this.area().nativeElement.focus();
   }
 
-  /** Il pulsante di allegato è la stessa `@`, per chi non la conosce. */
+  /**
+   * RF-C-02: un file allegato dal disco. Non entra negli archivi — vive con
+   * la conversazione; appena caricato compare come riferimento del contesto.
+   */
+  protected allegaFile(evento: Event): void {
+    const ingresso = evento.target as HTMLInputElement;
+    this.store.allega([...(ingresso.files ?? [])]);
+    /* Lo stesso file deve poter essere riallegato: l'input si azzera. */
+    ingresso.value = '';
+    this.area().nativeElement.focus();
+  }
+
+  /** Il pulsante di referenziazione è la stessa `@`, per chi non la conosce. */
   protected apriDaPulsante(): void {
     const area = this.area().nativeElement;
     const testo = this.store.bozza();

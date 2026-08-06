@@ -150,7 +150,13 @@
           @for (doc of contesto(); track doc.id) {
             <li class="contesto__doc">
               <ui-icon
-                [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+                [name]="
+                  doc.archivio === 'pubblico'
+                    ? 'archivio-pubblico'
+                    : doc.archivio === 'privato'
+                      ? 'archivio-privato'
+                      : 'allega'
+                "
                 [size]="14"
               />
               <span class="contesto__titolo">{{ doc.titolo }}</span>

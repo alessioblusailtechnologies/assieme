@@ -33,7 +33,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
-import { generaPdfDaTesto } from './pdf.mjs';
+import { generaPdf, generaPdfDaTesto } from './pdf.mjs';
+import { leggiMultipart } from './archivio-privato.mjs';
 import { trovaTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +55,16 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 let prossimoMessaggio = 100;
 let prossimaConversazione = 100;
 let prossimaCitazione = 100;
+let prossimoAllegato = 100;
+
+/**
+ * Allegati di conversazione (RF-C-02): file allegati dal composer, che non
+ * entrano negli archivi. Vivono qui, in memoria, con un PDF generato per il
+ * visualizzatore — come tutto il resto del mock.
+ */
+const ALLEGATI = [];
+
+const trovaAllegato = (id) => ALLEGATI.find((a) => a.id === id);
 
 // ---------------------------------------------------------------------------
 // Scenari di risposta
@@ -201,9 +212,15 @@ function componi(conversazione, trovaDocumento) {
   return {
     ...conversazione,
     documentiInContesto: conversazione.documentiInContesto
-      .map((id) => trovaDocumento(id))
-      .filter(Boolean)
-      .map((d) => ({ id: d.id, titolo: d.titolo, archivio: d.archivio })),
+      .map((id) => {
+        const allegato = trovaAllegato(id);
+        if (allegato) return { id: allegato.id, titolo: allegato.titolo, archivio: 'conversazione' };
+        const documento = trovaDocumento(id);
+        return documento
+          ? { id: documento.id, titolo: documento.titolo, archivio: documento.archivio }
+          : undefined;
+      })
+      .filter(Boolean),
   };
 }
 
@@ -230,6 +247,13 @@ function titoloDaMessaggio(testo) {
  * `false`; il chiamante deve fermarsi.
  */
 function aggiungiAlContesto(conversazione, documentoId, { inviaJson, trovaDocumento }, res) {
+  /* Un allegato è sempre utilizzabile: nasce con la conversazione. */
+  if (trovaAllegato(documentoId)) {
+    if (!conversazione.documentiInContesto.includes(documentoId)) {
+      conversazione.documentiInContesto.push(documentoId);
+    }
+    return true;
+  }
   const documento = trovaDocumento(documentoId);
   if (!documento) {
     inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Documento inesistente.' });
@@ -384,6 +408,43 @@ export async function gestisci(req, res, url, deps) {
   /* Lo streaming non passa dalla simulazione — la latenza è già nel suo
      ritmo, e l'errore a metà risposta è gestito dentro lo stream. */
   if (!streaming && (await simulazione(req, res))) return true;
+
+  /* RF-C-02 — allegati di conversazione. Le rotte fisse vanno riconosciute
+     prima di `/:id`, o «allegati» verrebbe letto come id. */
+  if (percorso === '/api/conversazioni/allegati' && req.method === 'POST') {
+    const corpo = await leggiCorpo(req);
+    const file = leggiMultipart(corpo, req.headers['content-type']);
+    if (!file.length) {
+      inviaJson(res, 400, { codice: 'FILE_MANCANTE', messaggio: 'Nessun file nel caricamento.' });
+      return true;
+    }
+    const allegato = {
+      id: `all-${prossimoAllegato++}`,
+      titolo: file[0].nome,
+      numeroPagine: 4,
+    };
+    ALLEGATI.push(allegato);
+    inviaJson(res, 201, { id: allegato.id, titolo: allegato.titolo, archivio: 'conversazione' });
+    return true;
+  }
+
+  const rottaFileAllegato = percorso.match(/^\/api\/conversazioni\/allegati\/([^/]+)\/file$/);
+  if (rottaFileAllegato && req.method === 'GET') {
+    const allegato = trovaAllegato(rottaFileAllegato[1]);
+    if (!allegato) {
+      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Allegato inesistente.' });
+      return true;
+    }
+    const pdf = generaPdf(allegato.titolo, allegato.numeroPagine);
+    res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Length': pdf.length,
+      'Content-Disposition': 'inline',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(pdf);
+    return true;
+  }
 
   // RF-C-01: lo storico, la più recente in cima
   if (percorso === '/api/conversazioni' && req.method === 'GET') {

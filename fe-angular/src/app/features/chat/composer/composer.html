@@ -9,12 +9,18 @@
     />
   }
 
-  @if (store.riferimentiBozza().length) {
-    <div class="riferimenti" aria-label="Documenti referenziati nel messaggio">
+  @if (store.riferimentiBozza().length || store.allegati().length) {
+    <div class="riferimenti" aria-label="Documenti referenziati o allegati al messaggio">
       @for (doc of store.riferimentiBozza(); track doc.id) {
         <span class="riferimento">
           <ui-icon
-            [name]="doc.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+            [name]="
+              doc.archivio === 'pubblico'
+                ? 'archivio-pubblico'
+                : doc.archivio === 'privato'
+                  ? 'archivio-privato'
+                  : 'allega'
+            "
             [size]="12"
           />
           <span class="riferimento__titolo">{{ doc.titolo }}</span>
@@ -28,15 +34,56 @@
           </button>
         </span>
       }
+      @for (allegato of store.allegati(); track allegato.chiave) {
+        <span class="riferimento" [class.is-errore]="allegato.stato === 'errore'">
+          <ui-icon
+            [name]="allegato.stato === 'errore' ? 'errore' : 'in-corso'"
+            [size]="12"
+            [class.gira]="allegato.stato === 'caricamento'"
+          />
+          <span class="riferimento__titolo">{{ allegato.nome }}</span>
+          <span class="mono riferimento__stato">
+            {{ allegato.stato === 'errore' ? allegato.messaggio : 'caricamento…' }}
+          </span>
+          @if (allegato.stato === 'errore') {
+            <button
+              type="button"
+              class="riferimento__togli"
+              (click)="store.rimuoviAllegato(allegato.chiave)"
+              [attr.aria-label]="'Togli l’allegato ' + allegato.nome"
+            >
+              <ui-icon name="chiudi" [size]="11" />
+            </button>
+          }
+        </span>
+      }
     </div>
   }
 
   <div class="campo">
+    <input
+      #file
+      type="file"
+      multiple
+      hidden
+      (change)="allegaFile($event)"
+      aria-hidden="true"
+      tabindex="-1"
+    />
+    <button
+      type="button"
+      class="campo__allega"
+      (click)="file.click()"
+      aria-label="Allega un file alla conversazione"
+      title="Allega un file — resta in questa conversazione, non entra negli archivi"
+    >
+      <ui-icon name="allega" [size]="17" />
+    </button>
     <button
       type="button"
       class="campo__allega"
       (click)="apriDaPulsante()"
-      aria-label="Referenzia un documento"
+      aria-label="Referenzia un documento degli archivi"
       title="Referenzia un documento (@)"
     >
       <ui-icon name="referenzia" [size]="17" />

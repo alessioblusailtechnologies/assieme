@@ -217,6 +217,10 @@ export class EditorAgente {
   }
 
   protected aggiungiDocumento(documento: RiferimentoDocumento): void {
+    /* Il selettore propone solo gli archivi: un allegato di conversazione
+       non può diventare fonte di un agente. La guardia restringe il tipo. */
+    if (documento.archivio === 'conversazione') return;
+    const archivio = documento.archivio;
     this.fonti.update((fonti) =>
       fonti.some((f) => f.tipo === 'documento' && f.documentoId === documento.id)
         ? fonti
@@ -225,7 +229,7 @@ export class EditorAgente {
             {
               tipo: 'documento',
               documentoId: documento.id,
-              archivio: documento.archivio,
+              archivio,
               etichetta: documento.titolo,
             },
           ],

@@ -463,6 +463,7 @@ Chat con risposta in streaming SSE, storico e rinomina; selettore `@` su entramb
 - **Il contesto della conversazione esce idratato** (`RiferimentoDocumento`: id, titolo, archivio): la barra del contesto non fa una chiamata per documento.
 - **L'evento `inizio` porta anche `messaggioUtenteId`**: il client riconcilia la propria copia ottimistica e un ricaricamento a stream aperto non duplica nulla. Il messaggio dell'assistente si persiste solo a risposta completa: uno stream interrotto non lascia mezzi messaggi nello storico.
 - **Il mock genera file veri.** PDF multi-pagina per il visualizzatore (`mocks/pdf.mjs`, scritti a mano: catalogo, xref, Helvetica non incorporata), DOCX/XLSX minimi ma apribili per l'esportazione (`mocks/ufficio.mjs`, zip in modalità store). Le risposte della chat sono **scenari deterministici** guidati dal testo della domanda (`mocks/chat.mjs`) — «grandine» produce la non-copertura, «franchig» la risposta breve con due citazioni, il resto il confronto del caso pilota.
+- **Allegati di conversazione** (aggiunto 08/2026, su indicazione del committente): dal composer si allega un file che **non entra negli archivi** — vive con la conversazione. `POST /api/conversazioni/allegati` risponde col riferimento già pronto per il contesto (`archivio: 'conversazione'`, terzo valore ammesso solo in `RiferimentoDocumento`, mai negli archivi); il file sta su `…/allegati/:id/file`. Ciò che invece deve restare al tenant si carica nell'Archivio Privato, dov'è sempre stato.
 
 ### ✅ Fase 4 — Tabelle di analisi — **completata** · RF-C-11…C-15
 
