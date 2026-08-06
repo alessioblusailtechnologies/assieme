@@ -16,17 +16,12 @@
   } @else {
     <div class="assistente">
       <!--
-        RF-C-08: la non-copertura non è un errore ma una risposta legittima,
-        e il segnale sta sopra il testo: chi legge deve saperlo prima di
-        leggere, non scoprirlo dopo aver copiato la risposta in una mail.
+        RF-C-08: la non-copertura è dichiarata **nel testo della risposta** —
+        il banner che la anticipava è stato rimosso su indicazione del
+        committente. Il segnale `nonSupportato` resta nel contratto: al
+        backend serve, e un trattamento futuro non richiederà una modifica
+        di specifica.
       -->
-      @if (m.nonSupportato) {
-        <p class="non-supportato">
-          <ui-icon name="avviso" [size]="14" />
-          <span>Risposta non fondata sui documenti disponibili</span>
-        </p>
-      }
-
       @if (!m.testo && m.inCorso) {
         <p class="attesa" aria-live="polite">
           <span class="attesa__punto"></span><span class="attesa__punto"></span

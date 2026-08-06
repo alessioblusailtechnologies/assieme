@@ -161,20 +161,6 @@
 
 /* ---------- Segnali ---------- */
 
-.non-supportato {
-  display: flex;
-  border-radius: var(--radius-sm);
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  background: var(--c-warn-soft);
-  color: var(--c-warn);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono);
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-}
-
 .errore-stream {
   display: flex;
   border-radius: var(--radius-sm);
