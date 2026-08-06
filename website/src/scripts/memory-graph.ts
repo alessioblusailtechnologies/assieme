@@ -149,7 +149,8 @@ export function startGraph(
       n.y = n.by + Math.cos(t * n.sp * 0.85 + n.ph) * n.amp;
     }
 
-    ctx.fillStyle = '#14181D';
+    /* L'inchiostro caldo della palette di piattaforma. */
+    ctx.fillStyle = '#1C1A15';
     ctx.fillRect(0, 0, W, H);
 
     ctx.lineWidth = 0.6 * scale;

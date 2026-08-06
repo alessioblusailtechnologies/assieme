@@ -1,62 +1,71 @@
 /*
- * Token di design — estratti dal design Assieme.
+ * Token di design — allineati al design system della piattaforma
+ * (fe-angular/src/styles/_tokens.scss): la stessa scala di **neutri caldi**
+ * — tinta ferma, bianchi puliti in alto, scuri senza deriva marrone — e lo
+ * stesso blu Assieme come segnale. Chi passa dal sito alla demo deve
+ * riconoscere lo stesso prodotto.
  *
- * Il design originale è espresso in stili inline a larghezza fissa (1280px).
- * Qui i valori diventano custom property, così che ogni componente parli la
- * stessa lingua e il layout possa adattarsi senza duplicare costanti.
+ * I nomi dei token restano quelli del sito (`--f-serif` compreso, anche se
+ * oggi punta a un sans): cambiare i valori qui è tutto l'adeguamento, i
+ * componenti non si toccano.
  */
 
 :root {
   /* ---------- Colore: superfici ---------- */
-  --c-ink: #14181d; /* fondo scuro / testo primario su chiaro */
-  --c-page: #f4f5f7; /* fondo pagina */
-  --c-page-alt: #eaecef; /* fondo sezione alternata (testimonianza) */
+  --c-ink: #1c1a15; /* l'inchiostro caldo: fondo scuro / testo primario */
+  --c-page: #faf9f7; /* fondo pagina: appena caldo, quasi bianco */
+  --c-page-alt: #eeedea; /* fondo sezione alternata (testimonianza) */
   --c-surface: #ffffff;
-  --c-surface-soft: #fbfcfd; /* pannello laterale nello screenshot prodotto */
-  --c-surface-tint: #f5f8fc; /* colonna evidenziata nella tabella */
+  --c-surface-soft: #fdfcfb; /* pannello laterale nello screenshot prodotto */
+  --c-surface-tint: #f5f4f1; /* colonna evidenziata nella tabella */
 
   /* ---------- Colore: superfici scure ---------- */
-  --c-ink-raise: #1b2027; /* riquadri media su fondo scuro */
-  --c-ink-raise-2: #22282f;
-  --c-ink-hatch: #20262e;
+  --c-ink-raise: #24221c; /* riquadri media su fondo scuro */
+  --c-ink-raise-2: #2e2b24;
+  --c-ink-hatch: #24221c;
 
   /* ---------- Colore: bordi ---------- */
-  --c-line: #dde0e5; /* bordo su chiaro */
-  --c-line-soft: #eef0f3; /* separatore di riga, molto tenue */
-  --c-line-dark: #2a3038; /* bordo su scuro */
-  --c-line-onink: rgb(255 255 255 / 8%);
+  --c-line: #e4e2dd; /* bordo su chiaro */
+  --c-line-soft: #eeedea; /* separatore di riga, molto tenue */
+  --c-line-dark: #45423a; /* bordo su scuro */
+  --c-line-onink: rgb(255 255 255 / 10%);
   --c-line-onink-strong: rgb(255 255 255 / 35%);
 
   /* ---------- Colore: testo ---------- */
-  --c-text: #14181d;
-  --c-text-2: #3a424c; /* corpo secondario su chiaro */
-  --c-text-3: #78818e; /* etichette mono su chiaro */
-  --c-text-4: #8a929c; /* testo attenuato */
-  --c-text-mute: #98a1ac;
-  --c-text-ghost: #bfc3c9; /* voci non attive del ticker */
+  --c-text: #1c1a15;
+  --c-text-2: #45423a; /* corpo secondario su chiaro */
+  --c-text-3: #767268; /* etichette mono su chiaro */
+  --c-text-4: #86827a; /* testo attenuato */
+  --c-text-mute: #9b978b;
+  --c-text-ghost: #cfccc4; /* voci non attive del ticker */
 
   --c-text-oninverse: #ffffff;
-  --c-text-oninverse-2: #c6ccd4; /* corpo su scuro */
-  --c-text-oninverse-3: #98a1ac; /* corpo attenuato su scuro */
-  --c-text-oninverse-4: #b4bcc6; /* link del footer */
-  --c-text-oninverse-mute: #5b646f; /* etichette mono su scuro */
-  --c-text-oninverse-hatch: #6d7681;
+  --c-text-oninverse-2: #d9d6cd; /* corpo su scuro */
+  --c-text-oninverse-3: #a5a196; /* corpo attenuato su scuro */
+  --c-text-oninverse-4: #b9b6ac; /* link del footer */
+  --c-text-oninverse-mute: #6f6b60; /* etichette mono su scuro */
+  --c-text-oninverse-hatch: #7d7970;
 
   /* ---------- Colore: accento ---------- */
   --c-accent: #2f4b7c; /* blu Assieme */
-  --c-accent-soft: #e7edf7; /* fondo dei chip di citazione */
+  --c-accent-soft: #e9eef6; /* fondo dei chip di citazione */
   --c-accent-on-dark: #7f97c4; /* accento leggibile su fondo scuro */
-  --c-accent-hover: #9fb4d6;
-  --c-accent-hairline: #c9cfd8;
+  --c-accent-hover: #9fb4d6; /* schiarita dei link su fondo scuro */
+  --c-accent-hairline: #cfccc2;
 
   /* ---------- Colore: semantico ---------- */
   --c-neg: #a63d2f; /* condizione peggiorativa */
   --c-pos: #2e6b4f; /* condizione migliorativa */
 
-  /* ---------- Tipografia ---------- */
-  --f-serif: 'Newsreader', georgia, 'Times New Roman', times, serif;
-  --f-sans: 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
-  --f-mono: 'DM Mono', ui-monospace, 'SF Mono', menlo, consolas, monospace;
+  /* ---------- Tipografia ----------
+   * La voce della piattaforma: TWK Ghost per tutto — titoli, corpo,
+   * etichette (il ruolo mono lo fanno maiuscole e spaziatura). Geist resta
+   * la voce di lettura per i testi lunghi, come in applicazione.
+   */
+  --f-serif: 'TWK Ghost', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
+  --f-sans: 'TWK Ghost', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
+  --f-mono: 'TWK Ghost', ui-monospace, 'SF Mono', menlo, consolas, monospace;
+  --f-lettura: 'Geist', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
 
   /* Scala fluida: il design è a 1280px, questi valori interpolano fino a lì. */
   --t-display: clamp(2.75rem, 1.35rem + 5.6vw, 5.25rem); /* 44 → 84px */

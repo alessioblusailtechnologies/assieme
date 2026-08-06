@@ -336,7 +336,7 @@ a:hover {
   background: repeating-linear-gradient(
     135deg,
     var(--c-line) 0 8px,
-    #e4e7eb 8px 16px
+    #e9e7e2 8px 16px
   );
 }
 

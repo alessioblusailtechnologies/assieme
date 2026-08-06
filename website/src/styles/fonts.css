@@ -1,77 +1,62 @@
 /*
- * Font self-ospitati.
+ * Font self-ospitati — gli stessi della piattaforma.
  *
  * Nessuna chiamata a fonts.googleapis.com: il trasferimento dell'IP del
  * visitatore verso un terzo extra-UE è esattamente ciò che il posizionamento
  * di Assieme sulla residenza europea del dato non può permettersi.
  *
- * Newsreader è una variable font (300–600) su un unico file per subset.
+ * TWK Ghost (Weltkern) è la voce del prodotto — interfaccia, titoli,
+ * etichette — e da qui in poi anche del sito: chi passa dalla home alla
+ * demo deve riconoscere lo stesso carattere. Geist (OFL, variabile) è la
+ * voce di lettura, pronta per i testi lunghi delle risorse.
  */
 
-/* --- Newsreader — titoli editoriali --- */
+/* --- TWK Ghost — la voce di Assieme --- */
 @font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 300 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-var-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: 'Newsreader';
-  font-style: normal;
-  font-weight: 300 600;
-  font-display: swap;
-  src: url('/fonts/newsreader-var-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
-/* --- DM Mono — etichette, metadati, riferimenti alle fonti --- */
-@font-face {
-  font-family: 'DM Mono';
+  font-family: 'TWK Ghost';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/dm-mono-400-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/TWKGhost-Regular.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'DM Mono';
-  font-style: normal;
+  font-family: 'TWK Ghost';
+  font-style: italic;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/dm-mono-400-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url('/fonts/TWKGhost-Italic.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'DM Mono';
+  font-family: 'TWK Ghost';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/dm-mono-500-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  src: url('/fonts/TWKGhost-Medium.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'DM Mono';
+  font-family: 'TWK Ghost';
   font-style: normal;
-  font-weight: 500;
+  font-weight: 700;
   font-display: swap;
-  src: url('/fonts/dm-mono-500-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
-    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
-    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  src: url('/fonts/TWKGhost-Bold.woff2') format('woff2');
+}
+
+/* --- Geist — la voce di lettura (variabile, 100–900) --- */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistVF.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/GeistVF-Italic.woff2') format('woff2');
 }
