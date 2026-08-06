@@ -1,0 +1,18 @@
+[
+  {
+    "id": "mcp-001",
+    "nome": "Postazione Marta — Claude Desktop",
+    "tokenMascherato": "asm_mcp_…8f2c",
+    "creataIl": "2026-07-10T09:30:00+02:00",
+    "ultimoUtilizzo": "2026-08-06T08:41:00+02:00",
+    "revocata": false
+  },
+  {
+    "id": "mcp-002",
+    "nome": "Prova integrazione gestionale",
+    "tokenMascherato": "asm_mcp_…41d9",
+    "creataIl": "2026-06-28T14:00:00+02:00",
+    "ultimoUtilizzo": "2026-07-02T16:22:00+02:00",
+    "revocata": true
+  }
+]

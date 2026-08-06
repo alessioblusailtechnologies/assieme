@@ -39,3 +39,12 @@ export interface NuovoRicordo {
   ambito: Ricordo['ambito'];
   categoria: Ricordo['categoria'];
 }
+
+/**
+ * Corpo del PATCH: ogni campo è indipendente. Modificare il testo di un
+ * ricordo appreso non ne cambia l'origine — resta «appreso», perché la
+ * distinzione racconta come è nato, non com'è oggi.
+ */
+export type ModificheRicordo = Partial<
+  Pick<Ricordo, 'testo' | 'ambito' | 'categoria' | 'attivo'>
+>;

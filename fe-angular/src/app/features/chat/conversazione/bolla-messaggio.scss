@@ -222,6 +222,13 @@
   gap: var(--sp-2);
   font-size: var(--t-xs);
   color: var(--c-text-3);
+  text-decoration: none;
+}
+
+.provenienza:hover,
+.provenienza:focus-visible {
+  color: var(--c-text);
+  text-decoration: none;
 }
 
 .provenienza__tipo {

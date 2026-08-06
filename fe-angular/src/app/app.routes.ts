@@ -8,14 +8,11 @@ import { Shell } from '@layout/shell';
  * I percorsi sono in italiano: l'utente li vede nella barra degli indirizzi
  * e li incolla ai colleghi, e il dominio di questo prodotto è italiano.
  *
- * Ogni sezione è oggi un segnaposto che dichiara la fase in cui verrà
- * costruita e i requisiti che coprirà. Tenere la roadmap qui, accanto ai
- * percorsi, la rende difficile da dimenticare: quando una fase parte si
- * sostituisce `segnaposto` con il `loadComponent` della funzionalità vera, e
- * il resto del file non cambia.
+ * Le sezioni sono nate come segnaposto che dichiaravano fase e requisiti, e
+ * sono state sostituite una alla volta dal `loadComponent`/`loadChildren`
+ * della funzionalità vera. Con la Fase 7 l'ultima è stata costruita: la
+ * roadmap che viveva qui è ora storia del piano di sviluppo.
  */
-const segnaposto = () => import('@shared/segnaposto/segnaposto-fase').then((m) => m.SegnapostoFase);
-
 export const routes: Routes = [
   {
     path: '',
@@ -57,18 +54,14 @@ export const routes: Routes = [
         loadChildren: () => import('@features/agenti/agenti.routes').then((m) => m.AGENTI_ROUTES),
       },
       {
+        /* Fase 7 — costruita. Pagina sola: niente file di rotte per un pannello. */
         path: 'memoria',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Memoria',
-          fase: 7,
-          descrizione:
-            "Ciò che l'assistente ha imparato dal lavoro dell'agenzia: consultabile, modificabile e cancellabile ricordo per ricordo. Le istruzioni esplicite prevalgono sempre sui ricordi appresi.",
-          requisiti: ['RF-G-01 … RF-G-07'],
-        },
+        loadComponent: () =>
+          import('@features/memoria/pannello-memoria').then((m) => m.PannelloMemoria),
+        title: 'Memoria — Assieme',
       },
       {
-        /* Fase 5 — costruita (il figlio `mcp` resta segnaposto, Fase 7). */
+        /* Fase 5 — costruita; il figlio `mcp` è arrivato con la Fase 7. */
         path: 'impostazioni',
         loadChildren: () =>
           import('@features/impostazioni/impostazioni.routes').then((m) => m.IMPOSTAZIONI_ROUTES),

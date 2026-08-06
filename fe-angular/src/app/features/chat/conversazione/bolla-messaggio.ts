@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { Citazione, RiferimentoDocumento } from '@core/models';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { MessaggioInStream } from '../chat-store';
+import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta } from '@shared/testi/testo-risposta';
 
 /**
@@ -16,7 +18,7 @@ import { htmlRisposta } from '@shared/testi/testo-risposta';
  */
 @Component({
   selector: 'app-bolla-messaggio',
-  imports: [ChipCitazione, Icona],
+  imports: [ChipCitazione, Icona, RouterLink, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './bolla-messaggio.html',
   styleUrl: './bolla-messaggio.scss',
@@ -62,5 +64,12 @@ export class BollaMessaggio {
     regola: 'Regola',
     'documento-riferimento': 'Documento di riferimento',
     memoria: 'Ricordo',
+  };
+
+  /** Dove si governa ciascun segnale: il ricordo in Memoria, il resto nelle Istruzioni. */
+  protected readonly percorsiProvenienza: Record<string, string> = {
+    regola: '/impostazioni/istruzioni',
+    'documento-riferimento': '/impostazioni/istruzioni',
+    memoria: '/memoria',
   };
 }

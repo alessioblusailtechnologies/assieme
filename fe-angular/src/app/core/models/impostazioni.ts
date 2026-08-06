@@ -150,3 +150,23 @@ export interface CredenzialeMcp {
   ultimoUtilizzo?: IsoDateTime;
   revocata: boolean;
 }
+
+/**
+ * La risposta alla generazione (RF-F-02): l'unica volta in cui il token
+ * viaggia in chiaro. Il server non lo conserva né lo rimanda: chi non lo
+ * copia adesso genera una credenziale nuova — è il comportamento standard
+ * dei token API, e va detto nell'interfaccia, non scoperto.
+ */
+export interface CredenzialeGenerata extends CredenzialeMcp {
+  token: string;
+}
+
+/** RF-F-04: una connessione MCP attiva, per lo stato in Impostazioni. */
+export interface ConnessioneMcp {
+  id: Id;
+  /** Il client dichiarato, es. `Claude Desktop`. */
+  client: string;
+  credenzialeId: Id;
+  connessaDal: IsoDateTime;
+  ultimaAttivita: IsoDateTime;
+}

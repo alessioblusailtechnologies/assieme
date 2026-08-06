@@ -1,0 +1,203 @@
+@if (!puoGestire()) {
+  <ui-stato-vuoto
+    icona="mcp"
+    titolo="Sezione riservata all'amministratore"
+    descrizione="La generazione e la revoca delle credenziali MCP richiedono il permesso dedicato. Se ti serve collegare un client esterno, chiedi a chi amministra l'agenzia."
+  />
+} @else {
+  <header class="testata">
+    <h1 class="serif testata__titolo">Accesso MCP</h1>
+    <p class="testata__spiega">
+      ASSIEME come strumento nei client AI esterni: ricerca e lettura dei documenti dei due
+      archivi, con le stesse regole di isolamento dell'applicazione.
+    </p>
+    <button uiBottone variante="primario" type="button" class="testata__genera" (click)="apriGenera()">
+      <ui-icon name="aggiungi" [size]="15" />
+      <span>Genera una credenziale</span>
+    </button>
+  </header>
+
+  @if (errore()) {
+    <ui-stato-vuoto
+      icona="errore"
+      titolo="Non siamo riusciti a caricare le credenziali"
+      descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+    >
+      <button uiBottone variante="primario" type="button" (click)="riprova()">
+        <ui-icon name="riprova" [size]="15" />
+        <span>Riprova</span>
+      </button>
+    </ui-stato-vuoto>
+  } @else if (inCaricamento() && !credenziali().length) {
+    <div class="scheletri">
+      @for (i of [1, 2]; track i) {
+        <ui-scheletro [numeroRighe]="1" />
+      }
+    </div>
+  } @else if (!credenziali().length) {
+    <ui-stato-vuoto
+      icona="mcp"
+      titolo="Nessuna credenziale"
+      descrizione="Genera una credenziale per collegare un client AI esterno. Il token compare una volta sola: si copia al momento e si conserva in un gestore di password."
+    >
+      <button uiBottone variante="primario" type="button" (click)="apriGenera()">
+        <ui-icon name="aggiungi" [size]="15" />
+        <span>Genera la prima credenziale</span>
+      </button>
+    </ui-stato-vuoto>
+  } @else {
+    <div class="ui-tabella-contenitore">
+      <table class="ui-tabella">
+        <thead>
+          <tr>
+            <th>Credenziale</th>
+            <th class="col-token">Token</th>
+            <th class="col-data">Creata il</th>
+            <th class="col-data">Ultimo utilizzo</th>
+            <th class="col-stato">Stato</th>
+            <th class="col-azione"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (credenziale of credenziali(); track credenziale.id) {
+            <tr [class.is-revocata]="credenziale.revocata">
+              <td>{{ credenziale.nome }}</td>
+              <td class="col-token mono">{{ credenziale.tokenMascherato }}</td>
+              <td class="col-data cella-numerica">{{ credenziale.creataIl | date: 'dd/MM/yyyy' }}</td>
+              <td class="col-data cella-numerica">
+                {{ credenziale.ultimoUtilizzo ? (credenziale.ultimoUtilizzo | date: 'dd/MM HH:mm') : 'mai' }}
+              </td>
+              <td class="col-stato">
+                @if (credenziale.revocata) {
+                  <ui-badge variante="storico">revocata</ui-badge>
+                } @else {
+                  <ui-badge variante="corrente">attiva</ui-badge>
+                }
+              </td>
+              <td class="col-azione">
+                @if (!credenziale.revocata) {
+                  @if (confermaRevoca() !== credenziale.id) {
+                    <button uiBottone dimensione="piccolo" type="button" (click)="revoca(credenziale)">
+                      <span>Revoca</span>
+                    </button>
+                  } @else {
+                    <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="revoca(credenziale)">
+                      <span>Revoca davvero</span>
+                    </button>
+                  }
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- RF-F-04: lo stato delle connessioni attive. -->
+  <section class="blocco" aria-labelledby="titolo-connessioni">
+    <p class="mono" id="titolo-connessioni">Connessioni attive</p>
+    @if (!connessioni().length) {
+      <p class="blocco__vuoto">
+        Nessun client connesso in questo momento. Le connessioni compaiono qui quando un client
+        esterno usa una credenziale.
+      </p>
+    } @else {
+      <ul class="connessioni">
+        @for (connessione of connessioni(); track connessione.id) {
+          <li class="connessione">
+            <ui-icon name="mcp" [size]="15" />
+            <span class="connessione__client">{{ connessione.client }}</span>
+            <span class="connessione__dettaglio">
+              con «{{ nomeCredenziale(connessione.credenzialeId) }}» · ultima attività
+              {{ connessione.ultimaAttivita | date: 'dd/MM HH:mm' }}
+            </span>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- RF-F-04: istruzioni di configurazione; RF-F-05: l'avvertenza accanto. -->
+  <section class="blocco" aria-labelledby="titolo-configurazione">
+    <p class="mono" id="titolo-configurazione">Configurazione del client</p>
+    <p class="blocco__spiega">
+      Nei client compatibili (Claude Desktop, e in generale chi supporta server MCP remoti) si
+      registra il server con l'indirizzo <code class="mono">{{ endpointMcp }}</code> e il token
+      come intestazione di autorizzazione:
+    </p>
+
+    <div class="config">
+      <pre class="config__codice mono">{{ esempioConfigurazione }}</pre>
+      <button uiBottone dimensione="piccolo" type="button" (click)="copiaConfigurazione()">
+        <ui-icon [name]="configCopiata() ? 'pronto' : 'duplica'" [size]="13" />
+        <span>{{ configCopiata() ? 'Copiato' : 'Copia' }}</span>
+      </button>
+    </div>
+
+    <p class="avvertenza">
+      <ui-icon name="avviso" [size]="14" />
+      <span>
+        Le risposte generate nel client esterno non passano dalle istruzioni personalizzate né
+        dai vincoli di citazione di ASSIEME: il server MCP espone i documenti, non il giudizio
+        dell'assistente.
+      </span>
+    </p>
+  </section>
+}
+
+<!-- Generazione (RF-F-02): il token in chiaro esiste solo in questo cassetto. -->
+<ui-cassetto [(aperto)]="cassettoGenera" titolo="Genera una credenziale" larghezza="min(480px, 94vw)">
+  @if (cassettoGenera()) {
+    <div class="genera">
+      @if (!generata()) {
+        <p class="genera__spiega">
+          Un nome che dica dove verrà usata — postazione, persona o integrazione. Il token
+          comparirà una volta sola.
+        </p>
+        <input
+          uiCampo
+          type="text"
+          [value]="bozzaNome()"
+          (input)="bozzaNome.set($any($event.target).value)"
+          (keydown.enter)="genera()"
+          placeholder="es. Postazione Paolo — Claude Desktop"
+          aria-label="Nome della credenziale"
+        />
+        <footer class="genera__azioni">
+          <button
+            uiBottone
+            variante="primario"
+            type="button"
+            [disabled]="!bozzaNome().trim() || inGenerazione()"
+            (click)="genera()"
+          >
+            <ui-icon name="mcp" [size]="15" />
+            <span>{{ inGenerazione() ? 'Generazione…' : 'Genera' }}</span>
+          </button>
+          <button uiBottone variante="testo" type="button" (click)="cassettoGenera.set(false)">
+            <span>Annulla</span>
+          </button>
+        </footer>
+      } @else {
+        <p class="genera__spiega">
+          Credenziale «{{ generata()!.nome }}» generata. Questo token
+          <strong>non comparirà mai più</strong>: copialo adesso e conservalo in un gestore di
+          password.
+        </p>
+        <div class="token">
+          <code class="token__valore mono">{{ generata()!.token }}</code>
+          <button uiBottone dimensione="piccolo" type="button" (click)="copiaToken()">
+            <ui-icon [name]="tokenCopiato() ? 'pronto' : 'duplica'" [size]="13" />
+            <span>{{ tokenCopiato() ? 'Copiato' : 'Copia' }}</span>
+          </button>
+        </div>
+        <footer class="genera__azioni">
+          <button uiBottone variante="primario" type="button" (click)="cassettoGenera.set(false)">
+            <span>Ho copiato il token, chiudi</span>
+          </button>
+        </footer>
+      }
+    </div>
+  }
+</ui-cassetto>

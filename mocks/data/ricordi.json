@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ric-001",
+    "testo": "L'assenza della garanzia infortuni del conducente non va segnalata come carenza nei confronti: l'agenzia la copre con una polizza dedicata offerta a parte.",
+    "ambito": "tenant",
+    "categoria": "prassi",
+    "origine": "appreso",
+    "origineConversazioneId": "conv-001",
+    "creatoIl": "2026-07-18T15:42:00+02:00",
+    "aggiornatoIl": "2026-07-18T15:42:00+02:00",
+    "attivo": true
+  },
+  {
+    "id": "ric-002",
+    "testo": "Le officine convenzionate della zona di Torino nord hanno tempi di riparazione lunghi: nei confronti auto va dato peso alla riparazione a scelta libera.",
+    "ambito": "tenant",
+    "categoria": "decisione",
+    "origine": "esplicito",
+    "creatoIl": "2026-07-25T09:10:00+02:00",
+    "aggiornatoIl": "2026-07-25T09:10:00+02:00",
+    "attivo": true
+  },
+  {
+    "id": "ric-003",
+    "testo": "Per i clienti con più veicoli l'agenzia privilegia le franchigie fisse rispetto agli scoperti percentuali: rendono prevedibile il costo dei sinistri di flotta.",
+    "ambito": "tenant",
+    "categoria": "prassi",
+    "origine": "appreso",
+    "origineConversazioneId": "conv-002",
+    "creatoIl": "2026-07-29T11:05:00+02:00",
+    "aggiornatoIl": "2026-07-29T11:05:00+02:00",
+    "attivo": true
+  },
+  {
+    "id": "ric-004",
+    "testo": "La ditta Bianchi & Figli rinnova sempre a dicembre e chiede il riepilogo delle posizioni entro fine novembre.",
+    "ambito": "tenant",
+    "categoria": "cliente",
+    "origine": "appreso",
+    "creatoIl": "2026-08-01T17:20:00+02:00",
+    "aggiornatoIl": "2026-08-01T17:20:00+02:00",
+    "attivo": true
+  },
+  {
+    "id": "ric-005",
+    "testo": "Nei riepiloghi per i clienti preferisco tabelle brevi e un paragrafo di sintesi in testa, senza premesse lunghe.",
+    "ambito": "personale",
+    "categoria": "preferenza",
+    "origine": "esplicito",
+    "creatoIl": "2026-07-22T08:55:00+02:00",
+    "aggiornatoIl": "2026-07-22T08:55:00+02:00",
+    "attivo": true,
+    "_utenteId": "utn-004"
+  },
+  {
+    "id": "ric-006",
+    "testo": "Preferisco che le scadenze mi vengano riepilogate il venerdì, non il lunedì.",
+    "ambito": "personale",
+    "categoria": "preferenza",
+    "origine": "esplicito",
+    "creatoIl": "2026-07-30T10:15:00+02:00",
+    "aggiornatoIl": "2026-08-02T09:00:00+02:00",
+    "attivo": false,
+    "_utenteId": "utn-001"
+  }
+]

@@ -1,0 +1,223 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 100%;
+  max-width: 980px;
+  padding: var(--sp-6);
+  overflow-y: auto;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__spiega {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__conteggio {
+  margin-left: auto;
+  min-width: 9ch;
+  text-align: right;
+}
+
+/* ---------- Guida (RF-G-04) ---------- */
+
+.guida {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.guida ui-icon {
+  flex: none;
+  align-self: center;
+  color: var(--c-text-3);
+}
+
+/* ---------- Stati ---------- */
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+ui-stato-vuoto {
+  justify-content: center;
+  padding-block: var(--sp-8);
+}
+
+/* ---------- Filtri ---------- */
+
+.filtri {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.filtri__ambiti {
+  display: flex;
+  gap: var(--sp-1);
+}
+
+.filtri__cerca {
+  margin-left: auto;
+  min-width: 260px;
+}
+
+.nessun-esito {
+  font-size: var(--t-sm);
+  color: var(--c-text-mute);
+  padding-block: var(--sp-4);
+}
+
+/* ---------- Ricordi ---------- */
+
+.ricordi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.ricordo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.ricordo__testa {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.ricordo__data {
+  margin-left: auto;
+  color: var(--c-text-3);
+}
+
+/* La lettura è della voce di lettura, come in chat: la memoria si legge. */
+.ricordo__testo {
+  font-family: var(--f-lettura);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  max-width: 78ch;
+}
+
+.is-sospeso .ricordo__testo {
+  color: var(--c-text-3);
+}
+
+.ricordo__campo {
+  width: 100%;
+  font-family: var(--f-lettura);
+}
+
+.ricordo__azioni-modifica {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.ricordo__azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.ricordo__azioni a,
+.ricordo__azioni a:hover {
+  text-decoration: none;
+}
+
+.ricordo__spazio {
+  flex: 1;
+}
+
+.ricordo__ambito {
+  min-width: 190px;
+}
+
+/* ---------- Retention (RF-G-05) ---------- */
+
+.retention {
+  font-size: var(--t-xs);
+  color: var(--c-text-mute);
+  max-width: 78ch;
+}
+
+/* ---------- Cassetto nuovo ricordo ---------- */
+
+.nuovo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.nuovo__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.nuovo textarea {
+  width: 100%;
+  font-family: var(--f-lettura);
+}
+
+.nuovo__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
+  }
+
+  .filtri__cerca {
+    margin-left: 0;
+    width: 100%;
+  }
+}

@@ -49,6 +49,8 @@ const INSTRADAMENTO = [
   { prefisso: '/api/identita-visiva', porta: 3001 },
   { prefisso: '/api/impostazioni', porta: 3001 },
   { prefisso: '/api/agenti', porta: 3001 },
+  { prefisso: '/api/ricordi', porta: 3001 },
+  { prefisso: '/api/mcp', porta: 3001 },
   { prefisso: '/api', porta: 3000 },
 ];
 

@@ -9,8 +9,8 @@ import { Routes } from '@angular/router';
  * permesso, e comunque il server risponde 403 a chi non lo ha — la seconda
  * linea non si affida mai alla prima.
  *
- * `mcp` resta un segnaposto: il Modulo F ha superficie FE minima e arriva
- * con la Fase 7.
+ * `mcp` è la superficie FE del Modulo F (Fase 7): piccola per scelta — il
+ * valore del modulo sta nel backend.
  */
 export const IMPOSTAZIONI_ROUTES: Routes = [
   {
@@ -41,17 +41,10 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
         title: 'Utenti — Assieme',
       },
       {
+        /* Fase 7 — costruita. Il valore del Modulo F resta tutto nel backend. */
         path: 'mcp',
-        loadComponent: () =>
-          import('@shared/segnaposto/segnaposto-fase').then((m) => m.SegnapostoFase),
+        loadComponent: () => import('./mcp/accesso-mcp').then((m) => m.AccessoMcp),
         title: 'Accesso MCP — Assieme',
-        data: {
-          titolo: 'Accesso MCP',
-          fase: 7,
-          descrizione:
-            'Credenziali per collegare ASSIEME come strumento nei client AI esterni: generazione e revoca dei token, stato delle connessioni, istruzioni di configurazione. Il valore del modulo è tutto nel backend.',
-          requisiti: ['RF-F-02', 'RF-F-04'],
-        },
       },
     ],
   },

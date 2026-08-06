@@ -34,6 +34,7 @@ import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdfDaTesto } from './pdf.mjs';
+import { registraRicordo } from './memoria.mjs';
 import { trovaTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -131,9 +132,43 @@ function scenarioFranchigie() {
 
 **Il preventivo UnipolSai** prevede invece uno scoperto del 10% con un minimo di 500 €: su un danno da 8.000 € restano a carico del cliente 800 €, e il minimo scatta anche sui danni piccoli.
 
-Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è quasi sempre la formula più prevedibile.`,
+Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è quasi sempre la formula più prevedibile — ed è la prassi che la tua agenzia segue per i clienti con più veicoli.`,
     citazioni: [citazione(CITAZIONE_FRANCHIGIA_GENERALI), citazione(CITAZIONE_SCOPERTO_UNIPOL)],
-    provenienze: [],
+    /* RF-G-03: quando la risposta si fonda su un ricordo il sistema lo rende
+       riconoscibile. Il ricordo esiste davvero nelle fixture della memoria. */
+    provenienze: [
+      {
+        tipo: 'memoria',
+        origineId: 'ric-003',
+        etichetta: 'tiene conto del ricordo "franchigie fisse per i clienti con più veicoli"',
+      },
+    ],
+  };
+}
+
+/**
+ * RF-G-07: «ricordati che…» registra un ricordo vero — compare nel pannello
+ * Memoria — e la conferma del salvataggio è la risposta stessa, con il
+ * segnale di provenienza che punta al ricordo appena nato.
+ */
+const SCHEMA_RICORDATI = /^\s*(?:ricordati|ricorda)\s+(?:che\s+|di\s+)?(.+)$/is;
+
+function scenarioRegistraRicordo(testoDomanda, req) {
+  const estratto = SCHEMA_RICORDATI.exec(testoDomanda)?.[1]?.trim() ?? testoDomanda.trim();
+  const testo = estratto.charAt(0).toUpperCase() + estratto.slice(1);
+  const ricordo = registraRicordo(testo.endsWith('.') ? testo : `${testo}.`, req);
+  return {
+    testo: `Registrato: **${ricordo.testo}**
+
+D'ora in poi ne terrò conto nelle risposte e nelle esecuzioni degli agenti. Il ricordo è nella memoria dell'agenzia: dal pannello **Memoria** puoi correggerlo, spostarlo fra memoria personale e di agenzia, sospenderlo o eliminarlo.`,
+    citazioni: [],
+    provenienze: [
+      {
+        tipo: 'memoria',
+        origineId: ricordo.id,
+        etichetta: 'ricordo registrato nella memoria dell’agenzia',
+      },
+    ],
   };
 }
 
@@ -169,8 +204,10 @@ In sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla pers
   };
 }
 
-function scegliScenario(testo, documentiInContesto) {
+function scegliScenario(testo, documentiInContesto, req) {
   const t = testo.toLowerCase();
+  /* Prima di tutto: dettare un ricordo non richiede documenti (RF-G-07). */
+  if (SCHEMA_RICORDATI.test(testo)) return scenarioRegistraRicordo(testo, req);
   if (!documentiInContesto.length) return scenarioSenzaDocumenti();
   if (t.includes('grandine') || t.includes('cristalli')) return scenarioNonCoperto();
   if (t.includes('franchig') || t.includes('scopert')) return scenarioFranchigie();
@@ -284,7 +321,7 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     interrotto = true;
   });
 
-  const scenario = scegliScenario(nuovoMessaggio.testo, conversazione.documentiInContesto);
+  const scenario = scegliScenario(nuovoMessaggio.testo, conversazione.documentiInContesto, req);
   const messaggioId = `msg-${prossimoMessaggio++}`;
 
   invia({ tipo: 'inizio', messaggioId, messaggioUtenteId: messaggioUtente.id });

@@ -1,0 +1,204 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  max-width: 980px;
+}
+
+.testata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.testata__spiega {
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__genera {
+  align-self: flex-start;
+}
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+ui-stato-vuoto {
+  flex: 1;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* ---------- Tabella ---------- */
+
+tr.is-revocata td {
+  opacity: 0.6;
+}
+
+.cella-numerica {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.col-token {
+  width: 170px;
+}
+
+.col-data {
+  width: 130px;
+}
+
+.col-stato {
+  width: 110px;
+}
+
+.col-azione {
+  width: 170px;
+  text-align: right;
+}
+
+/* ---------- Blocchi: connessioni e configurazione ---------- */
+
+.blocco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.blocco__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  max-width: 72ch;
+}
+
+.blocco__vuoto {
+  font-size: var(--t-sm);
+  color: var(--c-text-mute);
+}
+
+.connessioni {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.connessione {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+}
+
+.connessione ui-icon {
+  align-self: center;
+  color: var(--c-pos);
+}
+
+.connessione__client {
+  font-weight: 500;
+}
+
+.connessione__dettaglio {
+  color: var(--c-text-3);
+}
+
+.config {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.config__codice {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  font-size: var(--t-mono);
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* RF-F-05: chi collega un client esterno deve saperlo da subito. */
+.avvertenza {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  max-width: 72ch;
+}
+
+.avvertenza ui-icon {
+  flex: none;
+  align-self: center;
+  color: var(--c-warn, var(--c-neg));
+}
+
+/* ---------- Cassetto di generazione ---------- */
+
+.genera {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.genera__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.genera input {
+  width: 100%;
+}
+
+.genera__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.token {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.token__valore {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-accent-hairline, var(--c-line));
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  font-size: var(--t-mono);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .col-data {
+    display: none;
+  }
+}

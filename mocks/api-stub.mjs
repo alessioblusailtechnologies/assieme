@@ -45,6 +45,8 @@ import {
 import { gestisci as gestisciAgenti } from './agenti.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
 import { gestisci as gestisciImpostazioni } from './impostazioni.mjs';
+import { gestisci as gestisciMcp } from './mcp.mjs';
+import { gestisci as gestisciMemoria } from './memoria.mjs';
 import { gestisci as gestisciTabelle } from './tabelle.mjs';
 import { generaPdf } from './pdf.mjs';
 
@@ -327,6 +329,16 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  /* Modulo G: la memoria — ricordi di tenant e personali. */
+  if (await gestisciMemoria(req, res, url, { inviaJson, leggiCorpo })) {
+    return;
+  }
+
+  /* Modulo F: credenziali e connessioni MCP. Solo amministratore. */
+  if (await gestisciMcp(req, res, url, { inviaJson, leggiCorpo })) {
+    return;
+  }
+
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
@@ -402,6 +414,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti, /api/ricordi, /api/mcp',
   );
 });

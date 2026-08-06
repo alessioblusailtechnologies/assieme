@@ -63,11 +63,21 @@
 
       @if (m.provenienze.length) {
         <div class="provenienze">
+          <!--
+            RF-G-03 (con RF-D-05/15): il segnale porta al pannello che lo
+            governa — il ricordo si corregge in Memoria, la regola nelle
+            Istruzioni. Riconoscibile e raggiungibile, non solo dichiarato.
+          -->
           @for (p of m.provenienze; track p.origineId) {
-            <span class="provenienza" [class]="'is-' + p.tipo">
+            <a
+              class="provenienza"
+              [class]="'is-' + p.tipo"
+              [routerLink]="percorsiProvenienza[p.tipo]"
+              [uiSuggerimento]="p.tipo === 'memoria' ? 'Apri il pannello Memoria' : 'Apri le Istruzioni'"
+            >
               <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
               {{ p.etichetta }}
-            </span>
+            </a>
           }
         </div>
       }
