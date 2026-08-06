@@ -77,19 +77,23 @@ export const productShot: {
 };
 
 /* -------------------------------------------------------------------------
- * DNA d'Agenzia — il differenziale, raccontato come vantaggio e non come
- * architettura (istruzioni + memoria + documenti di riferimento).
+ * Memoria viva — il differenziale, raccontato come vantaggio e non come
+ * architettura: le regole che detti, quello che impara, i documenti di
+ * riferimento sempre a portata.
+ *
+ * Il contrasto con la cartella condivisa non è retorico: è esattamente da
+ * lì che i documenti arrivano oggi, ed è il paragone che il lettore fa da sé.
  * ---------------------------------------------------------------------- */
 
 export const memory = {
-  eyebrow: "DNA d'Agenzia",
-  title: 'Più lo usi, più somiglia alla tua agenzia',
-  body: "Uno strumento a criteri fissi giudica tutti allo stesso modo. Assieme impara il tuo: le regole che gli detti, le scelte che ti vede fare, i documenti che tieni sempre a portata. Ogni settimana la distanza fra le sue risposte e le tue aumenta a tuo favore.",
+  eyebrow: 'Memoria viva',
+  title: 'Un archivio che risponde invece di aspettare',
+  body: 'Le cartelle condivise conservano. Non collegano, non ricordano, non rispondono. Qui ogni documento letto entra a far parte di qualcosa che cresce: le regole che gli detti, le scelte che ti vede fare, la casistica che avete già risolto.',
   rows: [
     {
       term: 'Le tue regole',
       detail:
-        "Scrivi in italiano come valuta la tua agenzia. Vale da subito, per tutti i colleghi",
+        'Scrivi in italiano come valuta la tua agenzia. Vale da subito, per tutti i colleghi',
     },
     {
       term: 'Quello che impara',
