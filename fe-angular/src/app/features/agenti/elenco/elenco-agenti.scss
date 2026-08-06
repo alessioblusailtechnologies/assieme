@@ -1,0 +1,193 @@
+/* Stessa impalcatura degli altri elenchi: testata fissa, griglia che scorre.
+   In coda però c'è la libreria: la pagina intera scorre, non solo la tabella. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 100%;
+  padding: var(--sp-6);
+  overflow-y: auto;
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__spiega {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.testata__conteggio {
+  margin-left: auto;
+  min-width: 9ch;
+  text-align: right;
+}
+
+/* ---------- Stati ---------- */
+
+.scheletri {
+  display: flex;
+  border-radius: var(--radius);
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+}
+
+ui-stato-vuoto {
+  justify-content: center;
+  padding-block: var(--sp-8);
+}
+
+/* ---------- Griglia ---------- */
+
+.agente {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.agente__nome {
+  font-weight: 500;
+}
+
+.agente__spiega {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+/* Un agente disattivo resta leggibile ma si vede che dorme. */
+.riga-spenta .agente__nome {
+  color: var(--c-text-3);
+}
+
+.pianificazione {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  white-space: nowrap;
+}
+
+.pianificazione ui-icon {
+  color: var(--c-text-3);
+}
+
+.ultima {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  white-space: nowrap;
+}
+
+.muto {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.col-pianificazione {
+  width: 240px;
+}
+
+.col-ultima {
+  width: 240px;
+}
+
+.col-stato {
+  width: 120px;
+}
+
+.col-azione {
+  width: 110px;
+}
+
+.apri {
+  float: right;
+}
+
+.apri,
+.apri:hover {
+  text-decoration: none;
+}
+
+/* ---------- Libreria (RF-E-10) ---------- */
+
+.libreria {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--c-line);
+}
+
+.libreria__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.libreria__schede {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.scheda__nome {
+  font-weight: 500;
+}
+
+.scheda__spiega {
+  flex: 1;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.scheda__azione {
+  align-self: flex-start;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
+  }
+
+  .col-pianificazione,
+  .col-ultima {
+    display: none;
+  }
+}

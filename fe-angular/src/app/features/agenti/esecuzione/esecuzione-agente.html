@@ -1,0 +1,157 @@
+@if (errore()) {
+  <ui-briciole [voci]="briciole()" />
+
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti ad aprire l'esito"
+    descrizione="L'esecuzione potrebbe non esistere più, oppure il problema è temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprovaCaricamento()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !esecuzione()) {
+  <ui-briciole [voci]="briciole()" />
+  <div class="caricamento">
+    <ui-scheletro [numeroRighe]="1" />
+    <ui-scheletro [numeroRighe]="5" />
+  </div>
+} @else if (esecuzione(); as esecuzione) {
+  <header class="testata">
+    <ui-briciole [voci]="briciole()" />
+    <span class="testata__stacco" aria-hidden="true"></span>
+    <h1 class="serif testata__titolo">Esecuzione del {{ esecuzione.avviataIl | date: 'dd/MM/yyyy HH:mm' }}</h1>
+    <app-stato-esecuzione [stato]="esecuzione.stato" />
+    @if (esecuzione.tentativi > 1) {
+      <ui-badge variante="negativo">{{ esecuzione.tentativi }} tentativi</ui-badge>
+    }
+  </header>
+
+  <p class="meta mono" role="status" aria-live="polite">
+    {{ esecuzione.modalita }}
+    @if (durata(); as durata) {
+      · conclusa in {{ durata }}
+    } @else if (inLavoro()) {
+      · in lavorazione…
+    }
+  </p>
+
+  @if (parametriMostrati().length) {
+    <section class="scheda" aria-labelledby="titolo-parametri">
+      <p class="mono" id="titolo-parametri">Parametri dell'avvio</p>
+      <ul class="parametri">
+        @for (parametro of parametriMostrati(); track parametro.etichetta) {
+          <li><span class="parametri__etichetta">{{ parametro.etichetta }}:</span> {{ parametro.valore }}</li>
+        }
+      </ul>
+    </section>
+  }
+
+  <!-- L'esito consultabile (RF-E-07), con le citazioni che lo reggono (RF-E-08). -->
+  @if (esecuzione.stato === 'fallita') {
+    <section class="scheda fallimento" aria-labelledby="titolo-fallimento">
+      <p class="mono" id="titolo-fallimento">Esecuzione fallita</p>
+      <p class="fallimento__messaggio">{{ esecuzione.errore }}</p>
+      @if (esecuzione.tentativi > 1) {
+        <p class="fallimento__nota">
+          La politica di retry ha effettuato {{ esecuzione.tentativi }} tentativi prima di
+          arrendersi: il fallimento è persistente, non un inciampo momentaneo.
+        </p>
+      }
+      <div class="fallimento__azioni">
+        <button uiBottone variante="primario" type="button" [disabled]="inAvvio()" (click)="riesegui()">
+          <ui-icon name="riprova" [size]="15" />
+          <span>{{ inAvvio() ? 'Avvio…' : 'Riprova ora' }}</span>
+        </button>
+      </div>
+    </section>
+  } @else if (esecuzione.output) {
+    <section class="scheda" aria-labelledby="titolo-esito">
+      <p class="mono" id="titolo-esito">Esito</p>
+      <div class="esito" [innerHTML]="outputHtml()"></div>
+
+      @if (esecuzione.citazioni.length) {
+        <div class="citazioni" aria-label="Citazioni">
+          @for (citazione of esecuzione.citazioni; track citazione.id) {
+            <ui-chip-citazione [citazione]="citazione" (apri)="citazioneAperta.set($event)" />
+          }
+        </div>
+      }
+
+      <div class="esito__azioni">
+        @if (esecuzione.documentoGeneratoUrl; as url) {
+          <a uiBottone [href]="url" download>
+            <ui-icon name="scarica" [size]="15" />
+            <span>Scarica il documento generato</span>
+          </a>
+        }
+        <button uiBottone type="button" (click)="approfondisciInChat()">
+          <ui-icon name="chat" [size]="15" />
+          <span>Approfondisci in chat</span>
+        </button>
+      </div>
+    </section>
+  } @else if (inLavoro()) {
+    <section class="scheda" aria-labelledby="titolo-attesa">
+      <p class="mono" id="titolo-attesa">Esito</p>
+      <p class="attesa">
+        <ui-icon name="in-corso" [size]="15" class="attesa__icona" />
+        <span>L'esecuzione sta lavorando: l'esito comparirà qui, senza bisogno di ricaricare.</span>
+      </p>
+    </section>
+  }
+
+  <!-- Il log sintetico (RF-E-06): passi svolti, non traccia di debug. -->
+  <section class="scheda" aria-labelledby="titolo-log">
+    <p class="mono" id="titolo-log">Log</p>
+    <ol class="log">
+      @for (riga of esecuzione.log; track riga.istante + riga.messaggio) {
+        <li class="riga" [class]="'is-' + riga.livello">
+          <span class="riga__istante mono">{{ riga.istante | date: 'HH:mm:ss' }}</span>
+          <ui-icon
+            [name]="riga.livello === 'errore' ? 'errore' : riga.livello === 'avviso' ? 'avviso' : 'pronto'"
+            [size]="13"
+          />
+          <span class="riga__messaggio">{{ riga.messaggio }}</span>
+        </li>
+      }
+    </ol>
+  </section>
+}
+
+<!-- RF-C-05 dall'esito: la citazione si apre accanto, senza perdere il contesto. -->
+<ui-cassetto
+  [aperto]="!!citazioneAperta()"
+  (apertoChange)="!$event && citazioneAperta.set(undefined)"
+  [titolo]="citazioneAperta()?.documentoTitolo ?? ''"
+>
+  @if (citazioneAperta(); as citazione) {
+    <div class="citazione-dettaglio">
+      <p class="mono">
+        pagina {{ citazione.posizione.pagina }}
+        @if (citazione.posizione.articolo) {
+          · art. {{ citazione.posizione.articolo }}
+        }
+        @if (citazione.posizione.sezione) {
+          · {{ citazione.posizione.sezione }}
+        }
+      </p>
+      <blockquote class="citazione-dettaglio__estratto">«{{ citazione.estratto }}»</blockquote>
+
+      <ui-visualizzatore-pdf
+        class="citazione-dettaglio__pdf"
+        [fileUrl]="urlFile(citazione)"
+        [posizione]="citazione.posizione"
+      />
+
+      <a
+        uiBottone
+        [routerLink]="['/archivio', citazione.archivio === 'pubblico' ? 'pubblico' : 'privato', citazione.documentoId]"
+      >
+        <ui-icon name="apri-esterno" [size]="15" />
+        <span>Apri la scheda del documento</span>
+      </a>
+    </div>
+  }
+</ui-cassetto>

@@ -1,0 +1,223 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 100%;
+  max-width: 920px;
+  padding: var(--sp-6);
+  overflow-y: auto;
+}
+
+.caricamento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.meta {
+  color: var(--c-text-3);
+}
+
+/* ---------- Schede ---------- */
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+.parametri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--t-sm);
+}
+
+.parametri__etichetta {
+  color: var(--c-text-3);
+}
+
+/* ---------- Esito ---------- */
+
+/* La lettura lunga è della voce di lettura, come le risposte in chat. */
+.esito {
+  max-width: 72ch;
+  font-family: var(--f-lettura);
+  font-size: var(--t-lead);
+  line-height: 1.6;
+  color: var(--c-text);
+}
+
+.esito ::ng-deep p {
+  margin: 0 0 var(--sp-3);
+}
+
+.esito ::ng-deep p:last-child {
+  margin-bottom: 0;
+}
+
+.esito ::ng-deep code {
+  font-family: var(--f-mono);
+  font-size: 0.85em;
+  background: var(--c-page-alt);
+  padding: 1px 4px;
+}
+
+.citazioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.esito__azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.esito__azioni a,
+.esito__azioni a:hover {
+  text-decoration: none;
+}
+
+.attesa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.attesa__icona {
+  animation: gira 1.8s linear infinite;
+  color: var(--c-stato-corso);
+}
+
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Fallimento (RF-E-11) ---------- */
+
+.fallimento {
+  border-color: var(--c-neg-soft);
+}
+
+.fallimento__messaggio {
+  color: var(--c-neg);
+}
+
+.fallimento__nota {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  max-width: 72ch;
+}
+
+.fallimento__azioni {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+/* ---------- Log (RF-E-06) ---------- */
+
+.log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.riga {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+}
+
+.riga ui-icon {
+  flex: none;
+  align-self: center;
+  color: var(--c-text-3);
+}
+
+.riga.is-avviso ui-icon {
+  color: var(--c-stato-corso);
+}
+
+.riga.is-errore ui-icon {
+  color: var(--c-stato-errore);
+}
+
+.riga__istante {
+  flex: none;
+  color: var(--c-text-3);
+}
+
+.riga__messaggio {
+  min-width: 0;
+}
+
+.riga.is-errore .riga__messaggio {
+  color: var(--c-neg);
+}
+
+/* ---------- Cassetto della citazione ---------- */
+
+.citazione-dettaglio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  height: 100%;
+}
+
+.citazione-dettaglio__estratto {
+  padding: var(--sp-3);
+  border-left: 2px solid var(--c-accent);
+  background: var(--c-page-alt);
+  font-size: var(--t-sm);
+}
+
+.citazione-dettaglio__pdf {
+  flex: 1;
+  min-height: 0;
+}
+
+.citazione-dettaglio a,
+.citazione-dettaglio a:hover {
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+}

@@ -1,0 +1,344 @@
+@if (store.errore()) {
+  <ui-briciole [voci]="briciole()" />
+
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti ad aprire l'agente"
+    descrizione="Potrebbe essere stato eliminato da un collega, oppure il problema è temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="store.riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (store.inCaricamento() && !store.agente()) {
+  <ui-briciole [voci]="briciole()" />
+  <div class="caricamento">
+    <ui-scheletro [numeroRighe]="1" />
+    <ui-scheletro [numeroRighe]="6" />
+  </div>
+} @else if (store.agente(); as agente) {
+  <header class="testata">
+    <ui-briciole [voci]="briciole()" />
+    <span class="testata__stacco" aria-hidden="true"></span>
+    <h1 class="serif testata__titolo">{{ agente.nome }}</h1>
+
+    @if (agente.attivo) {
+      <ui-badge variante="corrente">attivo</ui-badge>
+    } @else {
+      <ui-badge variante="storico">disattivo</ui-badge>
+    }
+    @if (agente.pianificazione?.sospesa) {
+      <ui-badge variante="storico">pianificazione sospesa</ui-badge>
+    }
+  </header>
+
+  @if (agente.descrizione) {
+    <p class="descrizione">{{ agente.descrizione }}</p>
+  }
+
+  <div class="azioni" role="toolbar" aria-label="Azioni sull'agente">
+    <button
+      uiBottone
+      variante="primario"
+      dimensione="piccolo"
+      type="button"
+      (click)="avvia()"
+      [disabled]="!agente.attivo"
+      [uiSuggerimento]="agente.attivo ? '' : 'L’agente è disattivato'"
+    >
+      <ui-icon name="esegui" [size]="14" />
+      <span>Esegui ora</span>
+    </button>
+
+    <a uiBottone dimensione="piccolo" [routerLink]="['/agenti', agente.id, 'modifica']">
+      <ui-icon name="modifica" [size]="14" />
+      <span>Modifica</span>
+    </a>
+
+    <button uiBottone dimensione="piccolo" type="button" (click)="store.attiva(!agente.attivo)">
+      <ui-icon [name]="agente.attivo ? 'sospendi' : 'esegui'" [size]="14" />
+      <span>{{ agente.attivo ? 'Disattiva' : 'Attiva' }}</span>
+    </button>
+
+    @if (agente.pianificazione; as pianificazione) {
+      <button
+        uiBottone
+        dimensione="piccolo"
+        type="button"
+        (click)="store.sospendiPianificazione(!pianificazione.sospesa)"
+      >
+        <ui-icon name="pianificazione" [size]="14" />
+        <span>{{ pianificazione.sospesa ? 'Riprendi la pianificazione' : 'Sospendi la pianificazione' }}</span>
+      </button>
+    }
+
+    <button uiBottone dimensione="piccolo" type="button" (click)="store.duplica()">
+      <ui-icon name="duplica" [size]="14" />
+      <span>Duplica</span>
+    </button>
+
+    <span class="azioni__spazio" aria-hidden="true"></span>
+
+    @if (!confermaEliminazione()) {
+      <button uiBottone dimensione="piccolo" type="button" (click)="elimina()">
+        <ui-icon name="elimina" [size]="14" />
+        <span>Elimina</span>
+      </button>
+    } @else {
+      <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina()">
+        <span>Elimina davvero</span>
+      </button>
+      <button
+        uiBottone
+        dimensione="piccolo"
+        variante="testo"
+        type="button"
+        (click)="confermaEliminazione.set(false)"
+      >
+        <span>Annulla</span>
+      </button>
+    }
+  </div>
+
+  <div class="colonne">
+    <!-- Definizione (RF-E-02) -->
+    <section class="scheda definizione" aria-labelledby="titolo-definizione">
+      <p class="mono" id="titolo-definizione">Definizione</p>
+
+      <p class="definizione__etichetta">Istruzioni</p>
+      <p class="definizione__istruzioni">{{ agente.istruzioni }}</p>
+
+      <p class="definizione__etichetta">Fonti</p>
+      <ul class="fonti">
+        @for (fonte of agente.fonti; track fonte.etichetta) {
+          <li class="fonte">
+            <ui-icon
+              [name]="
+                fonte.tipo === 'documenti-riferimento'
+                  ? 'riferimenti'
+                  : fonte.tipo === 'selezione'
+                    ? fonte.archivio === 'pubblico'
+                      ? 'archivio-pubblico'
+                      : 'archivio-privato'
+                    : 'documento'
+              "
+              [size]="14"
+            />
+            @if (fonte.tipo === 'documento') {
+              <a
+                class="fonte__collegamento"
+                [routerLink]="[
+                  '/archivio',
+                  fonte.archivio === 'pubblico' ? 'pubblico' : 'privato',
+                  fonte.documentoId,
+                ]"
+              >
+                {{ fonte.etichetta }}
+              </a>
+            } @else {
+              <span>{{ fonte.etichetta }}</span>
+            }
+          </li>
+        }
+      </ul>
+
+      <p class="definizione__etichetta">Output</p>
+      <p>
+        {{ agente.formatoOutput }}
+        @if (nomeTemplate(); as nome) {
+          <span class="definizione__nota">— sul template {{ nome }}</span>
+        }
+      </p>
+
+      @if (agente.parametri.length) {
+        <p class="definizione__etichetta">Parametri all'avvio</p>
+        <ul class="fonti">
+          @for (parametro of agente.parametri; track parametro.chiave) {
+            <li class="fonte">
+              <ui-icon [name]="parametro.tipo === 'documento' ? 'documento' : 'modifica'" [size]="13" />
+              <span>
+                {{ parametro.etichetta }}
+                <span class="definizione__nota">{{ parametro.obbligatorio ? 'obbligatorio' : 'facoltativo' }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
+      <p class="definizione__etichetta">Pianificazione</p>
+      @if (agente.pianificazione; as pianificazione) {
+        <p>
+          {{ etichettaPianificazione(pianificazione) }}
+          @if (pianificazione.sospesa) {
+            <span class="definizione__nota">— sospesa</span>
+          }
+        </p>
+      } @else {
+        <p class="definizione__nota">Solo su richiesta.</p>
+      }
+    </section>
+
+    <!-- Storico (RF-E-06) -->
+    <section class="scheda storico" aria-labelledby="titolo-storico">
+      <p class="mono" id="titolo-storico">Storico esecuzioni</p>
+
+      @if (!store.esecuzioni().length) {
+        <p class="storico__vuoto">
+          Mai eseguito. «Esegui ora» avvia la prima esecuzione; l'esito comparirà qui.
+        </p>
+      } @else {
+        <div class="ui-tabella-contenitore">
+          <table class="ui-tabella">
+            <thead>
+              <tr>
+                <th>Avviata il</th>
+                <th class="col-modalita">Modalità</th>
+                <th class="col-stato">Stato</th>
+                <th class="col-durata">Durata</th>
+                <th class="col-documento"><span class="visually-hidden">Documento generato</span></th>
+                <th class="col-azione"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (esecuzione of store.esecuzioni(); track esecuzione.id) {
+                <tr>
+                  <td class="cella-numerica">{{ esecuzione.avviataIl | date: 'dd/MM/yyyy HH:mm' }}</td>
+                  <td class="col-modalita">{{ esecuzione.modalita }}</td>
+                  <td class="col-stato">
+                    <app-stato-esecuzione [stato]="esecuzione.stato" />
+                    @if (esecuzione.tentativi > 1) {
+                      <span
+                        class="tentativi"
+                        [uiSuggerimento]="'Ha richiesto ' + esecuzione.tentativi + ' tentativi (politica di retry)'"
+                      >
+                        ×{{ esecuzione.tentativi }}
+                      </span>
+                    }
+                  </td>
+                  <td class="col-durata cella-numerica">{{ durata(esecuzione) }}</td>
+                  <td class="col-documento">
+                    @if (esecuzione.documentoGeneratoUrl; as url) {
+                      <a
+                        class="scarica"
+                        [href]="url"
+                        download
+                        uiSuggerimento="Scarica il documento generato"
+                        aria-label="Scarica il documento generato"
+                      >
+                        <ui-icon name="scarica" [size]="15" />
+                      </a>
+                    }
+                  </td>
+                  <td class="col-azione">
+                    <a
+                      uiBottone
+                      dimensione="piccolo"
+                      variante="testo"
+                      [routerLink]="['/agenti', agente.id, 'esecuzioni', esecuzione.id]"
+                    >
+                      <span>Apri esito</span>
+                    </a>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  </div>
+}
+
+<!-- RF-E-05: i parametri dell'esecuzione manuale, chiesti solo se dichiarati. -->
+<ui-cassetto [(aperto)]="cassettoAvvio" titolo="Esegui ora" larghezza="min(460px, 94vw)">
+  @if (cassettoAvvio()) {
+    <div class="avvio">
+      <p class="avvio__spiega">
+        Questo agente accetta parametri per l'esecuzione: valgono solo per questa volta.
+      </p>
+
+      @for (parametro of parametri(); track parametro.chiave) {
+        <div class="avvio__campo">
+          <p class="avvio__etichetta">
+            {{ parametro.etichetta }}
+            @if (!parametro.obbligatorio) {
+              <span class="avvio__nota">facoltativo</span>
+            }
+          </p>
+
+          @if (parametro.tipo === 'testo') {
+            <input
+              uiCampo
+              type="text"
+              [value]="valoriTesto()[parametro.chiave] ?? ''"
+              (input)="aggiornaTesto(parametro.chiave, $any($event.target).value)"
+              [placeholder]="parametro.suggerimento ?? ''"
+              [attr.aria-label]="parametro.etichetta"
+            />
+          } @else if (documentiScelti()[parametro.chiave]; as documento) {
+            <div class="avvio__scelto">
+              <ui-icon
+                [name]="documento.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+                [size]="14"
+              />
+              <span class="avvio__titolo">{{ documento.titolo }}</span>
+              <button
+                type="button"
+                class="avvio__togli"
+                (click)="togliDocumento(parametro.chiave)"
+                [attr.aria-label]="'Togli ' + documento.titolo"
+              >
+                <ui-icon name="chiudi" [size]="12" />
+              </button>
+            </div>
+          } @else if (parametroInRicerca() === parametro.chiave) {
+            <label class="ui-campo-icona">
+              <ui-icon name="cerca" [size]="16" />
+              <input
+                uiCampo
+                type="search"
+                [value]="ricercaParametro()"
+                (input)="ricercaParametro.set($any($event.target).value)"
+                (keydown)="suTastoRicerca($event)"
+                placeholder="Cerca per compagnia, prodotto o titolo…"
+                [attr.aria-label]="'Cerca il documento per ' + parametro.etichetta"
+              />
+            </label>
+            <ui-selettore-documenti
+              [query]="ricercaParametro()"
+              [esclusi]="[]"
+              (scelto)="scegliDocumento($event)"
+              (chiuso)="parametroInRicerca.set(undefined)"
+            />
+          } @else {
+            <button uiBottone type="button" (click)="apriRicerca(parametro.chiave)">
+              <ui-icon name="cerca" [size]="14" />
+              <span>Scegli il documento</span>
+            </button>
+          }
+
+          @if (parametro.suggerimento && parametro.tipo === 'documento') {
+            <p class="avvio__nota">{{ parametro.suggerimento }}</p>
+          }
+        </div>
+      }
+
+      <footer class="avvio__azioni">
+        <button
+          uiBottone
+          variante="primario"
+          type="button"
+          [disabled]="!avvioPronto()"
+          (click)="confermaAvvio()"
+        >
+          <ui-icon name="esegui" [size]="15" />
+          <span>Avvia l'esecuzione</span>
+        </button>
+        <button uiBottone variante="testo" type="button" (click)="cassettoAvvio.set(false)">
+          <span>Annulla</span>
+        </button>
+      </footer>
+    </div>
+  }
+</ui-cassetto>

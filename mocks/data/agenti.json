@@ -1,0 +1,92 @@
+[
+  {
+    "id": "agt-001",
+    "nome": "Monitoraggio nuove edizioni auto",
+    "descrizione": "Controlla ogni mattina i set informativi auto dei prodotti preferiti e segnala edizioni nuove o aggiornate.",
+    "istruzioni": "Confronta le edizioni presenti nell'Archivio Pubblico con quelle note al giorno precedente, limitandoti ai documenti dei prodotti segnati come preferiti. Per ogni novità indica compagnia, prodotto, tipologia del documento e data di validità, e riassumi in due righe cosa cambia rispetto all'edizione precedente. Se non ci sono novità, dillo esplicitamente.",
+    "fonti": [
+      { "tipo": "selezione", "archivio": "pubblico", "ramoId": "ram-auto", "soloPreferiti": true }
+    ],
+    "formatoOutput": "testo",
+    "parametri": [],
+    "pianificazione": { "frequenza": "giornaliera", "orario": "07:30", "sospesa": false },
+    "attivo": true,
+    "creatoDa": "utn-001",
+    "aggiornatoIl": "2026-07-28T09:15:00+02:00"
+  },
+  {
+    "id": "agt-002",
+    "nome": "Riepilogo settimanale Archivio Privato",
+    "descrizione": "Ogni lunedì riassume i documenti caricati nella settimana, con stato di elaborazione ed eventuali errori da sistemare.",
+    "istruzioni": "Elenca i documenti caricati nell'Archivio Privato negli ultimi sette giorni raggruppandoli per tipologia. Per ciascuno indica chi lo ha caricato e lo stato di elaborazione; segnala a parte i documenti in errore, che vanno ricaricati. Chiudi con il totale dello spazio occupato.",
+    "fonti": [{ "tipo": "selezione", "archivio": "privato" }],
+    "formatoOutput": "documento",
+    "templateOutputId": "tpl-005",
+    "parametri": [],
+    "pianificazione": { "frequenza": "settimanale", "orario": "08:00", "giornoSettimana": 1, "sospesa": false },
+    "attivo": true,
+    "creatoDa": "utn-004",
+    "aggiornatoIl": "2026-07-14T11:40:00+02:00"
+  },
+  {
+    "id": "agt-003",
+    "nome": "Verifica preventivo contro polizza in essere",
+    "descrizione": "Confronta un preventivo con le condizioni AUTOPIÙ in essere e produce il confronto sul template dell'agenzia.",
+    "istruzioni": "Confronta il preventivo indicato all'avvio con le Condizioni di Assicurazione Active Veicoli AUTOPIÙ, garanzia per garanzia: massimali, franchigie e scoperti, assistenza, garanzie presenti in una sola delle due offerte. Applica i criteri di valutazione dell'agenzia e cita sempre articolo e pagina. Se una garanzia non compare in un documento, dichiaralo invece di dedurre.",
+    "fonti": [
+      { "tipo": "documento", "documentoId": "doc-pub-003", "archivio": "pubblico" },
+      { "tipo": "documenti-riferimento" }
+    ],
+    "formatoOutput": "documento",
+    "templateOutputId": "tpl-001",
+    "parametri": [
+      {
+        "chiave": "preventivo",
+        "etichetta": "Preventivo da verificare",
+        "tipo": "documento",
+        "obbligatorio": true,
+        "suggerimento": "Il preventivo caricato nell'Archivio Privato su cui fare il confronto."
+      },
+      {
+        "chiave": "note",
+        "etichetta": "Indicazioni per questa verifica",
+        "tipo": "testo",
+        "obbligatorio": false,
+        "suggerimento": "es. il cliente tiene soprattutto alla garanzia furto."
+      }
+    ],
+    "attivo": true,
+    "creatoDa": "utn-001",
+    "aggiornatoIl": "2026-08-03T16:20:00+02:00"
+  },
+  {
+    "id": "agt-004",
+    "nome": "Controllo scadenze convenzioni",
+    "descrizione": "A inizio mese verifica le convenzioni attive dell'agenzia e segnala quelle in scadenza nei sessanta giorni successivi.",
+    "istruzioni": "Leggi le convenzioni dell'agenzia e individua le date di scadenza. Segnala quelle che scadono entro sessanta giorni, con il riferimento al passaggio del documento in cui la scadenza è indicata.",
+    "fonti": [{ "tipo": "documento", "documentoId": "doc-priv-003", "archivio": "privato" }],
+    "formatoOutput": "testo",
+    "parametri": [],
+    "pianificazione": { "frequenza": "mensile", "orario": "09:00", "giornoMese": 1, "sospesa": false },
+    "attivo": false,
+    "creatoDa": "utn-001",
+    "aggiornatoIl": "2026-06-02T10:05:00+02:00"
+  },
+  {
+    "id": "agt-005",
+    "nome": "Rassegna massimali salute Zurich",
+    "descrizione": "Rassegna settimanale dei massimali del prodotto Zurich Salute Più, in attesa del chiarimento richiesto alla compagnia.",
+    "istruzioni": "Estrai i massimali del prodotto Zurich Salute Più e confrontali con quanto dichiarato nella corrispondenza con la compagnia. Segnala ogni incongruenza fra i due, con citazioni puntuali.",
+    "fonti": [
+      { "tipo": "selezione", "archivio": "pubblico", "compagniaId": "cmp-zurich", "ramoId": "ram-salute" },
+      { "tipo": "documento", "documentoId": "doc-priv-009", "archivio": "privato" }
+    ],
+    "formatoOutput": "testo",
+    "parametri": [],
+    "pianificazione": { "frequenza": "settimanale", "orario": "07:00", "giornoSettimana": 3, "sospesa": true },
+    "attivo": true,
+    "creatoDa": "utn-004",
+    "aggiornatoIl": "2026-08-05T09:30:00+02:00",
+    "_scenario": "fallimento"
+  }
+]

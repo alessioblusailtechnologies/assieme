@@ -42,6 +42,13 @@ const INSTRADAMENTO = [
   { prefisso: '/api/spazio', porta: 3001 },
   { prefisso: '/api/conversazioni', porta: 3001 },
   { prefisso: '/api/template', porta: 3001 },
+  { prefisso: '/api/tabelle', porta: 3001 },
+  { prefisso: '/api/modelli', porta: 3001 },
+  { prefisso: '/api/istruzioni', porta: 3001 },
+  { prefisso: '/api/utenti', porta: 3001 },
+  { prefisso: '/api/identita-visiva', porta: 3001 },
+  { prefisso: '/api/impostazioni', porta: 3001 },
+  { prefisso: '/api/agenti', porta: 3001 },
   { prefisso: '/api', porta: 3000 },
 ];
 

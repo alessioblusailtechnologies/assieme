@@ -42,6 +42,7 @@ import {
   gestisci as gestisciArchivioPrivato,
   trovaDocumento as trovaDocumentoPrivato,
 } from './archivio-privato.mjs';
+import { gestisci as gestisciAgenti } from './agenti.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
 import { gestisci as gestisciImpostazioni } from './impostazioni.mjs';
 import { gestisci as gestisciTabelle } from './tabelle.mjs';
@@ -320,6 +321,12 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  /* Modulo E: agenti, esecuzioni con macchina a stati, libreria predefiniti,
+     limiti del piano. */
+  if (await gestisciAgenti(req, res, url, { inviaJson, leggiCorpo, trovaDocumento })) {
+    return;
+  }
+
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
@@ -395,6 +402,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti',
   );
 });

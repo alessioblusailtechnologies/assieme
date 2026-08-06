@@ -52,15 +52,9 @@ export const routes: Routes = [
           ),
       },
       {
+        /* Fase 6 — costruita. */
         path: 'agenti',
-        loadComponent: segnaposto,
-        data: {
-          titolo: 'Agenti',
-          fase: 6,
-          descrizione:
-            'Task AI definiti una volta ed eseguibili su richiesta o su pianificazione ricorrente, con storico delle esecuzioni, log ed esito. È la base che abilita le automazioni verticali future.',
-          requisiti: ['RF-E-01 … RF-E-13'],
-        },
+        loadChildren: () => import('@features/agenti/agenti.routes').then((m) => m.AGENTI_ROUTES),
       },
       {
         path: 'memoria',

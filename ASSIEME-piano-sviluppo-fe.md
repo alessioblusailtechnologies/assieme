@@ -493,9 +493,21 @@ Sezione con shell propria e navigazione secondaria: **Modello AI** (schede infor
 - **Utenti: niente eliminazione, si sospende**; su sé stessi né ruolo né stato (409). L'invito nasce `invitato` e diventa attivo al primo accesso.
 - Rimandati con motivo: **RF-D-09** (modalità di prova di una regola — priorità C, ha senso con l'AI vera) e la **revoca credenziali MCP** (Fase 7, con il Modulo F).
 
-### Fase 6 — Agenti · ~7 giorni · RF-E-01…E-13
+### ✅ Fase 6 — Agenti — **completata** · RF-E-01…E-13
 
-Elenco e stati, creazione guidata (istruzioni, fonti, output, template), pianificazione ricorrente, esecuzione manuale, storico con log ed esito, notifiche in applicazione, libreria di agenti predefiniti.
+Elenco come plancia (stato, pianificazione, esito dell'ultima esecuzione) con i limiti del piano dichiarati in testata (RF-E-09); editor unico per creazione e modifica — istruzioni, fonti (documenti singoli, porzioni di archivio, documenti di riferimento), formato di output con template (RF-E-13), parametri d'avvio (RF-E-05), pianificazione con le frequenze ammesse dal piano (RF-E-04); esecuzione manuale con cassetto dei parametri; dettaglio con storico, log sintetico ed esito con citazioni apribili sul passaggio (RF-E-08 con RF-C-05); libreria dei predefiniti (RF-E-10) con «Parti da questo» che apre la creazione già compilata; «Approfondisci in chat» dall'esito (RF-E-12).
+
+**Decisioni di contratto da sapere:**
+
+- **L'esecuzione si segue col polling dello storico**, come l'elaborazione documenti e le tabelle: `POST /api/agenti/:id/esecuzioni` risponde con l'esecuzione `in-coda`, e il FE interroga finché non si assesta. Il polling si ferma da solo; la notifica in applicazione (RF-E-07) nasce dal polling stesso che vede la transizione, nessun canale in più.
+- **Le fonti escono idratate** (`FonteAgente` porta l'`etichetta` pronta), come il contesto della chat; nei corpi di richiesta viaggia la forma nuda (`NuovaFonteAgente`). Una fonte può essere una **porzione di archivio** (ramo, compagnia, solo preferiti): un insieme vivo, che è il punto del monitoraggio delle nuove edizioni.
+- **I limiti sono applicati due volte** (RF-E-09): il FE li mostra prima (`GET /api/agenti/limiti`), il mock li impone comunque — 409 sull'attivazione oltre soglia, 429 con `ritentaTraSecondi` sulle esecuzioni concorrenti.
+- **Il retry è raccontato, non nascosto** (RF-E-11): `tentativi` sta sull'esecuzione, gli avvisi di nuovo tentativo stanno nel log, e un fallimento con 3 tentativi si presenta come persistente. Nel mock l'agente marcato `_scenario: 'fallimento'` fallisce a comando, per mostrare il caso peggiore in demo.
+- **«Attivare» un predefinito significa copiarlo**: la libreria è sola lettura, «Parti da questo» apre l'editor precompilato e l'agente che nasce è del tenant. Niente collegamento all'indietro da mantenere.
+- **La copia di un agente nasce disattiva e con la pianificazione sospesa**: duplicare non deve mai raddoppiare le esecuzioni pianificate di nascosto.
+- **Il documento su template (RF-E-13) è una rotta dell'esecuzione** (`GET …/esecuzioni/:eid/documento`), generato dal server come le esportazioni di chat e tabelle; nello storico compare come icona di download.
+- Il mock è deterministico come chat e tabelle: la verifica del preventivo del caso pilota produce gli stessi numeri e le stesse citazioni degli scenari già esistenti.
+- Rimandati con motivo: **notifiche email** (punto aperto §6.10, in attesa della decisione sui canali) e l'esecuzione pianificata *vera* nel mock — lo storico contiene esecuzioni pianificate come fixture, ma il timer che le genererebbe a orologio è un comportamento da backend, non da demo.
 
 ### Fase 7 — Memoria e MCP · ~4 giorni · RF-G-01…G-07, RF-F-02/F-04
 

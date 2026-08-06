@@ -1,0 +1,270 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-height: 100%;
+  padding: var(--sp-6);
+  overflow-y: auto;
+}
+
+.caricamento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* ---------- Testata ---------- */
+
+.testata {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.descrizione {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  max-width: 72ch;
+}
+
+/* ---------- Azioni ---------- */
+
+.azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.azioni__spazio {
+  flex: 1;
+}
+
+/* ---------- Le due colonne ---------- */
+
+.colonne {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+/* ---------- Definizione ---------- */
+
+.definizione__etichetta {
+  margin-top: var(--sp-2);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.definizione__istruzioni {
+  font-size: var(--t-sm);
+  white-space: pre-line;
+}
+
+.definizione__nota {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.fonti {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.fonte {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+}
+
+.fonte ui-icon {
+  color: var(--c-text-3);
+  flex: none;
+}
+
+.fonte__collegamento {
+  color: inherit;
+  text-decoration: none;
+}
+
+.fonte__collegamento:hover {
+  color: var(--c-accent);
+  text-decoration: underline;
+}
+
+/* ---------- Storico ---------- */
+
+.storico__vuoto {
+  font-size: var(--t-sm);
+  color: var(--c-text-mute);
+  padding-block: var(--sp-4);
+}
+
+.cella-numerica {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.col-modalita {
+  width: 110px;
+}
+
+.col-stato {
+  width: 170px;
+  white-space: nowrap;
+}
+
+.tentativi {
+  margin-left: var(--sp-2);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  color: var(--c-stato-errore);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+
+.col-durata {
+  width: 100px;
+  text-align: right;
+}
+
+.col-documento {
+  width: 48px;
+  text-align: center;
+}
+
+.scarica {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  color: var(--c-text-3);
+}
+
+.scarica:hover {
+  color: var(--c-accent);
+}
+
+.col-azione {
+  width: 110px;
+}
+
+/* ---------- Cassetto di avvio (RF-E-05) ---------- */
+
+.avvio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.avvio__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.avvio__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.avvio__campo input {
+  width: 100%;
+}
+
+.avvio__etichetta {
+  font-size: var(--t-sm);
+  font-weight: 500;
+}
+
+.avvio__nota {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+  font-weight: 400;
+}
+
+.avvio__scelto {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--c-page);
+}
+
+.avvio__titolo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-sm);
+}
+
+.avvio__togli {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.avvio__togli:hover {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+.avvio__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 900px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  .colonne {
+    grid-template-columns: 1fr;
+  }
+
+  .col-modalita,
+  .col-durata {
+    display: none;
+  }
+}
