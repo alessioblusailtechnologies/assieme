@@ -19,215 +19,217 @@
   </span>
 </header>
 
-<!--
-  La memoria viva, la stessa figura del sito: nodi che si addensano in temi.
-  Il testo accanto dice le due cose da sapere prima di toccare qualsiasi
-  ricordo: la memoria impara da sola (RF-G-01) e le istruzioni scritte
-  prevalgono sempre (RF-G-04).
--->
-<section class="figura" aria-labelledby="figura-occhiello">
-  <app-grafo-memoria class="figura__grafo" />
-  <div class="figura__copy">
+<div class="corpo">
+  <!-- A sinistra: i ricordi, con i loro stati. -->
+  <div class="elenco">
+    @if (errore()) {
+      <ui-stato-vuoto
+        icona="errore"
+        titolo="Non siamo riusciti a caricare la memoria"
+        descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+      >
+        <button uiBottone variante="primario" type="button" (click)="riprova()">
+          <ui-icon name="riprova" [size]="15" />
+          <span>Riprova</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else if (inCaricamento() && !ricordi().length) {
+      <div class="scheletri">
+        @for (i of [1, 2, 3]; track i) {
+          <ui-scheletro [numeroRighe]="2" />
+        }
+      </div>
+    } @else if (!ricordi().length) {
+      <ui-stato-vuoto
+        icona="memoria"
+        titolo="La memoria è ancora vuota"
+        descrizione="Il sistema impara da solo, lavorando: dalle conversazioni e dalle esecuzioni degli agenti. I primi ricordi compariranno qui, pronti da verificare."
+      />
+    } @else {
+      <div class="filtri">
+        <div class="filtri__ambiti" role="group" aria-label="Filtra per ambito">
+          <button
+            uiBottone
+            dimensione="piccolo"
+            [variante]="filtroAmbito() === 'tutti' ? 'primario' : 'secondario'"
+            type="button"
+            (click)="filtroAmbito.set('tutti')"
+          >
+            <span>Tutti</span>
+          </button>
+          <button
+            uiBottone
+            dimensione="piccolo"
+            [variante]="filtroAmbito() === 'tenant' ? 'primario' : 'secondario'"
+            type="button"
+            (click)="filtroAmbito.set('tenant')"
+          >
+            <span>Dell'agenzia</span>
+          </button>
+          <button
+            uiBottone
+            dimensione="piccolo"
+            [variante]="filtroAmbito() === 'personale' ? 'primario' : 'secondario'"
+            type="button"
+            (click)="filtroAmbito.set('personale')"
+          >
+            <span>Personali</span>
+          </button>
+        </div>
+
+        <label class="ui-campo-icona filtri__cerca">
+          <ui-icon name="cerca" [size]="16" />
+          <input
+            uiCampo
+            type="search"
+            [value]="ricerca()"
+            (input)="ricerca.set($any($event.target).value)"
+            placeholder="Cerca nei ricordi…"
+            aria-label="Cerca nei ricordi"
+          />
+        </label>
+      </div>
+
+      @if (!filtrati().length) {
+        <p class="nessun-esito">Nessun ricordo corrisponde ai filtri.</p>
+      } @else {
+        <ul class="ricordi">
+          @for (ricordo of filtrati(); track ricordo.id) {
+            <li class="ricordo" [class.is-sospeso]="!ricordo.attivo">
+              <div class="ricordo__testa">
+                <ui-tag [variante]="ricordo.ambito === 'tenant' ? 'accento' : 'neutro'">
+                  {{ ricordo.ambito === 'tenant' ? 'agenzia' : 'personale' }}
+                </ui-tag>
+                <ui-tag>{{ etichettaCategoria(ricordo.categoria) }}</ui-tag>
+                <ui-badge
+                  [variante]="ricordo.origine === 'esplicito' ? 'neutro' : 'accento'"
+                  [uiSuggerimento]="
+                    ricordo.origine === 'esplicito'
+                      ? 'Registrato di proposito da una persona'
+                      : 'Dedotto dal sistema durante il lavoro: verificalo prima di contarci'
+                  "
+                >
+                  {{ ricordo.origine === 'esplicito' ? 'dettato' : 'appreso' }}
+                </ui-badge>
+                @if (!ricordo.attivo) {
+                  <ui-badge variante="storico">sospeso</ui-badge>
+                }
+                <span class="ricordo__data mono">{{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}</span>
+              </div>
+
+              @if (inModifica() === ricordo.id) {
+                <textarea
+                  uiCampo
+                  rows="3"
+                  class="ricordo__campo"
+                  [value]="testoBozza()"
+                  (input)="testoBozza.set($any($event.target).value)"
+                  (keydown.escape)="inModifica.set(undefined)"
+                  aria-label="Testo del ricordo"
+                ></textarea>
+                <div class="ricordo__azioni-modifica">
+                  <button uiBottone dimensione="piccolo" variante="primario" type="button" (click)="confermaModifica(ricordo)">
+                    <span>Salva</span>
+                  </button>
+                  <button uiBottone dimensione="piccolo" variante="testo" type="button" (click)="inModifica.set(undefined)">
+                    <span>Annulla</span>
+                  </button>
+                </div>
+              } @else {
+                <p class="ricordo__testo">{{ ricordo.testo }}</p>
+              }
+
+              <div class="ricordo__azioni">
+                @if (ricordo.origineConversazioneId; as conversazioneId) {
+                  <a
+                    uiBottone
+                    dimensione="piccolo"
+                    variante="testo"
+                    [routerLink]="['/chat', conversazioneId]"
+                    uiSuggerimento="Apri la conversazione da cui è emerso"
+                  >
+                    <ui-icon name="chat" [size]="13" />
+                    <span>Da una conversazione</span>
+                  </a>
+                }
+
+                <span class="ricordo__spazio" aria-hidden="true"></span>
+
+                <ui-select
+                  class="ricordo__ambito"
+                  [opzioni]="ambiti"
+                  campoEtichetta="etichetta"
+                  campoValore="valore"
+                  [valore]="ricordo.ambito"
+                  (valoreChange)="cambiaAmbito(ricordo, $event)"
+                  ariaLabel="Ambito del ricordo"
+                />
+
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  type="button"
+                  (click)="avviaModifica(ricordo)"
+                >
+                  <ui-icon name="modifica" [size]="13" />
+                  <span>Correggi</span>
+                </button>
+
+                <button uiBottone dimensione="piccolo" type="button" (click)="alternaAttivo(ricordo)">
+                  <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="13" />
+                  <span>{{ ricordo.attivo ? 'Sospendi' : 'Riattiva' }}</span>
+                </button>
+
+                @if (confermaEliminazione() !== ricordo.id) {
+                  <button uiBottone dimensione="piccolo" type="button" (click)="elimina(ricordo)">
+                    <ui-icon name="elimina" [size]="13" />
+                    <span>Elimina</span>
+                  </button>
+                } @else {
+                  <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina(ricordo)">
+                    <span>Elimina davvero</span>
+                  </button>
+                  <button
+                    uiBottone
+                    dimensione="piccolo"
+                    variante="testo"
+                    type="button"
+                    (click)="confermaEliminazione.set(undefined)"
+                  >
+                    <span>Annulla</span>
+                  </button>
+                }
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      <!-- RF-G-05: i limiti della memoria vanno detti dove la si governa. -->
+      <p class="retention">
+        La memoria non registra categorie particolari di dati personali degli assicurati (es. dati
+        sanitari) né informazioni eccedenti la finalità. L'eliminazione è effettiva e immediata.
+      </p>
+    }
+  </div>
+
+  <!--
+    A destra: la memoria viva, la stessa figura del sito ma su carta chiara.
+    Il testo sotto dice le due cose da sapere prima di toccare qualsiasi
+    ricordo: la memoria impara da sola (RF-G-01) e le istruzioni scritte
+    prevalgono sempre (RF-G-04).
+  -->
+  <aside class="figura" aria-labelledby="figura-occhiello">
     <p class="mono figura__occhiello" id="figura-occhiello">Memoria viva</p>
-    <h2 class="serif figura__titolo">Quello che il sistema ha imparato, sotto i tuoi occhi</h2>
+    <app-grafo-memoria class="figura__grafo" />
     <p class="figura__testo">
       Ogni punto è qualcosa che è stato letto o appreso — documenti, prassi, casistica risolta —
-      e i legami sono ciò che li tiene insieme. La memoria si alimenta da sola, lavorando: qui
-      sotto la governi ricordo per ricordo — correggi, sospendi, elimini.
+      e i legami sono ciò che li tiene insieme. La memoria si alimenta da sola, lavorando; qui
+      la governi ricordo per ricordo.
     </p>
     <p class="figura__guida">
       I ricordi integrano le regole scritte, non le sostituiscono: in caso di conflitto
       prevalgono sempre le <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>.
     </p>
-  </div>
-</section>
-
-@if (errore()) {
-  <ui-stato-vuoto
-    icona="errore"
-    titolo="Non siamo riusciti a caricare la memoria"
-    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
-  >
-    <button uiBottone variante="primario" type="button" (click)="riprova()">
-      <ui-icon name="riprova" [size]="15" />
-      <span>Riprova</span>
-    </button>
-  </ui-stato-vuoto>
-} @else if (inCaricamento() && !ricordi().length) {
-  <div class="scheletri">
-    @for (i of [1, 2, 3]; track i) {
-      <ui-scheletro [numeroRighe]="2" />
-    }
-  </div>
-} @else if (!ricordi().length) {
-  <ui-stato-vuoto
-    icona="memoria"
-    titolo="La memoria è ancora vuota"
-    descrizione="Il sistema impara da solo, lavorando: dalle conversazioni e dalle esecuzioni degli agenti. I primi ricordi compariranno qui, pronti da verificare."
-  />
-} @else {
-  <div class="filtri">
-    <div class="filtri__ambiti" role="group" aria-label="Filtra per ambito">
-      <button
-        uiBottone
-        dimensione="piccolo"
-        [variante]="filtroAmbito() === 'tutti' ? 'primario' : 'secondario'"
-        type="button"
-        (click)="filtroAmbito.set('tutti')"
-      >
-        <span>Tutti</span>
-      </button>
-      <button
-        uiBottone
-        dimensione="piccolo"
-        [variante]="filtroAmbito() === 'tenant' ? 'primario' : 'secondario'"
-        type="button"
-        (click)="filtroAmbito.set('tenant')"
-      >
-        <span>Dell'agenzia</span>
-      </button>
-      <button
-        uiBottone
-        dimensione="piccolo"
-        [variante]="filtroAmbito() === 'personale' ? 'primario' : 'secondario'"
-        type="button"
-        (click)="filtroAmbito.set('personale')"
-      >
-        <span>Personali</span>
-      </button>
-    </div>
-
-    <label class="ui-campo-icona filtri__cerca">
-      <ui-icon name="cerca" [size]="16" />
-      <input
-        uiCampo
-        type="search"
-        [value]="ricerca()"
-        (input)="ricerca.set($any($event.target).value)"
-        placeholder="Cerca nei ricordi…"
-        aria-label="Cerca nei ricordi"
-      />
-    </label>
-  </div>
-
-  @if (!filtrati().length) {
-    <p class="nessun-esito">Nessun ricordo corrisponde ai filtri.</p>
-  } @else {
-    <ul class="ricordi">
-      @for (ricordo of filtrati(); track ricordo.id) {
-        <li class="ricordo" [class.is-sospeso]="!ricordo.attivo">
-          <div class="ricordo__testa">
-            <ui-tag [variante]="ricordo.ambito === 'tenant' ? 'accento' : 'neutro'">
-              {{ ricordo.ambito === 'tenant' ? 'agenzia' : 'personale' }}
-            </ui-tag>
-            <ui-tag>{{ etichettaCategoria(ricordo.categoria) }}</ui-tag>
-            <ui-badge
-              [variante]="ricordo.origine === 'esplicito' ? 'neutro' : 'accento'"
-              [uiSuggerimento]="
-                ricordo.origine === 'esplicito'
-                  ? 'Registrato di proposito da una persona'
-                  : 'Dedotto dal sistema durante il lavoro: verificalo prima di contarci'
-              "
-            >
-              {{ ricordo.origine === 'esplicito' ? 'dettato' : 'appreso' }}
-            </ui-badge>
-            @if (!ricordo.attivo) {
-              <ui-badge variante="storico">sospeso</ui-badge>
-            }
-            <span class="ricordo__data mono">{{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}</span>
-          </div>
-
-          @if (inModifica() === ricordo.id) {
-            <textarea
-              uiCampo
-              rows="3"
-              class="ricordo__campo"
-              [value]="testoBozza()"
-              (input)="testoBozza.set($any($event.target).value)"
-              (keydown.escape)="inModifica.set(undefined)"
-              aria-label="Testo del ricordo"
-            ></textarea>
-            <div class="ricordo__azioni-modifica">
-              <button uiBottone dimensione="piccolo" variante="primario" type="button" (click)="confermaModifica(ricordo)">
-                <span>Salva</span>
-              </button>
-              <button uiBottone dimensione="piccolo" variante="testo" type="button" (click)="inModifica.set(undefined)">
-                <span>Annulla</span>
-              </button>
-            </div>
-          } @else {
-            <p class="ricordo__testo">{{ ricordo.testo }}</p>
-          }
-
-          <div class="ricordo__azioni">
-            @if (ricordo.origineConversazioneId; as conversazioneId) {
-              <a
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                [routerLink]="['/chat', conversazioneId]"
-                uiSuggerimento="Apri la conversazione da cui è emerso"
-              >
-                <ui-icon name="chat" [size]="13" />
-                <span>Da una conversazione</span>
-              </a>
-            }
-
-            <span class="ricordo__spazio" aria-hidden="true"></span>
-
-            <ui-select
-              class="ricordo__ambito"
-              [opzioni]="ambiti"
-              campoEtichetta="etichetta"
-              campoValore="valore"
-              [valore]="ricordo.ambito"
-              (valoreChange)="cambiaAmbito(ricordo, $event)"
-              ariaLabel="Ambito del ricordo"
-            />
-
-            <button
-              uiBottone
-              dimensione="piccolo"
-              type="button"
-              (click)="avviaModifica(ricordo)"
-            >
-              <ui-icon name="modifica" [size]="13" />
-              <span>Correggi</span>
-            </button>
-
-            <button uiBottone dimensione="piccolo" type="button" (click)="alternaAttivo(ricordo)">
-              <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="13" />
-              <span>{{ ricordo.attivo ? 'Sospendi' : 'Riattiva' }}</span>
-            </button>
-
-            @if (confermaEliminazione() !== ricordo.id) {
-              <button uiBottone dimensione="piccolo" type="button" (click)="elimina(ricordo)">
-                <ui-icon name="elimina" [size]="13" />
-                <span>Elimina</span>
-              </button>
-            } @else {
-              <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina(ricordo)">
-                <span>Elimina davvero</span>
-              </button>
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                type="button"
-                (click)="confermaEliminazione.set(undefined)"
-              >
-                <span>Annulla</span>
-              </button>
-            }
-          </div>
-        </li>
-      }
-    </ul>
-  }
-
-  <!-- RF-G-05: i limiti della memoria vanno detti dove la si governa. -->
-  <p class="retention">
-    La memoria non registra categorie particolari di dati personali degli assicurati (es. dati
-    sanitari) né informazioni eccedenti la finalità. L'eliminazione è effettiva e immediata.
-  </p>
-}
+  </aside>
+</div>

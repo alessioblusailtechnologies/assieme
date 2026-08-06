@@ -37,8 +37,9 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
  * Il pannello della memoria (RF-G-03): ciò che il sistema ha imparato,
  * consultabile, modificabile e cancellabile ricordo per ricordo. È uno dei
  * tre pilastri del DNA d'Agenzia, e sta al primo livello proprio perché una
- * personalizzazione che non si vede non genera fiducia. In testa, il grafo
- * della memoria viva — la stessa figura del sito.
+ * personalizzazione che non si vede non genera fiducia. I ricordi stanno a
+ * sinistra; a destra, su carta chiara, il grafo della memoria viva — la
+ * stessa figura del sito.
  *
  * Due livelli (RF-G-02): la memoria dell'agenzia, condivisa, e quella
  * personale — il server mostra solo la propria. La memoria si alimenta

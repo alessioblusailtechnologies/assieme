@@ -3,7 +3,7 @@
   flex-direction: column;
   gap: var(--sp-4);
   min-height: 100%;
-  max-width: 980px;
+  max-width: 1180px;
   padding: var(--sp-6);
   overflow-y: auto;
 }
@@ -40,58 +40,46 @@
   text-align: right;
 }
 
-/* ---------- La memoria viva (la figura del sito) ---------- */
+/* ---------- Le due colonne: ricordi a sinistra, figura a destra ---------- */
 
-/* Fondo inchiostro come la sezione del sito: il grafo è disegnato su
-   #14181d e la carta scura è parte della figura, non un tema alternativo. */
-.figura {
+.corpo {
   display: grid;
-  grid-template-columns: minmax(220px, 340px) 1fr;
-  gap: var(--sp-6);
-  align-items: center;
-  padding: var(--sp-5) var(--sp-6);
+  grid-template-columns: 1fr minmax(260px, 320px);
+  gap: var(--sp-4);
+  align-items: start;
+}
+
+.elenco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+/* La figura del sito, ma su carta chiara come il resto del pannello: il
+   canvas ha il fondo trasparente e prende questo. Sticky: la memoria viva
+   resta sott'occhio mentre si scorre l'elenco. */
+.figura {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
   border-radius: var(--radius);
-  background: #14181d;
+  background: var(--c-surface);
 }
 
 .figura__grafo {
   width: 100%;
-  max-width: 340px;
-  justify-self: center;
 }
 
-.figura__copy {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  max-width: 56ch;
-}
-
-.figura__occhiello {
-  color: #9fb4d6;
-}
-
-.figura__titolo {
-  font-size: var(--t-section);
-  font-weight: 400;
-  letter-spacing: var(--ls-snug);
-  color: #f4f5f7;
-}
-
-.figura__testo {
-  font-size: var(--t-sm);
-  line-height: 1.6;
-  color: rgb(244 245 247 / 72%);
-}
-
+.figura__testo,
 .figura__guida {
   font-size: var(--t-sm);
   line-height: 1.6;
-  color: rgb(244 245 247 / 55%);
-}
-
-.figura__guida a {
-  color: #9fb4d6;
+  color: var(--c-text-3);
 }
 
 /* ---------- Stati ---------- */
@@ -226,13 +214,14 @@ ui-stato-vuoto {
     display: none;
   }
 
-  .figura {
+  /* Sotto i 900px la colonna sparisce: la figura è un orientamento, i
+     ricordi sono il lavoro — e sullo schermo stretto vince il lavoro. */
+  .corpo {
     grid-template-columns: 1fr;
-    gap: var(--sp-4);
   }
 
-  .figura__grafo {
-    max-width: 280px;
+  .figura {
+    display: none;
   }
 
   .filtri__cerca {

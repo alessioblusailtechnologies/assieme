@@ -10,8 +10,10 @@ import {
 
 /**
  * Il grafo della memoria viva — la stessa figura del sito (portata da
- * `website/src/scripts/memory-graph.ts`): cluster di nodi con deriva lenta
- * su fondo inchiostro. Le tre proprietà che contano sono le stesse:
+ * `website/src/scripts/memory-graph.ts`): cluster di nodi con deriva lenta.
+ * A differenza del sito il fondo è **trasparente**: la figura vive su una
+ * carta chiara del pannello, e il colore lo decide chi la ospita. Le tre
+ * proprietà che contano sono le stesse:
  *
  *  · il seme è fisso, quindi la figura è identica a ogni apertura;
  *  · con `prefers-reduced-motion` disegna un solo fotogramma e si ferma;
@@ -145,8 +147,9 @@ function avviaGrafo(cv: HTMLCanvasElement): () => void {
       n.y = n.by + Math.cos(t * n.sp * 0.85 + n.ph) * n.amp;
     }
 
-    ctx.fillStyle = '#14181D';
-    ctx.fillRect(0, 0, W, H);
+    /* Fondo trasparente: sul sito qui c'è l'inchiostro (#14181D), nel
+       pannello la figura prende il fondo della carta che la ospita. */
+    ctx.clearRect(0, 0, W, H);
 
     ctx.lineWidth = 0.6;
     for (const [i, k, o] of vicini) {
