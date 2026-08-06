@@ -39,22 +39,6 @@
       <a routerLink="/impostazioni/istruzioni">istruzioni del tenant</a>.
     </p>
 
-    @if (ricordi().length) {
-      <dl class="vivo__numeri">
-        <div class="numero">
-          <dt class="numero__etichetta mono">dell'agenzia</dt>
-          <dd class="numero__valore serif">{{ quantiAgenzia() }}</dd>
-        </div>
-        <div class="numero">
-          <dt class="numero__etichetta mono">personali</dt>
-          <dd class="numero__valore serif">{{ quantiPersonali() }}</dd>
-        </div>
-        <div class="numero">
-          <dt class="numero__etichetta mono">sospesi</dt>
-          <dd class="numero__valore serif">{{ quantiSospesi() }}</dd>
-        </div>
-      </dl>
-    }
   </div>
 </section>
 
@@ -151,7 +135,6 @@
                 @if (!ricordo.attivo) {
                   <ui-badge variante="storico">sospeso</ui-badge>
                 }
-                <span class="ricordo__data mono">{{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}</span>
               </div>
 
               @if (inModifica() === ricordo.id) {
@@ -176,51 +159,63 @@
                 <p class="ricordo__testo">{{ ricordo.testo }}</p>
               }
 
-              <div class="ricordo__azioni">
+              <footer class="ricordo__pie">
                 @if (ricordo.origineConversazioneId; as conversazioneId) {
                   <a
-                    uiBottone
-                    dimensione="piccolo"
-                    variante="testo"
+                    class="azione"
                     [routerLink]="['/chat', conversazioneId]"
                     uiSuggerimento="Apri la conversazione da cui è emerso"
+                    aria-label="Apri la conversazione da cui è emerso il ricordo"
                   >
-                    <ui-icon name="chat" [size]="13" />
-                    <span>Da una conversazione</span>
+                    <ui-icon name="chat" [size]="14" />
                   </a>
                 }
+                <span class="ricordo__data mono">{{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}</span>
 
                 <span class="ricordo__spazio" aria-hidden="true"></span>
 
-                <ui-select
-                  class="ricordo__ambito"
-                  [opzioni]="ambiti"
-                  campoEtichetta="etichetta"
-                  campoValore="valore"
-                  [valore]="ricordo.ambito"
-                  (valoreChange)="cambiaAmbito(ricordo, $event)"
-                  ariaLabel="Ambito del ricordo"
-                />
-
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  type="button"
-                  (click)="avviaModifica(ricordo)"
-                >
-                  <ui-icon name="modifica" [size]="13" />
-                  <span>Correggi</span>
-                </button>
-
-                <button uiBottone dimensione="piccolo" type="button" (click)="alternaAttivo(ricordo)">
-                  <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="13" />
-                  <span>{{ ricordo.attivo ? 'Sospendi' : 'Riattiva' }}</span>
-                </button>
-
                 @if (confermaEliminazione() !== ricordo.id) {
-                  <button uiBottone dimensione="piccolo" type="button" (click)="elimina(ricordo)">
-                    <ui-icon name="elimina" [size]="13" />
-                    <span>Elimina</span>
+                  <button
+                    type="button"
+                    class="azione"
+                    (click)="avviaModifica(ricordo)"
+                    uiSuggerimento="Correggi il testo"
+                    aria-label="Correggi il testo del ricordo"
+                  >
+                    <ui-icon name="modifica" [size]="14" />
+                  </button>
+                  <button
+                    type="button"
+                    class="azione"
+                    (click)="alternaAmbito(ricordo)"
+                    [uiSuggerimento]="
+                      ricordo.ambito === 'tenant'
+                        ? 'Rendi personale: smette di valere per i colleghi'
+                        : 'Condividi con l’agenzia: varrà per tutti'
+                    "
+                    [attr.aria-label]="
+                      ricordo.ambito === 'tenant' ? 'Rendi il ricordo personale' : 'Condividi il ricordo con l’agenzia'
+                    "
+                  >
+                    <ui-icon [name]="ricordo.ambito === 'tenant' ? 'utente' : 'condividi'" [size]="14" />
+                  </button>
+                  <button
+                    type="button"
+                    class="azione"
+                    (click)="alternaAttivo(ricordo)"
+                    [uiSuggerimento]="ricordo.attivo ? 'Sospendi: resta qui ma non condiziona più le risposte' : 'Riattiva'"
+                    [attr.aria-label]="ricordo.attivo ? 'Sospendi il ricordo' : 'Riattiva il ricordo'"
+                  >
+                    <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="14" />
+                  </button>
+                  <button
+                    type="button"
+                    class="azione"
+                    (click)="elimina(ricordo)"
+                    uiSuggerimento="Elimina"
+                    aria-label="Elimina il ricordo"
+                  >
+                    <ui-icon name="elimina" [size]="14" />
                   </button>
                 } @else {
                   <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina(ricordo)">
@@ -236,7 +231,7 @@
                     <span>Annulla</span>
                   </button>
                 }
-              </div>
+              </footer>
             </li>
           }
         </ul>

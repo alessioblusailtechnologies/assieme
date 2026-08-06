@@ -103,28 +103,6 @@
   color: var(--c-text-2);
 }
 
-.vivo__numeri {
-  display: flex;
-  gap: var(--sp-6);
-  margin-top: var(--sp-2);
-}
-
-.numero {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 2px;
-}
-
-.numero__valore {
-  font-size: 2rem;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.numero__etichetta {
-  color: var(--c-text-3);
-}
-
 /* ---------- L'elenco, a tutta larghezza sotto la scena ---------- */
 
 .elenco {
@@ -178,16 +156,20 @@ ui-stato-vuoto {
 
 /* ---------- Ricordi ---------- */
 
+/* Griglia, non righe: i ricordi sono testi brevi, e una scheda larga quanto
+   la pagina è quasi tutta aria. Tre colonne quando c'è spazio, due o una
+   quando manca — e i piè di scheda restano allineati in basso. */
 .ricordi {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: var(--sp-3);
+  align-items: stretch;
 }
 
 .ricordo {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--sp-3);
   padding: var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--radius);
@@ -201,17 +183,13 @@ ui-stato-vuoto {
   gap: var(--sp-2);
 }
 
-.ricordo__data {
-  margin-left: auto;
-  color: var(--c-text-3);
-}
-
-/* La lettura è della voce di lettura, come in chat: la memoria si legge. */
+/* La lettura è della voce di lettura, come in chat: la memoria si legge.
+   `flex: 1` spinge il piè di scheda in basso, pari con i vicini di riga. */
 .ricordo__testo {
+  flex: 1;
   font-family: var(--f-lettura);
-  font-size: var(--t-body);
+  font-size: var(--t-sm);
   line-height: 1.55;
-  max-width: 78ch;
 }
 
 .is-sospeso .ricordo__testo {
@@ -219,6 +197,7 @@ ui-stato-vuoto {
 }
 
 .ricordo__campo {
+  flex: 1;
   width: 100%;
   font-family: var(--f-lettura);
 }
@@ -228,24 +207,39 @@ ui-stato-vuoto {
   gap: var(--sp-2);
 }
 
-.ricordo__azioni {
+.ricordo__pie {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--c-line-soft);
 }
 
-.ricordo__azioni a,
-.ricordo__azioni a:hover {
-  text-decoration: none;
+.ricordo__data {
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-3);
 }
 
 .ricordo__spazio {
   flex: 1;
 }
 
-.ricordo__ambito {
-  min-width: 190px;
+/* Azione a icona: discreta finché non serve, come le azioni dei messaggi. */
+.azione {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.azione:hover,
+.azione:focus-visible {
+  background: var(--c-page-alt);
+  color: var(--c-text);
 }
 
 /* ---------- Retention (RF-G-05) ---------- */

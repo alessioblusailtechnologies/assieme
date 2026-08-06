@@ -11,7 +11,6 @@ import { Campo } from '@shared/ui/campo/campo';
 import { GrafoMemoria } from './grafo-memoria';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
-import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { Tag } from '@shared/ui/tag/tag';
@@ -24,11 +23,6 @@ export const CATEGORIE_RICORDO: { valore: Ricordo['categoria']; etichetta: strin
   { valore: 'preferenza', etichetta: 'Preferenza' },
   { valore: 'decisione', etichetta: 'Decisione' },
   { valore: 'altro', etichetta: 'Altro' },
-];
-
-const AMBITI: { valore: Ricordo['ambito']; etichetta: string }[] = [
-  { valore: 'tenant', etichetta: 'Memoria dell’agenzia' },
-  { valore: 'personale', etichetta: 'Memoria personale' },
 ];
 
 type FiltroAmbito = 'tutti' | Ricordo['ambito'];
@@ -60,7 +54,6 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
     Icona,
     RouterLink,
     Scheletro,
-    Select,
     StatoVuoto,
     Suggerimento,
     Tag,
@@ -78,7 +71,6 @@ export class PannelloMemoria {
   ];
 
   protected readonly categorie = CATEGORIE_RICORDO;
-  protected readonly ambiti = AMBITI;
 
   private readonly risorsa = httpResource<Ricordo[]>(() => this.api.urlElenco());
 
@@ -94,17 +86,6 @@ export class PannelloMemoria {
 
   protected readonly filtroAmbito = signal<FiltroAmbito>('tutti');
   protected readonly ricerca = signal('');
-
-  /* I numeri del blocco in testa: la memoria raccontata in tre cifre. */
-  protected readonly quantiAgenzia = computed(
-    () => this.ricordi().filter((r) => r.ambito === 'tenant').length,
-  );
-  protected readonly quantiPersonali = computed(
-    () => this.ricordi().filter((r) => r.ambito === 'personale').length,
-  );
-  protected readonly quantiSospesi = computed(
-    () => this.ricordi().filter((r) => !r.attivo).length,
-  );
 
   protected readonly filtrati = computed(() => {
     const ambito = this.filtroAmbito();
@@ -137,9 +118,9 @@ export class PannelloMemoria {
     this.applica(ricordo.id, { testo });
   }
 
-  protected cambiaAmbito(ricordo: Ricordo, valore: unknown): void {
-    const ambito = valore as Ricordo['ambito'];
-    if (ambito !== ricordo.ambito) this.applica(ricordo.id, { ambito });
+  /** Due soli ambiti: lo spostamento è un'azione sola, non una tendina. */
+  protected alternaAmbito(ricordo: Ricordo): void {
+    this.applica(ricordo.id, { ambito: ricordo.ambito === 'tenant' ? 'personale' : 'tenant' });
   }
 
   /** Sospendere ferma il ricordo senza perderlo: la via reversibile. */
