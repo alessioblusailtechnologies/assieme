@@ -20,14 +20,11 @@ export interface Ricordo {
    */
   ambito: 'tenant' | 'personale';
   categoria: 'prassi' | 'cliente' | 'preferenza' | 'decisione' | 'altro';
-  /**
-   * Come è nato: dedotto dal sistema (RF-G-01) o dettato da una persona.
-   * La registrazione esplicita non ha più un'interfaccia (RF-G-07 rimosso su
-   * indicazione del committente), ma la distinzione resta nel contratto: i
-   * ricordi dettati in passato — o da flussi futuri del backend — hanno
-   * un'autorevolezza che un'inferenza non ha, e l'interfaccia la mostra.
+  /*
+   * Nessun campo `origine`: senza registrazione esplicita (RF-G-07 rimosso
+   * su indicazione del committente) ogni ricordo è appreso dal lavoro, e un
+   * discriminante con un valore solo è rumore di contratto.
    */
-  origine: 'appreso' | 'esplicito';
   /** Da quale conversazione o esecuzione è emerso, per poterlo verificare. */
   origineConversazioneId?: Id;
   creatoIl: IsoDateTime;
@@ -36,11 +33,7 @@ export interface Ricordo {
   attivo: boolean;
 }
 
-/**
- * Corpo del PATCH: ogni campo è indipendente. Modificare il testo di un
- * ricordo appreso non ne cambia l'origine — resta «appreso», perché la
- * distinzione racconta come è nato, non com'è oggi.
- */
+/** Corpo del PATCH: ogni campo è indipendente. */
 export type ModificheRicordo = Partial<
   Pick<Ricordo, 'testo' | 'ambito' | 'categoria' | 'attivo'>
 >;

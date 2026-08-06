@@ -511,14 +511,14 @@ Elenco come plancia (stato, pianificazione, esito dell'ultima esecuzione) con i 
 
 ### ✅ Fase 7 — Memoria e MCP — **completata** · RF-G-01…G-07, RF-F-02/F-04
 
-Pannello `/memoria` con i ricordi consultabili, correggibili in linea, sospendibili e cancellabili (RF-G-03); in testa il **grafo della memoria viva** — la stessa figura del sito, portata da `website/src/scripts/memory-graph.ts`: seme fisso, un fotogramma solo con `prefers-reduced-motion`, animazione sospesa fuori dal viewport; due livelli con filtro e spostamento fra memoria dell'agenzia e personale (RF-G-02); origine distinta — «appreso» contro «dettato» — con collegamento alla conversazione da cui il ricordo è emerso; precedenza delle istruzioni dichiarata nella figura (RF-G-04) e nota di retention (RF-G-05). In chat i segnali di provenienza sono diventati collegamenti al pannello che li governa. **Accesso MCP** in Impostazioni (RF-F-02/04): credenziali con token mostrato una sola volta, revoca definitiva, stato delle connessioni attive, configurazione d'esempio per i client e l'avvertenza di RF-F-05 accanto.
+Pannello `/memoria` con i ricordi consultabili, correggibili in linea, sospendibili e cancellabili (RF-G-03); in testa il **grafo della memoria viva** — la stessa figura del sito, portata da `website/src/scripts/memory-graph.ts`: seme fisso, un fotogramma solo con `prefers-reduced-motion`, animazione sospesa fuori dal viewport; due livelli con filtro e spostamento fra memoria dell'agenzia e personale (RF-G-02); collegamento alla conversazione da cui il ricordo è emerso; precedenza delle istruzioni dichiarata nella figura (RF-G-04) e nota di retention (RF-G-05). In chat i segnali di provenienza sono diventati collegamenti al pannello che li governa. **Accesso MCP** in Impostazioni (RF-F-02/04): credenziali con token mostrato una sola volta, revoca definitiva, stato delle connessioni attive, configurazione d'esempio per i client e l'avvertenza di RF-F-05 accanto.
 
 > **RF-G-07 rimosso (08/2026):** su indicazione del committente la memoria si
 > alimenta **solo imparando** — niente registrazione esplicita, né dal
 > pannello né con «ricordati che…» in chat. L'utente governa ciò che il
-> sistema ha appreso: corregge, sospende, elimina. `origine: 'esplicito'`
-> resta nel contratto per i ricordi storici e per eventuali flussi futuri
-> del backend.
+> sistema ha appreso: corregge, sospende, elimina. Con essa è uscito dal
+> contratto anche il campo `origine`: ogni ricordo è appreso, e un
+> discriminante con un valore solo è rumore.
 
 **Decisioni di contratto da sapere:**
 

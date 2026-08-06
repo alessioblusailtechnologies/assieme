@@ -1,12 +1,14 @@
 /* A tutta larghezza, come gli elenchi: il blocco della memoria viva è la
-   scena d'apertura e l'elenco sotto respira su tutta la pagina. */
+   scena d'apertura e l'elenco sotto respira su tutta la pagina.
+   L'asse orizzontale è chiuso: con il solo `overflow-y` un pixel di sbordo
+   qualsiasi diventa una barra di scorrimento orizzontale. */
 :host {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
   min-height: 100%;
   padding: var(--sp-6);
-  overflow-y: auto;
+  overflow: hidden auto;
 }
 
 /* ---------- Testata ---------- */
@@ -170,6 +172,9 @@ ui-stato-vuoto {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  /* Senza, il contenuto a riga intera può allargare la cella oltre la
+     colonna della griglia e far sbordare la pagina. */
+  min-width: 0;
   padding: var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--radius);
@@ -181,6 +186,29 @@ ui-stato-vuoto {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-2);
+}
+
+/* L'ambito: di chi è il ricordo. Etichetta mono col segno, non una pillola —
+   una lingua diversa dalla categoria, perché è un'informazione diversa. */
+.ricordo__amb {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.ricordo__amb.is-agenzia {
+  color: var(--c-accent);
+}
+
+.ricordo__stacco {
+  width: 1px;
+  height: 14px;
+  background: var(--c-line);
 }
 
 /* La lettura è della voce di lettura, come in chat: la memoria si legge.
@@ -215,14 +243,9 @@ ui-stato-vuoto {
   border-top: 1px solid var(--c-line-soft);
 }
 
-/* Origine e data insieme: com'è nato e quando è stato toccato l'ultima
-   volta. Il tratteggio dice che c'è altro da sapere nel suggerimento. */
-.ricordo__origine {
+.ricordo__data {
   font-size: var(--t-mono-sm);
   color: var(--c-text-3);
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-  cursor: help;
 }
 
 .ricordo__spazio {
