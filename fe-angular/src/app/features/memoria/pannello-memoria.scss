@@ -215,9 +215,14 @@ ui-stato-vuoto {
   border-top: 1px solid var(--c-line-soft);
 }
 
-.ricordo__data {
+/* Origine e data insieme: com'è nato e quando è stato toccato l'ultima
+   volta. Il tratteggio dice che c'è altro da sapere nel suggerimento. */
+.ricordo__origine {
   font-size: var(--t-mono-sm);
   color: var(--c-text-3);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
 }
 
 .ricordo__spazio {

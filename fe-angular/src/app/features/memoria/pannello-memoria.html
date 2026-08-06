@@ -117,21 +117,18 @@
         <ul class="ricordi">
           @for (ricordo of filtrati(); track ricordo.id) {
             <li class="ricordo" [class.is-sospeso]="!ricordo.attivo">
+              <!-- Solo tag, tutti della stessa famiglia: l'ambito col suo
+                   segno, la categoria come parola. Lo stato (sospeso) è
+                   l'unico badge, perché è un segnale, non una classificazione. -->
               <div class="ricordo__testa">
-                <ui-tag [variante]="ricordo.ambito === 'tenant' ? 'accento' : 'neutro'">
+                <ui-tag
+                  [variante]="ricordo.ambito === 'tenant' ? 'accento' : 'neutro'"
+                  [icona]="ricordo.ambito === 'tenant' ? 'compagnia' : 'utente'"
+                >
                   {{ ricordo.ambito === 'tenant' ? 'agenzia' : 'personale' }}
                 </ui-tag>
                 <ui-tag>{{ etichettaCategoria(ricordo.categoria) }}</ui-tag>
-                <ui-badge
-                  [variante]="ricordo.origine === 'esplicito' ? 'neutro' : 'accento'"
-                  [uiSuggerimento]="
-                    ricordo.origine === 'esplicito'
-                      ? 'Registrato di proposito da una persona'
-                      : 'Dedotto dal sistema durante il lavoro: verificalo prima di contarci'
-                  "
-                >
-                  {{ ricordo.origine === 'esplicito' ? 'dettato' : 'appreso' }}
-                </ui-badge>
+                <span class="ricordo__spazio" aria-hidden="true"></span>
                 @if (!ricordo.attivo) {
                   <ui-badge variante="storico">sospeso</ui-badge>
                 }
@@ -170,7 +167,17 @@
                     <ui-icon name="chat" [size]="14" />
                   </a>
                 }
-                <span class="ricordo__data mono">{{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}</span>
+                <span
+                  class="ricordo__origine mono"
+                  [uiSuggerimento]="
+                    ricordo.origine === 'esplicito'
+                      ? 'Registrato di proposito da una persona'
+                      : 'Dedotto dal sistema durante il lavoro: verificalo prima di contarci'
+                  "
+                >
+                  {{ ricordo.origine === 'esplicito' ? 'dettato' : 'appreso' }}
+                  · {{ ricordo.aggiornatoIl | date: 'dd/MM/yyyy' }}
+                </span>
 
                 <span class="ricordo__spazio" aria-hidden="true"></span>
 
