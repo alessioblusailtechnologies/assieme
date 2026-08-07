@@ -36,10 +36,19 @@
 </section>
 
 <style>
+  /*
+   * Il fondo del video è --c-page (#FAF9F7), ma l'encoding H.264 in gamma
+   * limitata lo decodifica #F8F8F5: due punti su 255, invisibili in assoluto
+   * ma sufficienti a disegnare una cucitura sul bordo netto del riquadro.
+   * La sezione adotta quindi il tono decodificato: il video si fonde senza
+   * bordo, e i due punti di differenza verso la pagina si perdono nel
+   * passaggio morbido fra le sezioni.
+   */
   .demo {
     display: flex;
     justify-content: center;
     padding: 1rem var(--gutter) 4rem;
+    background: #f8f8f5;
   }
 
   .demo__video,

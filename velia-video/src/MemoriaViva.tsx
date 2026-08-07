@@ -290,6 +290,9 @@ export const MemoriaViva: React.FC = () => {
     lineHeight: 1.5,
   };
 
+  /* Il bordo è quello vero dell'app (.assistente usa la superficie bianca
+     bordata); qui serve il token line pieno perché la compressione video
+     mangerebbe il line-soft, quasi invisibile già in origine. */
   const bollaAssistente: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
@@ -299,7 +302,7 @@ export const MemoriaViva: React.FC = () => {
     borderRadius: 12,
     padding: '24px 30px',
     background: C.surface,
-    border: `1.5px solid ${C.lineSoft}`,
+    border: `1.5px solid ${C.line}`,
   };
 
   const mono: React.CSSProperties = {
