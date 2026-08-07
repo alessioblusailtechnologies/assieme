@@ -22,3 +22,8 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Video sorgente (4K, centinaia di MB): restano fuori, sul sito va solo
+# la versione compressa in public/media/.
+*.mov
+

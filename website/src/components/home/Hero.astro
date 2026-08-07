@@ -8,17 +8,28 @@ const LOGO_SLOTS = 8;
 
 <section class="hero on-ink" aria-labelledby="hero-title">
   <div class="hero__stage">
-    <p class="hero__credit mono" aria-hidden="true">
-      Fotografia — agenzia / cliente in riunione
-    </p>
+    {/* Decorativo: il contenuto informativo sta tutto nel testo accanto. */}
+    <video
+      class="hero__video"
+      src="/media/hero.mp4"
+      poster="/media/hero-poster.jpg"
+      autoplay
+      muted
+      loop
+      playsinline
+      preload="metadata"
+      aria-hidden="true"
+      tabindex="-1"></video>
 
     <div class="hero__content">
+      {/* Ogni riga in uno span, separato da uno spazio vero: così quando
+          sui telefoni le righe tornano a scorrere insieme le parole non si
+          incollano (con i <br> nascosti «agenzia.» ed «E» si toccavano). */}
       <h1 class="hero__title serif" id="hero-title">
         {
           hero.title.map((line, i) => (
             <Fragment>
-              {i > 0 && <br />}
-              {line}
+              {i > 0 && ' '}<span class="hero__line">{line}</span>
             </Fragment>
           ))
         }
@@ -53,8 +64,9 @@ const LOGO_SLOTS = 8;
     background: var(--c-ink);
   }
 
-  /* Sfondo a due strati: il tratteggio fa da segnaposto della fotografia, il
-     gradiente garantisce il contrasto del testo quando l'immagine arriverà. */
+  /* Sfondo a tre strati: il video in fondo, il tratteggio come riserva
+     mentre carica (o quando è spento), il gradiente sopra a garantire il
+     contrasto del testo. */
   .hero__stage {
     position: relative;
     display: flex;
@@ -63,28 +75,43 @@ const LOGO_SLOTS = 8;
     /* Il margine laterale sta qui, non su .hero__content: quest'ultimo deve
        poter usare i suoi 720px interi per il testo (vedi sotto). */
     padding: 4rem var(--gutter);
-    background:
-      linear-gradient(
-        90deg,
-        #1c1a15 0%,
-        rgb(28 26 21 / 92%) 42%,
-        rgb(28 26 21 / 55%) 70%,
-        rgb(28 26 21 / 45%) 100%
-      ),
-      repeating-linear-gradient(135deg, #24221c 0 10px, #2e2b24 10px 20px);
+    background: repeating-linear-gradient(135deg, #24221c 0 10px, #2e2b24 10px 20px);
   }
 
-  .hero__credit {
+  .hero__video {
     position: absolute;
-    right: var(--gutter);
-    bottom: 6rem;
-    color: var(--c-text-oninverse-mute);
-    margin: 0;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ::after e non ::before: viene dopo il video nell'ordine di pittura,
+     quindi il gradiente gli resta sopra senza bisogno di z-index. */
+  .hero__stage::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      #1c1a15 0%,
+      rgb(28 26 21 / 92%) 42%,
+      rgb(28 26 21 / 55%) 70%,
+      rgb(28 26 21 / 45%) 100%
+    );
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__video {
+      display: none;
+    }
   }
 
   /* 720px come nel design: il margine laterale sta su .hero__stage, così il
      testo dispone dei 720px interi (vedi sopra). */
   .hero__content {
+    position: relative; /* sopra il gradiente in ::after */
+    z-index: 1;
     display: flex;
     flex-direction: column;
     gap: 1.75rem;
@@ -108,6 +135,10 @@ const LOGO_SLOTS = 8;
     letter-spacing: var(--ls-tight);
     color: var(--c-text-oninverse);
     text-wrap: initial; /* le tre righe sono decise a mano */
+  }
+
+  .hero__line {
+    display: block;
   }
 
   .hero__lead {
@@ -155,10 +186,6 @@ const LOGO_SLOTS = 8;
       min-height: 32rem;
     }
 
-    .hero__credit {
-      display: none;
-    }
-
     .hero__logos {
       grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
@@ -166,10 +193,15 @@ const LOGO_SLOTS = 8;
   }
 
   @media (max-width: 640px) {
-    /* Sui telefoni gli a-capo decisi a mano cedono il passo a un corpo
-       leggibile: il testo va a capo da sé, pareggiato da text-wrap. */
-    .hero__title br {
-      display: none;
+    /* Sui telefoni le prime due righe tornano a scorrere insieme, con un
+       corpo leggibile; solo «E non lo dimentica.» tiene il suo a-capo,
+       perché è la chiusura e deve iniziare da sola. */
+    .hero__line {
+      display: inline;
+    }
+
+    .hero__line:last-child {
+      display: block;
     }
 
     .hero__title {
@@ -179,9 +211,12 @@ const LOGO_SLOTS = 8;
 
     .hero__stage {
       min-height: 26rem;
-      background:
-        linear-gradient(90deg, #1c1a15 0%, rgb(28 26 21 / 82%) 100%),
-        repeating-linear-gradient(135deg, #24221c 0 10px, #2e2b24 10px 20px);
+    }
+
+    /* Sullo schermo stretto il testo copre tutta la larghezza: il velo
+       scuro si stende uniforme sull'intero video. */
+    .hero__stage::after {
+      background: linear-gradient(90deg, #1c1a15 0%, rgb(28 26 21 / 82%) 100%);
     }
 
     .hero__proof {
