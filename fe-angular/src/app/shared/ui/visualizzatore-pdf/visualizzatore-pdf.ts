@@ -169,28 +169,29 @@ export class VisualizzatorePdf {
       const larghezza = this.contenitore().nativeElement.clientWidth;
       if (!larghezza) return;
 
-      const base = pdfPagina.getViewport({ scale: 1 });
-      const scala = larghezza / base.width;
-      const viewport = pdfPagina.getViewport({ scale: scala });
-
-      /* La tela si rende alla densità dello schermo: senza, su un display
-         ad alta densità il testo del PDF esce sfocato. */
+      /* La densità dello schermo entra NELLA scala del viewport, non in un
+         transform a parte: pdf.js 6, quando riceve `canvasContext`, vuole
+         `canvas: null` esplicito — altrimenti deriva la tela dal contesto e
+         applica la propria gestione di scala sopra la nostra, e la pagina
+         esce ribaltata e in miniatura. Un solo sistema di coordinate:
+         viewport = pixel fisici della tela, il CSS la riporta a misura. */
       const dpr = window.devicePixelRatio || 1;
-      tela.width = Math.floor(viewport.width * dpr);
-      tela.height = Math.floor(viewport.height * dpr);
-      tela.style.width = `${Math.floor(viewport.width)}px`;
-      tela.style.height = `${Math.floor(viewport.height)}px`;
+      const base = pdfPagina.getViewport({ scale: 1 });
+      const viewport = pdfPagina.getViewport({ scale: (larghezza / base.width) * dpr });
+
+      tela.width = Math.floor(viewport.width);
+      tela.height = Math.floor(viewport.height);
+      tela.style.width = `${Math.floor(viewport.width / dpr)}px`;
+      tela.style.height = `${Math.floor(viewport.height / dpr)}px`;
 
       const contesto = tela.getContext('2d');
       if (!contesto) return;
 
-      void pdfPagina.render({
-        canvasContext: contesto,
-        viewport,
-        transform: dpr === 1 ? undefined : [dpr, 0, 0, dpr, 0, 0],
-      } as Parameters<typeof pdfPagina.render>[0]).promise.catch(() => {
-        /* Resa annullata da una più recente: non è un errore. */
-      });
+      void pdfPagina
+        .render({ canvas: null, canvasContext: contesto, viewport })
+        .promise.catch(() => {
+          /* Resa annullata da una più recente: non è un errore. */
+        });
     });
   }
 
