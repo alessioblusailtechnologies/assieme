@@ -309,6 +309,25 @@ const proofPoints = [
       padding-block: 1.5rem;
     }
 
+    /* Le tre prove non vanno a capo: scorrono in orizzontale, a tutta
+       larghezza, con la barra di scorrimento nascosta. */
+    .hero__points {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin-inline: calc(-1 * var(--gutter));
+      padding-inline: var(--gutter);
+      scrollbar-width: none;
+    }
+
+    .hero__points::-webkit-scrollbar {
+      display: none;
+    }
+
+    .hero__point {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+
     .hero__logos {
       grid-template-columns: repeat(3, 1fr);
     }
