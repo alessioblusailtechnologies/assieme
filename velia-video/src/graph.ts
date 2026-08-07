@@ -154,60 +154,97 @@ const easeOutBack = (p: number) => {
   return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
 };
 
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/**
+ * `build` (0–1) è la nascita del grafo: a 0 i nodi sono dispersi lontano dal
+ * proprio posto, a 1 il grafo è quello di sempre. Ogni nodo converge con un
+ * proprio ritardo, i legami si accendono quando i nodi sono quasi a posto,
+ * gli anelli si stringono per ultimi.
+ */
 export function drawGraph(
   ctx: CanvasRenderingContext2D,
   m: GraphModel,
   t: number,
   memory: MemoryEvent | null,
+  build = 1,
 ) {
   const { nodes, near, far, hubs, rings, cx, cy } = m;
 
   const px = (n: Node) => n.bx + Math.sin(t * n.sp + n.ph) * n.amp;
   const py = (n: Node) => n.by + Math.cos(t * n.sp * 0.85 + n.ph) * n.amp;
 
+  /* Posizione e presenza di un nodo durante la convergenza. */
+  const conv = (i: number, n: Node) => {
+    if (build >= 1) return { x: px(n), y: py(n), a: 1 };
+    const stagger = (((i * 7919) % 100) / 100) * 0.35;
+    const nb = clamp01((build - stagger) / 0.65);
+    const e = 1 - Math.pow(1 - nb, 3);
+    const dist = 260 + n.amp * 60;
+    return {
+      x: px(n) + Math.cos(n.ph) * dist * (1 - e),
+      y: py(n) + Math.sin(n.ph) * dist * (1 - e),
+      a: nb,
+    };
+  };
+
   ctx.fillStyle = '#1C1A15';
   ctx.fillRect(0, 0, GRAPH_W, GRAPH_H);
 
-  ctx.lineWidth = 0.6;
-  for (const [i, k, o] of near) {
-    ctx.strokeStyle = `rgba(159,180,214,${o.toFixed(3)})`;
+  const linkIn = build >= 1 ? 1 : clamp01((build - 0.8) / 0.2);
+  if (linkIn > 0) {
+    ctx.lineWidth = 0.6;
+    for (const [i, k, o] of near) {
+      ctx.strokeStyle = `rgba(159,180,214,${(o * linkIn).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
+      ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = `rgba(127,151,196,${(0.1 * linkIn).toFixed(3)})`;
     ctx.beginPath();
-    ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
-    ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
+    for (const [i, k] of far) {
+      ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
+      ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
+    }
     ctx.stroke();
   }
 
-  ctx.strokeStyle = 'rgba(127,151,196,0.10)';
-  ctx.beginPath();
-  for (const [i, k] of far) {
-    ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
-    ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
-  }
-  ctx.stroke();
-
-  for (const n of nodes) {
+  nodes.forEach((n, i) => {
+    const c = conv(i, n);
+    if (c.a <= 0) return;
+    ctx.globalAlpha = c.a;
     ctx.fillStyle = n.c;
     ctx.beginPath();
-    ctx.arc(px(n), py(n), n.r, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, n.r, 0, Math.PI * 2);
     ctx.fill();
-  }
+  });
+  ctx.globalAlpha = 1;
 
   for (const h of hubs) {
-    const n = nodes[h.i]!;
+    const c = conv(h.i, nodes[h.i]!);
+    if (c.a <= 0) continue;
+    ctx.globalAlpha = c.a;
     ctx.fillStyle = h.c;
     ctx.beginPath();
-    ctx.arc(px(n), py(n), h.r, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, h.r, 0, Math.PI * 2);
     ctx.fill();
   }
+  ctx.globalAlpha = 1;
 
-  const spin = t * 0.012;
-  for (const p of rings) {
-    const a = p.a + spin;
-    const rr = p.r + Math.sin(t * 0.5 + p.ph) * 1.6;
-    ctx.fillStyle = `rgba(127,151,196,${p.o})`;
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1.6, 0, Math.PI * 2);
-    ctx.fill();
+  const ringIn = build >= 1 ? 1 : clamp01((build - 0.5) / 0.5);
+  if (ringIn > 0) {
+    const spin = t * 0.012;
+    const stretch = 1 + (1 - ringIn) * 0.3;
+    for (const p of rings) {
+      const a = p.a + spin;
+      const rr = (p.r + Math.sin(t * 0.5 + p.ph) * 1.6) * stretch;
+      ctx.fillStyle = `rgba(127,151,196,${(p.o * ringIn).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   /* --- Il ricordo nuovo --- */
