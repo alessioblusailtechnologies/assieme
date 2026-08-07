@@ -2,25 +2,22 @@
 import { testimonial as t } from '~/data/home';
 ---
 
+{/* Non è una citazione: è la storia dell'agenzia pilota raccontata da noi,
+    quindi niente blockquote né firma. */}
 <section class="quote section--alt" aria-labelledby="quote-title">
-  <h2 class="visually-hidden" id="quote-title">La voce dei clienti</h2>
+  <h2 class="visually-hidden" id="quote-title">Dal campo</h2>
 
   <div class="quote__inner shell">
-    <div class="quote__portrait hatch" role="img" aria-label="Ritratto del cliente — immagine in arrivo">
-      <span class="mono" aria-hidden="true">ritratto cliente · 3:4</span>
+    <div class="quote__portrait hatch" role="img" aria-label="Fotografia dall'agenzia pilota — immagine in arrivo">
+      <span class="mono" aria-hidden="true">fotografia · 3:4</span>
     </div>
 
-    <figure class="quote__figure">
-      <blockquote class="serif quote__text">{t.quote}</blockquote>
-      <figcaption class="quote__author">
-        <span class="quote__name">{t.name}</span>
-        <span>{t.role}</span>
-        <span>{t.company}</span>
-      </figcaption>
+    <div class="quote__figure">
+      <p class="serif quote__text">{t.quote}</p>
       <a class="btn btn--text" href={t.href}>
         Guarda la dimostrazione <span class="btn__arrow" aria-hidden="true">→</span>
       </a>
-    </figure>
+    </div>
   </div>
 </section>
 
@@ -62,18 +59,6 @@ import { testimonial as t } from '~/data/home';
     letter-spacing: -0.012em;
     color: var(--c-text);
     text-wrap: pretty;
-  }
-
-  .quote__author {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: var(--t-sm);
-    color: var(--c-text-2);
-  }
-
-  .quote__name {
-    color: var(--c-text);
   }
 
   @media (max-width: 900px) {

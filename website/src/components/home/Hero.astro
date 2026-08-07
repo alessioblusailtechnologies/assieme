@@ -14,7 +14,14 @@ const LOGO_SLOTS = 8;
 
     <div class="hero__content">
       <h1 class="hero__title serif" id="hero-title">
-        {hero.title[0]}<br />{hero.title[1]}
+        {
+          hero.title.map((line, i) => (
+            <Fragment>
+              {i > 0 && <br />}
+              {line}
+            </Fragment>
+          ))
+        }
       </h1>
       <p class="hero__lead">{hero.lead}</p>
       <a class="btn btn--solid btn--lg hero__cta" href="/demo">
@@ -35,7 +42,7 @@ const LOGO_SLOTS = 8;
       }
     </ul>
     <a class="btn btn--ghost btn--sm hero__proof-cta" href="/clienti">
-      I nostri clienti
+      Guarda Velia al lavoro
     </a>
   </div>
 </section>
@@ -75,13 +82,8 @@ const LOGO_SLOTS = 8;
     margin: 0;
   }
 
-  /*
-   * 720px come nel design. Attenzione: lì il box è content-box e i 40px di
-   * margine si sommano ai 720; qui il reset impone border-box, quindi
-   * tenendo insieme max-width e padding il testo scenderebbe a 640px — e
-   * «fatta a regola d'arte», che a 84px misura circa 630px, andrebbe a capo
-   * per una manciata di pixel.
-   */
+  /* 720px come nel design: il margine laterale sta su .hero__stage, così il
+     testo dispone dei 720px interi (vedi sopra). */
   .hero__content {
     display: flex;
     flex-direction: column;
@@ -90,12 +92,22 @@ const LOGO_SLOTS = 8;
     max-width: 45rem;
   }
 
+  /*
+   * Corpo ridotto rispetto al token display (44→84px): la riga più lunga del
+   * titolo — «come lavora la tua agenzia.» — misura 11,55em (metrici TWK
+   * Ghost Regular, tracking −0.02em compreso), quindi oltre 62px il box da
+   * 720px non la contiene e il browser aggiungerebbe una quarta riga. Il
+   * massimo sta a 3.8rem con un 2% di margine; la pendenza tiene la riga
+   * dentro (100vw − 2×gutter) a ogni larghezza intermedia. Sotto i 640px le
+   * tre righe forzate imporrebbero corpi da h3: lì gli a-capo manuali si
+   * spengono e il testo scorre naturale (vedi media query in fondo).
+   */
   .hero__title {
-    font-size: var(--t-display);
-    line-height: 1.02;
+    font-size: clamp(1.5rem, 0.6rem + 3.9vw, 3.8rem);
+    line-height: 1.05;
     letter-spacing: var(--ls-tight);
     color: var(--c-text-oninverse);
-    text-wrap: initial; /* le due righe sono decise a mano */
+    text-wrap: initial; /* le tre righe sono decise a mano */
   }
 
   .hero__lead {
@@ -154,6 +166,17 @@ const LOGO_SLOTS = 8;
   }
 
   @media (max-width: 640px) {
+    /* Sui telefoni gli a-capo decisi a mano cedono il passo a un corpo
+       leggibile: il testo va a capo da sé, pareggiato da text-wrap. */
+    .hero__title br {
+      display: none;
+    }
+
+    .hero__title {
+      font-size: 2rem;
+      text-wrap: balance;
+    }
+
     .hero__stage {
       min-height: 26rem;
       background:

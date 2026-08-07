@@ -11,20 +11,18 @@
  *
  * Sostanza allineata a «VELIA — Analisi dei Requisiti» v0.8 (03/08/2026).
  *
- * ⚠️ Da sostituire prima della pubblicazione: `testimonial` (il prodotto ha
- * un'unica agenzia pilota) e i loghi cliente nei due nastri.
+ * ⚠️ Da sostituire prima della pubblicazione: i loghi cliente nei due nastri.
  */
 
 export const hero = {
-  title: ['La consulenza,', "fatta a regola d'arte"],
-  lead: 'Le agenzie, i broker e gli intermediari più esigenti usano Velia per leggere i documenti, confrontare le condizioni e rispondere ai clienti con la fonte sempre citata.',
+  title: ["L'AI che impara", 'come lavora la tua agenzia.', 'E non lo dimentica.'],
+  lead: "Velia è l'intelligenza artificiale per la distribuzione assicurativa: legge i set informativi, confronta le garanzie con la fonte citata — e ricorda le tue regole, da una conversazione all'altra.",
 } as const;
 
 export const statement = {
-  strong:
-    "Velia è l'intelligenza artificiale pensata per la distribuzione assicurativa.",
+  strong: 'Le AI generiche ripartono da zero a ogni conversazione. Velia no.',
   muted:
-    "Lavora sui documenti che hai già, ragiona con i criteri della tua agenzia e lascia a te l'ultima parola.",
+    "Lavora sui documenti che hai già in archivio, ragiona con i criteri della tua agenzia e lascia sempre a te l'ultima parola.",
 } as const;
 
 /* -------------------------------------------------------------------------
@@ -72,7 +70,7 @@ export const productShot: {
     },
   ],
   summary:
-    '9 differenze rilevanti su 54 garanzie. Gli infortuni del conducente non risultano carenza: la tua agenzia li copre a parte.',
+    "9 differenze rilevanti su 54 garanzie. Gli infortuni del conducente non risultano carenza: gliel'hai spiegato una volta — la tua agenzia li copre a parte.",
   citations: ['autopiu_cda.pdf · art. 12 p. 34', 'preventivo_unipol.pdf · sez. 3 p. 2'],
 };
 
@@ -87,23 +85,22 @@ export const productShot: {
 
 export const memory = {
   eyebrow: 'Memoria viva',
-  title: 'Un archivio che risponde invece di aspettare',
-  body: 'Le cartelle condivise conservano. Non collegano, non ricordano, non rispondono. Qui ogni documento letto entra a far parte di qualcosa che cresce: le regole che gli detti, le scelte che ti vede fare, la casistica che avete già risolto.',
+  title: 'Ecco cosa significa non dimenticare',
+  body: 'Le cartelle condivise conservano e basta: non collegano, non ricordano, non rispondono. In Velia ogni documento letto entra in qualcosa che cresce — le regole che le detti, le scelte che ti vede fare, i casi che avete già risolto insieme. Il lunedì sa quello che le hai spiegato il venerdì.',
   rows: [
     {
       term: 'Le tue regole',
       detail:
-        'Scrivi in italiano come valuta la tua agenzia. Vale da subito, per tutti i colleghi',
+        'Scrivi in italiano come valuta la tua agenzia. Vale da subito, per tutti i colleghi.',
     },
     {
       term: 'Quello che impara',
-      detail:
-        'Prassi, pratiche ricorrenti e preferenze: non devi ripeterle a ogni conversazione',
+      detail: 'Prassi, eccezioni e preferenze: spiegate una volta, mai più ripetute.',
     },
     {
       term: 'Sempre tuo',
       detail:
-        'Consulti, correggi e cancelli quello che ha imparato. Le tue regole vengono prima',
+        "Consulti, correggi, cancelli. Quello che Velia impara resta dell'agenzia.",
     },
   ],
 } as const;
@@ -122,20 +119,18 @@ export const useCases = [
   'Verifica dei preventivi',
   'Ricerca fra le condizioni',
   'Archivio documentale',
-  'Proposte per il cliente',
+  'Proposte pronte per il cliente',
 ] as const;
 
 /* -------------------------------------------------------------------------
- * Testimonianza — ⚠️ segnaposto: una sola agenzia pilota, nessuna
- * citazione ancora autorizzata.
+ * Dal campo — non più una citazione firmata: il prodotto ha una sola
+ * agenzia pilota e nessuna frase autorizzata, quindi la storia è raccontata
+ * in terza persona, senza virgolette né firma da inventare.
  * ---------------------------------------------------------------------- */
 
 export const testimonial = {
   quote:
-    "«Gli altri strumenti ci segnalavano come carenza una garanzia che noi copriamo da sempre a parte. Ad Velia l'abbiamo spiegato una volta, in italiano, e da allora ragiona come ragioniamo noi.»",
-  name: 'Nome Cognome',
-  role: 'Titolare',
-  company: 'Agenzia pilota',
+    "Un'agenzia pilota ci ha spiegato una volta sola, in italiano, che gli infortuni del conducente li copre sempre con una polizza a parte. Da allora Velia non li segnala più come carenza: ragiona come ragionano loro.",
   href: '/clienti',
 } as const;
 
@@ -149,11 +144,11 @@ export const stories = [
     href: '/clienti#confronto-auto',
   },
   {
-    title: 'Dieci prodotti a confronto in una tabella sola',
+    title: 'Dieci prodotti, una tabella, ogni casella con la sua fonte',
     href: '/clienti#tabella-analisi',
   },
   {
-    title: 'Le nuove edizioni segnalate senza andarle a cercare',
+    title: 'Le nuove edizioni ti trovano loro — non il contrario',
     href: '/clienti#agente-edizioni',
   },
 ] as const;
@@ -162,13 +157,13 @@ export const stories = [
  * Numeri — non adozione (il prodotto è pre-lancio) ma scelte di progetto.
  * ---------------------------------------------------------------------- */
 
-export const statsIntro = ['Meno tempo sui documenti,', 'più tempo sui clienti'];
+export const statsIntro = ['Meno tempo sui documenti,', 'più tempo con i clienti'];
 
 export const stats = [
-  { label: 'Documenti da caricare per cominciare', value: '0' },
+  { label: 'Documenti da caricare per iniziare', value: 'Zero' },
+  { label: 'Volte che devi ripetere una regola', value: 'Una' },
   { label: 'Risposte con la fonte citata', value: '100%' },
-  { label: 'Formati per i documenti al cliente', value: '4' },
-  { label: 'Documenti a confronto, contro i 5 degli altri', value: 'Decine' },
+  { label: 'Documenti in un solo confronto — gli altri si fermano a 5', value: 'Decine' },
   { label: 'Compagnie già in archivio', value: 'In crescita' },
 ] as const;
 
@@ -179,13 +174,14 @@ export const stats = [
 
 export const security = {
   title: ['Accuratezza e riservatezza,', 'prima di ogni altra cosa'],
-  body: "Velia cita sempre da dove viene una risposta e dice quando non lo sa. I tuoi documenti restano tuoi: non escono dall'agenzia, non finiscono in mano ad altri clienti, non addestrano nulla.",
+  body: "Velia cita sempre da dove arriva una risposta — e quando non lo sa, lo dice. I tuoi documenti restano tuoi e quello che impara resta dell'agenzia: non esce, non finisce ad altri clienti, non addestra nessun modello.",
+  /* La memoria apre la fila: è il cuore dell'angolo narrativo della pagina. */
   badges: [
+    { mark: 'Memoria', name: 'Che controlli tu', href: '/sicurezza#memoria' },
     { mark: 'Fonte', name: 'Ogni risposta citata', href: '/sicurezza#citazione' },
     { mark: 'Non so', name: 'Mai una risposta inventata', href: '/sicurezza#non-copertura' },
     { mark: 'Solo tuoi', name: 'Documenti riservati', href: '/sicurezza#isolamento' },
     { mark: 'GDPR', name: 'Trattamento conforme', href: '/sicurezza#gdpr' },
     { mark: 'Tracce', name: 'Fonti sempre tracciate', href: '/sicurezza#tracciabilita' },
-    { mark: 'Memoria', name: 'Che controlli tu', href: '/sicurezza#memoria' },
   ],
 } as const;

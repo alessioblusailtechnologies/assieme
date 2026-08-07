@@ -23,7 +23,7 @@ const softwareSchema = {
   url: SITE_URL,
   inLanguage: 'it-IT',
   description:
-    'Assistente AI per agenzie assicurative, broker e intermediari: le condizioni delle compagnie già in archivio, i documenti dell’agenzia accanto ai loro, confronti e tabelle con la fonte sempre citata.',
+    'AI per agenzie assicurative, broker e intermediari che impara le regole dell’agenzia e non le dimentica: condizioni delle compagnie già in archivio, confronti e tabelle con la fonte sempre citata.',
   publisher: { '@id': `${SITE_URL}/#organization` },
   audience: {
     '@type': 'Audience',
@@ -40,7 +40,7 @@ const softwareSchema = {
     'Documenti per il cliente già impaginati in PDF, DOCX, XLSX e PPTX',
     'Agenti che ripetono il lavoro ricorrente su pianificazione',
     'Archivi raggiungibili anche dagli strumenti AI già in uso',
-    'Memoria delle prassi dell’agenzia, consultabile e cancellabile',
+    'Memoria persistente di regole, prassi e casistica dell’agenzia: spiegate una volta, ricordate in ogni conversazione, consultabili e cancellabili',
   ],
   offers: {
     '@type': 'Offer',
@@ -56,7 +56,7 @@ const softwareSchema = {
 
 <BaseLayout
   title="Velia — AI per agenzie assicurative, broker e intermediari"
-  description="L'assistente AI per agenzie, broker e intermediari: i set informativi già in archivio, i tuoi documenti accanto ai loro, ogni risposta con la fonte citata."
+  description="L'AI per agenzie e broker che impara le tue regole e non le dimentica. Confronta polizze e preventivi con la fonte citata, sempre. Richiedi una demo."
   schema={[softwareSchema]}
 >
   <Hero />

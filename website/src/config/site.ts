@@ -115,14 +115,14 @@ export const legalNav: NavItem[] = [
 export const announcements: { label: string; text: string }[] = [
   {
     label: 'Novità',
-    text: 'Tabelle: decine di prodotti a confronto, con la fonte in ogni casella',
+    text: 'Tabelle di analisi: decine di prodotti a confronto, la fonte in ogni casella',
   },
   {
     label: 'Novità',
-    text: 'I tuoi archivi ora raggiungibili anche dagli strumenti AI che già usi',
+    text: 'I tuoi archivi ora parlano anche con gli strumenti AI che già usi',
   },
   {
     label: 'Novità',
-    text: 'I documenti per il cliente escono già impaginati con il tuo marchio',
+    text: 'Documenti per il cliente già impaginati, col tuo marchio',
   },
 ];

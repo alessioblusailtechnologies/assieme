@@ -15,11 +15,12 @@ export interface Props {
   ogType?: 'website' | 'article';
   noindex?: boolean;
   schema?: Record<string, unknown>[];
-  /** La barra annunci resta alla homepage e alle pagine di prodotto. */
+  /** Barra annunci spenta ovunque in vista del lancio; si riaccende
+      passando `announcement={true}` dalla singola pagina. */
   announcement?: boolean;
 }
 
-const { announcement = true, ...seo } = Astro.props;
+const { announcement = false, ...seo } = Astro.props;
 ---
 
 <!doctype html>
