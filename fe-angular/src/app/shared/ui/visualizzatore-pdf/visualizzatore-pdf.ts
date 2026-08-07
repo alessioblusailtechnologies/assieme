@@ -13,7 +13,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentLoadingTask, PDFDocumentProxy, RenderTask } from 'pdfjs-dist';
 
 import { Icona } from '@shared/ui/icona/icona';
 import { PosizioneDocumento } from '@core/models';
@@ -154,6 +154,15 @@ export class VisualizzatorePdf {
   /** Cresce a ogni resa avviata: una resa superata non tocca più la tela. */
   private generazioneResa = 0;
 
+  /**
+   * La resa in corso, da annullare prima di avviarne un'altra. Due rese
+   * concorrenti sulla stessa tela disegnano entrambe, e la seconda eredita
+   * la matrice di trasformazione della prima: la pagina compare due volte,
+   * di cui una capovolta. Con `canvas: null` pdf.js non può più rilevare il
+   * conflitto da sé — l'annullamento esplicito è nostro compito.
+   */
+  private resaInCorso: RenderTask | undefined;
+
   private rendi(): void {
     const doc = this.documento();
     const tela = this.tela()?.nativeElement;
@@ -187,10 +196,15 @@ export class VisualizzatorePdf {
       const contesto = tela.getContext('2d');
       if (!contesto) return;
 
-      void pdfPagina
-        .render({ canvas: null, canvasContext: contesto, viewport })
-        .promise.catch(() => {
+      this.resaInCorso?.cancel();
+      const resa = pdfPagina.render({ canvas: null, canvasContext: contesto, viewport });
+      this.resaInCorso = resa;
+      void resa.promise
+        .catch(() => {
           /* Resa annullata da una più recente: non è un errore. */
+        })
+        .finally(() => {
+          if (this.resaInCorso === resa) this.resaInCorso = undefined;
         });
     });
   }
