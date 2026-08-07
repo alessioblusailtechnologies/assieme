@@ -30,15 +30,15 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
 
   beforeAll(async () => {
     const righe = await pool().query<{ id: string }>(
-      `insert into public.tenant (nome) values ('Tenant A (test)'), ('Tenant B (test)') returning id`,
+      `insert into assieme.tenant (nome) values ('Tenant A (test)'), ('Tenant B (test)') returning id`,
     );
     creati.tenantA = righe.rows[0]!.id;
     creati.tenantB = righe.rows[1]!.id;
   });
 
   afterAll(async () => {
-    await pool().query(`delete from public.jobs where tipo = 'prova'`);
-    await pool().query(`delete from public.tenant where nome like '%(test)'`);
+    await pool().query(`delete from assieme.jobs where tipo = 'prova'`);
+    await pool().query(`delete from assieme.tenant where nome like '%(test)'`);
     await chiudiPool();
   });
 
@@ -51,7 +51,7 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
       pool(),
       { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'operatore' },
       async (client) => {
-        const r = await client.query<{ id: string }>('select id from public.tenant');
+        const r = await client.query<{ id: string }>('select id from assieme.tenant');
         return r.rows.map((riga) => riga.id);
       },
     );
@@ -67,7 +67,7 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
       pool(),
       { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
       (client) =>
-        client.query(`update public.tenant set nome = 'violazione' where id = $1 returning id`, [
+        client.query(`update assieme.tenant set nome = 'violazione' where id = $1 returning id`, [
           creati.tenantA,
         ]),
     );
@@ -75,7 +75,7 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
 
     // E il nome, riletto dal sistema, è rimasto quello vero.
     const riga = await pool().query<{ nome: string }>(
-      'select nome from public.tenant where id = $1',
+      'select nome from assieme.tenant where id = $1',
       [creati.tenantA],
     );
     expect(riga.rows[0]!.nome).toBe('Tenant A (test)');
@@ -85,7 +85,7 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
     const righe = await conIdentita(
       pool(),
       { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
-      async (client) => (await client.query<Record<string, unknown>>('select * from public.jobs')).rows,
+      async (client) => (await client.query<Record<string, unknown>>('select * from assieme.jobs')).rows,
     );
     expect(righe).toEqual([]);
   });
@@ -109,12 +109,12 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
       expect(lavorato).toBe(true);
 
       const job = (
-        await pool().query<Job>('select * from public.jobs where id = $1', [jobId])
+        await pool().query<Job>('select * from assieme.jobs where id = $1', [jobId])
       ).rows[0]!;
       expect(job.stato).toBe('completato');
 
       const eventi = await pool().query<{ tipo: string }>(
-        'select tipo from public.eventi_job where job_id = $1 order by id',
+        'select tipo from assieme.eventi_job where job_id = $1 order by id',
         [jobId],
       );
       expect(eventi.rows.map((e) => e.tipo)).toEqual([
@@ -148,13 +148,13 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
     for (let i = 0; i < 30 && stato !== 'fallito'; i++) {
       await lavoraUno(pool(), { visibilitaSecondi: 1, tentativiMassimi: 2 });
       stato = (
-        await pool().query<{ stato: string }>('select stato from public.jobs where id = $1', [jobId])
+        await pool().query<{ stato: string }>('select stato from assieme.jobs where id = $1', [jobId])
       ).rows[0]!.stato;
       if (stato !== 'fallito') await attendi(400);
     }
 
     const job = (
-      await pool().query<Job>('select * from public.jobs where id = $1', [jobId])
+      await pool().query<Job>('select * from assieme.jobs where id = $1', [jobId])
     ).rows[0]!;
     expect(job.stato).toBe('fallito');
     expect(job.tentativi).toBe(2);
@@ -162,7 +162,7 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
 
     // Il retry è raccontato: l'evento `nuovo-tentativo` sta nel canale.
     const eventi = await pool().query<{ tipo: string }>(
-      'select tipo from public.eventi_job where job_id = $1 order by id',
+      'select tipo from assieme.eventi_job where job_id = $1 order by id',
       [jobId],
     );
     expect(eventi.rows.map((e) => e.tipo)).toContain('nuovo-tentativo');

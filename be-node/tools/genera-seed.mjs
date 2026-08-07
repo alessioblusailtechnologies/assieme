@@ -28,11 +28,11 @@ const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
 const righe = [];
 righe.push('-- Generato da tools/genera-seed.mjs — non modificare a mano.');
 righe.push('');
-righe.push('insert into public.tenant (id, nome, piano) values');
+righe.push('insert into assieme.tenant (id, nome, piano) values');
 righe.push(`  ('${TENANT_DEMO}', 'Assicurazioni Meridiana S.r.l.', 'agenzia')`);
 righe.push('on conflict (id) do update set nome = excluded.nome, piano = excluded.piano;');
 righe.push('');
-righe.push('insert into public.compagnie (id, nome, ultimo_aggiornamento) values');
+righe.push('insert into assieme.compagnie (id, nome, ultimo_aggiornamento) values');
 righe.push(
   compagnie
     .map((c) => `  (${apice(c.id)}, ${apice(c.nome)}, ${apice(c.ultimoAggiornamento)})`)
@@ -42,7 +42,7 @@ righe.push(
   'on conflict (id) do update set nome = excluded.nome, ultimo_aggiornamento = excluded.ultimo_aggiornamento;',
 );
 righe.push('');
-righe.push('insert into public.rami (id, nome, codice) values');
+righe.push('insert into assieme.rami (id, nome, codice) values');
 righe.push(rami.map((r) => `  (${apice(r.id)}, ${apice(r.nome)}, ${apice(r.codice)})`).join(',\n'));
 righe.push('on conflict (id) do update set nome = excluded.nome, codice = excluded.codice;');
 righe.push('');

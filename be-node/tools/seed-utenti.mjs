@@ -1,6 +1,6 @@
 /**
  * Crea gli utenti demo (fixture `mocks/data/utenti.json`) su Supabase Auth
- * e le righe di profilo in `public.utenti`. Idempotente: al secondo giro
+ * e le righe di profilo in `assieme.utenti`. Idempotente: al secondo giro
  * aggiorna invece di duplicare.
  *
  * Richiede .env compilato (service role). Password demo uguale per tutti,
@@ -32,6 +32,7 @@ const PASSWORD_DEMO = 'assieme-demo-2026!';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
+  db: { schema: 'assieme' },
 });
 
 const utenti = JSON.parse(
