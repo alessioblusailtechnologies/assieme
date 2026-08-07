@@ -44,7 +44,14 @@ jobs:
         run: npm run build
 
       - name: Stack Supabase effimero (migrazioni + seed da zero)
-        run: supabase start
+        # Al fallimento la coda dell'output diventa un'annotazione del check:
+        # è leggibile dall'API pubblica, i log del job no.
+        run: |
+          set -o pipefail
+          if ! supabase start 2>&1 | tee avvio.log; then
+            echo "::error title=supabase start fallito::$(tail -c 900 avvio.log | tr '\n' ' ')"
+            exit 1
+          fi
 
       - name: Test (unità + integrazione)
         run: |
