@@ -1,9 +1,13 @@
 ---
 import { hero } from '~/data/home';
 
-// La fascia loghi resta un segnaposto tratteggiato finché il reparto
-// marketing non fornisce i marchi cliente autorizzati.
+// La fascia loghi si riempie man mano che arrivano i marchi autorizzati;
+// gli slot senza logo restano segnaposto tratteggiati.
 const LOGO_SLOTS = 8;
+
+const logos: { src: string; alt: string }[] = [
+  { src: '/loghi/unipol.webp', alt: 'Unipol' },
+];
 ---
 
 <section class="hero on-ink" aria-labelledby="hero-title">
@@ -44,15 +48,27 @@ const LOGO_SLOTS = 8;
   <div class="hero__proof">
     <ul class="hero__logos" aria-label="Clienti che usano Velia">
       {
-        Array.from({ length: LOGO_SLOTS }, (_, i) => (
-          <li class="hero__logo hatch--faint">
-            <span class="visually-hidden">Logo cliente {i + 1}</span>
+        logos.map((logo) => (
+          <li class="hero__logo">
+            <img
+              class="hero__logo-img"
+              src={logo.src}
+              alt={logo.alt}
+              loading="lazy"
+            />
+          </li>
+        ))
+      }
+      {
+        Array.from({ length: LOGO_SLOTS - logos.length }, (_, i) => (
+          <li class="hero__logo hatch">
+            <span class="visually-hidden">Logo cliente {logos.length + i + 1}</span>
             <span aria-hidden="true">logo</span>
           </li>
         ))
       }
     </ul>
-    <a class="btn btn--ghost btn--sm hero__proof-cta" href="/clienti">
+    <a class="btn btn--outline btn--sm hero__proof-cta" href="/clienti">
       Guarda Velia al lavoro
     </a>
   </div>
@@ -150,14 +166,17 @@ const LOGO_SLOTS = 8;
 
   /* --- Fascia di riprova sociale --- */
 
+  /* Fascia chiara sotto la hero scura: i loghi delle compagnie sono a
+     colori pieni e sul fondo scuro non si leggerebbero. Il colore è quello
+     della pagina, così la fascia scorre nella sezione che segue. */
   .hero__proof {
     display: flex;
     align-items: center;
     gap: 2rem;
     min-height: 74px;
     padding: 1rem var(--gutter);
-    background: rgb(255 255 255 / 4%);
-    border-top: 1px solid var(--c-line-onink);
+    background: var(--c-page);
+    border-bottom: 1px solid var(--c-line);
   }
 
   .hero__logos {
@@ -175,6 +194,13 @@ const LOGO_SLOTS = 8;
     font-family: var(--f-mono);
     font-size: 0.5625rem;
     color: var(--c-text-oninverse-hatch);
+  }
+
+  .hero__logo-img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    object-fit: contain;
   }
 
   .hero__proof-cta {
