@@ -47,7 +47,24 @@ righe.push(rami.map((r) => `  (${apice(r.id)}, ${apice(r.nome)}, ${apice(r.codic
 righe.push('on conflict (id) do update set nome = excluded.nome, codice = excluded.codice;');
 righe.push('');
 
+const documenti = leggi('documenti-pubblici.json');
+righe.push(
+  'insert into assieme.documenti (id, archivio, titolo, tipologia, numero_pagine, compagnia_id, ramo_id, prodotto, edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al, edizione_corrente) values',
+);
+righe.push(
+  documenti
+    .map(
+      (d) =>
+        `  (${apice(d.id)}, 'pubblico', ${apice(d.titolo)}, ${apice(d.tipologia)}, ${d.numeroPagine ?? 'null'}, ${apice(d.compagniaId)}, ${apice(d.ramoId)}, ${apice(d.prodotto)}, ${apice(d.edizione.id)}, ${apice(d.edizione.etichetta)}, ${apice(d.edizione.validaDal)}, ${apice(d.edizione.validaAl)}, ${d.edizione.corrente})`,
+    )
+    .join(',\n'),
+);
+righe.push(
+  'on conflict (id) do update set titolo = excluded.titolo, tipologia = excluded.tipologia, numero_pagine = excluded.numero_pagine, compagnia_id = excluded.compagnia_id, ramo_id = excluded.ramo_id, prodotto = excluded.prodotto, edizione_id = excluded.edizione_id, edizione_etichetta = excluded.edizione_etichetta, edizione_valida_dal = excluded.edizione_valida_dal, edizione_valida_al = excluded.edizione_valida_al, edizione_corrente = excluded.edizione_corrente;',
+);
+righe.push('');
+
 writeFileSync(join(QUI, '..', 'supabase', 'seed.sql'), righe.join('\n'), 'utf8');
 console.log(
-  `seed.sql generato: 1 tenant, ${compagnie.length} compagnie, ${rami.length} rami`,
+  `seed.sql generato: 1 tenant, ${compagnie.length} compagnie, ${rami.length} rami, ${documenti.length} documenti`,
 );

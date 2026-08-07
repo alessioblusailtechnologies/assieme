@@ -1,5 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteSessione } from './sessione/rotte.js';
@@ -31,6 +32,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   app.get('/api/salute', () => ({ stato: 'ok' }));
 
   registraRotteSessione(app);
+  registraRotteDocumenti(app);
 
   return app;
 }

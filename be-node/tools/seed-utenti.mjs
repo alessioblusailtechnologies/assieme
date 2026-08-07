@@ -82,4 +82,23 @@ for (const u of utenti) {
   console.log(`✓ ${u.email} (${u.ruolo})`);
 }
 
+/*
+ * RF-A-09: nella fixture il preferito era un booleano globale (il mock ha
+ * un utente solo); qui diventa una riga per utente. Gli stessi documenti
+ * marcati nel mock lo sono per ogni utente demo: la demo resta identica.
+ */
+const documenti = JSON.parse(
+  readFileSync(join(QUI, '..', '..', 'mocks', 'data', 'documenti-pubblici.json'), 'utf8'),
+);
+const marcati = documenti.filter((d) => d.preferito).map((d) => d.id);
+const { data: profili, error: erroreProfili } = await supabase.from('utenti').select('id');
+if (erroreProfili) throw erroreProfili;
+for (const profilo of profili) {
+  const { error } = await supabase
+    .from('preferiti')
+    .upsert(marcati.map((documentoId) => ({ utente_id: profilo.id, documento_id: documentoId })));
+  if (error) throw error;
+}
+console.log(`✓ preferiti: ${marcati.length} documenti per ${profili.length} utenti`);
+
 console.log(`\nFatto. Password demo per tutti: ${PASSWORD_DEMO}`);

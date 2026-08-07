@@ -238,6 +238,15 @@ La pipeline di ingestion (§4.2) nasce qui, sul Pubblico, dove i documenti li ca
 - **Proxy**: `/api/sessione` → `localhost:3002` — il primo endpoint dello switchover. `npm run dev` del FE ora avvia anche il backend (`npm:be`).
 - Rimandati con motivo: revoca server-side dei token all'uscita (logout Supabase) e recupero password — hanno senso con la gestione utenti completa della Fase 6.
 
+**✅ Secondo pezzo completato (07/08/2026): switchover dei documenti pubblici** — `/api/documenti` (elenco, dettaglio, file, preferito), `/api/compagnie` e `/api/rami` rispondono dal backend. Decisioni di contratto da sapere:
+
+- **La logica dello stub è diventata SQL**: ricerca tutte-le-parole senza accenti con `extensions.unaccent`, ordinamento con collazione `it-x-icu`, ordine di lettura del set informativo via `array_position`, busta `{elementi, totale, pagina, perPagina}` col totale in window function.
+- **I preferiti sono per utente** (tabella `preferiti` + policy RLS sulle sole righe proprie): nel mock era un booleano globale perché il mock ha un utente solo. Il seed marca gli stessi 6 documenti della fixture per ogni utente demo, e il test d'integrazione dimostra che il preferito di un utente non si vede dall'altro.
+- **`documenti` nasce col discriminante `archivio`** (pubblico/privato/conversazione) e il vincolo che il pubblico non ha tenant e il resto sì; l'edizione vive sulla riga, le «altre edizioni» sono le righe sorelle per (compagnia, prodotto, tipologia). Id testuali: sono già il contratto delle fixture e delle URL.
+- **Il PDF resta generato dal generatore del mock** (`mocks/pdf.mjs`, riusato dal BE): ponte dichiarato finché lo Storage non entra col punto 2 della fase.
+- **Il mock non perde le rotte**: servono alla demo self-contained (`tools/serve-demo.mjs`). In sviluppo è il **proxy** a decidere chi risponde — e `/api/documenti-privati` DEVE precedere `/api/documenti` nel proxy, perché ne è un prefisso e resta al mock fino alla Fase 2.
+- Prima CI verde sul push `76e8919`: migrazioni da zero + 29 test sullo stack effimero.
+
 - Storage: bucket e layout dei path; servizio file (PDF per il visualizzatore — il contratto FE apre il PDF sul passaggio citato)
 - **Back-office (RF-A-06), forma minima:** CLI/script di caricamento massivo con metadati, rigenerazione indici, ritiro documenti — un'interfaccia grafica interna è rimandata finché il team piattaforma è chi sviluppa
 - Pipeline di conversione con Haiku: prompt, ancore di pagina, verifica di fedeltà a campione sui PDF del pilota; `INDICE.md` generati con sinonimi commerciali
