@@ -14,7 +14,7 @@ import { GRAPH_H, GRAPH_W, buildGraph, drawGraph } from './graph';
 export const WIDTH = 1080;
 export const HEIGHT = 1080;
 export const FPS = 30;
-export const DURATION = 655;
+export const DURATION = 990;
 
 /* ---------------------------------------------------------------------------
  * Token del FE (fe-angular/src/styles/_tokens.scss).
@@ -64,6 +64,27 @@ const T = {
   land: 592,
 };
 
+/* Secondo atto: il ricordo torna al lavoro. Il grafo si smonta al
+ * contrario, il pallino riemerge e rilascia l'interfaccia, poi si posa
+ * nell'icona Memoria; una conversazione nuova mostra Velia che applica
+ * la regola imparata, con la provenienza MEMORIA in evidenza. */
+const T2 = {
+  smonta: [652, 688] as const, // il grafo si disassembla
+  emerge: [655, 684] as const, // il pallino riemerge dal nodo
+  ritorno: 692, // l'interfaccia si ricompone dal pallino
+  guizzo: [718, 740] as const, // il pallino si posa sull'icona Memoria
+  iconaPulsa: 740,
+  user3: 756,
+  wait3: [794, 826] as const,
+  stream3: [826, 892] as const,
+  fonti3: 900,
+  prov3: 912,
+  zoomProv: [920, 950] as const,
+};
+
+/** L'icona Memoria nella barra laterale compressa (centro, coordinate app). */
+const ICONA_MEMORIA = { x: 34, y: 360 };
+
 /* Geometria del guscio applicativo: barra laterale compressa, solo icone. */
 const SIDEBAR_W = 68;
 const TOPBAR_H = 64;
@@ -83,13 +104,13 @@ const ATTR_CONTENT = { x: 166, y: 1220 };
 const SCROLL_FINALE = 480;
 const ATTR_APP = { x: ATTR_CONTENT.x, y: ATTR_CONTENT.y + THREAD.top - SCROLL_FINALE };
 
-const SCROLL_T = [0, T.scorri[0], T.scorri[1], 332, 352];
-const SCROLL_Y = [0, 0, 410, 410, SCROLL_FINALE];
+const SCROLL_T = [0, T.scorri[0], T.scorri[1], 332, 352, 600, 638];
+const SCROLL_Y = [0, 0, 410, 410, SCROLL_FINALE, SCROLL_FINALE, 0];
 
-const CAM_T = [0, 20, 44, 62, 92, 148, 175, 204, 240, 265, 285, 305, 332, 365, 430, 445, 472];
-const CAM_X = [540, 540, 680, 680, 440, 440, 540, 540, 540, 460, 460, 680, 680, 440, 440, 166, 166];
-const CAM_Y = [540, 540, 180, 180, 380, 380, 540, 540, 540, 560, 560, 630, 630, 750, 820, 844, 844];
-const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.02, 1.02, 1.02, 1.25, 1.25, 1.35, 1.35, 1.28, 1.5, 1.5, 1.5];
+const CAM_T = [0, 20, 44, 62, 92, 148, 175, 204, 240, 265, 285, 305, 332, 365, 430, 445, 472, 640, 895, 935];
+const CAM_X = [540, 540, 680, 680, 440, 440, 540, 540, 540, 460, 460, 680, 680, 440, 440, 166, 166, 540, 540, 430];
+const CAM_Y = [540, 540, 180, 180, 380, 380, 540, 540, 540, 560, 560, 630, 630, 750, 820, 844, 844, 540, 540, 380];
+const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.02, 1.02, 1.02, 1.25, 1.25, 1.35, 1.35, 1.28, 1.5, 1.5, 1.5, 1, 1, 1.45];
 
 const TESTI = {
   user1: 'Confronta il preventivo Unipol con la polizza auto del cliente Rossi.',
@@ -107,6 +128,13 @@ const TESTI = {
   velia2: 'Capito: per la tua agenzia non la segnalerò più come carenza.',
   salva: 'Sto salvando in memoria…',
   placeholder: 'Fai una domanda sui documenti — «@» per referenziarli',
+  /* Secondo atto: un altro cliente, la stessa regola — stavolta ricordata. */
+  user3: 'Confronta il preventivo Generali con la polizza auto del cliente Bianchi.',
+  riferimenti3: ['preventivo_generali.pdf', 'polizza_bianchi_cga.pdf'],
+  velia3:
+    'Il preventivo non copre gli infortuni del conducente. Non la segnalo come carenza: la tua agenzia li copre sempre con una polizza dedicata.',
+  citazioni3: [{ titolo: 'Preventivo Generali', pos: 'SEZ. 2 · P. 3' }],
+  provenienza3: 'Infortuni del conducente coperti a parte con polizza dedicata',
 };
 
 type Tono = 'pos' | 'neg' | undefined;
@@ -261,8 +289,12 @@ export const MemoriaViva: React.FC = () => {
 
   const s1 = stream(TESTI.intro, T.stream1);
   const s2 = stream(TESTI.velia2, T.stream2);
+  const s3 = stream(TESTI.velia3, T2.stream3);
   const attesa1 = frame >= T.wait1[0] && frame < T.wait1[1];
   const attesa2 = frame >= T.wait2[0] && frame < T.wait2[1];
+  const attesa3 = frame >= T2.wait3[0] && frame < T2.wait3[1];
+  /** Secondo atto: la conversazione nuova, dopo il ritorno dal grafo. */
+  const atto2 = frame >= T2.ritorno;
 
   const appear = (at: number) => {
     const s = spring({ frame: frame - at, fps: FPS, config: { damping: 200 } });
@@ -280,6 +312,22 @@ export const MemoriaViva: React.FC = () => {
     attr: { x: number; y: number },
     ritardo: number,
   ): React.CSSProperties => {
+    /* Secondo atto: lo stesso moto, all'indietro — l'elemento si ricompone
+       uscendo dal pallino fermo al centro del quadro. */
+    if (atto2) {
+      const f0 = T2.ritorno + ritardo;
+      const p =
+        1 -
+        interpolate(frame, [f0, f0 + 20], [0, 1], {
+          ...clamp,
+          easing: Easing.out(Easing.cubic),
+        });
+      if (p <= 0) return {};
+      return {
+        transform: `translate(${(540 - centro.x) * p}px, ${(540 - centro.y) * p}px) scale(${Math.max(0.02, 1 - p * 0.98)}) rotate(${p * 6}deg)`,
+        opacity: 1 - Math.pow(p, 4) * 0.55,
+      };
+    }
     const f0 = T.suck + ritardo;
     if (frame < f0) return {};
     const p = interpolate(frame, [f0, f0 + 20], [0, 1], {
@@ -292,12 +340,19 @@ export const MemoriaViva: React.FC = () => {
     };
   };
 
-  const chatOpacity = interpolate(frame, [T.chatVia[0], T.chatVia[1]], [1, 0], clamp);
-  const chatVisible = frame < T.chatVia[1];
+  const chatOpacity = atto2
+    ? 1
+    : interpolate(frame, [T.chatVia[0], T.chatVia[1]], [1, 0], clamp);
+  const chatVisible = frame < T.chatVia[1] || atto2;
 
-  const build = interpolate(frame, [T.build[0], T.build[1]], [0, 1], clamp);
-  const graphVisible = frame >= T.build[0];
-  const graphOpacity = interpolate(frame, [T.build[0], T.build[0] + 12], [0, 1], clamp);
+  /* Il grafo nasce nel primo atto e si smonta, al contrario, nel secondo. */
+  const build =
+    interpolate(frame, [T.build[0], T.build[1]], [0, 1], clamp) *
+    interpolate(frame, [T2.smonta[0], T2.smonta[1]], [1, 0], clamp);
+  const graphVisible = frame >= T.build[0] && frame < T2.smonta[1] + 4;
+  const graphOpacity =
+    interpolate(frame, [T.build[0], T.build[0] + 12], [0, 1], clamp) *
+    interpolate(frame, [T2.smonta[1] - 10, T2.smonta[1]], [1, 0], clamp);
   const graphRot =
     interpolate(frame, [T.build[0], T.build[1]], [-5, 0], {
       ...clamp,
@@ -310,13 +365,15 @@ export const MemoriaViva: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const nodeProgress =
-    frame < T.land
+    (frame < T.land
       ? 0
       : spring({
           frame: frame - T.land,
           fps: FPS,
           config: { damping: 11, stiffness: 130, mass: 0.7 },
-        });
+        })) *
+    /* Quando il pallino riemerge, il nodo del canvas gli cede il posto. */
+    interpolate(frame, [T2.emerge[0], T2.emerge[0] + 10], [1, 0], clamp);
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
@@ -341,24 +398,56 @@ export const MemoriaViva: React.FC = () => {
       easing: Easing.out(Easing.cubic),
     }) * interpolate(frame, [T.land - 4, T.land + 10, T.land + 50], [1, 1.015, 1], clamp);
 
-  /* --- Il pallino: assorbe l'interfaccia, poi vola nel grafo --- */
-  const dotVisible = frame >= T.suck && frame < T.land + 3;
-  const flyP = interpolate(frame, [T.fly[0], T.fly[1]], [0, 1], {
-    ...clamp,
-    easing: Easing.inOut(Easing.cubic),
-  });
-  const bob = frame < T.fly[0] ? Math.sin((frame - T.suck) * 0.16) * 3 : 0;
-  const dotX = SPAWN.x + (TARGET_PX.x - SPAWN.x) * flyP;
-  const dotY = SPAWN.y + (TARGET_PX.y - SPAWN.y) * flyP - Math.sin(flyP * Math.PI) * 70 + bob;
-  /* Cresce a ogni boccone: da 12 a 22 px lungo il risucchio. */
-  const dotSize = interpolate(frame, [T.suck, T.suck + 40], [12, 22], {
-    ...clamp,
-    easing: Easing.out(Easing.cubic),
-  });
-  const dotPulse = 1 + 0.08 * Math.sin((frame - T.suck) * 0.55) * (frame < T.fly[0] ? 1 : 0);
-  const dotOpacity =
-    interpolate(frame, [T.suck, T.suck + 6], [0, 1], clamp) *
-    interpolate(frame, [T.land - 1, T.land + 3], [1, 0], clamp);
+  /* --- Il pallino: assorbe l'interfaccia, vola nel grafo; poi riemerge,
+   * rilascia l'interfaccia e si posa nell'icona Memoria. --- */
+  const dotAtto1 = frame >= T.suck && frame < T.land + 3;
+  const dotAtto2 = frame >= T2.emerge[0] && frame < T2.guizzo[1] + 3;
+  const dotVisible = dotAtto1 || dotAtto2;
+
+  let dotX = SPAWN.x;
+  let dotY = SPAWN.y;
+  let dotSize = 12;
+  let dotOpacity = 1;
+  if (dotAtto1) {
+    const flyP = interpolate(frame, [T.fly[0], T.fly[1]], [0, 1], {
+      ...clamp,
+      easing: Easing.inOut(Easing.cubic),
+    });
+    const bob = frame < T.fly[0] ? Math.sin((frame - T.suck) * 0.16) * 3 : 0;
+    dotX = SPAWN.x + (TARGET_PX.x - SPAWN.x) * flyP;
+    dotY = SPAWN.y + (TARGET_PX.y - SPAWN.y) * flyP - Math.sin(flyP * Math.PI) * 70 + bob;
+    dotSize = interpolate(frame, [T.suck, T.suck + 40], [12, 22], {
+      ...clamp,
+      easing: Easing.out(Easing.cubic),
+    });
+    dotOpacity =
+      interpolate(frame, [T.suck, T.suck + 6], [0, 1], clamp) *
+      interpolate(frame, [T.land - 1, T.land + 3], [1, 0], clamp);
+  } else if (dotAtto2) {
+    if (frame < T2.guizzo[0]) {
+      // Riemerge dal nodo e torna al centro, dove rilascia l'interfaccia.
+      const p = interpolate(frame, [T2.emerge[0], T2.emerge[1]], [0, 1], {
+        ...clamp,
+        easing: Easing.inOut(Easing.cubic),
+      });
+      dotX = TARGET_PX.x + (SPAWN.x - TARGET_PX.x) * p;
+      dotY = TARGET_PX.y + (SPAWN.y - TARGET_PX.y) * p + Math.sin(p * Math.PI) * 70;
+      dotSize = interpolate(frame, [T2.ritorno, T2.guizzo[0]], [22, 13], clamp);
+      dotOpacity = interpolate(frame, [T2.emerge[0], T2.emerge[0] + 6], [0, 1], clamp);
+    } else {
+      // Il guizzo finale: dentro l'icona Memoria della barra laterale.
+      const p = interpolate(frame, [T2.guizzo[0], T2.guizzo[1]], [0, 1], {
+        ...clamp,
+        easing: Easing.in(Easing.cubic),
+      });
+      dotX = SPAWN.x + (ICONA_MEMORIA.x - SPAWN.x) * p;
+      dotY = SPAWN.y + (ICONA_MEMORIA.y - SPAWN.y) * p - Math.sin(p * Math.PI) * 60;
+      dotSize = 13 - p * 5;
+      dotOpacity = interpolate(frame, [T2.guizzo[1] - 2, T2.guizzo[1] + 2], [1, 0], clamp);
+    }
+  }
+  const dotPulse =
+    1 + 0.08 * Math.sin((frame - T.suck) * 0.55) * (dotAtto1 && frame < T.fly[0] ? 1 : 0);
 
   /* --- Stili dal FE --- */
   const bollaUtente: React.CSSProperties = {
@@ -494,23 +583,33 @@ export const MemoriaViva: React.FC = () => {
               </div>
 
               <div style={{ paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {NAV.flatMap((g) => g.voci).map((v) => (
-                  <div
-                    key={v.nome}
-                    title={v.nome}
-                    style={{
-                      display: 'grid',
-                      placeItems: 'center',
-                      width: 44,
-                      height: 44,
-                      borderRadius: 9,
-                      background: v.attiva ? C.pageAlt : 'transparent',
-                      color: v.attiva ? C.text : C.text3,
-                    }}
-                  >
-                    <IconaNav tipo={v.nome} />
-                  </div>
-                ))}
+                {NAV.flatMap((g) => g.voci).map((v) => {
+                  /* Quando il ricordo si posa, l'icona Memoria lo accoglie
+                     con un battito e resta calda. */
+                  const memoria = v.nome === 'Memoria';
+                  const battito = memoria
+                    ? interpolate(frame, [738, 746, 758], [1, 1.4, 1], clamp)
+                    : 1;
+                  const calda = memoria && frame >= T2.iconaPulsa;
+                  return (
+                    <div
+                      key={v.nome}
+                      title={v.nome}
+                      style={{
+                        display: 'grid',
+                        placeItems: 'center',
+                        width: 44,
+                        height: 44,
+                        borderRadius: 9,
+                        background: v.attiva ? C.pageAlt : calda ? '#F6EFE3' : 'transparent',
+                        color: v.attiva ? C.text : calda ? C.warm : C.text3,
+                        transform: `scale(${battito})`,
+                      }}
+                    >
+                      <IconaNav tipo={v.nome} />
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -574,7 +673,7 @@ export const MemoriaViva: React.FC = () => {
                 transform: `translateY(${-scrollY}px)`,
               }}
             >
-              {frame >= T.user1 && (
+              {!atto2 && frame >= T.user1 && (
                 <div
                   style={{
                     display: 'flex',
@@ -612,7 +711,7 @@ export const MemoriaViva: React.FC = () => {
                 </div>
               )}
 
-              {frame >= T.wait1[0] && (
+              {!atto2 && frame >= T.wait1[0] && (
                 <div
                   style={{
                     ...bollaAssistente,
@@ -738,13 +837,13 @@ export const MemoriaViva: React.FC = () => {
                 </div>
               )}
 
-              {frame >= T.user2 && (
+              {!atto2 && frame >= T.user2 && (
                 <div style={{ ...bollaUtente, ...appear(T.user2), ...succhia({ x: 700, y: 1006 }, ATTR_CONTENT, 16) }}>
                   {TESTI.user2}
                 </div>
               )}
 
-              {frame >= T.wait2[0] && (
+              {!atto2 && frame >= T.wait2[0] && (
                 <div
                   style={{
                     ...bollaAssistente,
@@ -767,6 +866,131 @@ export const MemoriaViva: React.FC = () => {
                             style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 18, color: C.provMemoria }}
                           >
                             {TESTI.salva}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* ---- Secondo atto: un'altra pratica, la regola ricordata ---- */}
+              {atto2 && frame >= T2.user3 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-end',
+                    gap: 10,
+                    ...appear(T2.user3),
+                  }}
+                >
+                  <div style={bollaUtente}>{TESTI.user3}</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {TESTI.riferimenti3.map((r) => (
+                      <span
+                        key={r}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 7,
+                          padding: '4px 13px',
+                          borderRadius: 999,
+                          border: `1.5px solid ${C.line}`,
+                          background: C.surface,
+                          fontFamily: F.lettura,
+                          fontSize: 15.5,
+                          color: C.text3,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        <IconaDoc size={14} />
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {atto2 && frame >= T2.wait3[0] && (
+                <div style={{ ...bollaAssistente, ...appear(T2.wait3[0]) }}>
+                  {attesa3 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {puntini(C.textMute)}
+                      <span style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 18, color: C.text3 }}>
+                        {TESTI.attesa}
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ fontFamily: F.lettura, fontSize: 20, lineHeight: 1.55, color: C.text }}>
+                        {s3.shown}
+                        {cursore(s3.inCorso)}
+                      </div>
+                      {frame >= T2.fonti3 && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            paddingTop: 13,
+                            borderTop: `1.5px solid ${C.lineSoft}`,
+                            ...appear(T2.fonti3),
+                          }}
+                        >
+                          <span style={mono}>Fonti</span>
+                          {TESTI.citazioni3.map((c) => (
+                            <span
+                              key={c.titolo}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '4px 13px',
+                                border: `1.5px solid ${C.line}`,
+                                borderRadius: 999,
+                                background: C.surface,
+                                fontFamily: F.lettura,
+                                fontSize: 15.5,
+                                color: C.text2,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {c.titolo}
+                              <span
+                                style={{ ...mono, fontSize: 13, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
+                              >
+                                {c.pos}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {frame >= T2.prov3 && (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            gap: 12,
+                            ...appear(T2.prov3),
+                          }}
+                        >
+                          <span
+                            style={{
+                              ...mono,
+                              fontSize: 14,
+                              letterSpacing: '0.08em',
+                              padding: '3px 10px',
+                              background: '#F6EFE3',
+                              color: C.provMemoria,
+                              transform: `scale(${interpolate(frame, [T2.prov3, T2.prov3 + 8, T2.prov3 + 18], [1, 1.12, 1], clamp)})`,
+                              transformOrigin: 'left center',
+                            }}
+                          >
+                            Memoria
+                          </span>
+                          <span style={{ fontFamily: F.lettura, fontSize: 17, color: C.text3 }}>
+                            {TESTI.provenienza3}
                           </span>
                         </div>
                       )}
