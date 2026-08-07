@@ -25,6 +25,14 @@ const logos: { src: string; alt: string }[] = [
 ];
 
 const shownLogos = SHOW_COMPANY_LOGOS ? logos : [];
+
+/* Con i loghi spenti la fascia porta tre prove concrete del prodotto:
+   affermazioni vere oggi, senza promettere clienti che non ci sono. */
+const proofPoints = [
+  'Ogni risposta con la fonte citata',
+  'Zero documenti da caricare per iniziare',
+  'I tuoi dati restano tuoi',
+];
 ---
 
 <section class="hero on-ink" aria-labelledby="hero-title">
@@ -63,28 +71,36 @@ const shownLogos = SHOW_COMPANY_LOGOS ? logos : [];
   </div>
 
   <div class="hero__proof">
-    <ul class="hero__logos" aria-label="Clienti che usano Velia">
-      {
-        shownLogos.map((logo) => (
-          <li class="hero__logo">
-            <img
-              class="hero__logo-img"
-              src={logo.src}
-              alt={logo.alt}
-              loading="lazy"
-            />
-          </li>
-        ))
-      }
-      {
-        Array.from({ length: LOGO_SLOTS - shownLogos.length }, (_, i) => (
-          <li class="hero__logo hatch">
-            <span class="visually-hidden">Logo cliente {shownLogos.length + i + 1}</span>
-            <span aria-hidden="true">logo</span>
-          </li>
-        ))
-      }
-    </ul>
+    {
+      SHOW_COMPANY_LOGOS ? (
+        <ul class="hero__logos" aria-label="Compagnie con prodotti in archivio">
+          {shownLogos.map((logo) => (
+            <li class="hero__logo">
+              <img
+                class="hero__logo-img"
+                src={logo.src}
+                alt={logo.alt}
+                loading="lazy"
+              />
+            </li>
+          ))}
+          {Array.from({ length: LOGO_SLOTS - shownLogos.length }, (_, i) => (
+            <li class="hero__logo hatch">
+              <span class="visually-hidden">
+                Logo cliente {shownLogos.length + i + 1}
+              </span>
+              <span aria-hidden="true">logo</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul class="hero__points" aria-label="Perché Velia">
+          {proofPoints.map((point) => (
+            <li class="hero__point">{point}</li>
+          ))}
+        </ul>
+      )
+    }
     <a class="btn btn--outline btn--sm hero__proof-cta" href="/clienti">
       Guarda Velia al lavoro
     </a>
@@ -218,6 +234,30 @@ const shownLogos = SHOW_COMPANY_LOGOS ? logos : [];
     max-width: 100%;
     width: auto;
     object-fit: contain;
+  }
+
+  /* --- Prove concrete (alternativa ai loghi) --- */
+
+  .hero__points {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+  }
+
+  .hero__point {
+    display: flex;
+    align-items: center;
+    font-size: var(--t-sm);
+    color: var(--c-text-2);
+  }
+
+  /* Il punto di separazione sta fra le voci, non davanti alla prima. */
+  .hero__point + .hero__point::before {
+    content: '·';
+    margin-right: 1.25rem;
+    color: var(--c-accent-hairline);
   }
 
   .hero__proof-cta {
