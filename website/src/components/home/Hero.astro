@@ -5,9 +5,26 @@ import { hero } from '~/data/home';
 // gli slot senza logo restano segnaposto tratteggiati.
 const LOGO_SLOTS = 8;
 
+/**
+ * Interruttore dei loghi compagnia: i file sono in public/loghi/ e l'elenco
+ * qui sotto è completo, ma mostrare marchi altrui in una fascia di riprova
+ * sociale è una scelta da confermare (e da coprire con le autorizzazioni).
+ * Con `false` la fascia mostra i segnaposto tratteggiati.
+ */
+const SHOW_COMPANY_LOGOS = false;
+
 const logos: { src: string; alt: string }[] = [
-  { src: '/loghi/unipol.webp', alt: 'Unipol' },
+  { src: '/loghi/unipol.svg', alt: 'Unipol' },
+  { src: '/loghi/cattolica.svg', alt: 'Cattolica Assicurazioni' },
+  { src: '/loghi/reale-mutua.png', alt: 'Reale Mutua' },
+  { src: '/loghi/generali.svg', alt: 'Generali' },
+  { src: '/loghi/allianz.svg', alt: 'Allianz' },
+  { src: '/loghi/axa.svg', alt: 'AXA' },
+  { src: '/loghi/zurich.svg', alt: 'Zurich' },
+  { src: '/loghi/groupama.svg', alt: 'Groupama' },
 ];
+
+const shownLogos = SHOW_COMPANY_LOGOS ? logos : [];
 ---
 
 <section class="hero on-ink" aria-labelledby="hero-title">
@@ -48,7 +65,7 @@ const logos: { src: string; alt: string }[] = [
   <div class="hero__proof">
     <ul class="hero__logos" aria-label="Clienti che usano Velia">
       {
-        logos.map((logo) => (
+        shownLogos.map((logo) => (
           <li class="hero__logo">
             <img
               class="hero__logo-img"
@@ -60,9 +77,9 @@ const logos: { src: string; alt: string }[] = [
         ))
       }
       {
-        Array.from({ length: LOGO_SLOTS - logos.length }, (_, i) => (
+        Array.from({ length: LOGO_SLOTS - shownLogos.length }, (_, i) => (
           <li class="hero__logo hatch">
-            <span class="visually-hidden">Logo cliente {logos.length + i + 1}</span>
+            <span class="visually-hidden">Logo cliente {shownLogos.length + i + 1}</span>
             <span aria-hidden="true">logo</span>
           </li>
         ))
