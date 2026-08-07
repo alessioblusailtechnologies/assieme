@@ -19,9 +19,12 @@ try {
   config = undefined;
 }
 
+/** Serve la connessione Postgres vera, con la password compilata. */
+const dbPronto = Boolean(config?.DATABASE_URL && !config.DATABASE_URL.includes('PASSWORD_MANCANTE'));
+
 const attendi = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-describe.skipIf(!config)('integrazione col database', () => {
+describe.skipIf(!dbPronto)('integrazione col database', () => {
   const pool = () => poolDb();
   const creati: { tenantA?: string; tenantB?: string } = {};
 
@@ -56,14 +59,26 @@ describe.skipIf(!config)('integrazione col database', () => {
     expect(visibili).not.toContain(creati.tenantB);
   });
 
-  it('con identità utente le scritture su tenant sono negate dal database', async () => {
-    await expect(
-      conIdentita(
-        pool(),
-        { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
-        (client) => client.query(`update public.tenant set nome = 'violazione' where id = $1`, [creati.tenantA]),
-      ),
-    ).rejects.toThrow();
+  it('con identità utente le scritture su tenant non toccano alcuna riga', async () => {
+    // Senza policy di scrittura la RLS non lancia un errore: filtra. Un
+    // UPDATE da authenticated deve toccare zero righe, anche sul proprio
+    // tenant — verificato anche sul progetto online via Management API.
+    const esito = await conIdentita(
+      pool(),
+      { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
+      (client) =>
+        client.query(`update public.tenant set nome = 'violazione' where id = $1 returning id`, [
+          creati.tenantA,
+        ]),
+    );
+    expect(esito.rowCount).toBe(0);
+
+    // E il nome, riletto dal sistema, è rimasto quello vero.
+    const riga = await pool().query<{ nome: string }>(
+      'select nome from public.tenant where id = $1',
+      [creati.tenantA],
+    );
+    expect(riga.rows[0]!.nome).toBe('Tenant A (test)');
   });
 
   it('i job non sono leggibili con identità utente (RLS senza policy)', async () => {

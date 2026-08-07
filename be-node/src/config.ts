@@ -18,10 +18,18 @@ const schemaAmbiente = z.object({
   /** Chiave di servizio: solo worker e job di sistema. Scavalca la RLS. */
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   /**
+   * Segreto JWT del progetto (progetti con chiavi legacy HS256, com'è il
+   * nostro: il JWKS è vuoto). Se un domani il progetto migra alle signing
+   * key asimmetriche, si toglie da .env e la verifica passa da sola al JWKS.
+   */
+  SUPABASE_JWT_SECRET: z.string().optional(),
+  /**
    * Connessione Postgres diretta (pooler in modalità sessione o connessione
    * diretta): serve a worker (LISTEN/NOTIFY, pgmq) e test di integrazione.
+   * Opzionale perché l'API pura ne fa a meno: chi la usa fallisce con un
+   * messaggio chiaro se manca (poolDb).
    */
-  DATABASE_URL: z.string().min(1),
+  DATABASE_URL: z.string().min(1).optional(),
   PORTA_API: z.coerce.number().int().default(3002),
   LOG_LIVELLO: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

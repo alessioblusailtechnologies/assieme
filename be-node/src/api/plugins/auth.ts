@@ -1,3 +1,5 @@
+import { createSecretKey } from 'node:crypto';
+
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
@@ -26,13 +28,26 @@ declare module 'fastify' {
 const ROTTE_PUBBLICHE = new Set(['/api/salute']);
 
 /**
- * Verifica il token contro le chiavi pubbliche del progetto Supabase
- * (endpoint JWKS standard). Le chiavi sono in cache dentro `jose`.
+ * Verifica il token del progetto Supabase. Due strade, decise dalla
+ * configurazione:
+ *
+ * - progetto con chiavi legacy (il nostro): HS256 col segreto JWT in
+ *   `SUPABASE_JWT_SECRET` — verifica locale, nessuna chiamata;
+ * - progetto migrato alle signing key: JWKS standard, chiavi in cache
+ *   dentro `jose`.
  */
 function verificatoreSupabase(): VerificaToken {
-  const jwks = createRemoteJWKSet(
-    new URL('/auth/v1/.well-known/jwks.json', configurazione().SUPABASE_URL),
-  );
+  const config = configurazione();
+
+  if (config.SUPABASE_JWT_SECRET) {
+    const segreto = createSecretKey(Buffer.from(config.SUPABASE_JWT_SECRET));
+    return async (token) => {
+      const { payload } = await jwtVerify(token, segreto, { audience: 'authenticated' });
+      return payload;
+    };
+  }
+
+  const jwks = createRemoteJWKSet(new URL('/auth/v1/.well-known/jwks.json', config.SUPABASE_URL));
   return async (token) => {
     const { payload } = await jwtVerify(token, jwks, { audience: 'authenticated' });
     return payload;

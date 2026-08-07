@@ -10,9 +10,17 @@ let istanza: pg.Pool | undefined;
  * La connessione va al progetto Supabase online: TLS obbligatorio. Verso
  * un Postgres locale (test in CI) il TLS si disattiva da solo.
  */
+function urlDb(): string {
+  const url = configurazione().DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL mancante in .env: serve la connessione Postgres diretta (vedi .env.example).');
+  }
+  return url;
+}
+
 export function poolDb(): pg.Pool {
   if (!istanza) {
-    const url = configurazione().DATABASE_URL;
+    const url = urlDb();
     const locale = url.includes('localhost') || url.includes('127.0.0.1');
     istanza = new pg.Pool({
       connectionString: url,
@@ -33,7 +41,7 @@ export async function chiudiPool(): Promise<void> {
  * l'ascolto LISTEN/NOTIFY. Stessa configurazione TLS del pool.
  */
 export function creaClientDedicato(): pg.Client {
-  const url = configurazione().DATABASE_URL;
+  const url = urlDb();
   const locale = url.includes('localhost') || url.includes('127.0.0.1');
   return new pg.Client({
     connectionString: url,
