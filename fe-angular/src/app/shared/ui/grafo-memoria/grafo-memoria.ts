@@ -11,9 +11,11 @@ import {
 /**
  * Il grafo della memoria viva — la stessa figura del sito (portata da
  * `website/src/scripts/memory-graph.ts`): cluster di nodi con deriva lenta.
- * A differenza del sito il fondo è **trasparente**: la figura vive su una
- * carta chiara del pannello, e il colore lo decide chi la ospita. Le tre
- * proprietà che contano sono le stesse:
+ * A differenza del sito il fondo è **trasparente**: la figura prende il
+ * colore di chi la ospita — la carta chiara del pannello memoria,
+ * l'inchiostro della schermata di accesso. Vive in `shared/ui` perché più
+ * feature la usano, e la regola del progetto vieta gli import fra feature.
+ * Le tre proprietà che contano sono le stesse:
  *
  *  · il seme è fisso, quindi la figura è identica a ogni apertura;
  *  · con `prefers-reduced-motion` disegna un solo fotogramma e si ferma;

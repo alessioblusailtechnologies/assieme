@@ -7,7 +7,7 @@ import { Id, ModificheRicordo, Ricordo } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
-import { GrafoMemoria } from './grafo-memoria';
+import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';

@@ -1,45 +1,67 @@
 <main class="accesso">
-  <section class="accesso__scheda" aria-labelledby="titolo-accesso">
+  <!-- La scena: l'inchiostro del sito, il grafo della memoria viva, la
+       promessa del prodotto. È la prima cosa che un utente vede di ASSIEME
+       ogni mattina: deve dire subito di che pasta è fatto. -->
+  <section class="accesso__scena" aria-hidden="true">
     <p class="accesso__marchio">ASSIEME</p>
-    <h1 id="titolo-accesso" class="accesso__titolo">Accedi</h1>
-    <p class="accesso__sottotitolo">L’assistente della tua agenzia ti aspetta.</p>
 
-    <form class="accesso__form" (ngSubmit)="invia()">
-      <label class="accesso__etichetta" for="email">Email</label>
-      <input
-        uiCampo
-        id="email"
-        name="email"
-        type="email"
-        autocomplete="email"
-        required
-        [ngModel]="email()"
-        (ngModelChange)="email.set($event)"
-      />
+    <div class="accesso__grafo">
+      <app-grafo-memoria />
+    </div>
 
-      <label class="accesso__etichetta" for="password">Password</label>
-      <input
-        uiCampo
-        id="password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        required
-        [ngModel]="password()"
-        (ngModelChange)="password.set($event)"
-      />
+    <div class="accesso__voce">
+      <p class="accesso__claim">La memoria viva della tua agenzia.</p>
+      <p class="accesso__sotto-claim">
+        Documenti, regole e casistica risolta: tutto ciò che l’agenzia sa, in un posto che non
+        dimentica.
+      </p>
+    </div>
+  </section>
 
-      @if (errore(); as messaggio) {
-        <p class="accesso__errore" role="alert">{{ messaggio }}</p>
-      }
+  <!-- La porta: calma, un'azione sola. -->
+  <section class="accesso__porta" aria-labelledby="titolo-accesso">
+    <div class="accesso__scheda">
+      <p class="accesso__marchio accesso__marchio--mobile">ASSIEME</p>
+      <h1 id="titolo-accesso" class="accesso__titolo">Accedi</h1>
+      <p class="accesso__sottotitolo">Entra con le credenziali della tua agenzia.</p>
 
-      <button uiBottone variante="primario" type="submit" [disabled]="inCorso()">
-        @if (inCorso()) {
-          Accesso in corso…
-        } @else {
-          Entra
+      <form class="accesso__form" (ngSubmit)="invia()">
+        <label class="accesso__etichetta" for="email">Email</label>
+        <input
+          uiCampo
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          required
+          [ngModel]="email()"
+          (ngModelChange)="email.set($event)"
+        />
+
+        <label class="accesso__etichetta" for="password">Password</label>
+        <input
+          uiCampo
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required
+          [ngModel]="password()"
+          (ngModelChange)="password.set($event)"
+        />
+
+        @if (errore(); as messaggio) {
+          <p class="accesso__errore" role="alert">{{ messaggio }}</p>
         }
-      </button>
-    </form>
+
+        <button uiBottone variante="primario" type="submit" [disabled]="inCorso()">
+          @if (inCorso()) {
+            Accesso in corso…
+          } @else {
+            Entra
+          }
+        </button>
+      </form>
+    </div>
   </section>
 </main>

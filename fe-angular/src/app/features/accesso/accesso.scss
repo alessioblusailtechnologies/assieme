@@ -1,30 +1,93 @@
 /*
- * Una scheda sola al centro di una pagina calma: l'accesso non è una
- * schermata da abitare, è una porta. Stessi neutri caldi del resto
- * dell'applicazione, azione primaria unica.
+ * Due pannelli: la scena e la porta.
+ *
+ * A sinistra l'inchiostro caldo del sito con il grafo della memoria viva —
+ * la stessa figura di /memoria e della pagina pubblica: chi arriva qui la
+ * riconosce. A destra il form, calmo, un'azione sola. Sotto i 900px la
+ * scena si ritira e resta la porta: su un telefono si entra, non si ammira.
  */
 .accesso {
   min-height: 100dvh;
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);
   background: var(--c-page);
+}
+
+/* ------------------------------------------------------------------ scena */
+
+.accesso__scena {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px 48px;
+  background: var(--c-ink);
+  color: var(--c-text-oninverse-2);
+}
+
+.accesso__grafo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* La figura respira oltre i bordi: è un cielo, non un'icona. */
+.accesso__grafo app-grafo-memoria {
+  width: min(88%, 720px);
+  opacity: 0.9;
+}
+
+.accesso__marchio {
+  position: relative;
+  z-index: 1;
+  font-family: var(--f-sans);
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  color: var(--c-text-oninverse-3);
+  margin: 0;
+}
+
+.accesso__voce {
+  position: relative;
+  z-index: 1;
+  max-width: 30rem;
+}
+
+.accesso__claim {
+  font-family: var(--f-serif);
+  font-size: clamp(24px, 2.6vw, 34px);
+  line-height: 1.2;
+  color: var(--c-text-oninverse);
+  margin: 0 0 10px;
+}
+
+.accesso__sotto-claim {
+  font-family: var(--f-lettura);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--c-text-oninverse-3);
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ porta */
+
+.accesso__porta {
+  display: grid;
+  place-items: center;
   padding: 24px;
 }
 
 .accesso__scheda {
-  width: min(380px, 100%);
-  background: var(--c-surface);
-  border: 1px solid var(--c-line);
-  border-radius: 8px;
-  padding: 40px 36px;
+  width: min(360px, 100%);
 }
 
-.accesso__marchio {
-  font-family: var(--f-sans);
-  font-size: 13px;
-  letter-spacing: 0.18em;
+.accesso__marchio--mobile {
+  display: none;
   color: var(--c-text-3);
-  margin: 0 0 20px;
+  margin-bottom: 20px;
 }
 
 .accesso__titolo {
@@ -60,4 +123,20 @@
 .accesso__form [uiBottone] {
   margin-top: 20px;
   justify-self: stretch;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 900px) {
+  .accesso {
+    grid-template-columns: 1fr;
+  }
+
+  .accesso__scena {
+    display: none;
+  }
+
+  .accesso__marchio--mobile {
+    display: block;
+  }
 }
