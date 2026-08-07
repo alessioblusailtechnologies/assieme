@@ -5,18 +5,22 @@ import { HttpInterceptorFn, provideHttpClient, withFetch, withInterceptors } fro
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 
 import { environment } from '@env';
+import { autenticazioneInterceptor } from '@core/interceptors/autenticazione.interceptor';
 import { erroreInterceptor } from '@core/interceptors/errore.interceptor';
 import { routes } from './app.routes';
 import { sviluppoInterceptor } from '@core/interceptors/sviluppo.interceptor';
 
 /*
  * L'interceptor di sviluppo entra nella catena solo dove ha senso. In
- * produzione la catena contiene il solo `erroreInterceptor`, e quando
- * arriverà l'autenticazione vera si aggiungerà qui il suo.
+ * produzione la catena è autenticazione + errori.
+ *
+ * L'ordine conta: l'autenticazione sta prima degli errori, così un 401
+ * recuperato dal rinnovo del token non arriva mai al gestore che notifica
+ * (che comunque i 401 li ignora — sono suoi solo gli errori definitivi).
  */
 const interceptors: HttpInterceptorFn[] = environment.devTools
-  ? [sviluppoInterceptor, erroreInterceptor]
-  : [erroreInterceptor];
+  ? [sviluppoInterceptor, autenticazioneInterceptor, erroreInterceptor]
+  : [autenticazioneInterceptor, erroreInterceptor];
 
 /*
  * Locale italiana registrata all'avvio.

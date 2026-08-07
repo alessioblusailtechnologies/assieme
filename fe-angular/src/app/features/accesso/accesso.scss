@@ -1,0 +1,63 @@
+/*
+ * Una scheda sola al centro di una pagina calma: l'accesso non è una
+ * schermata da abitare, è una porta. Stessi neutri caldi del resto
+ * dell'applicazione, azione primaria unica.
+ */
+.accesso {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: var(--c-page);
+  padding: 24px;
+}
+
+.accesso__scheda {
+  width: min(380px, 100%);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: 8px;
+  padding: 40px 36px;
+}
+
+.accesso__marchio {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--c-text-3);
+  margin: 0 0 20px;
+}
+
+.accesso__titolo {
+  font-family: var(--f-sans);
+  font-size: 22px;
+  margin: 0 0 4px;
+}
+
+.accesso__sottotitolo {
+  color: var(--c-text-3);
+  font-size: 14px;
+  margin: 0 0 28px;
+}
+
+.accesso__form {
+  display: grid;
+  gap: 8px;
+}
+
+.accesso__etichetta {
+  font-family: var(--f-sans);
+  font-size: 13px;
+  color: var(--c-text-2);
+  margin-top: 8px;
+}
+
+.accesso__errore {
+  color: var(--c-neg);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.accesso__form [uiBottone] {
+  margin-top: 20px;
+  justify-self: stretch;
+}

@@ -68,3 +68,21 @@ export interface Sessione {
   tenant: Tenant;
   permessi: Permesso[];
 }
+
+/** Corpo di `POST /api/sessione/accesso`. */
+export interface Credenziali {
+  email: string;
+  password: string;
+}
+
+/**
+ * Risposta dell'accesso (e, senza `sessione`, dell'aggiornamento token).
+ * Specchio di `be-node/src/contratto/sessione.ts`: il backend è la fonte
+ * di questo contratto.
+ */
+export interface EsitoAccesso {
+  tokenAccesso: string;
+  tokenAggiornamento: string;
+  scadeInSecondi: number;
+  sessione: Sessione;
+}

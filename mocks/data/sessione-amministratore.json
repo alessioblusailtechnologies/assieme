@@ -16,7 +16,7 @@
   "permessi": [
     "archivio-privato.carica",
     "archivio-privato.elimina",
-    "knowledge-base.gestisci",
+    "riferimenti.gestisci",
     "istruzioni.gestisci",
     "template.gestisci",
     "utenti.gestisci",

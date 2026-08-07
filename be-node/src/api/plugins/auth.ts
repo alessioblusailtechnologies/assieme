@@ -24,8 +24,8 @@ declare module 'fastify' {
   }
 }
 
-/** Rotte fuori dall'autenticazione: solo la sonda di vita. */
-const ROTTE_PUBBLICHE = new Set(['/api/salute']);
+/** Rotte fuori dall'autenticazione: la sonda di vita e l'ingresso stesso. */
+const ROTTE_PUBBLICHE = new Set(['/api/salute', '/api/sessione/accesso', '/api/sessione/aggiorna']);
 
 /**
  * Verifica il token del progetto Supabase. Due strade, decise dalla

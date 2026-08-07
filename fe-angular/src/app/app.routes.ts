@@ -15,6 +15,12 @@ import { Shell } from '@layout/shell';
  */
 export const routes: Routes = [
   {
+    /* Fuori dalla shell: è una porta, non una stanza. Contro il mock e
+       nella demo non serve mai — nessuna rotta 401 e nessun redirect. */
+    path: 'accesso',
+    loadComponent: () => import('@features/accesso/accesso').then((m) => m.Accesso),
+  },
+  {
     path: '',
     component: Shell,
     children: [

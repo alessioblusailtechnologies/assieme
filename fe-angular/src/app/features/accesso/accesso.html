@@ -1,0 +1,45 @@
+<main class="accesso">
+  <section class="accesso__scheda" aria-labelledby="titolo-accesso">
+    <p class="accesso__marchio">ASSIEME</p>
+    <h1 id="titolo-accesso" class="accesso__titolo">Accedi</h1>
+    <p class="accesso__sottotitolo">L’assistente della tua agenzia ti aspetta.</p>
+
+    <form class="accesso__form" (ngSubmit)="invia()">
+      <label class="accesso__etichetta" for="email">Email</label>
+      <input
+        uiCampo
+        id="email"
+        name="email"
+        type="email"
+        autocomplete="email"
+        required
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+      />
+
+      <label class="accesso__etichetta" for="password">Password</label>
+      <input
+        uiCampo
+        id="password"
+        name="password"
+        type="password"
+        autocomplete="current-password"
+        required
+        [ngModel]="password()"
+        (ngModelChange)="password.set($event)"
+      />
+
+      @if (errore(); as messaggio) {
+        <p class="accesso__errore" role="alert">{{ messaggio }}</p>
+      }
+
+      <button uiBottone variante="primario" type="submit" [disabled]="inCorso()">
+        @if (inCorso()) {
+          Accesso in corso…
+        } @else {
+          Entra
+        }
+      </button>
+    </form>
+  </section>
+</main>

@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Router } from '@angular/router';
 
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
+import { TokenStore } from '@core/auth/token-store';
 
 /**
  * Barra superiore: contesto a sinistra, data e identità a destra.
@@ -52,6 +54,15 @@ import { SessioneStore } from '@core/auth/sessione-store';
           <span class="identita__nome">{{ nomeBreve() }}</span>
           <span class="identita__ruolo mono">{{ utente.ruolo }}</span>
         </span>
+
+        <!-- Solo con una sessione autenticata vera: contro il mock e nella
+             demo non ci sono token, e non c'è nulla da cui uscire. -->
+        @if (autenticato()) {
+          <button class="esci" type="button" title="Esci" (click)="esci()">
+            <ui-icon name="esci" [size]="15" />
+            <span class="visually-hidden">Esci</span>
+          </button>
+        }
       }
     </div>
   `,
@@ -134,6 +145,24 @@ import { SessioneStore } from '@core/auth/sessione-store';
       user-select: none;
     }
 
+    .esci {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      flex: none;
+      border: 0;
+      border-radius: var(--radius-pieno);
+      background: transparent;
+      color: var(--c-text-3);
+      cursor: pointer;
+    }
+
+    .esci:hover {
+      background: var(--c-page-alt);
+      color: var(--c-text);
+    }
+
     /* Scheletro invece di spinner: occupa lo spazio che occuperà il
        contenuto, così la barra non sussulta quando la sessione arriva. */
     .scheletro {
@@ -146,8 +175,18 @@ import { SessioneStore } from '@core/auth/sessione-store';
 })
 export class BarraSuperiore {
   protected readonly sessione = inject(SessioneStore);
+  private readonly token = inject(TokenStore);
+  private readonly router = inject(Router);
 
   protected readonly adesso = signal(new Date());
+
+  protected readonly autenticato = computed(() => Boolean(this.token.tokenAccesso()));
+
+  protected esci(): void {
+    this.token.pulisci();
+    this.sessione.ricarica();
+    void this.router.navigate(['/accesso']);
+  }
 
   /** Forma `m.ferrero`: la stessa con cui l'utente si riconosce nella posta. */
   protected readonly nomeBreve = computed(() => {

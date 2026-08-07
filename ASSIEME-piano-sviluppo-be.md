@@ -229,6 +229,15 @@ Stime per **uno sviluppatore BE a tempo pieno**, da ricalibrare dopo la Fase 0. 
 
 La pipeline di ingestion (§4.2) nasce qui, sul Pubblico, dove i documenti li carichiamo noi: si mette a punto la conversione senza utenti di mezzo.
 
+**✅ Primo pezzo completato (07/08/2026): accesso e sessione** — su indicazione del committente, perché lo switchover non si fa senza porta d'ingresso. Decisioni di contratto da sapere:
+
+- **Tre rotte nuove**: `POST /api/sessione/accesso` (email+password → `EsitoAccesso`: token + sessione già idratata), `POST /api/sessione/aggiorna` (il refresh token di Supabase **ruota a ogni uso**), `GET /api/sessione` (identica alla fixture del mock — la promessa di `SessioneStore` mantenuta). Le prime due sono le uniche rotte pubbliche oltre la sonda di vita.
+- **Codici nuovi**: `CREDENZIALI_NON_VALIDE` (401 al login), `UTENTE_SOSPESO` (403, niente token: sospeso = fuori). L'`invitato` diventa `attivo` al primo accesso e `ultimo_accesso` si aggiorna a ogni login (contratto Fase 5 FE).
+- **I permessi li afferma il server** (`permessiPerRuolo`): vocabolario del tipo `Permesso` del FE — la fixture mock portava ancora `knowledge-base.gestisci` (v0.8), corretta in `riferimenti.gestisci`.
+- **FE**: rotta `/accesso` fuori dalla shell; `TokenStore` (localStorage) + interceptor che allega il Bearer, sul 401 rinnova una volta (rinnovo condiviso fra richieste concorrenti) e riprova, altrimenti pulisce e porta ad `/accesso`; «Esci» nella barra superiore, visibile solo con token veri. **Senza token la catena è trasparente**: mock e demo self-contained funzionano come sempre, nessun login davanti alla demo.
+- **Proxy**: `/api/sessione` → `localhost:3002` — il primo endpoint dello switchover. `npm run dev` del FE ora avvia anche il backend (`npm:be`).
+- Rimandati con motivo: revoca server-side dei token all'uscita (logout Supabase) e recupero password — hanno senso con la gestione utenti completa della Fase 6.
+
 - Storage: bucket e layout dei path; servizio file (PDF per il visualizzatore — il contratto FE apre il PDF sul passaggio citato)
 - **Back-office (RF-A-06), forma minima:** CLI/script di caricamento massivo con metadati, rigenerazione indici, ritiro documenti — un'interfaccia grafica interna è rimandata finché il team piattaforma è chi sviluppa
 - Pipeline di conversione con Haiku: prompt, ancore di pagina, verifica di fedeltà a campione sui PDF del pilota; `INDICE.md` generati con sinonimi commerciali

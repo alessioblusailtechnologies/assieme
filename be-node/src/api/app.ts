@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
+import { registraRotteSessione } from './sessione/rotte.js';
 
 export interface OpzioniApp {
   logger?: boolean | object;
@@ -28,6 +29,8 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
 
   /** Sonda di vita per deploy e sviluppo: non è parte del contratto FE. */
   app.get('/api/salute', () => ({ stato: 'ok' }));
+
+  registraRotteSessione(app);
 
   return app;
 }
