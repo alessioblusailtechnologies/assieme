@@ -1,4 +1,4 @@
-# ASSIEME
+# VELIA
 
 Piattaforma AI per il settore assicurativo — assistente interrogabile in
 linguaggio naturale per agenzie, broker e intermediari.
@@ -17,8 +17,8 @@ linguaggio naturale per agenzie, broker e intermediari.
 
 | Documento | Contenuto |
 |---|---|
-| [`ASSIEME-analisi-requisiti.md`](ASSIEME-analisi-requisiti.md) | Requisiti funzionali e non funzionali, v0.8 |
-| [`ASSIEME-piano-sviluppo-fe.md`](ASSIEME-piano-sviluppo-fe.md) | Piano di sviluppo front-end, fasi e decisioni aperte |
+| [`VELIA-analisi-requisiti.md`](VELIA-analisi-requisiti.md) | Requisiti funzionali e non funzionali, v0.8 |
+| [`VELIA-piano-sviluppo-fe.md`](VELIA-piano-sviluppo-fe.md) | Piano di sviluppo front-end, fasi e decisioni aperte |
 
 `mocks/` sta fuori da `fe-angular/` di proposito: non è codice front-end, è
 la specifica eseguibile delle API. Chi implementerà il backend lo avvia e
