@@ -90,6 +90,9 @@ cambiala in entrambi i posti):
    contenuto normativo.
 6. **Testo illeggibile.** `> [!ATTENZIONE] Porzione non leggibile a pag. N`
    e avanti: mai inventare.
+7. **Pagine senza testo.** Una pagina di sola grafica, copertina o
+   separatore produce la sua ancora `[pag. N]` e nient'altro: niente note,
+   niente descrizioni della grafica.
 
 ## 4. Scrivi l'INDICE.md dell'edizione
 

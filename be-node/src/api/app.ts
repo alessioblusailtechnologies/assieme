@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
+import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
 import { registraRotteSessione } from './sessione/rotte.js';
 
 export interface OpzioniApp {
@@ -33,6 +34,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
 
   registraRotteSessione(app);
   registraRotteDocumenti(app);
+  registraRotteSegnalazioni(app);
 
   return app;
 }

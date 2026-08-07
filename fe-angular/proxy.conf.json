@@ -5,6 +5,7 @@
   "/api/documenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/compagnie": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/rami": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/segnalazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/etichette": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/spazio": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/conversazioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },

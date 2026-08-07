@@ -365,6 +365,27 @@ const server = createServer(async (req, res) => {
     return;
   }
 
+  /* RF-A-08 — segnalazioni sull'archivio. Lo stub registra e ringrazia:
+     la persistenza vera è del backend, qui serve solo che la demo risponda. */
+  if (percorso === '/api/segnalazioni' && req.method === 'POST') {
+    const corpo = await leggiCorpo(req);
+    if (!corpo?.tipo || !String(corpo?.messaggio ?? '').trim()) {
+      inviaJson(res, 400, {
+        codice: 'DATI_NON_VALIDI',
+        messaggio: 'Segnalazione non valida: servono un tipo e un messaggio.',
+      });
+      return;
+    }
+    inviaJson(res, 201, {
+      id: `seg-${Date.now()}`,
+      tipo: corpo.tipo,
+      messaggio: corpo.messaggio,
+      ...(corpo.documentoId && { documentoId: corpo.documentoId }),
+      creataIl: new Date().toISOString(),
+    });
+    return;
+  }
+
   const dettaglio = percorso.match(/^\/api\/documenti\/([^/]+)$/);
   if (dettaglio && req.method === 'GET') {
     const documento = DOCUMENTI.find((d) => d.id === dettaglio[1]);

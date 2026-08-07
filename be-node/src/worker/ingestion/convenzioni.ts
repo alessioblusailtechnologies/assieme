@@ -19,6 +19,7 @@ Regole non negoziabili:
 4. STRUTTURA. Usa i titoli Markdown (\`##\`, \`###\`) per articoli e sezioni, mantenendo la numerazione originale (es. \`### Art. 2.4 — Esclusioni\`). Elenchi puntati e lettere (a), b), c)) restano come nell'originale.
 5. NIENTE DECORAZIONE. Ometti intestazioni e piè di pagina ripetitivi (nome compagnia su ogni pagina, numeri di modulo ripetuti), MA non omettere mai contenuto normativo.
 6. TESTO ILLEGGIBILE. Se una porzione non è leggibile (scansione, immagine senza testo), scrivi \`> [!ATTENZIONE] Porzione non leggibile a pag. N\` e prosegui: mai inventare il contenuto mancante.
+7. PAGINE SENZA TESTO. Una pagina di sola grafica, copertina o separatore produce la sua ancora \`[pag. N]\` e nient'altro: niente note, niente descrizioni della grafica. L'ancora nuda dice già tutto.
 
 Rispondi SOLO con il Markdown convertito, senza preamboli né commenti.`;
 

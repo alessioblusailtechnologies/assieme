@@ -9,6 +9,7 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { DettaglioDocumento as Dettaglio, DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
+import { SegnalaDocumento } from '../segnalazione/segnala-documento';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { etichettaTipologia } from '@shared/testi/etichette';
@@ -29,6 +30,7 @@ import { etichettaTipologia } from '@shared/testi/etichette';
     Icona,
     RouterLink,
     Scheletro,
+    SegnalaDocumento,
     StatoVuoto,
     VisualizzatorePdf,
   ],

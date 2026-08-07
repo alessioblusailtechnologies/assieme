@@ -12,6 +12,7 @@ import { DocumentoPubblico } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 import { Paginazione } from '@shared/ui/paginazione/paginazione';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
+import { SegnalaDocumento } from '../segnalazione/segnala-documento';
 import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { TIPOLOGIE_PUBBLICHE } from '@shared/testi/etichette';
@@ -45,6 +46,7 @@ import { TIPOLOGIE_PUBBLICHE } from '@shared/testi/etichette';
     Icona,
     Paginazione,
     Scheletro,
+    SegnalaDocumento,
     Select,
     StatoVuoto,
   ],

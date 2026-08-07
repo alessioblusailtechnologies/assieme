@@ -114,6 +114,18 @@
           </ul>
         </section>
       }
+
+      <!--
+        RF-A-08: chi ha il documento davanti è chi si accorge dell'errore.
+        La segnalazione sta dove nasce il dubbio, non in una pagina a parte.
+      -->
+      <section class="riquadro">
+        <p class="mono">Qualcosa non torna?</p>
+        <p class="riquadro__spiega">
+          Un errore nel testo, o un'edizione più recente che in archivio ancora non c'è.
+        </p>
+        <app-segnala-documento [documento]="doc" />
+      </section>
     </aside>
   </div>
 }

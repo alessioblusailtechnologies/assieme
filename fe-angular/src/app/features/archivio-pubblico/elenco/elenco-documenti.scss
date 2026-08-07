@@ -233,3 +233,14 @@ ui-stato-vuoto {
     width: 100%;
   }
 }
+
+/* La coda della pagina (RF-A-08): una frase e l'innesco, senza riquadri —
+   è un invito, non una sezione. */
+.segnala {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
