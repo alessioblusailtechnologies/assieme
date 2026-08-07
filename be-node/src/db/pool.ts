@@ -2,6 +2,14 @@ import pg from 'pg';
 
 import { configurazione } from '../config.js';
 
+/*
+ * Le colonne `date` restano stringhe 'YYYY-MM-DD': lasciarle diventare Date
+ * JavaScript significa passare dalla mezzanotte locale, e con un fuso a est
+ * di Greenwich ogni data scivola al giorno prima appena la si serializza.
+ * Una data di validità non ha ore: non deve averne nemmeno in transito.
+ */
+pg.types.setTypeParser(pg.types.builtins.DATE, (valore) => valore);
+
 let istanza: pg.Pool | undefined;
 
 /**

@@ -247,6 +247,15 @@ La pipeline di ingestion (§4.2) nasce qui, sul Pubblico, dove i documenti li ca
 - **Il mock non perde le rotte**: servono alla demo self-contained (`tools/serve-demo.mjs`). In sviluppo è il **proxy** a decidere chi risponde — e `/api/documenti-privati` DEVE precedere `/api/documenti` nel proxy, perché ne è un prefisso e resta al mock fino alla Fase 2.
 - Prima CI verde sul push `76e8919`: migrazioni da zero + 29 test sullo stack effimero.
 
+**✅ Terzo pezzo completato (07/08/2026): l'archivio è reale** — su indicazione del committente («non mockiamo niente adesso») le 48 fixture inventate sono uscite dal catalogo; dentro c'è il set informativo vero del pilota: **UnipolSai Km&Servizi Autovetture, edizioni 01/2019 e 11/2022** (10 documenti, PDF originali da ~2 MB + Markdown con ancore dall'esperimento del motore). Decisioni da sapere:
+
+- **Back-office prima forma** (RF-A-06): `tools/carica-archivio.mjs` percorre un albero nel layout del motore, carica su Storage (bucket `archivio`, privato) PDF e `.md` con gli INDICE, cataloga in Postgres leggendo i metadati **dagli header dei Markdown** (titolo, prodotto, edizione, pagine, file d'origine), e scrive il manifesto `be-node/dati/catalogo-archivio.json`.
+- **Il manifesto è il seed**: soli metadati (mai contenuti — punto aperto §6.2 sulla ridistribuzione), committato; in CI il catalogo c'è, i byte no, e il test del PDF si salta lì.
+- **Un'edizione = un PDF**: i documenti del set (DIP, Aggiuntivo, Condizioni…) sono porzioni logiche dello stesso PDF (194/212 pagine); ogni riga porta il proprio `numero_pagine` ma `fileUrl` serve l'originale intero, e le ancore `[pag. N]` dei Markdown riferiscono le pagine del PDF complessivo — è ciò che serve alle citazioni della Fase 3.
+- **Niente generatore**: il file esce dallo Storage o è un 404 `FILE_MANCANTE` leggibile. L'autorizzazione al file è la lettura di catalogo via RLS.
+- **Le date restano stringhe** (`pg.types.setTypeParser(DATE)`): come JS `Date` a mezzanotte locale, ogni data di validità scivolava al giorno prima in serializzazione (fuso a est di Greenwich).
+- I preferiti demo ora marcano DIP e Condizioni dell'edizione corrente; `informativa-privacy` e `riferimenti-utili` sono `tipologia: altro`.
+
 - Storage: bucket e layout dei path; servizio file (PDF per il visualizzatore — il contratto FE apre il PDF sul passaggio citato)
 - **Back-office (RF-A-06), forma minima:** CLI/script di caricamento massivo con metadati, rigenerazione indici, ritiro documenti — un'interfaccia grafica interna è rimandata finché il team piattaforma è chi sviluppa
 - Pipeline di conversione con Haiku: prompt, ancore di pagina, verifica di fedeltà a campione sui PDF del pilota; `INDICE.md` generati con sinonimi commerciali

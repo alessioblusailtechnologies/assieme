@@ -47,20 +47,29 @@ righe.push(rami.map((r) => `  (${apice(r.id)}, ${apice(r.nome)}, ${apice(r.codic
 righe.push('on conflict (id) do update set nome = excluded.nome, codice = excluded.codice;');
 righe.push('');
 
-const documenti = leggi('documenti-pubblici.json');
+/*
+ * Il catalogo documentale viene dal manifesto del back-office
+ * (`dati/catalogo-archivio.json`, scritto da carica-archivio.mjs): soli
+ * metadati di documenti VERI — su indicazione del committente (07/08/2026)
+ * l'archivio non contiene più fixture inventate. In CI il catalogo c'è, i
+ * file no: il test del PDF si salta lì.
+ */
+const documenti = JSON.parse(
+  readFileSync(join(QUI, '..', 'dati', 'catalogo-archivio.json'), 'utf8'),
+);
 righe.push(
-  'insert into assieme.documenti (id, archivio, titolo, tipologia, numero_pagine, compagnia_id, ramo_id, prodotto, edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al, edizione_corrente) values',
+  'insert into assieme.documenti (id, archivio, titolo, tipologia, numero_pagine, compagnia_id, ramo_id, prodotto, edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al, edizione_corrente, path_pdf, path_md) values',
 );
 righe.push(
   documenti
     .map(
       (d) =>
-        `  (${apice(d.id)}, 'pubblico', ${apice(d.titolo)}, ${apice(d.tipologia)}, ${d.numeroPagine ?? 'null'}, ${apice(d.compagniaId)}, ${apice(d.ramoId)}, ${apice(d.prodotto)}, ${apice(d.edizione.id)}, ${apice(d.edizione.etichetta)}, ${apice(d.edizione.validaDal)}, ${apice(d.edizione.validaAl)}, ${d.edizione.corrente})`,
+        `  (${apice(d.id)}, 'pubblico', ${apice(d.titolo)}, ${apice(d.tipologia)}, ${d.numeroPagine ?? 'null'}, ${apice(d.compagniaId)}, ${apice(d.ramoId)}, ${apice(d.prodotto)}, ${apice(d.edizione.id)}, ${apice(d.edizione.etichetta)}, ${apice(d.edizione.validaDal)}, ${apice(d.edizione.validaAl)}, ${d.edizione.corrente}, ${apice(d.pathPdf)}, ${apice(d.pathMd)})`,
     )
     .join(',\n'),
 );
 righe.push(
-  'on conflict (id) do update set titolo = excluded.titolo, tipologia = excluded.tipologia, numero_pagine = excluded.numero_pagine, compagnia_id = excluded.compagnia_id, ramo_id = excluded.ramo_id, prodotto = excluded.prodotto, edizione_id = excluded.edizione_id, edizione_etichetta = excluded.edizione_etichetta, edizione_valida_dal = excluded.edizione_valida_dal, edizione_valida_al = excluded.edizione_valida_al, edizione_corrente = excluded.edizione_corrente;',
+  'on conflict (id) do update set titolo = excluded.titolo, tipologia = excluded.tipologia, numero_pagine = excluded.numero_pagine, compagnia_id = excluded.compagnia_id, ramo_id = excluded.ramo_id, prodotto = excluded.prodotto, edizione_id = excluded.edizione_id, edizione_etichetta = excluded.edizione_etichetta, edizione_valida_dal = excluded.edizione_valida_dal, edizione_valida_al = excluded.edizione_valida_al, edizione_corrente = excluded.edizione_corrente, path_pdf = excluded.path_pdf, path_md = excluded.path_md;',
 );
 righe.push('');
 

@@ -1,0 +1,177 @@
+[
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Condizioni di Assicurazione — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 154,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 24,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Danni — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 5,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Informativa Privacy — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Numeri e Riferimenti Utili — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 5,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Condizioni di Assicurazione — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 164,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 30,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Danni — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 6,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Informativa Privacy — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Numeri e Riferimenti Utili — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 4,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ }
+]

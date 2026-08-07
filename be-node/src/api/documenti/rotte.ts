@@ -14,6 +14,7 @@ import {
 } from '../../contratto/documenti.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { BUCKET_ARCHIVIO, clientServizio } from '../../db/supabase.js';
 
 /** La riga dell'elenco, con compagnia e ramo già uniti. */
 interface RigaDocumento {
@@ -24,12 +25,12 @@ interface RigaDocumento {
   prodotto: string;
   edizione_id: string;
   edizione_etichetta: string;
-  edizione_valida_dal: Date;
-  edizione_valida_al: Date | null;
+  edizione_valida_dal: string;
+  edizione_valida_al: string | null;
   edizione_corrente: boolean;
   compagnia_id: string;
   compagnia_nome: string;
-  compagnia_aggiornamento: Date | null;
+  compagnia_aggiornamento: string | null;
   ramo_id: string;
   ramo_nome: string;
   ramo_codice: string;
@@ -37,7 +38,7 @@ interface RigaDocumento {
   totale?: string;
 }
 
-const dataIso = (d: Date | null): string | undefined => d?.toISOString().slice(0, 10);
+const dataIso = (d: string | null): string | undefined => d ?? undefined;
 
 function versoDocumento(r: RigaDocumento): DocumentoPubblico {
   const compagnia: Compagnia = {
@@ -158,8 +159,8 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
         id: string;
         edizione_id: string;
         edizione_etichetta: string;
-        edizione_valida_dal: Date;
-        edizione_valida_al: Date | null;
+        edizione_valida_dal: string;
+        edizione_valida_al: string | null;
         edizione_corrente: boolean;
       }>(
         `select id, edizione_id, edizione_etichetta, edizione_valida_dal,
@@ -216,27 +217,44 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
   }
 
   /**
-   * Il PDF per il visualizzatore. Ponte dichiarato: finché lo Storage non
-   * entra (punto 2 della fase), i documenti fixture servono lo stesso PDF
-   * generato del mock — pagine vere, col numero dichiarato nei metadati.
+   * Il PDF per il visualizzatore: l'originale, dallo Storage. Niente
+   * generatori — dall'archivio escono solo documenti veri; un documento
+   * senza file caricato è un errore leggibile, non un segnaposto.
+   *
+   * L'autorizzazione è la lettura di catalogo (RLS): se l'utente non può
+   * vedere la riga, non arriva al file.
    */
   app.get<{ Params: { id: string } }>('/api/documenti/:id/file', async (richiesta, risposta) => {
-    const documento = await conIdentita(poolDb(), richiesta.identita, (client) =>
-      documentoPerId(client, richiesta.params.id),
-    );
-    if (!documento) throw ErroreApi.nonTrovato('Documento inesistente.');
+    const riga = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const r = await client.query<{ path_pdf: string | null }>(
+        `select path_pdf from assieme.documenti where archivio = 'pubblico' and id = $1`,
+        [richiesta.params.id],
+      );
+      return r.rows[0];
+    });
+    if (!riga) throw ErroreApi.nonTrovato('Documento inesistente.');
+    if (!riga.path_pdf) {
+      throw new ErroreApi(404, 'FILE_MANCANTE', 'Il file di questo documento non è ancora in archivio.');
+    }
 
-    const pdf = await pdfGenerato(documento.titolo, documento.numeroPagine);
+    const { data, error } = await clientServizio()
+      .storage.from(BUCKET_ARCHIVIO)
+      .download(riga.path_pdf);
+    if (error || !data) {
+      richiesta.log.error({ path: riga.path_pdf, err: error }, 'file non leggibile dallo storage');
+      throw new ErroreApi(500, 'ERRORE_INTERNO', 'Il servizio non è momentaneamente disponibile.');
+    }
+
     void risposta
       .header('Content-Type', 'application/pdf')
       .header('Content-Disposition', 'inline')
-      .send(pdf);
+      .send(Buffer.from(await data.arrayBuffer()));
   });
 
   /** Le tassonomie di navigazione (RF-A-03). */
   app.get('/api/compagnie', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const righe = await client.query<{ id: string; nome: string; ultimo_aggiornamento: Date | null }>(
+      const righe = await client.query<{ id: string; nome: string; ultimo_aggiornamento: string | null }>(
         `select id, nome, ultimo_aggiornamento from assieme.compagnie order by nome collate "it-x-icu"`,
       );
       return righe.rows.map(
@@ -281,14 +299,3 @@ async function contaSenzaPagina(
   return Number(conta.rows[0]?.totale ?? 0);
 }
 
-/** Il generatore PDF del mock, riusato com'è: è già il contratto dei file. */
-let generatore: ((titolo: string, pagine?: number) => Buffer) | undefined;
-
-async function pdfGenerato(titolo: string, pagine?: number): Promise<Buffer> {
-  if (!generatore) {
-    const percorso = new URL('../../../../mocks/pdf.mjs', import.meta.url).href;
-    const modulo = (await import(percorso)) as { generaPdf: (t: string, p?: number) => Buffer };
-    generatore = modulo.generaPdf;
-  }
-  return generatore(titolo, pagine);
-}

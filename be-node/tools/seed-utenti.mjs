@@ -83,14 +83,16 @@ for (const u of utenti) {
 }
 
 /*
- * RF-A-09: nella fixture il preferito era un booleano globale (il mock ha
- * un utente solo); qui diventa una riga per utente. Gli stessi documenti
- * marcati nel mock lo sono per ogni utente demo: la demo resta identica.
+ * RF-A-09: i preferiti sono per utente. Dal catalogo reale si marcano, per
+ * ogni utente demo, il DIP e le Condizioni dell'edizione corrente: i
+ * documenti che un operatore terrebbe davvero a portata di mano.
  */
 const documenti = JSON.parse(
-  readFileSync(join(QUI, '..', '..', 'mocks', 'data', 'documenti-pubblici.json'), 'utf8'),
+  readFileSync(join(QUI, '..', 'dati', 'catalogo-archivio.json'), 'utf8'),
 );
-const marcati = documenti.filter((d) => d.preferito).map((d) => d.id);
+const marcati = documenti
+  .filter((d) => d.edizione.corrente && ['dip', 'condizioni-assicurazione'].includes(d.tipologia))
+  .map((d) => d.id);
 const { data: profili, error: erroreProfili } = await supabase.from('utenti').select('id');
 if (erroreProfili) throw erroreProfili;
 for (const profilo of profili) {
