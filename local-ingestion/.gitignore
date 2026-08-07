@@ -1,0 +1,4 @@
+# I byte dei documenti non entrano mai nel repository (analisi §6.2):
+# nel repo vivono solo le istruzioni; contenuti e PDF vanno su Storage.
+originali/
+lavorazione/

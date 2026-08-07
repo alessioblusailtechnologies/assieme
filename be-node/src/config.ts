@@ -30,6 +30,8 @@ const schemaAmbiente = z.object({
    * messaggio chiaro se manca (poolDb).
    */
   DATABASE_URL: z.string().min(1).optional(),
+  /** Conversione documenti (Haiku) e, in Fase 3, motore agentico. */
+  ANTHROPIC_API_KEY: z.string().optional(),
   PORTA_API: z.coerce.number().int().default(3002),
   LOG_LIVELLO: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

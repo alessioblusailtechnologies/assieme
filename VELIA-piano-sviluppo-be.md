@@ -256,6 +256,15 @@ La pipeline di ingestion (§4.2) nasce qui, sul Pubblico, dove i documenti li ca
 - **Le date restano stringhe** (`pg.types.setTypeParser(DATE)`): come JS `Date` a mezzanotte locale, ogni data di validità scivolava al giorno prima in serializzazione (fuso a est di Greenwich).
 - I preferiti demo ora marcano DIP e Condizioni dell'edizione corrente; `informativa-privacy` e `riferimenti-utili` sono `tipologia: altro`.
 
+**✅ Quarto pezzo completato (07/08/2026): la pipeline di ingestion — costruita, non eseguita.** Su indicazione del committente il codice è pronto ma nessuna conversione è partita: la prima girerà su un documento scelto, con il campione manuale dell'esperimento come metro. Decisioni da sapere:
+
+- **Il convertitore è Haiku via SDK ufficiale** (`ConvertitoreHaiku`, streaming, PDF come document block base64): la conversione è il costo fisso per documento (doc motore §4), il modello economico è il dimensionamento voluto. La chiave vive in `.env` (`ANTHROPIC_API_KEY`, opzionale in config: l'API server non la richiede).
+- **Il PDF si spezza client-side** (`pdf-lib`, blocchi da 20 pagine): l'API accetta al massimo 100 pagine per richiesta sui modelli a contesto 200K, e il set vero ne ha 212. Ogni blocco riceve la pagina assoluta di partenza: le ancore `[pag. N]` restano sulla numerazione del PDF complessivo, senza rimappature.
+- **Le convenzioni sono un contratto in due lingue**: il prompt della pipeline (`src/worker/ingestion/convenzioni.ts`) e le istruzioni per l'ingestion manuale (`local-ingestion/ISTRUZIONI.md`) dicono le stesse regole — fedeltà assoluta, ancore assolute, tabelle intere, header parsabile dal back-office. Se una cambia, cambia l'altra.
+- **`documenti` ha ora `stato` + `errore_elaborazione`** (RF-B-05/06): in-coda → in-elaborazione → pronto, o errore col motivo leggibile. Il gestore aggiorna lo stato a ogni passo ed emette eventi (`ingestion-inizio/avanzamento/fine`) sul canale dei job.
+- **Il gestore è a dipendenze iniettate** (convertitore, archivio file): i test percorrono la pipeline intera contro il database vero con finti al posto di AI e Storage — zero chiamate, zero spesa. Il gestore vero si costruisce pigramente alla prima chiamata: l'API server importa il modulo senza pretendere la chiave.
+- **`local-ingestion/`** è il playbook delle ingestion manuali in sessione (il procedimento del primo archivio): studio del PDF, albero di lavorazione, conversione con le regole, INDICE, controlli di qualità obbligatori a campione, caricamento col back-office, cosa si committa (solo metadati) e gli errori già fatti da non ripetere. `originali/` e `lavorazione/` sono gitignorate.
+
 - Storage: bucket e layout dei path; servizio file (PDF per il visualizzatore — il contratto FE apre il PDF sul passaggio citato)
 - **Back-office (RF-A-06), forma minima:** CLI/script di caricamento massivo con metadati, rigenerazione indici, ritiro documenti — un'interfaccia grafica interna è rimandata finché il team piattaforma è chi sviluppa
 - Pipeline di conversione con Haiku: prompt, ancore di pagina, verifica di fedeltà a campione sui PDF del pilota; `INDICE.md` generati con sinonimi commerciali

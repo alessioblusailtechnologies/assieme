@@ -2,6 +2,9 @@ import type pg from 'pg';
 
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
+import { ArchivioStorage } from './ingestion/archivio-file.js';
+import { ConvertitoreHaiku } from './ingestion/convertitore.js';
+import { creaGestoreIngestion } from './ingestion/gestore.js';
 
 /** Gli strumenti che ogni gestore riceve; crescono con le fasi. */
 export interface StrumentiJob {
@@ -17,7 +20,22 @@ export type GestoreJob = (job: Job, strumenti: StrumentiJob) => Promise<void>;
  * coda → worker → eventi → LISTEN già in Fase 0, ed è quello che i test
  * end-to-end esercitano.
  */
+/**
+ * Il gestore di ingestion vero si costruisce alla prima chiamata, non
+ * all'importazione: creare il client Anthropic pretende la chiave in .env,
+ * e l'API server importa questo modulo senza mai fare ingestion.
+ */
+let ingestionVera: GestoreJob | undefined;
+
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
+  ingestion: async (job, strumenti) => {
+    ingestionVera ??= creaGestoreIngestion({
+      convertitore: new ConvertitoreHaiku(),
+      archivio: new ArchivioStorage(),
+    });
+    await ingestionVera(job, strumenti);
+  },
+
   prova: async (job, { db }) => {
     await emettiEvento(db, job.id, 'inizio', {});
     const passi = Number(job.payload['passi'] ?? 2);
