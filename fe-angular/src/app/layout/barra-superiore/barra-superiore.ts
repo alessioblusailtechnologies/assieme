@@ -20,7 +20,11 @@ import { TokenStore } from '@core/auth/token-store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contesto">
+      <!-- La voce del prodotto, sempre presente: è lei che parla in chat. -->
+      <span class="saluto serif">Ciao, sono Velia.</span>
+
       @if (sessione.tenant(); as tenant) {
+        <span class="separatore" aria-hidden="true"></span>
         <ui-icon name="compagnia" [size]="16" />
         <span class="contesto__nome">{{ tenant.nome }}</span>
       } @else if (sessione.inCaricamento()) {
@@ -92,6 +96,13 @@ import { TokenStore } from '@core/auth/token-store';
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .saluto {
+      font-size: var(--t-body);
+      color: var(--c-text);
+      white-space: nowrap;
+      flex: none;
     }
 
     .lato {
