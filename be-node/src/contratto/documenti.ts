@@ -53,6 +53,12 @@ export interface DocumentoPubblico {
   titolo: string;
   tipologia: TipologiaDocumento;
   numeroPagine?: number;
+  /**
+   * Dove il documento comincia nel PDF condiviso dell'edizione (le compagnie
+   * pubblicano il set in un file unico): il visualizzatore si apre qui.
+   * Stessa numerazione delle ancore `[pag. N]` e delle citazioni.
+   */
+  paginaInizio?: number;
   fileUrl: string;
   compagnia: Compagnia;
   ramo: Ramo;

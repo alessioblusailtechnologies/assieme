@@ -7,6 +7,7 @@
   "titolo": "Condizioni di Assicurazione — UnipolSai Km&Servizi Autovetture",
   "tipologia": "condizioni-assicurazione",
   "numeroPagine": 154,
+  "paginaInizio": 30,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2019-01",
    "etichetta": "ed. 01/2019",
@@ -25,6 +26,7 @@
   "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
   "tipologia": "dip-aggiuntivo",
   "numeroPagine": 24,
+  "paginaInizio": 6,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2019-01",
    "etichetta": "ed. 01/2019",
@@ -43,6 +45,7 @@
   "titolo": "DIP Danni — UnipolSai Km&Servizi Autovetture",
   "tipologia": "dip",
   "numeroPagine": 5,
+  "paginaInizio": 1,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2019-01",
    "etichetta": "ed. 01/2019",
@@ -61,6 +64,7 @@
   "titolo": "Informativa Privacy — UnipolSai Km&Servizi Autovetture",
   "tipologia": "altro",
   "numeroPagine": 6,
+  "paginaInizio": 184,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2019-01",
    "etichetta": "ed. 01/2019",
@@ -79,6 +83,7 @@
   "titolo": "Numeri e Riferimenti Utili — UnipolSai Km&Servizi Autovetture",
   "tipologia": "altro",
   "numeroPagine": 5,
+  "paginaInizio": 190,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2019-01",
    "etichetta": "ed. 01/2019",
@@ -97,6 +102,7 @@
   "titolo": "Condizioni di Assicurazione — UnipolSai Km&Servizi Autovetture",
   "tipologia": "condizioni-assicurazione",
   "numeroPagine": 164,
+  "paginaInizio": 37,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2022-11",
    "etichetta": "ed. 11/2022",
@@ -114,6 +120,7 @@
   "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
   "tipologia": "dip-aggiuntivo",
   "numeroPagine": 30,
+  "paginaInizio": 7,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2022-11",
    "etichetta": "ed. 11/2022",
@@ -131,6 +138,7 @@
   "titolo": "DIP Danni — UnipolSai Km&Servizi Autovetture",
   "tipologia": "dip",
   "numeroPagine": 6,
+  "paginaInizio": 1,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2022-11",
    "etichetta": "ed. 11/2022",
@@ -148,6 +156,7 @@
   "titolo": "Informativa Privacy — UnipolSai Km&Servizi Autovetture",
   "tipologia": "altro",
   "numeroPagine": 8,
+  "paginaInizio": 205,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2022-11",
    "etichetta": "ed. 11/2022",
@@ -165,6 +174,7 @@
   "titolo": "Numeri e Riferimenti Utili — UnipolSai Km&Servizi Autovetture",
   "tipologia": "altro",
   "numeroPagine": 4,
+  "paginaInizio": 201,
   "edizione": {
    "id": "edz-km-servizi-autovetture-2022-11",
    "etichetta": "ed. 11/2022",

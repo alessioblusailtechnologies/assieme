@@ -71,6 +71,7 @@ function metadatiDaHeader(md) {
     prodotto: campo('Prodotto'),
     validaDal: dataIt ? `${dataIt[3]}-${dataIt[2]}-${dataIt[1]}` : undefined,
     pagine: pagine ? Number(pagine[2]) - Number(pagine[1]) + 1 : undefined,
+    paginaInizio: pagine ? Number(pagine[1]) : undefined,
     filePdf: file?.[1],
   };
 }
@@ -127,6 +128,7 @@ for (const compagniaDir of readdirSync(radice)) {
             titolo: meta.titolo ?? basename(file, '.md'),
             tipologia,
             numeroPagine: meta.pagine,
+            paginaInizio: meta.paginaInizio,
             edizione: {
               id: `edz-${slug(prodottoDir)}-${edDir.slice(3)}`,
               etichetta: `ed. ${meta.validaDal?.slice(5, 7)}/${meta.validaDal?.slice(0, 4)}`,
@@ -200,13 +202,13 @@ if (pulisciFixture) {
 for (const d of catalogo) {
   await db.query(
     `insert into assieme.documenti
-       (id, archivio, titolo, tipologia, numero_pagine, compagnia_id, ramo_id, prodotto,
+       (id, archivio, titolo, tipologia, numero_pagine, pagina_inizio, compagnia_id, ramo_id, prodotto,
         edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al,
         edizione_corrente, path_pdf, path_md)
-     values ($1,'pubblico',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+     values ($1,'pubblico',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      on conflict (id) do update set
        titolo = excluded.titolo, tipologia = excluded.tipologia,
-       numero_pagine = excluded.numero_pagine, compagnia_id = excluded.compagnia_id,
+       numero_pagine = excluded.numero_pagine, pagina_inizio = excluded.pagina_inizio, compagnia_id = excluded.compagnia_id,
        ramo_id = excluded.ramo_id, prodotto = excluded.prodotto,
        edizione_id = excluded.edizione_id, edizione_etichetta = excluded.edizione_etichetta,
        edizione_valida_dal = excluded.edizione_valida_dal,
@@ -214,7 +216,7 @@ for (const d of catalogo) {
        edizione_corrente = excluded.edizione_corrente,
        path_pdf = excluded.path_pdf, path_md = excluded.path_md`,
     [
-      d.id, d.titolo, d.tipologia, d.numeroPagine ?? null, d.compagniaId, d.ramoId, d.prodotto,
+      d.id, d.titolo, d.tipologia, d.numeroPagine ?? null, d.paginaInizio ?? null, d.compagniaId, d.ramoId, d.prodotto,
       d.edizione.id, d.edizione.etichetta, d.edizione.validaDal ?? null,
       d.edizione.validaAl ?? null, d.edizione.corrente, d.pathPdf, d.pathMd,
     ],

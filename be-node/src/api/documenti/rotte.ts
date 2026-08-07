@@ -22,6 +22,7 @@ interface RigaDocumento {
   titolo: string;
   tipologia: DocumentoPubblico['tipologia'];
   numero_pagine: number | null;
+  pagina_inizio: number | null;
   prodotto: string;
   edizione_id: string;
   edizione_etichetta: string;
@@ -53,6 +54,7 @@ function versoDocumento(r: RigaDocumento): DocumentoPubblico {
     titolo: r.titolo,
     tipologia: r.tipologia,
     ...(r.numero_pagine !== null && { numeroPagine: r.numero_pagine }),
+    ...(r.pagina_inizio !== null && { paginaInizio: r.pagina_inizio }),
     fileUrl: `/api/documenti/${r.id}/file`,
     compagnia,
     ramo,
@@ -74,7 +76,7 @@ function versoDocumento(r: RigaDocumento): DocumentoPubblico {
  * le righe proprie, quindi il left join È «il mio preferito».
  */
 const SQL_BASE = `
-  select d.id, d.titolo, d.tipologia, d.numero_pagine, d.prodotto,
+  select d.id, d.titolo, d.tipologia, d.numero_pagine, d.pagina_inizio, d.prodotto,
          d.edizione_id, d.edizione_etichetta, d.edizione_valida_dal,
          d.edizione_valida_al, d.edizione_corrente,
          c.id as compagnia_id, c.nome as compagnia_nome,

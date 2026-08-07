@@ -104,6 +104,16 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     expect(dettaglio.edizioni[1]!.validaDal).toBe('2019-01-01');
     // RF-A-04: la storica dichiara fin quando è valsa.
     expect(dettaglio.edizioni[1]!.validaAl).toBe('2022-10-31');
+    // Il DIP comincia in copertina…
+    expect(dettaglio.paginaInizio).toBe(1);
+  });
+
+  it('le Condizioni si aprono dove cominciano nel PDF del set (pag. 37)', async () => {
+    const r = await richiedi(
+      '/api/documenti/doc-unipolsai-km-servizi-autovetture-ed-2022-11-condizioni-di-assicurazione',
+      tokenAdmin,
+    );
+    expect(r.json<DettaglioDocumento>().paginaInizio).toBe(37);
   });
 
   const DOC_STORICO = 'doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip';

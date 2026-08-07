@@ -45,7 +45,12 @@
 
   <div class="colonne">
     <div class="principale">
-      <ui-visualizzatore-pdf [fileUrl]="doc.fileUrl" />
+      <!-- Il set dell'edizione è un PDF unico: ci si apre dove il documento
+           comincia — il DIP al DIP, le Condizioni alle Condizioni. -->
+      <ui-visualizzatore-pdf
+        [fileUrl]="doc.fileUrl"
+        [posizione]="doc.paginaInizio ? { pagina: doc.paginaInizio } : undefined"
+      />
     </div>
 
     <aside class="lato">

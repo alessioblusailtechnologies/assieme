@@ -69,6 +69,12 @@ export interface DocumentoPubblico extends DocumentoBase {
   edizione: Edizione;
   /** RF-A-09: accesso rapido ai documenti di uso frequente. */
   preferito: boolean;
+  /**
+   * Dove il documento comincia nel PDF condiviso dell'edizione: le compagnie
+   * pubblicano il set informativo in un file unico, e aprire il DIP deve
+   * portare al DIP, non alla copertina. Stessa numerazione delle citazioni.
+   */
+  paginaInizio?: number;
 }
 
 /**
