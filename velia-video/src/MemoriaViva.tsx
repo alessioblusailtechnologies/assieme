@@ -67,7 +67,7 @@ const T = {
 /* Geometria del guscio applicativo: barra laterale compressa, solo icone. */
 const SIDEBAR_W = 68;
 const TOPBAR_H = 64;
-const THREAD = { x: 244, w: 660, top: TOPBAR_H + 40 };
+const THREAD = { x: 128, w: 856, top: TOPBAR_H + 40 };
 const GRAPH_BOX = { x: 130, y: 148, w: 820, h: 789 };
 const TARGET = { nx: 0.55, ny: 0.42 };
 const TARGET_PX = {
@@ -79,16 +79,16 @@ const SPAWN = { x: 540, y: 540 };
 
 /* L'attrattore del risucchio: i puntini di «Sto salvando in memoria…».
  * In coordinate contenuto (filo) e, dopo lo scroll, in coordinate app. */
-const ATTR_CONTENT = { x: 290, y: 1421 };
-const SCROLL_FINALE = 680;
+const ATTR_CONTENT = { x: 166, y: 1220 };
+const SCROLL_FINALE = 480;
 const ATTR_APP = { x: ATTR_CONTENT.x, y: ATTR_CONTENT.y + THREAD.top - SCROLL_FINALE };
 
 const SCROLL_T = [0, T.scorri[0], T.scorri[1], 332, 352];
-const SCROLL_Y = [0, 0, 590, 590, SCROLL_FINALE];
+const SCROLL_Y = [0, 0, 410, 410, SCROLL_FINALE];
 
 const CAM_T = [0, 20, 44, 62, 92, 148, 175, 204, 240, 265, 285, 305, 332, 365, 430, 445, 472];
-const CAM_X = [540, 540, 624, 624, 464, 464, 540, 540, 540, 464, 464, 604, 604, 464, 464, 290, 290];
-const CAM_Y = [540, 540, 200, 200, 420, 420, 540, 540, 540, 600, 600, 700, 700, 780, 830, 845, 845];
+const CAM_X = [540, 540, 680, 680, 440, 440, 540, 540, 540, 460, 460, 680, 680, 440, 440, 166, 166];
+const CAM_Y = [540, 540, 180, 180, 380, 380, 540, 540, 540, 560, 560, 630, 630, 750, 820, 844, 844];
 const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.02, 1.02, 1.02, 1.25, 1.25, 1.35, 1.35, 1.28, 1.5, 1.5, 1.5];
 
 const TESTI = {
@@ -582,7 +582,7 @@ export const MemoriaViva: React.FC = () => {
                     alignItems: 'flex-end',
                     gap: 10,
                     ...appear(T.user1),
-                    ...succhia({ x: 324, y: 96 }, ATTR_CONTENT, 8),
+                    ...succhia({ x: 620, y: 60 }, ATTR_CONTENT, 8),
                   }}
                 >
                   <div style={bollaUtente}>{TESTI.user1}</div>
@@ -617,7 +617,7 @@ export const MemoriaViva: React.FC = () => {
                   style={{
                     ...bollaAssistente,
                     ...appear(T.wait1[0]),
-                    ...succhia({ x: 194, y: 680 }, ATTR_CONTENT, 12),
+                    ...succhia({ x: 420, y: 520 }, ATTR_CONTENT, 12),
                   }}
                 >
                   {attesa1 ? (
@@ -739,7 +739,7 @@ export const MemoriaViva: React.FC = () => {
               )}
 
               {frame >= T.user2 && (
-                <div style={{ ...bollaUtente, ...appear(T.user2), ...succhia({ x: 334, y: 1196 }, ATTR_CONTENT, 16) }}>
+                <div style={{ ...bollaUtente, ...appear(T.user2), ...succhia({ x: 700, y: 1006 }, ATTR_CONTENT, 16) }}>
                   {TESTI.user2}
                 </div>
               )}
@@ -749,7 +749,7 @@ export const MemoriaViva: React.FC = () => {
                   style={{
                     ...bollaAssistente,
                     ...appear(T.wait2[0]),
-                    ...succhia({ x: 184, y: 1330 }, ATTR_CONTENT, 22),
+                    ...succhia({ x: 400, y: 1130 }, ATTR_CONTENT, 22),
                   }}
                 >
                   {attesa2 ? (
@@ -783,7 +783,7 @@ export const MemoriaViva: React.FC = () => {
                 left: THREAD.x,
                 width: THREAD.w,
                 top: 966,
-                ...succhia({ x: 574, y: 994 }, ATTR_APP, 10),
+                ...succhia({ x: 556, y: 994 }, ATTR_APP, 10),
               }}
             >
               <div
