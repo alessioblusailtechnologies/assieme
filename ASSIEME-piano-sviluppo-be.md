@@ -203,15 +203,27 @@ Scelte trasversali già fissate dal contratto FE, da onorare nello schema:
 
 Stime per **uno sviluppatore BE a tempo pieno**, da ricalibrare dopo la Fase 0. Ogni fase chiude con: test sul contratto (le risposte del backend validate contro gli schemi Zod del contratto, gli stessi casi che i mock coprono), rotte tolte dal mock, FE verificato contro il backend, sezione della fase aggiornata qui con le «decisioni di contratto da sapere» — lo stesso metodo che ha funzionato per il FE.
 
-### Fase 0 — Fondamenta · ~6 giorni
+### ✅ Fase 0 — Fondamenta — **completata** (07/08/2026)
 
 - `be-node/` con Fastify + TS + Zod; `contratto/` popolato dai modelli di `core/models`
-- Progetto Supabase + CLI + ambiente locale (`supabase start`); prime migrazioni: tenant, utenti, tassonomie
-- Supabase Auth: login, inviti, JWT con `tenant_id`/`ruolo`; plugin Fastify di autenticazione e autorizzazione; RLS di base e test che la dimostrano (un utente del tenant A **non può** leggere il tenant B, provato in CI)
+- Progetto Supabase + CLI; prime migrazioni: tenant, utenti, tassonomie
+- Supabase Auth: login, JWT con `tenant_id`/`ruolo`; plugin Fastify di autenticazione e autorizzazione; RLS di base e test che la dimostrano (un utente del tenant A **non può** leggere il tenant B, provato contro il database vero)
 - Modello degli errori identico al mock: forme di 403/404/409/429 (`ritentaTraSecondi`)/500 che il FE già gestisce
-- pgmq + scheletro del worker (pesca, heartbeat, retry, dead letter); LISTEN/NOTIFY funzionante end-to-end su un job finto
+- pgmq + scheletro del worker (pesca, retry, dead letter); LISTEN/NOTIFY funzionante end-to-end su un job finto
 - Seed di sviluppo dalle fixture dei mock: stesso caso pilota, stessi dati — le demo restano identiche
 - CI: build, lint, test, migrazioni applicate da zero
+
+**Decisioni di infrastruttura da sapere:**
+
+- **Niente Supabase locale su questa macchina** (indicazione del committente): si lavora sul progetto online `hcxiloivukbdcfcugksg` (eu-north-1). Lo stack effimero della CLI gira **solo in CI**.
+- **Il progetto è condiviso con altre applicazioni** (tabelle in `public`, schema `koya`): tutto ASSIEME vive nello **schema `assieme`** — tabelle e funzioni. `public` non si tocca.
+- **Ruolo dedicato `assieme_app`**: login del worker e dei test, proprietario delle sole tabelle ASSIEME (quindi bypassa la RLS *solo* lì), membro di `authenticated` per il `set local role` di `conIdentita`. La password di `postgres` non è mai servita. **Ogni migrazione futura che crea tabelle deve chiudersi con `alter table … owner to assieme_app`.**
+- **JWT legacy HS256**: il progetto ha il JWKS vuoto; la verifica usa `SUPABASE_JWT_SECRET` in `.env`. Se il progetto migrasse alle signing key, si toglie la variabile e il plugin passa da solo al JWKS.
+- **`supabase db push` è rotto su questo progetto** (il ruolo `cli_login_postgres` della piattaforma non è più alterabile): le migrazioni si applicano via Management API (`POST /v1/projects/:ref/database/query`) e si registrano a mano in `supabase_migrations.schema_migrations`.
+- **La connessione diretta passa dal session pooler** (`aws-1-eu-north-1.pooler.supabase.com:5432`, utente `assieme_app.<ref>`): LISTEN/NOTIFY non attraversa il transaction pooler. Password nel `DATABASE_URL` percent-encoded.
+- **La RLS filtra, non lancia**: una scrittura senza policy tocca 0 righe senza errore. I test di isolamento contano le righe, non aspettano eccezioni.
+- **PostgREST espone anche `assieme`** (`db_schema: public,graphql_public,koya,assieme`): nei futuri PATCH di configurazione vanno **preservati gli schemi altrui**.
+- Codici d'errore aggiunti al vocabolario del mock: `NON_AUTENTICATO` (401, il mock non aveva autenticazione) e `DATI_NON_VALIDI` (400 di validazione).
 
 ### Fase 1 — Archivio Pubblico e ingestion · ~8 giorni · RF-A-01…A-07, A-09
 
