@@ -1,0 +1,64 @@
+---
+/**
+ * Velia all'opera, in video: la conversazione di confronto che diventa un
+ * ricordo nel grafo della memoria. Renderizzato con Remotion dal progetto
+ * `velia-video/` (composizione MemoriaViva) sui token e i font del FE.
+ *
+ * Senza cornice, di proposito: il fondo della chat nel video è lo stesso
+ * `--c-page` della pagina, quindi la scena si fonde nel flusso come se
+ * accadesse nella pagina stessa.
+ */
+---
+
+<section
+  class="demo"
+  aria-label="Velia all'opera: il confronto fra polizza e preventivo in chat diventa un ricordo nella memoria dell'agenzia"
+>
+  <video
+    class="demo__video"
+    src="/media/memoria-viva.mp4"
+    poster="/media/memoria-viva-poster.jpg"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="metadata"
+    aria-hidden="true"
+    tabindex="-1"></video>
+
+  {/* Con le animazioni ridotte resta il fotogramma della conversazione. */}
+  <img
+    class="demo__fermo"
+    src="/media/memoria-viva-poster.jpg"
+    alt=""
+    loading="lazy"
+  />
+</section>
+
+<style>
+  .demo {
+    display: flex;
+    justify-content: center;
+    padding: 1rem var(--gutter) 4rem;
+  }
+
+  .demo__video,
+  .demo__fermo {
+    width: min(680px, 100%);
+    height: auto;
+  }
+
+  .demo__fermo {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .demo__video {
+      display: none;
+    }
+
+    .demo__fermo {
+      display: block;
+    }
+  }
+</style>

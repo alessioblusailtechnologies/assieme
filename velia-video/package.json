@@ -1,0 +1,20 @@
+{
+  "name": "velia-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Video di prodotto Velia renderizzati con Remotion.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts MemoriaViva out/memoria-viva.mp4"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.246",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "^4.0.246"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "typescript": "^5.9.3"
+  }
+}
