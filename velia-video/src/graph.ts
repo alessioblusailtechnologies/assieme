@@ -188,21 +188,23 @@ export function drawGraph(
     };
   };
 
-  ctx.fillStyle = '#1C1A15';
+  /* Tema chiaro: lo stesso avorio della pagina del sito, così il grafo
+     appartiene alla sezione che ospita il video invece di scurirla. */
+  ctx.fillStyle = '#FAF9F7';
   ctx.fillRect(0, 0, GRAPH_W, GRAPH_H);
 
   const linkIn = build >= 1 ? 1 : clamp01((build - 0.8) / 0.2);
   if (linkIn > 0) {
     ctx.lineWidth = 0.6;
     for (const [i, k, o] of near) {
-      ctx.strokeStyle = `rgba(159,180,214,${(o * linkIn).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(78,108,158,${(o * linkIn).toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
       ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
       ctx.stroke();
     }
 
-    ctx.strokeStyle = `rgba(127,151,196,${(0.1 * linkIn).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(47,75,124,${(0.1 * linkIn).toFixed(3)})`;
     ctx.beginPath();
     for (const [i, k] of far) {
       ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
@@ -240,7 +242,7 @@ export function drawGraph(
     for (const p of rings) {
       const a = p.a + spin;
       const rr = (p.r + Math.sin(t * 0.5 + p.ph) * 1.6) * stretch;
-      ctx.fillStyle = `rgba(127,151,196,${(p.o * ringIn).toFixed(3)})`;
+      ctx.fillStyle = `rgba(107,122,146,${(p.o * 0.55 * ringIn).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1.6, 0, Math.PI * 2);
       ctx.fill();
@@ -260,7 +262,7 @@ export function drawGraph(
     ctx.lineWidth = 1.1;
     for (const e of dists) {
       const n = nodes[e.i]!;
-      ctx.strokeStyle = `rgba(214,178,138,${(0.7 * g).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(166,105,54,${(0.55 * g).toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(memory.x, memory.y);
       ctx.lineTo(px(n), py(n));
@@ -276,8 +278,8 @@ export function drawGraph(
       memory.y,
       30,
     );
-    halo.addColorStop(0, `rgba(232,196,148,${(0.3 * g).toFixed(3)})`);
-    halo.addColorStop(1, 'rgba(232,196,148,0)');
+    halo.addColorStop(0, `rgba(176,115,63,${(0.28 * g).toFixed(3)})`);
+    halo.addColorStop(1, 'rgba(176,115,63,0)');
     ctx.fillStyle = halo;
     ctx.beginPath();
     ctx.arc(memory.x, memory.y, 30, 0, Math.PI * 2);
@@ -285,7 +287,7 @@ export function drawGraph(
 
     // Il nodo: nasce con un piccolo rimbalzo e resta il più caldo del grafo.
     const r = 9.5 * easeOutBack(g);
-    ctx.fillStyle = '#D8A87E';
+    ctx.fillStyle = '#B0733F';
     ctx.beginPath();
     ctx.arc(memory.x, memory.y, Math.max(0, r), 0, Math.PI * 2);
     ctx.fill();
@@ -302,7 +304,7 @@ export function drawGraph(
       const p = Math.min(1, age / (1.05 * speed));
       const rr = 14 + p * 150;
       const alpha = (1 - p) * 0.6;
-      ctx.strokeStyle = `rgba(216,168,126,${alpha.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(166,105,54,${alpha.toFixed(3)})`;
       ctx.lineWidth = 2.4 * (1 - p) + 0.4;
       ctx.beginPath();
       ctx.arc(memory.x, memory.y, rr, 0, Math.PI * 2);
@@ -319,8 +321,8 @@ export function drawGraph(
       memory.y,
       glowR,
     );
-    grad.addColorStop(0, `rgba(232,196,148,${(0.4 * (1 - p)).toFixed(3)})`);
-    grad.addColorStop(1, 'rgba(232,196,148,0)');
+    grad.addColorStop(0, `rgba(176,115,63,${(0.32 * (1 - p)).toFixed(3)})`);
+    grad.addColorStop(1, 'rgba(176,115,63,0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.arc(memory.x, memory.y, glowR, 0, Math.PI * 2);

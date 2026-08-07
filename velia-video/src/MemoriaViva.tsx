@@ -5,7 +5,6 @@ import {
   continueRender,
   delayRender,
   interpolate,
-  interpolateColors,
   spring,
   staticFile,
   useCurrentFrame,
@@ -15,13 +14,12 @@ import { GRAPH_H, GRAPH_W, buildGraph, drawGraph } from './graph';
 export const WIDTH = 1080;
 export const HEIGHT = 1080;
 export const FPS = 30;
-export const DURATION = 680;
+export const DURATION = 655;
 
 /* ---------------------------------------------------------------------------
- * Token del FE (fe-angular/src/styles/_tokens.scss), scalati ×1.5.
+ * Token del FE (fe-angular/src/styles/_tokens.scss).
  * ------------------------------------------------------------------------ */
 const C = {
-  ink: '#1C1A15',
   page: '#FAF9F7',
   pageAlt: '#EEEDEA',
   surface: '#FFFFFF',
@@ -35,7 +33,7 @@ const C = {
   pos: '#2E6B4F',
   neg: '#A63D2F',
   provMemoria: '#7C5A2F',
-  warm: '#D8A87E',
+  warm: '#B0733F',
 };
 
 const F = {
@@ -49,43 +47,49 @@ const F = {
 const T = {
   user1: 20,
   wait1: [60, 105] as const,
-  stream1: [105, 148] as const, // l'introduzione della risposta
-  tavola: 150, // le righe della tabella entrano in rapida successione
-  scorri: [204, 228] as const, // lo scroll rapidissimo verso il fondo
+  stream1: [105, 148] as const,
+  tavola: 150,
+  scorri: [204, 228] as const,
   sintesi: 240,
   fonti: 268,
   user2: 300,
   wait2: [335, 362] as const,
   stream2: [362, 420] as const,
   salva: 432,
-  iperzoom: [496, 524] as const, // la camera si tuffa nei puntini
-  bloom: [502, 540] as const, // il bagliore caldo che inghiotte la chat
-  fadeChat: [505, 522] as const,
-  build: [515, 565] as const, // il grafo si assembla dal buio
-  fly: [570, 600] as const,
-  land: 600,
+  /* Il risucchio: l'interfaccia vola dentro il pallino, pezzo per pezzo. */
+  suck: 478,
+  chatVia: [496, 516] as const, // le superfici residue sfumano
+  build: [515, 560] as const, // il grafo chiaro si assembla attorno
+  fly: [566, 592] as const,
+  land: 592,
 };
 
-const THREAD = { x: 150, w: 780, top: 90 };
-const GRAPH_BOX = { x: 200, y: 213, w: 680, h: 654 };
+/* Geometria del guscio applicativo: barra laterale compressa, solo icone. */
+const SIDEBAR_W = 68;
+const TOPBAR_H = 64;
+const THREAD = { x: 244, w: 660, top: TOPBAR_H + 40 };
+const GRAPH_BOX = { x: 130, y: 148, w: 820, h: 789 };
 const TARGET = { nx: 0.55, ny: 0.42 };
 const TARGET_PX = {
   x: GRAPH_BOX.x + TARGET.nx * GRAPH_BOX.w,
   y: GRAPH_BOX.y + TARGET.ny * GRAPH_BOX.h,
 };
-/** Il pallino nasce al centro del quadro: l'iperzoom ha portato lì i puntini. */
+/** Il pallino nasce al centro del quadro: la camera è sui puntini. */
 const SPAWN = { x: 540, y: 540 };
 
-/* Lo scorrimento del filo: fermo, poi la corsa verso il fondo della tabella,
- * poi un altro passo quando la conversazione prosegue. */
-const SCROLL_T = [0, T.scorri[0], T.scorri[1], 332, 352];
-const SCROLL_Y = [0, 0, 620, 620, 760];
+/* L'attrattore del risucchio: i puntini di «Sto salvando in memoria…».
+ * In coordinate contenuto (filo) e, dopo lo scroll, in coordinate app. */
+const ATTR_CONTENT = { x: 290, y: 1421 };
+const SCROLL_FINALE = 680;
+const ATTR_APP = { x: ATTR_CONTENT.x, y: ATTR_CONTENT.y + THREAD.top - SCROLL_FINALE };
 
-/* La camera: fuoco (x, y) nel quadro e zoom, per fotogrammi chiave. */
-const CAM_T = [0, 20, 44, 62, 92, 148, 175, 204, 240, 265, 285, 305, 332, 365, 430, 445, 488, 496, 524];
-const CAM_X = [540, 540, 655, 655, 470, 470, 540, 540, 540, 470, 470, 650, 650, 470, 470, 325, 325, 201, 201];
-const CAM_Y = [430, 430, 150, 150, 350, 350, 540, 540, 540, 600, 600, 708, 708, 780, 800, 856, 856, 856, 856];
-const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.05, 1.05, 1.05, 1.3, 1.3, 1.35, 1.35, 1.3, 1.3, 2.25, 2.25, 6, 6];
+const SCROLL_T = [0, T.scorri[0], T.scorri[1], 332, 352];
+const SCROLL_Y = [0, 0, 590, 590, SCROLL_FINALE];
+
+const CAM_T = [0, 20, 44, 62, 92, 148, 175, 204, 240, 265, 285, 305, 332, 365, 430, 445, 472];
+const CAM_X = [540, 540, 624, 624, 464, 464, 540, 540, 540, 464, 464, 604, 604, 464, 464, 290, 290];
+const CAM_Y = [540, 540, 200, 200, 420, 420, 540, 540, 540, 600, 600, 700, 700, 780, 830, 845, 845];
+const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.02, 1.02, 1.02, 1.25, 1.25, 1.35, 1.35, 1.28, 1.5, 1.5, 1.5];
 
 const TESTI = {
   user1: 'Confronta il preventivo Unipol con la polizza auto del cliente Rossi.',
@@ -121,6 +125,14 @@ const TABELLA: { label: string; a: string; b: string; tono?: Tono }[] = [
   { label: 'Bonus protetto', a: 'Incluso', b: 'Incluso' },
 ];
 
+/* La navigazione vera (layout/navigazione.ts). */
+const NAV: { gruppo: string; voci: { nome: string; attiva?: boolean }[] }[] = [
+  { gruppo: 'Lavoro', voci: [{ nome: 'Chat', attiva: true }, { nome: 'Tabelle di analisi' }] },
+  { gruppo: 'Archivi', voci: [{ nome: 'Archivio pubblico' }, { nome: 'Archivio privato' }] },
+  { gruppo: 'Automazione', voci: [{ nome: 'Agenti' }] },
+  { gruppo: 'Agenzia', voci: [{ nome: 'Memoria' }, { nome: 'Impostazioni' }] },
+];
+
 const IconaDoc: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
     <path
@@ -154,6 +166,58 @@ const IconaInvia: React.FC<{ size?: number }> = ({ size = 22 }) => (
   </svg>
 );
 
+/* Glifo di navigazione minimale: un quadratino stondato al tratto basta a
+ * suggerire l'icona senza pretendere di replicarla. */
+const IconaNav: React.FC<{ tipo: string }> = ({ tipo }) => {
+  const s = 17;
+  const k = { stroke: 'currentColor', strokeWidth: 1.4, fill: 'none' } as const;
+  switch (tipo) {
+    case 'Chat':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <path d="M2 3.5h12v7.5H6L3 13.5v-2.5H2z" {...k} strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Tabelle di analisi':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <rect x="2" y="3" width="12" height="10" {...k} />
+          <path d="M2 6.5h12M6.5 3v10" {...k} />
+        </svg>
+      );
+    case 'Agenti':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="5.5" {...k} />
+          <path d="M8 2.5V0.8M5.8 6.8h.01M10.2 6.8h.01M5.5 10a3.4 3.4 0 0 0 5 0" {...k} strokeLinecap="round" />
+        </svg>
+      );
+    case 'Memoria':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <circle cx="5" cy="5" r="1.6" fill="currentColor" />
+          <circle cx="11.5" cy="7" r="1.2" fill="currentColor" />
+          <circle cx="7" cy="11.5" r="1.2" fill="currentColor" />
+          <path d="M6 6l4.5 1M6 6l.8 4.3M11 8l-3.4 3" {...k} strokeWidth="0.9" />
+        </svg>
+      );
+    case 'Impostazioni':
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <circle cx="8" cy="8" r="2.2" {...k} />
+          <path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.8 3.8l1.4 1.4M10.8 10.8l1.4 1.4M12.2 3.8l-1.4 1.4M5.2 10.8l-1.4 1.4" {...k} strokeLinecap="round" />
+        </svg>
+      );
+    default:
+      return (
+        <svg width={s} height={s} viewBox="0 0 16 16">
+          <rect x="2.5" y="2.5" width="11" height="11" rx="1.5" {...k} />
+          <path d="M5.5 6h5M5.5 9h5" {...k} strokeLinecap="round" />
+        </svg>
+      );
+  }
+};
+
 export const MemoriaViva: React.FC = () => {
   const frame = useCurrentFrame();
 
@@ -180,7 +244,6 @@ export const MemoriaViva: React.FC = () => {
     extrapolateRight: 'clamp',
   } as const;
 
-  /* --- Camera e scorrimento --- */
   const ease = { ...clamp, easing: Easing.inOut(Easing.cubic) };
   const camX = interpolate(frame, CAM_T, CAM_X, ease);
   const camY = interpolate(frame, CAM_T, CAM_Y, ease);
@@ -188,7 +251,6 @@ export const MemoriaViva: React.FC = () => {
   const camTransform = `translate(${540 - camZ * camX}px, ${540 - camZ * camY}px) scale(${camZ})`;
   const scrollY = interpolate(frame, SCROLL_T, SCROLL_Y, ease);
 
-  /* --- Streaming del testo --- */
   const stream = (full: string, range: readonly [number, number]) => {
     const p = interpolate(frame, [range[0], range[1]], [0, 1], clamp);
     return {
@@ -210,21 +272,39 @@ export const MemoriaViva: React.FC = () => {
     };
   };
 
-  /* --- La transizione: bagliore, buio, e il grafo che si assembla --- */
-  const chatOpacity = interpolate(frame, [T.fadeChat[0], T.fadeChat[1]], [1, 0], clamp);
-  const chatVisible = frame < T.fadeChat[1];
-  const bloomIn = interpolate(frame, [T.bloom[0], T.bloom[0] + 10], [0, 1], clamp);
-  const bloomOut = interpolate(frame, [T.bloom[0] + 14, T.bloom[1]], [1, 0], clamp);
-  const bloomOpacity = bloomIn * bloomOut;
-  const bloomVisible = frame >= T.bloom[0] && frame < T.bloom[1];
+  /* --- Il risucchio: ogni pezzo dell'interfaccia vola nell'attrattore ---
+   * `centro` è il baricentro stimato dell'elemento, `attr` l'attrattore,
+   * entrambi nello stesso sistema di coordinate dell'elemento. */
+  const succhia = (
+    centro: { x: number; y: number },
+    attr: { x: number; y: number },
+    ritardo: number,
+  ): React.CSSProperties => {
+    const f0 = T.suck + ritardo;
+    if (frame < f0) return {};
+    const p = interpolate(frame, [f0, f0 + 20], [0, 1], {
+      ...clamp,
+      easing: Easing.in(Easing.cubic),
+    });
+    return {
+      transform: `translate(${(attr.x - centro.x) * p}px, ${(attr.y - centro.y) * p}px) scale(${Math.max(0.02, 1 - p * 0.98)}) rotate(${p * -6}deg)`,
+      opacity: 1 - Math.pow(p, 4) * 0.55,
+    };
+  };
+
+  const chatOpacity = interpolate(frame, [T.chatVia[0], T.chatVia[1]], [1, 0], clamp);
+  const chatVisible = frame < T.chatVia[1];
 
   const build = interpolate(frame, [T.build[0], T.build[1]], [0, 1], clamp);
   const graphVisible = frame >= T.build[0];
   const graphOpacity = interpolate(frame, [T.build[0], T.build[0] + 12], [0, 1], clamp);
-  const graphRot = interpolate(frame, [T.build[0], T.build[1]], [-5, 0], {
-    ...clamp,
-    easing: Easing.out(Easing.cubic),
-  });
+  const graphRot =
+    interpolate(frame, [T.build[0], T.build[1]], [-5, 0], {
+      ...clamp,
+      easing: Easing.out(Easing.cubic),
+    }) +
+    /* Assemblato, continua a girare piano: un grado e mezzo al secondo. */
+    Math.max(0, frame - T.build[1]) * 0.05;
 
   const model = useMemo(buildGraph, []);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -244,7 +324,7 @@ export const MemoriaViva: React.FC = () => {
     drawGraph(
       ctx,
       model,
-      frame / FPS,
+      (frame / FPS) * 1.7, // deriva più viva: il grafo respira, non dorme
       {
         x: TARGET.nx * GRAPH_W,
         y: TARGET.ny * GRAPH_H,
@@ -255,59 +335,59 @@ export const MemoriaViva: React.FC = () => {
     );
   }, [frame, model, nodeProgress, build]);
 
-  const graphGlow = interpolate(frame, [T.land - 4, T.land + 8, T.land + 45], [1, 1.2, 1], clamp);
   const graphScale =
     interpolate(frame, [T.build[0], T.build[1]], [1.06, 1], {
       ...clamp,
       easing: Easing.out(Easing.cubic),
-    }) * interpolate(frame, [T.land - 4, T.land + 10, T.land + 50], [1, 1.018, 1], clamp);
+    }) * interpolate(frame, [T.land - 4, T.land + 10, T.land + 50], [1, 1.015, 1], clamp);
 
-  /* --- Il pallino: resta al centro dopo il tuffo, poi vola nel grafo --- */
-  const dotVisible = frame >= T.fadeChat[0] && frame < T.land + 3;
+  /* --- Il pallino: assorbe l'interfaccia, poi vola nel grafo --- */
+  const dotVisible = frame >= T.suck && frame < T.land + 3;
   const flyP = interpolate(frame, [T.fly[0], T.fly[1]], [0, 1], {
     ...clamp,
     easing: Easing.inOut(Easing.cubic),
   });
-  const bob = frame < T.fly[0] ? Math.sin((frame - T.fadeChat[0]) * 0.16) * 3 : 0;
+  const bob = frame < T.fly[0] ? Math.sin((frame - T.suck) * 0.16) * 3 : 0;
   const dotX = SPAWN.x + (TARGET_PX.x - SPAWN.x) * flyP;
   const dotY = SPAWN.y + (TARGET_PX.y - SPAWN.y) * flyP - Math.sin(flyP * Math.PI) * 70 + bob;
-  const dotColor = interpolateColors(frame, [T.fadeChat[0], T.build[0] + 10], [C.provMemoria, C.warm]);
-  const dotSize = interpolate(frame, [T.fadeChat[0], T.build[0] + 10], [13, 17], clamp);
+  /* Cresce a ogni boccone: da 12 a 22 px lungo il risucchio. */
+  const dotSize = interpolate(frame, [T.suck, T.suck + 40], [12, 22], {
+    ...clamp,
+    easing: Easing.out(Easing.cubic),
+  });
+  const dotPulse = 1 + 0.08 * Math.sin((frame - T.suck) * 0.55) * (frame < T.fly[0] ? 1 : 0);
   const dotOpacity =
-    interpolate(frame, [T.fadeChat[0], T.fadeChat[0] + 8], [0, 1], clamp) *
+    interpolate(frame, [T.suck, T.suck + 6], [0, 1], clamp) *
     interpolate(frame, [T.land - 1, T.land + 3], [1, 0], clamp);
 
   /* --- Stili dal FE --- */
   const bollaUtente: React.CSSProperties = {
     alignSelf: 'flex-end',
-    maxWidth: '72%',
+    maxWidth: '76%',
     borderRadius: 12,
-    padding: '18px 24px',
+    padding: '16px 22px',
     background: C.pageAlt,
     color: C.text,
     fontFamily: F.lettura,
-    fontSize: 21,
+    fontSize: 20,
     lineHeight: 1.5,
   };
 
-  /* Il bordo è quello vero dell'app (.assistente usa la superficie bianca
-     bordata); qui serve il token line pieno perché la compressione video
-     mangerebbe il line-soft, quasi invisibile già in origine. */
   const bollaAssistente: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: 18,
-    maxWidth: '85%',
+    gap: 16,
+    maxWidth: '88%',
     marginRight: 'auto',
     borderRadius: 12,
-    padding: '24px 30px',
+    padding: '22px 26px',
     background: C.surface,
     border: `1.5px solid ${C.line}`,
   };
 
   const mono: React.CSSProperties = {
     fontFamily: F.interfaccia,
-    fontSize: 16,
+    fontSize: 15,
     letterSpacing: '0.14em',
     textTransform: 'uppercase',
     color: C.text3,
@@ -332,8 +412,8 @@ export const MemoriaViva: React.FC = () => {
       <span
         style={{
           display: 'inline-block',
-          width: 10,
-          height: 22,
+          width: 9,
+          height: 21,
           marginLeft: 3,
           verticalAlign: 'text-bottom',
           background: C.accent,
@@ -345,8 +425,8 @@ export const MemoriaViva: React.FC = () => {
   const tonoColore = (t: Tono) => (t === 'pos' ? C.pos : t === 'neg' ? C.neg : C.text);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: C.ink }}>
-      {/* ============ Il grafo: si assembla dal buio, poi accoglie ========= */}
+    <AbsoluteFill style={{ backgroundColor: C.page }}>
+      {/* ============ Il grafo chiaro: si assembla attorno al ricordo ====== */}
       {graphVisible && (
         <canvas
           ref={canvasRef}
@@ -359,17 +439,129 @@ export const MemoriaViva: React.FC = () => {
             width: GRAPH_BOX.w,
             height: GRAPH_BOX.h,
             opacity: graphOpacity,
-            filter: `brightness(${graphGlow})`,
             transform: `scale(${graphScale}) rotate(${graphRot}deg)`,
           }}
         />
       )}
 
-      {/* ============ La chat, ripresa dalla camera ======================== */}
+      {/* ============ La piattaforma, ripresa dalla camera ================= */}
       {chatVisible && (
         <AbsoluteFill style={{ background: C.page, opacity: chatOpacity, overflow: 'hidden' }}>
           <AbsoluteFill style={{ transform: camTransform, transformOrigin: '0 0' }}>
-            {/* Filo dei messaggi, con lo scorrimento del thread */}
+            {/* Area di lavoro bianca, come nel FE (il contorno è avorio). */}
+            <div
+              style={{
+                position: 'absolute',
+                left: SIDEBAR_W,
+                top: TOPBAR_H,
+                right: 0,
+                bottom: 0,
+                background: C.surface,
+              }}
+            />
+
+            {/* ---- Barra laterale compressa: il marchio e le sole icone ---- */}
+            <div
+              style={{
+                position: 'absolute',
+                left: 0,
+                top: 0,
+                width: SIDEBAR_W,
+                height: HEIGHT,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                background: C.page,
+                borderRight: `1.5px solid ${C.lineSoft}`,
+                ...succhia({ x: 34, y: 540 }, ATTR_APP, 4),
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: TOPBAR_H }}>
+                <svg width={34} height={34} viewBox="0 0 28 28" style={{ borderRadius: 7 }}>
+                  <rect width="28" height="28" fill={C.accent} />
+                  <text
+                    x="14"
+                    y="14"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontFamily="Georgia, serif"
+                    fontSize="18"
+                    fill="#ffffff"
+                  >
+                    V
+                  </text>
+                </svg>
+              </div>
+
+              <div style={{ paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {NAV.flatMap((g) => g.voci).map((v) => (
+                  <div
+                    key={v.nome}
+                    title={v.nome}
+                    style={{
+                      display: 'grid',
+                      placeItems: 'center',
+                      width: 44,
+                      height: 44,
+                      borderRadius: 9,
+                      background: v.attiva ? C.pageAlt : 'transparent',
+                      color: v.attiva ? C.text : C.text3,
+                    }}
+                  >
+                    <IconaNav tipo={v.nome} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ---- Barra superiore ---- */}
+            <div
+              style={{
+                position: 'absolute',
+                left: SIDEBAR_W,
+                top: 0,
+                right: 0,
+                height: TOPBAR_H,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 22px',
+                background: C.surface,
+                borderBottom: `1.5px solid ${C.line}`,
+                ...succhia({ x: 574, y: 32 }, ATTR_APP, 0),
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontFamily: F.interfaccia, fontSize: 18, color: C.text }}>Ciao, sono Velia.</span>
+                <span style={{ width: 1.5, height: 22, background: C.line }} />
+                <span style={{ fontFamily: F.lettura, fontSize: 17, color: C.text2 }}>Agenzia Ferrero</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{ ...mono, fontSize: 14, letterSpacing: '0.08em', textTransform: 'none' }}>
+                  07/08/2026 18:12
+                </span>
+                <span style={{ width: 1.5, height: 22, background: C.line }} />
+                <span
+                  style={{
+                    display: 'grid',
+                    placeItems: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: 999,
+                    background: C.pageAlt,
+                    color: C.text2,
+                    fontFamily: F.lettura,
+                    fontSize: 15,
+                  }}
+                >
+                  M
+                </span>
+                <span style={{ fontFamily: F.lettura, fontSize: 15.5, color: C.text }}>m.ferrero</span>
+                <span style={{ ...mono, fontSize: 12.5, letterSpacing: '0.12em' }}>Titolare</span>
+              </div>
+            </div>
+
+            {/* ---- Filo dei messaggi ---- */}
             <div
               style={{
                 position: 'absolute',
@@ -378,7 +570,7 @@ export const MemoriaViva: React.FC = () => {
                 width: THREAD.w,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 26,
+                gap: 24,
                 transform: `translateY(${-scrollY}px)`,
               }}
             >
@@ -390,6 +582,7 @@ export const MemoriaViva: React.FC = () => {
                     alignItems: 'flex-end',
                     gap: 10,
                     ...appear(T.user1),
+                    ...succhia({ x: 324, y: 96 }, ATTR_CONTENT, 8),
                   }}
                 >
                   <div style={bollaUtente}>{TESTI.user1}</div>
@@ -401,17 +594,17 @@ export const MemoriaViva: React.FC = () => {
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: 7,
-                          padding: '4px 14px',
+                          padding: '4px 13px',
                           borderRadius: 999,
                           border: `1.5px solid ${C.line}`,
                           background: C.surface,
                           fontFamily: F.lettura,
-                          fontSize: 17,
+                          fontSize: 15.5,
                           color: C.text3,
                           whiteSpace: 'nowrap',
                         }}
                       >
-                        <IconaDoc size={15} />
+                        <IconaDoc size={14} />
                         {r}
                       </span>
                     ))}
@@ -420,39 +613,43 @@ export const MemoriaViva: React.FC = () => {
               )}
 
               {frame >= T.wait1[0] && (
-                <div style={{ ...bollaAssistente, ...appear(T.wait1[0]) }}>
+                <div
+                  style={{
+                    ...bollaAssistente,
+                    ...appear(T.wait1[0]),
+                    ...succhia({ x: 194, y: 680 }, ATTR_CONTENT, 12),
+                  }}
+                >
                   {attesa1 ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {puntini(C.textMute)}
-                      <span style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 19, color: C.text3 }}>
+                      <span style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 18, color: C.text3 }}>
                         {TESTI.attesa}
                       </span>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontFamily: F.lettura, fontSize: 22, lineHeight: 1.6, color: C.text }}>
+                      <div style={{ fontFamily: F.lettura, fontSize: 20, lineHeight: 1.55, color: C.text }}>
                         {s1.shown}
                         {cursore(s1.inCorso)}
                       </div>
 
-                      {/* La tabella di confronto: le righe entrano in rapida
-                          successione, come un risultato che si impagina. */}
                       {frame >= T.tavola && (
                         <div style={{ border: `1.5px solid ${C.lineSoft}`, borderRadius: 8 }}>
                           <div
                             style={{
                               display: 'grid',
                               gridTemplateColumns: '1.5fr 1fr 1fr',
-                              gap: '0 18px',
-                              padding: '12px 18px',
+                              gap: '0 16px',
+                              padding: '11px 16px',
                               borderBottom: `1.5px solid ${C.line}`,
                               background: C.pageAlt,
                               borderRadius: '8px 8px 0 0',
                             }}
                           >
-                            <span style={{ ...mono, fontSize: 14 }}>Garanzia</span>
-                            <span style={{ ...mono, fontSize: 14 }}>Polizza attuale</span>
-                            <span style={{ ...mono, fontSize: 14 }}>Preventivo</span>
+                            <span style={{ ...mono, fontSize: 13 }}>Garanzia</span>
+                            <span style={{ ...mono, fontSize: 13 }}>Polizza attuale</span>
+                            <span style={{ ...mono, fontSize: 13 }}>Preventivo</span>
                           </div>
                           {TABELLA.map((r, i) => {
                             const at = T.tavola + i * 3.5;
@@ -464,11 +661,11 @@ export const MemoriaViva: React.FC = () => {
                                 style={{
                                   display: 'grid',
                                   gridTemplateColumns: '1.5fr 1fr 1fr',
-                                  gap: '0 18px',
-                                  padding: '13px 18px',
+                                  gap: '0 16px',
+                                  padding: '12px 16px',
                                   borderTop: i > 0 ? `1px solid ${C.lineSoft}` : 'none',
                                   fontFamily: F.lettura,
-                                  fontSize: 19,
+                                  fontSize: 17,
                                   opacity: s,
                                   transform: `translateY(${(1 - s) * 8}px)`,
                                 }}
@@ -486,8 +683,8 @@ export const MemoriaViva: React.FC = () => {
                         <div
                           style={{
                             fontFamily: F.lettura,
-                            fontSize: 22,
-                            lineHeight: 1.6,
+                            fontSize: 20,
+                            lineHeight: 1.55,
                             color: C.text,
                             ...appear(T.sintesi),
                           }}
@@ -502,8 +699,9 @@ export const MemoriaViva: React.FC = () => {
                             display: 'flex',
                             alignItems: 'center',
                             gap: 10,
-                            paddingTop: 14,
+                            paddingTop: 13,
                             borderTop: `1.5px solid ${C.lineSoft}`,
+                            flexWrap: 'wrap',
                             ...appear(T.fonti),
                           }}
                         >
@@ -515,19 +713,19 @@ export const MemoriaViva: React.FC = () => {
                                 display: 'inline-flex',
                                 alignItems: 'center',
                                 gap: 8,
-                                padding: '5px 14px',
+                                padding: '4px 13px',
                                 border: `1.5px solid ${C.line}`,
                                 borderRadius: 999,
                                 background: C.surface,
                                 fontFamily: F.lettura,
-                                fontSize: 17,
+                                fontSize: 15.5,
                                 color: C.text2,
                                 whiteSpace: 'nowrap',
                               }}
                             >
                               {c.titolo}
                               <span
-                                style={{ ...mono, fontSize: 14, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
+                                style={{ ...mono, fontSize: 13, letterSpacing: '0.08em', whiteSpace: 'nowrap' }}
                               >
                                 {c.pos}
                               </span>
@@ -540,15 +738,25 @@ export const MemoriaViva: React.FC = () => {
                 </div>
               )}
 
-              {frame >= T.user2 && <div style={{ ...bollaUtente, ...appear(T.user2) }}>{TESTI.user2}</div>}
+              {frame >= T.user2 && (
+                <div style={{ ...bollaUtente, ...appear(T.user2), ...succhia({ x: 334, y: 1196 }, ATTR_CONTENT, 16) }}>
+                  {TESTI.user2}
+                </div>
+              )}
 
               {frame >= T.wait2[0] && (
-                <div style={{ ...bollaAssistente, ...appear(T.wait2[0]) }}>
+                <div
+                  style={{
+                    ...bollaAssistente,
+                    ...appear(T.wait2[0]),
+                    ...succhia({ x: 184, y: 1330 }, ATTR_CONTENT, 22),
+                  }}
+                >
                   {attesa2 ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{puntini(C.textMute)}</div>
                   ) : (
                     <>
-                      <div style={{ fontFamily: F.lettura, fontSize: 22, lineHeight: 1.6, color: C.text }}>
+                      <div style={{ fontFamily: F.lettura, fontSize: 20, lineHeight: 1.55, color: C.text }}>
                         {s2.shown}
                         {cursore(s2.inCorso)}
                       </div>
@@ -556,7 +764,7 @@ export const MemoriaViva: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, ...appear(T.salva) }}>
                           {puntini(C.provMemoria)}
                           <span
-                            style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 19, color: C.provMemoria }}
+                            style={{ marginLeft: 10, fontFamily: F.lettura, fontSize: 18, color: C.provMemoria }}
                           >
                             {TESTI.salva}
                           </span>
@@ -568,44 +776,36 @@ export const MemoriaViva: React.FC = () => {
               )}
             </div>
 
-            {/* Composer fisso in fondo; si ritira quando la camera stringe. */}
+            {/* ---- Composer ---- */}
             <div
               style={{
                 position: 'absolute',
                 left: THREAD.x,
                 width: THREAD.w,
-                top: 952,
-                opacity: interpolate(frame, [T.salva + 10, T.salva + 40], [1, 0], clamp),
+                top: 966,
+                ...succhia({ x: 574, y: 994 }, ATTR_APP, 10),
               }}
             >
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 10,
+                  gap: 8,
                   borderRadius: 12,
-                  padding: 12,
+                  padding: 10,
                   background: C.surface,
                   border: `1.5px solid ${C.line}`,
                 }}
               >
-                <span style={{ display: 'inline-flex', padding: 10, color: C.text3 }}>
-                  <IconaAllega size={24} />
+                <span style={{ display: 'inline-flex', padding: 8, color: C.text3 }}>
+                  <IconaAllega size={22} />
                 </span>
                 <span
-                  style={{
-                    display: 'inline-flex',
-                    padding: 10,
-                    color: C.text3,
-                    fontFamily: F.lettura,
-                    fontSize: 24,
-                  }}
+                  style={{ display: 'inline-flex', padding: 8, color: C.text3, fontFamily: F.lettura, fontSize: 22 }}
                 >
                   @
                 </span>
-                <span
-                  style={{ flex: 1, padding: '10px 4px', fontFamily: F.lettura, fontSize: 21, color: C.textMute }}
-                >
+                <span style={{ flex: 1, padding: '8px 4px', fontFamily: F.lettura, fontSize: 19, color: C.textMute }}>
                   {TESTI.placeholder}
                 </span>
                 <span
@@ -613,14 +813,14 @@ export const MemoriaViva: React.FC = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 54,
-                    height: 54,
+                    width: 48,
+                    height: 48,
                     borderRadius: 9,
                     background: C.accent,
                     color: '#fff',
                   }}
                 >
-                  <IconaInvia size={24} />
+                  <IconaInvia size={22} />
                 </span>
               </div>
             </div>
@@ -628,28 +828,18 @@ export const MemoriaViva: React.FC = () => {
         </AbsoluteFill>
       )}
 
-      {/* ============ Il bagliore del tuffo nella memoria ================== */}
-      {bloomVisible && (
-        <AbsoluteFill
-          style={{
-            background: `radial-gradient(circle at 50% 50%, rgba(216,168,126,0.95) 0%, rgba(124,90,47,0.55) 34%, rgba(28,26,21,0) 68%)`,
-            opacity: bloomOpacity,
-          }}
-        />
-      )}
-
-      {/* ============ Il ricordo: dal tuffo al grafo ======================= */}
+      {/* ============ Il ricordo: assorbe tutto, poi trova il suo posto ==== */}
       {dotVisible && (
         <div
           style={{
             position: 'absolute',
-            left: dotX - dotSize / 2,
-            top: dotY - dotSize / 2,
-            width: dotSize,
-            height: dotSize,
+            left: dotX - (dotSize * dotPulse) / 2,
+            top: dotY - (dotSize * dotPulse) / 2,
+            width: dotSize * dotPulse,
+            height: dotSize * dotPulse,
             borderRadius: 999,
-            background: dotColor,
-            boxShadow: `0 0 24px 7px rgba(216,168,126,0.5)`,
+            background: C.warm,
+            boxShadow: `0 0 26px 8px rgba(176,115,63,0.35)`,
             opacity: dotOpacity,
           }}
         />
