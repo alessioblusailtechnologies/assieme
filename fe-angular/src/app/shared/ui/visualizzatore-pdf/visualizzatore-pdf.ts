@@ -12,6 +12,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 
 import { Icona } from '@shared/ui/icona/icona';
@@ -65,6 +66,8 @@ function pdfjs(): Promise<typeof import('pdfjs-dist')> {
   styleUrl: './visualizzatore-pdf.scss',
 })
 export class VisualizzatorePdf {
+  private readonly http = inject(HttpClient);
+
   readonly fileUrl = input.required<string>();
   /** Dove aprirsi: pagina ed eventuale riquadro da evidenziare. */
   readonly posizione = input<PosizioneDocumento>();
@@ -100,19 +103,37 @@ export class VisualizzatorePdf {
 
       let superato = false;
       let compito: PDFDocumentLoadingTask | undefined;
-      pdfjs()
-        .then((modulo) => {
+
+      /* Il PDF si scarica con HttpClient, non col fetch interno di pdf.js:
+         così attraversa gli interceptor come ogni altra chiamata — il
+         Bearer dell'autenticazione (senza, il backend vero risponde 401) e
+         il pannello di sviluppo. A pdf.js arrivano i byte, non l'URL. */
+      const sottoscrizione = this.http.get(url, { responseType: 'arraybuffer' }).subscribe({
+        next: (dati) => {
           if (superato) return;
-          compito = modulo.getDocument({ url, standardFontDataUrl: '/pdfjs/standard-fonts/' });
-          return compito.promise.then((doc) => {
-            if (!superato) this.documento.set(doc);
-          });
-        })
-        .catch(() => {
+          pdfjs()
+            .then((modulo) => {
+              if (superato) return;
+              compito = modulo.getDocument({
+                data: new Uint8Array(dati),
+                standardFontDataUrl: '/pdfjs/standard-fonts/',
+              });
+              return compito.promise.then((doc) => {
+                if (!superato) this.documento.set(doc);
+              });
+            })
+            .catch(() => {
+              if (!superato) this.errore.set(true);
+            });
+        },
+        error: () => {
           if (!superato) this.errore.set(true);
-        });
+        },
+      });
+
       pulizia(() => {
         superato = true;
+        sottoscrizione.unsubscribe();
         void compito?.destroy();
       });
     });
