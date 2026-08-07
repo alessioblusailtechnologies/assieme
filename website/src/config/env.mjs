@@ -7,14 +7,14 @@
  */
 
 export const SITE_URL = (
-  process.env.SITE_URL || 'https://www.assieme.ai'
+  process.env.SITE_URL || 'https://www.sonovelia.it'
 ).replace(/\/$/, '');
 
 /** Sottodominio dell'applicativo: da sostituire con l'URL reale del login. */
-export const APP_URL = process.env.APP_URL || 'https://app.assieme.ai';
+export const APP_URL = process.env.APP_URL || 'https://app.sonovelia.it';
 
 /** Pagina di stato del servizio, ospitata fuori dal sito istituzionale. */
-export const STATUS_URL = process.env.STATUS_URL || 'https://status.assieme.ai';
+export const STATUS_URL = process.env.STATUS_URL || 'https://status.sonovelia.it';
 
 /**
  * Endpoint a cui il modulo «Richiedi una demo» invia i dati.

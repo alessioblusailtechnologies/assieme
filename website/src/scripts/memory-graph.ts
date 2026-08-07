@@ -1,7 +1,7 @@
 /**
  * Grafo della memoria — visualizzazione procedurale a cluster con deriva lenta.
  *
- * Portato dal design Assieme. Rispetto all'originale:
+ * Portato dal design Velia. Rispetto all'originale:
  *  · il seme è fisso, quindi la figura è identica a ogni caricamento;
  *  · con `prefers-reduced-motion` disegna un solo fotogramma e si ferma;
  *  · l'animazione parte solo quando il canvas entra nel viewport e si sospende

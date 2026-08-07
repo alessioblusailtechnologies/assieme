@@ -30,7 +30,7 @@ export interface ModelloAI {
  * L'esempio dell'analisi vale più di una definizione: "non segnalare come
  * carenza l'assenza della garanzia infortuni del conducente, l'agenzia la
  * copre con polizza dedicata". Un'analisi a criteri fissi la segnalerebbe
- * come mancanza grave; è esattamente il limite di Navisio che ASSIEME supera.
+ * come mancanza grave; è esattamente il limite di Navisio che VELIA supera.
  *
  * RF-D-08 pone il confine: le regole orientano il giudizio, **non alterano i
  * fatti documentali**. L'obbligo di citazione e la dichiarazione di

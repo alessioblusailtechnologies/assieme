@@ -83,10 +83,10 @@ const SQL_BASE = `
          c.ultimo_aggiornamento as compagnia_aggiornamento,
          r.id as ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
          (p.documento_id is not null) as preferito
-  from assieme.documenti d
-  join assieme.compagnie c on c.id = d.compagnia_id
-  join assieme.rami r on r.id = d.ramo_id
-  left join assieme.preferiti p on p.documento_id = d.id
+  from velia.documenti d
+  join velia.compagnie c on c.id = d.compagnia_id
+  join velia.rami r on r.id = d.ramo_id
+  left join velia.preferiti p on p.documento_id = d.id
   where d.archivio = 'pubblico'`;
 
 /**
@@ -135,8 +135,8 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
     /* Il totale viaggia su ogni riga (finestra): una query sola per elenco
        e conteggio. La colonna in più si aggiunge alla SELECT della base. */
     const conTotale = SQL_BASE.replace(
-      '\n  from assieme.documenti d',
-      ',\n         count(*) over() as totale\n  from assieme.documenti d',
+      '\n  from velia.documenti d',
+      ',\n         count(*) over() as totale\n  from velia.documenti d',
     );
     const sql = `${conTotale}${dove}${ordine}${limite}`;
 
@@ -167,7 +167,7 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
       }>(
         `select id, edizione_id, edizione_etichetta, edizione_valida_dal,
                 edizione_valida_al, edizione_corrente
-         from assieme.documenti
+         from velia.documenti
          where archivio = 'pubblico' and compagnia_id = $1 and prodotto = $2 and tipologia = $3
          order by edizione_valida_dal desc`,
         [documento.compagnia.id, documento.prodotto, documento.tipologia],
@@ -202,13 +202,13 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
 
           if (metodo === 'put') {
             await client.query(
-              `insert into assieme.preferiti (utente_id, documento_id)
+              `insert into velia.preferiti (utente_id, documento_id)
                values ($1, $2) on conflict do nothing`,
               [richiesta.identita.utenteId, richiesta.params.id],
             );
           } else {
             await client.query(
-              `delete from assieme.preferiti where utente_id = $1 and documento_id = $2`,
+              `delete from velia.preferiti where utente_id = $1 and documento_id = $2`,
               [richiesta.identita.utenteId, richiesta.params.id],
             );
           }
@@ -229,7 +229,7 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
   app.get<{ Params: { id: string } }>('/api/documenti/:id/file', async (richiesta, risposta) => {
     const riga = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const r = await client.query<{ path_pdf: string | null }>(
-        `select path_pdf from assieme.documenti where archivio = 'pubblico' and id = $1`,
+        `select path_pdf from velia.documenti where archivio = 'pubblico' and id = $1`,
         [richiesta.params.id],
       );
       return r.rows[0];
@@ -257,7 +257,7 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
   app.get('/api/compagnie', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
       const righe = await client.query<{ id: string; nome: string; ultimo_aggiornamento: string | null }>(
-        `select id, nome, ultimo_aggiornamento from assieme.compagnie order by nome collate "it-x-icu"`,
+        `select id, nome, ultimo_aggiornamento from velia.compagnie order by nome collate "it-x-icu"`,
       );
       return righe.rows.map(
         (c): Compagnia => ({
@@ -272,7 +272,7 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
   app.get('/api/rami', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
       const righe = await client.query<Ramo>(
-        `select id, nome, codice from assieme.rami order by nome collate "it-x-icu"`,
+        `select id, nome, codice from velia.rami order by nome collate "it-x-icu"`,
       );
       return righe.rows;
     });

@@ -61,7 +61,7 @@ let prossimaEsecuzione = 100;
 let prossimaCitazione = 950;
 
 const utenteCorrente = (req) =>
-  req.headers['x-assieme-ruolo'] === 'amministratore'
+  req.headers['x-velia-ruolo'] === 'amministratore'
     ? { id: 'utn-001', nome: 'Marta Ferrero' }
     : { id: 'utn-004', nome: 'Davide Lo Bianco' };
 

@@ -26,7 +26,7 @@ export async function emettiEvento(
   dati: Record<string, unknown> = {},
 ): Promise<number> {
   const inserito = await db.query<{ id: string }>(
-    `insert into assieme.eventi_job (job_id, tipo, dati)
+    `insert into velia.eventi_job (job_id, tipo, dati)
      values ($1, $2, $3) returning id`,
     [jobId, tipo, dati],
   );

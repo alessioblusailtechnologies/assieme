@@ -33,7 +33,7 @@ const CONNESSIONI = [
 /* Il contatore parte alto per non collidere con gli id delle fixture. */
 let prossimaCredenziale = 100;
 
-const amministratore = (req) => req.headers['x-assieme-ruolo'] === 'amministratore';
+const amministratore = (req) => req.headers['x-velia-ruolo'] === 'amministratore';
 
 // ---------------------------------------------------------------------------
 // Instradamento

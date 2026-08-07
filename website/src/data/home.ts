@@ -9,7 +9,7 @@
  * Le capacità sono presentate come prodotti con un nome e una riga, non come
  * moduli con l'elenco delle funzioni.
  *
- * Sostanza allineata a «ASSIEME — Analisi dei Requisiti» v0.8 (03/08/2026).
+ * Sostanza allineata a «VELIA — Analisi dei Requisiti» v0.8 (03/08/2026).
  *
  * ⚠️ Da sostituire prima della pubblicazione: `testimonial` (il prodotto ha
  * un'unica agenzia pilota) e i loghi cliente nei due nastri.
@@ -17,12 +17,12 @@
 
 export const hero = {
   title: ['La consulenza,', "fatta a regola d'arte"],
-  lead: 'Le agenzie, i broker e gli intermediari più esigenti usano Assieme per leggere i documenti, confrontare le condizioni e rispondere ai clienti con la fonte sempre citata.',
+  lead: 'Le agenzie, i broker e gli intermediari più esigenti usano Velia per leggere i documenti, confrontare le condizioni e rispondere ai clienti con la fonte sempre citata.',
 } as const;
 
 export const statement = {
   strong:
-    "Assieme è l'intelligenza artificiale pensata per la distribuzione assicurativa.",
+    "Velia è l'intelligenza artificiale pensata per la distribuzione assicurativa.",
   muted:
     "Lavora sui documenti che hai già, ragiona con i criteri della tua agenzia e lascia a te l'ultima parola.",
 } as const;
@@ -132,7 +132,7 @@ export const useCases = [
 
 export const testimonial = {
   quote:
-    "«Gli altri strumenti ci segnalavano come carenza una garanzia che noi copriamo da sempre a parte. Ad Assieme l'abbiamo spiegato una volta, in italiano, e da allora ragiona come ragioniamo noi.»",
+    "«Gli altri strumenti ci segnalavano come carenza una garanzia che noi copriamo da sempre a parte. Ad Velia l'abbiamo spiegato una volta, in italiano, e da allora ragiona come ragioniamo noi.»",
   name: 'Nome Cognome',
   role: 'Titolare',
   company: 'Agenzia pilota',
@@ -179,7 +179,7 @@ export const stats = [
 
 export const security = {
   title: ['Accuratezza e riservatezza,', 'prima di ogni altra cosa'],
-  body: "Assieme cita sempre da dove viene una risposta e dice quando non lo sa. I tuoi documenti restano tuoi: non escono dall'agenzia, non finiscono in mano ad altri clienti, non addestrano nulla.",
+  body: "Velia cita sempre da dove viene una risposta e dice quando non lo sa. I tuoi documenti restano tuoi: non escono dall'agenzia, non finiscono in mano ad altri clienti, non addestrano nulla.",
   badges: [
     { mark: 'Fonte', name: 'Ogni risposta citata', href: '/sicurezza#citazione' },
     { mark: 'Non so', name: 'Mai una risposta inventata', href: '/sicurezza#non-copertura' },

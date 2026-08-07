@@ -22,29 +22,29 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
       {
         path: 'modello',
         loadComponent: () => import('./modello/modello').then((m) => m.Modello),
-        title: 'Modello AI — Assieme',
+        title: 'Modello AI — Velia',
       },
       {
         path: 'istruzioni',
         loadComponent: () => import('./istruzioni/istruzioni').then((m) => m.Istruzioni),
-        title: 'Istruzioni — Assieme',
+        title: 'Istruzioni — Velia',
       },
       {
         path: 'template',
         loadComponent: () =>
           import('./template/template-output').then((m) => m.TemplateOutputSezione),
-        title: 'Template di output — Assieme',
+        title: 'Template di output — Velia',
       },
       {
         path: 'utenti',
         loadComponent: () => import('./utenti/utenti').then((m) => m.Utenti),
-        title: 'Utenti — Assieme',
+        title: 'Utenti — Velia',
       },
       {
         /* Fase 7 — costruita. Il valore del Modulo F resta tutto nel backend. */
         path: 'mcp',
         loadComponent: () => import('./mcp/accesso-mcp').then((m) => m.AccessoMcp),
-        title: 'Accesso MCP — Assieme',
+        title: 'Accesso MCP — Velia',
       },
     ],
   },

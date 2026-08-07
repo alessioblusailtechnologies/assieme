@@ -12,27 +12,27 @@ export const AGENTI_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./elenco/elenco-agenti').then((m) => m.ElencoAgenti),
-    title: 'Agenti — Assieme',
+    title: 'Agenti — Velia',
   },
   {
     path: 'nuovo',
     loadComponent: () => import('./editor/editor-agente').then((m) => m.EditorAgente),
-    title: 'Nuovo agente — Assieme',
+    title: 'Nuovo agente — Velia',
   },
   {
     path: ':id/modifica',
     loadComponent: () => import('./editor/editor-agente').then((m) => m.EditorAgente),
-    title: 'Modifica agente — Assieme',
+    title: 'Modifica agente — Velia',
   },
   {
     path: ':id/esecuzioni/:esecuzioneId',
     loadComponent: () =>
       import('./esecuzione/esecuzione-agente').then((m) => m.EsecuzioneAgentePagina),
-    title: 'Esito esecuzione — Assieme',
+    title: 'Esito esecuzione — Velia',
   },
   {
     path: ':id',
     loadComponent: () => import('./dettaglio/dettaglio-agente').then((m) => m.DettaglioAgente),
-    title: 'Agente — Assieme',
+    title: 'Agente — Velia',
   },
 ];

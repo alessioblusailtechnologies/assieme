@@ -1,11 +1,11 @@
-# ASSIEME — Piano di sviluppo Front-end
+# VELIA — Piano di sviluppo Front-end
 
 | Campo | Valore |
 |---|---|
 | Documento | Piano di sviluppo FE |
 | Versione | 0.4 — design system proprio, via PrimeNG e AG Grid |
 | Data | 05/08/2026 |
-| Riferimento | `ASSIEME-analisi-requisiti.md` v0.9 |
+| Riferimento | `VELIA-analisi-requisiti.md` v0.9 |
 | Progetto | `fe-angular/` — Angular 22.1.x |
 
 ---
@@ -18,7 +18,7 @@ Non è un prototipo usa-e-getta: è il front-end definitivo, che parla HTTP vero
 
 1. **Un'applicazione dimostrabile** al cliente pilota e in demo commerciale, con dati realistici e persistenza di sessione.
 2. **Il contratto API in due forme**: le interfacce TypeScript nel FE e l'ambiente Mockoon, che è una specifica *eseguibile* — il backend può lanciarlo e vedere esattamente quali richieste arrivano e quali risposte sono attese.
-3. **Il tema applicativo**: PrimeNG e AG Grid ricondotti alla lingua visiva di ASSIEME, riusabile per tutto il resto del prodotto.
+3. **Il tema applicativo**: PrimeNG e AG Grid ricondotti alla lingua visiva di VELIA, riusabile per tutto il resto del prodotto.
 
 **Fuori perimetro adesso:** autenticazione reale, elaborazione documenti, chiamate ai provider AI, generazione dei documenti su template, server MCP. Tutto ciò che li riguarda esiste come interfaccia e come contratto, mai come implementazione.
 
@@ -53,7 +53,7 @@ Da aggiungere: `angular-eslint`, `ng generate environments`, `concurrently` (per
 ## 3. Interfaccia: PrimeNG tematizzato
 
 > **Superato (08/2026):** su indicazione del committente PrimeNG è stato
-> rimosso del tutto. L'interfaccia è il **design system proprio di ASSIEME**,
+> rimosso del tutto. L'interfaccia è il **design system proprio di VELIA**,
 > ispirato a quello di Harvey (harvey.ai): scala di neutri caldi quasi
 > bianchi con token semantici nominati per intento (`styles/_tokens.scss`),
 > classi dei componenti in `styles/_ui.scss`, componenti `ui-*` in
@@ -67,28 +67,28 @@ Da aggiungere: `angular-eslint`, `ng generate environments`, `concurrently` (per
 > dati, licenza OFL). Nessuna dipendenza di componenti, nessuna licenza di
 > librerie UI. Questa sezione resta come storia.
 
-PrimeNG 22 usa il **modo stilizzato a design token** su tre livelli — primitivi (palette), semantici (`primary.color`), di componente (`inputtext.background`). È esattamente la struttura che serve per portarci sopra i token di ASSIEME: si sovrascrivono i token, non si combatte il CSS.
+PrimeNG 22 usa il **modo stilizzato a design token** su tre livelli — primitivi (palette), semantici (`primary.color`), di componente (`inputtext.background`). È esattamente la struttura che serve per portarci sopra i token di VELIA: si sovrascrivono i token, non si combatte il CSS.
 
 ### Preset di base: Nora
 
-Dei quattro preset disponibili (Aura, Material, Lara, Nora), **Nora** è quello di impostazione enterprise, il meno arrotondato e il più sobrio — il punto di partenza più vicino all'estetica piatta e squadrata di ASSIEME. Su di esso si definisce il preset `assieme`:
+Dei quattro preset disponibili (Aura, Material, Lara, Nora), **Nora** è quello di impostazione enterprise, il meno arrotondato e il più sobrio — il punto di partenza più vicino all'estetica piatta e squadrata di VELIA. Su di esso si definisce il preset `velia`:
 
 ```ts
-// src/styles/theme/assieme-preset.ts
+// src/styles/theme/velia-preset.ts
 import Nora from '@primeuix/themes/nora';
 import { definePreset } from '@primeuix/themes';
 
-export const AssiemePreset = definePreset(Nora, {
+export const VeliaPreset = definePreset(Nora, {
   primitive: {
     borderRadius: { none: '0', xs: '0', sm: '0', md: '0', lg: '0', xl: '0' },
-    assieme: {           // la palette del sito, invariata
+    velia: {           // la palette del sito, invariata
       ink: '#14181d', page: '#f4f5f7', accent: '#2f4b7c',
       accentSoft: '#e7edf7', line: '#dde0e5',
       neg: '#a63d2f', pos: '#2e6b4f',
     },
   },
   semantic: {
-    primary: { color: '{assieme.accent}', contrastColor: '#ffffff' },
+    primary: { color: '{velia.accent}', contrastColor: '#ffffff' },
     // …superfici, testo, bordi, stati
   },
 });
@@ -97,14 +97,14 @@ export const AssiemePreset = definePreset(Nora, {
 Registrato una volta sola in `app.config.ts`:
 
 ```ts
-providePrimeNG({ theme: { preset: AssiemePreset, options: { darkModeSelector: false } } })
+providePrimeNG({ theme: { preset: VeliaPreset, options: { darkModeSelector: false } } })
 ```
 
 Tre note che valgono in tutte le schermate:
 
 - **Raggio di bordo a zero.** Non è un vezzo: nel design originale nessun elemento è arrotondato, ed è metà del carattere del prodotto. Va imposto a livello primitivo, altrimenti riemerge componente per componente.
 - **Tipografia.** Newsreader per i titoli, DM Mono per etichette e citazioni, sans di sistema per il corpo. I `woff2` esistono già in `website/dist/fonts/`, si copiano in `public/fonts/`.
-- **Densità.** Il sito è un documento da leggere, ASSIEME è uno strumento da usare otto ore al giorno: spaziature più compatte e testo di corpo a 14px, contro i 16 del sito.
+- **Densità.** Il sito è un documento da leggere, VELIA è uno strumento da usare otto ore al giorno: spaziature più compatte e testo di corpo a 14px, contro i 16 del sito.
 
 ### ⚠️ PrimeNG 22 non è più open source
 
@@ -127,7 +127,7 @@ di rimuovere.
 **Stato: chiave Community attiva dal 04/08/2026, scade il 04/08/2027.**
 Verificata con il verificatore di PrimeUI: `valid: true, status: active`.
 
-Il punto da mettere nel piano economico, non da scoprire dopo: ASSIEME è un
+Il punto da mettere nel piano economico, non da scoprire dopo: VELIA è un
 SaaS a ~279 €/mese per tenant. Superato il milione di fatturato la Community
 non è più utilizzabile e servirà la licenza commerciale — cifra irrilevante a
 quel punto, ma va prevista.
@@ -161,7 +161,7 @@ Usiamo AG Grid per la **tabella di analisi** (RF-C-11…C-14) e per gli elenchi 
 Da v33 i file CSS dei temi sono deprecati: il tema si definisce in codice e la griglia inietta il proprio CSS.
 
 ```ts
-export const assiemeGridTheme = themeQuartz.withParams({
+export const veliaGridTheme = themeQuartz.withParams({
   accentColor: '#2f4b7c',
   borderColor: '#dde0e5',
   borderRadius: 0,
@@ -230,7 +230,7 @@ DocumentiApiService            ← codice definitivo (HttpClient / httpResource)
    ↓ GET /api/documenti?ramo=auto
 proxy del dev server Angular   ← proxy.conf.json
    ↓ http://localhost:3000
-Mockoon CLI                    ← mocks/assieme.json + mocks/data/*.json
+Mockoon CLI                    ← mocks/velia.json + mocks/data/*.json
 ```
 
 Il front-end fa richieste HTTP vere a un server vero. Nessun interceptor, nessun ramo `if (mock)` nel codice, nessuna implementazione doppia dei servizi. **Il codice che gira in sviluppo è, riga per riga, quello che andrà in produzione.**
@@ -243,7 +243,7 @@ Il front-end fa richieste HTTP vere a un server vero. Nessun interceptor, nessun
 ```json
 // package.json
 "scripts": {
-  "mock": "mockoon-cli start --data ./mocks/assieme.json --port 3000",
+  "mock": "mockoon-cli start --data ./mocks/velia.json --port 3000",
   "dev":  "concurrently \"npm:mock\" \"ng serve\""
 }
 ```
@@ -330,7 +330,7 @@ Due scelte trasversali da fare subito, perché toccano ogni schermata:
 ## 8. Struttura del progetto
 
 ```
-assieme/
+velia/
 ├── fe-angular/
 │   ├── proxy.conf.json
 │   ├── public/fonts/        # TWK Ghost + Geist, self-ospitati
@@ -366,7 +366,7 @@ assieme/
 │           ├── _fonts.scss      # @font-face di Ghost e Geist
 │           └── styles.scss
 ├── mocks/
-│   ├── assieme.json         # ambiente Mockoon (versionato)
+│   ├── velia.json         # ambiente Mockoon (versionato)
 │   ├── data/*.json          # fixture
 │   ├── api-stub.mjs         # endpoint con logica (ricerca, paginazione)
 │   ├── archivio-privato.mjs # macchina a stati dell'elaborazione
@@ -421,7 +421,7 @@ Stime indicative per **uno sviluppatore FE a tempo pieno**, comprensive di fixtu
 Nessun requisito funzionale, ma tutto il resto poggia qui.
 
 - Configurazione: PrimeNG + CDK + AG Grid + Hugeicons, ESLint, environment, alias, `proxy.conf.json`, script `npm run dev`
-- **Preset PrimeNG `assieme`** e **tema AG Grid**: la parte che determina se il prodotto sembrerà ASSIEME o sembrerà PrimeNG
+- **Preset PrimeNG `velia`** e **tema AG Grid**: la parte che determina se il prodotto sembrerà VELIA o sembrerà PrimeNG
 - Token e tipografia dal sito; font Newsreader e DM Mono da `website/dist/fonts/`
 - Componente `ui-icon` e verifica copertura del set Hugeicons free
 - **Ambiente Mockoon** con le prime fixture e la latenza configurata
@@ -487,7 +487,7 @@ Sezione con shell propria e navigazione secondaria: **Modello AI** (schede infor
 
 **Decisioni di contratto da sapere:**
 
-- **I permessi sono applicati due volte.** Le voci e i controlli compaiono con `puo()`; il mock rifiuta comunque le scritture senza `X-Assieme-Ruolo: amministratore` (403) — il pannello di sviluppo mostra davvero l'interfaccia dell'operatore, e il server resta l'ultima linea. L'operatore **vede** modello, istruzioni e template in lettura: sapere cosa condiziona le risposte è trasparenza, non privilegio.
+- **I permessi sono applicati due volte.** Le voci e i controlli compaiono con `puo()`; il mock rifiuta comunque le scritture senza `X-Velia-Ruolo: amministratore` (403) — il pannello di sviluppo mostra davvero l'interfaccia dell'operatore, e il server resta l'ultima linea. L'operatore **vede** modello, istruzioni e template in lettura: sapere cosa condiziona le risposte è trasparenza, non privilegio.
 - **I documenti di riferimento sono un elenco unico con due origini.** I promossi dall'Archivio Privato si idratano dall'archivio a ogni lettura (titolo e peso restano veri); il governo — ambito, attivazione — vive nelle Istruzioni. `DELETE` su un promosso toglie il ruolo e il documento resta nell'archivio; su un caricato diretto lo elimina.
 - **Lo storico (RF-D-07) è un endpoint solo**, `GET /api/impostazioni/storico?oggetti=…`: ogni schermata mostra le voci sue, il modello (`VoceStoricoImpostazioni`) è comune. Ogni mutazione del mock registra chi, cosa e quando.
 - **L'anteprima dei template è sempre PDF** (`GET /api/template/:id/anteprima`), qualunque sia il formato di generazione: mostra impaginazione e segnaposto (RF-D-11), non il file. Il predefinito per tipologia (RF-D-13) è unico: assegnarlo lo toglie a chi lo portava.

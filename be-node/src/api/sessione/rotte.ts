@@ -31,8 +31,8 @@ const SQL_PROFILO = `
   select u.id, u.nome, u.cognome, u.email, u.ruolo, u.stato, u.ultimo_accesso,
          t.id as tenant_id, t.nome as tenant_nome, t.piano as tenant_piano,
          null as tenant_logo_url
-  from assieme.utenti u
-  join assieme.tenant t on t.id = u.tenant_id
+  from velia.utenti u
+  join velia.tenant t on t.id = u.tenant_id
   where u.id = $1`;
 
 function versoSessione(riga: RigaProfilo): Sessione {
@@ -111,9 +111,9 @@ export function registraRotteSessione(app: FastifyInstance): void {
     const profili = await db.query<RigaProfilo>(SQL_PROFILO, [token.user.id]);
     const profilo = profili.rows[0];
     if (!profilo) {
-      // Utente Auth senza profilo ASSIEME: mal provisionato (o di un'altra
+      // Utente Auth senza profilo VELIA: mal provisionato (o di un'altra
       // applicazione di questo progetto condiviso). Nessun accesso.
-      richiesta.log.warn({ sub: token.user.id }, 'accesso senza profilo assieme');
+      richiesta.log.warn({ sub: token.user.id }, 'accesso senza profilo velia');
       throw ErroreApi.permessoNegato();
     }
     if (profilo.stato === 'sospeso') {
@@ -122,7 +122,7 @@ export function registraRotteSessione(app: FastifyInstance): void {
 
     const adesso = new Date();
     await db.query(
-      `update assieme.utenti set stato = 'attivo', ultimo_accesso = $2 where id = $1`,
+      `update velia.utenti set stato = 'attivo', ultimo_accesso = $2 where id = $1`,
       [profilo.id, adesso],
     );
     profilo.stato = 'attivo';

@@ -19,7 +19,7 @@ try {
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
 const EMAIL_ADMIN = 'm.ferrero@assicurazionimeridiana.it';
-const PASSWORD_DEMO = 'assieme-demo-2026!';
+const PASSWORD_DEMO = 'velia-demo-2026!';
 
 const pronto = Boolean(
   config?.SUPABASE_URL &&

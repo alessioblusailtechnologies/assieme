@@ -28,11 +28,11 @@ const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
 const righe = [];
 righe.push('-- Generato da tools/genera-seed.mjs — non modificare a mano.');
 righe.push('');
-righe.push('insert into assieme.tenant (id, nome, piano) values');
+righe.push('insert into velia.tenant (id, nome, piano) values');
 righe.push(`  ('${TENANT_DEMO}', 'Assicurazioni Meridiana S.r.l.', 'agenzia')`);
 righe.push('on conflict (id) do update set nome = excluded.nome, piano = excluded.piano;');
 righe.push('');
-righe.push('insert into assieme.compagnie (id, nome, ultimo_aggiornamento) values');
+righe.push('insert into velia.compagnie (id, nome, ultimo_aggiornamento) values');
 righe.push(
   compagnie
     .map((c) => `  (${apice(c.id)}, ${apice(c.nome)}, ${apice(c.ultimoAggiornamento)})`)
@@ -42,7 +42,7 @@ righe.push(
   'on conflict (id) do update set nome = excluded.nome, ultimo_aggiornamento = excluded.ultimo_aggiornamento;',
 );
 righe.push('');
-righe.push('insert into assieme.rami (id, nome, codice) values');
+righe.push('insert into velia.rami (id, nome, codice) values');
 righe.push(rami.map((r) => `  (${apice(r.id)}, ${apice(r.nome)}, ${apice(r.codice)})`).join(',\n'));
 righe.push('on conflict (id) do update set nome = excluded.nome, codice = excluded.codice;');
 righe.push('');
@@ -58,7 +58,7 @@ const documenti = JSON.parse(
   readFileSync(join(QUI, '..', 'dati', 'catalogo-archivio.json'), 'utf8'),
 );
 righe.push(
-  'insert into assieme.documenti (id, archivio, titolo, tipologia, numero_pagine, pagina_inizio, compagnia_id, ramo_id, prodotto, edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al, edizione_corrente, path_pdf, path_md) values',
+  'insert into velia.documenti (id, archivio, titolo, tipologia, numero_pagine, pagina_inizio, compagnia_id, ramo_id, prodotto, edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al, edizione_corrente, path_pdf, path_md) values',
 );
 righe.push(
   documenti

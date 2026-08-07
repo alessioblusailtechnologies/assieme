@@ -64,7 +64,7 @@ export const routes: Routes = [
         path: 'memoria',
         loadComponent: () =>
           import('@features/memoria/pannello-memoria').then((m) => m.PannelloMemoria),
-        title: 'Memoria — Assieme',
+        title: 'Memoria — Velia',
       },
       {
         /* Fase 5 — costruita; il figlio `mcp` è arrivato con la Fase 7. */

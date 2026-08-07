@@ -6,7 +6,7 @@ import type { APIRoute } from 'astro';
  * fra staging e produzione.
  */
 export const GET: APIRoute = ({ site }) => {
-  const origin = (site?.href ?? 'https://www.assieme.ai').replace(/\/$/, '');
+  const origin = (site?.href ?? 'https://www.sonovelia.it').replace(/\/$/, '');
 
   const body = [
     'User-agent: *',

@@ -38,7 +38,7 @@ export async function accoda(
   try {
     await client.query('begin');
     const inserito = await client.query<{ id: string }>(
-      `insert into assieme.jobs (tipo, payload, tenant_id, utente_id)
+      `insert into velia.jobs (tipo, payload, tenant_id, utente_id)
        values ($1, $2, $3, $4) returning id`,
       [tipo, payload, opzioni.tenantId ?? null, opzioni.utenteId ?? null],
     );
@@ -74,7 +74,7 @@ export async function prossimo(
   const messaggio = letti.rows[0];
   if (!messaggio) return undefined;
 
-  const righe = await db.query<Job>('select * from assieme.jobs where id = $1', [
+  const righe = await db.query<Job>('select * from velia.jobs where id = $1', [
     messaggio.message.jobId,
   ]);
   const job = righe.rows[0];
@@ -98,7 +98,7 @@ export async function aggiornaStatoJob(
   campi: { tentativi?: number; errore?: string | null } = {},
 ): Promise<void> {
   await db.query(
-    `update assieme.jobs
+    `update velia.jobs
      set stato = $2,
          tentativi = coalesce($3, tentativi),
          errore = $4

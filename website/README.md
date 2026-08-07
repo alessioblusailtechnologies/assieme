@@ -1,6 +1,6 @@
-# Sito Assieme
+# Sito Velia
 
-Sito istituzionale di **Assieme**, la piattaforma conversazionale AI per
+Sito istituzionale di **Velia**, la piattaforma conversazionale AI per
 agenzie assicurative, broker e intermediari.
 
 Costruito con [Astro](https://astro.build) in modalità statica: nessun
@@ -38,9 +38,9 @@ Definite in `src/config/env.mjs`, sovrascrivibili dall'ambiente di build:
 
 | Variabile       | Predefinito                | A cosa serve                                     |
 | --------------- | -------------------------- | ------------------------------------------------ |
-| `SITE_URL`      | `https://www.assieme.ai`   | Radice di canonical, sitemap e tag Open Graph     |
-| `APP_URL`       | `https://app.assieme.ai`   | Destinazione del pulsante «Accedi»                |
-| `STATUS_URL`    | `https://status.assieme.ai`| Pagina di stato del servizio                      |
+| `SITE_URL`      | `https://www.sonovelia.it`   | Radice di canonical, sitemap e tag Open Graph     |
+| `APP_URL`       | `https://app.sonovelia.it`   | Destinazione del pulsante «Accedi»                |
+| `STATUS_URL`    | `https://status.sonovelia.it`| Pagina di stato del servizio                      |
 | `FORM_ENDPOINT` | *(vuoto)*                  | Destinatario del modulo «Richiedi una demo»       |
 
 **`FORM_ENDPOINT` è la più importante.** Finché è vuota, il modulo non invia
@@ -50,7 +50,7 @@ moduli o a una funzione serverless.
 
 ### 2. Numeri e affermazioni da verificare
 
-I contenuti sono allineati al documento **«ASSIEME — Analisi dei Requisiti»
+I contenuti sono allineati al documento **«VELIA — Analisi dei Requisiti»
 v0.8 (03/08/2026)**. Quello che il documento non copre è marcato come
 segnaposto e raccolto in un punto solo:
 
@@ -73,7 +73,7 @@ nel documento è un vincolo di costo interno, non un listino.
 
 ### 3. Dati societari
 
-Il titolare è **Blusail Technologies S.r.l.s.**; Assieme è il prodotto.
+Il titolare è **Blusail Technologies S.r.l.s.**; Velia è il prodotto.
 `src/config/site.ts` contiene ragione sociale, e-mail e profili social. Sede
 legale, partita IVA, REA e PEC sono marcati «da completare» nelle pagine
 legali, e l'indirizzo non compare nei dati strutturati finché non è quello
@@ -137,7 +137,7 @@ ogni build.
 
 ## Design
 
-Il sito replica il design consegnato in `../assieme-homepage.html`. Gli stili
+Il sito replica il design consegnato in `../velia-homepage.html`. Gli stili
 inline dell'esportazione sono stati convertiti in un sistema di token
 (`src/styles/tokens.css`) — colori, scala tipografica, spaziature — e in CSS
 con ambito di componente.

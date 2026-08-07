@@ -195,13 +195,13 @@ for (const [locale, remoto, contentType] of caricamenti) {
 /* ---------------------------------------------------------------- cataloga */
 
 if (pulisciFixture) {
-  const via = await db.query(`delete from assieme.documenti where id like 'doc-pub-%'`);
+  const via = await db.query(`delete from velia.documenti where id like 'doc-pub-%'`);
   console.log(`fixture rimosse dal catalogo: ${via.rowCount}`);
 }
 
 for (const d of catalogo) {
   await db.query(
-    `insert into assieme.documenti
+    `insert into velia.documenti
        (id, archivio, titolo, tipologia, numero_pagine, pagina_inizio, compagnia_id, ramo_id, prodotto,
         edizione_id, edizione_etichetta, edizione_valida_dal, edizione_valida_al,
         edizione_corrente, path_pdf, path_md)

@@ -1,7 +1,7 @@
 {
   "uuid": "a551e3e0-0000-4000-8000-000000000001",
   "lastMigration": 33,
-  "name": "ASSIEME — API mock",
+  "name": "VELIA — API mock",
   "port": 3000,
   "hostname": "",
   "endpointPrefix": "api",
@@ -134,7 +134,7 @@
     {
       "uuid": "a551e3e0-0000-4000-8000-000000000010",
       "type": "http",
-      "documentation": "Sessione dell'utente corrente. L'autenticazione vera non esiste ancora: il ruolo arriva dall'header X-Assieme-Ruolo che il pannello di sviluppo imposta. Quando arriverà l'autenticazione vera cambierà solo chi risponde a questa rotta.",
+      "documentation": "Sessione dell'utente corrente. L'autenticazione vera non esiste ancora: il ruolo arriva dall'header X-Velia-Ruolo che il pannello di sviluppo imposta. Quando arriverà l'autenticazione vera cambierà solo chi risponde a questa rotta.",
       "method": "get",
       "endpoint": "sessione",
       "responses": [
@@ -152,7 +152,7 @@
           "rules": [
             {
               "target": "header",
-              "modifier": "X-Assieme-Ruolo",
+              "modifier": "X-Velia-Ruolo",
               "value": "operatore",
               "invert": false,
               "operator": "equals"

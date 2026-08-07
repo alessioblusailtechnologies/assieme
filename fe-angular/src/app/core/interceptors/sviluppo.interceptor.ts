@@ -10,7 +10,7 @@ import { SviluppoStore } from '@core/sviluppo/sviluppo-store';
  * questo interceptor non entra nella catena.
  *
  * Gli header non li legge il front-end: li legge Mockoon, che ha regole di
- * risposta corrispondenti (`mocks/assieme.json`). Il codice applicativo
+ * risposta corrispondenti (`mocks/velia.json`). Il codice applicativo
  * riceve un 500 vero, con un `HttpErrorResponse` vero, e lo gestisce come
  * gestirebbe un 500 di produzione. È l'unico modo per sapere davvero se lo
  * gestisce.
@@ -19,7 +19,7 @@ export const sviluppoInterceptor: HttpInterceptorFn = (req, next) => {
   const dev = inject(SviluppoStore);
 
   const headers: Record<string, string> = {
-    'X-Assieme-Ruolo': dev.ruolo(),
+    'X-Velia-Ruolo': dev.ruolo(),
   };
 
   const latenza = dev.latenzaExtra();

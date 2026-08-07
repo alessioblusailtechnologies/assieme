@@ -37,7 +37,7 @@ const VOCI: VoceSezione[] = [
   {
     percorso: 'mcp',
     etichetta: 'Accesso MCP',
-    spiega: 'ASSIEME come strumento nei client AI esterni',
+    spiega: 'VELIA come strumento nei client AI esterni',
     permesso: 'mcp.credenziali',
   },
 ];

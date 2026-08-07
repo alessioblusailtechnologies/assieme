@@ -1,9 +1,9 @@
 {
-  "name": "assieme-website",
+  "name": "velia-website",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Sito istituzionale di Assieme — la piattaforma conversazionale AI per agenzie, broker e intermediari assicurativi.",
+  "description": "Sito istituzionale di Velia — la piattaforma conversazionale AI per agenzie, broker e intermediari assicurativi.",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

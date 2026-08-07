@@ -8,7 +8,7 @@ import { Permesso, Sessione } from '@core/models';
  * Sessione dell'utente corrente.
  *
  * In questa fase l'autenticazione è finta: il server mock restituisce un
- * utente in base all'header `X-Assieme-Ruolo` che il pannello di sviluppo
+ * utente in base all'header `X-Velia-Ruolo` che il pannello di sviluppo
  * imposta. Quando arriverà l'autenticazione vera cambierà **solo** cosa
  * risponde `GET /api/sessione` — il resto dell'applicazione interroga già
  * `puo()` e non sa da dove venga la risposta.

@@ -5,12 +5,12 @@ export { APP_URL, FORM_ENDPOINT, SITE_URL, STATUS_URL };
 /* -------------------------------------------------------------------------
  * Identità
  *
- * Assieme è il prodotto; il titolare è Blusail Technologies, come da
+ * Velia è il prodotto; il titolare è Blusail Technologies, come da
  * documento di analisi dei requisiti (v0.8).
  * ---------------------------------------------------------------------- */
 
 export const site = {
-  name: 'Assieme',
+  name: 'Velia',
   legalName: 'Blusail Technologies S.r.l.s.',
   /** Usato in `<title>` come suffisso e nei dati strutturati. */
   tagline: 'AI per la distribuzione assicurativa',
@@ -20,11 +20,11 @@ export const site = {
   city: 'Milano',
   country: 'IT',
   foundingYear: 2025,
-  email: 'ciao@assieme.ai',
+  email: 'ciao@sonovelia.it',
   social: {
     linkedin: 'https://www.linkedin.com/company/blusail-technologies',
-    x: 'https://x.com/assieme_ai',
-    youtube: 'https://www.youtube.com/@assieme-ai',
+    x: 'https://x.com/sonovelia',
+    youtube: 'https://www.youtube.com/@sonovelia',
   },
 } as const;
 

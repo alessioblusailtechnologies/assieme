@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 
-const CHIAVE = 'assieme.token';
+const CHIAVE = 'velia.token';
 
 interface TokenSalvati {
   accesso: string;

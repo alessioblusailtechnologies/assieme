@@ -1,8 +1,8 @@
-# ASSIEME — Analisi dei Requisiti
+# VELIA — Analisi dei Requisiti
 
 | Campo | Valore |
 |---|---|
-| Prodotto | ASSIEME |
+| Prodotto | VELIA |
 | Versione documento | 0.9 (bozza) |
 | Data | 04/08/2026 |
 | Stato | In lavorazione |
@@ -14,11 +14,11 @@
 
 ### 1.1 Scopo del documento
 
-Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di ASSIEME, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni, che comprendono sia regole scritte sia documenti di riferimento — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, e alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con sistemi esterni) saranno oggetto di versioni future del documento.
+Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di VELIA, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni, che comprendono sia regole scritte sia documenti di riferimento — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, e alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con sistemi esterni) saranno oggetto di versioni future del documento.
 
 ### 1.2 Ambito del prodotto
 
-ASSIEME è un assistente AI interrogabile in linguaggio naturale, pensato per **agenzie assicurative, broker e intermediari**. Il valore centrale è permettere all'operatore di porre domande, ottenere risposte puntuali ed effettuare confronti su set informativi, condizioni di polizza e preventivi, senza dover leggere manualmente documenti lunghi decine o centinaia di pagine.
+VELIA è un assistente AI interrogabile in linguaggio naturale, pensato per **agenzie assicurative, broker e intermediari**. Il valore centrale è permettere all'operatore di porre domande, ottenere risposte puntuali ed effettuare confronti su set informativi, condizioni di polizza e preventivi, senza dover leggere manualmente documenti lunghi decine o centinaia di pagine.
 
 Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla comparazione documentale su massimo 5 documenti, senza archivio precaricato né integrazioni) è la combinazione di:
 
@@ -35,7 +35,7 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 |---|---|
 | Set informativo | Insieme dei documenti precontrattuali che le compagnie sono obbligate a pubblicare per ciascun prodotto assicurativo (ai sensi del Regolamento IVASS 41/2018): DIP, DIP Aggiuntivo, Condizioni di Assicurazione, glossario. |
 | DIP / DIP Aggiuntivo | Documento Informativo Precontrattuale (base e aggiuntivo) di un prodotto assicurativo. |
-| Archivio Pubblico | Repository documentale precaricato e gestito centralmente da ASSIEME, contenente i set informativi e i documenti pubblici delle compagnie. |
+| Archivio Pubblico | Repository documentale precaricato e gestito centralmente da VELIA, contenente i set informativi e i documenti pubblici delle compagnie. |
 | Archivio Privato | Repository documentale riservato a una singola agenzia/utenza, popolato tramite upload dagli utenti. |
 | Referenziazione | Azione con cui l'utente richiama esplicitamente uno o più documenti (pubblici o privati) all'interno di un messaggio in chat, rendendoli parte del contesto della risposta. |
 | Tenant | Unità organizzativa cliente (agenzia, broker, intermediario) a cui appartengono utenti e Archivio Privato. |
@@ -48,9 +48,9 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 | Tabella di analisi | Tabella strutturata generata dall'AI su un insieme di documenti selezionati (righe) e criteri di estrazione (colonne), con citazione per ogni cella; interrogabile, salvabile ed esportabile. |
 | Documenti di riferimento | Documenti interni del tenant (convenzioni, note tecniche, casistica, testi tipo) che il tenant designa come contesto permanente: l'AI li consulta automaticamente, senza referenziazione esplicita. Risiedono nelle Istruzioni (Modulo D) insieme alle regole scritte, e come queste hanno un ambito di validità. *In versione 0.8 erano un'area dell'Archivio Privato chiamata "knowledge base di agenzia" (ex RF-B-09).* |
 | MCP (Model Context Protocol) | Protocollo standard che permette a client AI esterni (es. Claude, ChatGPT) di utilizzare strumenti e dati esposti da un server terzo. |
-| Server MCP di ASSIEME | Componente della piattaforma che espone le capacità di ASSIEME (ricerca e interrogazione degli archivi) come tool MCP richiamabili dai client AI del tenant. |
+| Server MCP di VELIA | Componente della piattaforma che espone le capacità di VELIA (ricerca e interrogazione degli archivi) come tool MCP richiamabili dai client AI del tenant. |
 | Memoria persistente | Insieme di informazioni durevoli che l'assistente apprende dalle interazioni (prassi, contesto su clienti e pratiche, preferenze) e riutilizza automaticamente nelle conversazioni ed esecuzioni successive del tenant. |
-| DNA d'Agenzia | Nome collettivo dello strato di personalizzazione del tenant: le istruzioni personalizzate del Modulo D — regole scritte (RF-D-04) e documenti di riferimento (RF-D-14) — e la memoria persistente del Modulo G. È ciò che rende le risposte di ASSIEME uniche per ciascuna agenzia. |
+| DNA d'Agenzia | Nome collettivo dello strato di personalizzazione del tenant: le istruzioni personalizzate del Modulo D — regole scritte (RF-D-04) e documenti di riferimento (RF-D-14) — e la memoria persistente del Modulo G. È ciò che rende le risposte di VELIA uniche per ciascuna agenzia. |
 
 ### 1.4 Attori
 
@@ -58,7 +58,7 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 |---|---|
 | Operatore di agenzia | Utente finale principale: agente, subagente, impiegato di agenzia, broker o collaboratore. Consulta gli archivi e interagisce con la chat. |
 | Amministratore di tenant | Utente dell'agenzia con permessi di gestione: utenti del tenant, organizzazione dell'Archivio Privato. |
-| Gestore piattaforma (ASSIEME) | Team interno che cura popolamento, aggiornamento e qualità dell'Archivio Pubblico. |
+| Gestore piattaforma (VELIA) | Team interno che cura popolamento, aggiornamento e qualità dell'Archivio Pubblico. |
 
 ---
 
@@ -83,13 +83,13 @@ Entrambi hanno un ambito di validità (generale, per ramo, per compagnia): un do
 
 Nelle Impostazioni risiede anche la libreria dei template di output: modelli grafici precaricati nei formati PDF, DOCX, XLSX e PPTX che danno coerenza visiva ai documenti generati dalla chat e dagli agenti, personalizzabili con l'identità dell'agenzia.
 
-**Modulo E — Agenti.** Sezione in cui l'utente crea e gestisce agenti: task AI definiti una volta — istruzioni, fonti documentali, output atteso — ed eseguibili sia manualmente su richiesta, sia in modo ricorrente tramite pianificazione. Gli agenti estendono ASSIEME da strumento interrogativo a strumento operativo: attività ripetitive dell'agenzia (es. verifica periodica di nuove edizioni dei set informativi, riepiloghi ricorrenti sui documenti in archivio) vengono automatizzate e producono risultati consultabili e notificati.
+**Modulo E — Agenti.** Sezione in cui l'utente crea e gestisce agenti: task AI definiti una volta — istruzioni, fonti documentali, output atteso — ed eseguibili sia manualmente su richiesta, sia in modo ricorrente tramite pianificazione. Gli agenti estendono VELIA da strumento interrogativo a strumento operativo: attività ripetitive dell'agenzia (es. verifica periodica di nuove edizioni dei set informativi, riepiloghi ricorrenti sui documenti in archivio) vengono automatizzate e producono risultati consultabili e notificati.
 
-**Modulo F — Server MCP.** Componente che espone le capacità della piattaforma verso l'esterno tramite Model Context Protocol: il tenant collega il proprio client AI abituale (Claude, ChatGPT o altro client compatibile) e da lì ricerca e interroga l'Archivio Pubblico e il proprio Archivio Privato come strumenti nativi. ASSIEME diventa così anche infrastruttura, oltre che applicazione: il valore degli archivi raggiunge l'utente anche negli ambienti AI che già utilizza.
+**Modulo F — Server MCP.** Componente che espone le capacità della piattaforma verso l'esterno tramite Model Context Protocol: il tenant collega il proprio client AI abituale (Claude, ChatGPT o altro client compatibile) e da lì ricerca e interroga l'Archivio Pubblico e il proprio Archivio Privato come strumenti nativi. VELIA diventa così anche infrastruttura, oltre che applicazione: il valore degli archivi raggiunge l'utente anche negli ambienti AI che già utilizza.
 
-**Modulo G — Memoria persistente.** L'assistente non riparte da zero a ogni conversazione: apprende e conserva le informazioni durevoli che emergono dal lavoro quotidiano — le prassi dell'agenzia, il contesto su clienti e pratiche ricorrenti, le decisioni già prese, le preferenze di formato — e le riutilizza automaticamente in chat e nelle esecuzioni degli agenti. Con il tempo il sistema conosce l'agenzia come un collaboratore storico: è il meccanismo che rende ASSIEME più prezioso a ogni settimana d'uso e progressivamente più difficile da sostituire. La memoria è trasparente per costruzione: consultabile, modificabile e cancellabile dall'utente.
+**Modulo G — Memoria persistente.** L'assistente non riparte da zero a ogni conversazione: apprende e conserva le informazioni durevoli che emergono dal lavoro quotidiano — le prassi dell'agenzia, il contesto su clienti e pratiche ricorrenti, le decisioni già prese, le preferenze di formato — e le riutilizza automaticamente in chat e nelle esecuzioni degli agenti. Con il tempo il sistema conosce l'agenzia come un collaboratore storico: è il meccanismo che rende VELIA più prezioso a ogni settimana d'uso e progressivamente più difficile da sostituire. La memoria è trasparente per costruzione: consultabile, modificabile e cancellabile dall'utente.
 
-I meccanismi di personalizzazione — le istruzioni del Modulo D, nelle loro due nature di regole scritte (RF-D-04) e documenti di riferimento (RF-D-14), e la memoria persistente del Modulo G — formano insieme il **DNA d'Agenzia**: le regole dette, i documenti di riferimento e il contesto appreso che rendono le risposte di ASSIEME uniche per ciascun tenant. Il DNA d'Agenzia cresce con l'uso, non è replicabile da un concorrente che parte da zero e costituisce il principale valore accumulato dal cliente sulla piattaforma.
+I meccanismi di personalizzazione — le istruzioni del Modulo D, nelle loro due nature di regole scritte (RF-D-04) e documenti di riferimento (RF-D-14), e la memoria persistente del Modulo G — formano insieme il **DNA d'Agenzia**: le regole dette, i documenti di riferimento e il contesto appreso che rendono le risposte di VELIA uniche per ciascun tenant. Il DNA d'Agenzia cresce con l'uso, non è replicabile da un concorrente che parte da zero e costituisce il principale valore accumulato dal cliente sulla piattaforma.
 
 La linea di separazione è il **modo in cui nascono**: le istruzioni sono deliberate e autorevoli — qualcuno le ha scritte o caricate — mentre la memoria è dedotta e fallibile. Da qui discende la precedenza sancita da RF-G-04: in caso di conflitto vincono le istruzioni. E da qui discende anche il criterio pratico con cui l'utente sceglie dove mettere una cosa: se è una regola su *come giudicare* è una regola scritta; se è un contenuto che va citato, o è più lungo di una pagina, è un documento di riferimento.
 
@@ -197,7 +197,7 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | RF-F-02 | L'accesso via MCP DEVE avvenire con credenziali dedicate per tenant/utente, generabili e revocabili dalla sezione Impostazioni, e DEVE rispettare le stesse regole di isolamento e visibilità dell'applicazione (RF-B-01, RF-B-07). | M |
 | RF-F-03 | Le interazioni effettuate via MCP DEVONO essere conteggiate nei limiti di piano del tenant al pari di quelle in applicazione e tracciate nei log (RNF-05, RNF-07). | M |
 | RF-F-04 | La piattaforma DOVREBBE fornire documentazione di configurazione per i principali client MCP e mostrare in Impostazioni lo stato delle connessioni attive. | S |
-| RF-F-05 | La documentazione DEVE chiarire che le risposte generate nel client esterno non sono governate dalle istruzioni personalizzate né dai vincoli di citazione di ASSIEME; il sistema POTREBBE esporre le istruzioni del tenant come risorsa MCP opzionale per mitigare questo scarto. | M/C |
+| RF-F-05 | La documentazione DEVE chiarire che le risposte generate nel client esterno non sono governate dalle istruzioni personalizzate né dai vincoli di citazione di VELIA; il sistema POTREBBE esporre le istruzioni del tenant come risorsa MCP opzionale per mitigare questo scarto. | M/C |
 | RF-F-06 | L'esposizione via MCP di capacità avanzate (tabelle di analisi, esecuzione di agenti, generazione su template) POTREBBE essere introdotta in versioni successive, previa valutazione di sicurezza e costi. | C |
 
 ### 3.7 Modulo G — Memoria persistente
@@ -231,10 +231,10 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 ## 5. Vincoli e assunzioni
 
 1. **Lingua e mercato:** prima release focalizzata su mercato italiano e documentazione in lingua italiana.
-2. **Naming e dominio:** il nome di prodotto confermato è ASSIEME; la scelta del dominio è in corso e non impatta i requisiti qui descritti.
+2. **Naming e dominio:** il nome di prodotto confermato è VELIA; la scelta del dominio è in corso e non impatta i requisiti qui descritti.
 3. **Cliente pilota:** è disponibile un'agenzia assicurativa pilota con documenti reali; il test case di riferimento per il Modulo C è il confronto ramo auto tra polizza Cattolica/Generali "Active Veicoli AUTOPIÙ con Telematica" e un preventivo Unipol sullo stesso veicolo.
 4. **Dipendenza da provider AI terzi:** il sistema si appoggia a modelli di provider esterni; disponibilità, versioni, prezzi e termini d'uso sono variabili esogene. Il layer di astrazione multi-provider (RF-D-02) è il presidio architetturale di questo rischio.
-5. **Perimetro della prima release:** le automazioni verticali su rinnovi/retention e le integrazioni con sistemi esterni restano fuori dal perimetro di questo documento; la sezione Agenti (Modulo E) ne costituisce però la base abilitante, e i moduli qui descritti devono essere progettati senza precluderne l'introduzione. Fa eccezione il server MCP (Modulo F), che non è un'integrazione con i gestionali di agenzia ma un'esposizione di ASSIEME verso i client AI dell'utente.
+5. **Perimetro della prima release:** le automazioni verticali su rinnovi/retention e le integrazioni con sistemi esterni restano fuori dal perimetro di questo documento; la sezione Agenti (Modulo E) ne costituisce però la base abilitante, e i moduli qui descritti devono essere progettati senza precluderne l'introduzione. Fa eccezione il server MCP (Modulo F), che non è un'integrazione con i gestionali di agenzia ma un'esposizione di VELIA verso i client AI dell'utente.
 
 ---
 
@@ -248,7 +248,7 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | 4 | **Limite documenti per conversazione (RF-C-07):** fissare il valore effettivo in base a test su contesto, qualità e costi. | UX e posizionamento competitivo. |
 | 5 | **Granularità della visibilità nell'Archivio Privato (RF-B-07):** serve davvero il livello per-utente in prima release o basta il livello tenant? Da validare col cliente pilota. | Scope prima release. |
 | 6 | **Gestione documenti scansionati (RF-B-06):** OCR in prima release o rimandato? | Scope prima release. |
-| 7 | **Provider e modelli supportati al lancio (RF-D-02):** quali provider/modelli offrire in prima release e con quale granularità di scelta (solo a livello tenant o anche per singola conversazione)? Gestione delle chiavi API: incluse nel servizio ASSIEME o "bring your own key"? Impatta direttamente RNF-05 e il pricing. | Decisione di prodotto e commerciale. |
+| 7 | **Provider e modelli supportati al lancio (RF-D-02):** quali provider/modelli offrire in prima release e con quale granularità di scelta (solo a livello tenant o anche per singola conversazione)? Gestione delle chiavi API: incluse nel servizio VELIA o "bring your own key"? Impatta direttamente RNF-05 e il pricing. | Decisione di prodotto e commerciale. |
 | 8 | **Governance delle istruzioni (RF-D-04, RF-D-14):** chi può crearle e modificarle (solo l'amministratore?), serve un flusso di approvazione, e come intercettare istruzioni mal formulate che degradano la qualità delle risposte? Vale per le regole scritte quanto per i documenti di riferimento. | Qualità e responsabilità professionale. |
 | 9 | **Sostenibilità delle esecuzioni schedulate (RF-E-04, RF-E-09):** le esecuzioni ricorrenti consumano AI anche senza utente attivo; da definire i limiti di piano (frequenza minima, numero di run mensili inclusi) per non erodere la marginalità del canone. | Sostenibilità economica (RNF-05). |
 | 10 | **Canali di notifica degli agenti (RF-E-07):** solo in-app o anche email/altri canali? Da validare col cliente pilota. | UX e scope prima release. |

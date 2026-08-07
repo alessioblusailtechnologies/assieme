@@ -65,7 +65,7 @@ $bWhite  = New-Object System.Drawing.SolidBrush($white)
 $bMuted  = New-Object System.Drawing.SolidBrush($muted)
 $bAccent = New-Object System.Drawing.SolidBrush($accent)
 
-$g.DrawString('ASSIEME', $fMark, $bWhite, 72, 66)
+$g.DrawString('VELIA', $fMark, $bWhite, 72, 66)
 
 $penLine = New-Object System.Drawing.Pen($lineDark, 1)
 $g.DrawLine($penLine, 72, 138, $w - 72, 138)
@@ -78,7 +78,7 @@ $g.DrawString('AI per agenzie, broker e intermediari assicurativi', $fBody, $bMu
 $g.DrawLine($penLine, 72, 520, $w - 72, 520)
 $g.DrawString('DOCUMENTI · CONFRONTO · FONTE SEMPRE CITATA', $fMono, $bAccent, 70, 548)
 
-$c.Bitmap.Save((Join-Path $public 'og\assieme-default.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$c.Bitmap.Save((Join-Path $public 'og\velia-default.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose(); $c.Bitmap.Dispose()
 
 # --------------------------------------------------------------------------
@@ -91,7 +91,7 @@ $fmt = New-Object System.Drawing.StringFormat
 $fmt.Alignment = 'Center'
 $fmt.LineAlignment = 'Center'
 $g.DrawString('A', $fLogo, $bWhite, (New-Object System.Drawing.RectangleF(0, -14, 512, 512)), $fmt)
-$c.Bitmap.Save((Join-Path $public 'og\assieme-logo.png'), [System.Drawing.Imaging.ImageFormat]::Png)
+$c.Bitmap.Save((Join-Path $public 'og\velia-logo.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose(); $c.Bitmap.Dispose()
 
 # --------------------------------------------------------------------------

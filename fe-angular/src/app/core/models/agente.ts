@@ -4,7 +4,7 @@ import { Id, IsoDateTime } from './comune';
 
 /**
  * Agenti (Modulo E): task AI definiti una volta ed eseguibili su richiesta o
- * su pianificazione. È ciò che estende ASSIEME da strumento interrogativo a
+ * su pianificazione. È ciò che estende VELIA da strumento interrogativo a
  * strumento operativo.
  */
 

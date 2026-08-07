@@ -25,7 +25,7 @@ const promises = [
     id: 'non-copertura',
     mark: 'Non so',
     name: 'Mai una risposta inventata',
-    body: 'Se nei documenti la risposta non c\'è, Assieme lo dice. Nelle tabelle la casella riporta "non presente". Un dato verosimile ma sbagliato su una garanzia è peggio di un dato mancante.',
+    body: 'Se nei documenti la risposta non c\'è, Velia lo dice. Nelle tabelle la casella riporta "non presente". Un dato verosimile ma sbagliato su una garanzia è peggio di un dato mancante.',
   },
   {
     id: 'isolamento',
@@ -49,7 +49,7 @@ const promises = [
     id: 'memoria',
     mark: 'Memoria',
     name: 'Che controlli tu',
-    body: "Quello che Assieme impara lo puoi leggere, correggere e cancellare. I dati sanitari degli assicurati non li registra affatto, e le tue regole vengono sempre prima di quello che ha dedotto.",
+    body: "Quello che Velia impara lo puoi leggere, correggere e cancellare. I dati sanitari degli assicurati non li registra affatto, e le tue regole vengono sempre prima di quello che ha dedotto.",
   },
 ];
 
@@ -64,7 +64,7 @@ const faq = [
   },
   {
     q: 'Posso fidarmi senza rileggere il documento?',
-    a: "La risposta ti dice dove guardare, e dalla citazione apri il punto esatto. Assieme accorcia il tempo della verifica, non ti solleva dal farla: la consulenza la firmi tu.",
+    a: "La risposta ti dice dove guardare, e dalla citazione apri il punto esatto. Velia accorcia il tempo della verifica, non ti solleva dal farla: la consulenza la firmi tu.",
   },
   {
     q: 'Avete certificazioni di sicurezza?',
@@ -86,13 +86,13 @@ const faqSchema = {
 
 <BaseLayout
   title="Sicurezza"
-  description="Ogni risposta citata, mai una risposta inventata, documenti riservati alla tua agenzia e memoria che controlli tu: gli impegni di Assieme."
+  description="Ogni risposta citata, mai una risposta inventata, documenti riservati alla tua agenzia e memoria che controlli tu: gli impegni di Velia."
   schema={[faqSchema]}
 >
   <PageHero
     eyebrow="Sicurezza"
     title="Un dato sbagliato è peggio di un dato mancante"
-    lead="Di quello che consigli rispondi tu. Per questo l'accuratezza in Assieme non è una funzione fra le altre: è il vincolo attorno a cui è costruito il resto."
+    lead="Di quello che consigli rispondi tu. Per questo l'accuratezza in Velia non è una funzione fra le altre: è il vincolo attorno a cui è costruito il resto."
   />
 
   <Breadcrumbs trail={[{ label: 'Sicurezza', href: '/sicurezza' }]} />

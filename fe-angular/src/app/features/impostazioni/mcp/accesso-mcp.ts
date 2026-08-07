@@ -23,7 +23,7 @@ import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
  *
  * L'avvertenza di RF-F-05 sta accanto alle istruzioni: le risposte generate
  * nel client esterno non passano dalle istruzioni del tenant né dai vincoli
- * di citazione di ASSIEME — chi configura deve saperlo da subito.
+ * di citazione di VELIA — chi configura deve saperlo da subito.
  */
 @Component({
   selector: 'app-accesso-mcp',
@@ -125,13 +125,13 @@ export class AccessoMcp {
 
   // --- Istruzioni di configurazione (RF-F-04) -----------------------------
 
-  /** L'endpoint del server MCP di ASSIEME, come lo vedrà il client. */
-  protected readonly endpointMcp = 'https://mcp.assieme.it/v1';
+  /** L'endpoint del server MCP di VELIA, come lo vedrà il client. */
+  protected readonly endpointMcp = 'https://mcp.velia.it/v1';
 
   protected readonly esempioConfigurazione = `{
   "mcpServers": {
-    "assieme": {
-      "url": "${'https://mcp.assieme.it/v1'}",
+    "velia": {
+      "url": "${'https://mcp.velia.it/v1'}",
       "headers": { "Authorization": "Bearer <il tuo token>" }
     }
   }

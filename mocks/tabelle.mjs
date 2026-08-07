@@ -55,7 +55,7 @@ let prossimaCitazione = 500;
  * collega si apre in sola lettura, e la distinzione parte da qui (RF-C-15).
  */
 const utenteCorrente = (req) =>
-  req.headers['x-assieme-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
+  req.headers['x-velia-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
 
 // ---------------------------------------------------------------------------
 // Generazione progressiva

@@ -108,7 +108,7 @@ export function generaDocx(titolo, testo, fonti = []) {
 
   const corpo = [
     paragrafo(titolo, true),
-    paragrafo('Documento simulato — generato da ASSIEME su template'),
+    paragrafo('Documento simulato — generato da VELIA su template'),
     paragrafo(''),
     ...testo
       .replaceAll('**', '')

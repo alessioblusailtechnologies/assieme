@@ -25,7 +25,7 @@ const pronto = Boolean(
     !config.DATABASE_URL.includes('PASSWORD_MANCANTE'),
 );
 
-const PASSWORD_DEMO = 'assieme-demo-2026!';
+const PASSWORD_DEMO = 'velia-demo-2026!';
 
 async function accedi(app: FastifyInstance, email: string): Promise<string> {
   const r = await app.inject({

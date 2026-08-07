@@ -2,7 +2,7 @@
  * Token di design — allineati al design system della piattaforma
  * (fe-angular/src/styles/_tokens.scss): la stessa scala di **neutri caldi**
  * — tinta ferma, bianchi puliti in alto, scuri senza deriva marrone — e lo
- * stesso blu Assieme come segnale. Chi passa dal sito alla demo deve
+ * stesso blu Velia come segnale. Chi passa dal sito alla demo deve
  * riconoscere lo stesso prodotto.
  *
  * I nomi dei token restano quelli del sito (`--f-serif` compreso, anche se
@@ -47,7 +47,7 @@
   --c-text-oninverse-hatch: #7d7970;
 
   /* ---------- Colore: accento ---------- */
-  --c-accent: #2f4b7c; /* blu Assieme */
+  --c-accent: #2f4b7c; /* blu Velia */
   --c-accent-soft: #e9eef6; /* fondo dei chip di citazione */
   --c-accent-on-dark: #7f97c4; /* accento leggibile su fondo scuro */
   --c-accent-hover: #9fb4d6; /* schiarita dei link su fondo scuro */

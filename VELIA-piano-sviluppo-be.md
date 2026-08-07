@@ -1,11 +1,11 @@
-# ASSIEME — Piano di sviluppo Back-end
+# VELIA — Piano di sviluppo Back-end
 
 | Campo | Valore |
 |---|---|
 | Documento | Piano di sviluppo BE |
 | Versione | 0.1 (bozza) |
 | Data | 07/08/2026 |
-| Riferimenti | `ASSIEME-analisi-requisiti.md` v0.9 · `ASSIEME-motore-agentico.md` v0.1 · `ASSIEME-piano-sviluppo-fe.md` v0.4 |
+| Riferimenti | `VELIA-analisi-requisiti.md` v0.9 · `VELIA-motore-agentico.md` v0.1 · `VELIA-piano-sviluppo-fe.md` v0.4 |
 | Stack | Node.js · Supabase (Postgres, Auth, Storage, Queues) |
 | Progetto | `be-node/` (nuova cartella, stesso repository) |
 
@@ -19,13 +19,13 @@ Il contratto esiste già, in tre forme che devono restare la fonte di verità:
 
 1. **le interfacce TypeScript** in `fe-angular/src/app/core/models/` — la forma dei dati;
 2. **i servizi** in `fe-angular/src/app/core/api/` — rotte, verbi, codici di errore attesi;
-3. **il mock eseguibile** (`mocks/assieme.json` + `mocks/*.mjs`) — il comportamento: idratazione dei riferimenti, macchine a stati, framing SSE, file generati.
+3. **il mock eseguibile** (`mocks/velia.json` + `mocks/*.mjs`) — il comportamento: idratazione dei riferimenti, macchine a stati, framing SSE, file generati.
 
 Il backend non progetta un'API nuova: **onora questa**. Ogni deviazione necessaria è una modifica di contratto, va discussa e riportata nei modelli FE e nei mock, mai introdotta di nascosto.
 
 **Criterio di uscita per ogni fase:** il proxy Mockoon in modalità inoltro punta al backend, le rotte implementate vengono tolte dal mock, e l'applicazione FE funziona identica a prima — questa è la transizione graduale già prevista dal piano FE (§6): si passa endpoint per endpoint, con l'applicazione sempre in piedi.
 
-**Prerequisito dichiarato:** il motore agentico va validato **prima** di costruirci attorno l'idraulica (`ASSIEME-motore-agentico.md` §8, `esperimento-motore/`). Le misure già raccolte (06/08/2026: 0,43–0,99 USD e 94–128 s per domanda puntuale su percorso agentico) alimentano le decisioni su modello, budget per query e percorsi rapidi futuri.
+**Prerequisito dichiarato:** il motore agentico va validato **prima** di costruirci attorno l'idraulica (`VELIA-motore-agentico.md` §8, `esperimento-motore/`). Le misure già raccolte (06/08/2026: 0,43–0,99 USD e 94–128 s per domanda puntuale su percorso agentico) alimentano le decisioni su modello, budget per query e percorsi rapidi futuri.
 
 ---
 
@@ -116,7 +116,7 @@ Conseguenze da non perdere:
 
 ### 3.2 Autenticazione: cosa sostituisce cosa
 
-Nel mock la sessione è finta e il ruolo viaggia in `X-Assieme-Ruolo`. Nel backend:
+Nel mock la sessione è finta e il ruolo viaggia in `X-Velia-Ruolo`. Nel backend:
 
 - login e sessione con Supabase Auth (email/password; l'invito nasce `invitato` e diventa attivo al primo accesso — contratto Fase 5 FE);
 - il JWT porta `tenant_id` e `ruolo` (`operatore` | `amministratore`) in `app_metadata` — mai modificabili dall'utente;
@@ -130,7 +130,7 @@ L'interceptor FE che oggi aggiunge l'header di sviluppo diventerà l'interceptor
 
 ## 4. I documenti vivono in due mondi
 
-È la decisione architetturale centrale, e discende da `ASSIEME-motore-agentico.md`: **il filesystem È l'indice**. Postgres cataloga, Storage conserva, ma il motore naviga un albero di file Markdown.
+È la decisione architetturale centrale, e discende da `VELIA-motore-agentico.md`: **il filesystem È l'indice**. Postgres cataloga, Storage conserva, ma il motore naviga un albero di file Markdown.
 
 ### 4.1 Chi è la verità su cosa
 
@@ -216,13 +216,13 @@ Stime per **uno sviluppatore BE a tempo pieno**, da ricalibrare dopo la Fase 0. 
 **Decisioni di infrastruttura da sapere:**
 
 - **Niente Supabase locale su questa macchina** (indicazione del committente): si lavora sul progetto online `hcxiloivukbdcfcugksg` (eu-north-1). Lo stack effimero della CLI gira **solo in CI**.
-- **Il progetto è condiviso con altre applicazioni** (tabelle in `public`, schema `koya`): tutto ASSIEME vive nello **schema `assieme`** — tabelle e funzioni. `public` non si tocca.
-- **Ruolo dedicato `assieme_app`**: login del worker e dei test, proprietario delle sole tabelle ASSIEME (quindi bypassa la RLS *solo* lì), membro di `authenticated` per il `set local role` di `conIdentita`. La password di `postgres` non è mai servita. **Ogni migrazione futura che crea tabelle deve chiudersi con `alter table … owner to assieme_app`.**
+- **Il progetto è condiviso con altre applicazioni** (tabelle in `public`, schema `koya`): tutto VELIA vive nello **schema `velia`** — tabelle e funzioni. `public` non si tocca.
+- **Ruolo dedicato `velia_app`**: login del worker e dei test, proprietario delle sole tabelle VELIA (quindi bypassa la RLS *solo* lì), membro di `authenticated` per il `set local role` di `conIdentita`. La password di `postgres` non è mai servita. **Ogni migrazione futura che crea tabelle deve chiudersi con `alter table … owner to velia_app`.**
 - **JWT legacy HS256**: il progetto ha il JWKS vuoto; la verifica usa `SUPABASE_JWT_SECRET` in `.env`. Se il progetto migrasse alle signing key, si toglie la variabile e il plugin passa da solo al JWKS.
 - **`supabase db push` è rotto su questo progetto** (il ruolo `cli_login_postgres` della piattaforma non è più alterabile): le migrazioni si applicano via Management API (`POST /v1/projects/:ref/database/query`) e si registrano a mano in `supabase_migrations.schema_migrations`.
-- **La connessione diretta passa dal session pooler** (`aws-1-eu-north-1.pooler.supabase.com:5432`, utente `assieme_app.<ref>`): LISTEN/NOTIFY non attraversa il transaction pooler. Password nel `DATABASE_URL` percent-encoded.
+- **La connessione diretta passa dal session pooler** (`aws-1-eu-north-1.pooler.supabase.com:5432`, utente `velia_app.<ref>`): LISTEN/NOTIFY non attraversa il transaction pooler. Password nel `DATABASE_URL` percent-encoded.
 - **La RLS filtra, non lancia**: una scrittura senza policy tocca 0 righe senza errore. I test di isolamento contano le righe, non aspettano eccezioni.
-- **PostgREST espone anche `assieme`** (`db_schema: public,graphql_public,koya,assieme`): nei futuri PATCH di configurazione vanno **preservati gli schemi altrui**.
+- **PostgREST espone anche `velia`** (`db_schema: public,graphql_public,koya,velia`): nei futuri PATCH di configurazione vanno **preservati gli schemi altrui**.
 - Codici d'errore aggiunti al vocabolario del mock: `NON_AUTENTICATO` (401, il mock non aveva autenticazione) e `DATI_NON_VALIDI` (400 di validazione).
 
 ### Fase 1 — Archivio Pubblico e ingestion · ~8 giorni · RF-A-01…A-07, A-09
@@ -328,7 +328,7 @@ Isolata perché tre moduli la riusano (chat, tabelle, agenti) e perché la fedel
 - `mcp/`: server MCP che espone **ricerca per metadati, lettura/estratto, interrogazione di un documento** su entrambi gli archivi — sono gli stessi servizi dell'API e la stessa preparazione del filesystem: un motore solo, più ingressi
 - Autenticazione con credenziali dedicate (Fase 7 FE: token in chiaro una volta sola, hash sul server, revoca definitiva che chiude le connessioni); stato connessioni in Impostazioni
 - **Stesso isolamento e stessi conteggi** (RF-F-02/03): le chiamate MCP passano dal medesimo strato di autorizzazione e scrivono in `consumi` con origine `mcp`
-- Documentazione di configurazione per i client principali + avvertenza RF-F-05 (le risposte nel client esterno non sono governate dalle istruzioni ASSIEME); l'esposizione delle istruzioni come risorsa MCP opzionale: C, dopo-lancio
+- Documentazione di configurazione per i client principali + avvertenza RF-F-05 (le risposte nel client esterno non sono governate dalle istruzioni VELIA); l'esposizione delle istruzioni come risorsa MCP opzionale: C, dopo-lancio
 - Capacità avanzate via MCP (RF-F-06): fuori, come da requisito
 
 **Totale indicativo: ~65 giorni-uomo** (~13 settimane per una persona), esclusi i punti rimandati dichiarati. La Fase 3 è quella con la varianza più alta: dipende da quanto l'esperimento del motore ha già sgrossato prompt e conversione.

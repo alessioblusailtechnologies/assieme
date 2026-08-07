@@ -18,7 +18,7 @@ export interface GruppoNavigazione {
  * Navigazione principale.
  *
  * I gruppi non seguono i moduli dei requisiti ma **il lavoro dell'utente**:
- * chi apre ASSIEME al mattino vuole chiedere qualcosa o confrontare
+ * chi apre VELIA al mattino vuole chiedere qualcosa o confrontare
  * qualcosa, non "accedere al Modulo C". Gli archivi vengono dopo, perché si
  * consultano quando serve; automazione e agenzia stanno in fondo, perché si
  * configurano una volta e si toccano di rado.

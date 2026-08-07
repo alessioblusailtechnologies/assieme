@@ -56,7 +56,7 @@ function verificatoreSupabase(): VerificaToken {
 
 /**
  * Autenticazione su ogni rotta: Bearer token di Supabase Auth → `identita`
- * sulla richiesta. Sostituisce l'header di sviluppo `X-Assieme-Ruolo` del
+ * sulla richiesta. Sostituisce l'header di sviluppo `X-Velia-Ruolo` del
  * mock: il ruolo e il tenant arrivano da `app_metadata`, che l'utente non
  * può scrivere.
  *

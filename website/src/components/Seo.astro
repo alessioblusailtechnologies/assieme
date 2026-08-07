@@ -21,8 +21,8 @@ const {
   title,
   description,
   canonical,
-  image = '/og/assieme-default.png',
-  imageAlt = 'Assieme — la piattaforma AI per la distribuzione assicurativa',
+  image = '/og/velia-default.png',
+  imageAlt = 'Velia — la piattaforma AI per la distribuzione assicurativa',
   ogType = 'website',
   noindex = false,
   schema = [],
@@ -56,12 +56,12 @@ const organizationSchema = {
   url: SITE_URL,
   logo: {
     '@type': 'ImageObject',
-    url: new URL('/og/assieme-logo.png', SITE_URL).href,
+    url: new URL('/og/velia-logo.png', SITE_URL).href,
     width: 512,
     height: 512,
   },
   description:
-    'Assieme è l’assistente AI per agenzie assicurative, broker e intermediari: un archivio di set informativi già pronto, i documenti dell’agenzia accanto ai loro e ogni risposta con la citazione al passaggio di origine.',
+    'Velia è l’assistente AI per agenzie assicurative, broker e intermediari: un archivio di set informativi già pronto, i documenti dell’agenzia accanto ai loro e ogni risposta con la citazione al passaggio di origine.',
   foundingDate: String(site.foundingYear),
   email: site.email,
   // Indirizzo completo volutamente assente: meglio nessun dato che uno

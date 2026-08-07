@@ -6,7 +6,7 @@
  * 1. **Lo storico** (RF-D-07): ogni mutazione — regola, documento di
  *    riferimento, modello, template — lascia una voce «chi, cosa, quando».
  * 2. **Il permesso**: le scritture sono dell'amministratore. Il mock lo
- *    applica davvero leggendo `X-Assieme-Ruolo`, così il pannello di
+ *    applica davvero leggendo `X-Velia-Ruolo`, così il pannello di
  *    sviluppo mostra l'interfaccia com'è per un operatore — e il 403 del
  *    server resta l'ultima linea anche se l'interfaccia sbagliasse.
  *
@@ -75,11 +75,11 @@ export function elencoTemplate() {
 // ---------------------------------------------------------------------------
 
 const utenteCorrente = (req) =>
-  req.headers['x-assieme-ruolo'] === 'amministratore'
+  req.headers['x-velia-ruolo'] === 'amministratore'
     ? { id: 'utn-001', nome: 'Marta Ferrero' }
     : { id: 'utn-004', nome: 'Davide Lo Bianco' };
 
-const amministratore = (req) => req.headers['x-assieme-ruolo'] === 'amministratore';
+const amministratore = (req) => req.headers['x-velia-ruolo'] === 'amministratore';
 
 function vietato(res, inviaJson) {
   inviaJson(res, 403, {
@@ -472,7 +472,7 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         '{{titolo}} — titolo del documento',
         '{{destinatario}} — cliente o pratica',
         '{{data}} — data di generazione',
-        '{{corpo}} — contenuto generato da ASSIEME',
+        '{{corpo}} — contenuto generato da VELIA',
         '{{tabella}} — tabelle comparative, dove previste',
         '',
         `Intestazione e piè di pagina applicano l’identità visiva dell’agenzia:`,

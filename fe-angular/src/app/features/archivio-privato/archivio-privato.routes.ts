@@ -17,12 +17,12 @@ export const ARCHIVIO_PRIVATO_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () => import('./elenco/elenco-privati').then((m) => m.ElencoPrivati),
-        title: 'Archivio privato — Assieme',
+        title: 'Archivio privato — Velia',
       },
       {
         path: ':id',
         loadComponent: () => import('./dettaglio/dettaglio-privato').then((m) => m.DettaglioPrivato),
-        title: 'Documento — Assieme',
+        title: 'Documento — Velia',
       },
     ],
   },

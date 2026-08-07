@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "mock": "mockoon-cli start --data ../mocks/assieme.json --port 3000 --disable-log-to-file",
+    "mock": "mockoon-cli start --data ../mocks/velia.json --port 3000 --disable-log-to-file",
     "mock:api": "node ../mocks/api-stub.mjs",
     "dev": "concurrently -n mockoon,api,be,ng -c blue,magenta,yellow,green \"npm:mock\" \"npm:mock:api\" \"npm:be\" \"npm:start\"",
     "demo:serve": "node ../tools/serve-demo.mjs",

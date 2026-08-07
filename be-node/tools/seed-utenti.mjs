@@ -1,6 +1,6 @@
 /**
  * Crea gli utenti demo (fixture `mocks/data/utenti.json`) su Supabase Auth
- * e le righe di profilo in `assieme.utenti`. Idempotente: al secondo giro
+ * e le righe di profilo in `velia.utenti`. Idempotente: al secondo giro
  * aggiorna invece di duplicare.
  *
  * Richiede .env compilato (service role). Password demo uguale per tutti,
@@ -28,11 +28,11 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 }
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
-const PASSWORD_DEMO = 'assieme-demo-2026!';
+const PASSWORD_DEMO = 'velia-demo-2026!';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
   auth: { autoRefreshToken: false, persistSession: false },
-  db: { schema: 'assieme' },
+  db: { schema: 'velia' },
 });
 
 const utenti = JSON.parse(

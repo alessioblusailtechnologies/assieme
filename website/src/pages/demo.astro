@@ -26,7 +26,7 @@ const contactSchema = {
   '@context': 'https://schema.org',
   '@type': 'ContactPage',
   '@id': `${SITE_URL}/demo#contactpage`,
-  name: 'Richiedi una demo di Assieme',
+  name: 'Richiedi una demo di Velia',
   inLanguage: 'it-IT',
   isPartOf: { '@id': `${SITE_URL}/#website` },
   about: { '@id': `${SITE_URL}/#organization` },
@@ -35,14 +35,14 @@ const contactSchema = {
 
 <BaseLayout
   title="Richiedi una demo"
-  description="Trenta minuti, un tuo capitolato e nessun impegno: prenota una demo di Assieme e guarda la piattaforma lavorare sui documenti della tua agenzia."
+  description="Trenta minuti, un tuo capitolato e nessun impegno: prenota una demo di Velia e guarda la piattaforma lavorare sui documenti della tua agenzia."
   announcement={false}
   schema={[contactSchema]}
 >
   <PageHero
     eyebrow="Demo"
     title="Portaci un capitolato, ti mostriamo il confronto"
-    lead="Le demo generiche non convincono nessuno. Preferiamo lavorare su un documento vero: in mezz'ora capisci se Assieme ti fa risparmiare tempo oppure no."
+    lead="Le demo generiche non convincono nessuno. Preferiamo lavorare su un documento vero: in mezz'ora capisci se Velia ti fa risparmiare tempo oppure no."
   />
 
   <Breadcrumbs trail={[{ label: 'Richiedi una demo', href: '/demo' }]} />
@@ -435,7 +435,7 @@ const contactSchema = {
       if (!form.getAttribute('action')) {
         event.preventDefault();
         errorBox.textContent =
-          'Invio non configurato su questo ambiente. Scrivi a ciao@assieme.ai e ti rispondiamo subito.';
+          'Invio non configurato su questo ambiente. Scrivi a ciao@sonovelia.it e ti rispondiamo subito.';
         errorBox.hidden = false;
       }
     });

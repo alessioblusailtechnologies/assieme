@@ -35,7 +35,7 @@ registerLocaleData(localeIt);
 
 /*
  * Nessuna libreria di componenti: l'interfaccia è il design system di
- * ASSIEME — le classi in `styles/_ui.scss` e i componenti in `shared/ui`.
+ * VELIA — le classi in `styles/_ui.scss` e i componenti in `shared/ui`.
  */
 export const appConfig: ApplicationConfig = {
   providers: [

@@ -22,7 +22,7 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 const RICORDI = JSON.parse(readFileSync(join(QUI, 'data', 'ricordi.json'), 'utf8'));
 
 const utenteCorrente = (req) =>
-  req?.headers['x-assieme-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
+  req?.headers['x-velia-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
 
 const AMBITI = ['tenant', 'personale'];
 const CATEGORIE = ['prassi', 'cliente', 'preferenza', 'decisione', 'altro'];

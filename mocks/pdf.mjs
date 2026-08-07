@@ -39,7 +39,7 @@ const scappa = (testo) => testo.replace(/[\\()]/g, (c) => `\\${c}`);
 /** Righe di riempimento, deterministiche per pagina: la demo è ripetibile. */
 function righePagina(titolo, pagina, totale) {
   const righe = [
-    { testo: 'DOCUMENTO SIMULATO - ambiente di sviluppo ASSIEME', dim: 8 },
+    { testo: 'DOCUMENTO SIMULATO - ambiente di sviluppo VELIA', dim: 8 },
     { testo: '', dim: 10 },
     { testo: titolo, dim: 14 },
     { testo: `Pagina ${pagina} di ${totale}`, dim: 9 },
@@ -94,7 +94,7 @@ export function generaPdfDaTesto(titolo, testo) {
 
   return componiPdf(sanifica(titolo), paginate.length || 1, (pagina) => {
     const contenuto = [
-      { testo: 'DOCUMENTO SIMULATO - generato da ASSIEME su template', dim: 8 },
+      { testo: 'DOCUMENTO SIMULATO - generato da VELIA su template', dim: 8 },
       { testo: '', dim: 10 },
       ...(pagina === 1 ? [{ testo: sanifica(titolo), dim: 14 }, { testo: '', dim: 10 }] : []),
     ];
