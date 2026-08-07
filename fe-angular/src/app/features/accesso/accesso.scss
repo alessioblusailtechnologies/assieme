@@ -1,48 +1,68 @@
 /*
- * Due pannelli: la scena e la porta.
+ * Una superficie sola, non due blocchi.
  *
- * A sinistra l'inchiostro caldo del sito con il grafo della memoria viva —
- * la stessa figura di /memoria e della pagina pubblica: chi arriva qui la
- * riconosce. A destra il form, calmo, un'azione sola. Sotto i 900px la
- * scena si ritira e resta la porta: su un telefono si entra, non si ammira.
+ * Tutta la pagina è l'inchiostro caldo del sito; da destra entra la luce
+ * della pagina in una sfumatura larga, e il form vive nella zona chiara.
+ * Il grafo della memoria viva sborda oltre la sua colonna e si vela
+ * attraversando la transizione: il velo è la sfumatura stessa, che gli
+ * passa sopra (z-index 1) mentre i testi restano sopra a tutto (z-index 2).
+ * Sotto i 900px resta la porta sola su fondo chiaro: si entra, non si ammira.
  */
 .accesso {
+  position: relative;
+  overflow: hidden;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr);
-  background: var(--c-page);
+  background: var(--c-ink);
+}
+
+/* La luce che entra da destra. `transparent` → colore pieno: i browser
+   interpolano in alfa premoltiplicato, niente grigi in mezzo. */
+.accesso::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    rgb(250 249 247 / 0.55) 58%,
+    var(--c-page) 74%
+  );
 }
 
 /* ------------------------------------------------------------------ scena */
 
 .accesso__scena {
   position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 40px 48px;
-  background: var(--c-ink);
   color: var(--c-text-oninverse-2);
 }
 
+/* Il grafo sborda a destra, dentro la transizione: è un cielo, non
+   un'icona, e la sfumatura lo vela man mano che entra nella luce. */
 .accesso__grafo {
   position: absolute;
   inset: 0;
+  right: -18%;
   display: grid;
   place-items: center;
   pointer-events: none;
 }
 
-/* La figura respira oltre i bordi: è un cielo, non un'icona. */
 .accesso__grafo app-grafo-memoria {
-  width: min(88%, 720px);
+  width: min(96%, 780px);
   opacity: 0.9;
 }
 
 .accesso__marchio {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   font-family: var(--f-sans);
   font-size: 14px;
   letter-spacing: 0.22em;
@@ -52,7 +72,7 @@
 
 .accesso__voce {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 30rem;
 }
 
@@ -75,6 +95,8 @@
 /* ------------------------------------------------------------------ porta */
 
 .accesso__porta {
+  position: relative;
+  z-index: 2;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -130,6 +152,11 @@
 @media (max-width: 900px) {
   .accesso {
     grid-template-columns: 1fr;
+    background: var(--c-page);
+  }
+
+  .accesso::before {
+    content: none;
   }
 
   .accesso__scena {
