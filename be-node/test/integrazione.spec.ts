@@ -1,0 +1,156 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+import { configurazione, type Configurazione } from '../src/config.js';
+import { conIdentita } from '../src/db/identita.js';
+import { chiudiPool, creaClientDedicato, poolDb } from '../src/db/pool.js';
+import { lavoraUno } from '../src/worker/ciclo.js';
+import { accoda, type Job } from '../src/worker/coda.js';
+import { ascoltaEventi, type PuntatoreEvento } from '../src/worker/eventi.js';
+
+/**
+ * Questi test parlano col database vero (il progetto Supabase del .env, o
+ * lo stack effimero in CI). Senza configurazione si saltano: il resto della
+ * suite resta eseguibile ovunque.
+ */
+let config: Configurazione | undefined;
+try {
+  config = configurazione();
+} catch {
+  config = undefined;
+}
+
+const attendi = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+describe.skipIf(!config)('integrazione col database', () => {
+  const pool = () => poolDb();
+  const creati: { tenantA?: string; tenantB?: string } = {};
+
+  beforeAll(async () => {
+    const righe = await pool().query<{ id: string }>(
+      `insert into public.tenant (nome) values ('Tenant A (test)'), ('Tenant B (test)') returning id`,
+    );
+    creati.tenantA = righe.rows[0]!.id;
+    creati.tenantB = righe.rows[1]!.id;
+  });
+
+  afterAll(async () => {
+    await pool().query(`delete from public.jobs where tipo = 'prova'`);
+    await pool().query(`delete from public.tenant where nome like '%(test)'`);
+    await chiudiPool();
+  });
+
+  // -------------------------------------------------------------------------
+  // RLS: RF-B-01 dimostrato, non promesso
+  // -------------------------------------------------------------------------
+
+  it('un utente del tenant A vede solo il tenant A', async () => {
+    const visibili = await conIdentita(
+      pool(),
+      { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'operatore' },
+      async (client) => {
+        const r = await client.query<{ id: string }>('select id from public.tenant');
+        return r.rows.map((riga) => riga.id);
+      },
+    );
+    expect(visibili).toContain(creati.tenantA);
+    expect(visibili).not.toContain(creati.tenantB);
+  });
+
+  it('con identità utente le scritture su tenant sono negate dal database', async () => {
+    await expect(
+      conIdentita(
+        pool(),
+        { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
+        (client) => client.query(`update public.tenant set nome = 'violazione' where id = $1`, [creati.tenantA]),
+      ),
+    ).rejects.toThrow();
+  });
+
+  it('i job non sono leggibili con identità utente (RLS senza policy)', async () => {
+    const righe = await conIdentita(
+      pool(),
+      { utenteId: crypto.randomUUID(), tenantId: creati.tenantA!, ruolo: 'amministratore' },
+      async (client) => (await client.query<Record<string, unknown>>('select * from public.jobs')).rows,
+    );
+    expect(righe).toEqual([]);
+  });
+
+  // -------------------------------------------------------------------------
+  // Coda: accoda → worker → eventi → LISTEN, il giro completo
+  // -------------------------------------------------------------------------
+
+  it('un job di prova percorre coda, worker, eventi e NOTIFY', async () => {
+    const ricevuti: PuntatoreEvento[] = [];
+    const ferma = await ascoltaEventi(creaClientDedicato, (p) => ricevuti.push(p));
+
+    try {
+      const jobId = await accoda(pool(), 'prova', { passi: 2 }, { tenantId: creati.tenantA! });
+
+      let lavorato = false;
+      for (let i = 0; i < 10 && !lavorato; i++) {
+        lavorato = await lavoraUno(pool(), { visibilitaSecondi: 30 });
+        if (!lavorato) await attendi(200);
+      }
+      expect(lavorato).toBe(true);
+
+      const job = (
+        await pool().query<Job>('select * from public.jobs where id = $1', [jobId])
+      ).rows[0]!;
+      expect(job.stato).toBe('completato');
+
+      const eventi = await pool().query<{ tipo: string }>(
+        'select tipo from public.eventi_job where job_id = $1 order by id',
+        [jobId],
+      );
+      expect(eventi.rows.map((e) => e.tipo)).toEqual([
+        'inizio',
+        'avanzamento',
+        'avanzamento',
+        'fine',
+      ]);
+
+      // La spinta in tempo reale: i puntatori arrivano al LISTEN.
+      for (let i = 0; i < 25 && ricevuti.filter((p) => p.jobId === jobId).length < 4; i++) {
+        await attendi(200);
+      }
+      const tipiRicevuti = ricevuti.filter((p) => p.jobId === jobId).map((p) => p.tipo);
+      expect(tipiRicevuti).toEqual(['inizio', 'avanzamento', 'avanzamento', 'fine']);
+    } finally {
+      await ferma();
+    }
+  });
+
+  it('un job che fallisce sempre diventa `fallito` dopo i tentativi massimi', async () => {
+    const jobId = await accoda(
+      pool(),
+      'prova',
+      { fallisci: true },
+      { tenantId: creati.tenantA! },
+    );
+
+    // visibilità 1s: il messaggio ricompare in fretta per il tentativo dopo.
+    let stato = '';
+    for (let i = 0; i < 30 && stato !== 'fallito'; i++) {
+      await lavoraUno(pool(), { visibilitaSecondi: 1, tentativiMassimi: 2 });
+      stato = (
+        await pool().query<{ stato: string }>('select stato from public.jobs where id = $1', [jobId])
+      ).rows[0]!.stato;
+      if (stato !== 'fallito') await attendi(400);
+    }
+
+    const job = (
+      await pool().query<Job>('select * from public.jobs where id = $1', [jobId])
+    ).rows[0]!;
+    expect(job.stato).toBe('fallito');
+    expect(job.tentativi).toBe(2);
+    expect(job.errore).toContain('fallimento richiesto');
+
+    // Il retry è raccontato: l'evento `nuovo-tentativo` sta nel canale.
+    const eventi = await pool().query<{ tipo: string }>(
+      'select tipo from public.eventi_job where job_id = $1 order by id',
+      [jobId],
+    );
+    expect(eventi.rows.map((e) => e.tipo)).toContain('nuovo-tentativo');
+    expect(eventi.rows.map((e) => e.tipo)).toContain('errore');
+  });
+});

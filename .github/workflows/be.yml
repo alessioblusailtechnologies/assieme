@@ -1,0 +1,56 @@
+# CI del backend: build, lint, migrazioni applicate da zero, test.
+#
+# Lo stack Supabase effimero della CLI gira SOLO qui in CI (in locale si
+# usa il progetto online): dà Postgres con auth, pgmq e ruoli veri, quindi
+# i test di integrazione — RLS dimostrata, coda end-to-end — girano su un
+# database nato dalle sole migrazioni. Se una migrazione non si applica da
+# zero, la CI è rossa.
+
+name: be
+
+on:
+  push:
+    branches: [main]
+    paths: ['be-node/**', '.github/workflows/be.yml']
+  pull_request:
+    paths: ['be-node/**', '.github/workflows/be.yml']
+
+jobs:
+  verifica:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: be-node
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: be-node/package-lock.json
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Dipendenze
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Stack Supabase effimero (migrazioni + seed da zero)
+        run: supabase start
+
+      - name: Test (unità + integrazione)
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          export SUPABASE_URL="$API_URL"
+          export SUPABASE_ANON_KEY="$ANON_KEY"
+          export SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+          export DATABASE_URL="$DB_URL"
+          npm test
