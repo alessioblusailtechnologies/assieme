@@ -37,7 +37,14 @@ export const autenticazioneInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(conBearer(req)).pipe(
     catchError((errore: HttpErrorResponse) => {
-      if (errore.status !== 401 || !token.tokenAggiornamento()) {
+      if (errore.status !== 401) {
+        return throwError(() => errore);
+      }
+      // 401 senza nemmeno un token da rinnovare: si va alla porta. Contro il
+      // mock e nella demo non succede mai — lì i 401 non esistono.
+      if (!token.tokenAggiornamento()) {
+        token.pulisci();
+        void router.navigate(['/accesso']);
         return throwError(() => errore);
       }
       return from(rinnovaCondiviso(token, accesso)).pipe(
