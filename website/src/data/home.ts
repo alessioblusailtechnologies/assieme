@@ -142,14 +142,18 @@ export const stories = [
   {
     title: 'Un preventivo concorrente smontato in dieci minuti',
     href: '/clienti#confronto-auto',
+    /** Schermata sfocata dell'applicativo: anticipa senza svelare. */
+    img: '/media/demo-confronto.jpg',
   },
   {
     title: 'Dieci prodotti, una tabella, ogni casella con la sua fonte',
     href: '/clienti#tabella-analisi',
+    img: '/media/demo-tabella.jpg',
   },
   {
-    title: 'Le nuove edizioni ti trovano loro — non il contrario',
+    title: 'Le nuove edizioni ti trovano loro, non il contrario',
     href: '/clienti#agente-edizioni',
+    img: '/media/demo-agenti.jpg',
   },
 ] as const;
 

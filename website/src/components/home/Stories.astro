@@ -15,8 +15,12 @@ const LOGO_SLOTS = 6;
   <ul class="stories__grid">
     {
       stories.map((s) => (
-        <li class="stories__card hatch--ink">
+        <li
+          class="stories__card"
+          style={`background-image: linear-gradient(rgb(20 18 14 / 45%), rgb(20 18 14 / 78%)), url('${s.img}');`}
+        >
           <a class="stories__link" href={s.href}>
+            <span class="mono stories__tag">Dimostrazione in arrivo</span>
             <span class="serif stories__card-title">{s.title}</span>
             <span class="stories__play" aria-hidden="true">
               ▶
@@ -67,17 +71,35 @@ const LOGO_SLOTS = 6;
     padding: 2.75rem var(--gutter) 0;
   }
 
+  /* Lo sfondo è lo screen sfocato dell'applicativo, con un velo scuro che
+     tiene leggibile il titolo: si intuisce la funzionalità, non si svela. */
   .stories__card {
     position: relative;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--c-ink-raise);
   }
 
   .stories__link {
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+    gap: 0.625rem;
     height: 280px;
     padding: 1.5rem;
     color: var(--c-text-oninverse);
     transition: background-color var(--dur-fast) ease;
+  }
+
+  .stories__tag {
+    padding: 3px 10px;
+    border: 1px solid rgb(255 255 255 / 40%);
+    border-radius: var(--radius-pieno, 999px);
+    font-size: var(--t-mono-sm);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-text-oninverse-2);
   }
 
   .stories__link:hover {
