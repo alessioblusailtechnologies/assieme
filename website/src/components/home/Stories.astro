@@ -1,7 +1,5 @@
 ---
 import { stories } from '~/data/home';
-
-const LOGO_SLOTS = 6;
 ---
 
 <section class="stories" aria-labelledby="stories-title">
@@ -31,15 +29,6 @@ const LOGO_SLOTS = 6;
     }
   </ul>
 
-  <ul class="stories__logos" aria-label="Altri clienti">
-    {
-      Array.from({ length: LOGO_SLOTS }, (_, i) => (
-        <li class="stories__logo hatch--faint">
-          <span class="visually-hidden">Logo cliente {i + 1}</span>
-        </li>
-      ))
-    }
-  </ul>
 </section>
 
 <style>
@@ -93,13 +82,14 @@ const LOGO_SLOTS = 6;
   }
 
   .stories__tag {
-    padding: 3px 10px;
-    border: 1px solid rgb(255 255 255 / 40%);
+    padding: 4px 12px;
+    border: 1px solid rgb(255 255 255 / 55%);
     border-radius: var(--radius-pieno, 999px);
-    font-size: var(--t-mono-sm);
+    background: rgb(20 18 14 / 72%);
+    font-size: var(--t-mono);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--c-text-oninverse-2);
+    color: var(--c-text-oninverse);
   }
 
   .stories__link:hover {
@@ -131,17 +121,6 @@ const LOGO_SLOTS = 6;
     background: rgb(255 255 255 / 12%);
   }
 
-  .stories__logos {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 1.5rem;
-    padding: 3.5rem var(--gutter) 0;
-  }
-
-  .stories__logo {
-    height: 24px;
-  }
-
   @media (max-width: 900px) {
     .stories__grid {
       grid-template-columns: 1fr;
@@ -149,10 +128,6 @@ const LOGO_SLOTS = 6;
 
     .stories__link {
       height: 220px;
-    }
-
-    .stories__logos {
-      grid-template-columns: repeat(3, 1fr);
     }
   }
 </style>
