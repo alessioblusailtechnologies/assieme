@@ -56,7 +56,6 @@ const year = new Date().getFullYear();
       }
     </ul>
 
-    <p class="site-footer__place">{site.city.toUpperCase()} · {site.country}</p>
   </div>
 </footer>
 
@@ -141,10 +140,6 @@ const year = new Date().getFullYear();
     color: var(--c-text-oninverse);
   }
 
-  .site-footer__place {
-    margin-left: auto;
-  }
-
   @media (max-width: 1080px) {
     .site-footer__grid {
       grid-template-columns: repeat(3, 1fr);
@@ -164,10 +159,6 @@ const year = new Date().getFullYear();
     .site-footer__base {
       flex-direction: column;
       align-items: flex-start;
-    }
-
-    .site-footer__place {
-      margin-left: 0;
     }
   }
 </style>
