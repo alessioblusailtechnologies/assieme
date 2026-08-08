@@ -8,9 +8,14 @@ import { testimonial as t } from '~/data/home';
   <h2 class="visually-hidden" id="quote-title">Dal campo</h2>
 
   <div class="quote__inner shell">
-    <div class="quote__portrait hatch" role="img" aria-label="Fotografia dall'agenzia pilota — immagine in arrivo">
-      <span class="mono" aria-hidden="true">fotografia · 3:4</span>
-    </div>
+    <img
+      class="quote__portrait"
+      src="/media/dal-campo.jpg"
+      alt="Al lavoro sui documenti, a fine giornata, nella luce dello schermo"
+      width="340"
+      height="400"
+      loading="lazy"
+    />
 
     <div class="quote__figure">
       <p class="serif quote__text">{t.quote}</p>
@@ -35,11 +40,10 @@ import { testimonial as t } from '~/data/home';
   }
 
   .quote__portrait {
-    display: flex;
-    align-items: flex-end;
+    display: block;
+    width: 100%;
     height: 400px;
-    padding: 1rem;
-    color: var(--c-text-4);
+    object-fit: cover;
   }
 
   .quote__figure {

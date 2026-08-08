@@ -298,8 +298,15 @@ const proofPoints = [
 
     /* Sullo schermo stretto il testo copre tutta la larghezza: il velo
        scuro si stende uniforme sull'intero video. */
+    /* A destra il velo si alleggerisce: sul telefono il video deve
+       respirare, non affogare sotto lo scuro uniforme. */
     .hero__stage::after {
-      background: linear-gradient(90deg, #1c1a15 0%, rgb(28 26 21 / 82%) 100%);
+      background: linear-gradient(
+        90deg,
+        #1c1a15 0%,
+        rgb(28 26 21 / 78%) 45%,
+        rgb(28 26 21 / 42%) 100%
+      );
     }
 
     .hero__proof {
