@@ -71,7 +71,14 @@ const track = [...useCases, ...useCases];
     height: calc(var(--row) * 7);
     overflow: hidden;
     font-family: var(--f-serif);
-    font-size: var(--t-ticker);
+    /*
+     * Le righe hanno altezza fissa: una voce che va a capo straborda nelle
+     * vicine e rompe lo scatto. La voce più lunga («Proposte pronte per il
+     * cliente») misura 13,1em: il corpo non può superare lo spazio
+     * disponibile diviso 13,5 — sui telefoni il tetto scatta, sui monitor
+     * non tocca mai il token.
+     */
+    font-size: min(var(--t-ticker), calc((100vw - 2 * var(--gutter)) / 13.5));
     letter-spacing: -0.015em;
     /* Le voci in entrata e in uscita sfumano invece di essere tranciate. */
     mask-image: linear-gradient(
@@ -89,6 +96,8 @@ const track = [...useCases, ...useCases];
     height: var(--row);
     color: var(--c-text-ghost);
     font-weight: 400;
+    /* Mai su due righe: l'ingranaggio del ticker vive di righe da una. */
+    white-space: nowrap;
   }
 
   .ticker__list {
