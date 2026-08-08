@@ -177,19 +177,19 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
     display: none;
   }
 
-  .site-header__panel a {
-    color: var(--c-text-oninverse);
-  }
-
   .site-header__panel nav ul {
     display: flex;
     flex-direction: column;
   }
 
+  /* Il colore va solo alle voci di navigazione: i bottoni in fondo al
+     pannello hanno già i loro, e il bianco su bianco cancellava il testo
+     della CTA piena. */
   .site-header__panel nav a {
     display: block;
     padding: 0.875rem 0;
     font-size: 1.0625rem;
+    color: var(--c-text-oninverse);
     border-bottom: 1px solid var(--c-line-dark);
   }
 
