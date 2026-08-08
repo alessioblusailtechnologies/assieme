@@ -44,8 +44,8 @@ export const productShot: {
   summary: string;
   citations: string[];
 } = {
-  breadcrumb: 'Fascicolo / Rinnovo auto — cliente Rossi',
-  title: 'Ramo auto — la polizza in corso e il preventivo a confronto',
+  breadcrumb: 'Fascicolo / Rinnovo auto · cliente Rossi',
+  title: 'Ramo auto: la polizza in corso e il preventivo a confronto',
   columns: ['Garanzia', 'Active Veicoli AUTOPIÙ', 'Preventivo Unipol'],
   rows: [
     {
@@ -70,7 +70,7 @@ export const productShot: {
     },
   ],
   summary:
-    "9 differenze rilevanti su 54 garanzie. Gli infortuni del conducente non risultano carenza: gliel'hai spiegato una volta — la tua agenzia li copre a parte.",
+    "9 differenze rilevanti su 54 garanzie. Gli infortuni del conducente non risultano carenza: gliel'hai spiegato una volta, la tua agenzia li copre a parte.",
   citations: ['autopiu_cda.pdf · art. 12 p. 34', 'preventivo_unipol.pdf · sez. 3 p. 2'],
 };
 
@@ -86,7 +86,7 @@ export const productShot: {
 export const memory = {
   eyebrow: 'Memoria viva',
   title: 'Ecco cosa significa non dimenticare',
-  body: 'Le cartelle condivise conservano e basta: non collegano, non ricordano, non rispondono. In Velia ogni documento letto entra in qualcosa che cresce — le regole che le detti, le scelte che ti vede fare, i casi che avete già risolto insieme. Il lunedì sa quello che le hai spiegato il venerdì.',
+  body: 'Le cartelle condivise conservano e basta: non collegano, non ricordano, non rispondono. In Velia ogni documento letto entra in qualcosa che cresce, fatto delle regole che le detti, delle scelte che ti vede fare, dei casi che avete già risolto insieme. Il lunedì sa quello che le hai spiegato il venerdì.',
   rows: [
     {
       term: 'Le tue regole',
@@ -167,8 +167,8 @@ export const stats = [
   { label: 'Documenti da caricare per iniziare', value: 'Zero' },
   { label: 'Volte che devi ripetere una regola', value: 'Una' },
   { label: 'Risposte con la fonte citata', value: '100%' },
-  { label: 'Documenti in un solo confronto — gli altri si fermano a 5', value: 'Decine' },
-  { label: 'Compagnie già in archivio', value: 'In crescita' },
+  { label: 'Documenti in un solo confronto', value: 'Decine' },
+  { label: 'Compagnie già in archivio', value: 'Più di 30' },
 ] as const;
 
 /* -------------------------------------------------------------------------
@@ -178,7 +178,7 @@ export const stats = [
 
 export const security = {
   title: ['Accuratezza e riservatezza,', 'prima di ogni altra cosa'],
-  body: "Velia cita sempre da dove arriva una risposta — e quando non lo sa, lo dice. I tuoi documenti restano tuoi e quello che impara resta dell'agenzia: non esce, non finisce ad altri clienti, non addestra nessun modello.",
+  body: "Velia cita sempre da dove arriva una risposta e, quando non lo sa, lo dice. I tuoi documenti restano tuoi e quello che impara resta dell'agenzia: non esce, non finisce ad altri clienti, non addestra nessun modello.",
   /* La memoria apre la fila: è il cuore dell'angolo narrativo della pagina. */
   badges: [
     { mark: 'Memoria', name: 'Che controlli tu', href: '/sicurezza#memoria' },
