@@ -6,9 +6,10 @@ Redesign del logo aziendale di Blusail Technologies S.r.l.s.
 
 Il nome viene da una storia di famiglia: alla figlia del fondatore, da
 piccola, piacevano le vele blu del villaggio Valtur. Il marchio la
-racconta senza dirla: **due vele, una grande e una piccola**, in
-navigazione insieme sulla stessa acqua. La vela piccola sta davanti,
-nel blu più chiaro: è lei che dà il nome a tutto.
+astrae senza illustrarla: **due tratti curvi che salgono, uno grande e
+uno piccolo**. Chi conosce la storia ci vede le due vele, il genitore e
+la bambina; chi non la conosce vede slancio e crescita. Niente barca,
+niente acqua: è un'azienda tecnologica, non marittima.
 
 ## Le forme e le voci
 
@@ -23,11 +24,12 @@ nel blu più chiaro: è lei che dà il nome a tutto.
 
 | File | Uso |
 | --- | --- |
-| `blusail-logo.svg` | orizzontale su fondo chiaro, la versione d'uso quotidiano |
+| `blusail-logo.svg` | orizzontale su fondo chiaro: tratti, Blusail e TECHNOLOGIES |
 | `blusail-logo-scuro.svg` | orizzontale su fondo scuro |
-| `blusail-logo-verticale.svg` | impilato, per avatar larghi e chiusure di documento |
-| `blusail-marchio.svg` | le sole vele, per favicon e spazi stretti |
-| `blusail-marchio-scuro.svg` | le sole vele, su fondo scuro |
+| `blusail-nome.svg` | solo il nome con la riga TECHNOLOGIES, senza marchio |
+| `blusail-marchio.svg` | i soli tratti, per spazi stretti |
+| `blusail-marchio-scuro.svg` | i soli tratti, su fondo scuro |
+| `blusail-app.svg` | il quadrato blu con i tratti: avatar, favicon, icona app |
 
 ## Rigenerare
 

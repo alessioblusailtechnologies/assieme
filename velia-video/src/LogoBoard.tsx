@@ -19,9 +19,9 @@ export const LogoBoard: React.FC = () => (
         justifyContent: 'space-around',
       }}
     >
-      <Img src={staticFile('brand/blusail-logo.svg')} style={{ height: 130 }} />
-      <Img src={staticFile('brand/blusail-logo-verticale.svg')} style={{ height: 230 }} />
-      <Img src={staticFile('brand/blusail-marchio.svg')} style={{ height: 150 }} />
+      <Img src={staticFile('brand/blusail-logo.svg')} style={{ height: 120 }} />
+      <Img src={staticFile('brand/blusail-app.svg')} style={{ height: 170 }} />
+      <Img src={staticFile('brand/blusail-marchio.svg')} style={{ height: 140 }} />
     </div>
     <div
       style={{
@@ -36,8 +36,9 @@ export const LogoBoard: React.FC = () => (
         justifyContent: 'space-around',
       }}
     >
-      <Img src={staticFile('brand/blusail-logo-scuro.svg')} style={{ height: 120 }} />
-      <Img src={staticFile('brand/blusail-marchio-scuro.svg')} style={{ height: 140 }} />
+      <Img src={staticFile('brand/blusail-logo-scuro.svg')} style={{ height: 110 }} />
+      <Img src={staticFile('brand/blusail-marchio-scuro.svg')} style={{ height: 130 }} />
+      <Img src={staticFile('brand/blusail-app.svg')} style={{ height: 150 }} />
     </div>
   </AbsoluteFill>
 );
