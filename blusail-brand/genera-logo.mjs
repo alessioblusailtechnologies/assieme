@@ -1,12 +1,18 @@
 /**
- * Logo Blusail Technologies — generatore.
+ * Logo Blusail Technologies — generatore, tre vie.
  *
  * Il nome viene dalle vele blu che piacevano alla figlia del fondatore; il
- * marchio le astrae in due tratti curvi che salgono, uno grande e uno
- * piccolo: vela, vento, crescita — senza diventare un'azienda marittima.
- * Il wordmark è in TWK Ghost (la voce di Velia), lettere in tracciati.
+ * marchio le astrae in due elementi, uno grande e uno piccolo. Tre
+ * interpretazioni dello stesso concetto:
+ *   A · tratti — due tratti curvi che salgono, punte tonde (la via attuale)
+ *   B · vele  — due lame piene e curve, più corpo, meglio da lontano
+ *   C · quarti — due quarti geometrici a base piatta, la via più costruita
  *
- * Uso: node genera-logo.mjs   (rigenera tutti gli SVG nella cartella)
+ * Wordmark: «blusail» minuscolo in TWK Ghost Medium, TECHNOLOGIES in
+ * maiuscolo spaziato sotto. Lettere in tracciati: nessuna dipendenza dai
+ * font installati.
+ *
+ * Uso: node genera-logo.mjs
  */
 
 import * as fontkit from 'fontkit';
@@ -15,21 +21,15 @@ import { writeFileSync } from 'node:fs';
 const ghostMedium = fontkit.openSync('../website/public/fonts/TWKGhost-Medium.woff2');
 const ghostRegular = fontkit.openSync('../website/public/fonts/TWKGhost-Regular.woff2');
 
-/* ---------------------------------------------------------------------------
- * Palette: gli stessi token di Velia (tokens.css).
- * ------------------------------------------------------------------------ */
 const INK = '#1C1A15';
 const CREMA = '#F5F1E8';
-const GRIGIO = '#767268'; // text-3: la riga TECHNOLOGIES
+const GRIGIO = '#767268';
 const GRIGIO_SU_SCURO = '#A5A196';
 const BLU = '#2F4B7C';
 const BLU_CHIARO = '#7F97C4';
 const BLU_SU_SCURO = '#7F97C4';
 const BLU_CHIARO_SU_SCURO = '#9FB4D6';
 
-/* ---------------------------------------------------------------------------
- * Testo in tracciati (unità del font, y verso l'alto: il gruppo capovolge).
- * ------------------------------------------------------------------------ */
 function testo(font, contenuto, x, baselineY, fontSize, colore, trackingPx = 0) {
   const run = font.layout(contenuto);
   const s = fontSize / font.unitsPerEm;
@@ -46,45 +46,43 @@ function testo(font, contenuto, x, baselineY, fontSize, colore, trackingPx = 0) 
 }
 
 /* ---------------------------------------------------------------------------
- * Il marchio astratto: due tratti curvi che salgono, il grande e il piccolo.
- * Quadro 100×100, tratti con le punte tonde.
+ * I tre segni, tutti in un quadro 100×100 con la base a y=84.
  * ------------------------------------------------------------------------ */
-function tratti(x, y, scala, blu, bluChiaro, spessore = 13) {
-  return `<g transform="translate(${x} ${y}) scale(${scala})" fill="none" stroke-linecap="round" stroke-width="${spessore}">
-    <path d="M 22 86 Q 28 36 64 12" stroke="${blu}"/>
-    <path d="M 58 86 Q 62 62 80 46" stroke="${bluChiaro}"/>
-  </g>`;
-}
 
-/** Il quadrato app: il linguaggio del quadratino blu di Velia. */
-function quadrato(nome, { fondo, tratto1, tratto2 }) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
-  <rect width="100" height="100" rx="22" fill="${fondo}"/>
-  <g fill="none" stroke-linecap="round" stroke-width="11">
-    <path d="M 28 76 Q 33 36 62 17" stroke="${tratto1}"/>
-    <path d="M 57 76 Q 60 57 75 43" stroke="${tratto2}"/>
-  </g>
-</svg>`;
-  writeFileSync(nome, svg);
-  return nome;
-}
+const SEGNI = {
+  /** A · tratti: due tratti curvi con le punte tonde. */
+  tratti: (blu, bluChiaro) => `<g fill="none" stroke-linecap="round" stroke-width="13">
+    <path d="M 22 84 Q 28 36 64 12" stroke="${blu}"/>
+    <path d="M 58 84 Q 62 60 80 44" stroke="${bluChiaro}"/>
+  </g>`,
+
+  /** B · vele: due lame piene, curve su entrambi i fianchi. */
+  vele: (blu, bluChiaro) => `<g>
+    <path d="M 24 84 Q 28 34 66 10 Q 52 44 48 84 Z" fill="${blu}"/>
+    <path d="M 58 84 Q 63 58 84 42 Q 74 62 72 84 Z" fill="${bluChiaro}"/>
+  </g>`,
+
+  /** C · quarti: geometria piatta, un fianco dritto e uno curvo. */
+  quarti: (blu, bluChiaro) => `<g>
+    <path d="M 20 84 L 20 18 Q 64 26 64 84 Z" fill="${blu}"/>
+    <path d="M 72 84 L 72 46 Q 94 52 94 84 Z" fill="${bluChiaro}"/>
+  </g>`,
+};
+
+const segno = (via, x, y, scala, blu, bluChiaro) =>
+  `<g transform="translate(${x} ${y}) scale(${scala})">${SEGNI[via](blu, bluChiaro)}</g>`;
 
 /* ---------------------------------------------------------------------------
  * Le composizioni.
  * ------------------------------------------------------------------------ */
 
-/** Orizzontale: tratti + Blusail, con TECHNOLOGIES in maiuscoletto sotto. */
-function orizzontale({ nome, testoColore, sottoColore, blu, bluChiaro }) {
-  const NOME_SIZE = 54;
-  const NOME_BASE = 56;
-  const SOTTO_SIZE = 14.5;
-  const SOTTO_BASE = 82;
+function orizzontale(via, { nome, testoColore, sottoColore, blu, bluChiaro }) {
   const TX = 96;
-  const nomeT = testo(ghostMedium, 'Blusail', TX, NOME_BASE, NOME_SIZE, testoColore, -0.5);
-  const sottoT = testo(ghostRegular, 'TECHNOLOGIES', TX + 2, SOTTO_BASE, SOTTO_SIZE, sottoColore, 4.4);
+  const nomeT = testo(ghostMedium, 'blusail', TX, 56, 56, testoColore, -0.5);
+  const sottoT = testo(ghostRegular, 'TECHNOLOGIES', TX + 2, 82, 14.5, sottoColore, 4.4);
   const W = Math.ceil(TX + Math.max(nomeT.larghezza, sottoT.larghezza) + 14);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 100" role="img" aria-label="Blusail Technologies">
-  ${tratti(0, 2, 0.86, blu, bluChiaro)}
+  ${segno(via, 0, 2, 0.86, blu, bluChiaro)}
   ${nomeT.svg}
   ${sottoT.svg}
 </svg>`;
@@ -92,23 +90,30 @@ function orizzontale({ nome, testoColore, sottoColore, blu, bluChiaro }) {
   return nome;
 }
 
-/** Solo il nome, senza marchio: per contesti dove il segno c'è già. */
+function quadratoApp(via, nome) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
+  <rect width="100" height="100" rx="22" fill="${BLU}"/>
+  ${segno(via, 6, 4, 0.88, '#FFFFFF', BLU_CHIARO_SU_SCURO)}
+</svg>`;
+  writeFileSync(nome, svg);
+  return nome;
+}
+
+function soloSegno(via, nome, blu, bluChiaro) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
+  ${segno(via, 0, 0, 1, blu, bluChiaro)}
+</svg>`;
+  writeFileSync(nome, svg);
+  return nome;
+}
+
 function soloNome({ nome, testoColore, sottoColore }) {
-  const nomeT = testo(ghostMedium, 'Blusail', 2, 44, 54, testoColore, -0.5);
+  const nomeT = testo(ghostMedium, 'blusail', 2, 44, 56, testoColore, -0.5);
   const sottoT = testo(ghostRegular, 'TECHNOLOGIES', 4, 70, 14.5, sottoColore, 4.4);
   const W = Math.ceil(Math.max(nomeT.larghezza, sottoT.larghezza) + 8);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 84" role="img" aria-label="Blusail Technologies">
   ${nomeT.svg}
   ${sottoT.svg}
-</svg>`;
-  writeFileSync(nome, svg);
-  return nome;
-}
-
-/** I soli tratti: avatar, favicon su fondo libero. */
-function soloTratti({ nome, blu, bluChiaro }) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
-  ${tratti(0, 0, 1, blu, bluChiaro)}
 </svg>`;
   writeFileSync(nome, svg);
   return nome;
@@ -122,13 +127,15 @@ const scuro = {
   bluChiaro: BLU_CHIARO_SU_SCURO,
 };
 
-const generati = [
-  orizzontale({ ...chiaro, nome: 'blusail-logo.svg' }),
-  orizzontale({ ...scuro, nome: 'blusail-logo-scuro.svg' }),
-  soloNome({ ...chiaro, nome: 'blusail-nome.svg' }),
-  soloTratti({ ...chiaro, nome: 'blusail-marchio.svg' }),
-  soloTratti({ ...scuro, nome: 'blusail-marchio-scuro.svg' }),
-  quadrato('blusail-app.svg', { fondo: BLU, tratto1: '#FFFFFF', tratto2: BLU_CHIARO_SU_SCURO }),
-];
+const generati = [];
+for (const via of ['tratti', 'vele', 'quarti']) {
+  generati.push(
+    orizzontale(via, { ...chiaro, nome: `blusail-${via}.svg` }),
+    orizzontale(via, { ...scuro, nome: `blusail-${via}-scuro.svg` }),
+    soloSegno(via, `blusail-${via}-marchio.svg`, BLU, BLU_CHIARO),
+    quadratoApp(via, `blusail-${via}-app.svg`),
+  );
+}
+generati.push(soloNome({ ...chiaro, nome: 'blusail-nome.svg' }));
 
-console.log('Generati:', generati.join(', '));
+console.log('Generati:', generati.length, 'file');
