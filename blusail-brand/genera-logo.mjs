@@ -67,6 +67,30 @@ const SEGNI = {
     <path d="M 20 84 L 20 18 Q 64 26 64 84 Z" fill="${blu}"/>
     <path d="M 72 84 L 72 46 Q 94 52 94 84 Z" fill="${bluChiaro}"/>
   </g>`,
+
+  /** D · tratto e punto: il tratto grande che sale, la bambina è il punto. */
+  'tratto-punto': (blu, bluChiaro) => `<g>
+    <path d="M 32 84 Q 38 34 72 12" fill="none" stroke="${blu}" stroke-linecap="round" stroke-width="14"/>
+    <circle cx="70" cy="60" r="9.5" fill="${bluChiaro}"/>
+  </g>`,
+
+  /** E · vento: due tratti orizzontali che spazzano verso destra. */
+  vento: (blu, bluChiaro) => `<g fill="none" stroke-linecap="round" stroke-width="13">
+    <path d="M 14 40 Q 50 22 86 34" stroke="${blu}"/>
+    <path d="M 28 64 Q 56 52 80 60" stroke="${bluChiaro}"/>
+  </g>`,
+
+  /** F · archi: la stessa curva che si propaga, il piccolo dentro il grande. */
+  archi: (blu, bluChiaro) => `<g fill="none" stroke-linecap="round" stroke-width="13">
+    <path d="M 24 30 A 54 54 0 0 1 78 84" stroke="${blu}"/>
+    <path d="M 24 58 A 26 26 0 0 1 50 84" stroke="${bluChiaro}"/>
+  </g>`,
+
+  /** G · equilibrio: due quarti pieni, opposti sulla diagonale. */
+  equilibrio: (blu, bluChiaro) => `<g>
+    <path d="M 20 84 L 20 32 A 52 52 0 0 1 72 84 Z" fill="${blu}"/>
+    <path d="M 98 8 L 72 8 A 26 26 0 0 0 98 34 Z" fill="${bluChiaro}"/>
+  </g>`,
 };
 
 const segno = (via, x, y, scala, blu, bluChiaro) =>
@@ -128,7 +152,7 @@ const scuro = {
 };
 
 const generati = [];
-for (const via of ['tratti', 'vele', 'quarti']) {
+for (const via of ['tratti', 'quarti', 'tratto-punto', 'vento', 'archi', 'equilibrio']) {
   generati.push(
     orizzontale(via, { ...chiaro, nome: `blusail-${via}.svg` }),
     orizzontale(via, { ...scuro, nome: `blusail-${via}-scuro.svg` }),
