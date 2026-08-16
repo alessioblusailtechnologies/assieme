@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
+  <rect width="100" height="100" rx="22" fill="#1C1A15"/>
+  <g transform="translate(6 4) scale(0.88)"><g>
+    <path d="M 24 84 L 24 38 A 46 46 0 0 1 70 84 Z" fill="#F5F1E8"/>
+    <path d="M 98 12 L 76 12 A 22 22 0 0 0 98 34 Z" fill="#7F97C4"/>
+  </g></g>
+</svg>

@@ -91,6 +91,56 @@ const SEGNI = {
     <path d="M 20 84 L 20 32 A 52 52 0 0 1 72 84 Z" fill="${blu}"/>
     <path d="M 98 8 L 72 8 A 26 26 0 0 0 98 34 Z" fill="${bluChiaro}"/>
   </g>`,
+
+  /* ---- Le vie premium: segni più fini, palette trattenuta ---- */
+
+  /** D1 · filo: il tratto si fa sottile, le punte tagliate di netto. */
+  filo: (c1, c2) => `<g>
+    <path d="M 30 84 Q 34 34 70 12" fill="none" stroke="${c1}" stroke-width="7.5"/>
+    <circle cx="67" cy="62" r="6.5" fill="${c2}"/>
+  </g>`,
+
+  /** D2 · punto blu: il tratto nel colore del testo, il blu solo al punto. */
+  punto: (c1, c2) => `<g>
+    <path d="M 31 84 Q 36 34 71 13" fill="none" stroke="${c1}" stroke-linecap="round" stroke-width="10"/>
+    <circle cx="68" cy="61" r="7.5" fill="${c2}"/>
+  </g>`,
+
+  /** G1/G2 · quarti raffinati: più aria, il piccolo più discreto. */
+  quartiP: (c1, c2) => `<g>
+    <path d="M 24 84 L 24 38 A 46 46 0 0 1 70 84 Z" fill="${c1}"/>
+    <path d="M 98 12 L 76 12 A 22 22 0 0 0 98 34 Z" fill="${c2}"/>
+  </g>`,
+};
+
+/* ---------------------------------------------------------------------------
+ * Varianti premium: ogni via porta i suoi colori, su chiaro, scuro e app.
+ * ------------------------------------------------------------------------ */
+const PREMIUM = {
+  filo: {
+    segno: 'filo',
+    chiaro: [BLU, BLU_CHIARO],
+    scuro: [BLU_SU_SCURO, BLU_CHIARO_SU_SCURO],
+    app: { fondo: BLU, colori: ['#FFFFFF', BLU_CHIARO_SU_SCURO] },
+  },
+  'punto-blu': {
+    segno: 'punto',
+    chiaro: [INK, BLU],
+    scuro: [CREMA, BLU_CHIARO_SU_SCURO],
+    app: { fondo: INK, colori: [CREMA, BLU_CHIARO] },
+  },
+  'quarti-tono': {
+    segno: 'quartiP',
+    chiaro: [BLU, 'rgba(47,75,124,0.42)'],
+    scuro: [BLU_SU_SCURO, 'rgba(127,151,196,0.45)'],
+    app: { fondo: BLU, colori: ['#FFFFFF', 'rgba(255,255,255,0.45)'] },
+  },
+  'quarti-notte': {
+    segno: 'quartiP',
+    chiaro: [INK, BLU],
+    scuro: [CREMA, BLU_CHIARO_SU_SCURO],
+    app: { fondo: INK, colori: [CREMA, BLU_CHIARO] },
+  },
 };
 
 const segno = (via, x, y, scala, blu, bluChiaro) =>
@@ -151,13 +201,38 @@ const scuro = {
   bluChiaro: BLU_CHIARO_SU_SCURO,
 };
 
+/** Lockup premium: marchio più piccolo, riga TECHNOLOGIES più ariosa. */
+function orizzontalePremium(spec, { nome, testoColore, sottoColore }, tono) {
+  const TX = 84;
+  const nomeT = testo(ghostMedium, 'blusail', TX, 54, 52, testoColore, -0.5);
+  const sottoT = testo(ghostRegular, 'TECHNOLOGIES', TX + 2, 79, 12.5, sottoColore, 5.2);
+  const W = Math.ceil(TX + Math.max(nomeT.larghezza, sottoT.larghezza) + 14);
+  const [c1, c2] = spec[tono];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 100" role="img" aria-label="Blusail Technologies">
+  <g transform="translate(0 8) scale(0.78)">${SEGNI[spec.segno](c1, c2)}</g>
+  ${nomeT.svg}
+  ${sottoT.svg}
+</svg>`;
+  writeFileSync(nome, svg);
+  return nome;
+}
+
+function quadratoAppPremium(spec, nome) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Blusail Technologies">
+  <rect width="100" height="100" rx="22" fill="${spec.app.fondo}"/>
+  <g transform="translate(6 4) scale(0.88)">${SEGNI[spec.segno](...spec.app.colori)}</g>
+</svg>`;
+  writeFileSync(nome, svg);
+  return nome;
+}
+
 const generati = [];
-for (const via of ['tratti', 'quarti', 'tratto-punto', 'vento', 'archi', 'equilibrio']) {
+for (const [via, spec] of Object.entries(PREMIUM)) {
   generati.push(
-    orizzontale(via, { ...chiaro, nome: `blusail-${via}.svg` }),
-    orizzontale(via, { ...scuro, nome: `blusail-${via}-scuro.svg` }),
-    soloSegno(via, `blusail-${via}-marchio.svg`, BLU, BLU_CHIARO),
-    quadratoApp(via, `blusail-${via}-app.svg`),
+    orizzontalePremium(spec, { ...chiaro, nome: `blusail-${via}.svg` }, 'chiaro'),
+    orizzontalePremium(spec, { ...scuro, nome: `blusail-${via}-scuro.svg` }, 'scuro'),
+    soloSegno(spec.segno, `blusail-${via}-marchio.svg`, ...spec.chiaro),
+    quadratoAppPremium(spec, `blusail-${via}-app.svg`),
   );
 }
 generati.push(soloNome({ ...chiaro, nome: 'blusail-nome.svg' }));

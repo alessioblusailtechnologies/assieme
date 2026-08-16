@@ -6,10 +6,10 @@ export const BOARD_W = 1400;
 export const BOARD_H = 1240;
 
 const VIE = [
-  { via: 'tratto-punto', etichetta: 'D · tratto e punto' },
-  { via: 'vento', etichetta: 'E · vento' },
-  { via: 'archi', etichetta: 'F · archi' },
-  { via: 'equilibrio', etichetta: 'G · equilibrio' },
+  { via: 'filo', etichetta: 'D1 · filo' },
+  { via: 'punto-blu', etichetta: 'D2 · punto blu' },
+  { via: 'quarti-tono', etichetta: 'G1 · quarti in tono' },
+  { via: 'quarti-notte', etichetta: 'G2 · quarti notte' },
 ];
 
 export const LogoBoard: React.FC = () => (
