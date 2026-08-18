@@ -22,7 +22,7 @@ export const BIB_DUR = 240; // 8 s   — la scansione attraversa gli scaffali
 export const MET_DUR = 300; // 10 s  — la regola scende lungo il paragrafo
 export const AGE_DUR = 360; // 12 s  — le orbite chiudono giri interi
 
-const C = {
+export const C = {
   ground: '#EEEDEA', // --c-page-alt: il pannello media si stacca appena dalla pagina
   hair: '#DAD7D0',
   barA: '#D8D5CE',
@@ -30,15 +30,17 @@ const C = {
   mute: '#9B978B',
   ink: '#1C1A15',
   accent: '#2F4B7C',
+  warm: '#B0733F', // il segnale che risale: stesso caldo della provenienza memoria
+  card: '#F7F6F3', // superficie dei "documenti" sopra il fondo del pannello
 };
 
 /** Pseudo-caso deterministico: stessa scena a ogni render. */
-const rnd = (i: number) => {
+export const rnd = (i: number) => {
   const s = Math.sin(i * 127.1 + 311.7) * 43758.5453;
   return s - Math.floor(s);
 };
 
-const gauss = (d: number, sigma: number) => Math.exp(-(d * d) / (2 * sigma * sigma));
+export const gauss = (d: number, sigma: number) => Math.exp(-(d * d) / (2 * sigma * sigma));
 
 /* ---------------------------------------------------------------------------
  * Biblioteca — schiere di dorsi in filetto su tre scaffali; una scansione

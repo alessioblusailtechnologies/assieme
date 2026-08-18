@@ -13,6 +13,16 @@ import {
   BIB_DUR,
   MET_DUR,
 } from './Astratti';
+import {
+  AGZ_DUR,
+  BRO_DUR,
+  CMP_DUR,
+  INT_DUR,
+  SoluzioneAgenzie,
+  SoluzioneBroker,
+  SoluzioneCompagnie,
+  SoluzioneIntermediari,
+} from './AstrattiSoluzioni';
 
 export const Root: React.FC = () => (
   <>
@@ -47,6 +57,38 @@ export const Root: React.FC = () => (
       id="AstrattoAgenti"
       component={AstrattoAgenti}
       durationInFrames={AGE_DUR}
+      fps={AST_FPS}
+      width={AST_W}
+      height={AST_H}
+    />
+    <Composition
+      id="SoluzioneAgenzie"
+      component={SoluzioneAgenzie}
+      durationInFrames={AGZ_DUR}
+      fps={AST_FPS}
+      width={AST_W}
+      height={AST_H}
+    />
+    <Composition
+      id="SoluzioneBroker"
+      component={SoluzioneBroker}
+      durationInFrames={BRO_DUR}
+      fps={AST_FPS}
+      width={AST_W}
+      height={AST_H}
+    />
+    <Composition
+      id="SoluzioneIntermediari"
+      component={SoluzioneIntermediari}
+      durationInFrames={INT_DUR}
+      fps={AST_FPS}
+      width={AST_W}
+      height={AST_H}
+    />
+    <Composition
+      id="SoluzioneCompagnie"
+      component={SoluzioneCompagnie}
+      durationInFrames={CMP_DUR}
       fps={AST_FPS}
       width={AST_W}
       height={AST_H}

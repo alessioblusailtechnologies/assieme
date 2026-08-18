@@ -33,6 +33,19 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       { term: 'A modo tuo', detail: "Le convenzioni e i testi dell'agenzia diventano il modo in cui Velia ragiona" },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-soluzione-agenzie.mp4"
+        poster="/media/astratto-soluzione-agenzie-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-soluzione-agenzie-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       In agenzia il tempo non se ne va sulle decisioni difficili. Se ne va nel
       ritrovare il documento giusto e nel rileggere trenta pagine per
@@ -51,6 +64,19 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       { term: 'Consegna', detail: "Lo stesso lavoro esce come documento con il marchio dell'agenzia" },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-soluzione-broker.mp4"
+        poster="/media/astratto-soluzione-broker-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-soluzione-broker-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Il valore del broker sta nel leggere quello che una tabella comparativa
       non mostra: una retroattività ridotta, un'esclusione aggiunta in coda,
@@ -73,6 +99,19 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       { term: 'Continuità', detail: 'Quello che lo studio ha imparato resta, anche quando cambia chi ci lavora' },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-soluzione-intermediari.mp4"
+        poster="/media/astratto-soluzione-intermediari-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-soluzione-intermediari-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Chi lavora in due o tre persone ha gli stessi obblighi documentali di una
       rete strutturata, senza la stessa macchina dietro. Quello che nelle grandi
@@ -92,6 +131,19 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
       { term: 'Segnale', detail: 'Le clausole che generano più domande emergono prima del contenzioso' },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-soluzione-compagnie.mp4"
+        poster="/media/astratto-soluzione-compagnie-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-soluzione-compagnie-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Una compagnia scrive i testi; la rete li interpreta. Fra le due cose c'è
       uno scarto che di solito si scopre in fase di liquidazione.
@@ -103,3 +155,29 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
     cta="Parliamone in una demo"
   />
 </BaseLayout>
+
+<style>
+  /* Gli astratti Remotion nelle figure, come nella pagina Piattaforma. */
+  .figura__video,
+  .figura__fermo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .figura__fermo {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .figura__video {
+      display: none;
+    }
+
+    .figura__fermo {
+      display: block;
+      height: 100%;
+    }
+  }
+</style>
