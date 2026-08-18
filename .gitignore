@@ -43,6 +43,15 @@ desktop.ini
 *.pem
 *.key
 
+# Esperimento del motore agentico (ASSIEME-motore-agentico.md §8):
+# i PDF del pilota e le loro conversioni contengono dati reali di clienti,
+# restano locali. Tracciati solo README, CLAUDE.md e script.
+esperimento-motore/originali/*
+!esperimento-motore/originali/README.md
+esperimento-motore/workspace/archivio-pubblico/
+esperimento-motore/workspace/tenant/
+esperimento-motore/risultati/
+
 # Caratteri in prova sotto licenza commerciale.
 # Le licenze trial (TypeType e simili) permettono di valutare il font sul
 # proprio computer ma vietano di condividerlo: metterlo nel repository
