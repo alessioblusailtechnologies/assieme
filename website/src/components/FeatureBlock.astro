@@ -12,6 +12,9 @@ export interface Props {
 
 const { id, eyebrow, title, rows = [], flip = false, tone = 'light' } = Astro.props;
 const titleId = id ? `${id}-title` : undefined;
+/* Con lo slot `figure` il riquadro ospita un media; senza, resta il
+ * segnaposto tratteggiato con l'occhiello. */
+const hasFigure = Astro.slots.has('figure');
 ---
 
 <section
@@ -20,8 +23,14 @@ const titleId = id ? `${id}-title` : undefined;
   aria-labelledby={titleId}
 >
   <div class="feature__inner shell">
-    <div class="feature__figure hatch" aria-hidden="true">
-      <span class="mono">{eyebrow}</span>
+    <div
+      class:list={[
+        'feature__figure',
+        hasFigure ? 'feature__figure--media' : 'hatch',
+      ]}
+      aria-hidden="true"
+    >
+      {hasFigure ? <slot name="figure" /> : <span class="mono">{eyebrow}</span>}
     </div>
 
     <div class="feature__copy">
@@ -73,6 +82,14 @@ const titleId = id ? `${id}-title` : undefined;
     align-items: flex-end;
     aspect-ratio: 4 / 3;
     padding: 1rem;
+  }
+
+  /* Il riquadro con un media dentro: niente cornice né padding, il
+     contenuto riempie il 4:3. */
+  .feature__figure--media {
+    display: block;
+    padding: 0;
+    overflow: hidden;
   }
 
   .feature--ink .feature__figure {

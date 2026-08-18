@@ -105,6 +105,19 @@ const products = [
       },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-biblioteca.mp4"
+        poster="/media/astratto-biblioteca-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-biblioteca-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Ogni comparatore in circolazione ti chiede prima di tutto di caricare i
       documenti. È il lavoro che la normativa ha già fatto (le condizioni sono
@@ -139,6 +152,19 @@ const products = [
       },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-metodo.mp4"
+        poster="/media/astratto-metodo-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-metodo-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Il caso è sempre lo stesso. Un comparatore segnala come carenza grave
       l'assenza della garanzia infortuni del conducente. Ma tu quella garanzia
@@ -169,6 +195,19 @@ const products = [
       },
     ]}
   >
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-agenti.mp4"
+        poster="/media/astratto-agenti-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-agenti-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
     <p>
       Alcune cose non vale la pena rifarle a mano: controllare se è uscita una
       nuova edizione, rileggere ogni lunedì quello che è entrato in archivio.
@@ -187,3 +226,34 @@ const products = [
     cta="Richiedi una demo"
   />
 </BaseLayout>
+
+<style>
+  /*
+   * Gli astratti Remotion nelle figure dei blocchi: loop muti sui token del
+   * sito, resi sul fondo --c-page-alt così il riquadro si stacca appena
+   * dalla pagina, come i pannelli media della home.
+   */
+  .figura__video,
+  .figura__fermo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .figura__fermo {
+    display: none;
+  }
+
+  /* Con le animazioni ridotte resta il fotogramma fermo. */
+  @media (prefers-reduced-motion: reduce) {
+    .figura__video {
+      display: none;
+    }
+
+    .figura__fermo {
+      display: block;
+      height: 100%;
+    }
+  }
+</style>
