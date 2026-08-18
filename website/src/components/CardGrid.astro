@@ -92,6 +92,16 @@ const titleId = `${id ?? 'grid'}-title`;
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* Righe incomplete: l'ultima card si allarga fino al bordo, altrimenti il
+     fondo a filetti affiorerebbe come blocco vuoto accanto a lei. */
+  .cards__grid--3 .card:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+
+  .cards__grid--3 .card:last-child:nth-child(3n + 2) {
+    grid-column: span 2;
+  }
+
   /* Le celle sono separate dal fondo che traspare fra i gap: una griglia di
      filetti da 1px senza doppi bordi agli incroci. */
   .card {
@@ -130,6 +140,16 @@ const titleId = `${id ?? 'grid'}-title`;
   @media (max-width: 1000px) {
     .cards__grid--3 {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* A due colonne la riga incompleta è un'altra: si riparte da capo. */
+    .cards__grid--3 .card:last-child:nth-child(3n + 1),
+    .cards__grid--3 .card:last-child:nth-child(3n + 2) {
+      grid-column: auto;
+    }
+
+    .cards__grid--3 .card:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
     }
   }
 

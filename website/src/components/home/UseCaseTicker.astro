@@ -5,8 +5,8 @@ import { useCases } from '~/data/home';
  * Ticker verticale dei casi d'uso.
  *
  * Nel design il movimento è pilotato da uno stato React che avanza di una
- * riga ogni 2,4 s. Qui è tutto CSS: sette scatti da 2,4 s per un ciclo di
- * 16,8 s che termina esattamente su una copia della prima voce, così l'anello
+ * riga ogni 2,4 s. Qui è tutto CSS: otto scatti da 2,4 s per un ciclo di
+ * 19,2 s che termina esattamente su una copia della prima voce, così l'anello
  * si chiude senza salti e la pagina resta senza JavaScript.
  *
  * Il testo scorre in due strati sovrapposti e sincronizzati: quello di fondo
@@ -47,7 +47,7 @@ const track = [...useCases, ...useCases];
 <style>
   .ticker {
     --row: 58px;
-    --cycle: 16.8s;
+    --cycle: 19.2s;
 
     display: grid;
     grid-template-columns: 240px 1fr 200px;
@@ -73,12 +73,13 @@ const track = [...useCases, ...useCases];
     font-family: var(--f-serif);
     /*
      * Le righe hanno altezza fissa: una voce che va a capo straborda nelle
-     * vicine e rompe lo scatto. La voce più lunga («Proposte pronte per il
-     * cliente») misura 13,1em: il corpo non può superare lo spazio
-     * disponibile diviso 13,5 — sui telefoni il tetto scatta, sui monitor
-     * non tocca mai il token.
+     * vicine e rompe lo scatto. Le voci più lunghe («Proposte pronte per il
+     * cliente», 13,1em, e «Allegati da WhatsApp e email», che con la W larga
+     * le sta appena sotto) impongono il tetto: il corpo non può superare lo
+     * spazio disponibile diviso 13,8 — sui telefoni il tetto scatta, sui
+     * monitor non tocca mai il token.
      */
-    font-size: min(var(--t-ticker), calc((100vw - 2 * var(--gutter)) / 13.5));
+    font-size: min(var(--t-ticker), calc((100vw - 2 * var(--gutter)) / 13.8));
     letter-spacing: -0.015em;
     /* Le voci in entrata e in uscita sfumano invece di essere tranciate. */
     mask-image: linear-gradient(
@@ -124,46 +125,50 @@ const track = [...useCases, ...useCases];
   }
 
   /*
-   * Sette passi da 2,4 s su un ciclo di 16,8 s.
+   * Otto passi da 2,4 s su un ciclo di 19,2 s.
    *
    * Di ogni passo, 2,12 s sono fermo immagine e solo gli ultimi 0,28 s sono
    * movimento: la riga sta immobile per l'88% del tempo e poi salta al posto
    * successivo. È questo rapporto — non l'easing — a produrre lo scatto.
    *
-   * Le percentuali: fine attesa = (k·2,4 − 0,28)/16,8 · 100
-   *                 arrivo      = (k·2,4)/16,8 · 100
+   * Le percentuali: fine attesa = (k·2,4 − 0,28)/19,2 · 100
+   *                 arrivo      = (k·2,4)/19,2 · 100
    */
   @keyframes ticker-advance {
     0%,
-    12.619% {
+    11.042% {
       transform: translateY(0);
     }
-    14.286%,
-    26.905% {
+    12.5%,
+    23.542% {
       transform: translateY(calc(var(--row) * -1));
     }
-    28.571%,
-    41.19% {
+    25%,
+    36.042% {
       transform: translateY(calc(var(--row) * -2));
     }
-    42.857%,
-    55.476% {
+    37.5%,
+    48.542% {
       transform: translateY(calc(var(--row) * -3));
     }
-    57.143%,
-    69.762% {
+    50%,
+    61.042% {
       transform: translateY(calc(var(--row) * -4));
     }
-    71.429%,
-    84.048% {
+    62.5%,
+    73.542% {
       transform: translateY(calc(var(--row) * -5));
     }
-    85.714%,
-    98.333% {
+    75%,
+    86.042% {
       transform: translateY(calc(var(--row) * -6));
     }
-    100% {
+    87.5%,
+    98.542% {
       transform: translateY(calc(var(--row) * -7));
+    }
+    100% {
+      transform: translateY(calc(var(--row) * -8));
     }
   }
 

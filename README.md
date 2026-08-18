@@ -17,7 +17,7 @@ linguaggio naturale per agenzie, broker e intermediari.
 
 | Documento | Contenuto |
 |---|---|
-| [`VELIA-analisi-requisiti.md`](VELIA-analisi-requisiti.md) | Requisiti funzionali e non funzionali, v0.8 |
+| [`VELIA-analisi-requisiti.md`](VELIA-analisi-requisiti.md) | Requisiti funzionali e non funzionali, v0.10 |
 | [`VELIA-piano-sviluppo-fe.md`](VELIA-piano-sviluppo-fe.md) | Piano di sviluppo front-end, fasi e decisioni aperte |
 
 `mocks/` sta fuori da `fe-angular/` di proposito: non è codice front-end, è

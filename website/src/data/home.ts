@@ -9,7 +9,7 @@
  * Le capacità sono presentate come prodotti con un nome e una riga, non come
  * moduli con l'elenco delle funzioni.
  *
- * Sostanza allineata a «VELIA — Analisi dei Requisiti» v0.8 (03/08/2026).
+ * Sostanza allineata a «VELIA — Analisi dei Requisiti» v0.10 (19/08/2026).
  *
  * ⚠️ Da sostituire prima della pubblicazione: i loghi cliente nei due nastri.
  */
@@ -106,10 +106,11 @@ export const memory = {
 } as const;
 
 /* -------------------------------------------------------------------------
- * Ticker — sette voci, quante ne prevede l'animazione.
+ * Ticker — otto voci, quante ne prevede l'animazione.
  *
- * Nomi del lavoro, non del software. Solo attività del perimetro di prima
- * release: rinnovi, sinistri e scadenze sono fuori (§5.5).
+ * Nomi del lavoro, non del software. Solo attività del perimetro dei
+ * requisiti: rinnovi, sinistri e scadenze sono fuori (§5.5); i canali
+ * WhatsApp ed email sono dentro dalla v0.10 (Modulo H).
  * ---------------------------------------------------------------------- */
 
 export const useCases = [
@@ -118,6 +119,7 @@ export const useCases = [
   'Lettura dei capitolati',
   'Verifica dei preventivi',
   'Ricerca fra le condizioni',
+  'Allegati da WhatsApp e email',
   'Archivio documentale',
   'Proposte pronte per il cliente',
 ] as const;

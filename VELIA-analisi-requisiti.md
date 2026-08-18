@@ -3,8 +3,8 @@
 | Campo | Valore |
 |---|---|
 | Prodotto | VELIA |
-| Versione documento | 0.9 (bozza) |
-| Data | 04/08/2026 |
+| Versione documento | 0.10 (bozza) |
+| Data | 19/08/2026 |
 | Stato | In lavorazione |
 | Autore | Blusail Technologies S.R.L.S. |
 
@@ -14,7 +14,7 @@
 
 ### 1.1 Scopo del documento
 
-Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di VELIA, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni, che comprendono sia regole scritte sia documenti di riferimento — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, e alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con sistemi esterni) saranno oggetto di versioni future del documento.
+Questo documento raccoglie e formalizza i requisiti funzionali e non funzionali di VELIA, piattaforma AI per il settore assicurativo. La presente versione copre il nucleo iniziale del prodotto: l'**archivio documentale pubblico precaricato**, l'**archivio privato per utente/agenzia**, la **referenziazione dei documenti all'interno della chat conversazionale**, le **tabelle di analisi** multi-documento e la **condivisione** di conversazioni e tabelle all'interno del tenant, il **sistema di impostazioni** — scelta del modello/provider AI e personalizzazione della metodologia di ragionamento tramite istruzioni, che comprendono sia regole scritte sia documenti di riferimento — e la sezione **Agenti**, per la creazione di task AI eseguibili manualmente o su pianificazione, oltre alla generazione di **output client-ready** su template grafici precaricati, all'esposizione delle capacità della piattaforma tramite **server MCP**, utilizzabile dai client AI compatibili del tenant, alla **memoria persistente** dell'assistente, che accumula il contesto del tenant nel tempo, e ai **canali di comunicazione** — WhatsApp ed email — attraverso cui i documenti in arrivo entrano nell'Archivio Privato e gli output client-ready raggiungono il cliente finale, sempre previa approvazione di un utente. Funzionalità successive (es. automazioni verticali su rinnovi e retention, integrazioni con i gestionali di agenzia) saranno oggetto di versioni future del documento.
 
 ### 1.2 Ambito del prodotto
 
@@ -50,6 +50,7 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 | MCP (Model Context Protocol) | Protocollo standard che permette a client AI esterni (es. Claude, ChatGPT) di utilizzare strumenti e dati esposti da un server terzo. |
 | Server MCP di VELIA | Componente della piattaforma che espone le capacità di VELIA (ricerca e interrogazione degli archivi) come tool MCP richiamabili dai client AI del tenant. |
 | Memoria persistente | Insieme di informazioni durevoli che l'assistente apprende dalle interazioni (prassi, contesto su clienti e pratiche, preferenze) e riutilizza automaticamente nelle conversazioni ed esecuzioni successive del tenant. |
+| Canale collegato | Canale di comunicazione esterno associato al tenant — un numero WhatsApp Business o una casella email dedicata — attraverso cui i documenti in arrivo entrano nell'Archivio Privato e gli output generati raggiungono il cliente finale. |
 | DNA d'Agenzia | Nome collettivo dello strato di personalizzazione del tenant: le istruzioni personalizzate del Modulo D — regole scritte (RF-D-04) e documenti di riferimento (RF-D-14) — e la memoria persistente del Modulo G. È ciò che rende le risposte di VELIA uniche per ciascuna agenzia. |
 
 ### 1.4 Attori
@@ -64,7 +65,7 @@ Il differenziale rispetto ai competitor esistenti (es. Navisio.ai, limitato alla
 
 ## 2. Descrizione generale del sistema
 
-Il sistema si articola in tre moduli fortemente integrati:
+Il sistema si articola in otto moduli fortemente integrati:
 
 **Modulo A — Archivio Pubblico.** Libreria documentale precaricata, uguale per tutti i tenant, contenente i set informativi e i documenti pubblici delle polizze delle principali compagnie operanti sul mercato italiano. L'utente la trova già popolata al primo accesso: è il "catalogo" su cui interrogare il sistema fin da subito, senza alcun onere di caricamento.
 
@@ -89,11 +90,13 @@ Nelle Impostazioni risiede anche la libreria dei template di output: modelli gra
 
 **Modulo G — Memoria persistente.** L'assistente non riparte da zero a ogni conversazione: apprende e conserva le informazioni durevoli che emergono dal lavoro quotidiano — le prassi dell'agenzia, il contesto su clienti e pratiche ricorrenti, le decisioni già prese, le preferenze di formato — e le riutilizza automaticamente in chat e nelle esecuzioni degli agenti. Con il tempo il sistema conosce l'agenzia come un collaboratore storico: è il meccanismo che rende VELIA più prezioso a ogni settimana d'uso e progressivamente più difficile da sostituire. La memoria è trasparente per costruzione: consultabile, modificabile e cancellabile dall'utente.
 
+**Modulo H — Canali (WhatsApp ed email).** I documenti dell'agenzia non nascono in piattaforma: arrivano su WhatsApp e nelle caselle email, ed è su quegli stessi canali che le proposte devono tornare al cliente. Il modulo collega al tenant un numero WhatsApp Business e una o più caselle email dedicate: gli allegati ricevuti confluiscono nell'Archivio Privato con la classificazione assistita, eliminando il passaggio scarica-e-ricarica che oggi precede ogni upload; gli output client-ready generati su template partono verso il cliente finale direttamente dalla piattaforma. Due principi non negoziabili: nessun contenuto generato dall'AI viene inviato in autonomia — ogni invio verso il cliente finale richiede l'approvazione esplicita di un utente — e numeri e caselle sono mappati su un solo tenant, con lo stesso isolamento degli archivi. I canali estendono infine le notifiche degli agenti (Modulo E) oltre l'in-app.
+
 I meccanismi di personalizzazione — le istruzioni del Modulo D, nelle loro due nature di regole scritte (RF-D-04) e documenti di riferimento (RF-D-14), e la memoria persistente del Modulo G — formano insieme il **DNA d'Agenzia**: le regole dette, i documenti di riferimento e il contesto appreso che rendono le risposte di VELIA uniche per ciascun tenant. Il DNA d'Agenzia cresce con l'uso, non è replicabile da un concorrente che parte da zero e costituisce il principale valore accumulato dal cliente sulla piattaforma.
 
 La linea di separazione è il **modo in cui nascono**: le istruzioni sono deliberate e autorevoli — qualcuno le ha scritte o caricate — mentre la memoria è dedotta e fallibile. Da qui discende la precedenza sancita da RF-G-04: in caso di conflitto vincono le istruzioni. E da qui discende anche il criterio pratico con cui l'utente sceglie dove mettere una cosa: se è una regola su *come giudicare* è una regola scritta; se è un contenuto che va citato, o è più lungo di una pagina, è un documento di riferimento.
 
-Il flusso d'uso tipico: l'operatore riceve un preventivo dal cliente → lo carica nell'Archivio Privato → in chat lo referenzia insieme al set informativo (già presente nell'Archivio Pubblico) del prodotto concorrente → chiede un confronto tra garanzie, massimali, franchigie ed esclusioni → ottiene una risposta strutturata con riferimenti puntuali ai passaggi dei documenti, valutata secondo le istruzioni personalizzate della propria agenzia.
+Il flusso d'uso tipico: l'operatore riceve un preventivo dal cliente — su WhatsApp o per email, da cui entra da solo nell'Archivio Privato tramite i canali collegati (Modulo H), oppure caricandolo a mano → in chat lo referenzia insieme al set informativo (già presente nell'Archivio Pubblico) del prodotto concorrente → chiede un confronto tra garanzie, massimali, franchigie ed esclusioni → ottiene una risposta strutturata con riferimenti puntuali ai passaggi dei documenti, valutata secondo le istruzioni personalizzate della propria agenzia.
 
 ---
 
@@ -181,7 +184,7 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | RF-E-04 | L'utente DEVE poter pianificare l'esecuzione ricorrente di un agente (es. giornaliera, settimanale, mensile, con orario), con possibilità di sospendere e riprendere la pianificazione. | M |
 | RF-E-05 | All'esecuzione manuale l'utente DOVREBBE poter fornire parametri di input variabili previsti dalla definizione dell'agente (es. il documento su cui operare in quella specifica esecuzione). | S |
 | RF-E-06 | Il sistema DEVE mantenere per ciascun agente uno storico delle esecuzioni: data/ora, modalità (manuale/schedulata), stato (in corso, completata, fallita), output prodotto e log sintetico. | M |
-| RF-E-07 | Gli output degli agenti DEVONO essere consultabili in piattaforma; il sistema DOVREBBE notificare l'utente al completamento delle esecuzioni pianificate (in-app e/o email). | M/S |
+| RF-E-07 | Gli output degli agenti DEVONO essere consultabili in piattaforma; il sistema DOVREBBE notificare l'utente al completamento delle esecuzioni pianificate (in-app, email e/o gli altri canali collegati — RF-H-07). | M/S |
 | RF-E-08 | Le esecuzioni degli agenti DEVONO rispettare gli stessi vincoli della chat: isolamento del tenant (RF-B-01), istruzioni personalizzate del Modulo D, obbligo di citazione (RF-C-04) e dichiarazione di non-copertura (RF-C-08). | M |
 | RF-E-09 | Il sistema DEVE applicare limiti per tenant sulle esecuzioni (numero di agenti attivi, frequenza minima di schedulazione, esecuzioni concorrenti), coerenti con il piano commerciale e con RNF-05. | M |
 | RF-E-10 | Il sistema DOVREBBE offrire una libreria di agenti predefiniti (template) attivabili e personalizzabili (es. monitoraggio di nuove edizioni dei set informativi dei prodotti preferiti, riepilogo settimanale dei documenti caricati nell'Archivio Privato). | S |
@@ -212,6 +215,21 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | RF-G-06 | La memoria DOVREBBE alimentare anche le esecuzioni degli agenti (Modulo E), così che i task pianificati beneficino del contesto accumulato del tenant. | S |
 | RF-G-07 | L'utente DOVREBBE poter registrare esplicitamente un ricordo dalla chat (es. "ricordati che...") con conferma visibile del salvataggio. | S |
 
+### 3.8 Modulo H — Canali (WhatsApp ed email)
+
+| ID | Requisito | Priorità |
+|---|---|---|
+| RF-H-01 | L'amministratore di tenant DEVE poter collegare al tenant, dalla sezione Impostazioni, canali di comunicazione esterni: un numero WhatsApp Business e una o più caselle email dedicate. Collegamento, sospensione e revoca sono riservati all'amministratore; lo stato dei canali collegati è visibile in Impostazioni. | M |
+| RF-H-02 | I documenti ricevuti sui canali collegati (allegati email, file WhatsApp) DEVONO confluire automaticamente nell'Archivio Privato, con le stesse garanzie dell'upload manuale: classificazione assistita (RF-B-03), stato di elaborazione visibile (RF-B-05), limiti di piano (RF-B-08). Mittente, data e testo/oggetto del messaggio di accompagnamento sono acquisiti come metadati del documento. | M |
+| RF-H-03 | Il sistema DOVREBBE riconoscere il mittente già noto (numero o indirizzo) e proporre l'associazione del documento a cliente/pratica di riferimento, modificabile dall'utente. | S |
+| RF-H-04 | I messaggi provenienti da mittenti sconosciuti DEVONO essere trattenuti in un'area di revisione: entrano nell'Archivio Privato solo dopo conferma di un utente del tenant. | M |
+| RF-H-05 | L'utente DEVE poter inviare gli output client-ready (RF-C-10) al cliente finale direttamente dai canali collegati, senza download e reinvio manuale, scegliendo canale e destinatario dall'interfaccia. | M |
+| RF-H-06 | Ogni invio verso il cliente finale DEVE essere approvato esplicitamente da un utente prima della partenza: il sistema NON DEVE mai inviare contenuti generati dall'AI in autonomia. Il vincolo vale anche per gli output prodotti dalle esecuzioni degli agenti (Modulo E). | M |
+| RF-H-07 | Le notifiche delle esecuzioni degli agenti (RF-E-07) DOVREBBERO poter essere recapitate sui canali scelti dall'utente: email e/o WhatsApp. Queste notifiche sono dirette agli utenti del tenant, mai ai clienti finali. | S |
+| RF-H-08 | Numeri WhatsApp e caselle email DEVONO essere associati univocamente a un solo tenant, con lo stesso isolamento degli archivi (RF-B-01); tutti i messaggi in ingresso e in uscita DEVONO essere tracciati nei log (RNF-07), con storico di invii e ricezioni consultabile per canale. | M |
+| RF-H-09 | Gli invii DEVONO avvenire nel rispetto del GDPR e della normativa sulle comunicazioni dell'intermediario: destinatari per cui il tenant dispone di idonea base giuridica, informativa dove richiesta, contenuti approvati (RF-H-06). La responsabilità del contenuto inviato resta dell'agenzia (coerenza con RNF-03). | M |
+| RF-H-10 | L'interrogazione conversazionale di VELIA direttamente dal canale (es. porre domande via WhatsApp e ricevere risposte dagli archivi) POTREBBE essere introdotta in versioni successive, con gli stessi vincoli di citazione e non-copertura della chat (RF-C-04, RF-C-08). | C |
+
 ---
 
 ## 4. Requisiti non funzionali
@@ -234,7 +252,7 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 2. **Naming e dominio:** il nome di prodotto confermato è VELIA; la scelta del dominio è in corso e non impatta i requisiti qui descritti.
 3. **Cliente pilota:** è disponibile un'agenzia assicurativa pilota con documenti reali; il test case di riferimento per il Modulo C è il confronto ramo auto tra polizza Cattolica/Generali "Active Veicoli AUTOPIÙ con Telematica" e un preventivo Unipol sullo stesso veicolo.
 4. **Dipendenza da provider AI terzi:** il sistema si appoggia a modelli di provider esterni; disponibilità, versioni, prezzi e termini d'uso sono variabili esogene. Il layer di astrazione multi-provider (RF-D-02) è il presidio architetturale di questo rischio.
-5. **Perimetro della prima release:** le automazioni verticali su rinnovi/retention e le integrazioni con sistemi esterni restano fuori dal perimetro di questo documento; la sezione Agenti (Modulo E) ne costituisce però la base abilitante, e i moduli qui descritti devono essere progettati senza precluderne l'introduzione. Fa eccezione il server MCP (Modulo F), che non è un'integrazione con i gestionali di agenzia ma un'esposizione di VELIA verso i client AI dell'utente.
+5. **Perimetro della prima release:** le automazioni verticali su rinnovi/retention e le integrazioni con i gestionali di agenzia restano fuori dal perimetro di questo documento; la sezione Agenti (Modulo E) ne costituisce però la base abilitante, e i moduli qui descritti devono essere progettati senza precluderne l'introduzione. Fanno eccezione il server MCP (Modulo F), che non è un'integrazione con i gestionali ma un'esposizione di VELIA verso i client AI dell'utente, e i canali WhatsApp ed email (Modulo H), che non integrano un sistema terzo dell'agenzia ma collegano la piattaforma ai canali su cui documenti e clienti già transitano.
 
 ---
 
@@ -256,10 +274,44 @@ Convenzione: i requisiti sono identificati come `RF-<modulo>-<numero>`. Priorit�
 | 12 | **Dimensionamento di tabelle e documenti di riferimento (RF-C-11, RF-D-14):** limiti su documenti × colonne per tabella e sull'ampiezza del contesto permanente, che incide sul costo di ogni singola query. L'ambito di validità (RF-D-06) mitiga il problema — un documento entra in contesto solo quando pertinente — ma non lo elimina. Da definire in coerenza con RNF-05. | Sostenibilità economica e UX. |
 | 13 | **Perimetro e pricing dell'accesso MCP (Modulo F):** quali tool esporre al lancio, come conteggiare e prezzare le interazioni provenienti dai client esterni (incluse nel canone? pacchetto dedicato?), e policy di sicurezza per l'accesso programmatico all'Archivio Privato. | Decisione di prodotto, commerciale e di sicurezza. |
 | 14 | **Regole di apprendimento e perimetro privacy della memoria (Modulo G):** cosa merita di essere memorizzato e cosa no (dati dei clienti finali, basi giuridiche GDPR, retention), come prevenire ricordi errati o obsoleti che degradano le risposte, e come comunicare al tenant il funzionamento della memoria in modo che generi fiducia e non diffidenza. | Privacy, qualità e fiducia. |
+| 15 | **Attivazione dei canali (Modulo H):** la WhatsApp Business Platform richiede un numero dedicato, la verifica dell'azienda presso Meta e template pre-approvati per i messaggi in uscita fuori dalla finestra di servizio di 24 ore, con costo per conversazione; per l'email vanno decisi il modello di casella (dedicata fornita da VELIA vs. casella esistente dell'agenzia) e i presidi di deliverability. Costi ricorrenti e percorso di onboarding da validare col cliente pilota. | Fattibilità operativa, costi (RNF-05) e UX di attivazione. |
+| 16 | **Perimetro normativo degli invii al cliente finale (RF-H-09):** quali comunicazioni dell'intermediario possono transitare da WhatsApp ed email e con quali obblighi (consenso, informativa, conservazione delle comunicazioni), da chiarire con consulenza legale insieme a RNF-03. | Rischio legale e di conformità, da chiudere prima dell'attivazione dei canali. |
 
 ---
 
 ## 7. Storico delle revisioni
+
+### 0.10 — 19/08/2026
+
+**Nasce il Modulo H — Canali (WhatsApp ed email).**
+
+I canali di comunicazione entrano nel perimetro del documento: un numero
+WhatsApp Business e caselle email dedicate, collegati al tenant.
+
+*Perché.* Il flusso d'uso tipico del §2 parte da "l'operatore riceve un
+preventivo dal cliente": nella pratica quel preventivo arriva su WhatsApp o
+per email, e il passaggio scarica-e-ricarica è il primo attrito
+all'adozione quotidiana. Allo stesso modo gli output client-ready (RF-C-10)
+oggi si fermano al download, mentre la consegna avviene sugli stessi
+canali. Il modulo chiude il cerchio in ingresso (allegati → Archivio
+Privato con classificazione assistita) e in uscita (invio dell'output al
+cliente finale dalla piattaforma).
+
+*Due principi fondativi.* Nessun contenuto generato dall'AI parte in
+autonomia: ogni invio al cliente finale richiede l'approvazione esplicita
+di un utente (RF-H-06) — nel dominio assicurativo un'allucinazione
+consegnata a un cliente è un rischio professionale, non un bug. E numeri e
+caselle sono mappati su un solo tenant, con l'isolamento degli archivi
+(RF-H-08).
+
+| Cambiamento | |
+|---|---|
+| RF-H-01…RF-H-10 | nuovi — collegamento canali, ingestione, revisione mittenti ignoti, invio con approvazione, notifiche, isolamento, conformità |
+| RF-E-07 | allineato: le notifiche degli agenti citano i canali collegati (RF-H-07) |
+| §1.1, §1.3, §2, §5.5 | allineati (aggiunto il Modulo H; corretto "tre moduli" in "otto moduli" al §2) |
+| §6.15, §6.16 | nuovi punti aperti: attivazione dei canali; perimetro normativo degli invii |
+
+---
 
 ### 0.9 — 04/08/2026
 
@@ -293,4 +345,4 @@ aperto §6.12, vincolo RNF-05 — passa da fisso a condizionato.
 
 ---
 
-*Prossime revisioni previste: requisiti di integrazione con sistemi esterni; requisiti delle automazioni su rinnovi e retention; dashboard di utilizzo per l'amministratore; spazi condivisi tra organizzazioni; modello dei ruoli e permessi di dettaglio; requisiti di onboarding tenant.*
+*Prossime revisioni previste: requisiti di integrazione con i gestionali di agenzia; requisiti delle automazioni su rinnovi e retention; dashboard di utilizzo per l'amministratore; spazi condivisi tra organizzazioni; modello dei ruoli e permessi di dettaglio; requisiti di onboarding tenant.*
