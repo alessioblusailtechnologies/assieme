@@ -4,12 +4,34 @@ export interface Props {
   title: string;
   lead?: string;
   cta?: { label: string; href: string };
+  /** Video di sfondo decorativo: sotto il velo scuro, come la hero della home. */
+  video?: { src: string; poster: string };
 }
 
-const { eyebrow, title, lead, cta } = Astro.props;
+const { eyebrow, title, lead, cta, video } = Astro.props;
 ---
 
-<section class="page-hero on-ink" aria-labelledby="page-title">
+<section
+  class:list={['page-hero', 'on-ink', video && 'page-hero--video']}
+  aria-labelledby="page-title"
+>
+  {
+    video && (
+      <video
+        class="page-hero__video"
+        src={video.src}
+        poster={video.poster}
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        aria-hidden="true"
+        tabindex="-1"
+      />
+    )
+  }
+
   <div class="page-hero__inner">
     <p class="eyebrow">{eyebrow}</p>
     <h1 class="serif page-hero__title" id="page-title">{title}</h1>
@@ -26,13 +48,39 @@ const { eyebrow, title, lead, cta } = Astro.props;
 
 <style>
   .page-hero {
+    position: relative;
     background:
       linear-gradient(90deg, #1c1a15 0%, rgb(28 26 21 / 88%) 100%),
       repeating-linear-gradient(135deg, #24221c 0 10px, #2e2b24 10px 20px);
     padding: clamp(3.5rem, 1.6rem + 7.6vw, 7rem) var(--gutter);
   }
 
+  .page-hero__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Il velo sopra il video, come nella hero della home: ::after viene dopo
+     il video nell'ordine di pittura, niente z-index. */
+  .page-hero--video::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      #1c1a15 0%,
+      rgb(28 26 21 / 92%) 42%,
+      rgb(28 26 21 / 55%) 70%,
+      rgb(28 26 21 / 45%) 100%
+    );
+  }
+
   .page-hero__inner {
+    position: relative; /* sopra il velo in ::after */
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -58,5 +106,24 @@ const { eyebrow, title, lead, cta } = Astro.props;
 
   .page-hero__cta {
     margin-top: 0.5rem;
+  }
+
+  /* Sullo schermo stretto il velo si alleggerisce a destra, come sulla
+     home: il video deve respirare, non affogare sotto lo scuro uniforme. */
+  @media (max-width: 640px) {
+    .page-hero--video::after {
+      background: linear-gradient(
+        90deg,
+        #1c1a15 0%,
+        rgb(28 26 21 / 78%) 45%,
+        rgb(28 26 21 / 42%) 100%
+      );
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-hero__video {
+      display: none;
+    }
   }
 </style>
