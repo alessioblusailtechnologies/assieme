@@ -53,8 +53,10 @@ esperimento-motore/workspace/tenant/
 esperimento-motore/risultati/
 
 # Sorgenti video stock (Envato e simili) appoggiati nella root: pesano
-# decine di MB e in repo va solo l'encodato di website/public/media/.
+# decine o centinaia di MB e in repo va solo l'encodato di
+# website/public/media/.
 /*-utc.mp4
+/*-utc.mov
 
 # Caratteri in prova sotto licenza commerciale.
 # Le licenze trial (TypeType e simili) permettono di valutare il font sul
