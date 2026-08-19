@@ -1,7 +1,7 @@
 ---
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import PageHero from '~/components/PageHero.astro';
-import { FORM_ENDPOINT, SITE_URL, site } from '~/config/site';
+import { FORM_ACCESS_KEY, FORM_ENDPOINT, SITE_URL, site } from '~/config/site';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 const steps = [
@@ -84,6 +84,12 @@ const contactSchema = {
           novalidate
           data-demo-form
         >
+          {/* Campi di servizio Web3Forms: destinazione, oggetto della mail
+              e pagina di atterraggio dopo l'invio. */}
+          <input type="hidden" name="access_key" value={FORM_ACCESS_KEY} />
+          <input type="hidden" name="subject" value="Richiesta demo dal sito" />
+          <input type="hidden" name="from_name" value="Sito Velia" />
+          <input type="hidden" name="redirect" value={`${SITE_URL}/demo/grazie`} />
           <div class="form__row">
             <label class="form__field">
               <span class="form__label">Nome e cognome <abbr title="obbligatorio">*</abbr></span>
@@ -156,12 +162,12 @@ const contactSchema = {
             </span>
           </label>
 
-          {/* Trappola per i bot: invisibile e fuori dall'ordine di tabulazione.
-              Se arriva compilato, la richiesta non è umana. */}
+          {/* Trappola per i bot di Web3Forms: invisibile e fuori dall'ordine
+              di tabulazione. Se arriva spuntata, il servizio scarta l'invio. */}
           <div class="form__trap" aria-hidden="true">
             <label>
-              Non compilare questo campo
-              <input type="text" name="azienda_extra" tabindex="-1" autocomplete="off" />
+              Non spuntare questa casella
+              <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" />
             </label>
           </div>
 
@@ -170,8 +176,8 @@ const contactSchema = {
           </button>
 
           <p class="form__note">
-            Ti rispondiamo entro il giorno lavorativo successivo. I dati restano
-            in Unione Europea e non vengono ceduti a terzi.
+            Ti rispondiamo entro il giorno lavorativo successivo. I tuoi dati
+            servono solo per ricontattarti e non vengono ceduti a terzi.
           </p>
 
           <p class="form__error" role="alert" hidden data-form-error></p>

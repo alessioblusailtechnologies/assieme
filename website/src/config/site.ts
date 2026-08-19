@@ -1,6 +1,12 @@
-import { APP_URL, FORM_ENDPOINT, SITE_URL, STATUS_URL } from './env.mjs';
+import {
+  APP_URL,
+  FORM_ACCESS_KEY,
+  FORM_ENDPOINT,
+  SITE_URL,
+  STATUS_URL,
+} from './env.mjs';
 
-export { APP_URL, FORM_ENDPOINT, SITE_URL, STATUS_URL };
+export { APP_URL, FORM_ACCESS_KEY, FORM_ENDPOINT, SITE_URL, STATUS_URL };
 
 /* -------------------------------------------------------------------------
  * Identità

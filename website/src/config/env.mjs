@@ -19,8 +19,18 @@ export const STATUS_URL = process.env.STATUS_URL || 'https://status.sonovelia.it
 /**
  * Endpoint a cui il modulo «Richiedi una demo» invia i dati.
  *
- * Il sito è statico: non esiste un backend che possa riceverli. Va impostato
- * con l'URL del CRM, del form provider o di una funzione serverless PRIMA
- * della messa online — altrimenti le richieste di demo si perdono.
+ * Il sito è statico: la ricezione è affidata a Web3Forms, che fa da staffetta
+ * verso la casella dell'agenzia senza conservare gli invii. Il piano gratuito
+ * accetta solo POST dal browser: qualunque test va fatto dalla pagina, non
+ * da terminale.
  */
-export const FORM_ENDPOINT = process.env.FORM_ENDPOINT || '';
+export const FORM_ENDPOINT =
+  process.env.FORM_ENDPOINT || 'https://api.web3forms.com/submit';
+
+/**
+ * La access key di Web3Forms identifica la destinazione degli invii. È
+ * pensata per stare in chiaro nell'HTML: non è un segreto, il filtro spam
+ * sta nel campo botcheck e nei controlli del servizio.
+ */
+export const FORM_ACCESS_KEY =
+  process.env.FORM_ACCESS_KEY || '932e5e9d-30dc-406e-82dd-6fb042b20a7e';
