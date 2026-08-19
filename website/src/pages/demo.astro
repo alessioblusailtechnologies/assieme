@@ -438,12 +438,53 @@ const contactSchema = {
 
       // Senza destinatario configurato il POST porterebbe a una pagina bianca:
       // meglio fermarsi e dirlo.
-      if (!form.getAttribute('action')) {
+      const action = form.getAttribute('action');
+      if (!action) {
         event.preventDefault();
         errorBox.textContent =
           'Invio non configurato su questo ambiente. Scrivi a ciao@sonovelia.it e ti rispondiamo subito.';
         errorBox.hidden = false;
+        return;
       }
+
+      /*
+       * Invio via fetch invece del POST nativo: Web3Forms ignora il campo
+       * `redirect` quando il dominio non gli torna, e l'utente atterrerebbe
+       * sulla loro pagina di conferma. Così la richiesta parte in JSON e
+       * l'atterraggio su /demo/grazie lo governiamo noi. Il POST nativo
+       * resta come ripiego per chi naviga senza JavaScript.
+       */
+      event.preventDefault();
+
+      const submit = form.querySelector<HTMLButtonElement>('[type="submit"]');
+      const label = submit?.textContent ?? '';
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent = 'Invio in corso…';
+      }
+
+      fetch(action, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: new FormData(form),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.success) {
+            window.location.href = '/demo/grazie';
+            return;
+          }
+          throw new Error(data?.message ?? `HTTP ${res.status}`);
+        })
+        .catch(() => {
+          if (submit) {
+            submit.disabled = false;
+            submit.textContent = label;
+          }
+          errorBox.textContent =
+            'Non siamo riusciti a inviare la richiesta. Riprova fra qualche istante, oppure scrivi a ciao@sonovelia.it.';
+          errorBox.hidden = false;
+        });
     });
   }
 </script>
