@@ -28,8 +28,9 @@ export const site = {
   foundingYear: 2025,
   email: 'ciao@sonovelia.it',
   social: {
-    linkedin: 'https://www.linkedin.com/company/blusail-technologies',
-    x: 'https://x.com/sonovelia',
+    linkedin: 'https://www.linkedin.com/company/sono-velia',
+    facebook: 'https://www.facebook.com/people/Sono-Velia/61593652101712/',
+    instagram: 'https://www.instagram.com/sonovelia',
     youtube: 'https://www.youtube.com/@sonovelia',
   },
 } as const;
@@ -102,7 +103,8 @@ export const footerNav: FooterColumn[] = [
     title: 'Seguici',
     items: [
       { label: 'LinkedIn', href: site.social.linkedin, external: true },
-      { label: 'X', href: site.social.x, external: true },
+      { label: 'Facebook', href: site.social.facebook, external: true },
+      { label: 'Instagram', href: site.social.instagram, external: true },
       { label: 'YouTube', href: site.social.youtube, external: true },
     ],
   },

@@ -72,7 +72,12 @@ const organizationSchema = {
     addressCountry: site.country,
   },
   areaServed: { '@type': 'Country', name: 'Italia' },
-  sameAs: [site.social.linkedin, site.social.x, site.social.youtube],
+  sameAs: [
+    site.social.linkedin,
+    site.social.facebook,
+    site.social.instagram,
+    site.social.youtube,
+  ],
 };
 
 const websiteSchema = {
