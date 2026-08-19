@@ -16,23 +16,23 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 const products = [
   {
     id: 'archivio-pubblico',
-    title: 'Biblioteca',
-    body: 'Le condizioni delle compagnie sono già dentro. Il primo giorno fai domande, non caricamenti.',
+    title: 'Archivio pubblico',
+    body: 'Il mercato assicurativo italiano è già dentro, ordinato e aggiornato. Il primo giorno fai domande, non caricamenti.',
   },
   {
     id: 'archivio-privato',
     title: 'Il tuo archivio',
-    body: "Preventivi, polizze emesse, appendici e corrispondenza dell'agenzia, a fianco dei documenti delle compagnie.",
+    body: "Quello che entra in agenzia trova posto da solo. E da quel momento risponde, ogni volta che lo chiami in causa.",
   },
   {
     id: 'confronto',
     title: 'Confronto',
-    body: 'Metti due documenti uno accanto all\'altro e leggi solo quello che cambia davvero.',
+    body: 'Due prodotti, una domanda: che cosa cambia davvero. La risposta arriva in secondi, non in pomeriggi.',
   },
   {
     id: 'tabelle',
     title: 'Tabelle',
-    body: 'Decine di prodotti, i criteri che scegli tu, la fonte in ogni singola casella.',
+    body: 'Decine di prodotti letti in parallelo, i criteri che scegli tu, la fonte in ogni singola casella.',
   },
   {
     id: 'istruzioni',
@@ -52,29 +52,29 @@ const products = [
   {
     id: 'agenti',
     title: 'Agenti',
-    body: 'Affida il lavoro che si ripete, scegli ogni quanto, ritrovalo fatto.',
+    body: 'Il lavoro che si ripete lo descrivi una volta, in italiano. Poi lo ritrovi fatto.',
   },
   {
     id: 'ecosistema',
     title: 'Ecosistema',
-    body: 'Interroga i tuoi archivi anche da dove già lavori, senza cambiare strumento.',
+    body: 'Velia ti raggiunge negli strumenti che già usi ogni giorno, senza farti cambiare abitudini.',
   },
   {
     id: 'memoria',
     title: 'Ricorda',
-    body: 'Non ricomincia da capo. Tiene a mente le tue prassi e te le applica da solo.',
+    body: "Ogni settimana di lavoro la rende più precisa. E quello che impara resta dell'agenzia.",
   },
 ];
 ---
 
 <BaseLayout
-  title="La piattaforma"
-  description="Le condizioni delle compagnie già in archivio, i documenti della tua agenzia accanto ai loro, confronti con la fonte citata e documenti pronti per il cliente."
+  title="La piattaforma AI per il lavoro di agenzia"
+  description="Velia è l'intelligenza artificiale per agenzie, broker e intermediari assicurativi: interroga il mercato, confronta i prodotti, prepara proposte con il tuo marchio e automatizza il lavoro che si ripete, con la fonte sotto ogni risposta."
 >
   <PageHero
     eyebrow="Piattaforma"
-    title="Tutto quello che serve per leggere un contratto in fretta"
-    lead="Velia mette insieme le condizioni delle compagnie, i documenti della tua agenzia e il modo in cui la tua agenzia li valuta. E di ogni risposta ti dice sempre da dove viene."
+    title="Tutta l'agenzia, una sola intelligenza"
+    lead="Interroga il mercato, confronta i prodotti, prepara le proposte, sorveglia le novità. Velia mette il lavoro di giorni in una conversazione, con il metodo della tua agenzia e la fonte sotto ogni risposta."
     cta={{ label: 'Richiedi una demo', href: '/demo' }}
   />
 
@@ -82,22 +82,21 @@ const products = [
 
   <CardGrid
     title="Che cosa trovi dentro"
-    lead="Dieci strumenti che lavorano sugli stessi documenti e si passano il lavoro fra loro."
+    lead="Dieci strumenti che si passano il lavoro fra loro e parlano la lingua del mestiere, non quella dei software."
     cards={products}
   />
 
   <FeatureBlock
-    eyebrow="Biblioteca"
-    title="Il primo giorno non comincia da una cartella vuota"
+    eyebrow="Archivio pubblico"
+    title="Arrivi, e il mercato lo sai già tutto"
     rows={[
       {
-        term: 'Già dentro',
-        detail:
-          'DIP, DIP Aggiuntivo e Condizioni di Assicurazione dei prodotti sul mercato italiano',
+        term: 'Già pronto',
+        detail: 'I prodotti delle principali compagnie italiane, caricati e mantenuti da noi',
       },
       {
         term: 'Ordinato',
-        detail: 'Per compagnia, ramo, prodotto ed edizione, con la versione in corso in evidenza',
+        detail: 'Compagnie, rami, prodotti ed edizioni, con la versione in corso in evidenza',
       },
       {
         term: 'Aggiornato',
@@ -119,14 +118,15 @@ const products = [
       <img class="figura__fermo" src="/media/astratto-biblioteca-poster.jpg" alt="" loading="lazy" />
     </Fragment>
     <p>
-      Ogni comparatore in circolazione ti chiede prima di tutto di caricare i
-      documenti. È il lavoro che la normativa ha già fatto (le condizioni sono
-      pubbliche per obbligo di legge) rifatto da capo in ogni agenzia d'Italia.
+      Gli strumenti generici nascono vuoti: prima di darti una mano vanno
+      riempiti, istruiti e mantenuti, agenzia per agenzia. Velia arriva piena:
+      conosce i prodotti sul mercato, le loro edizioni e le loro condizioni, e
+      li tiene aggiornati per te.
     </p>
     <p>
-      Da noi sono già lì, catalogate. Tu carichi solo quello che è tuo: il
-      preventivo che il cliente ha portato stamattina. E se è arrivato su
-      WhatsApp o per email, entra in archivio da solo.
+      Tu aggiungi solo quello che è tuo: il preventivo che il cliente ha
+      portato stamattina, la polizza da rinnovare. E se è arrivato su WhatsApp
+      o per email, entra da solo.
     </p>
     <a class="btn btn--outline" href="/demo" slot="actions">
       Chiedi quali compagnie sono già coperte
@@ -172,7 +172,7 @@ const products = [
       è rumore.
     </p>
     <p>
-      Ad Velia lo dici una volta. È la differenza fra uno strumento che
+      A Velia lo dici una volta. È la differenza fra uno strumento che
       applica i propri criteri e uno che applica i tuoi.
     </p>
   </FeatureBlock>

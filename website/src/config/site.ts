@@ -59,7 +59,7 @@ export const footerNav: FooterColumn[] = [
   {
     title: 'Piattaforma',
     items: [
-      { label: 'Biblioteca', href: '/piattaforma#archivio-pubblico' },
+      { label: 'Archivio pubblico', href: '/piattaforma#archivio-pubblico' },
       { label: 'Il tuo archivio', href: '/piattaforma#archivio-privato' },
       { label: 'Confronti e tabelle', href: '/piattaforma#confronto' },
       { label: 'Agenti', href: '/piattaforma#agenti' },
