@@ -125,19 +125,20 @@ export const useCases = [
 ] as const;
 
 /* -------------------------------------------------------------------------
- * Dal campo — non più una citazione firmata: il prodotto ha una sola
- * agenzia pilota e nessuna frase autorizzata, quindi la storia è raccontata
- * in terza persona, senza virgolette né firma da inventare.
+ * Dal campo — non una citazione firmata: nessuna frase autorizzata da
+ * pubblicare, quindi la storia è raccontata in terza persona, senza
+ * virgolette né firma da inventare.
  * ---------------------------------------------------------------------- */
 
 export const testimonial = {
   quote:
-    "Un'agenzia pilota ci ha spiegato una volta sola, in italiano, che gli infortuni del conducente li copre sempre con una polizza a parte. Da allora Velia non li segnala più come carenza: ragiona come ragionano loro.",
+    "Un'agenzia ci ha spiegato una volta sola, in italiano, che gli infortuni del conducente li copre sempre con una polizza a parte. Da allora Velia non li segnala più come carenza: ragiona come ragionano loro.",
   href: '/clienti',
 } as const;
 
 /* -------------------------------------------------------------------------
- * Dimostrazioni — non storie cliente: il prodotto non è ancora in adozione
+ * Dimostrazioni — non storie cliente firmate: nessun caso pubblicabile con
+ * nome e numeri, quindi si mostra il prodotto al lavoro.
  * ---------------------------------------------------------------------- */
 
 export const stories = [
@@ -160,7 +161,8 @@ export const stories = [
 ] as const;
 
 /* -------------------------------------------------------------------------
- * Numeri — non adozione (il prodotto è pre-lancio) ma scelte di progetto.
+ * Numeri — non metriche di adozione (non ne pubblichiamo) ma scelte di
+ * progetto, verificabili in demo.
  * ---------------------------------------------------------------------- */
 
 export const statsIntro = ['Meno tempo sui documenti,', 'più tempo con i clienti'];

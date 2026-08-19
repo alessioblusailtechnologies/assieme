@@ -6,10 +6,10 @@ import BaseLayout from '~/layouts/BaseLayout.astro';
 import { stats } from '~/data/home';
 
 /**
- * Il prodotto è in fase pilota con una sola agenzia: questa pagina racconta
- * che cosa Velia fa, non quanti lo usano. Le tre voci sono dimostrazioni
- * su documenti reali, non casi cliente — e la prima è il test case di
- * riferimento indicato nei requisiti (§5.3).
+ * Il prodotto è sul mercato e in forte crescita: la pagina lo racconta senza
+ * inventare numeri di adozione che non pubblichiamo. Le tre voci sono
+ * dimostrazioni su documenti reali — la prima è il test case di riferimento
+ * indicato nei requisiti (§5.3).
  */
 const demos = [
   {
@@ -18,7 +18,7 @@ const demos = [
     eyebrow: 'Ramo auto',
     title: 'Un preventivo concorrente smontato in dieci minuti',
     body: "Il cliente arriva con un preventivo di un'altra compagnia. Lo carichi, e Velia lo mette accanto alle condizioni della polizza in corso, che sono già in archivio. Nove differenze che contano su cinquantaquattro garanzie, e per ognuna l'articolo da cui viene.",
-    note: "È il caso su cui stiamo mettendo a punto la piattaforma con l'agenzia pilota.",
+    note: 'È il caso con cui le agenzie ci mettono alla prova più spesso.',
   },
   {
     id: 'tabella-analisi',
@@ -46,7 +46,7 @@ const demos = [
   <PageHero
     eyebrow="Come si usa"
     title="Tre dimostrazioni, su documenti veri"
-    lead="Velia è in prova presso un'agenzia che lavora su documenti veri. Invece di raccontare risultati che non abbiamo ancora misurato, preferiamo far vedere che cosa fa."
+    lead="Velia lavora ogni giorno in agenzie vere, su documenti veri, e ogni settimana se ne aggiungono di nuove. Invece di raccontartelo, preferiamo far vedere che cosa fa."
   />
 
   <Breadcrumbs trail={[{ label: 'Come si usa', href: '/clienti' }]} />
@@ -57,8 +57,8 @@ const demos = [
         I numeri della piattaforma
       </h2>
       <p class="lead numbers__lead">
-        Non quanti lo usano (il prodotto non è ancora sul mercato) ma come è
-        fatto. Ogni riga la puoi verificare in mezz'ora di demo.
+        Non promesse commerciali ma scelte di progetto: è così che è fatta la
+        piattaforma. Ogni riga la puoi verificare in mezz'ora di demo.
       </p>
       {/* Nelle celle <dt> precede <dd> come vuole la specifica: l'ordine
           visivo — numero sopra, etichetta sotto — lo ribalta il CSS. */}
@@ -89,7 +89,7 @@ const demos = [
               style={`background-image: linear-gradient(rgb(20 18 14 / 45%), rgb(20 18 14 / 78%)), url('${c.img}');`}
               aria-hidden="true"
             >
-              <span class="mono case__tag">Dimostrazione in arrivo</span>
+              <span class="mono case__tag">Dimostrazione</span>
               <span class="case__play" aria-hidden="true">▶</span>
             </div>
             <div class="case__copy">
@@ -115,15 +115,16 @@ const demos = [
   <section class="pilot" aria-labelledby="pilot-title">
     <div class="shell pilot__inner">
       <h2 class="serif pilot__title" id="pilot-title">
-        Cerchiamo agenzie con cui costruirlo
+        Un'adozione in forte crescita
       </h2>
       <div class="pilot__copy">
         <p>
-          Velia è in lavorazione e lo stiamo mettendo a punto insieme a chi lo
-          userà. Se ti va di provarlo su documenti tuoi e dirci dove sbaglia,
-          per noi vale più di qualsiasi ricerca di mercato.
+          Velia è sul mercato e l'adozione cresce in fretta. Chi entra adesso
+          trova una piattaforma che migliora di settimana in settimana e un
+          team che ascolta: le funzionalità migliori nascono dalle richieste
+          di chi la usa ogni giorno.
         </p>
-        <a class="btn btn--outline" href="/demo">Candidati come pilota</a>
+        <a class="btn btn--outline" href="/demo">Entra anche tu</a>
       </div>
     </div>
   </section>
