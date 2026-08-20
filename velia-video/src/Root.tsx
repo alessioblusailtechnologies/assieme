@@ -23,6 +23,7 @@ import {
   SoluzioneCompagnie,
   SoluzioneIntermediari,
 } from './AstrattiSoluzioni';
+import { IG_FONTE_DUR, IG_FPS, IG_H, IG_W, IgFonte, QUAD_H, QUAD_W } from './SocialIg';
 
 export const Root: React.FC = () => (
   <>
@@ -84,6 +85,22 @@ export const Root: React.FC = () => (
       fps={AST_FPS}
       width={AST_W}
       height={AST_H}
+    />
+    <Composition
+      id="IgFonte"
+      component={IgFonte}
+      durationInFrames={IG_FONTE_DUR}
+      fps={IG_FPS}
+      width={IG_W}
+      height={IG_H}
+    />
+    <Composition
+      id="FonteQuadrata"
+      component={IgFonte}
+      durationInFrames={IG_FONTE_DUR}
+      fps={IG_FPS}
+      width={QUAD_W}
+      height={QUAD_H}
     />
     <Composition
       id="SoluzioneCompagnie"
