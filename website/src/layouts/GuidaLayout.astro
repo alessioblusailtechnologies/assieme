@@ -2,7 +2,7 @@
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import Closing from '~/components/Closing.astro';
 import PageHero from '~/components/PageHero.astro';
-import { SITE_URL, site } from '~/config/site';
+import { SITE_URL } from '~/config/site';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 export interface Props {
@@ -65,11 +65,7 @@ const articleSchema = {
   <article class="guida">
     <div class="guida__inner">
       <p class="guida__meta">
-        <span>{site.legalName}</span>
-        <span aria-hidden="true">·</span>
-        <span>
-          Aggiornato il <time datetime={iso(updated)}>{dataLunga.format(updated)}</time>
-        </span>
+        Aggiornato il <time datetime={iso(updated)}>{dataLunga.format(updated)}</time>
       </p>
       <div class="guida__body prose">
         <slot />
@@ -113,9 +109,6 @@ const articleSchema = {
   }
 
   .guida__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.6rem;
     padding-bottom: 1.5rem;
     margin-bottom: 2.5rem;
     font-family: var(--f-mono);
