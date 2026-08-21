@@ -8,12 +8,11 @@ import type { APIRoute } from 'astro';
 export const GET: APIRoute = ({ site }) => {
   const origin = (site?.href ?? 'https://www.sonovelia.it').replace(/\/$/, '');
 
+  /* Niente `Disallow: /404`: la pagina è già noindex, e nominarla qui la fa
+   * solo scoprire (e conteggiare come 4XX) dagli strumenti di audit. */
   const body = [
     'User-agent: *',
     'Allow: /',
-    '',
-    '# Pagine di servizio: nessun valore per l’indice.',
-    'Disallow: /404',
     '',
     `Sitemap: ${origin}/sitemap-index.xml`,
     '',

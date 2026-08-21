@@ -42,15 +42,9 @@ const softwareSchema = {
     'Archivi raggiungibili anche dagli strumenti AI già in uso',
     'Memoria persistente di regole, prassi e casistica dell’agenzia: spiegate una volta, ricordate in ogni conversazione, consultabili e cancellabili',
   ],
-  offers: {
-    '@type': 'Offer',
-    availability: 'https://schema.org/InStock',
-    priceSpecification: {
-      '@type': 'PriceSpecification',
-      priceCurrency: 'EUR',
-      description: 'Preventivo su misura, dopo la demo.',
-    },
-  },
+  /* Niente blocco `offers`: il prezzo è su misura e un'Offer senza `price`
+   * è proprio il dato strutturato che i validatori segnalano come invalido.
+   * Meglio nessuna offerta che una monca. */
 };
 ---
 

@@ -95,7 +95,11 @@ export const footerNav: FooterColumn[] = [
       { label: 'Guide', href: '/risorse#guide' },
       { label: 'Glossario', href: '/risorse#glossario' },
       { label: 'Assistenza', href: '/risorse#assistenza' },
-      { label: 'Stato del servizio', href: STATUS_URL, external: true },
+      // La pagina di stato compare solo quando il sottodominio esiste:
+      // un link che non risolve è un link rotto, per le persone e per gli audit.
+      ...(STATUS_URL
+        ? [{ label: 'Stato del servizio', href: STATUS_URL, external: true }]
+        : []),
     ],
   },
   {

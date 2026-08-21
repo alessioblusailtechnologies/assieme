@@ -10,11 +10,16 @@ export const SITE_URL = (
   process.env.SITE_URL || 'https://www.sonovelia.it'
 ).replace(/\/$/, '');
 
-/** Sottodominio dell'applicativo: da sostituire con l'URL reale del login. */
-export const APP_URL = process.env.APP_URL || 'https://app.sonovelia.it';
+/**
+ * Sottodominio dell'applicativo. Vuoto finché il login non esiste davvero:
+ * i sottodomini non risolvono e ogni link diventa un link rotto (e un
+ * finto «Accedi» per chi visita). Quando app.sonovelia.it sarà online,
+ * basta valorizzare la variabile d'ambiente o rimettere l'URL qui.
+ */
+export const APP_URL = process.env.APP_URL || '';
 
-/** Pagina di stato del servizio, ospitata fuori dal sito istituzionale. */
-export const STATUS_URL = process.env.STATUS_URL || 'https://status.sonovelia.it';
+/** Pagina di stato del servizio: stessa regola, vuota finché non esiste. */
+export const STATUS_URL = process.env.STATUS_URL || '';
 
 /**
  * Endpoint a cui il modulo «Richiedi una demo» invia i dati.

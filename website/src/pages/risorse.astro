@@ -150,17 +150,21 @@ const glossario = [
             {site.email}
           </a>
         </li>
-        <li>
-          <a
-            class="btn btn--outline"
-            href={STATUS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Stato del servizio
-            <span class="visually-hidden"> (si apre in una nuova scheda)</span>
-          </a>
-        </li>
+        {
+          STATUS_URL && (
+            <li>
+              <a
+                class="btn btn--outline"
+                href={STATUS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Stato del servizio
+                <span class="visually-hidden"> (si apre in una nuova scheda)</span>
+              </a>
+            </li>
+          )
+        }
       </ul>
     </div>
   </section>

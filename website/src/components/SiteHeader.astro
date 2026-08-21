@@ -29,7 +29,9 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
     </nav>
 
     <div class="site-header__actions">
-      <a class="btn btn--ghost btn--sm" href={APP_URL} rel="nofollow">Accedi</a>
+      {APP_URL && (
+        <a class="btn btn--ghost btn--sm" href={APP_URL} rel="nofollow">Accedi</a>
+      )}
       <a class="btn btn--solid btn--sm" href="/demo">Richiedi una demo</a>
     </div>
 
@@ -63,7 +65,9 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
       </ul>
     </nav>
     <div class="site-header__panel-actions">
-      <a class="btn btn--ghost" href={APP_URL} rel="nofollow">Accedi</a>
+      {APP_URL && (
+        <a class="btn btn--ghost" href={APP_URL} rel="nofollow">Accedi</a>
+      )}
       <a class="btn btn--solid" href="/demo">Richiedi una demo</a>
     </div>
   </div>
