@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import CardGrid from '~/components/CardGrid.astro';
 import Closing from '~/components/Closing.astro';
@@ -6,32 +7,19 @@ import PageHero from '~/components/PageHero.astro';
 import { STATUS_URL, site } from '~/config/site';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
-const guide = [
-  {
-    id: 'guida-confronto',
-    eyebrow: 'Guida',
-    title: 'Leggere un set informativo senza perdere le esclusioni',
-    body: 'Come sono fatti DIP, DIP Aggiuntivo e Condizioni di Assicurazione, che cosa sta scritto solo in uno dei tre e in quale ordine conviene leggerli.',
-    href: '/demo',
-    linkLabel: 'Richiedi la guida',
-  },
-  {
-    id: 'guida-istruzioni',
-    eyebrow: 'Guida',
-    title: "Mettere per iscritto il metodo dell'agenzia",
-    body: "Come si spiega a uno strumento il modo in cui valuti le garanzie, con esempi di regole che funzionano e di regole che peggiorano le risposte.",
-    href: '/demo',
-    linkLabel: 'Richiedi la guida',
-  },
-  {
-    id: 'guida-ai',
-    eyebrow: 'Nota tecnica',
-    title: "AI in agenzia e responsabilità dell'intermediario",
-    body: "Dove finisce l'assistenza dello strumento e dove comincia la responsabilità professionale di chi firma la consulenza, alla luce degli obblighi di distribuzione.",
-    href: '/demo',
-    linkLabel: 'Richiedi la nota',
-  },
-];
+/* Le guide vivono in src/content/guide/, una pagina ciascuna in
+   /risorse/<slug>; qui si elencano soltanto. */
+const guide = (await getCollection('guide'))
+  .filter((g) => !g.data.draft)
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((g) => ({
+    id: g.id,
+    eyebrow: g.data.filone,
+    title: g.data.title,
+    body: g.data.description,
+    href: `/risorse/${g.id}`,
+    linkLabel: 'Leggi la guida',
+  }));
 
 /* Glossario del mestiere, non del software: sono le parole che ricorrono
    nelle domande dei clienti e nei documenti che si leggono ogni giorno.
@@ -108,9 +96,10 @@ const glossario = [
 
   <CardGrid
     id="guide"
-    title="Guide e note tecniche"
-    lead="Documenti brevi, pensati per essere letti fra un appuntamento e l'altro."
+    title="Guide"
+    lead="Pagine che valgono per anni, non per una settimana: il metodo di lavoro, la lettura dei documenti, l'AI in agenzia. Si leggono fra un appuntamento e l'altro."
     cards={guide}
+    columns={guide.length >= 3 ? 3 : 2}
   />
 
   <section class="glossary" id="glossario" aria-labelledby="glossary-title">

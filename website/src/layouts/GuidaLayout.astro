@@ -1,0 +1,273 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { SITE_URL, site } from '~/config/site';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  lead: string;
+  filone: string;
+  published: Date;
+  updated: Date;
+  /** Percorso della guida, es. /risorse/nome-guida. */
+  href: string;
+  /** Altre guide da proporre in fondo. */
+  altre: { title: string; href: string; filone: string }[];
+}
+
+const { title, description, lead, filone, published, updated, href, altre } = Astro.props;
+
+const dataLunga = new Intl.DateTimeFormat('it-IT', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+/* Schema Article: la guida come contenuto firmato da Blusail, con le date
+ * vere. `mainEntityOfPage` e `publisher` agganciano l'entità Organization
+ * dichiarata in Seo.astro. */
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  inLanguage: 'it-IT',
+  datePublished: iso(published),
+  dateModified: iso(updated),
+  mainEntityOfPage: new URL(href, SITE_URL).href,
+  author: { '@id': `${SITE_URL}/#organization` },
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  image: new URL('/og/velia-default.png', SITE_URL).href,
+  articleSection: filone,
+};
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  ogType="article"
+  schema={[articleSchema]}
+  announcement={false}
+>
+  <PageHero eyebrow={`Risorse · ${filone}`} title={title} lead={lead} />
+
+  <Breadcrumbs
+    trail={[
+      { label: 'Risorse', href: '/risorse' },
+      { label: title, href },
+    ]}
+  />
+
+  <article class="guida">
+    <div class="guida__inner">
+      <p class="guida__meta">
+        <span>{site.legalName}</span>
+        <span aria-hidden="true">·</span>
+        <span>
+          Aggiornato il <time datetime={iso(updated)}>{dataLunga.format(updated)}</time>
+        </span>
+      </p>
+      <div class="guida__body prose">
+        <slot />
+      </div>
+    </div>
+  </article>
+
+  {
+    altre.length > 0 && (
+      <section class="altre" aria-labelledby="altre-title">
+        <div class="altre__inner">
+          <h2 class="serif altre__title" id="altre-title">
+            Altre guide
+          </h2>
+          <ul class="altre__list">
+            {altre.map((g) => (
+              <li>
+                <a class="altre__link" href={g.href}>
+                  <span class="mono altre__filone">{g.filone}</span>
+                  <span class="serif altre__name">{g.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+    )
+  }
+
+  <Closing title="Vuoi vederlo sulla tua casistica?" cta="Richiedi una demo" href="/demo" />
+</BaseLayout>
+
+<style>
+  .guida {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .guida__inner {
+    max-width: 46rem;
+    margin-inline: auto;
+  }
+
+  .guida__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .guida__body {
+    color: var(--c-text-2);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+
+  .guida__body :global(h2) {
+    margin: 2.75rem 0 1rem;
+    font-family: var(--f-serif);
+    font-size: 1.625rem;
+    line-height: 1.2;
+    color: var(--c-text);
+  }
+
+  .guida__body :global(h2:first-child) {
+    margin-top: 0;
+  }
+
+  .guida__body :global(h3) {
+    margin: 2rem 0 0.75rem;
+    font-size: 1.0625rem;
+    font-weight: 500;
+    color: var(--c-text);
+  }
+
+  .guida__body :global(p) {
+    margin-bottom: 1.125rem;
+  }
+
+  .guida__body :global(ul),
+  .guida__body :global(ol) {
+    margin: 0 0 1.125rem;
+    padding-left: 1.25rem;
+  }
+
+  .guida__body :global(ul) {
+    list-style: disc;
+  }
+
+  .guida__body :global(li) {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .guida__body :global(li)::marker {
+    color: var(--c-accent);
+  }
+
+  .guida__body :global(strong) {
+    color: var(--c-text);
+    font-weight: 500;
+  }
+
+  .guida__body :global(a) {
+    color: var(--c-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+  }
+
+  .guida__body :global(blockquote) {
+    margin: 1.75rem 0;
+    padding: 0.25rem 0 0.25rem 1.25rem;
+    border-left: 2px solid var(--c-accent);
+    color: var(--c-text);
+    font-family: var(--f-serif);
+    font-size: 1.2rem;
+    line-height: 1.5;
+  }
+
+  .guida__body :global(table) {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-collapse: collapse;
+    font-size: var(--t-sm);
+  }
+
+  .guida__body :global(th),
+  .guida__body :global(td) {
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .guida__body :global(th) {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+  }
+
+  .altre {
+    padding: 0 var(--gutter) var(--sp-section);
+  }
+
+  .altre__inner {
+    max-width: 46rem;
+    margin-inline: auto;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .altre__title {
+    margin-bottom: 1.25rem;
+    font-size: 1.375rem;
+  }
+
+  .altre__list {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .altre__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--c-line);
+    border-radius: var(--radius, 8px);
+    background: var(--c-surface);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .altre__link:hover {
+    border-color: var(--c-accent);
+  }
+
+  .altre__filone {
+    font-size: var(--t-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+  }
+
+  .altre__name {
+    font-size: 1.125rem;
+    color: var(--c-text);
+  }
+</style>
