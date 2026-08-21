@@ -16,7 +16,7 @@
 
 export const hero = {
   title: ["L'AI che impara", 'come lavora la tua agenzia.', 'E non lo dimentica.'],
-  lead: "Velia è l'intelligenza artificiale per la distribuzione assicurativa: il mestiere lo conosce già, deve solo imparare come lo fai tu.",
+  lead: "Velia è l'intelligenza artificiale per chi distribuisce assicurazioni, agenzie, broker e intermediari: il mestiere lo conosce già, deve solo imparare come lo fai tu.",
 } as const;
 
 export const statement = {
