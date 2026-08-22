@@ -3,6 +3,7 @@ import type pg from 'pg';
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
+import { ClassificatoreHaiku } from './ingestion/classificatore.js';
 import { ConvertitoreHaiku } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 
@@ -31,6 +32,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
     ingestionVera ??= creaGestoreIngestion({
       convertitore: new ConvertitoreHaiku(),
+      classificatore: new ClassificatoreHaiku(),
       archivio: new ArchivioStorage(),
     });
     await ingestionVera(job, strumenti);

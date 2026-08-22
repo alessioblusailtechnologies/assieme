@@ -8,6 +8,11 @@ import { BUCKET_ARCHIVIO, clientServizio } from '../../db/supabase.js';
 export interface ArchivioFile {
   scarica(percorso: string): Promise<Buffer>;
   carica(percorso: string, contenuto: Buffer, contentType: string): Promise<void>;
+  /**
+   * RNF-03: la cancellazione è effettiva. Rimuove i percorsi indicati;
+   * un percorso che non esiste non è un errore (idempotente).
+   */
+  elimina(percorsi: string[]): Promise<void>;
 }
 
 export class ArchivioStorage implements ArchivioFile {
@@ -22,5 +27,11 @@ export class ArchivioStorage implements ArchivioFile {
       .storage.from(BUCKET_ARCHIVIO)
       .upload(percorso, contenuto, { contentType, upsert: true });
     if (error) throw new Error(`caricamento fallito (${percorso}): ${error.message}`);
+  }
+
+  async elimina(percorsi: string[]): Promise<void> {
+    if (!percorsi.length) return;
+    const { error } = await clientServizio().storage.from(BUCKET_ARCHIVIO).remove(percorsi);
+    if (error) throw new Error(`rimozione fallita (${percorsi.join(', ')}): ${error.message}`);
   }
 }

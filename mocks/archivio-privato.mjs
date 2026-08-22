@@ -343,6 +343,17 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
       return true;
     }
 
+    // Come il backend (Fase 2): la pipeline converte solo PDF, gli altri
+    // formati si rifiutano subito con un motivo leggibile, non in coda.
+    const nonPdf = file.find((f) => !/.pdf$/i.test(f.nome));
+    if (nonPdf) {
+      inviaJson(res, 415, {
+        codice: 'FORMATO_NON_SUPPORTATO',
+        messaggio: `«${nonPdf.nome}» non è un PDF: per ora l'archivio accetta solo documenti PDF.`,
+      });
+      return true;
+    }
+
     if (spazioUsato() + file.reduce((s, f) => s + f.dimensione, 0) > LIMITE_SPAZIO_BYTE) {
       inviaJson(res, 507, {
         codice: 'SPAZIO_ESAURITO',

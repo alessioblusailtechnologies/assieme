@@ -103,6 +103,9 @@ export class ZonaCaricamento {
   /** Estensioni ammesse, per il filtro della finestra di scelta. */
   readonly formati = input('.pdf,.docx,.doc,.png,.jpg,.jpeg');
 
+  /** Come si raccontano i formati sotto al riquadro (l'Archivio Privato oggi accetta solo PDF). */
+  readonly descrizioneFormati = input('PDF, DOCX, immagini');
+
   /** Misura massima del singolo file, per scriverla sotto al riquadro. */
   readonly limiteFileByte = input<number>();
 
@@ -113,7 +116,7 @@ export class ZonaCaricamento {
   protected descrizioneLimiti(): string {
     const mb = this.limiteFileByte();
     const misura = mb ? ` · massimo ${Math.round(mb / 1024 / 1024)} MB per file` : '';
-    return `PDF, DOCX, immagini${misura}`;
+    return `${this.descrizioneFormati()}${misura}`;
   }
 
   protected entra(e: DragEvent): void {

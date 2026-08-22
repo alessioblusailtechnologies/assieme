@@ -32,6 +32,8 @@
 </header>
 
 <ui-zona-caricamento
+  formati=".pdf"
+  descrizioneFormati="PDF"
   [limiteFileByte]="spazio()?.limiteFileByte"
   (scelti)="store.carica($event)"
 />

@@ -9,12 +9,13 @@
     "test": "ng test",
     "mock": "mockoon-cli start --data ../mocks/velia.json --port 3000 --disable-log-to-file",
     "mock:api": "node ../mocks/api-stub.mjs",
-    "dev": "concurrently -n mockoon,api,be,ng -c blue,magenta,yellow,green \"npm:mock\" \"npm:mock:api\" \"npm:be\" \"npm:start\"",
+    "dev": "concurrently -n mockoon,api,be,worker,ng -c blue,magenta,yellow,red,green \"npm:mock\" \"npm:mock:api\" \"npm:be\" \"npm:be:worker\" \"npm:start\"",
     "demo:serve": "node ../tools/serve-demo.mjs",
     "demo": "ng build && concurrently -n mockoon,api,demo -c blue,magenta,cyan \"npm:mock\" \"npm:mock:api\" \"npm:demo:serve\"",
     "demo:tunnel": "node ../tools/tunnel.mjs",
     "lint": "ng lint",
-    "be": "npm --prefix ../be-node run dev"
+    "be": "npm --prefix ../be-node run dev",
+    "be:worker": "npm --prefix ../be-node run dev:worker"
   },
   "private": true,
   "packageManager": "npm@11.17.0",

@@ -42,6 +42,10 @@ class ArchivioFinto implements ArchivioFile {
     this.caricati.set(percorso, contenuto.toString('utf8'));
     return Promise.resolve();
   }
+  elimina(percorsi: string[]): Promise<void> {
+    for (const p of percorsi) this.caricati.delete(p);
+    return Promise.resolve();
+  }
 }
 
 class ConvertitoreFinto implements Convertitore {
@@ -138,7 +142,7 @@ describe.skipIf(!dbPronto)('pipeline di ingestion (convertitore finto)', () => {
     ]);
   });
 
-  it('un errore di conversione lascia il documento in errore, col motivo', async () => {
+  it('un errore di conversione lascia il documento in errore, con un motivo che parla all’utente', async () => {
     const archivio = new ArchivioFinto(await pdfDiProva());
     const convertitoreRotto: Convertitore = {
       convertiBlocco: () => Promise.reject(new Error('modello non raggiungibile')),
@@ -157,6 +161,9 @@ describe.skipIf(!dbPronto)('pipeline di ingestion (convertitore finto)', () => {
       [DOC_ID],
     );
     expect(riga.rows[0]!.stato).toBe('errore');
-    expect(riga.rows[0]!.errore_elaborazione).toContain('modello non raggiungibile');
+    // Il dettaglio tecnico resta nell'eccezione (e nel job, via worker): sul
+    // documento va una frase che dice all'utente cosa fare (RF-B-05/B-06).
+    expect(riga.rows[0]!.errore_elaborazione).not.toContain('modello non raggiungibile');
+    expect(riga.rows[0]!.errore_elaborazione).toMatch(/Riprova a caricare/);
   });
 });

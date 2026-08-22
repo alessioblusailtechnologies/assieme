@@ -1,5 +1,7 @@
+import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
@@ -10,6 +12,8 @@ export interface OpzioniApp {
   logger?: boolean | object;
   /** Nei test: un verificatore finto al posto del JWKS di Supabase. */
   verificaToken?: VerificaToken;
+  /** Nei test: lo Storage finto per l'Archivio Privato. */
+  archivioPrivato?: OpzioniArchivioPrivato;
 }
 
 /**
@@ -26,6 +30,14 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
     // resta /api/...: il prefisso è parte del contratto, non lo strippiamo.
   });
 
+  /* Upload dell'Archivio Privato (RF-B-02): i file si bufferizzano in
+     memoria, il tetto duro qui è per non farsi saturare — il limite vero,
+     per tenant, lo applica la rotta (RF-B-08) e risponde 413. */
+  void app.register(multipart, {
+    limits: { fileSize: 64 * 1024 * 1024, files: 30 },
+    throwFileSizeLimit: false,
+  });
+
   registraGestoreErrori(app);
   registraAuth(app, opzioni.verificaToken);
 
@@ -35,6 +47,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteSessione(app);
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
+  registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
 
   return app;
 }
