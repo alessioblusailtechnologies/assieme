@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
+import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { MARCATORE_CITAZIONI, promptSistema, promptUtente, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita } from '../src/worker/motore/sessione.js';
 import {
   ErroreValidazione,
+  limiteInoltro,
   margineMarcatore,
   normalizzaPath,
   separaBlocco,
@@ -58,6 +60,67 @@ describe('il blocco velia-citazioni', () => {
     expect(margineMarcatore('Testo.\n```vel')).toBe('\n```vel'.length);
     expect(margineMarcatore('Testo.\n')).toBe(1);
     expect(margineMarcatore('codice ```js')).toBe(0);
+  });
+
+  it('limiteInoltro: mai oltre l’inizio del blocco, anche quando il blocco è già tutto nel buffer', () => {
+    expect(limiteInoltro('Risposta.')).toBe('Risposta.'.length);
+    expect(limiteInoltro('Risposta.\n```vel')).toBe('Risposta.'.length);
+    const conBlocco = `Risposta.\n${MARCATORE_CITAZIONI}\n{"citazioni":[]}\n\`\`\``;
+    expect(limiteInoltro(conBlocco)).toBe('Risposta.'.length);
+    expect(limiteInoltro(`${MARCATORE_CITAZIONI}\n{}`)).toBe(0);
+  });
+});
+
+describe('FlussoTesto: cosa vede l’utente e cosa legge il validatore', () => {
+  function registratore() {
+    const passi: Array<{ tipo: string; testo: string }> = [];
+    const flusso = new FlussoTesto(
+      (p) => {
+        passi.push({ tipo: p.tipo, testo: p.tipo === 'testo' ? p.delta : p.etichetta });
+        return Promise.resolve();
+      },
+      40, // soglia bassa per i test
+    );
+    return { flusso, passi, testo: () => passi.filter((p) => p.tipo === 'testo').map((p) => p.testo).join('') };
+  }
+
+  it('la risposta finale: si inoltra a pezzi, il blocco resta fuori, il completo lo contiene', async () => {
+    const { flusso, passi, testo } = registratore();
+    flusso.inizioTurno();
+    for (const d of ['La franchigia è € 200 ', '*(DIP, pag. 3)*. Altre righe di risposta qui.', '\n\n```vel', 'ia-citazioni\n{"citazioni":[]}', '\n```']) {
+      await flusso.delta(d);
+    }
+    await flusso.fineTurno('end_turn');
+    expect(testo()).toBe('La franchigia è € 200 *(DIP, pag. 3)*. Altre righe di risposta qui.');
+    expect(passi.every((p) => p.tipo === 'testo')).toBe(true);
+    expect(flusso.testoVisibile).toBe(testo());
+    expect(flusso.testoCompleto).toContain(MARCATORE_CITAZIONI);
+    expect(flusso.testoCompleto.startsWith(flusso.testoVisibile)).toBe(true);
+  });
+
+  it('un testo breve prima di un tool è narrazione → attività; uno lungo è già risposta', async () => {
+    const { flusso, passi } = registratore();
+    flusso.inizioTurno();
+    await flusso.delta('Cerco nelle condizioni.');
+    await flusso.fineTurno('tool_use');
+    expect(passi).toEqual([{ tipo: 'attivita', testo: 'Cerco nelle condizioni.' }]);
+
+    flusso.inizioTurno();
+    await flusso.delta('Una risposta che supera la soglia di quaranta caratteri e continua ancora.');
+    await flusso.fineTurno('tool_use');
+    flusso.inizioTurno();
+    await flusso.delta('Fine.');
+    await flusso.fineTurno('end_turn');
+    expect(flusso.testoVisibile).toBe('Una risposta che supera la soglia di quaranta caratteri e continua ancora.\n\nFine.');
+  });
+
+  it('una risposta sotto soglia arriva tutta a fine turno, e il blocco non passa mai', async () => {
+    const { flusso, testo } = registratore();
+    flusso.inizioTurno();
+    await flusso.delta(`Sì.\n${MARCATORE_CITAZIONI}\n{"citazioni":[],"nonSupportato":true}\n\`\`\``);
+    await flusso.fineTurno('end_turn');
+    expect(testo()).toBe('Sì.');
+    expect(flusso.testoCompleto).toContain('"nonSupportato":true');
   });
 });
 

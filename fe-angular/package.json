@@ -15,7 +15,7 @@
     "demo:tunnel": "node ../tools/tunnel.mjs",
     "lint": "ng lint",
     "be": "npm --prefix ../be-node run dev",
-    "be:worker": "npm --prefix ../be-node run dev:worker"
+    "be:worker": "npm --prefix ../be-node run worker"
   },
   "private": true,
   "packageManager": "npm@11.17.0",

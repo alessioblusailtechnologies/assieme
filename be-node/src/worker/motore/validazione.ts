@@ -87,6 +87,23 @@ export function margineMarcatore(testo: string): number {
   return 0;
 }
 
+/**
+ * Fino a dove il testo di un turno si può inoltrare all'utente: mai oltre
+ * l'inizio del blocco finale (che il FE non deve vedere), e senza la coda
+ * che potrebbe esserne l'inizio.
+ */
+export function limiteInoltro(testo: string): number {
+  const inizioBlocco = testo.indexOf(`\n${MARCATORE_CITAZIONI}`);
+  let limite: number;
+  if (testo.startsWith(MARCATORE_CITAZIONI)) limite = 0;
+  else if (inizioBlocco >= 0) limite = inizioBlocco;
+  else limite = testo.length - margineMarcatore(testo);
+  // Gli spazi in coda si trattengono: o li segue altro testo (e partono
+  // con quello) o precedono il blocco (e non si vedrebbero comunque).
+  while (limite > 0 && /\s/.test(testo[limite - 1]!)) limite--;
+  return limite;
+}
+
 export interface EsitoValidazione {
   citazioni: Citazione[];
   provenienze: Provenienza[];

@@ -7,7 +7,7 @@ import {
   type SDKMessage,
 } from '@anthropic-ai/claude-agent-sdk';
 
-import { margineMarcatore } from './validazione.js';
+import { FlussoTesto } from './flusso-testo.js';
 
 /**
  * La sessione del motore (doc motore §2, piano §4.3): l'Agent SDK — lo
@@ -68,9 +68,6 @@ export interface OpzioniMotoreSdk {
   intervalloAnnullamentoMs?: number;
 }
 
-/** Sotto questa lunghezza un testo fra due tool è narrazione, non risposta. */
-const SOGLIA_TESTO_FINALE = 300;
-
 export class MotoreAgentSdk implements Motore {
   constructor(private readonly opzioni: OpzioniMotoreSdk) {}
 
@@ -81,21 +78,9 @@ export class MotoreAgentSdk implements Motore {
     const documentiLetti: string[] = [];
     let annullato = false;
 
-    /* La verità sul testo: quello che abbiamo inoltrato all'utente. Il testo
-       dei turni intermedi (fra due tool) è narrazione e diventa un'attività,
-       a meno che non sia lungo abbastanza da essere già la risposta. */
-    let testoEmesso = '';
-    let bufferTurno = '';
-    let inviatoDelTurno = 0;
-    let turnoInStreaming = false;
-
-    const inoltra = async (finoA: number): Promise<void> => {
-      if (finoA <= inviatoDelTurno) return;
-      const delta = bufferTurno.slice(inviatoDelTurno, finoA);
-      inviatoDelTurno = finoA;
-      testoEmesso += delta;
-      await osservatore.passo({ tipo: 'testo', delta });
-    };
+    /* Il testo, turno per turno: cosa vede l'utente e cosa legge il
+       validatore lo decide `FlussoTesto` (pura, provata a parte). */
+    const flusso = new FlussoTesto((p) => osservatore.passo(p));
 
     const hookPreTool: HookCallback = async (input) => {
       if (input.hook_event_name !== 'PreToolUse') return {};
@@ -170,40 +155,20 @@ export class MotoreAgentSdk implements Motore {
       for await (const messaggio of sessione) {
         if (messaggio.type === 'stream_event' && messaggio.parent_tool_use_id === null) {
           const evento = messaggio.event;
-          if (evento.type === 'message_start') {
-            bufferTurno = '';
-            inviatoDelTurno = 0;
-            turnoInStreaming = false;
-          } else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
-            bufferTurno += evento.delta.text;
-            /* Oltre la soglia è la risposta: la si inoltra man mano, trattenendo
-               la coda che potrebbe essere l'inizio del blocco finale. */
-            if (turnoInStreaming || bufferTurno.length >= SOGLIA_TESTO_FINALE) {
-              turnoInStreaming = true;
-              await inoltra(bufferTurno.length - margineMarcatore(bufferTurno));
-            }
+          if (evento.type === 'message_start') flusso.inizioTurno();
+          else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
+            await flusso.delta(evento.delta.text);
           } else if (evento.type === 'message_delta') {
-            if (evento.delta.stop_reason === 'tool_use') {
-              /* Turno intermedio: ciò che non è ancora partito è narrazione. */
-              const narrazione = bufferTurno.slice(inviatoDelTurno).trim();
-              if (narrazione && !turnoInStreaming) {
-                await osservatore.passo({ tipo: 'attivita', etichetta: accorcia(narrazione, 140) });
-              } else if (narrazione) {
-                await inoltra(bufferTurno.length);
-                testoEmesso += '\n\n';
-              }
-            } else {
-              await inoltra(bufferTurno.length);
-            }
+            await flusso.fineTurno(evento.delta.stop_reason);
           }
         } else if (messaggio.type === 'result') {
-          esito = this.esitoDa(messaggio, testoEmesso, documentiLetti, inizio, annullato);
+          esito = this.esitoDa(messaggio, flusso.testoCompleto, documentiLetti, inizio, annullato);
         }
       }
     } catch (errore) {
       if (annullato) {
         esito = {
-          testo: testoEmesso,
+          testo: flusso.testoCompleto,
           terminato: 'annullato',
           modello: this.opzioni.modello,
           turni: 0,
@@ -221,7 +186,7 @@ export class MotoreAgentSdk implements Motore {
 
     if (!esito) {
       esito = {
-        testo: testoEmesso,
+        testo: flusso.testoCompleto,
         terminato: annullato ? 'annullato' : 'errore',
         ...(!annullato && { errore: 'la sessione si è chiusa senza un risultato' }),
         modello: this.opzioni.modello,
@@ -237,7 +202,7 @@ export class MotoreAgentSdk implements Motore {
 
   private esitoDa(
     m: Extract<SDKMessage, { type: 'result' }>,
-    testoEmesso: string,
+    testoCompleto: string,
     documentiLetti: string[],
     inizio: number,
     annullato: boolean,
@@ -256,22 +221,22 @@ export class MotoreAgentSdk implements Motore {
       token,
       documentiLetti,
     };
-    if (annullato) return { ...base, testo: testoEmesso, terminato: 'annullato' };
+    if (annullato) return { ...base, testo: testoCompleto, terminato: 'annullato' };
     if (m.subtype === 'success') {
       // Se nulla è passato in streaming (risposta breve), il risultato è il testo.
-      return { ...base, testo: testoEmesso || m.result, terminato: 'completato' };
+      return { ...base, testo: testoCompleto || m.result, terminato: 'completato' };
     }
     if (m.subtype === 'error_max_turns' || m.subtype === 'error_max_budget_usd') {
       return {
         ...base,
-        testo: testoEmesso,
+        testo: testoCompleto,
         terminato: 'budget',
         errore: m.subtype === 'error_max_turns' ? 'tetto di turni raggiunto' : 'tetto di spesa raggiunto',
       };
     }
     return {
       ...base,
-      testo: testoEmesso,
+      testo: testoCompleto,
       terminato: 'errore',
       errore: m.errors.join('; ') || m.subtype,
     };
@@ -328,9 +293,4 @@ export function etichettaAttivita(tool: string, input: Record<string, unknown>, 
     default:
       return `Uso ${tool}`;
   }
-}
-
-function accorcia(testo: string, n: number): string {
-  const pulito = testo.replace(/\s+/g, ' ').trim();
-  return pulito.length <= n ? pulito : `${pulito.slice(0, n - 1).trimEnd()}…`;
 }
