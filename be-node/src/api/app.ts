@@ -2,6 +2,7 @@ import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
+import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
@@ -14,6 +15,8 @@ export interface OpzioniApp {
   verificaToken?: VerificaToken;
   /** Nei test: lo Storage finto per l'Archivio Privato. */
   archivioPrivato?: OpzioniArchivioPrivato;
+  /** Nei test: Storage finto e ponte eventi condiviso per la chat. */
+  conversazioni?: OpzioniConversazioni;
 }
 
 /**
@@ -48,6 +51,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
+  registraRotteConversazioni(app, opzioni.conversazioni);
 
   return app;
 }

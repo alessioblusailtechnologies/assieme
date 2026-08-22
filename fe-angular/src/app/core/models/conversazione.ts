@@ -81,6 +81,12 @@ export type EventoStream =
    * ottimistica, così un ricaricamento a stream aperto non la duplica.
    */
   | { tipo: 'inizio'; messaggioId: Id; messaggioUtenteId: Id }
+  /**
+   * Un passo di lavoro del motore («Cerco "cristalli" in condizioni.md»,
+   * «Leggo dip.md»): l'utente vede il lavoro, non uno spinner. Arriva prima
+   * del testo e può ripetersi; l'ultimo ricevuto è quello da mostrare.
+   */
+  | { tipo: 'attivita'; etichetta: string }
   | { tipo: 'testo'; delta: string }
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }

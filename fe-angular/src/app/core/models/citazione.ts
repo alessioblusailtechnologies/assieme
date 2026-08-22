@@ -20,7 +20,8 @@ export interface Citazione {
   id: Id;
   documentoId: Id;
   documentoTitolo: string;
-  archivio: Archivio;
+  /** Anche gli allegati di conversazione sono citabili: il motore li legge come gli altri. */
+  archivio: Archivio | 'conversazione';
   posizione: PosizioneDocumento;
   /** Il passaggio testuale da cui il dato è tratto, per l'anteprima. */
   estratto: string;

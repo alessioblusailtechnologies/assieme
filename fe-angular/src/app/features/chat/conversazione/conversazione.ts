@@ -22,6 +22,7 @@ import { Citazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
+import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -61,6 +62,7 @@ export class Conversazione {
   protected readonly store = inject(ChatStore);
   private readonly apiPubblici = inject(DocumentiApi);
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
+  private readonly apiConversazioni = inject(ConversazioniApi);
 
   /** Dalla rotta; assente su `/chat`, la schermata «nuova conversazione». */
   readonly id = input<string>();
@@ -150,9 +152,14 @@ export class Conversazione {
   }
 
   protected urlFile(citazione: Citazione): string {
-    return citazione.archivio === 'pubblico'
-      ? this.apiPubblici.urlFile(citazione.documentoId)
-      : this.apiPrivati.urlFile(citazione.documentoId);
+    switch (citazione.archivio) {
+      case 'pubblico':
+        return this.apiPubblici.urlFile(citazione.documentoId);
+      case 'conversazione':
+        return this.apiConversazioni.urlFileAllegato(citazione.documentoId);
+      default:
+        return this.apiPrivati.urlFile(citazione.documentoId);
+    }
   }
 
   // --- Esportazione su template (RF-C-10) ---------------------------------

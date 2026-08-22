@@ -2,3 +2,6 @@ node_modules/
 dist/
 .env
 supabase/.temp/
+
+# Cache e workspace del worker (Fase 3): ricostruibili dallo Storage, mai nel repo.
+.velia-worker/

@@ -35,6 +35,8 @@ export interface AllegatoInCorso {
 export interface MessaggioInStream extends Messaggio {
   erroreStream?: string;
   interrotto?: boolean;
+  /** L'ultimo passo di lavoro del motore, finché il testo non arriva. */
+  attivita?: string;
 }
 
 /** La coppia domanda/risposta che sta attraversando lo stream. */
@@ -320,6 +322,9 @@ export class ChatStore {
             inCorso: true,
           },
         });
+        break;
+      case 'attivita':
+        this.aggiornaAssistente((m) => ({ ...m, attivita: evento.etichetta }));
         break;
       case 'testo':
         this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + evento.delta }));

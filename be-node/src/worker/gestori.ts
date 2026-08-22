@@ -1,11 +1,16 @@
+import { resolve } from 'node:path';
+
 import type pg from 'pg';
 
+import { configurazione } from '../config.js';
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
 import { ClassificatoreHaiku } from './ingestion/classificatore.js';
 import { ConvertitoreHaiku } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
+import { creaGestoreInterrogazione } from './motore/gestore.js';
+import { MotoreAgentSdk } from './motore/sessione.js';
 
 /** Gli strumenti che ogni gestore riceve; crescono con le fasi. */
 export interface StrumentiJob {
@@ -27,6 +32,7 @@ export type GestoreJob = (job: Job, strumenti: StrumentiJob) => Promise<void>;
  * e l'API server importa questo modulo senza mai fare ingestion.
  */
 let ingestionVera: GestoreJob | undefined;
+let interrogazioneVera: GestoreJob | undefined;
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
@@ -36,6 +42,24 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       archivio: new ArchivioStorage(),
     });
     await ingestionVera(job, strumenti);
+  },
+
+  /** Fase 3: il motore agentico (Agent SDK) sulla workspace del tenant. */
+  interrogazione: async (job, strumenti) => {
+    if (!interrogazioneVera) {
+      const c = configurazione();
+      interrogazioneVera = creaGestoreInterrogazione({
+        motore: new MotoreAgentSdk({
+          modello: c.MODELLO_MOTORE,
+          maxTurni: c.MOTORE_MAX_TURNI,
+          budgetUsd: c.MOTORE_BUDGET_USD,
+          ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+        }),
+        archivio: new ArchivioStorage(),
+        radice: resolve(c.CARTELLA_WORKER),
+      });
+    }
+    await interrogazioneVera(job, strumenti);
   },
 
   prova: async (job, { db }) => {

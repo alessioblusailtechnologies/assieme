@@ -30,8 +30,18 @@ const schemaAmbiente = z.object({
    * messaggio chiaro se manca (poolDb).
    */
   DATABASE_URL: z.string().min(1).optional(),
-  /** Conversione documenti (Haiku) e, in Fase 3, motore agentico. */
+  /** Conversione documenti (Haiku) e motore agentico (Agent SDK). */
   ANTHROPIC_API_KEY: z.string().optional(),
+  /**
+   * Il motore agentico (Fase 3). Modello e budget per job sono le decisioni
+   * aperte 1 e 4 del doc motore: si misurano qui, non si cablano.
+   */
+  MODELLO_MOTORE: z.string().default('claude-opus-5'),
+  MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
+  MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
+  MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
+  /** Dove il worker materializza workspace e cache dei documenti. */
+  CARTELLA_WORKER: z.string().default('.velia-worker'),
   PORTA_API: z.coerce.number().int().default(3002),
   LOG_LIVELLO: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

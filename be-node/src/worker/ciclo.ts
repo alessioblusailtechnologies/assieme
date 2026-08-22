@@ -1,6 +1,7 @@
 import type pg from 'pg';
 
 import { aggiornaStatoJob, archivia, prossimo } from './coda.js';
+import { ErroreNonRitentabile } from './errori.js';
 import { emettiEvento } from './eventi.js';
 import { gestori, type StrumentiJob } from './gestori.js';
 
@@ -46,11 +47,17 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
 
   try {
     await gestore(job, strumenti);
-    await aggiornaStatoJob(db, job.id, 'completato');
+    /* `completato` solo se nel frattempo nessuno l'ha annullato (l'API lo
+       fa quando il client chiude lo stream): l'annullamento non si sovrascrive. */
+    await db.query(
+      `update velia.jobs set stato = 'completato', errore = null
+       where id = $1 and stato = 'in-esecuzione'`,
+      [job.id],
+    );
     await archivia(db, msgId);
   } catch (errore) {
     const messaggioErrore = errore instanceof Error ? errore.message : String(errore);
-    if (consegne >= tentativiMassimi) {
+    if (errore instanceof ErroreNonRitentabile || consegne >= tentativiMassimi) {
       // Fallimento persistente: si racconta (RF-E-11), non si nasconde.
       await aggiornaStatoJob(db, job.id, 'fallito', {
         tentativi: consegne,

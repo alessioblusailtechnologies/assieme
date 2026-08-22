@@ -63,27 +63,29 @@ export async function prossimo(
   db: pg.Pool,
   visibilitaSecondi = 60,
 ): Promise<MessaggioJob | undefined> {
-  const letti = await db.query<{
-    msg_id: string;
-    read_ct: number;
-    message: { jobId: string };
-  }>('select msg_id, read_ct, message from pgmq.read($1, $2, 1)', [
-    CODA_LAVORI,
-    visibilitaSecondi,
-  ]);
-  const messaggio = letti.rows[0];
-  if (!messaggio) return undefined;
+  /* Un messaggio orfano (job cancellato) si archivia e si passa al
+     successivo nello stesso giro: un orfano in testa alla coda non deve
+     costare un tick di attesa ai job veri dietro di lui. */
+  for (let tentativi = 0; tentativi < 20; tentativi++) {
+    const letti = await db.query<{
+      msg_id: string;
+      read_ct: number;
+      message: { jobId: string };
+    }>('select msg_id, read_ct, message from pgmq.read($1, $2, 1)', [
+      CODA_LAVORI,
+      visibilitaSecondi,
+    ]);
+    const messaggio = letti.rows[0];
+    if (!messaggio) return undefined;
 
-  const righe = await db.query<Job>('select * from velia.jobs where id = $1', [
-    messaggio.message.jobId,
-  ]);
-  const job = righe.rows[0];
-  if (!job) {
-    // Messaggio orfano (job cancellato): si archivia e si va avanti.
+    const righe = await db.query<Job>('select * from velia.jobs where id = $1', [
+      messaggio.message.jobId,
+    ]);
+    const job = righe.rows[0];
+    if (job) return { msgId: Number(messaggio.msg_id), consegne: messaggio.read_ct, job };
     await archivia(db, Number(messaggio.msg_id));
-    return undefined;
   }
-  return { msgId: Number(messaggio.msg_id), consegne: messaggio.read_ct, job };
+  return undefined;
 }
 
 /** Toglie il messaggio dalla coda conservandolo nell'archivio pgmq. */
