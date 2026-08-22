@@ -3,30 +3,51 @@ import {
   Component,
   ElementRef,
   computed,
+  effect,
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 
-import { ChatStore } from '../chat-store';
+import { ChatStore, type AllegatoInCorso } from '../chat-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
+import {
+  chipAllegatoPerChiave,
+  chipPerId,
+  creaChipAllegato,
+  creaChipDocumento,
+  idChip,
+  posizionaCursore,
+  posizioneCursore,
+  ripulisciSeVuoto,
+  sostituisciIntervallo,
+  testoEditor,
+} from './editor-testo';
 import { menzioneAlCursore } from './menzione';
-
-/** Oltre questa altezza il campo smette di crescere e scorre. */
-const ALTEZZA_MASSIMA_PX = 168;
 
 /**
  * Composizione del messaggio: testo, referenziazione `@`, invio.
  *
- * Il selettore si apre digitando `@` o col pulsante di allegato — che non è
- * una seconda modalità: inserisce una `@` nel testo, e da lì in poi i due
- * gesti sono lo stesso gesto (RF-C-02). Mentre il selettore è aperto la
- * tastiera naviga i risultati senza che il fuoco lasci il campo di testo; il
- * documento scelto diventa un chip sopra il campo, non un token dentro il
- * testo — il messaggio resta testo semplice, il contratto resta semplice.
+ * Il campo è un editor `contenteditable` che il componente governa via DOM
+ * (`editor-testo.ts`): i documenti referenziati sono chip **tra le parole**,
+ * non una riga sopra il campo — si scrive «@», si sceglie, e il chip prende
+ * il posto della `@query`. Il messaggio che parte resta testo semplice più
+ * gli id (contratto RF-C-02): la posizione dei chip nel testo è di chi
+ * scrive, non del server.
+ *
+ * Il selettore si apre digitando `@` o col pulsante — che non è una seconda
+ * modalità: inserisce una `@` nel testo, e da lì in poi i due gesti sono lo
+ * stesso gesto. Mentre è aperto la tastiera naviga i risultati senza che il
+ * fuoco lasci il campo.
+ *
+ * Lo store resta la verità (bozza = testo, riferimentiBozza = documenti):
+ * l'editor la riflette e la aggiorna. Se la bozza cambia da fuori (invio,
+ * ripristino dopo un errore, suggerimento cliccato) l'editor si ricostruisce;
+ * se cambiano solo i riferimenti, i chip si aggiungono o tolgono sul posto.
  */
 @Component({
   selector: 'app-composer',
@@ -41,7 +62,7 @@ export class Composer {
   /** Documenti da non riproporre nel selettore: già nel contesto. */
   readonly giaInContesto = input<string[]>([]);
 
-  private readonly area = viewChild.required<ElementRef<HTMLTextAreaElement>>('area');
+  private readonly area = viewChild.required<ElementRef<HTMLDivElement>>('area');
   private readonly selettore = viewChild(SelettoreDocumenti);
 
   /*
@@ -69,15 +90,35 @@ export class Composer {
     this.selettoreAperto() ? this.selettore()?.idOpzioneAttiva() : undefined,
   );
 
-  protected aggiorna(evento: Event): void {
-    const area = evento.target as HTMLTextAreaElement;
-    this.store.bozza.set(area.value);
+  constructor() {
+    // Lo store → l'editor: ricostruzione sul testo, riconciliazione sui chip.
+    effect(() => {
+      const testo = this.store.bozza();
+      const riferimenti = this.store.riferimentiBozza();
+      const allegati = this.store.allegati();
+      untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati));
+    });
+  }
+
+  private get editor(): HTMLDivElement {
+    return this.area().nativeElement;
+  }
+
+  /** Dall'editor allo store, dopo ogni gesto dell'utente. */
+  protected aggiorna(): void {
+    const editor = this.editor;
+    ripulisciSeVuoto(editor);
+    this.store.bozza.set(testoEditor(editor));
+    const presenti = new Set(idChip(editor));
+    if (this.store.riferimentiBozza().some((r) => !presenti.has(r.id))) {
+      // Un chip tolto con Backspace: il riferimento se ne va con lui.
+      this.store.riferimentiBozza.update((r) => r.filter((d) => presenti.has(d.id)));
+    }
     this.aggiornaCursore();
-    this.ridimensiona(area);
   }
 
   protected aggiornaCursore(): void {
-    this.cursore.set(this.area().nativeElement.selectionStart ?? 0);
+    this.cursore.set(posizioneCursore(this.editor, document.getSelection()));
     /* Uscire dalla menzione azzera la soppressione: la prossima `@` deve
        aprire il selettore anche se nasce nello stesso punto del testo. */
     if (!this.menzione()) this.soppressaDa.set(undefined);
@@ -91,10 +132,18 @@ export class Composer {
         return;
       }
     }
-    if (evento.key === 'Enter' && !evento.shiftKey) {
+    if (evento.key === 'Enter') {
       evento.preventDefault();
-      this.invia();
+      if (evento.shiftKey) this.inserisciTesto('\n');
+      else this.invia();
     }
+  }
+
+  /** Si incolla solo testo: l'editor non accetta markup da fuori. */
+  protected incolla(evento: ClipboardEvent): void {
+    evento.preventDefault();
+    const testo = evento.clipboardData?.getData('text/plain') ?? '';
+    if (testo) this.inserisciTesto(testo);
   }
 
   protected chiudiSelettore(): void {
@@ -103,27 +152,21 @@ export class Composer {
   }
 
   /**
-   * Documento scelto: via la `@query` dal testo, dentro il chip. Il fuoco
-   * non si è mai mosso dal campo; il cursore torna dove stava la menzione.
+   * Documento scelto: la `@query` diventa il chip, lì dove stava. Il fuoco
+   * non si è mai mosso dal campo; il cursore resta subito dopo il chip.
    */
   protected referenzia(documento: RiferimentoDocumento): void {
     const menzione = this.menzione();
-    if (menzione) {
-      const testo = this.store.bozza();
-      const dopo = testo.slice(this.cursore());
-      this.store.bozza.set((testo.slice(0, menzione.inizio) + dopo).replace(/ {2,}/g, ' '));
-
-      const area = this.area().nativeElement;
-      /* Il modello è già nuovo ma il DOM non ancora: il cursore si posiziona
-         al prossimo giro, quando il valore è stato riversato nel campo. */
-      setTimeout(() => {
-        area.setSelectionRange(menzione.inizio, menzione.inizio);
-        this.aggiornaCursore();
-        this.ridimensiona(area);
-      });
-    }
+    const chip = this.nuovoChip(documento);
+    const editor = this.editor;
+    editor.focus();
+    const da = menzione ? menzione.inizio : this.cursore();
+    const a = menzione ? this.cursore() : this.cursore();
+    sostituisciIntervallo(editor, da, a, chip);
+    // Uno spazio dopo il chip: si continua a scrivere senza incollarsi.
+    sostituisciIntervallo(editor, testoAlPunto(editor, chip), testoAlPunto(editor, chip), document.createTextNode(' '));
     this.store.aggiungiRiferimento(documento);
-    this.area().nativeElement.focus();
+    this.aggiorna();
   }
 
   /**
@@ -135,35 +178,94 @@ export class Composer {
     this.store.allega([...(ingresso.files ?? [])]);
     /* Lo stesso file deve poter essere riallegato: l'input si azzera. */
     ingresso.value = '';
-    this.area().nativeElement.focus();
+    this.editor.focus();
   }
 
   /** Il pulsante di referenziazione è la stessa `@`, per chi non la conosce. */
   protected apriDaPulsante(): void {
-    const area = this.area().nativeElement;
+    this.editor.focus();
     const testo = this.store.bozza();
-    const cursore = area.selectionStart ?? testo.length;
+    const cursore = this.cursore();
     const prefisso = testo.slice(0, cursore);
     const inserto = !prefisso || /[\s([{]$/.test(prefisso) ? '@' : ' @';
-
-    this.store.bozza.set(prefisso + inserto + testo.slice(cursore));
     this.soppressaDa.set(undefined);
-    area.focus();
-    setTimeout(() => {
-      area.setSelectionRange(cursore + inserto.length, cursore + inserto.length);
-      this.aggiornaCursore();
-    });
+    this.inserisciTesto(inserto);
   }
 
   protected invia(): void {
     if (this.store.inRisposta() || !this.store.bozza().trim()) return;
     this.store.invia();
-    const area = this.area().nativeElement;
-    setTimeout(() => this.ridimensiona(area));
   }
 
-  private ridimensiona(area: HTMLTextAreaElement): void {
-    area.style.height = 'auto';
-    area.style.height = `${Math.min(area.scrollHeight, ALTEZZA_MASSIMA_PX)}px`;
+  private inserisciTesto(testo: string): void {
+    const editor = this.editor;
+    editor.focus();
+    const posizione = this.cursore();
+    sostituisciIntervallo(editor, posizione, posizione, document.createTextNode(testo));
+    this.aggiorna();
   }
+
+  private nuovoChip(documento: RiferimentoDocumento): HTMLElement {
+    return creaChipDocumento(documento, () => {
+      chipPerId(this.editor, documento.id)?.remove();
+      this.store.rimuoviRiferimento(documento.id);
+      this.aggiorna();
+      this.editor.focus();
+    });
+  }
+
+  /**
+   * Lo store verso l'editor. Sul testo si confronta e, se differisce, si
+   * ricostruisce (chip davanti, testo dopo, cursore in fondo se il campo ha
+   * il fuoco); sui riferimenti si riconcilia chip per chip.
+   */
+  private sincronizzaEditor(
+    testo: string,
+    riferimenti: RiferimentoDocumento[],
+    allegati: AllegatoInCorso[],
+  ): void {
+    const editor = this.editor;
+    const presenti = new Set(idChip(editor));
+    const attesi = new Set(riferimenti.map((r) => r.id));
+
+    if (testoEditor(editor) !== testo) {
+      editor.replaceChildren();
+      for (const r of riferimenti) editor.append(this.nuovoChip(r), document.createTextNode(' '));
+      if (testo) editor.append(document.createTextNode(testo));
+      if (document.activeElement === editor) posizionaCursore(editor, testo.length);
+    } else {
+      for (const id of presenti) if (!attesi.has(id)) chipPerId(editor, id)?.remove();
+      for (const r of riferimenti) {
+        if (!presenti.has(r.id)) editor.append(document.createTextNode(' '), this.nuovoChip(r));
+      }
+    }
+
+    // Gli allegati in corso: chip transitori, per chiave; via quando spariscono dallo store.
+    const chiaviAttese = new Set(allegati.map((a) => a.chiave));
+    for (const c of Array.from(editor.querySelectorAll<HTMLElement>('.riferimento[data-chiave]'))) {
+      if (!chiaviAttese.has(Number(c.getAttribute('data-chiave')))) c.remove();
+    }
+    for (const a of allegati) {
+      const esistente = chipAllegatoPerChiave(editor, a.chiave);
+      const nuovo = creaChipAllegato(a, () => {
+        this.store.rimuoviAllegato(a.chiave);
+        this.editor.focus();
+      });
+      if (esistente) esistente.replaceWith(nuovo);
+      else editor.append(document.createTextNode(' '), nuovo);
+    }
+
+    ripulisciSeVuoto(editor);
+    this.cursore.set(posizioneCursore(editor, document.getSelection()));
+  }
+}
+
+/** La posizione di testo subito dopo un chip (i chip non contano caratteri). */
+function testoAlPunto(editor: HTMLElement, chip: HTMLElement): number {
+  const intervallo = editor.ownerDocument.createRange();
+  intervallo.setStart(editor, 0);
+  intervallo.setEndAfter(chip);
+  const contenitore = document.createElement('div');
+  contenitore.append(intervallo.cloneContents());
+  return testoEditor(contenitore).length;
 }
