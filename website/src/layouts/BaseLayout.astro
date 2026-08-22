@@ -32,6 +32,11 @@ const { announcement = false, ...seo } = Astro.props;
     <meta name="theme-color" content="#1C1A15" />
     <meta name="author" content={site.legalName} />
 
+    <!-- Google per il risultato di ricerca vuole una PNG o un .ico a multipli
+         di 48px: l'SVG da solo non basta, e il .ico alla radice è il
+         ripiego che il suo crawler prova comunque. -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
