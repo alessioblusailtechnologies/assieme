@@ -1,17 +1,16 @@
 @if (messaggio(); as m) {
   @if (m.autore === 'utente') {
     <div class="utente">
-      <div class="utente__testo">{{ m.testo }}</div>
-      @if (referenziati().length) {
-        <div class="utente__riferimenti">
-          @for (doc of referenziati(); track doc.id) {
-            <span class="riferimento">
-              <ui-icon name="documento" [size]="11" />
-              <span class="riferimento__titolo">{{ doc.titolo }}</span>
-            </span>
-          }
-        </div>
-      }
+      <!-- I documenti referenziati stanno nel messaggio, in linea col testo: sono parte di ciò che si è chiesto. -->
+      <div class="utente__testo">
+        @for (doc of referenziati(); track doc.id) {
+          <span class="riferimento">
+            <ui-icon name="documento" [size]="11" />
+            <span class="riferimento__titolo">{{ doc.titolo }}</span>
+          </span>
+        }
+        <span class="utente__parole">{{ m.testo }}</span>
+      </div>
     </div>
   } @else {
     <div class="assistente">

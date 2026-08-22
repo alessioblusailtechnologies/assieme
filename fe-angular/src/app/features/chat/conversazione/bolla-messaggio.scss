@@ -25,25 +25,24 @@
   color: var(--c-text);
   font-family: var(--f-lettura);
   font-size: var(--t-body);
-  line-height: 1.5;
-  white-space: pre-wrap;
+  line-height: 1.6;
   overflow-wrap: break-word;
 }
 
-.utente__riferimenti {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--sp-1);
+.utente__parole {
+  white-space: pre-wrap;
 }
 
+/* I chip dei documenti referenziati scorrono in linea col testo. */
 .riferimento {
   display: inline-flex;
+  vertical-align: middle;
+  margin: 0 var(--sp-1) 2px 0;
   border-radius: var(--radius-pieno);
   align-items: center;
   gap: var(--sp-1);
   max-width: 32ch;
-  padding: 2px 8px;
+  padding: 1px 8px;
   border: 1px solid var(--c-line);
   background: var(--c-surface);
   font-size: var(--t-xs);
