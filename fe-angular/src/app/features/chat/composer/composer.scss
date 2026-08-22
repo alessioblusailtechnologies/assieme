@@ -22,7 +22,7 @@
 
 /* I chip stanno dentro l'editor, in linea col testo (vedi editor-testo.ts). */
 
-.riferimento {
+.campo__testo ::ng-deep .riferimento {
   display: inline-flex;
   vertical-align: middle;
   margin: 0 2px 2px 0;
@@ -37,14 +37,19 @@
   font-size: var(--t-xs);
 }
 
-.riferimento__titolo {
+.campo__testo ::ng-deep .riferimento svg {
+  flex: none;
+  display: block;
+}
+
+.campo__testo ::ng-deep .riferimento__titolo {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.riferimento__togli {
+.campo__testo ::ng-deep .riferimento__togli {
   display: inline-flex;
   align-items: center;
   padding: 2px;
@@ -55,28 +60,28 @@
   opacity: 0.7;
 }
 
-.riferimento__togli:hover {
+.campo__testo ::ng-deep .riferimento__togli:hover {
   opacity: 1;
 }
 
 /* ---------- Allegati in salita (RF-C-02) ---------- */
 
-.riferimento.is-errore {
+.campo__testo ::ng-deep .riferimento.is-errore {
   background: var(--c-neg-soft);
   color: var(--c-neg);
 }
 
-.riferimento__stato {
+.campo__testo ::ng-deep .riferimento__stato {
   flex: none;
   font-size: var(--t-mono-sm);
   color: var(--c-text-3);
 }
 
-.riferimento.is-errore .riferimento__stato {
+.campo__testo ::ng-deep .riferimento.is-errore .riferimento__stato {
   color: inherit;
 }
 
-.riferimento ui-icon.gira {
+.campo__testo ::ng-deep .riferimento svg.gira {
   animation: gira 1.8s linear infinite;
 }
 
