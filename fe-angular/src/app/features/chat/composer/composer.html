@@ -9,57 +9,6 @@
     />
   }
 
-  @if (store.riferimentiBozza().length || store.allegati().length) {
-    <div class="riferimenti" aria-label="Documenti referenziati o allegati al messaggio">
-      @for (doc of store.riferimentiBozza(); track doc.id) {
-        <span class="riferimento">
-          <ui-icon
-            [name]="
-              doc.archivio === 'pubblico'
-                ? 'archivio-pubblico'
-                : doc.archivio === 'privato'
-                  ? 'archivio-privato'
-                  : 'allega'
-            "
-            [size]="12"
-          />
-          <span class="riferimento__titolo">{{ doc.titolo }}</span>
-          <button
-            type="button"
-            class="riferimento__togli"
-            (click)="store.rimuoviRiferimento(doc.id)"
-            [attr.aria-label]="'Togli il riferimento a ' + doc.titolo"
-          >
-            <ui-icon name="chiudi" [size]="11" />
-          </button>
-        </span>
-      }
-      @for (allegato of store.allegati(); track allegato.chiave) {
-        <span class="riferimento" [class.is-errore]="allegato.stato === 'errore'">
-          <ui-icon
-            [name]="allegato.stato === 'errore' ? 'errore' : 'in-corso'"
-            [size]="12"
-            [class.gira]="allegato.stato === 'caricamento'"
-          />
-          <span class="riferimento__titolo">{{ allegato.nome }}</span>
-          <span class="mono riferimento__stato">
-            {{ allegato.stato === 'errore' ? allegato.messaggio : 'caricamento…' }}
-          </span>
-          @if (allegato.stato === 'errore') {
-            <button
-              type="button"
-              class="riferimento__togli"
-              (click)="store.rimuoviAllegato(allegato.chiave)"
-              [attr.aria-label]="'Togli l’allegato ' + allegato.nome"
-            >
-              <ui-icon name="chiudi" [size]="11" />
-            </button>
-          }
-        </span>
-      }
-    </div>
-  }
-
   <div class="campo">
     <input
       #file
@@ -89,24 +38,78 @@
       <ui-icon name="referenzia" [size]="17" />
     </button>
 
-    <textarea
-      #area
-      class="campo__testo"
-      rows="1"
-      placeholder="Fai una domanda sui documenti — «@» per referenziarli"
-      [value]="store.bozza()"
-      (input)="aggiorna($event)"
-      (keydown)="suTasto($event)"
-      (keyup)="aggiornaCursore()"
-      (click)="aggiornaCursore()"
-      (blur)="chiudiSelettore()"
-      role="combobox"
-      aria-label="Messaggio"
-      [attr.aria-expanded]="selettoreAperto()"
-      aria-controls="selettore-documenti"
-      aria-autocomplete="list"
-      [attr.aria-activedescendant]="idOpzioneAttiva()"
-    ></textarea>
+    <!-- I documenti referenziati e gli allegati stanno nel messaggio, in linea col testo che si scrive. -->
+    <div class="campo__corpo">
+      @if (store.riferimentiBozza().length || store.allegati().length) {
+        <div class="riferimenti" aria-label="Documenti referenziati o allegati al messaggio">
+          @for (doc of store.riferimentiBozza(); track doc.id) {
+            <span class="riferimento">
+              <ui-icon
+                [name]="
+                  doc.archivio === 'pubblico'
+                    ? 'archivio-pubblico'
+                    : doc.archivio === 'privato'
+                      ? 'archivio-privato'
+                      : 'allega'
+                "
+                [size]="12"
+              />
+              <span class="riferimento__titolo">{{ doc.titolo }}</span>
+              <button
+                type="button"
+                class="riferimento__togli"
+                (click)="store.rimuoviRiferimento(doc.id)"
+                [attr.aria-label]="'Togli il riferimento a ' + doc.titolo"
+              >
+                <ui-icon name="chiudi" [size]="11" />
+              </button>
+            </span>
+          }
+          @for (allegato of store.allegati(); track allegato.chiave) {
+            <span class="riferimento" [class.is-errore]="allegato.stato === 'errore'">
+              <ui-icon
+                [name]="allegato.stato === 'errore' ? 'errore' : 'in-corso'"
+                [size]="12"
+                [class.gira]="allegato.stato === 'caricamento'"
+              />
+              <span class="riferimento__titolo">{{ allegato.nome }}</span>
+              <span class="mono riferimento__stato">
+                {{ allegato.stato === 'errore' ? allegato.messaggio : 'caricamento…' }}
+              </span>
+              @if (allegato.stato === 'errore') {
+                <button
+                  type="button"
+                  class="riferimento__togli"
+                  (click)="store.rimuoviAllegato(allegato.chiave)"
+                  [attr.aria-label]="'Togli l’allegato ' + allegato.nome"
+                >
+                  <ui-icon name="chiudi" [size]="11" />
+                </button>
+              }
+            </span>
+          }
+        </div>
+      }
+
+      <textarea
+        #area
+        class="campo__testo"
+        rows="1"
+        placeholder="Fai una domanda sui documenti — «@» per referenziarli"
+        [value]="store.bozza()"
+        (input)="aggiorna($event)"
+        (keydown)="suTasto($event)"
+        (keyup)="aggiornaCursore()"
+        (click)="aggiornaCursore()"
+        (blur)="chiudiSelettore()"
+        role="combobox"
+        aria-label="Messaggio"
+        [attr.aria-expanded]="selettoreAperto()"
+        aria-controls="selettore-documenti"
+        aria-autocomplete="list"
+        [attr.aria-activedescendant]="idOpzioneAttiva()"
+      ></textarea>
+    </div>
 
     @if (store.inRisposta()) {
       <button

@@ -20,10 +20,19 @@
 
 /* ---------- Chip dei riferimenti in attesa (RF-C-02) ---------- */
 
-.riferimenti {
+/* Chip e textarea nello stesso corpo: i chip scorrono in linea col testo. */
+.campo__corpo {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-1);
+  padding-left: var(--sp-1);
+}
+
+.riferimenti {
+  display: contents;
 }
 
 .riferimento {
@@ -105,8 +114,9 @@
 }
 
 .campo__testo {
-  flex: 1;
-  min-width: 0;
+  /* Parte dopo i chip sulla stessa riga; va a capo solo se non c'è più spazio. */
+  flex: 1 1 16ch;
+  min-width: 16ch;
   resize: none;
   border: 0;
   outline: none;
