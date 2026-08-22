@@ -50,6 +50,17 @@ export class BollaMessaggio {
       .filter((d): d is RiferimentoDocumento => !!d);
   });
 
+  /** Le fonti nascono chiuse: sono molte e l'utente le apre se vuole verificare. */
+  protected readonly fontiAperte = signal(false);
+
+  protected readonly riepilogoFonti = computed(() => {
+    const citazioni = this.messaggio().citazioni;
+    const documenti = new Set(citazioni.map((c) => c.documentoId)).size;
+    const passaggi = citazioni.length === 1 ? '1 passaggio' : `${citazioni.length} passaggi`;
+    const fonti = documenti === 1 ? '1 documento' : `${documenti} documenti`;
+    return `${passaggi} in ${fonti}`;
+  });
+
   /** RF-C-10: la copia rapida resta sempre disponibile, accanto all'esportazione. */
   protected readonly copiato = signal(false);
 
