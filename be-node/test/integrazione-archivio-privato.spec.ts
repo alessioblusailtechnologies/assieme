@@ -47,9 +47,9 @@ const pronto = Boolean(
 );
 
 const PASSWORD_DEMO = 'velia-demo-2026!';
-const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
-const EMAIL_ADMIN = 'm.ferrero@assicurazionimeridiana.it';
-const EMAIL_OPERATORE = 'p.ricciardi@assicurazionimeridiana.it';
+const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
+const EMAIL_ADMIN = 't.uno@collaudo.sonovelia.it';
+const EMAIL_OPERATORE = 't.due@collaudo.sonovelia.it';
 
 async function accedi(app: FastifyInstance, email: string): Promise<string> {
   const r = await app.inject({
@@ -166,7 +166,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     const riga = r.rows[0]!;
     return {
       id: riga.id,
-      tenant_id: TENANT_DEMO,
+      tenant_id: TENANT_COLLAUDO,
       tipo: 'ingestion',
       payload: riga.payload,
       stato: 'in-esecuzione',
@@ -185,25 +185,25 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     idAdmin = u.rows[0]!.id;
     const t = await pool().query<typeof limitiOriginali>(
       `select limite_spazio_byte, limite_file_byte from velia.tenant where id = $1`,
-      [TENANT_DEMO],
+      [TENANT_COLLAUDO],
     );
     limitiOriginali = t.rows[0]!;
     // Un giro precedente interrotto non deve sporcare questo.
     await pool().query(`delete from velia.documenti where archivio = 'privato' and tenant_id = $1`, [
-      TENANT_DEMO,
+      TENANT_COLLAUDO,
     ]);
   });
 
   afterAll(async () => {
     await pool().query(
       `update velia.tenant set limite_spazio_byte = $2, limite_file_byte = $3 where id = $1`,
-      [TENANT_DEMO, limitiOriginali.limite_spazio_byte, limitiOriginali.limite_file_byte],
+      [TENANT_COLLAUDO, limitiOriginali.limite_spazio_byte, limitiOriginali.limite_file_byte],
     );
     await pool().query(`delete from velia.jobs where tipo = 'ingestion' and tenant_id = $1`, [
-      TENANT_DEMO,
+      TENANT_COLLAUDO,
     ]);
     await pool().query(`delete from velia.documenti where archivio = 'privato' and tenant_id = $1`, [
-      TENANT_DEMO,
+      TENANT_COLLAUDO,
     ]);
     await chiudiPool();
   });
@@ -264,7 +264,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     expect(secondo.titolo).toBe('scansione-polizza');
 
     // I byte sono nello Storage, sotto il tenant.
-    expect(archivio.file.has(`tenant/${TENANT_DEMO}/documenti/${primo.id}.pdf`)).toBe(true);
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/documenti/${primo.id}.pdf`)).toBe(true);
 
     // E i job di ingestion sono accodati, firmati dal tenant e dall'utente.
     const jobs = await pool().query<{ tenant_id: string; utente_id: string }>(
@@ -273,7 +273,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
       [docs.map((d) => d.id)],
     );
     expect(jobs.rowCount).toBe(2);
-    expect(jobs.rows[0]).toEqual({ tenant_id: TENANT_DEMO, utente_id: idAdmin });
+    expect(jobs.rows[0]).toEqual({ tenant_id: TENANT_COLLAUDO, utente_id: idAdmin });
   });
 
   it('elenco: i più recenti in cima, filtri per stato e ricerca, anche per il collega', async () => {
@@ -335,7 +335,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
       riferimentoCliente: 'Rossi Mario',
       classificazioneDaConfermare: true, // la proposta resta tale finché l'utente non la tocca
     });
-    expect(archivio.file.has(`tenant/${TENANT_DEMO}/documenti/${creati[0]}.md`)).toBe(true);
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/documenti/${creati[0]}.md`)).toBe(true);
 
     const file = await richiedi('GET', `/api/documenti-privati/${creati[0]}/file`, tokenAdmin);
     expect(file.statusCode).toBe(200);
@@ -421,7 +421,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
   });
 
   it('limiti di piano (RF-B-08): 413 oltre la misura per file, 507 oltre lo spazio', async () => {
-    await pool().query(`update velia.tenant set limite_file_byte = 100 where id = $1`, [TENANT_DEMO]);
+    await pool().query(`update velia.tenant set limite_file_byte = 100 where id = $1`, [TENANT_COLLAUDO]);
     const grande = await carica(tokenAdmin, [{ nome: 'grande.pdf', contenuto: await pdfDiProva() }]);
     expect(grande.statusCode).toBe(413);
     expect(grande.json<CorpoErroreApi>()).toEqual({
@@ -431,14 +431,14 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
 
     await pool().query(
       `update velia.tenant set limite_file_byte = $2, limite_spazio_byte = 1000 where id = $1`,
-      [TENANT_DEMO, limitiOriginali.limite_file_byte],
+      [TENANT_COLLAUDO, limitiOriginali.limite_file_byte],
     );
     const pieno = await carica(tokenAdmin, [{ nome: 'altro.pdf', contenuto: await pdfDiProva() }]);
     expect(pieno.statusCode).toBe(507);
     expect(pieno.json<CorpoErroreApi>().codice).toBe('SPAZIO_ESAURITO');
 
     await pool().query(`update velia.tenant set limite_spazio_byte = $2 where id = $1`, [
-      TENANT_DEMO,
+      TENANT_COLLAUDO,
       limitiOriginali.limite_spazio_byte,
     ]);
     const spazio = await richiedi('GET', '/api/spazio', tokenAdmin);
@@ -449,7 +449,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
   it('isolamento (RF-B-01): un altro tenant non vede una riga, nemmeno per id', async () => {
     const altrove = await conIdentita(
       pool(),
-      { utenteId: '00000000-0000-4000-8000-000000000099', tenantId: '22222222-2222-4222-8222-222222222222', ruolo: 'amministratore' },
+      { utenteId: '00000000-0000-4000-8000-000000000099', tenantId: '33333333-3333-4333-8333-333333333333', ruolo: 'amministratore' },
       (client) =>
         client.query(`select id from velia.documenti where archivio = 'privato' and id = any($1)`, [creati]),
     );
@@ -458,7 +458,7 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     // Nemmeno senza il filtro esplicito della rotta: è la policy a dirlo.
     const tutto = await conIdentita(
       pool(),
-      { utenteId: '00000000-0000-4000-8000-000000000099', tenantId: '22222222-2222-4222-8222-222222222222', ruolo: 'operatore' },
+      { utenteId: '00000000-0000-4000-8000-000000000099', tenantId: '33333333-3333-4333-8333-333333333333', ruolo: 'operatore' },
       (client) => client.query(`select count(*)::int as n from velia.documenti where archivio = 'privato'`),
     );
     expect(tutto.rows[0]).toEqual({ n: 0 });
@@ -466,8 +466,8 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
 
   it('DELETE: 204, la riga sparisce e con lei PDF e Markdown (RNF-03)', async () => {
     const id = creati[0]!;
-    const pdf = `tenant/${TENANT_DEMO}/documenti/${id}.pdf`;
-    const md = `tenant/${TENANT_DEMO}/documenti/${id}.md`;
+    const pdf = `tenant/${TENANT_COLLAUDO}/documenti/${id}.pdf`;
+    const md = `tenant/${TENANT_COLLAUDO}/documenti/${id}.md`;
     expect(archivio.file.has(pdf) && archivio.file.has(md)).toBe(true);
 
     const r = await richiedi('DELETE', `/api/documenti-privati/${id}`, tokenOperatore);

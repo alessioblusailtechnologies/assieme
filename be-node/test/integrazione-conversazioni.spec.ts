@@ -50,9 +50,9 @@ const pronto = Boolean(
 );
 
 const PASSWORD_DEMO = 'velia-demo-2026!';
-const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
-const EMAIL_ADMIN = 'm.ferrero@assicurazionimeridiana.it';
-const EMAIL_OPERATORE = 'p.ricciardi@assicurazionimeridiana.it';
+const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
+const EMAIL_ADMIN = 't.uno@collaudo.sonovelia.it';
+const EMAIL_OPERATORE = 't.due@collaudo.sonovelia.it';
 
 async function accedi(app: FastifyInstance, email: string): Promise<string> {
   const r = await app.inject({ method: 'POST', url: '/api/sessione/accesso', payload: { email, password: PASSWORD_DEMO } });
@@ -191,22 +191,22 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       archivio.file.set(r.path_md, Buffer.from(`# ${r.path_md}\n\n[pag. 1]\n\nGaranzia cristalli: franchigia € 200.\n\n[pag. 2]\n\nEsclusioni.\n`));
     }
 
-    await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.ricordi where tenant_id = $1`, [TENANT_DEMO]);
+    await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.ricordi where tenant_id = $1`, [TENANT_COLLAUDO]);
   });
 
   afterAll(async () => {
     await ponte.chiudi();
     await app.close();
-    await pool().query(`delete from velia.jobs where tenant_id = $1 and tipo in ('interrogazione', 'ingestion')`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.ricordi where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.audit_risposte where tenant_id = $1`, [TENANT_DEMO]);
-    await pool().query(`delete from velia.consumi where tenant_id = $1`, [TENANT_DEMO]);
+    await pool().query(`delete from velia.jobs where tenant_id = $1 and tipo in ('interrogazione', 'ingestion')`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.ricordi where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.audit_risposte where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.consumi where tenant_id = $1`, [TENANT_COLLAUDO]);
     await chiudiPool();
     await rm(radice, { recursive: true, force: true });
   });
@@ -267,7 +267,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
 
   it('la workspace: pubblico nell’albero dello Storage, allegato non pronto segnalato, INDICE generati', async () => {
     const contesto = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>().documentiInContesto.map((d) => d.id);
-    const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_DEMO, radice, jobId: 'prova-ws', contestoIds: contesto });
+    const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_COLLAUDO, radice, jobId: 'prova-ws', contestoIds: contesto });
     try {
       expect(ws.perId.get(docPubblicoId)).toBe(pathMdPubblico);
       const contenuto = await readFile(join(ws.directory, ...pathMdPubblico.split('/')), 'utf8');
@@ -287,9 +287,9 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
   it('messaggio → SSE: inizio, attività, testo, citazione, provenienza, fine; poi il messaggio è persistito con audit e consumi', async () => {
     await pool().query(
       `insert into velia.istruzioni (tenant_id, titolo, testo, ambito_tipo) values ($1, 'Massimali prudenziali', 'Considera adeguato solo ≥ 10 milioni.', 'generale')`,
-      [TENANT_DEMO],
+      [TENANT_COLLAUDO],
     );
-    const istruzione = (await pool().query<{ id: string }>(`select id::text from velia.istruzioni where tenant_id = $1`, [TENANT_DEMO])).rows[0]!.id;
+    const istruzione = (await pool().query<{ id: string }>(`select id::text from velia.istruzioni where tenant_id = $1`, [TENANT_COLLAUDO])).rows[0]!.id;
 
     motore.copione = async (r, o) => {
       expect(r.promptSistema).toContain(`[id: ${istruzione}]`);
@@ -343,7 +343,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
 
     const audit = await pool().query<{ modello: string; documenti_letti: string[]; costo_usd: string }>(`select modello, documenti_letti, costo_usd from velia.audit_risposte where conversazione_id = $1`, [convId]);
     expect(audit.rows[0]).toMatchObject({ modello: 'finto', documenti_letti: [pathMdPubblico] });
-    const consumi = await pool().query(`select 1 from velia.consumi where tenant_id = $1 and modello = 'finto'`, [TENANT_DEMO]);
+    const consumi = await pool().query(`select 1 from velia.consumi where tenant_id = $1 and modello = 'finto'`, [TENANT_COLLAUDO]);
     expect(consumi.rowCount).toBeGreaterThan(0);
     const job = await pool().query<{ stato: string }>(`select stato from velia.jobs where tipo = 'interrogazione' and payload->>'conversazioneId' = $1 order by created_at desc limit 1`, [convId]);
     expect(job.rows[0]?.stato).toBe('completato');
@@ -422,13 +422,13 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
   it('DELETE: 204, messaggi in cascata, l’allegato orfano sparisce anche dallo Storage', async () => {
     const conv = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>();
     const allegato = conv.documentiInContesto.find((d) => d.archivio === 'conversazione')!;
-    expect(archivio.file.has(`tenant/${TENANT_DEMO}/allegati/${allegato.id}.pdf`)).toBe(true);
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/allegati/${allegato.id}.pdf`)).toBe(true);
 
     const r = await richiedi('DELETE', `/api/conversazioni/${convId}`, tokenAdmin);
     expect(r.statusCode).toBe(204);
     expect((await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).statusCode).toBe(404);
     expect((await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<CorpoErroreApi>().codice).toBe('NON_TROVATA');
-    expect(archivio.file.has(`tenant/${TENANT_DEMO}/allegati/${allegato.id}.pdf`)).toBe(false);
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/allegati/${allegato.id}.pdf`)).toBe(false);
     const messaggi = await pool().query(`select 1 from velia.messaggi where conversazione_id = $1`, [convId]);
     expect(messaggi.rowCount).toBe(0);
   });

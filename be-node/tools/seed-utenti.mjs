@@ -104,3 +104,60 @@ for (const profilo of profili) {
 console.log(`✓ preferiti: ${marcati.length} documenti per ${profili.length} utenti`);
 
 console.log(`\nFatto. Password demo per tutti: ${PASSWORD_DEMO}`);
+
+/*
+ * Il tenant di COLLAUDO: il compartimento dei test d'integrazione, separato
+ * dal tenant demo su cui si prova dal browser. I test possono spazzarlo a
+ * ogni giro senza toccare i dati di nessuno — ed è la dimostrazione
+ * quotidiana che l'isolamento fra tenant regge (RF-B-01).
+ */
+const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
+const UTENTI_COLLAUDO = [
+  { email: 't.uno@collaudo.sonovelia.it', nome: 'Tea', cognome: 'Collaudo', ruolo: 'amministratore' },
+  { email: 't.due@collaudo.sonovelia.it', nome: 'Ugo', cognome: 'Collaudo', ruolo: 'operatore' },
+];
+
+{
+  const { error } = await supabase
+    .from('tenant')
+    .upsert({ id: TENANT_COLLAUDO, nome: 'Agenzia di Collaudo (test)', piano: 'agenzia' });
+  if (error) throw error;
+}
+
+for (const u of UTENTI_COLLAUDO) {
+  const metadata = { tenant_id: TENANT_COLLAUDO, ruolo: u.ruolo };
+  const { data: esistenti, error: erroreLista } = await supabase.auth.admin.listUsers();
+  if (erroreLista) throw erroreLista;
+  const esistente = esistenti.users.find((x) => x.email === u.email);
+
+  let id;
+  if (esistente) {
+    id = esistente.id;
+    const { error } = await supabase.auth.admin.updateUserById(id, {
+      app_metadata: metadata,
+      password: PASSWORD_DEMO,
+    });
+    if (error) throw error;
+  } else {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: u.email,
+      password: PASSWORD_DEMO,
+      email_confirm: true,
+      app_metadata: metadata,
+    });
+    if (error) throw error;
+    id = data.user.id;
+  }
+
+  const { error: erroreProfilo } = await supabase.from('utenti').upsert({
+    id,
+    tenant_id: TENANT_COLLAUDO,
+    nome: u.nome,
+    cognome: u.cognome,
+    email: u.email,
+    ruolo: u.ruolo,
+    stato: 'attivo',
+  });
+  if (erroreProfilo) throw erroreProfilo;
+  console.log(`collaudo: ${u.email} (${u.ruolo})`);
+}
