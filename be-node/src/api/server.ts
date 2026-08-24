@@ -8,7 +8,8 @@ const app = creaApp({
 });
 
 try {
-  await app.listen({ port: config.PORTA_API, host: '0.0.0.0' });
+  /* Le piattaforme (Railway) assegnano la porta in PORT: vince su PORTA_API. */
+  await app.listen({ port: Number(process.env['PORT']) || config.PORTA_API, host: '0.0.0.0' });
 } catch (errore) {
   app.log.fatal({ err: errore }, 'avvio fallito');
   process.exit(1);

@@ -1,3 +1,4 @@
+import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
@@ -32,6 +33,8 @@ export interface OpzioniApp {
   istruzioni?: OpzioniIstruzioni;
   /** Nei test: Storage finto per il documento su template degli agenti. */
   agenti?: OpzioniAgenti;
+  /** Nei test: le origini CORS senza passare dalla configurazione. */
+  corsOrigini?: string;
 }
 
 /**
@@ -55,6 +58,17 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
     limits: { fileSize: 64 * 1024 * 1024, files: 30 },
     throwFileSizeLimit: false,
   });
+
+  /* App e API su host diversi (Pages + Railway): il browser chiede il
+     permesso, e lo si dà solo alle origini elencate. Il token viaggia
+     nell'header Authorization, non nei cookie: niente credenziali. */
+  const origini = (opzioni.corsOrigini ?? process.env['CORS_ORIGINI'] ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (origini.length) {
+    void app.register(cors, { origin: origini, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] });
+  }
 
   registraGestoreErrori(app);
   registraAuth(app, opzioni.verificaToken);

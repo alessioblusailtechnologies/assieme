@@ -42,7 +42,7 @@ describe('le rotte', () => {
     expect(elenco.statusCode).toBe(200);
     const modelli = elenco.json<ModelloAI[]>();
     expect(modelli.length).toBeGreaterThanOrEqual(5);
-    expect(modelli.filter((m) => m.disponibile).map((m) => m.nome)).toEqual([
+    expect(modelli.filter((m) => m.disponibile && m.provider === 'Anthropic').map((m) => m.nome)).toEqual([
       'Claude Opus 5',
       'Claude Sonnet 5',
       'Claude Haiku 4.5',

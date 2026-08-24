@@ -56,7 +56,14 @@ const schemaAmbiente = z.object({
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
   /** Dove il worker materializza workspace e cache dei documenti. */
   CARTELLA_WORKER: z.string().default('.velia-worker'),
+  /** In locale; in produzione la porta la assegna la piattaforma in `PORT` (vedi server.ts). */
   PORTA_API: z.coerce.number().int().default(3002),
+  /**
+   * Origini del front-end ammesse (separate da virgola), quando app e API
+   * stanno su host diversi — Cloudflare Pages da una parte, Railway
+   * dall'altra. Vuota = niente CORS (stesso host, o dev server col proxy).
+   */
+  CORS_ORIGINI: z.string().optional(),
   LOG_LIVELLO: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });
 
@@ -68,10 +75,15 @@ export function configurazione(ambiente: NodeJS.ProcessEnv = process.env): Confi
   if (!cache) {
     // Node 24: carica be-node/.env se esiste; in CI le variabili arrivano
     // dall'ambiente e il file non c'è.
-    try {
-      process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
-    } catch {
-      /* nessun .env: va bene così */
+    /* Da `src/` il file è un livello sopra; da `dist/src/` due. In produzione
+       (Railway) non c'è: le variabili arrivano dalla piattaforma. */
+    for (const candidato of ['../.env', '../../.env']) {
+      try {
+        process.loadEnvFile(fileURLToPath(new URL(candidato, import.meta.url)));
+        break;
+      } catch {
+        /* nessun .env qui: va bene così */
+      }
     }
     const esito = schemaAmbiente.safeParse(ambiente);
     if (!esito.success) {

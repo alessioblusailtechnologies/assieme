@@ -1,0 +1,80 @@
+# Deploy di VELIA
+
+Tre pezzi, tre posti:
+
+| Pezzo | Dove | Perché |
+|---|---|---|
+| Sito (Astro) | Cloudflare Pages | già lì |
+| App (Angular, `fe-angular/`) | Cloudflare Pages, `app.sonovelia.it` | è statica: CDN, TLS e DNS sullo stesso account del sito |
+| Backend (`be-node/`: API + worker) | Railway, regione **Amsterdam** (`europe-west4`), `api.sonovelia.it` | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
+| Database e Storage | Supabase (già in cloud, progetto `hcxiloivukbdcfcugksg`) | invariato |
+
+---
+
+## 1. Backend su Railway
+
+Un'immagine sola (`be-node/Dockerfile`) e **due servizi** dallo stesso repo: il comando di avvio li distingue.
+
+### Primo avvio (una volta)
+
+1. Railway → *New Project* → *Deploy from GitHub repo* → questo repository.
+2. Servizio **api**:
+   - *Settings → Source*: root directory `be-node`, config file `railway.api.json`.
+   - *Settings → Networking*: genera il dominio, poi *Custom domain* `api.sonovelia.it` (Railway dà il CNAME da mettere su Cloudflare DNS: in modalità proxy va bene, il ponte SSE manda un battito ogni pochi secondi e il proxy non chiude).
+   - Regione: Amsterdam.
+3. Servizio **worker**: *New service* dallo stesso repo, root `be-node`, config file `railway.worker.json`, regione Amsterdam. Nessuna porta pubblica.
+   - *Volume*: monta un volume su `/app/.velia-worker` (cache delle workspace; ricostruibile dallo Storage, ma evita di riscaricare i documenti a ogni job). 2-5 GB bastano.
+   - *Settings → Resources*: memoria almeno **2 GB** (l'Agent SDK lancia un processo figlio durante i job).
+4. Variabili (su entrambi i servizi, salvo dove indicato). Usa *Shared variables* del progetto e referenziale:
+
+   | Variabile | Valore | Note |
+   |---|---|---|
+   | `SUPABASE_URL` | `https://hcxiloivukbdcfcugksg.supabase.co` | |
+   | `SUPABASE_ANON_KEY` | dalla dashboard Supabase | |
+   | `SUPABASE_SERVICE_ROLE_KEY` | dalla dashboard Supabase | segreto |
+   | `SUPABASE_JWT_SECRET` | dalla dashboard Supabase (chiavi legacy HS256) | segreto |
+   | `DATABASE_URL` | pooler Supabase in **modalità sessione** (porta 5432) | il worker usa LISTEN/NOTIFY: non il transaction pooler |
+   | `ANTHROPIC_API_KEY` | chiave Anthropic | segreto |
+   | `HOSTYOURAI_API_KEY` | chiave HostYourAI (`hyai-…`) | opzionale: senza, GLM/Kimi restano schede |
+   | `MODELLO_MOTORE` | `claude-opus-5` | default |
+   | `MOTORE_EFFORT` | `medium` | opzionale, vedi costi |
+   | `CORS_ORIGINI` | `https://app.sonovelia.it` | **solo api** |
+   | `LOG_LIVELLO` | `info` | |
+
+   `PORT` la assegna Railway; `CARTELLA_WORKER` è già `/app/.velia-worker` nell'immagine.
+5. Deploy: parte da solo al push su `main`. Health check dell'API su `/api/salute`.
+
+### Migrazioni
+
+Non girano al deploy: si applicano come sempre da locale con `node tools/applica-migrazione.mjs supabase/migrations/<file>.sql` (Management API + ledger), **prima** di pushare il codice che le richiede.
+
+### Controlli dopo il primo deploy
+
+```
+curl https://api.sonovelia.it/api/salute            # {"stato":"ok"}
+```
+Poi login dall'app e una domanda in chat: il job passa dal worker (log del servizio worker: «avviato, in ascolto sulla coda»).
+
+---
+
+## 2. App su Cloudflare Pages
+
+1. Cloudflare → *Workers & Pages* → *Create* → *Pages* → connetti il repo.
+2. Impostazioni di build:
+   - Root directory: `fe-angular`
+   - Build command: `npm ci && npx ng build`
+   - Build output directory: `dist/fe-angular/browser`
+   - Variabile `NODE_VERSION` = `24`
+3. *Custom domains*: `app.sonovelia.it`.
+4. Dove sta l'API lo dice **`public/config.js`** (`window.veliaApiBase`), letto a runtime: oggi `https://api.sonovelia.it/api`. Per un ambiente di prova basta cambiare quel file, senza ricompilare.
+5. `public/_redirects` manda ogni percorso a `index.html` (routing della SPA).
+
+---
+
+## 3. Cose da sapere
+
+- **Segreti**: solo nelle variabili di Railway, mai nell'immagine né nel repo. `.env` resta locale.
+- **CORS**: l'API accetta solo le origini in `CORS_ORIGINI`. Il token viaggia in `Authorization`, non nei cookie.
+- **Costi**: Railway a consumo (~15-25 $/mese per i due servizi con poco traffico); Pages gratis. I costi AI sono in `velia.consumi`, per tenant.
+- **Residenza dei dati**: Railway Amsterdam e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte).
+- **Aggiornare**: push su `main` → Railway e Pages ricostruiscono. Le migrazioni prima, a mano.
