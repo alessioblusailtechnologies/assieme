@@ -78,7 +78,6 @@ export class Conversazione {
     effect(() => {
       this.store.apri(this.id());
       this.seguiFondo = true;
-      this.scorrimentoAvviato.set(false);
     });
 
     afterRenderEffect(() => {
@@ -88,14 +87,10 @@ export class Conversazione {
     });
   }
 
-  /** Vero appena il filo non è più in cima: la testata si stacca con un'ombra. */
-  protected readonly scorrimentoAvviato = signal(false);
-
   protected suScorrimento(): void {
     const el = this.filo()?.nativeElement;
     if (!el) return;
     this.seguiFondo = el.scrollHeight - el.scrollTop - el.clientHeight < SOGLIA_FONDO_PX;
-    this.scorrimentoAvviato.set(el.scrollTop > 0);
   }
 
   /** RF-C-15: condivide con l'agenzia, o revoca — il pulsante mostra lo stato. */

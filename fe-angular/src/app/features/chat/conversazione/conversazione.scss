@@ -69,32 +69,18 @@
  * foglio — sfondo trasparente, nessun filo — e il titolo galleggia sopra
  * la conversazione, con le azioni al margine.
  */
+/*
+ * Non una seconda barra piena: la testata resta sul foglio, con il solo
+ * filo di sistema a separarla dal filo dei messaggi. Padding simmetrico e
+ * `align-items: center`: titolo e azioni stanno sulla stessa mezzeria.
+ */
 .testata {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-4) var(--sp-6) var(--sp-2);
+  padding: var(--sp-3) var(--sp-6);
+  border-bottom: 1px solid var(--c-line-soft);
   flex: none;
-}
-
-/* Il distacco è un filo, come ovunque nel sistema — ma compare solo quando
-   serve: in dissolvenza, appena la conversazione scorre sotto il titolo. */
-.testata::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--c-line-soft);
-  opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-brand);
-}
-
-.testata.is-scorsa::after {
-  opacity: 1;
 }
 
 .testata__titolo {
