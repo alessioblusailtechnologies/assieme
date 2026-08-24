@@ -37,6 +37,12 @@ const schemaAmbiente = z.object({
    * aperte 1 e 4 del doc motore: si misurano qui, non si cablano.
    */
   MODELLO_MOTORE: z.string().default('claude-opus-5'),
+  /**
+   * Il modello dell'estrazione per le tabelle (Fase 5): un lavoro più
+   * meccanico della chat — di default lo stesso del motore, si abbassa
+   * quando i numeri di `consumi` lo giustificano.
+   */
+  MODELLO_TABELLE: z.string().optional(),
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),

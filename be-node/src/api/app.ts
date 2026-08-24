@@ -8,6 +8,7 @@ import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
 import { registraRotteSessione } from './sessione/rotte.js';
+import { registraRotteTabelle, type OpzioniTabelle } from './tabelle/rotte.js';
 import { registraRotteTemplate, type OpzioniTemplate } from './template/rotte.js';
 
 export interface OpzioniApp {
@@ -20,6 +21,8 @@ export interface OpzioniApp {
   conversazioni?: OpzioniConversazioni;
   /** Nei test: Storage finto per template e identità visiva. */
   template?: OpzioniTemplate;
+  /** Nei test: Storage finto per l'esportazione delle tabelle. */
+  tabelle?: OpzioniTabelle;
 }
 
 /**
@@ -56,6 +59,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRotteTemplate(app, opzioni.template);
+  registraRotteTabelle(app, opzioni.tabelle);
 
   return app;
 }

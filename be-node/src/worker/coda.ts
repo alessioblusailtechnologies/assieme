@@ -3,7 +3,7 @@ import type pg from 'pg';
 /** La coda pgmq unica dei lavori; il tipo sta nel job, il worker smista. */
 export const CODA_LAVORI = 'lavori';
 
-export type TipoJob = 'prova' | 'ingestion' | 'interrogazione' | 'agente' | 'memoria';
+export type TipoJob = 'prova' | 'ingestion' | 'interrogazione' | 'tabella' | 'agente' | 'memoria';
 
 export interface Job {
   id: string;

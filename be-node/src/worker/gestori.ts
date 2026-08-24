@@ -13,6 +13,7 @@ import { creaGestoreInterrogazione } from './motore/gestore.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
+import { creaGestoreTabelle } from './tabelle/gestore.js';
 
 /** Gli strumenti che ogni gestore riceve; crescono con le fasi. */
 export interface StrumentiJob {
@@ -35,6 +36,7 @@ export type GestoreJob = (job: Job, strumenti: StrumentiJob) => Promise<void>;
  */
 let ingestionVera: GestoreJob | undefined;
 let interrogazioneVera: GestoreJob | undefined;
+let tabellaVera: GestoreJob | undefined;
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
@@ -64,6 +66,24 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       });
     }
     await interrogazioneVera(job, strumenti);
+  },
+
+  /** Fase 5: l'estrazione delle celle, per gruppi per documento. */
+  tabella: async (job, strumenti) => {
+    if (!tabellaVera) {
+      const c = configurazione();
+      tabellaVera = creaGestoreTabelle({
+        motore: new MotoreAgentSdk({
+          modello: c.MODELLO_TABELLE ?? c.MODELLO_MOTORE,
+          maxTurni: c.MOTORE_MAX_TURNI,
+          budgetUsd: c.MOTORE_BUDGET_USD,
+          ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+        }),
+        archivio: new ArchivioStorage(),
+        radice: resolve(configurazione().CARTELLA_WORKER),
+      });
+    }
+    await tabellaVera(job, strumenti);
   },
 
   prova: async (job, { db }) => {

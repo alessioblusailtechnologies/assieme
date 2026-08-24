@@ -36,7 +36,7 @@ import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archi
  * `template_predefiniti`, mai sulle righe condivise della libreria.
  */
 
-interface RigaTemplate {
+export interface RigaTemplate {
   id: string;
   tenant_id: string | null;
   nome: string;
@@ -46,7 +46,7 @@ interface RigaTemplate {
   path_file: string | null;
 }
 
-interface RigaIdentita {
+export interface RigaIdentita {
   colore_primario: string;
   recapiti: string;
   firma: string;
@@ -467,7 +467,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
 // Letture condivise
 // ---------------------------------------------------------------------------
 
-async function templatePerId(client: pg.ClientBase, id: string): Promise<RigaTemplate | undefined> {
+export async function templatePerId(client: pg.ClientBase, id: string): Promise<RigaTemplate | undefined> {
   const r = await client.query<RigaTemplate>(
     `select id, tenant_id, nome, formato, descrizione, tipologia_libreria, path_file
      from velia.template where id = $1`,
@@ -482,19 +482,18 @@ async function templatePerId(client: pg.ClientBase, id: string): Promise<RigaTem
  * default di libreria. Libreria prima, poi i propri per data di caricamento.
  */
 async function elencoTemplate(client: pg.ClientBase, tenantId: string): Promise<TemplateOutput[]> {
-  const [righe, scelte] = await Promise.all([
-    client.query<RigaTemplate>(
-      `select id, tenant_id, nome, formato, descrizione, tipologia_libreria, path_file
-       from velia.template
-       where tenant_id is null or tenant_id = $1
-       order by (tenant_id is not null), created_at, id`,
-      [tenantId],
-    ),
-    client.query<{ tipologia: TipologiaOutput; template_id: string | null }>(
-      `select tipologia, template_id from velia.template_predefiniti where tenant_id = $1`,
-      [tenantId],
-    ),
-  ]);
+  /* Sequenziali: è un solo client di transazione, non sa parallelizzare. */
+  const righe = await client.query<RigaTemplate>(
+    `select id, tenant_id, nome, formato, descrizione, tipologia_libreria, path_file
+     from velia.template
+     where tenant_id is null or tenant_id = $1
+     order by (tenant_id is not null), created_at, id`,
+    [tenantId],
+  );
+  const scelte = await client.query<{ tipologia: TipologiaOutput; template_id: string | null }>(
+    `select tipologia, template_id from velia.template_predefiniti where tenant_id = $1`,
+    [tenantId],
+  );
 
   const predefiniti = new Map<TipologiaOutput, string | null>();
   for (const r of righe.rows) {
@@ -515,7 +514,7 @@ async function elencoTemplate(client: pg.ClientBase, tenantId: string): Promise<
   });
 }
 
-async function identitaDelTenant(client: pg.ClientBase, tenantId: string): Promise<RigaIdentita> {
+export async function identitaDelTenant(client: pg.ClientBase, tenantId: string): Promise<RigaIdentita> {
   const r = await client.query<RigaIdentita>(
     `select colore_primario, recapiti, firma, logo_path, logo_tipo
      from velia.identita_visiva where tenant_id = $1`,
@@ -533,7 +532,7 @@ function versoIdentita(riga: RigaIdentita): IdentitaVisiva {
   };
 }
 
-function versoIdentitaGenerazione(riga: RigaIdentita): Omit<IdentitaGenerazione, 'logo'> {
+export function versoIdentitaGenerazione(riga: RigaIdentita): Omit<IdentitaGenerazione, 'logo'> {
   return { colorePrimario: riga.colore_primario, recapiti: riga.recapiti, firma: riga.firma };
 }
 
