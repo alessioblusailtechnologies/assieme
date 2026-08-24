@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
-import { MARCATORE_CITAZIONI, promptSistema, promptUtente, type DnaAgenzia } from '../src/worker/motore/regole.js';
+import { MARCATORE_CITAZIONI, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import {
+  avvisiEsposizione,
   ErroreValidazione,
   limiteInoltro,
   margineMarcatore,
@@ -272,6 +273,20 @@ describe('workspace e sessione, le parti pure', () => {
     expect(lungo.length).toBeLessThanOrEqual(61);
     expect(lungo.endsWith('…')).toBe(true);
     expect(lungo).not.toMatch(/\s…$/);
+  });
+
+  it('le regole vietano di sostituire l’oggetto della domanda e di nominare il mondo interno', () => {
+    expect(REGOLE_MOTORE).toContain("Mai sostituire l'oggetto della domanda");
+    expect(REGOLE_MOTORE).toContain('aspetta la conferma');
+    expect(REGOLE_MOTORE).toContain('Il mondo interno non si nomina');
+    expect(REGOLE_MOTORE).toContain('«Archivio Pubblico» e «Archivio Privato»');
+  });
+
+  it('avvisiEsposizione segnala percorsi e nomi di file nel testo visibile', () => {
+    expect(avvisiEsposizione('In archivio-pubblico/unipolsai/ trovi il DIP.')).toHaveLength(1);
+    expect(avvisiEsposizione('Vedi tenant/allegati/INDICE.md nella workspace')).toHaveLength(1);
+    expect(avvisiEsposizione('Ho letto condizioni-di-assicurazione.md a pag. 76')).toHaveLength(1);
+    expect(avvisiEsposizione('La garanzia Furto prevede scoperto 10% *(Condizioni, pag. 103)*.')).toEqual([]);
   });
 
   it('i prompt portano regole, DNA con id, contesto e storia', () => {

@@ -205,6 +205,17 @@ function accorcia(testo: string, n: number): string {
   return pulito.length <= n ? pulito : `${pulito.slice(0, n - 1).trimEnd()}…`;
 }
 
+/**
+ * Il testo visibile non deve nominare il mondo interno (regola 6 del
+ * prompt): se succede si annota nell'audit — non si boccia la risposta, ma
+ * il segnale serve a stringere il prompt finché non succede più.
+ */
+export function avvisiEsposizione(testoVisibile: string): string[] {
+  const spie = [/archivio-pubblico\//i, /\btenant\//i, /INDICE\.md/i, /\bworkspace\b/i, /[\w-]+\.md\b/i];
+  const trovate = spie.filter((s) => s.test(testoVisibile)).map((s) => s.source);
+  return trovate.length ? [`la risposta espone il mondo interno: ${trovate.join(', ')}`] : [];
+}
+
 /** Path come li scrive il modello → chiave della workspace (posix, relativo). */
 export function normalizzaPath(p: string): string {
   return p

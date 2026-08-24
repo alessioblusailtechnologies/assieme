@@ -7,7 +7,7 @@ import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
-import { ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
+import { avvisiEsposizione, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
 import { materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
@@ -177,7 +177,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           citazioni = valido.citazioni;
           provenienze = valido.provenienze;
           nonSupportato = valido.nonSupportato;
-          avvisi = valido.avvisi;
+          avvisi = [...valido.avvisi, ...avvisiEsposizione(testoFinale)];
         } catch (errore) {
           await registraConsumi(db, tenantId, job.id, esito);
           await emetti({
