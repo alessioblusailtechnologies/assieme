@@ -83,15 +83,26 @@
   white-space: nowrap;
 }
 
-.testata__condivisa {
+.testata__stacco {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
+}
+
+/* I metadati stanno al margine: presenti, mai protagonisti. */
+.testata__meta {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono-sm);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--c-text-3);
+  gap: var(--sp-2);
+  margin-left: auto;
+  font-size: var(--t-mono);
+  color: var(--c-text-mute);
+  white-space: nowrap;
+}
+
+.testata__meta-stacco {
+  color: var(--c-text-ghost);
 }
 
 /* ---------- Corpo: conversazione a sinistra, contesto a destra ---------- */

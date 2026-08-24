@@ -21,16 +21,28 @@
   </div>
 } @else {
   <!--
-    La testata è lettura: titolo e stato. Rinomina ed eliminazione vivono
-    nella lista dello storico (barra laterale), al passaggio sulla voce.
+    La testata è lettura, nella lingua delle altre pagine: briciole, stacco,
+    titolo serif, stato e metadati. Rinomina ed eliminazione vivono nella
+    lista dello storico (barra laterale), al passaggio sulla voce.
   -->
   <header class="testata">
+    <ui-briciole [voci]="briciole" />
+    <span class="testata__stacco" aria-hidden="true"></span>
     <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
 
     @if (store.attiva()?.condivisa) {
-      <span class="testata__condivisa" title="Condivisa con l'agenzia">
-        <ui-icon name="condividi" [size]="13" />
-        condivisa
+      <ui-badge variante="accento" title="Condivisa con l'agenzia">condivisa</ui-badge>
+    }
+
+    @if (store.attiva(); as conversazione) {
+      <span class="testata__meta mono">
+        <span title="Ultimo aggiornamento">{{ conversazione.aggiornataIl | date: 'dd/MM HH:mm' }}</span>
+        @if (contesto().length) {
+          <span class="testata__meta-stacco" aria-hidden="true">·</span>
+          <span title="Documenti nel contesto">
+            {{ contesto().length }} {{ contesto().length === 1 ? 'documento' : 'documenti' }}
+          </span>
+        }
       </span>
     }
   </header>
