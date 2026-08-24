@@ -4,6 +4,7 @@ import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { MARCATORE_CITAZIONI, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
+import { interpretaSuggerimenti } from '../src/worker/motore/suggeritore.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
@@ -299,6 +300,16 @@ describe('workspace e sessione, le parti pure', () => {
     const lungo = ripulisciTitolo('Confronto molto dettagliato delle garanzie accessorie fra la polizza vecchia e quella nuova');
     expect(lungo.length).toBeLessThanOrEqual(61);
     expect(lungo.endsWith('…')).toBe(true);
+  });
+
+  it('interpretaSuggerimenti: array anche recintato, massimo tre, mai vuoto o fuori misura', () => {
+    expect(interpretaSuggerimenti('```json\n["Che massimali ha la Kasko?","E la grandine?","Confronto con la 2019?","Quarta"]\n```')).toEqual([
+      'Che massimali ha la Kasko?',
+      'E la grandine?',
+      'Confronto con la 2019?',
+    ]);
+    expect(() => interpretaSuggerimenti('nessun array')).toThrow();
+    expect(() => interpretaSuggerimenti('[]')).toThrow();
   });
 
   it('i prompt portano regole, DNA con id, contesto e storia', () => {

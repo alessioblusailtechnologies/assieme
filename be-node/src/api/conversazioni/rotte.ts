@@ -240,6 +240,22 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     return risposta.code(204).send();
   });
 
+  /**
+   * Le prossime domande per la schermata iniziale: le ha scritte il worker a
+   * fine risposta, su misura dell'ultima conversazione dell'utente. Vuoto se
+   * non ce ne sono: la home ricade sugli esempi.
+   */
+  app.get('/api/suggerimenti', async (richiesta) => {
+    return conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const righe = await client.query<{ testo: string }>(
+        `select testo from velia.suggerimenti
+         where utente_id = $1 order by created_at desc, id limit 3`,
+        [richiesta.identita.utenteId],
+      );
+      return righe.rows.map((r) => r.testo);
+    });
+  });
+
   /** Il filo intero, dal più vecchio: un array nudo, senza paginazione. */
   app.get<{ Params: { id: string } }>('/api/conversazioni/:id/messaggi', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<Messaggio[]> => {

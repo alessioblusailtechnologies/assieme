@@ -11,6 +11,7 @@ import { ConvertitoreHaiku } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
+import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
 
 /** Gli strumenti che ogni gestore riceve; crescono con le fasi. */
@@ -58,6 +59,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         }),
         archivio: new ArchivioStorage(),
         generatoreTitolo: new GeneratoreTitoloHaiku(),
+        generatoreSuggerimenti: new GeneratoreSuggerimentiHaiku(),
         radice: resolve(c.CARTELLA_WORKER),
       });
     }

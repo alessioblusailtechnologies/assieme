@@ -16,7 +16,11 @@ import { BollaMessaggio } from './bolla-messaggio';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
+import { httpResource } from '@angular/common/http';
+
 import { ChatStore } from '../chat-store';
+import { salutoPer } from '../saluto';
+import { SessioneStore } from '@core/auth/sessione-store';
 import { Citazione, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
@@ -61,6 +65,10 @@ export class Conversazione {
   private readonly apiPubblici = inject(DocumentiApi);
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
   private readonly apiConversazioni = inject(ConversazioniApi);
+  private readonly sessione = inject(SessioneStore);
+
+  /** Il saluto della schermata iniziale: contestuale all'ora e alla persona. */
+  protected readonly saluto = computed(() => salutoPer(new Date(), this.sessione.utente()?.nome));
 
   /** Dalla rotta; assente su `/chat`, la schermata «nuova conversazione». */
   readonly id = input<string>();
@@ -194,12 +202,25 @@ export class Conversazione {
     this.menuEsporta()?.apri(evento);
   }
 
-  /** I suggerimenti della schermata vuota: domande vere, pronte da inviare. */
-  protected readonly suggerimenti = [
+  /**
+   * I suggerimenti della schermata vuota: li scrive il motore a fine
+   * risposta, su misura dell'ultima conversazione; gli esempi fissi
+   * completano fino a tre e reggono da soli il primo giorno (o il mock).
+   */
+  private readonly esempi = [
     'Confronta il set informativo AUTOPIÙ con il preventivo UnipolSai per la Fiat 500X',
     'Che franchigie prevede la garanzia furto e incendio?',
     'La polizza copre i danni da grandine?',
   ];
+
+  private readonly risorsaSuggerimenti = httpResource<string[]>(() =>
+    this.apiConversazioni.urlSuggerimenti(),
+  );
+
+  protected readonly suggerimenti = computed(() => {
+    const generati = this.risorsaSuggerimenti.hasValue() ? this.risorsaSuggerimenti.value() : [];
+    return [...generati, ...this.esempi.filter((e) => !generati.includes(e))].slice(0, 3);
+  });
 
   protected usaSuggerimento(testo: string): void {
     this.store.bozza.set(testo);

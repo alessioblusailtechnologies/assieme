@@ -7,6 +7,7 @@ import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
+import type { GeneratoreSuggerimenti } from './suggeritore.js';
 import type { GeneratoreTitolo } from './titolista.js';
 import { avvisiEsposizione, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
 import { materializzaWorkspace, type Workspace } from './workspace.js';
@@ -29,6 +30,8 @@ export interface DipendenzeInterrogazione {
   radice: string;
   /** Il titolo sensato al posto del provvisorio; senza, resta il provvisorio. */
   generatoreTitolo?: GeneratoreTitolo;
+  /** Le prossime domande per la schermata iniziale; senza, la home usa gli esempi. */
+  generatoreSuggerimenti?: GeneratoreSuggerimenti;
   /** Quanto aspettare un allegato ancora in elaborazione prima di partire senza. */
   attesaAllegatiMs?: number;
 }
@@ -267,6 +270,28 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           }
         } catch (errore) {
           await emettiEvento(db, job.id, 'titolo-saltato', {
+            motivo: errore instanceof Error ? errore.message : String(errore),
+          });
+        }
+      }
+
+      /* Le prossime domande per la home: fresche a ogni risposta, per
+         utente. Un giro mancato non è un errore: restano le precedenti. */
+      if (dip.generatoreSuggerimenti) {
+        try {
+          const proposte = await dip.generatoreSuggerimenti.genera(payload.testo, testoFinale);
+          if (proposte.length) {
+            await db.query(`delete from velia.suggerimenti where utente_id = $1`, [payload.utenteId]);
+            for (const testoProposta of proposte) {
+              await db.query(
+                `insert into velia.suggerimenti (tenant_id, utente_id, testo, conversazione_id)
+                 values ($1, $2, $3, $4)`,
+                [tenantId, payload.utenteId, testoProposta, payload.conversazioneId],
+              );
+            }
+          }
+        } catch (errore) {
+          await emettiEvento(db, job.id, 'suggerimenti-saltati', {
             motivo: errore instanceof Error ? errore.message : String(errore),
           });
         }

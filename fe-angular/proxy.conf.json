@@ -10,6 +10,7 @@
   "/api/spazio": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "^/api/conversazioni/[^/]+/messaggi/[^/]+/esporta$": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/conversazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/suggerimenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/tabelle": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/template": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/modelli": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },

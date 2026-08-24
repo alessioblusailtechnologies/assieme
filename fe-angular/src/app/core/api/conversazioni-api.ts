@@ -60,6 +60,11 @@ export class ConversazioniApi {
     return this.http.post<Conversazione>(this.base, dati);
   }
 
+  /** Le prossime domande per la schermata iniziale, scritte dal motore a fine risposta. */
+  urlSuggerimenti(): string {
+    return `${environment.apiBase}/suggerimenti`;
+  }
+
   /** RF-C-01: le conversazioni sono rinominabili. */
   rinomina(id: Id, titolo: string): Observable<Conversazione> {
     return this.http.patch<Conversazione>(`${this.base}/${id}`, { titolo });

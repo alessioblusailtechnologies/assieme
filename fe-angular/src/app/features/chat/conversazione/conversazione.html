@@ -2,16 +2,16 @@
   <!-- Nuova conversazione: la stessa pagina, prima della prima domanda. -->
   <div class="benvenuto">
     <div class="benvenuto__centro">
-      <h1 class="serif benvenuto__titolo">Di cosa hai bisogno?</h1>
+      <h1 class="serif benvenuto__titolo">{{ saluto() }}</h1>
       <p class="benvenuto__spiega">
-        Fai una domanda in italiano e referenzia con «@» i documenti dei due archivi: la risposta
-        arriverà con le citazioni ai passaggi da cui è tratta.
+        Fai una domanda e referenzia con «@» i documenti dei due archivi: la risposta arriverà con
+        le citazioni ai passaggi da cui è tratta.
       </p>
 
       <app-composer />
 
       <div class="benvenuto__suggerimenti">
-        @for (s of suggerimenti; track s) {
+        @for (s of suggerimenti(); track s) {
           <button type="button" class="suggerimento" (click)="usaSuggerimento(s)">
             {{ s }}
           </button>
