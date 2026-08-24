@@ -10,7 +10,7 @@ import { ArchivioStorage } from './ingestion/archivio-file.js';
 import { ClassificatoreHaiku } from './ingestion/classificatore.js';
 import { ConvertitoreHaiku } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
-import { EstrattoreHaiku } from './memoria/estrattore.js';
+import { EstrattoreMotore } from './memoria/estrattore.js';
 import { creaGestoreMemoria } from './memoria/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
@@ -109,9 +109,22 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
     await tabellaVera(job, strumenti);
   },
 
-  /** Fase 8: l'apprendimento a fine conversazione, col modello economico. */
+  /** Fase 8: l'apprendimento durante la conversazione — lo stesso motore, modello del tenant. */
   memoria: async (job, strumenti) => {
-    memoriaVera ??= creaGestoreMemoria({ estrattore: new EstrattoreHaiku() });
+    if (!memoriaVera) {
+      const c = configurazione();
+      memoriaVera = creaGestoreMemoria({
+        estrattore: new EstrattoreMotore(
+          new MotoreAgentSdk({
+            modello: c.MODELLO_MOTORE,
+            maxTurni: 4,
+            budgetUsd: c.MOTORE_BUDGET_USD,
+            ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+          }),
+          resolve(c.CARTELLA_WORKER),
+        ),
+      });
+    }
     await memoriaVera(job, strumenti);
   },
 

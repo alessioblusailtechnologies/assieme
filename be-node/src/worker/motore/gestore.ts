@@ -1,7 +1,7 @@
 import type pg from 'pg';
 
 import type { Citazione, EventoStream, Provenienza } from '../../contratto/conversazioni.js';
-import type { Job } from '../coda.js';
+import { accoda, type Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -56,6 +56,8 @@ interface RigaConversazione {
   documenti_in_contesto: string[];
   /** RF-D-02: il modello scelto dal tenant; null = default di piattaforma. */
   modello_motore: string | null;
+  /** RF-G-01: se il tenant impara dalle conversazioni. */
+  memoria_attiva: boolean;
 }
 
 const MESSAGGIO_BUDGET =
@@ -70,7 +72,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     const emetti = (evento: EventoStream) => emettiEvento(db, job.id, evento.tipo, evento);
 
     const conv = await db.query<RigaConversazione>(
-      `select c.id, c.tenant_id, c.documenti_in_contesto, t.modello_motore
+      `select c.id, c.tenant_id, c.documenti_in_contesto, t.modello_motore, t.memoria_attiva
        from velia.conversazioni c
        join velia.tenant t on t.id = c.tenant_id
        where c.id = $1`,
@@ -262,6 +264,19 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ],
       );
       await registraConsumi(db, tenantId, job.id, esito);
+
+      /* RF-G-01: la memoria impara durante la conversazione — a risposta
+         scritta si accoda il job che legge gli scambi nuovi. Un accodamento
+         mancato non è un errore della risposta. */
+      if (conversazione.memoria_attiva) {
+        try {
+          await accoda(db, 'memoria', { conversazioneId: payload.conversazioneId }, { tenantId, utenteId: payload.utenteId });
+        } catch (errore) {
+          await emettiEvento(db, job.id, 'memoria-saltata', {
+            motivo: errore instanceof Error ? errore.message : String(errore),
+          });
+        }
+      }
 
       /* Prima del `fine`: alla chiusura il FE ricarica lo storico, e deve
          già trovarci il titolo sensato. Un titolo mancato non è un errore. */

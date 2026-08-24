@@ -1,16 +1,20 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { z } from 'zod';
 
-import { configurazione } from '../../config.js';
 import { AMBITI_RICORDO, CATEGORIE_RICORDO } from '../../contratto/memoria.js';
+import type { Motore } from '../motore/sessione.js';
 import type { CandidatoRicordo } from './perimetro.js';
 
 /**
- * L'estrazione dei candidati ricordi (RF-G-01) da una conversazione
- * conclusa: un modello economico legge gli scambi e propone ciò che vale la
- * pena tenere — prassi dell'agenzia, contesto su un cliente, preferenze
- * dell'utente, decisioni prese. Il worker poi valida (perimetro GDPR,
- * doppioni) e persiste: il modello propone, non scrive.
+ * L'estrazione dei candidati ricordi (RF-G-01) dagli scambi di una
+ * conversazione: lo STESSO motore della chat e delle tabelle (Agent SDK,
+ * modello del tenant — RF-D-02: lo switch da Impostazioni vale anche qui)
+ * legge gli scambi e propone ciò che vale la pena tenere — prassi
+ * dell'agenzia, contesto su un cliente, preferenze dell'utente, decisioni.
+ * Il worker poi valida (perimetro GDPR, doppioni) e persiste: il modello
+ * propone, non scrive.
  *
  * Interfaccia perché il gestore non deve sapere chi estrae: nei test è un
  * copione.
@@ -24,21 +28,20 @@ export interface ScambioConversazione {
 export interface EsitoEstrazione {
   candidati: CandidatoRicordo[];
   modello: string;
-  token: { input: number; output: number };
+  token: { input: number; output: number; cacheLettura: number; cacheScrittura: number };
   costoUsd: number;
 }
 
-export interface EstrattoreRicordi {
-  estrai(scambi: ScambioConversazione[], giaNoti: string[]): Promise<EsitoEstrazione>;
+export interface OpzioniEstrazione {
+  /** Il modello scelto dal tenant; senza, il default del motore. */
+  modello?: string;
 }
 
-export const MODELLO_ESTRAZIONE = 'claude-haiku-4-5';
+export interface EstrattoreRicordi {
+  estrai(scambi: ScambioConversazione[], giaNoti: string[], opzioni?: OpzioniEstrazione): Promise<EsitoEstrazione>;
+}
 
-/** Prezzi di listino di Haiku 4.5 per milione di token: il costo va in `consumi`. */
-const PREZZO_INPUT_USD_PER_MILIONE = 1;
-const PREZZO_OUTPUT_USD_PER_MILIONE = 5;
-
-export const ISTRUZIONI_ESTRAZIONE = `Sei la memoria di Velia, piattaforma AI per intermediari assicurativi italiani. Leggi una conversazione conclusa tra un utente dell'agenzia e l'assistente e proponi i ricordi che vale la pena conservare per le conversazioni future.
+export const ISTRUZIONI_ESTRAZIONE = `Sei la memoria di Velia, piattaforma AI per intermediari assicurativi italiani. Leggi gli ultimi scambi di una conversazione tra un utente dell'agenzia e l'assistente e proponi i ricordi che vale la pena conservare per le conversazioni future.
 
 Un ricordo è una frase sola, autonoma, in italiano, comprensibile senza la conversazione: una prassi dell'agenzia («L'agenzia privilegia…»), un'informazione operativa stabile su un cliente (azienda o persona) utile a servirlo, una preferenza sul modo di lavorare o sul formato delle risposte («Preferisce…»), una decisione presa. Mai «L'utente…» come soggetto: scrivi il ricordo come lo direbbe un collega che lo sa.
 
@@ -59,9 +62,9 @@ PERIMETRO INDEROGABILE (GDPR). Non proporre MAI ricordi che contengano o lascino
 - qualunque dettaglio non necessario allo scopo del ricordo (minimizzazione): il nome di un'azienda cliente va bene, i dettagli privati dei suoi dipendenti no.
 Se un'informazione utile è intrecciata con un dato vietato, riformulala senza il dato o lasciala perdere.
 
-Non ripetere i ricordi già noti (te li elenco), né proporre variazioni minime di quelli. Se la conversazione non contiene nulla che valga la pena ricordare, è una risposta corretta: array vuoto.
+Non ripetere i ricordi già noti (te li elenco), né proporre variazioni minime di quelli. Se gli scambi non contengono nulla che valga la pena ricordare, è una risposta corretta: array vuoto.
 
-Rispondi SOLO con un array JSON (al massimo 3 elementi) di oggetti {"testo": string, "categoria": string, "ambito": string}. Niente testo fuori dall'array.`;
+Non usare alcuno strumento: hai già tutto nel messaggio. Rispondi subito e SOLO con un array JSON (al massimo 3 elementi) di oggetti {"testo": string, "categoria": string, "ambito": string}. Niente testo fuori dall'array.`;
 
 const schemaCandidato = z.object({
   testo: z.string().trim().min(1).max(1000),
@@ -71,40 +74,50 @@ const schemaCandidato = z.object({
 
 export const schemaCandidati = z.array(schemaCandidato).max(10);
 
-export class EstrattoreHaiku implements EstrattoreRicordi {
-  private readonly client: Anthropic;
+/**
+ * L'estrattore sul motore vero: una sessione senza documenti (directory
+ * vuota, così le mura del motore restano le stesse) con le istruzioni di
+ * estrazione al posto delle regole della chat.
+ */
+export class EstrattoreMotore implements EstrattoreRicordi {
+  constructor(
+    private readonly motore: Motore,
+    /** Dove aprire la directory vuota della sessione. */
+    private readonly radice: string,
+  ) {}
 
-  constructor() {
-    const chiave = configurazione().ANTHROPIC_API_KEY;
-    if (!chiave) {
-      throw new Error('ANTHROPIC_API_KEY mancante in .env: l’apprendimento della memoria la richiede.');
+  async estrai(
+    scambi: ScambioConversazione[],
+    giaNoti: string[],
+    opzioni: OpzioniEstrazione = {},
+  ): Promise<EsitoEstrazione> {
+    const directory = await mkdtemp(join(this.radice, 'memoria-'));
+    try {
+      const esito = await this.motore.interroga(
+        {
+          directory,
+          promptSistema: ISTRUZIONI_ESTRAZIONE,
+          promptUtente: promptEstrazione(scambi, giaNoti),
+          ...(opzioni.modello && { modello: opzioni.modello }),
+        },
+        { passo: () => Promise.resolve(), annullato: () => Promise.resolve(false) },
+      );
+      if (esito.terminato !== 'completato') {
+        throw new Error(`estrazione ${esito.terminato}: ${esito.errore ?? ''}`);
+      }
+      return {
+        candidati: interpretaCandidati(esito.testo),
+        modello: esito.modello,
+        token: esito.token,
+        costoUsd: esito.costoUsd,
+      };
+    } finally {
+      await rm(directory, { recursive: true, force: true }).catch(() => undefined);
     }
-    this.client = new Anthropic({ apiKey: chiave });
-  }
-
-  async estrai(scambi: ScambioConversazione[], giaNoti: string[]): Promise<EsitoEstrazione> {
-    const messaggio = await this.client.messages.create({
-      model: MODELLO_ESTRAZIONE,
-      max_tokens: 1200,
-      system: ISTRUZIONI_ESTRAZIONE,
-      messages: [{ role: 'user', content: promptEstrazione(scambi, giaNoti) }],
-    });
-    const testo = messaggio.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n');
-    const input = messaggio.usage.input_tokens;
-    const output = messaggio.usage.output_tokens;
-    return {
-      candidati: interpretaCandidati(testo),
-      modello: MODELLO_ESTRAZIONE,
-      token: { input, output },
-      costoUsd: (input * PREZZO_INPUT_USD_PER_MILIONE + output * PREZZO_OUTPUT_USD_PER_MILIONE) / 1_000_000,
-    };
   }
 }
 
-/** La conversazione per il modello: gli scambi (tagliati) e i ricordi già noti. */
+/** Gli scambi per il modello (tagliati) e i ricordi già noti. */
 export function promptEstrazione(scambi: ScambioConversazione[], giaNoti: string[]): string {
   const parti: string[] = [];
   if (giaNoti.length) {
@@ -112,9 +125,9 @@ export function promptEstrazione(scambi: ScambioConversazione[], giaNoti: string
     for (const t of giaNoti.slice(0, 60)) parti.push(`- ${t}`);
     parti.push('');
   }
-  parti.push('Conversazione:');
+  parti.push('Scambi:');
   for (const s of scambi) {
-    parti.push(`\n[${s.autore === 'utente' ? 'Utente' : 'Assistente'}]\n${s.testo.slice(0, 4000)}`);
+    parti.push(`\n[${s.autore === 'utente' ? 'Utente' : 'Assistente'}]\n${s.testo.slice(0, 6000)}`);
   }
   return parti.join('\n');
 }

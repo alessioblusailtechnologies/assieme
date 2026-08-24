@@ -8,18 +8,26 @@ import type { Ricordo } from '../src/contratto/memoria.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { lavoraUno } from '../src/worker/ciclo.js';
+import { accoda } from '../src/worker/coda.js';
 import { gestori } from '../src/worker/gestori.js';
-import type { EsitoEstrazione, EstrattoreRicordi, ScambioConversazione } from '../src/worker/memoria/estrattore.js';
+import type {
+  EsitoEstrazione,
+  EstrattoreRicordi,
+  OpzioniEstrazione,
+  ScambioConversazione,
+} from '../src/worker/memoria/estrattore.js';
 import { creaGestoreMemoria } from '../src/worker/memoria/gestore.js';
 import type { CandidatoRicordo } from '../src/worker/memoria/perimetro.js';
 
 /**
  * La memoria per intero contro il progetto vero (tenant di collaudo,
- * estrattore finto): il tick che accoda solo le conversazioni concluse con
- * risposte non ancora apprese, il job che valida (perimetro GDPR, doppioni)
- * e persiste con origine e consumi, la separazione degli ambiti fatta dal
- * server (RF-G-02), il governo dal pannello (RF-G-03: correzione,
- * sospensione, spostamento, cancellazione effettiva), la retention.
+ * estrattore finto): il job accodato a ogni risposta (l'accodamento dal
+ * gestore della chat è provato in `integrazione-conversazioni`) che valida
+ * (perimetro GDPR, doppioni) e persiste con origine, modello del tenant e
+ * consumi; solo gli scambi nuovi al giro dopo; la separazione degli ambiti
+ * fatta dal server (RF-G-02); il governo dal pannello (RF-G-03:
+ * correzione, sospensione, spostamento, cancellazione effettiva); la
+ * retention e l'interruttore.
  */
 let config: Configurazione | undefined;
 try {
@@ -38,15 +46,15 @@ const PASSWORD_DEMO = 'velia-demo-2026!';
 const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
 
 class EstrattoreFinto implements EstrattoreRicordi {
-  chiamate: Array<{ scambi: ScambioConversazione[]; giaNoti: string[] }> = [];
+  chiamate: Array<{ scambi: ScambioConversazione[]; giaNoti: string[]; opzioni: OpzioniEstrazione }> = [];
   candidati: CandidatoRicordo[] = [];
-  estrai(scambi: ScambioConversazione[], giaNoti: string[]): Promise<EsitoEstrazione> {
-    this.chiamate.push({ scambi, giaNoti });
+  estrai(scambi: ScambioConversazione[], giaNoti: string[], opzioni: OpzioniEstrazione = {}): Promise<EsitoEstrazione> {
+    this.chiamate.push({ scambi, giaNoti, opzioni });
     return Promise.resolve({
       candidati: this.candidati,
-      modello: 'finto',
-      token: { input: 100, output: 20 },
-      costoUsd: 0.0002,
+      modello: opzioni.modello ?? 'finto',
+      token: { input: 100, output: 20, cacheLettura: 0, cacheScrittura: 0 },
+      costoUsd: 0.002,
     });
   }
 }
@@ -59,7 +67,7 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
   let tokenOperatore: string;
   let idAdmin: string;
   let convId: string;
-  let attesaOriginale: number;
+  let modelloOriginale: string | null;
 
   const richiedi = (metodo: 'GET' | 'PATCH' | 'DELETE', url: string, token: string, payload?: Record<string, unknown>) =>
     app.inject({ method: metodo, url, headers: { authorization: `Bearer ${token}` }, ...(payload && { payload }) });
@@ -72,19 +80,9 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     }
   }
 
-  /** Il tick è globale (accoda anche le conversazioni ferme degli altri tenant): si contano i job della nostra. */
-  async function accodaTick(): Promise<number> {
-    const conteggio = async (): Promise<number> => {
-      const r = await pool().query<{ n: string }>(
-        `select count(*) as n from velia.jobs where tipo = 'memoria' and payload->>'conversazioneId' = $1`,
-        [convId],
-      );
-      return Number(r.rows[0]!.n);
-    };
-    const prima = await conteggio();
-    await pool().query(`select velia.accoda_apprendimento()`);
-    return (await conteggio()) - prima;
-  }
+  /** Ciò che fa il gestore della chat a ogni risposta. */
+  const accodaMemoria = (): Promise<string> =>
+    accoda(pool(), 'memoria', { conversazioneId: convId }, { tenantId: TENANT_COLLAUDO, utenteId: idAdmin });
 
   async function messaggio(autore: 'utente' | 'assistente', testo: string): Promise<void> {
     await pool().query(
@@ -94,9 +92,9 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     );
   }
 
-  /** «Ferma da dieci minuti»: i messaggi si retrodatano, il tick guarda loro. */
-  async function retrodata(): Promise<void> {
-    await pool().query(`update velia.messaggi set inviato_il = inviato_il - interval '10 minutes' where conversazione_id = $1 and inviato_il > now() - interval '5 minutes'`, [convId]);
+  async function statoJob(jobId: string): Promise<string> {
+    const r = await pool().query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [jobId]);
+    return r.rows[0]!.stato;
   }
 
   const pulizia = async (): Promise<void> => {
@@ -126,23 +124,24 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     expect(tokenAdmin).toBeTruthy();
     expect(tokenOperatore).toBeTruthy();
 
-    /* Il cron accoda anche le conversazioni ferme degli ALTRI tenant, e
-       `lavoraTutto` le pescherebbe con l'estrattore finto: quelle si lasciano
-       stare (il tick le riaccoderà domani per il worker vero). */
+    /* Un worker dev acceso o un'altra suite possono lasciare job di altri
+       tenant in coda: `lavoraTutto` li pescherebbe con l'estrattore finto.
+       Quelli si lasciano stare. */
     const gestoreVero = creaGestoreMemoria({ estrattore });
     gestori.memoria = async (job, strumenti) => {
       if (job.tenant_id !== TENANT_COLLAUDO) return;
       await gestoreVero(job, strumenti);
     };
 
-    const t = await pool().query<{ memoria_attesa_minuti: number }>(
-      `select memoria_attesa_minuti from velia.tenant where id = $1`,
+    const t = await pool().query<{ modello_motore: string | null }>(
+      `select modello_motore from velia.tenant where id = $1`,
       [TENANT_COLLAUDO],
     );
-    attesaOriginale = t.rows[0]!.memoria_attesa_minuti;
-    /* Nei test la «fine conversazione» arriva subito: un minuto di attesa,
-       e i messaggi si retrodatano a mano. */
-    await pool().query(`update velia.tenant set memoria_attiva = true, memoria_retention_giorni = null, memoria_attesa_minuti = 1 where id = $1`, [TENANT_COLLAUDO]);
+    modelloOriginale = t.rows[0]!.modello_motore;
+    await pool().query(
+      `update velia.tenant set memoria_attiva = true, memoria_retention_giorni = null, modello_motore = 'claude-sonnet-5' where id = $1`,
+      [TENANT_COLLAUDO],
+    );
 
     const conv = await pool().query<{ id: string }>(
       `insert into velia.conversazioni (tenant_id, autore_id, titolo) values ($1, $2, 'Flotta Bianchi') returning id`,
@@ -152,46 +151,48 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
   }, 60_000);
 
   afterAll(async () => {
-    await pool().query(`update velia.tenant set memoria_attesa_minuti = $2, memoria_retention_giorni = null where id = $1`, [TENANT_COLLAUDO, attesaOriginale]);
+    await pool().query(
+      `update velia.tenant set memoria_attiva = true, memoria_retention_giorni = null, modello_motore = $2 where id = $1`,
+      [TENANT_COLLAUDO, modelloOriginale],
+    );
     await pulizia();
     await app.close();
     await chiudiPool();
   });
 
-  it('il tick ignora una conversazione ancora viva o senza risposte', async () => {
+  it('senza una risposta dell’assistente il job si chiude senza chiamare il motore', async () => {
     await messaggio('utente', 'Come gestiamo le franchigie per le flotte?');
-    expect(await accodaTick()).toBe(0);
-
-    await messaggio('assistente', 'Per le flotte la vostra agenzia privilegia le franchigie fisse.');
-    // Appena risposto: non è ancora «conclusa».
-    expect(await accodaTick()).toBe(0);
+    const jobId = await accodaMemoria();
+    await lavoraTutto();
+    expect(await statoJob(jobId)).toBe('completato');
+    expect(estrattore.chiamate).toHaveLength(0);
   });
 
-  it('conclusa, il tick la accoda una volta sola e il job impara applicando il perimetro', async () => {
-    await retrodata();
-    expect(await accodaTick()).toBe(1);
-    expect(await accodaTick()).toBe(0); // già accodata
-
+  it('a risposta data il job impara col modello del tenant, applicando il perimetro e scartando i doppioni', async () => {
+    await messaggio('assistente', 'Per le flotte la vostra agenzia privilegia le franchigie fisse.');
     estrattore.candidati = [
       { testo: 'Per le flotte l’agenzia privilegia le franchigie fisse rispetto agli scoperti percentuali.', categoria: 'prassi', ambito: 'tenant' },
       { testo: 'Il titolare della ditta Bianchi è malato di cuore e non guida più.', categoria: 'cliente', ambito: 'tenant' },
       { testo: 'Vuole i riepiloghi con una tabella breve e la sintesi in testa.', categoria: 'preferenza', ambito: 'tenant' },
       { testo: 'per le flotte l’agenzia privilegia le franchigie fisse rispetto agli scoperti percentuali.', categoria: 'prassi', ambito: 'tenant' },
     ];
+    const jobId = await accodaMemoria();
     await lavoraTutto();
+    expect(await statoJob(jobId)).toBe('completato');
 
-    const job = await pool().query<{ stato: string; id: string }>(
-      `select id, stato from velia.jobs where tipo = 'memoria' and payload->>'conversazioneId' = $1 order by created_at desc limit 1`,
-      [convId],
-    );
-    expect(job.rows[0]!.stato).toBe('completato');
     const eventi = await pool().query<{ tipo: string; dati: { motivo?: string; appresi?: number } }>(
       `select tipo, dati from velia.eventi_job where job_id = $1 order by id`,
-      [job.rows[0]!.id],
+      [jobId],
     );
     const scarti = eventi.rows.filter((e) => e.tipo === 'candidato-scartato').map((e) => e.dati.motivo);
-    expect(scarti).toEqual([expect.stringContaining('art. 9'), 'già noto']);
+    expect(scarti).toHaveLength(2);
+    expect(scarti[0]).toContain('art. 9');
+    expect(scarti[1]).toBe('già noto');
     expect(eventi.rows.find((e) => e.tipo === 'fine')?.dati.appresi).toBe(2);
+
+    // RF-D-02: lo stesso motore switch-abile della chat — il modello scelto dal tenant.
+    expect(estrattore.chiamate.at(-1)?.opzioni.modello).toBe('claude-sonnet-5');
+    expect(estrattore.chiamate.at(-1)?.scambi.map((s) => s.autore)).toEqual(['utente', 'assistente']);
 
     const perAdmin = await elenco(tokenAdmin);
     expect(perAdmin).toHaveLength(2);
@@ -202,28 +203,23 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     const tutti = await pool().query<{ testo: string }>(`select testo from velia.ricordi where tenant_id = $1`, [TENANT_COLLAUDO]);
     expect(tutti.rows.some((r) => r.testo.includes('malato'))).toBe(false);
 
-    const consumi = await pool().query(`select 1 from velia.consumi where job_id = $1 and modello = 'finto'`, [job.rows[0]!.id]);
+    const consumi = await pool().query(`select 1 from velia.consumi where job_id = $1 and modello = 'claude-sonnet-5'`, [jobId]);
     expect(consumi.rowCount).toBe(1);
-    expect(estrattore.chiamate.at(-1)?.scambi.map((s) => s.autore)).toEqual(['utente', 'assistente']);
   });
 
-  it('gli scambi già appresi non tornano al modello; con scambi nuovi i noti gli si elencano', async () => {
-    const stato = await pool().query<{ appresa_fino_a: Date | null; accodato_il: Date | null }>(
-      `select appresa_fino_a, accodato_il from velia.apprendimenti where conversazione_id = $1`,
-      [convId],
-    );
-    expect(stato.rows[0]!.appresa_fino_a).not.toBeNull();
-    expect(stato.rows[0]!.accodato_il).toBeNull();
-    await retrodata();
-    expect(await accodaTick()).toBe(0);
+  it('un secondo giro senza scambi nuovi non chiama il motore; con scambi nuovi riceve solo quelli e i ricordi noti', async () => {
+    const chiamatePrima = estrattore.chiamate.length;
+    const ripetuto = await accodaMemoria();
+    await lavoraTutto();
+    expect(await statoJob(ripetuto)).toBe('completato');
+    expect(estrattore.chiamate).toHaveLength(chiamatePrima);
 
     await messaggio('utente', 'E la ditta Bianchi?');
     await messaggio('assistente', 'La ditta Bianchi rinnova a dicembre.');
-    await retrodata();
-    expect(await accodaTick()).toBe(1);
     estrattore.candidati = [
       { testo: 'La ditta Bianchi rinnova sempre a dicembre e chiede il riepilogo entro fine novembre.', categoria: 'cliente', ambito: 'tenant' },
     ];
+    await accodaMemoria();
     await lavoraTutto();
     const ultima = estrattore.chiamate.at(-1)!;
     expect(ultima.scambi.map((s) => s.testo)).toEqual(['E la ditta Bianchi?', 'La ditta Bianchi rinnova a dicembre.']);
@@ -288,8 +284,11 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     await pool().query(`update velia.tenant set memoria_attiva = false where id = $1`, [TENANT_COLLAUDO]);
     await messaggio('utente', 'Altro?');
     await messaggio('assistente', 'Altro.');
-    await retrodata();
-    expect(await accodaTick()).toBe(0);
+    const chiamatePrima = estrattore.chiamate.length;
+    const jobId = await accodaMemoria();
+    await lavoraTutto();
+    expect(await statoJob(jobId)).toBe('completato');
+    expect(estrattore.chiamate).toHaveLength(chiamatePrima);
     await pool().query(`update velia.tenant set memoria_attiva = true where id = $1`, [TENANT_COLLAUDO]);
   });
 });

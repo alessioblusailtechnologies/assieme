@@ -171,6 +171,8 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       attesaAllegatiMs: 1000,
       generatoreTitolo: { genera: () => Promise.resolve('Franchigie cristalli Km&Servizi') },
     });
+    // La memoria impara a ogni risposta (Fase 8): qui si verifica l'accodamento, non si impara.
+    gestori.memoria = () => Promise.resolve();
     // E un'ingestion finta per gli allegati: il .md compare nello Storage finto e il documento diventa pronto.
     gestori.ingestion = async (job, { db }) => {
       const id = String(job.payload['documentoId']);
@@ -200,7 +202,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
   afterAll(async () => {
     await ponte.chiudi();
     await app.close();
-    await pool().query(`delete from velia.jobs where tenant_id = $1 and tipo in ('interrogazione', 'ingestion')`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.jobs where tenant_id = $1 and tipo in ('interrogazione', 'ingestion', 'memoria')`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_COLLAUDO]);
@@ -320,6 +322,12 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(r.headers['content-type']).toContain('text/event-stream');
     const eventi = eventiDa(r.body);
     expect(eventi[0]?.tipo).toBe('inizio');
+    // RF-G-01: a risposta scritta il job di memoria è in coda per questa conversazione.
+    const memoria = await pool().query(
+      `select 1 from velia.jobs where tipo = 'memoria' and payload->>'conversazioneId' = $1`,
+      [convId],
+    );
+    expect(memoria.rowCount).toBe(1);
     expect(eventi.map((e) => e.tipo)).toEqual(
       expect.arrayContaining(['inizio', 'attivita', 'testo', 'citazione', 'provenienza', 'fine']),
     );
