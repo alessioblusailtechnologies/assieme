@@ -57,28 +57,16 @@
 
       @if (m.citazioni.length) {
         <!--
-          Le fonti sono tante (il motore cita ogni passaggio letto): nascono
-          chiuse, con il conto di passaggi e documenti; si aprono a richiesta.
+          Le fonti sono tante (il motore cita ogni passaggio letto): l'accordion
+          nasce chiuso e il riepilogo dice già quanto e da dove.
         -->
-        <div class="citazioni" [class.is-aperte]="fontiAperte()">
-          <button
-            type="button"
-            class="citazioni__intestazione"
-            (click)="fontiAperte.set(!fontiAperte())"
-            [attr.aria-expanded]="fontiAperte()"
-          >
-            <span class="citazioni__freccia" aria-hidden="true"></span>
-            <span class="mono citazioni__etichetta">Fonti</span>
-            <span class="citazioni__riepilogo">{{ riepilogoFonti() }}</span>
-          </button>
-          @if (fontiAperte()) {
-            <div class="citazioni__elenco">
-              @for (c of m.citazioni; track c.id) {
-                <ui-chip-citazione [citazione]="c" (apri)="apriCitazione.emit($event)" />
-              }
-            </div>
-          }
-        </div>
+        <ui-accordion class="citazioni" etichetta="Fonti" [riepilogo]="riepilogoFonti()">
+          <div class="citazioni__elenco">
+            @for (c of m.citazioni; track c.id) {
+              <ui-chip-citazione [citazione]="c" (apri)="apriCitazione.emit($event)" />
+            }
+          </div>
+        </ui-accordion>
       }
 
       @if (m.provenienze.length) {

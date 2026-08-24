@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { Accordion } from '@shared/ui/accordion/accordion';
 import { Citazione, RiferimentoDocumento } from '@core/models';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
@@ -18,7 +19,7 @@ import { htmlRisposta } from '@shared/testi/testo-risposta';
  */
 @Component({
   selector: 'app-bolla-messaggio',
-  imports: [ChipCitazione, Icona, RouterLink, Suggerimento],
+  imports: [Accordion, ChipCitazione, Icona, RouterLink, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './bolla-messaggio.html',
   styleUrl: './bolla-messaggio.scss',
@@ -50,9 +51,7 @@ export class BollaMessaggio {
       .filter((d): d is RiferimentoDocumento => !!d);
   });
 
-  /** Le fonti nascono chiuse: sono molte e l'utente le apre se vuole verificare. */
-  protected readonly fontiAperte = signal(false);
-
+  /** Da chiuso l'accordion delle fonti deve già dire quanto e da dove. */
   protected readonly riepilogoFonti = computed(() => {
     const citazioni = this.messaggio().citazioni;
     const documenti = new Set(citazioni.map((c) => c.documentoId)).size;
