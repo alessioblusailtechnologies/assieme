@@ -297,6 +297,10 @@
 /* ---------- Provenienze (RF-D-05, RF-D-15, RF-G-03) ---------- */
 
 .provenienze {
+  margin-top: var(--sp-2);
+}
+
+.provenienze__elenco {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);

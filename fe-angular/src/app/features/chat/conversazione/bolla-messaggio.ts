@@ -70,10 +70,25 @@ export class BollaMessaggio {
     });
   }
 
+  /** Cosa c'è dentro, prima di aprire: «2 istruzioni · 3 dalla memoria». */
+  protected readonly riepilogoProvenienze = computed(() => {
+    const p = this.messaggio().provenienze;
+    const conta = (tipo: string) => p.filter((x) => x.tipo === tipo).length;
+    const parti: string[] = [];
+    const regole = conta('regola');
+    const riferimenti = conta('documento-riferimento');
+    const memoria = conta('memoria');
+    if (regole) parti.push(regole === 1 ? '1 istruzione' : `${regole} istruzioni`);
+    if (riferimenti) parti.push(riferimenti === 1 ? '1 documento di riferimento' : `${riferimenti} documenti di riferimento`);
+    if (memoria) parti.push(`${memoria} dalla memoria`);
+    return parti.join(' · ');
+  });
+
+  /** Le voci si chiamano come i pannelli che le governano: mai «ricordo». */
   protected readonly etichetteProvenienza: Record<string, string> = {
-    regola: 'Regola',
+    regola: 'Istruzione',
     'documento-riferimento': 'Documento di riferimento',
-    memoria: 'Ricordo',
+    memoria: 'Memoria',
   };
 
   /** Dove si governa ciascun segnale: il ricordo in Memoria, il resto nelle Istruzioni. */

@@ -70,24 +70,27 @@
       }
 
       @if (m.provenienze.length) {
-        <div class="provenienze">
-          <!--
-            RF-G-03 (con RF-D-05/15): il segnale porta al pannello che lo
-            governa — il ricordo si corregge in Memoria, la regola nelle
-            Istruzioni. Riconoscibile e raggiungibile, non solo dichiarato.
-          -->
-          @for (p of m.provenienze; track p.origineId) {
-            <a
-              class="provenienza"
-              [class]="'is-' + p.tipo"
-              [routerLink]="percorsiProvenienza[p.tipo]"
-              [uiSuggerimento]="p.tipo === 'memoria' ? 'Apri il pannello Memoria' : 'Apri le Istruzioni'"
-            >
-              <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
-              {{ p.etichetta }}
-            </a>
-          }
-        </div>
+        <!--
+          RF-G-03 (con RF-D-05/15): chiuse in un accordion come le Fonti, e
+          ogni voce porta al pannello che la governa — la memoria si corregge
+          in Memoria, la regola nelle Istruzioni. Riconoscibile e
+          raggiungibile, non solo dichiarato.
+        -->
+        <ui-accordion class="provenienze" etichetta="Istruzioni e memoria" [riepilogo]="riepilogoProvenienze()">
+          <div class="provenienze__elenco">
+            @for (p of m.provenienze; track p.origineId) {
+              <a
+                class="provenienza"
+                [class]="'is-' + p.tipo"
+                [routerLink]="percorsiProvenienza[p.tipo]"
+                [uiSuggerimento]="p.tipo === 'memoria' ? 'Apri il pannello Memoria' : 'Apri le Istruzioni'"
+              >
+                <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
+                {{ p.etichetta }}
+              </a>
+            }
+          </div>
+        </ui-accordion>
       }
 
       @if (m.ricordiAppresi?.length) {
