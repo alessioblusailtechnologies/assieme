@@ -5,6 +5,7 @@ import type { Job } from '../coda.js';
 import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
+import { ancoraCitazioni } from '../motore/ancoraggio.js';
 import type { EsitoSessione, Motore } from '../motore/sessione.js';
 import { materializzaWorkspace, type Workspace } from '../motore/workspace.js';
 import {
@@ -217,6 +218,12 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
 
         const { celle, avvisi } = valutaCelle(blocco, colonne.rows, workspace.perPath);
         for (const [colonnaId, cella] of celle) {
+          /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
+          if (cella.stato === 'pronta' && cella.esito === 'presente' && cella.citazioni.length) {
+            const ancorate = await ancoraCitazioni(workspace.directory, cella.citazioni, workspace.perPath);
+            cella.citazioni = ancorate.citazioni;
+            avvisi.push(...ancorate.avvisi);
+          }
           await scriviCella(db, tabellaId, riga.documento_id, colonnaId, cella);
         }
         await db.query(`update velia.tabelle set updated_at = now() where id = $1`, [tabellaId]);

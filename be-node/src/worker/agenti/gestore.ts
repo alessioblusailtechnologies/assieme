@@ -5,6 +5,7 @@ import type { Job } from '../coda.js';
 import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
+import { ancoraCitazioni } from '../motore/ancoraggio.js';
 import { caricaDna, promptSistema } from '../motore/regole.js';
 import type { EsitoSessione, Motore } from '../motore/sessione.js';
 import { ErroreValidazione, separaBlocco, validaBlocco } from '../motore/validazione.js';
@@ -182,7 +183,10 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         }
         try {
           const valido = validaBlocco(blocco, workspace.perPath, dna);
-          citazioni = valido.citazioni;
+          /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
+          const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
+          citazioni = ancorate.citazioni;
+          for (const a of ancorate.avvisi) await annota('avviso', a);
         } catch (errore) {
           const dettagli = errore instanceof ErroreValidazione ? errore.dettagli.join('; ') : String(errore);
           throw new ErroreNonRitentabile(`l'esito citava passaggi non verificabili: ${dettagli}`);

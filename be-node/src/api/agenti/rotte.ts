@@ -341,9 +341,10 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
 
   /** Esecuzione manuale (RF-E-03/05): nasce in coda, si segue col polling. */
   app.post<{ Params: { id: string } }>('/api/agenti/:id/esecuzioni', async (richiesta, risposta) => {
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const corpo = schemaAvvioEsecuzione.safeParse(richiesta.body ?? {});
     if (!corpo.success) throw ErroreApi.datiNonValidi('Parametri di avvio non validi.');
+    /* Pricing: dopo la forma, prima del lavoro — senza crediti non si parte. */
+    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
 
     const esecuzione = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const agente = await righeAgente(client, richiesta.identita.tenantId, controllaId(richiesta.params.id));

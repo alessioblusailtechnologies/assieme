@@ -134,11 +134,11 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
 
   /** RF-C-11: la tabella nasce con le celle in attesa e si popola da sola. */
   app.post('/api/tabelle', async (richiesta, risposta) => {
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const esito = schemaNuovaTabella.safeParse(richiesta.body ?? {});
     if (!esito.success) {
       throw new ErroreApi(400, 'TABELLA_VUOTA', 'Servono almeno un documento e una colonna.');
     }
+    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const corpo = esito.data;
     const documentiIds = [...new Set(corpo.documentiIds)];
 
@@ -266,9 +266,9 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
 
   /** RF-C-14: nuove righe. Le celle nuove partono in attesa e si generano. */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/documenti', async (richiesta) => {
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const esito = schemaAggiungiDocumenti.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Documenti non validi.');
+    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
 
     const { tabella, aggiunti } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await autoreDi(client, richiesta.identita, controllaId(richiesta.params.id));
@@ -321,11 +321,11 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
 
   /** RF-C-14: nuova colonna, predefinita o in linguaggio naturale. */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/colonne', async (richiesta) => {
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const esito = schemaNuovaColonna.safeParse(richiesta.body ?? {});
     if (!esito.success) {
       throw new ErroreApi(400, 'COLONNA_VUOTA', 'Alla colonna manca il criterio.');
     }
+    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
 
     const { tabella, righe } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await autoreDi(client, richiesta.identita, controllaId(richiesta.params.id));

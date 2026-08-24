@@ -8,6 +8,7 @@ import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
+import { ancoraCitazioni } from './ancoraggio.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
 import type { GeneratoreSuggerimenti } from './suggeritore.js';
@@ -199,10 +200,12 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         }
         try {
           const valido = validaBlocco(blocco, workspace.perPath, dna);
-          citazioni = valido.citazioni;
+          /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
+          const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
+          citazioni = ancorate.citazioni;
           provenienze = valido.provenienze;
           nonSupportato = valido.nonSupportato;
-          avvisi = [...valido.avvisi, ...avvisiEsposizione(testoFinale)];
+          avvisi = [...valido.avvisi, ...ancorate.avvisi, ...avvisiEsposizione(testoFinale)];
         } catch (errore) {
           await registraConsumi(db, tenantId, job.id, esito);
           await emetti({
