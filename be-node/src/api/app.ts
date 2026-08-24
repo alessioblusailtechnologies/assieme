@@ -9,6 +9,7 @@ import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/ro
 import { registraRotteModelli } from './modelli/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
+import { registraRotteRicordi } from './ricordi/rotte.js';
 import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
 import { registraRotteSessione } from './sessione/rotte.js';
 import { registraRotteTabelle, type OpzioniTabelle } from './tabelle/rotte.js';
@@ -72,6 +73,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteIstruzioni(app, opzioni.istruzioni);
   registraRotteUtenti(app);
   registraRotteAgenti(app, opzioni.agenti);
+  registraRotteRicordi(app);
 
   return app;
 }

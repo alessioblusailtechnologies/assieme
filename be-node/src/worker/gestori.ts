@@ -10,6 +10,8 @@ import { ArchivioStorage } from './ingestion/archivio-file.js';
 import { ClassificatoreHaiku } from './ingestion/classificatore.js';
 import { ConvertitoreHaiku } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
+import { EstrattoreHaiku } from './memoria/estrattore.js';
+import { creaGestoreMemoria } from './memoria/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
@@ -39,6 +41,7 @@ let ingestionVera: GestoreJob | undefined;
 let interrogazioneVera: GestoreJob | undefined;
 let tabellaVera: GestoreJob | undefined;
 let agenteVero: GestoreJob | undefined;
+let memoriaVera: GestoreJob | undefined;
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
@@ -104,6 +107,12 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       });
     }
     await tabellaVera(job, strumenti);
+  },
+
+  /** Fase 8: l'apprendimento a fine conversazione, col modello economico. */
+  memoria: async (job, strumenti) => {
+    memoriaVera ??= creaGestoreMemoria({ estrattore: new EstrattoreHaiku() });
+    await memoriaVera(job, strumenti);
   },
 
   prova: async (job, { db }) => {
