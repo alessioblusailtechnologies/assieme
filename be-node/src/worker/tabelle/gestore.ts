@@ -186,6 +186,8 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
           operazione: 'tabella',
           modello: esito.modello,
           costoUsd: esito.costoUsd,
+          token: esito.token,
+          tokenStimati: esito.tokenStimati,
           descrizione: `Tabella di analisi, riga «${riga.etichetta}»`,
         });
 

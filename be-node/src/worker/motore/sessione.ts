@@ -65,6 +65,8 @@ export interface EsitoSessione {
   token: { input: number; output: number; cacheLettura: number; cacheScrittura: number };
   /** I path (relativi alla workspace) che il modello ha letto con Read. */
   documentiLetti: string[];
+  /** Vero se l'input in `token` è stimato dal contesto (gateway che non lo riporta). */
+  tokenStimati?: boolean;
 }
 
 export interface Motore {
@@ -183,17 +185,51 @@ export class MotoreAgentSdk implements Motore {
       });
     }, this.opzioni.intervalloAnnullamentoMs ?? 3000);
 
+    const contati = { input: 0, output: 0, cacheLettura: 0, cacheScrittura: 0 };
+    let outputTurno = 0;
+    /* Per i gateway che non riportano l'input (HostYourAI manda 0 ovunque)
+       l'input di ogni turno si stima dal contesto che il modello ha
+       ricevuto fin lì: prompt, risposte precedenti, risultati dei tool.
+       ~3,6 caratteri per token sull'italiano; l'addebito lo dichiara. */
+    let caratteriContesto = richiesta.promptSistema.length + richiesta.promptUtente.length;
+    let inputStimato = false;
+
     let esito: EsitoSessione | undefined;
     try {
       for await (const messaggio of sessione) {
         ultimoSegnale = Date.now();
         if (messaggio.type === 'stream_event' && messaggio.parent_tool_use_id === null) {
           const evento = messaggio.event;
-          if (evento.type === 'message_start') flusso.inizioTurno();
-          else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
+          /* I token si contano qui, turno per turno, dagli eventi grezzi: il
+             totale dell'SDK a fine sessione è affidabile con Anthropic, ma un
+             gateway terzo lo lascia a zero sull'input. `message_start` porta
+             l'input (e la cache), `message_delta` l'output cumulato del turno. */
+          if (evento.type === 'message_start') {
+            const u = evento.message.usage;
+            const inputRiportato = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+            if (inputRiportato > 0) {
+              contati.input += u.input_tokens ?? 0;
+              contati.cacheLettura += u.cache_read_input_tokens ?? 0;
+              contati.cacheScrittura += u.cache_creation_input_tokens ?? 0;
+            } else {
+              contati.input += Math.round(caratteriContesto / 3.6);
+              inputStimato = true;
+            }
+            outputTurno = u.output_tokens ?? 0;
+            flusso.inizioTurno();
+          } else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
             await flusso.delta(evento.delta.text);
           } else if (evento.type === 'message_delta') {
+            outputTurno = Math.max(outputTurno, evento.usage.output_tokens ?? 0);
+            contati.output += outputTurno;
+            outputTurno = 0;
             await flusso.fineTurno(evento.delta.stop_reason);
+          }
+        } else if (messaggio.type === 'assistant' || messaggio.type === 'user') {
+          /* Ciò che entra nel contesto dei turni successivi: le risposte del
+             modello (testo e chiamate ai tool) e i risultati dei tool. */
+          if (messaggio.parent_tool_use_id === null) {
+            caratteriContesto += JSON.stringify(messaggio.message.content ?? '').length;
           }
         } else if (messaggio.type === 'result') {
           esito = this.esitoDa(
@@ -204,6 +240,8 @@ export class MotoreAgentSdk implements Motore {
             annullato,
             modello,
             fornitore.tariffaUsdPerMilione,
+            contati,
+            inputStimato,
           );
         }
       }
@@ -254,13 +292,22 @@ export class MotoreAgentSdk implements Motore {
     annullato: boolean,
     modello: string,
     tariffa?: number,
+    contati?: { input: number; output: number; cacheLettura: number; cacheScrittura: number },
+    inputStimato = false,
   ): EsitoSessione {
-    const token = {
+    const dallSdk = {
       input: m.usage.input_tokens,
       output: m.usage.output_tokens,
       cacheLettura: m.usage.cache_read_input_tokens,
       cacheScrittura: m.usage.cache_creation_input_tokens,
     };
+    /* Il conteggio dallo stream vince quando ha visto più dell'SDK (i
+       gateway terzi non riportano l'input nel totale); altrimenti l'SDK, che
+       aggrega anche i sottoprocessi che lo stream non mostra. */
+    const somma = (t: typeof dallSdk) => t.input + t.output + t.cacheLettura + t.cacheScrittura;
+    const daStream = Boolean(contati && somma(contati) > somma(dallSdk));
+    const token = daStream && contati ? contati : dallSdk;
+    const tokenStimati = daStream && inputStimato;
     const base = {
       modello,
       turni: m.num_turns,
@@ -269,6 +316,7 @@ export class MotoreAgentSdk implements Motore {
       costoUsd: tariffa !== undefined ? costoATariffa(token, tariffa) : m.total_cost_usd,
       token,
       documentiLetti,
+      ...(tokenStimati && { tokenStimati: true }),
     };
     if (annullato) return { ...base, testo: testoCompleto, terminato: 'annullato' };
     if (m.subtype === 'success') {

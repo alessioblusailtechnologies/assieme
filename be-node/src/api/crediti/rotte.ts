@@ -27,6 +27,10 @@ interface RigaMovimento {
   crediti: number;
   operazione: OperazioneCrediti | null;
   modello: string | null;
+  token_input: string | null;
+  token_output: string | null;
+  costo_usd: string | null;
+  token_stimati: boolean;
   descrizione: string;
   created_at: Date;
 }
@@ -45,7 +49,7 @@ export function registraRotteCrediti(app: FastifyInstance): void {
         [tenantId],
       );
       const movimenti = await client.query<RigaMovimento>(
-        `select id, tipo, crediti, operazione, modello, descrizione, created_at
+        `select id, tipo, crediti, operazione, modello, token_input, token_output, costo_usd, token_stimati, descrizione, created_at
          from velia.crediti_movimenti where tenant_id = $1
          order by created_at desc, id limit 100`,
         [tenantId],
@@ -57,7 +61,7 @@ export function registraRotteCrediti(app: FastifyInstance): void {
         if (chiave in listino) listino[chiave as keyof typeof listino] = p.crediti;
       }
       const meseCorrente = { risposta: 0, tabella: 0, agente: 0, conversione: 0 } as Record<OperazioneCrediti, number>;
-      for (const m of mese.rows) if (m.operazione) meseCorrente[m.operazione] = Number(m.crediti);
+      for (const m of mese.rows) if (m.operazione) meseCorrente[m.operazione] = Math.round(Number(m.crediti) * 10) / 10;
 
       return {
         saldo: {
@@ -72,9 +76,13 @@ export function registraRotteCrediti(app: FastifyInstance): void {
         movimenti: movimenti.rows.map((m) => ({
           id: m.id,
           tipo: m.tipo,
-          crediti: m.crediti,
+          crediti: Number(m.crediti),
           ...(m.operazione && { operazione: m.operazione }),
           ...(m.modello && { modello: m.modello }),
+          ...(m.token_input !== null && { tokenInput: Number(m.token_input) }),
+          ...(m.token_output !== null && { tokenOutput: Number(m.token_output) }),
+          ...(m.costo_usd !== null && { costoUsd: Number(m.costo_usd) }),
+          ...(m.token_stimati && { tokenStimati: true }),
           descrizione: m.descrizione,
           istante: m.created_at.toISOString(),
         })),

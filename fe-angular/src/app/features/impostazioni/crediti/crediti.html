@@ -27,7 +27,7 @@
   <section class="saldo" [class.is-riserva]="inRiserva()" [class.is-esaurito]="esauriti()">
     <div class="saldo__principale">
       <p class="mono saldo__etichetta">Disponibili</p>
-      <p class="serif saldo__numero">{{ r.saldo.disponibili | number: '1.0-0' : 'it' }}</p>
+      <p class="serif saldo__numero">{{ r.saldo.disponibili | number: '1.0-1' : 'it' }}</p>
       @if (esauriti()) {
         <p class="saldo__avviso">
           <ui-icon name="errore" [size]="14" />
@@ -45,8 +45,8 @@
       <div class="saldo__voce">
         <dt>Inclusi nel canone</dt>
         <dd>
-          <span class="saldo__usati">{{ r.saldo.inclusiUsati | number: '1.0-0' : 'it' }}</span>
-          <span class="saldo__di">di {{ r.saldo.inclusi | number: '1.0-0' : 'it' }} questo mese</span>
+          <span class="saldo__usati">{{ r.saldo.inclusiUsati | number: '1.0-1' : 'it' }}</span>
+          <span class="saldo__di">di {{ r.saldo.inclusi | number: '1.0-1' : 'it' }} questo mese</span>
         </dd>
         <div class="barra" role="progressbar" [attr.aria-valuenow]="quotaInclusi()" aria-valuemin="0" aria-valuemax="100">
           <span class="barra__pieno" [style.width.%]="quotaInclusi()"></span>
@@ -55,8 +55,8 @@
       <div class="saldo__voce">
         <dt>Pacchetti</dt>
         <dd>
-          <span class="saldo__usati">{{ pacchettiResidui() | number: '1.0-0' : 'it' }}</span>
-          <span class="saldo__di">residui su {{ r.saldo.acquistati | number: '1.0-0' : 'it' }} comprati</span>
+          <span class="saldo__usati">{{ pacchettiResidui() | number: '1.0-1' : 'it' }}</span>
+          <span class="saldo__di">residui su {{ r.saldo.acquistati | number: '1.0-1' : 'it' }} comprati</span>
         </dd>
       </div>
     </dl>
@@ -74,13 +74,13 @@
             @if (r.meseCorrente[o.chiave]) {
               <li class="consumi__riga">
                 <span>{{ o.etichetta }}</span>
-                <span class="mono consumi__valore">{{ r.meseCorrente[o.chiave] | number: '1.0-0' : 'it' }}</span>
+                <span class="mono consumi__valore">{{ r.meseCorrente[o.chiave] | number: '1.0-1' : 'it' }}</span>
               </li>
             }
           }
           <li class="consumi__riga is-totale">
             <span>Totale</span>
-            <span class="mono consumi__valore">{{ totaleMese() | number: '1.0-0' : 'it' }}</span>
+            <span class="mono consumi__valore">{{ totaleMese() | number: '1.0-1' : 'it' }}</span>
           </li>
         </ul>
       }
@@ -131,9 +131,17 @@
                   @if (m.descrizione) {
                     <span class="movimento__descrizione">{{ m.descrizione }}</span>
                   }
+                  @if (m.tokenInput !== undefined || m.tokenOutput !== undefined) {
+                    <!-- Da cosa nasce il numero: il lavoro misurato, non stimato. -->
+                    <span class="mono movimento__misura">
+                      {{ m.tokenInput ?? 0 | number: '1.0-0' : 'it' }} token letti{{ m.tokenStimati ? ' (stimati)' : '' }} ·
+                      {{ m.tokenOutput ?? 0 | number: '1.0-0' : 'it' }} scritti
+                      @if (m.modello) { · {{ m.modello }} }
+                    </span>
+                  }
                 </td>
                 <td class="mono col-crediti" [class.is-positivo]="m.crediti > 0">
-                  {{ m.crediti > 0 ? '+' : '' }}{{ m.crediti | number: '1.0-0' : 'it' }}
+                  {{ m.crediti > 0 ? '+' : '' }}{{ m.crediti | number: '1.0-1' : 'it' }}
                 </td>
               </tr>
             }

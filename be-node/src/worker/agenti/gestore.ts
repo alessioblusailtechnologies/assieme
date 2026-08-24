@@ -159,6 +159,8 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
           operazione: 'agente',
           modello: esito.modello,
           costoUsd: esito.costoUsd,
+          token: esito.token,
+          tokenStimati: esito.tokenStimati,
           utenteId: lavoro.creato_da,
           descrizione: `Agente «${lavoro.nome}»`,
         });

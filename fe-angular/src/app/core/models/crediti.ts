@@ -27,8 +27,14 @@ export interface SaldoCrediti {
 export interface MovimentoCrediti {
   id: string;
   tipo: 'pacchetto' | 'rettifica' | 'addebito';
-  /** Negativo per gli addebiti. */
+  /** Negativo per gli addebiti; un decimale. */
   crediti: number;
+  /** Il lavoro misurato da cui nasce l'addebito (input con la cache, output). */
+  tokenInput?: number;
+  tokenOutput?: number;
+  costoUsd?: number;
+  /** L'input è stimato dal contesto: il gateway del modello non lo riporta. */
+  tokenStimati?: boolean;
   operazione?: OperazioneCrediti;
   modello?: string;
   descrizione: string;

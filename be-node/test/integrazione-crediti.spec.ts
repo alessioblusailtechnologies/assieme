@@ -86,28 +86,29 @@ describe.skipIf(!pronto)('crediti col progetto Supabase', () => {
   });
 
   it('l’addebito segue il costo della sessione (minimo 1), la conversione è fissa, il mese lo racconta', async () => {
-    // Un confronto documentale con Opus (~0,40 $) → 10; un «ciao» (~0,03 $) → 1; open a tariffa (~0,004 $) → 1.
+    // Un confronto documentale con Opus (~0,40 $) → 10; un «ciao» (~0,03 $) → 0,8; open a tariffa (~0,004 $) → 0,1.
     expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'risposta', modello: 'claude-opus-5', costoUsd: 0.4, descrizione: 'confronto' })).toBe(10);
-    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'risposta', modello: 'claude-opus-5', costoUsd: 0.03, descrizione: 'ciao' })).toBe(1);
-    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'risposta', modello: 'zai-org/GLM-5.2', costoUsd: 0.0037, descrizione: 'open' })).toBe(1);
-    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'tabella', modello: 'claude-sonnet-5', costoUsd: 0.17, descrizione: 'riga' })).toBe(5);
+    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'risposta', modello: 'claude-opus-5', costoUsd: 0.03, descrizione: 'ciao' })).toBe(0.8);
+    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'risposta', modello: 'zai-org/GLM-5.2', costoUsd: 0.0037, descrizione: 'open', token: { input: 61000, output: 2100, cacheLettura: 0, cacheScrittura: 0 } })).toBe(0.1);
+    expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'tabella', modello: 'claude-sonnet-5', costoUsd: 0.17, descrizione: 'riga' })).toBe(4.3);
     // Senza costo vale il «tipico» della classe.
     expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'agente', modello: 'claude-sonnet-5', descrizione: 'senza costo' })).toBe(5);
     expect(await addebitaCrediti(pool(), { tenantId: TENANT_COLLAUDO, operazione: 'conversione', descrizione: 'prova conversione' })).toBe(1);
 
     const r = await riepilogo();
-    expect(r.saldo.inclusiUsati).toBe(23);
-    expect(r.saldo.disponibili).toBe(577);
-    expect(r.meseCorrente).toEqual({ risposta: 12, tabella: 5, agente: 5, conversione: 1 });
+    expect(r.saldo.inclusiUsati).toBe(21.2);
+    expect(r.saldo.disponibili).toBe(578.8);
+    expect(r.meseCorrente).toEqual({ risposta: 10.9, tabella: 4.3, agente: 5, conversione: 1 });
+    expect(r.movimenti.find((m) => m.descrizione === 'open')).toMatchObject({ tokenInput: 61000, tokenOutput: 2100, costoUsd: 0.0037 });
     expect(r.movimenti[0]).toMatchObject({ tipo: 'addebito', crediti: -1, operazione: 'conversione' });
     expect(r.movimenti).toHaveLength(6);
   });
 
   it('oltre gli inclusi si intaccano i pacchetti; senza nulla la chat risponde 429 CREDITI_ESAURITI', async () => {
     await pool().query(`update velia.tenant set crediti_inclusi = 20 where id = $1`, [TENANT_COLLAUDO]);
-    // 23 addebitati con 20 inclusi: 3 sono usciti dai pacchetti (che non ci sono) → sotto zero.
+    // 21,2 addebitati con 20 inclusi: 1,2 sono usciti dai pacchetti (che non ci sono) → sotto zero.
     let r = await riepilogo();
-    expect(r.saldo).toMatchObject({ inclusi: 20, inclusiUsati: 20, acquistati: 0, acquistatiUsati: 3, disponibili: -3 });
+    expect(r.saldo).toMatchObject({ inclusi: 20, inclusiUsati: 20, acquistati: 0, acquistatiUsati: 1.2, disponibili: -1.2 });
 
     const negata = await richiedi('POST', `/api/conversazioni/${convId}/messaggi`, { testo: 'Ci sei?', documentiReferenziati: [] });
     expect(negata.statusCode).toBe(429);
@@ -119,12 +120,12 @@ describe.skipIf(!pronto)('crediti col progetto Supabase', () => {
       [TENANT_COLLAUDO],
     );
     r = await riepilogo();
-    expect(r.saldo).toMatchObject({ acquistati: 100, acquistatiUsati: 3, disponibili: 97 });
+    expect(r.saldo).toMatchObject({ acquistati: 100, acquistatiUsati: 1.2, disponibili: 98.8 });
     expect(r.movimenti[0]).toMatchObject({ tipo: 'pacchetto', crediti: 100 });
 
     /* Con credito la domanda parte: la rotta SSE accoda il job e resta
        aperta finché non lo si lavora — qui basta sapere che non è più 429. */
     const ok = await pool().query<{ disponibili: number }>(`select disponibili from velia.saldo_crediti($1)`, [TENANT_COLLAUDO]);
-    expect(ok.rows[0]!.disponibili).toBe(97);
+    expect(Number(ok.rows[0]!.disponibili)).toBe(98.8);
   });
 });

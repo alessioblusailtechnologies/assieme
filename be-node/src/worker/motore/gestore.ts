@@ -276,6 +276,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         operazione: 'risposta',
         modello: esito.modello,
         costoUsd: esito.costoUsd,
+        token: esito.token,
+        tokenStimati: esito.tokenStimati,
         utenteId: payload.utenteId,
         descrizione: `Risposta in chat: ${payload.testo.slice(0, 80)}`,
       });
