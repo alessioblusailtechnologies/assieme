@@ -163,8 +163,14 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     tokenAdmin = await accedi(app, EMAIL_ADMIN);
     tokenOperatore = await accedi(app, EMAIL_OPERATORE);
 
-    // Il gestore d'interrogazione del worker, col motore finto.
-    gestori.interrogazione = creaGestoreInterrogazione({ motore, archivio, radice, attesaAllegatiMs: 1000 });
+    // Il gestore d'interrogazione del worker, col motore finto e il titolista finto.
+    gestori.interrogazione = creaGestoreInterrogazione({
+      motore,
+      archivio,
+      radice,
+      attesaAllegatiMs: 1000,
+      generatoreTitolo: { genera: () => Promise.resolve('Franchigie cristalli Km&Servizi') },
+    });
     // E un'ingestion finta per gli allegati: il .md compare nello Storage finto e il documento diventa pronto.
     gestori.ingestion = async (job, { db }) => {
       const id = String(job.payload['documentoId']);
@@ -266,7 +272,10 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       expect(ws.perId.get(docPubblicoId)).toBe(pathMdPubblico);
       const contenuto = await readFile(join(ws.directory, ...pathMdPubblico.split('/')), 'utf8');
       expect(contenuto).toContain('[pag. 1]');
-      expect(ws.mancanti.map((m) => m.motivo)).toEqual(['elaborazione non ancora conclusa']);
+      /* Il tenant demo può contenere documenti veri caricati a mano, che lo
+         Storage finto non conosce: qui conta solo che l'allegato in coda
+         sia dichiarato col suo motivo. */
+      expect(ws.mancanti.some((m) => m.motivo === 'elaborazione non ancora conclusa')).toBe(true);
       const indice = await readFile(join(ws.directory, 'tenant', 'documenti', 'INDICE.md'), 'utf8');
       expect(indice).toContain('Archivio privato');
       expect(await readFile(join(ws.directory, 'INDICE.md'), 'utf8')).toContain('archivio-pubblico/');
@@ -328,9 +337,9 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(filo[1]!.citazioni).toHaveLength(1);
     expect(filo[1]!.nonSupportato).toBeUndefined();
 
-    // Il titolo deriva dal primo messaggio; l'allegato in contesto ha fatto aspettare e poi si è andati avanti.
+    // Il titolo: provvisorio dalle prime parole all'invio, sensato dal titolista a risposta pronta.
     const conv = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>();
-    expect(conv.titolo).toBe('Che franchigia prevede la garanzia cristalli?');
+    expect(conv.titolo).toBe('Franchigie cristalli Km&Servizi');
 
     const audit = await pool().query<{ modello: string; documenti_letti: string[]; costo_usd: string }>(`select modello, documenti_letti, costo_usd from velia.audit_risposte where conversazione_id = $1`, [convId]);
     expect(audit.rows[0]).toMatchObject({ modello: 'finto', documenti_letti: [pathMdPubblico] });

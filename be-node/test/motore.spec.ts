@@ -4,6 +4,7 @@ import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { MARCATORE_CITAZIONI, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
+import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
   ErroreValidazione,
@@ -287,6 +288,15 @@ describe('workspace e sessione, le parti pure', () => {
     expect(avvisiEsposizione('Vedi tenant/allegati/INDICE.md nella workspace')).toHaveLength(1);
     expect(avvisiEsposizione('Ho letto condizioni-di-assicurazione.md a pag. 76')).toHaveLength(1);
     expect(avvisiEsposizione('La garanzia Furto prevede scoperto 10% *(Condizioni, pag. 103)*.')).toEqual([]);
+  });
+
+  it('ripulisciTitolo: una riga, senza virgolette né punto, troncato al confine di parola', () => {
+    expect(ripulisciTitolo('«Franchigie Furto e Rapina Km&Servizi».')).toBe('Franchigie Furto e Rapina Km&Servizi');
+    expect(ripulisciTitolo('"Titolo"\ncon una seconda riga')).toBe('Titolo');
+    expect(ripulisciTitolo('  \n  ')).toBe('');
+    const lungo = ripulisciTitolo('Confronto molto dettagliato delle garanzie accessorie fra la polizza vecchia e quella nuova');
+    expect(lungo.length).toBeLessThanOrEqual(61);
+    expect(lungo.endsWith('…')).toBe(true);
   });
 
   it('i prompt portano regole, DNA con id, contesto e storia', () => {

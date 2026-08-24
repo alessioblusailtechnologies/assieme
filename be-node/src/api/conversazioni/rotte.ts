@@ -294,7 +294,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     const { testo, documentiReferenziati } = esito.data;
     const { tenantId, utenteId } = richiesta.identita;
 
-    const { messaggioUtenteId } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+    const { messaggioUtenteId, titoloProvvisorio } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
       if (esistente.autore_id !== utenteId) {
         throw ErroreApi.permessoNegato('Solo chi ha aperto la conversazione può scriverci.');
@@ -305,7 +305,11 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         esistente.documenti_in_contesto,
         documentiReferenziati,
       );
-      const titolo = esistente.titolo === TITOLO_NUOVA ? titoloDaMessaggio(testo) : esistente.titolo;
+      /* Sul primo messaggio il titolo è un provvisorio (le prime parole): a
+         risposta pronta il worker lo sostituisce con uno sensato, generato
+         su domanda e risposta — a meno che l'utente non rinomini prima. */
+      const derivato = esistente.titolo === TITOLO_NUOVA;
+      const titolo = derivato ? titoloDaMessaggio(testo) : esistente.titolo;
       await client.query(
         `update velia.conversazioni set documenti_in_contesto = $2, titolo = $3, updated_at = now()
          where id = $1`,
@@ -317,7 +321,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
          values ($1, $2, 'utente', $3, $4, $5) returning id`,
         [esistente.id, tenantId, utenteId, testo, documentiReferenziati],
       );
-      return { messaggioUtenteId: m.rows[0]!.id };
+      return { messaggioUtenteId: m.rows[0]!.id, titoloProvvisorio: derivato ? titolo : undefined };
     });
 
     const messaggioAssistenteId = randomUUID();
@@ -330,6 +334,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         messaggioAssistenteId,
         utenteId,
         testo,
+        ...(titoloProvvisorio && { titoloProvvisorio }),
       },
       { tenantId, utenteId },
     );

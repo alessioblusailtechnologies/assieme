@@ -7,6 +7,7 @@ import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
+import type { GeneratoreTitolo } from './titolista.js';
 import { avvisiEsposizione, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
 import { materializzaWorkspace, type Workspace } from './workspace.js';
 
@@ -26,6 +27,8 @@ export interface DipendenzeInterrogazione {
   archivio: ArchivioFile;
   /** Radice di workspace e cache sul disco del worker. */
   radice: string;
+  /** Il titolo sensato al posto del provvisorio; senza, resta il provvisorio. */
+  generatoreTitolo?: GeneratoreTitolo;
   /** Quanto aspettare un allegato ancora in elaborazione prima di partire senza. */
   attesaAllegatiMs?: number;
 }
@@ -36,6 +39,12 @@ interface PayloadInterrogazione {
   messaggioAssistenteId: string;
   utenteId: string;
   testo: string;
+  /**
+   * Il titolo messo dall'API all'invio del primo messaggio (le prime parole
+   * della domanda): a risposta pronta si sostituisce con uno sensato, ma
+   * solo se è ancora questo — se l'utente ha rinominato, la sua parola vince.
+   */
+  titoloProvvisorio?: string;
 }
 
 interface RigaConversazione {
@@ -244,6 +253,25 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ],
       );
       await registraConsumi(db, tenantId, job.id, esito);
+
+      /* Prima del `fine`: alla chiusura il FE ricarica lo storico, e deve
+         già trovarci il titolo sensato. Un titolo mancato non è un errore. */
+      if (payload.titoloProvvisorio && dip.generatoreTitolo) {
+        try {
+          const titolo = await dip.generatoreTitolo.genera(payload.testo, testoFinale);
+          if (titolo) {
+            await db.query(
+              `update velia.conversazioni set titolo = $2 where id = $1 and titolo = $3`,
+              [payload.conversazioneId, titolo, payload.titoloProvvisorio],
+            );
+          }
+        } catch (errore) {
+          await emettiEvento(db, job.id, 'titolo-saltato', {
+            motivo: errore instanceof Error ? errore.message : String(errore),
+          });
+        }
+      }
+
       await emetti({ tipo: 'fine' });
     } finally {
       await workspace?.rimuovi().catch(() => undefined);
