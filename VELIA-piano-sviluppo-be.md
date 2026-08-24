@@ -225,7 +225,7 @@ Stime per **uno sviluppatore BE a tempo pieno**, da ricalibrare dopo la Fase 0. 
 - **PostgREST espone anche `velia`** (`db_schema: public,graphql_public,koya,velia`): nei futuri PATCH di configurazione vanno **preservati gli schemi altrui**.
 - Codici d'errore aggiunti al vocabolario del mock: `NON_AUTENTICATO` (401, il mock non aveva autenticazione) e `DATI_NON_VALIDI` (400 di validazione).
 
-### Fase 1 — Archivio Pubblico e ingestion · ~8 giorni · RF-A-01…A-07, A-09
+### ✅ Fase 1 — Archivio Pubblico e ingestion — **completata** (07/08/2026) · RF-A-01…A-07, A-09
 
 La pipeline di ingestion (§4.2) nasce qui, sul Pubblico, dove i documenti li carichiamo noi: si mette a punto la conversione senza utenti di mezzo.
 
