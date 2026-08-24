@@ -70,11 +70,19 @@
  * la conversazione, con le azioni al margine.
  */
 .testata {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-4) var(--sp-6) 0;
+  padding: var(--sp-4) var(--sp-6) var(--sp-2);
   flex: none;
+  transition: box-shadow var(--dur-fast) var(--ease-brand);
+}
+
+/* Il distacco compare solo quando serve: appena il filo scorre sotto il titolo. */
+.testata.is-scorsa {
+  box-shadow: 0 10px 12px -12px rgb(28 25 20 / 22%);
 }
 
 .testata__titolo {
