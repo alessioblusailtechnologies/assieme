@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type pg from 'pg';
 
 import { configurazione } from '../config.js';
+import { creaGestoreAgenti } from './agenti/gestore.js';
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
@@ -37,6 +38,7 @@ export type GestoreJob = (job: Job, strumenti: StrumentiJob) => Promise<void>;
 let ingestionVera: GestoreJob | undefined;
 let interrogazioneVera: GestoreJob | undefined;
 let tabellaVera: GestoreJob | undefined;
+let agenteVero: GestoreJob | undefined;
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
@@ -66,6 +68,24 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       });
     }
     await interrogazioneVera(job, strumenti);
+  },
+
+  /** Fase 7: l'esecuzione di un agente — la stessa interrogazione, ingresso diverso. */
+  agente: async (job, strumenti) => {
+    if (!agenteVero) {
+      const c = configurazione();
+      agenteVero = creaGestoreAgenti({
+        motore: new MotoreAgentSdk({
+          modello: c.MODELLO_MOTORE,
+          maxTurni: c.MOTORE_MAX_TURNI,
+          budgetUsd: c.MOTORE_BUDGET_USD,
+          ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+        }),
+        archivio: new ArchivioStorage(),
+        radice: resolve(c.CARTELLA_WORKER),
+      });
+    }
+    await agenteVero(job, strumenti);
   },
 
   /** Fase 5: l'estrazione delle celle, per gruppi per documento. */

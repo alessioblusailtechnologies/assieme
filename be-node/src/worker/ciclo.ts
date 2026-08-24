@@ -43,6 +43,10 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
   }
 
   await aggiornaStatoJob(db, job.id, 'in-esecuzione', { tentativi: consegne });
+  /* La riga era stata letta PRIMA dell'aggiornamento: il gestore deve vedere
+     il tentativo in corso, non quello precedente (i gestori di tabelle e
+     agenti ci decidono il «fallimento definitivo»). */
+  job.tentativi = consegne;
   const strumenti: StrumentiJob = { db };
 
   try {

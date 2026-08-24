@@ -101,7 +101,8 @@ export interface DnaAgenzia {
 export async function caricaDna(
   db: pg.Pool,
   tenantId: string,
-  utenteId: string,
+  /** Null per le esecuzioni senza un utente (agenti pianificati): niente ricordi personali. */
+  utenteId: string | null,
   ambiti: { ramiIds: string[]; compagnieIds: string[] },
   riferimentiInWorkspace: Map<string, DocumentoWorkspace>,
 ): Promise<DnaAgenzia> {
@@ -117,9 +118,9 @@ export async function caricaDna(
     ),
     db.query<Ricordo>(
       `select id::text, testo, categoria from velia.ricordi
-       where tenant_id = $1 and attivo and (ambito = 'tenant' or utente_id = $2)
+       where tenant_id = $1 and attivo and (ambito = 'tenant' or utente_id = $2::uuid)
        order by created_at`,
-      [tenantId, utenteId],
+      [tenantId, utenteId ?? null],
     ),
     db.query<{ documento_id: string }>(
       `select r.documento_id from velia.riferimenti r

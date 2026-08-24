@@ -1,6 +1,7 @@
 import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
@@ -28,6 +29,8 @@ export interface OpzioniApp {
   tabelle?: OpzioniTabelle;
   /** Nei test: Storage finto per i documenti di riferimento. */
   istruzioni?: OpzioniIstruzioni;
+  /** Nei test: Storage finto per il documento su template degli agenti. */
+  agenti?: OpzioniAgenti;
 }
 
 /**
@@ -68,6 +71,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteModelli(app);
   registraRotteIstruzioni(app, opzioni.istruzioni);
   registraRotteUtenti(app);
+  registraRotteAgenti(app, opzioni.agenti);
 
   return app;
 }
