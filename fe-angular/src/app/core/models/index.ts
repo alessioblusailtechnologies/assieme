@@ -21,3 +21,4 @@ export * from './tabella';
 export * from './agente';
 export * from './memoria';
 export * from './impostazioni';
+export * from './crediti';

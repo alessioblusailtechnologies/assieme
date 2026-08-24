@@ -35,6 +35,11 @@ const VOCI: VoceSezione[] = [
     permesso: 'utenti.gestisci',
   },
   {
+    percorso: 'crediti',
+    etichetta: 'Crediti',
+    spiega: 'Quanto resta, quanto si consuma, i pacchetti',
+  },
+  {
     percorso: 'mcp',
     etichetta: 'Accesso MCP',
     spiega: 'VELIA come strumento nei client AI esterni',

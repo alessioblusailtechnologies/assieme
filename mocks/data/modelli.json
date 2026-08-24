@@ -6,7 +6,8 @@
     "descrizione": "Il modello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È il modello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.",
     "adeguatezzaDocumentale": "alta",
     "notaCosti": "Incluso nel canone del piano Agenzia.",
-    "disponibile": true
+    "disponibile": true,
+    "creditiPerRisposta": 10
   },
   {
     "id": "mod-002",
@@ -15,7 +16,8 @@
     "descrizione": "Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.",
     "adeguatezzaDocumentale": "alta",
     "notaCosti": "Riduce il consumo del piano di circa la metà.",
-    "disponibile": true
+    "disponibile": true,
+    "creditiPerRisposta": 5
   },
   {
     "id": "mod-003",
@@ -24,7 +26,8 @@
     "descrizione": "Rapido ed economico, adatto a domande puntuali e agli agenti ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.",
     "adeguatezzaDocumentale": "media",
     "notaCosti": "Riduce il consumo del piano di circa due terzi.",
-    "disponibile": true
+    "disponibile": true,
+    "creditiPerRisposta": 3
   },
   {
     "id": "mod-006",
@@ -33,7 +36,8 @@
     "descrizione": "Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
     "adeguatezzaDocumentale": "media",
     "notaCosti": "Tariffa HostYourAI: circa 1,7 € per milione di token.",
-    "disponibile": true
+    "disponibile": true,
+    "creditiPerRisposta": 2
   },
   {
     "id": "mod-007",
@@ -42,7 +46,8 @@
     "descrizione": "Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
     "adeguatezzaDocumentale": "media",
     "notaCosti": "Tariffa HostYourAI: circa 3,2 € per milione di token.",
-    "disponibile": true
+    "disponibile": true,
+    "creditiPerRisposta": 2
   },
   {
     "id": "mod-004",

@@ -45,7 +45,11 @@
           <ui-badge [variante]="modello.adeguatezzaDocumentale === 'alta' ? 'positivo' : 'neutro'">
             {{ etichettaAdeguatezza(modello) }}
           </ui-badge>
-          @if (modello.notaCosti) {
+          @if (modello.creditiPerRisposta) {
+            <p class="modello__costi">
+              circa <strong>{{ modello.creditiPerRisposta }} crediti</strong> per una risposta tipica
+            </p>
+          } @else if (modello.notaCosti) {
             <p class="modello__costi">{{ modello.notaCosti }}</p>
           }
         </div>

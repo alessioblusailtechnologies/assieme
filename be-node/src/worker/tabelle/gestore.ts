@@ -2,6 +2,7 @@ import type pg from 'pg';
 
 import type { CellaTabella } from '../../contratto/tabelle.js';
 import type { Job } from '../coda.js';
+import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import type { EsitoSessione, Motore } from '../motore/sessione.js';
@@ -178,6 +179,15 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
         );
         await registraConsumi(db, tenantId, job.id, esito);
         if (esito.terminato === 'annullato') return;
+        /* Pricing: ogni riga estratta (anche parziale: i token sono spesi) è un addebito. */
+        await addebitaCrediti(db, {
+          tenantId,
+          jobId: job.id,
+          operazione: 'tabella',
+          modello: esito.modello,
+          costoUsd: esito.costoUsd,
+          descrizione: `Tabella di analisi, riga «${riga.etichetta}»`,
+        });
 
         if (esito.terminato !== 'completato') {
           /* Il budget o un errore su UNA riga non fermano la tabella: le sue

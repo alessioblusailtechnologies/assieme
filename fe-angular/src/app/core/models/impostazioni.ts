@@ -22,6 +22,8 @@ export interface ModelloAI {
   adeguatezzaDocumentale: 'alta' | 'media' | 'bassa';
   notaCosti?: string;
   disponibile: boolean;
+  /** Il peso di una risposta in crediti: quanto dura il pacchetto con questo modello. */
+  creditiPerRisposta?: number;
 }
 
 /**

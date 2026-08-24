@@ -23,6 +23,7 @@ import type { Citazione } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { richiediCrediti } from '../crediti/rotte.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
@@ -340,6 +341,7 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
 
   /** Esecuzione manuale (RF-E-03/05): nasce in coda, si segue col polling. */
   app.post<{ Params: { id: string } }>('/api/agenti/:id/esecuzioni', async (richiesta, risposta) => {
+    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const corpo = schemaAvvioEsecuzione.safeParse(richiesta.body ?? {});
     if (!corpo.success) throw ErroreApi.datiNonValidi('Parametri di avvio non validi.');
 

@@ -20,6 +20,7 @@ import {
 import { ErroreApi } from '../../contratto/errori.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
+import { richiediCrediti } from '../crediti/rotte.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import { PonteEventi } from './ponte-eventi.js';
@@ -309,6 +310,8 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     }
     const { testo, documentiReferenziati } = esito.data;
     const { tenantId, utenteId } = richiesta.identita;
+    /* Pricing: senza crediti la domanda non parte (429 CREDITI_ESAURITI). */
+    await richiediCrediti(poolDb(), tenantId);
 
     const { messaggioUtenteId, titoloProvvisorio } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);

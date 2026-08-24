@@ -18,6 +18,7 @@
   "/api/identita-visiva": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/impostazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/agenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/crediti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/ricordi": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/mcp": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api": { "target": "http://localhost:3000", "secure": false, "changeOrigin": true }

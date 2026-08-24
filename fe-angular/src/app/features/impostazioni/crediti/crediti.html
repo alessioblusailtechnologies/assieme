@@ -1,0 +1,145 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Crediti</h1>
+  <p class="testata__spiega">
+    Ogni operazione dell'AI consuma crediti in proporzione al lavoro fatto e al modello usato. Il
+    canone ne include un lotto al mese; i pacchetti comprati non scadono.
+  </p>
+</header>
+
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare i crediti"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !riepilogo()) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="3" />
+    <ui-scheletro [numeroRighe]="4" />
+  </div>
+} @else if (riepilogo(); as r) {
+  <!-- Il saldo, come il credito del telefono: un numero grande e cosa lo compone. -->
+  <section class="saldo" [class.is-riserva]="inRiserva()" [class.is-esaurito]="esauriti()">
+    <div class="saldo__principale">
+      <p class="mono saldo__etichetta">Disponibili</p>
+      <p class="serif saldo__numero">{{ r.saldo.disponibili | number: '1.0-0' : 'it' }}</p>
+      @if (esauriti()) {
+        <p class="saldo__avviso">
+          <ui-icon name="errore" [size]="14" />
+          Crediti esauriti: le risposte, le tabelle e gli agenti sono fermi finché non si ricarica.
+        </p>
+      } @else if (inRiserva()) {
+        <p class="saldo__avviso">
+          <ui-icon name="informazione" [size]="14" />
+          Siete in riserva: meno del 20% dei crediti del mese.
+        </p>
+      }
+    </div>
+
+    <dl class="saldo__dettagli">
+      <div class="saldo__voce">
+        <dt>Inclusi nel canone</dt>
+        <dd>
+          <span class="saldo__usati">{{ r.saldo.inclusiUsati | number: '1.0-0' : 'it' }}</span>
+          <span class="saldo__di">di {{ r.saldo.inclusi | number: '1.0-0' : 'it' }} questo mese</span>
+        </dd>
+        <div class="barra" role="progressbar" [attr.aria-valuenow]="quotaInclusi()" aria-valuemin="0" aria-valuemax="100">
+          <span class="barra__pieno" [style.width.%]="quotaInclusi()"></span>
+        </div>
+      </div>
+      <div class="saldo__voce">
+        <dt>Pacchetti</dt>
+        <dd>
+          <span class="saldo__usati">{{ pacchettiResidui() | number: '1.0-0' : 'it' }}</span>
+          <span class="saldo__di">residui su {{ r.saldo.acquistati | number: '1.0-0' : 'it' }} comprati</span>
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <div class="colonne">
+    <!-- Il mese: dove vanno i crediti. -->
+    <section class="riquadro">
+      <h2 class="riquadro__titolo">Questo mese</h2>
+      @if (!totaleMese()) {
+        <p class="riquadro__vuoto">Ancora nessun consumo questo mese.</p>
+      } @else {
+        <ul class="consumi">
+          @for (o of operazioni; track o.chiave) {
+            @if (r.meseCorrente[o.chiave]) {
+              <li class="consumi__riga">
+                <span>{{ o.etichetta }}</span>
+                <span class="mono consumi__valore">{{ r.meseCorrente[o.chiave] | number: '1.0-0' : 'it' }}</span>
+              </li>
+            }
+          }
+          <li class="consumi__riga is-totale">
+            <span>Totale</span>
+            <span class="mono consumi__valore">{{ totaleMese() | number: '1.0-0' : 'it' }}</span>
+          </li>
+        </ul>
+      }
+    </section>
+
+    <!-- Il listino: perché una risposta costa 10 o 2. -->
+    <section class="riquadro">
+      <h2 class="riquadro__titolo">Quanto pesa</h2>
+      <p class="riquadro__spiega">
+        I crediti seguono il lavoro fatto: quanto il modello legge e scrive. Una domanda breve
+        costa 1 credito; un confronto fra set informativi di più.
+      </p>
+      <ul class="pesi">
+        <li class="pesi__riga"><span>Risposta tipica con <strong>Claude Opus</strong></span><span class="mono">~{{ r.pesi.opus }}</span></li>
+        <li class="pesi__riga"><span>… con <strong>Claude Sonnet</strong></span><span class="mono">~{{ r.pesi.sonnet }}</span></li>
+        <li class="pesi__riga"><span>… con un <strong>modello open in UE</strong></span><span class="mono">1–{{ r.pesi.open }}</span></li>
+        <li class="pesi__riga"><span>Conversione di un documento caricato</span><span class="mono">{{ r.pesi.conversione }}</span></li>
+        <li class="pesi__riga is-nota"><span>Memoria, titoli e suggerimenti</span><span class="mono">inclusi</span></li>
+      </ul>
+      <p class="riquadro__nota">
+        Tabelle e agenti seguono la stessa regola, riga per riga ed esecuzione per esecuzione. Il
+        modello si sceglie in <em>Modello AI</em>: cambiarlo cambia quanto dura il pacchetto.
+      </p>
+    </section>
+  </div>
+
+  <!-- Il registro: ogni movimento, dal più recente. -->
+  <section class="riquadro">
+    <h2 class="riquadro__titolo">Movimenti</h2>
+    @if (!r.movimenti.length) {
+      <p class="riquadro__vuoto">Nessun movimento ancora.</p>
+    } @else {
+      <div class="ui-tabella-contenitore">
+        <table class="ui-tabella movimenti">
+          <thead>
+            <tr>
+              <th>Quando</th>
+              <th>Cosa</th>
+              <th class="col-crediti">Crediti</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of r.movimenti; track m.id) {
+              <tr>
+                <td class="mono col-quando">{{ m.istante | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td>
+                  <span class="movimento__tipo">{{ etichettaMovimento(m) }}</span>
+                  @if (m.descrizione) {
+                    <span class="movimento__descrizione">{{ m.descrizione }}</span>
+                  }
+                </td>
+                <td class="mono col-crediti" [class.is-positivo]="m.crediti > 0">
+                  {{ m.crediti > 0 ? '+' : '' }}{{ m.crediti | number: '1.0-0' : 'it' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+}

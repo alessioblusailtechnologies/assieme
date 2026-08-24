@@ -2,6 +2,7 @@ import type pg from 'pg';
 
 import type { Citazione, EventoStream, Provenienza } from '../../contratto/conversazioni.js';
 import type { Job } from '../coda.js';
+import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -268,6 +269,16 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ],
       );
       await registraConsumi(db, tenantId, job.id, esito);
+      /* Pricing: una risposta scritta è un addebito, proporzionato al lavoro della sessione. */
+      await addebitaCrediti(db, {
+        tenantId,
+        jobId: job.id,
+        operazione: 'risposta',
+        modello: esito.modello,
+        costoUsd: esito.costoUsd,
+        utenteId: payload.utenteId,
+        descrizione: `Risposta in chat: ${payload.testo.slice(0, 80)}`,
+      });
 
       /* RF-G-01: la memoria impara durante la conversazione — a risposta
          scritta, prima del `fine`, così l'utente vede il passo e l'esito.

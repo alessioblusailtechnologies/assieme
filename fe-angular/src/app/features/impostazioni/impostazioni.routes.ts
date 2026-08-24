@@ -41,6 +41,11 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
         title: 'Utenti — Velia',
       },
       {
+        path: 'crediti',
+        loadComponent: () => import('./crediti/crediti').then((m) => m.Crediti),
+        title: 'Crediti — Velia',
+      },
+      {
         /* Fase 7 — costruita. Il valore del Modulo F resta tutto nel backend. */
         path: 'mcp',
         loadComponent: () => import('./mcp/accesso-mcp').then((m) => m.AccessoMcp),
