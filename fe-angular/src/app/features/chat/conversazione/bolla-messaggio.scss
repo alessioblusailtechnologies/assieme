@@ -424,3 +424,14 @@
   border-color: var(--c-line);
   color: var(--c-text);
 }
+
+/* Su smartphone il margine laterale delle bolle è spazio sprecato. */
+@media (max-width: 600px) {
+  .utente {
+    max-width: 92%;
+  }
+
+  .assistente {
+    max-width: 100%;
+  }
+}

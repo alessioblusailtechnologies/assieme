@@ -1,0 +1,84 @@
+/*
+ * Responsività trasversale: ciò che vale per tutto il design system su
+ * smartphone e tablet, in un punto solo.
+ *
+ * Breakpoint del progetto (le media query non leggono le variabili, quindi
+ * i numeri sono scritti a mano ovunque, e sono questi tre):
+ *   600px  smartphone   (una colonna, tabelle a scorrimento, cassetti a tutto schermo)
+ *   768px  tablet       (barra laterale a cassetto, testata compatta)
+ *   900px  già in uso   (i blocchi esistenti nelle feature)
+ *
+ * Il puntatore «coarse» (dito) non è un breakpoint: un tablet in orizzontale
+ * è largo, ma si tocca. Target di 44px, campi a 16px (sotto, iOS ingrandisce
+ * la pagina al fuoco), niente tooltip al passaggio.
+ */
+
+:root {
+  --bp-sm: 600px;
+  --bp-md: 768px;
+  --bp-lg: 900px;
+  /* Le aree sicure di iPhone (tacca, barra home): zero sui desktop. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* ==========================================================
+ * Dito, non mouse
+ * ========================================================== */
+
+@media (pointer: coarse) {
+  .ui-bottone {
+    min-height: 44px;
+    padding-block: 0.625rem;
+  }
+
+  .ui-bottone.is-piccolo {
+    min-height: 40px;
+  }
+
+  .ui-campo,
+  .ui-select-innesco {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Il tooltip vive sul passaggio del mouse: su touch non ha un evento suo
+     e resterebbe appeso dopo il tocco. */
+  [data-suggerimento]::after {
+    display: none;
+  }
+}
+
+/* ==========================================================
+ * Tabelle: scorrono in orizzontale, e lo si vede
+ * ========================================================== */
+
+/*
+ * Le tabelle di elenco hanno 6-7 colonne con larghezze fisse: sotto i
+ * 600px non ci stanno, e il contenitore scorre. L'ombra sui bordi dice che
+ * c'è altro oltre il margine — senza, una tabella tagliata sembra finita.
+ */
+.ui-tabella-contenitore {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  background:
+    linear-gradient(to right, var(--c-surface) 30%, transparent) left / 40px 100% no-repeat,
+    linear-gradient(to left, var(--c-surface) 30%, transparent) right / 40px 100% no-repeat,
+    linear-gradient(to right, rgb(28 26 21 / 10%), transparent) left / 14px 100% no-repeat,
+    linear-gradient(to left, rgb(28 26 21 / 10%), transparent) right / 14px 100% no-repeat,
+    var(--c-surface);
+  background-attachment: local, local, scroll, scroll, scroll;
+}
+
+@media (max-width: 600px) {
+  .ui-tabella thead th,
+  .ui-tabella tbody td {
+    padding: var(--sp-2);
+  }
+
+  .ui-tabella {
+    font-size: var(--t-sm);
+  }
+}

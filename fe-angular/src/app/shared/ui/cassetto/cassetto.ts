@@ -64,6 +64,19 @@ import { Icona } from '@shared/ui/icona/icona';
       background: var(--c-surface);
       border-left: 1px solid var(--c-line);
       box-shadow: -12px 0 32px rgb(28 26 21 / 12%);
+      padding-top: var(--safe-top);
+      padding-bottom: var(--safe-bottom);
+    }
+
+    /* Su smartphone il cassetto è la schermata: tutto lo schermo, niente
+       margine laterale da cui sbirciare. */
+    @media (max-width: 600px) {
+      .pannello {
+        left: 0;
+        width: auto !important;
+        max-width: none;
+        border-left: 0;
+      }
     }
 
     .testata {

@@ -1,5 +1,7 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 
 import { BarraLaterale } from './barra-laterale/barra-laterale';
 import { BarraSuperiore } from './barra-superiore/barra-superiore';
@@ -12,6 +14,11 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
  * navigazione sono una decina e chi usa la tastiera le attraversa a ogni
  * cambio di schermata: senza questo collegamento, arrivare al contenuto
  * costa dieci pressioni di tabulatore ogni volta.
+ *
+ * Sotto i 768px la barra laterale non ha posto accanto al contenuto: diventa
+ * un cassetto che si apre dal menu nella testata e si chiude toccando lo
+ * sfondo o navigando. Lo stato vive qui, che è l'unico posto che vede
+ * entrambe le barre.
  */
 @Component({
   selector: 'app-shell',
@@ -20,10 +27,14 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
   template: `
     <a class="salta" href="#contenuto">Salta al contenuto</a>
 
-    <app-barra-laterale />
+    <app-barra-laterale [class.is-aperta]="menuAperto()" />
+
+    @if (menuAperto()) {
+      <div class="sfondo" (click)="menuAperto.set(false)" aria-hidden="true"></div>
+    }
 
     <div class="colonna">
-      <app-barra-superiore />
+      <app-barra-superiore [menuAperto]="menuAperto()" (menu)="menuAperto.set(!menuAperto())" />
 
       <main class="contenuto" id="contenuto" tabindex="-1">
         <router-outlet />
@@ -34,6 +45,9 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
     :host {
       display: flex;
       height: 100vh;
+      /* La barra degli indirizzi di Safari e Chrome mobile si ritira allo
+         scorrimento: dvh segue quella altezza, vh no. */
+      height: 100dvh;
       overflow: hidden;
     }
 
@@ -88,6 +102,36 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
     .salta:focus {
       transform: translateY(0);
     }
+
+    /* Lo sfondo del cassetto: scuro quanto basta a dire «c'è un livello sopra». */
+    .sfondo {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .sfondo {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: calc(var(--z-overlay) - 1);
+        background: rgb(28 26 21 / 40%);
+      }
+    }
   `,
 })
-export class Shell {}
+export class Shell {
+  private readonly router = inject(Router);
+
+  readonly menuAperto = signal(false);
+
+  constructor() {
+    /* Scegliere una voce chiude il cassetto: sullo schermo piccolo la
+       navigazione è un gesto, non un pannello che resta. */
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => this.menuAperto.set(false));
+  }
+}

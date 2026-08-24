@@ -46,6 +46,14 @@ export interface VoceBriciola {
       text-transform: uppercase;
       color: var(--c-text-3);
       white-space: nowrap;
+      /* Su uno schermo stretto un percorso lungo scorre, non sfonda la testata. */
+      max-width: 100%;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    ol::-webkit-scrollbar {
+      display: none;
     }
 
     li {

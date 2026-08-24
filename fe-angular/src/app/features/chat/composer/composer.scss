@@ -175,3 +175,29 @@
 .campo__invia.is-ferma {
   background: var(--c-ink);
 }
+
+/* ---------- Dito, non mouse ---------- */
+
+@media (pointer: coarse) {
+  .campo__allega,
+  .campo__invia {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Sotto i 16px iOS ingrandisce la pagina al fuoco del campo. */
+  .campo__testo {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Con la tastiera aperta restano pochi pixel: l'editor non può prenderseli tutti. */
+  .campo__testo {
+    max-height: 32dvh;
+  }
+
+  .campo__testo ::ng-deep .riferimento {
+    max-width: 22ch;
+  }
+}

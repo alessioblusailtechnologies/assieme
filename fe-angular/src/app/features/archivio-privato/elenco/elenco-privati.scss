@@ -199,6 +199,13 @@ ui-stato-vuoto {
     align-items: stretch;
   }
 
+  /* In colonna la base flessibile diventa un'altezza: il campo di ricerca
+     torna a misurarsi sul contenuto. */
+  .filtri__ricerca {
+    flex: none;
+    min-width: 0;
+  }
+
   .filtri__campo {
     width: 100%;
   }

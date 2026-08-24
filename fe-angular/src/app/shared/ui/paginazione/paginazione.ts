@@ -56,6 +56,11 @@ import { Icona } from '@shared/ui/icona/icona';
       width: 28px;
       height: 28px;
       border: 1px solid var(--c-line);
+      /* Col dito servono 44px: il bordo resta sottile, cresce l'area toccabile. */
+      @media (pointer: coarse) {
+        width: 44px;
+        height: 44px;
+      }
       border-radius: var(--radius-sm);
       background: var(--c-surface);
       color: var(--c-text-2);

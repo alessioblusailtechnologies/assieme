@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 
@@ -19,6 +19,18 @@ import { TokenStore } from '@core/auth/token-store';
   imports: [DatePipe, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- Sotto i 768px la barra laterale è un cassetto: questo lo apre. -->
+    <button
+      type="button"
+      class="menu"
+      (click)="menu.emit()"
+      [attr.aria-expanded]="menuAperto()"
+      aria-controls="navigazione"
+      [attr.aria-label]="menuAperto() ? 'Chiudi il menu' : 'Apri il menu'"
+    >
+      <ui-icon [name]="menuAperto() ? 'chiudi' : 'menu'" [size]="18" />
+    </button>
+
     <div class="contesto">
       <!-- La voce del prodotto, sempre presente: è lei che parla in chat. -->
       <span class="saluto serif">Ciao, sono Velia.</span>
@@ -81,6 +93,67 @@ import { TokenStore } from '@core/auth/token-store';
       padding: 0 var(--sp-4);
       background: var(--c-surface);
       border-bottom: 1px solid var(--c-line);
+    }
+
+    .menu {
+      display: none;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      margin-left: calc(var(--sp-2) * -1);
+      flex: none;
+      border: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--c-text-2);
+      cursor: pointer;
+    }
+
+    .menu:hover,
+    .menu:focus-visible {
+      background: var(--c-page-alt);
+      color: var(--c-text);
+    }
+
+    @media (max-width: 768px) {
+      :host {
+        gap: var(--sp-2);
+        padding-inline: calc(var(--sp-3) + var(--safe-left)) calc(var(--sp-3) + var(--safe-right));
+        padding-top: var(--safe-top);
+        height: calc(var(--topbar-h) + var(--safe-top));
+      }
+
+      .menu {
+        display: grid;
+      }
+
+    }
+
+    /* La voce del prodotto e il ruolo: belli, ma sotto i 900px non ci
+       stanno. Il nome del tenant resta, è l'informazione che RF-B-01 vuole
+       sempre in vista. */
+    @media (max-width: 900px) {
+      .saluto,
+      .saluto + .separatore,
+      .identita__ruolo {
+        display: none;
+      }
+
+      .contesto {
+        flex: 1;
+      }
+
+      .contesto ui-icon {
+        flex: none;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .orologio,
+      .orologio + .separatore,
+      .identita {
+        display: none;
+      }
     }
 
     .contesto {
@@ -185,6 +258,11 @@ import { TokenStore } from '@core/auth/token-store';
   `,
 })
 export class BarraSuperiore {
+  /** Sotto i 768px: lo stato del cassetto, per l'icona e l'aria-expanded. */
+  readonly menuAperto = input(false);
+  /** Il tocco sul menu: la shell apre o chiude il cassetto. */
+  readonly menu = output<void>();
+
   protected readonly sessione = inject(SessioneStore);
   private readonly token = inject(TokenStore);
   private readonly router = inject(Router);

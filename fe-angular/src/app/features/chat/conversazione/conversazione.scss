@@ -390,3 +390,54 @@
     padding-inline: var(--sp-4);
   }
 }
+
+/* ---------- Tablet e smartphone ---------- */
+
+@media (max-width: 768px) {
+  /* Da compresso il contesto è una riga sopra il filo, non una stecca verticale. */
+  .contesto.is-compresso {
+    width: auto;
+    height: 40px;
+  }
+
+  .contesto__apri {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 var(--sp-4);
+  }
+
+  .contesto__verticale {
+    writing-mode: horizontal-tb;
+  }
+
+  .contesto {
+    max-height: 26vh;
+  }
+
+  .benvenuto {
+    padding: var(--sp-4);
+    align-items: flex-start;
+  }
+
+  .benvenuto__titolo {
+    font-size: clamp(1.5rem, 6vw, 2.25rem);
+  }
+}
+
+@media (max-width: 600px) {
+  .testata,
+  .filo,
+  .fondo {
+    padding-inline: var(--sp-3);
+  }
+
+  .contesto__doc {
+    max-width: 100%;
+  }
+
+  /* Tastiera aperta: il fondo resta visibile perché la shell misura in dvh
+     e il filo, non la pagina, assorbe l'altezza che manca. */
+  .fondo {
+    padding-bottom: calc(var(--sp-3) + var(--safe-bottom));
+  }
+}
