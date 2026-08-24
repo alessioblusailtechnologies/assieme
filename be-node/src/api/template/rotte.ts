@@ -150,7 +150,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
               utenteId,
             ],
           );
-          await registraStorico(client, richiesta.identita, 'creazione', `Caricato il template «${nome}»`);
+          await registraStorico(client, richiesta.identita, 'creazione', 'template', `Caricato il template «${nome}»`);
           esiti.push({
             id: f.id,
             nome,
@@ -214,6 +214,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
         client,
         richiesta.identita,
         'modifica',
+        'template',
         tipologia
           ? `«${template.nome}» è il predefinito per ${tipologia}`
           : `«${template.nome}» non è più un predefinito`,
@@ -243,6 +244,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
         client,
         richiesta.identita,
         'eliminazione',
+        'template',
         `Eliminato il template «${template.nome}»`,
       );
     });
@@ -338,6 +340,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
         client,
         richiesta.identita,
         'modifica',
+        'template',
         'Aggiornata l’identità visiva dell’agenzia',
       );
       return versoIdentita(nuova);
@@ -375,7 +378,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
          on conflict (tenant_id) do update set logo_path = excluded.logo_path, logo_tipo = excluded.logo_tipo`,
         [richiesta.identita.tenantId, percorso, tipo],
       );
-      await registraStorico(client, richiesta.identita, 'modifica', 'Caricato il logo dell’agenzia');
+      await registraStorico(client, richiesta.identita, 'modifica', 'template', 'Caricato il logo dell’agenzia');
     });
     return { logoUrl: '/api/identita-visiva/logo' };
   });
@@ -536,16 +539,18 @@ export function versoIdentitaGenerazione(riga: RigaIdentita): Omit<IdentitaGener
   return { colorePrimario: riga.colore_primario, recapiti: riga.recapiti, firma: riga.firma };
 }
 
-async function registraStorico(
+/** La voce «chi, cosa, quando» di RF-D-07: ogni mutazione delle impostazioni la scrive. */
+export async function registraStorico(
   client: pg.ClientBase,
   identita: Identita,
-  azione: 'creazione' | 'modifica' | 'eliminazione',
+  azione: 'creazione' | 'modifica' | 'attivazione' | 'disattivazione' | 'eliminazione',
+  oggetto: 'regola' | 'documento-riferimento' | 'modello' | 'template',
   descrizione: string,
 ): Promise<void> {
   await client.query(
     `insert into velia.impostazioni_storico (tenant_id, utente_id, azione, oggetto, descrizione)
-     values ($1, $2, $3, 'template', $4)`,
-    [identita.tenantId, identita.utenteId, azione, descrizione],
+     values ($1, $2, $3, $4, $5)`,
+    [identita.tenantId, identita.utenteId, azione, oggetto, descrizione],
   );
 }
 

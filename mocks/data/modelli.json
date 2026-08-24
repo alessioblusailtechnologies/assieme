@@ -2,8 +2,8 @@
   {
     "id": "mod-001",
     "provider": "Anthropic",
-    "nome": "Claude Sonnet 5",
-    "descrizione": "Il modello di riferimento della piattaforma: lettura accurata di documenti lunghi, citazioni affidabili, buon equilibrio fra qualità e tempi di risposta.",
+    "nome": "Claude Opus 5",
+    "descrizione": "Il modello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È il modello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.",
     "adeguatezzaDocumentale": "alta",
     "notaCosti": "Incluso nel canone del piano Agenzia.",
     "disponibile": true
@@ -11,28 +11,37 @@
   {
     "id": "mod-002",
     "provider": "Anthropic",
-    "nome": "Claude Haiku 4.5",
-    "descrizione": "Più rapido ed economico, adatto a domande puntuali e agli agenti ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Riduce il consumo del piano di circa un terzo.",
+    "nome": "Claude Sonnet 5",
+    "descrizione": "Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.",
+    "adeguatezzaDocumentale": "alta",
+    "notaCosti": "Riduce il consumo del piano di circa la metà.",
     "disponibile": true
   },
   {
     "id": "mod-003",
-    "provider": "OpenAI",
-    "nome": "GPT-5.2",
-    "descrizione": "Alternativa di pari livello per l'analisi documentale, con uno stile di risposta più sintetico. Utile come confronto quando una valutazione lascia dubbi.",
-    "adeguatezzaDocumentale": "alta",
-    "notaCosti": "Incluso nel canone del piano Agenzia.",
+    "provider": "Anthropic",
+    "nome": "Claude Haiku 4.5",
+    "descrizione": "Rapido ed economico, adatto a domande puntuali e agli agenti ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.",
+    "adeguatezzaDocumentale": "media",
+    "notaCosti": "Riduce il consumo del piano di circa due terzi.",
     "disponibile": true
   },
   {
     "id": "mod-004",
+    "provider": "OpenAI",
+    "nome": "GPT-5.2",
+    "descrizione": "Alternativa di pari livello per l'analisi documentale, con uno stile di risposta più sintetico. In valutazione per l'integrazione multi-provider.",
+    "adeguatezzaDocumentale": "alta",
+    "notaCosti": "In valutazione, condizioni da definire.",
+    "disponibile": false
+  },
+  {
+    "id": "mod-005",
     "provider": "Mistral",
     "nome": "Mistral Large 3",
     "descrizione": "Opzione europea con residenza dei dati nell'UE. In corso di validazione sui documenti assicurativi italiani.",
     "adeguatezzaDocumentale": "media",
-    "notaCosti": "Disponibile a breve, condizioni da definire.",
+    "notaCosti": "In valutazione, condizioni da definire.",
     "disponibile": false
   }
 ]

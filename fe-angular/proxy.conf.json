@@ -1,5 +1,5 @@
 {
-  "//": "L'ordine conta: le chiavi piu' specifiche vanno prima di /api, altrimenti le cattura tutte. Al backend vero (be-node, 3002) vanno le rotte gia' attraversate dallo switchover: sessione, documenti pubblici e privati, tassonomie, segnalazioni, etichette, spazio, conversazioni (esportazione compresa, Fase 4), suggerimenti, template e identita' visiva, tabelle (Fase 5). /api/documenti-privati DEVE precedere /api/documenti: e' un prefisso di quest'ultimo (oggi vanno entrambi al 3002, ma l'ordine resta load-bearing).",
+  "//": "L'ordine conta: le chiavi piu' specifiche vanno prima di /api, altrimenti le cattura tutte. Al backend vero (be-node, 3002) vanno le rotte gia' attraversate dallo switchover: sessione, documenti pubblici e privati, tassonomie, segnalazioni, etichette, spazio, conversazioni (esportazione compresa, Fase 4), suggerimenti, template e identita' visiva, tabelle (Fase 5), modelli (Fase 6, primo pezzo). /api/documenti-privati DEVE precedere /api/documenti: e' un prefisso di quest'ultimo (oggi vanno entrambi al 3002, ma l'ordine resta load-bearing).",
   "/api/sessione": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti-privati": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
@@ -12,7 +12,7 @@
   "/api/suggerimenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/tabelle": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/template": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
-  "/api/modelli": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
+  "/api/modelli": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/istruzioni": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/utenti": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api/identita-visiva": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
