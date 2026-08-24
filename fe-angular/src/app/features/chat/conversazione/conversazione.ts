@@ -154,8 +154,21 @@ export class Conversazione {
   /** La citazione aperta nel pannello laterale del visualizzatore. */
   protected readonly citazioneAperta = signal<Citazione | undefined>(undefined);
 
-  /** Il pannello del contesto si comprime: su un confronto largo, 300px sono lettura. */
-  protected readonly contestoCompresso = signal(false);
+  /**
+   * Il pannello del contesto si comprime: su un confronto largo, 300px sono
+   * lettura. La scelta si ricorda sul browser: chi lo chiude lo vuole chiuso
+   * anche domani — e se lo storage non c'è (finestra privata), si riparte aperti.
+   */
+  protected readonly contestoCompresso = signal(leggiContestoCompresso());
+
+  private readonly ricordaContestoCompresso = effect(() => {
+    const compresso = this.contestoCompresso();
+    try {
+      localStorage.setItem(CHIAVE_CONTESTO_COMPRESSO, compresso ? '1' : '0');
+    } catch {
+      /* senza storage la preferenza vive quanto la pagina */
+    }
+  });
 
   protected apriCitazione(citazione: Citazione): void {
     this.citazioneAperta.set(citazione);
@@ -207,5 +220,16 @@ export class Conversazione {
 
   protected usaSuggerimento(testo: string): void {
     this.store.bozza.set(testo);
+  }
+}
+
+/** La preferenza vive sul browser: è comodità di chi guarda, non stato del dominio. */
+const CHIAVE_CONTESTO_COMPRESSO = 'velia.contesto-compresso';
+
+function leggiContestoCompresso(): boolean {
+  try {
+    return localStorage.getItem(CHIAVE_CONTESTO_COMPRESSO) === '1';
+  } catch {
+    return false;
   }
 }
