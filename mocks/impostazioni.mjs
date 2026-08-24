@@ -432,7 +432,16 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         if (!formato) {
           inviaJson(res, 400, {
             codice: 'FORMATO_NON_AMMESSO',
-            messaggio: `«${f.nome}»: i template accettano PDF, DOCX, XLSX o PPTX.`,
+            messaggio: `«${f.nome}»: i template accettano PDF, DOCX o XLSX.`,
+          });
+          return true;
+        }
+        /* Come il backend (Fase 4): la generazione PPTX e' rimandata, il
+           caricamento si rifiuta con un motivo leggibile. */
+        if (formato === 'pptx') {
+          inviaJson(res, 415, {
+            codice: 'FORMATO_NON_SUPPORTATO',
+            messaggio: `«${f.nome}»: la generazione PPTX non è ancora disponibile — carica un template PDF, DOCX o XLSX.`,
           });
           return true;
         }
@@ -472,8 +481,8 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         '{{titolo}} — titolo del documento',
         '{{destinatario}} — cliente o pratica',
         '{{data}} — data di generazione',
-        '{{corpo}} — contenuto generato da VELIA',
-        '{{tabella}} — tabelle comparative, dove previste',
+        '{{contenuto}} — il testo generato da VELIA',
+        '{{fonti}} — le citazioni, in coda',
         '',
         `Intestazione e piè di pagina applicano l’identità visiva dell’agenzia:`,
         `colore ${IDENTITA.colorePrimario}, recapiti e firma configurati nelle Impostazioni.`,

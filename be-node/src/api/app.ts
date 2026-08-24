@@ -8,6 +8,7 @@ import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
 import { registraRotteSessione } from './sessione/rotte.js';
+import { registraRotteTemplate, type OpzioniTemplate } from './template/rotte.js';
 
 export interface OpzioniApp {
   logger?: boolean | object;
@@ -17,6 +18,8 @@ export interface OpzioniApp {
   archivioPrivato?: OpzioniArchivioPrivato;
   /** Nei test: Storage finto e ponte eventi condiviso per la chat. */
   conversazioni?: OpzioniConversazioni;
+  /** Nei test: Storage finto per template e identità visiva. */
+  template?: OpzioniTemplate;
 }
 
 /**
@@ -52,6 +55,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
   registraRotteConversazioni(app, opzioni.conversazioni);
+  registraRotteTemplate(app, opzioni.template);
 
   return app;
 }

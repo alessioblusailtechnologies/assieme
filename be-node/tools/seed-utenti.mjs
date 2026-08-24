@@ -120,7 +120,9 @@ const UTENTI_COLLAUDO = [
 {
   const { error } = await supabase
     .from('tenant')
-    .upsert({ id: TENANT_COLLAUDO, nome: 'Agenzia di Collaudo (test)', piano: 'agenzia' });
+    // Niente suffisso «(test)» nel nome: è l'esca delle pulizie per pattern,
+    // e questo tenant è infrastruttura durevole, non una fixture usa e getta.
+    .upsert({ id: TENANT_COLLAUDO, nome: 'Agenzia di Collaudo', piano: 'agenzia' });
   if (error) throw error;
 }
 

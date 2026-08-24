@@ -38,7 +38,11 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
 
   afterAll(async () => {
     await pool().query(`delete from velia.jobs where tipo = 'prova'`);
-    await pool().query(`delete from velia.tenant where nome like '%(test)'`);
+    // Solo i tenant creati QUI: una pulizia per nome ('%(test)') si era
+    // portata via il tenant di collaudo, utenti compresi (24/08).
+    await pool().query(`delete from velia.tenant where id = any($1)`, [
+      [creati.tenantA, creati.tenantB].filter(Boolean),
+    ]);
     await chiudiPool();
   });
 
