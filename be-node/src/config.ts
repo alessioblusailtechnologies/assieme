@@ -54,6 +54,12 @@ const schemaAmbiente = z.object({
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
+  /**
+   * Quanto silenzio del modello (nessun evento di stream) prima di chiudere
+   * la sessione con errore: una chiamata appesa su un gateway terzo non
+   * deve tenere un job «in esecuzione» per sempre.
+   */
+  MOTORE_SILENZIO_MS: z.coerce.number().int().positive().default(180_000),
   /** Dove il worker materializza workspace e cache dei documenti. */
   CARTELLA_WORKER: z.string().default('.velia-worker'),
   /** In locale; in produzione la porta la assegna la piattaforma in `PORT` (vedi server.ts). */

@@ -80,6 +80,12 @@ export interface OpzioniMotoreSdk {
   intervalloAnnullamentoMs?: number;
   /** Le chiavi dei fornitori terzi (RF-D-03): senza, solo Anthropic. */
   fornitori?: ChiaviFornitori;
+  /**
+   * Silenzio massimo del modello (nessun evento di stream) prima di chiudere
+   * con errore: una chiamata appesa su un gateway terzo non deve tenere il
+   * job «in esecuzione» per sempre. Default 3 minuti.
+   */
+  silenzioMs?: number;
 }
 
 export class MotoreAgentSdk implements Motore {
@@ -157,8 +163,18 @@ export class MotoreAgentSdk implements Motore {
 
     const sessione = query({ prompt: richiesta.promptUtente, options: opzioni });
 
-    // L'annullamento fra un passo e l'altro senza tool (es. mentre scrive la risposta).
+    /* La sentinella fa due cose fra un evento e l'altro: onora l'annullamento
+       (es. mentre il modello scrive la risposta) e misura il silenzio — un
+       gateway che non risponde più si vede solo da qui. */
+    const silenzioMs = this.opzioni.silenzioMs ?? 180_000;
+    let ultimoSegnale = Date.now();
+    let silenzio = false;
     const sentinella = setInterval(() => {
+      if (!silenzio && Date.now() - ultimoSegnale > silenzioMs) {
+        silenzio = true;
+        controllo.abort();
+        return;
+      }
       void osservatore.annullato().then((si) => {
         if (si) {
           annullato = true;
@@ -170,6 +186,7 @@ export class MotoreAgentSdk implements Motore {
     let esito: EsitoSessione | undefined;
     try {
       for await (const messaggio of sessione) {
+        ultimoSegnale = Date.now();
         if (messaggio.type === 'stream_event' && messaggio.parent_tool_use_id === null) {
           const evento = messaggio.event;
           if (evento.type === 'message_start') flusso.inizioTurno();
@@ -202,7 +219,7 @@ export class MotoreAgentSdk implements Motore {
           token: { input: 0, output: 0, cacheLettura: 0, cacheScrittura: 0 },
           documentiLetti,
         };
-      } else {
+      } else if (!silenzio) {
         throw errore;
       }
     } finally {
@@ -213,7 +230,11 @@ export class MotoreAgentSdk implements Motore {
       esito = {
         testo: flusso.testoCompleto,
         terminato: annullato ? 'annullato' : 'errore',
-        ...(!annullato && { errore: 'la sessione si è chiusa senza un risultato' }),
+        ...(!annullato && {
+          errore: silenzio
+            ? `nessun segnale dal modello ${modello} per ${Math.round(silenzioMs / 1000)} s: sessione chiusa`
+            : 'la sessione si è chiusa senza un risultato',
+        }),
         modello,
         turni: 0,
         durataMs: Date.now() - inizio,

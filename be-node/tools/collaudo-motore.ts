@@ -49,6 +49,7 @@ try {
     modello,
     maxTurni: c.MOTORE_MAX_TURNI,
     budgetUsd: c.MOTORE_BUDGET_USD,
+    silenzioMs: c.MOTORE_SILENZIO_MS,
     ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
     /* RF-D-03: un modello HostYourAI (es. zai-org/GLM-5.2) passa dallo stesso motore con endpoint e chiave del fornitore. */
     fornitori: {
