@@ -71,7 +71,11 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     await aspettaAllegati(db, conversazione.documenti_in_contesto, attesaAllegati, emetti, annullato);
     if (await annullato()) return;
 
-    await emetti({ tipo: 'attivita', etichetta: 'Preparo i documenti' });
+    /* Il passo si racconta solo se c'è qualcosa da raccogliere: per un
+       saluto senza documenti non c'è nessun «preparo» da mostrare. */
+    if (conversazione.documenti_in_contesto.length) {
+      await emetti({ tipo: 'attivita', etichetta: 'Raccolgo i documenti della conversazione' });
+    }
     let workspace: Workspace | undefined;
     try {
       workspace = await materializzaWorkspace({
@@ -112,6 +116,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       const esito = await dip.motore.interroga(
         {
           directory: workspace.directory,
+          titoloPer: (path) => workspace!.perPath.get(path)?.titolo,
           promptSistema: promptSistema(dna),
           promptUtente: promptUtente({
             documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),

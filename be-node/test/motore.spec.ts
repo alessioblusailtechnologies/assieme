@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { MARCATORE_CITAZIONI, promptSistema, promptUtente, type DnaAgenzia } from '../src/worker/motore/regole.js';
-import { dentro, etichettaAttivita } from '../src/worker/motore/sessione.js';
+import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import {
   ErroreValidazione,
   limiteInoltro,
@@ -225,11 +225,41 @@ describe('workspace e sessione, le parti pure', () => {
     expect(dentro(radice, '\\prova.md')).toBe(true); // il Read a volte scrive così: è la radice
   });
 
-  it('le etichette delle attività parlano all’utente', () => {
+  it('le etichette delle attività parlano all’utente: titoli, mai file né sintassi', () => {
     const radice = process.platform === 'win32' ? 'C:\\ws\\job' : '/ws/job';
-    expect(etichettaAttivita('Grep', { pattern: 'cristalli', path: 'archivio-pubblico/u/dip.md' }, radice)).toBe('Cerco «cristalli» in dip.md');
-    expect(etichettaAttivita('Read', { file_path: 'tenant/documenti/p/rossi--x.md', offset: 120 }, radice)).toBe('Leggo rossi--x.md dalla riga 120');
-    expect(etichettaAttivita('Glob', { pattern: '**/INDICE.md' }, radice)).toBe('Cerco i documenti **/INDICE.md');
+    const titoli = new Map([
+      ['archivio-pubblico/u/dip.md', 'DIP Danni — UnipolSai Km&Servizi'],
+      ['tenant/documenti/p/rossi--x.md', 'Preventivo Rossi'],
+    ]);
+    const titoloPer = (p: string) => titoli.get(p);
+    expect(etichettaAttivita('Grep', { pattern: 'cristalli', path: 'archivio-pubblico/u/dip.md' }, radice, titoloPer)).toBe(
+      'Cerco «cristalli» in «DIP Danni — UnipolSai Km&Servizi»',
+    );
+    expect(etichettaAttivita('Grep', { pattern: '[Ff]urto|[Rr]apina' }, radice, titoloPer)).toBe(
+      'Cerco «furto, rapina» negli archivi',
+    );
+    expect(etichettaAttivita('Grep', { pattern: '^\\[pag\\. (9[0-9])\\]', path: 'archivio-pubblico/u/dip.md' }, radice, titoloPer)).toBe(
+      'Cerco nel testo in «DIP Danni — UnipolSai Km&Servizi»',
+    );
+    expect(etichettaAttivita('Read', { file_path: 'tenant/documenti/p/rossi--x.md', offset: 120 }, radice, titoloPer)).toBe(
+      'Continuo a leggere «Preventivo Rossi»',
+    );
+    expect(etichettaAttivita('Read', { file_path: 'archivio-pubblico/u/INDICE.md' }, radice, titoloPer)).toBe(
+      'Consulto l’indice dell’archivio',
+    );
+    expect(etichettaAttivita('Read', { file_path: 'sconosciuto.md' }, radice, titoloPer)).toBe('Leggo un documento');
+    expect(etichettaAttivita('Glob', { pattern: '**/*.md' }, radice, titoloPer)).toBe(
+      'Guardo quali documenti ci sono in archivio',
+    );
+  });
+
+  it('semplificaPattern: classi di maiuscole sciolte, alternative a virgole, regex intraducibili scartate', () => {
+    expect(semplificaPattern('[Ff]ranchigia|[Ss]coperto')).toBe('franchigia, scoperto');
+    expect(semplificaPattern('Art\\. 3\\.5\\.7')).toBe('Art. 3.5.7');
+    expect(semplificaPattern('massimale')).toBe('massimale');
+    expect(semplificaPattern('^\\[pag\\. \\d+\\]')).toBeUndefined();
+    expect(semplificaPattern('(a|b){2,}')).toBeUndefined();
+    expect(semplificaPattern('')).toBeUndefined();
   });
 
   it('titoloDaMessaggio: 60 caratteri al confine di parola, con i puntini', () => {

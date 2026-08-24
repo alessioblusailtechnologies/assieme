@@ -33,6 +33,12 @@ export interface RichiestaMotore {
   directory: string;
   promptSistema: string;
   promptUtente: string;
+  /**
+   * Il titolo del documento per un path relativo della workspace: le
+   * attività parlano all'utente coi titoli che conosce, mai coi nomi dei
+   * file — che sono architettura, non contenuto.
+   */
+  titoloPer?: (pathRelativo: string) => string | undefined;
 }
 
 export interface OsservatoreSessione {
@@ -113,7 +119,7 @@ export class MotoreAgentSdk implements Motore {
       }
       await osservatore.passo({
         tipo: 'attivita',
-        etichetta: etichettaAttivita(input.tool_name, argomenti, radice),
+        etichetta: etichettaAttivita(input.tool_name, argomenti, radice, richiesta.titoloPer),
         strumento: input.tool_name,
         dettaglio: argomenti,
       });
@@ -270,27 +276,70 @@ function relativoPosix(radice: string, percorso: string): string {
   return relative(resolve(radice), assolutoIn(radice, percorso)).split(sep).join('/');
 }
 
-/** Le etichette che l'utente legge mentre il motore lavora. */
-export function etichettaAttivita(tool: string, input: Record<string, unknown>, radice: string): string {
-  const nome = (p: unknown): string => {
-    if (typeof p !== 'string' || !p) return '';
+/**
+ * Le etichette che l'utente legge mentre il motore lavora: parlano di
+ * documenti e ricerche, mai di file, indici o sintassi — quelli sono
+ * architettura, e l'utente non deve vederla.
+ */
+export function etichettaAttivita(
+  tool: string,
+  input: Record<string, unknown>,
+  radice: string,
+  titoloPer?: (pathRelativo: string) => string | undefined,
+): string {
+  const documento = (p: unknown): { indice: boolean; titolo?: string } => {
+    if (typeof p !== 'string' || !p) return { indice: false };
     const rel = relativoPosix(radice, p);
-    return rel.split('/').pop() ?? rel;
+    if (/(^|\/)INDICE\.md$/i.test(rel)) return { indice: true };
+    const titolo = titoloPer?.(rel);
+    return { indice: false, ...(titolo && { titolo: accorcia(titolo, 70) }) };
   };
-  const testo = (v: unknown): string => (typeof v === 'string' ? v : '');
   switch (tool) {
     case 'Grep': {
-      const dove = nome(input['path']);
-      return `Cerco «${testo(input['pattern'])}»${dove ? ` in ${dove}` : ' nei documenti'}`;
+      const dove = documento(input['path']);
+      const termini = semplificaPattern(input['pattern']);
+      const oggetto = termini ? `«${termini}»` : 'nel testo';
+      if (dove.indice) return `Consulto l’indice dell’archivio`;
+      return dove.titolo ? `Cerco ${oggetto} in «${dove.titolo}»` : `Cerco ${oggetto} negli archivi`;
     }
     case 'Glob':
-      return `Cerco i documenti ${testo(input['pattern'])}`;
+      return 'Guardo quali documenti ci sono in archivio';
     case 'Read': {
-      const file = nome(input['file_path']);
-      const offset = input['offset'];
-      return `Leggo ${file}${typeof offset === 'number' && offset > 1 ? ` dalla riga ${offset}` : ''}`;
+      const cosa = documento(input['file_path']);
+      if (cosa.indice) return 'Consulto l’indice dell’archivio';
+      const oltre = typeof input['offset'] === 'number' && input['offset'] > 1;
+      if (!cosa.titolo) return oltre ? 'Continuo a leggere' : 'Leggo un documento';
+      return `${oltre ? 'Continuo a leggere' : 'Leggo'} «${cosa.titolo}»`;
     }
     default:
-      return `Uso ${tool}`;
+      return 'Sto lavorando alla risposta';
   }
+}
+
+/**
+ * Da un pattern di ricerca ai termini che l'utente riconosce: le classi
+ * `[Ff]urto` tornano parole, gli `|` diventano virgole, gli ancoraggi
+ * spariscono. Se resta sintassi che non si sa tradurre, meglio niente che
+ * un'espressione regolare in faccia all'utente.
+ */
+export function semplificaPattern(pattern: unknown): string | undefined {
+  if (typeof pattern !== 'string' || !pattern.trim()) return undefined;
+  const termini = pattern
+    .replace(/\[([A-Za-zÀ-ÿ])([A-Za-zÀ-ÿ])\]/g, (tutto, a: string, b: string) =>
+      a.toLowerCase() === b.toLowerCase() ? a.toLowerCase() : tutto,
+    )
+    .replace(/\\([.\-()€])/g, '$1')
+    .replace(/\\[bBdsSwW]/g, ' ')
+    .replace(/[\^$]/g, '')
+    .replace(/\.[*+?]/g, ' ')
+    .replace(/\s*\|\s*/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!termini || /[\\[\]{}()*+?^$]/.test(termini)) return undefined;
+  return accorcia(termini, 60);
+}
+
+function accorcia(testo: string, n: number): string {
+  const pulito = testo.replace(/\s+/g, ' ').trim();
+  return pulito.length <= n ? pulito : `${pulito.slice(0, n - 1).trimEnd()}…`;
 }

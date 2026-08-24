@@ -57,6 +57,7 @@ try {
   const esito = await motore.interroga(
     {
       directory: ws.directory,
+      titoloPer: (path) => ws.perPath.get(path)?.titolo,
       promptSistema: promptSistema(dna),
       promptUtente: promptUtente({ documenti: [], mancanti: [], storia: [], domanda }),
     },
