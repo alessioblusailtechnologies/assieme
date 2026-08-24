@@ -27,6 +27,24 @@
     "disponibile": true
   },
   {
+    "id": "mod-006",
+    "provider": "HostYourAI (UE)",
+    "nome": "GLM 5.2",
+    "descrizione": "Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
+    "adeguatezzaDocumentale": "media",
+    "notaCosti": "Tariffa HostYourAI: circa 1,7 € per milione di token.",
+    "disponibile": true
+  },
+  {
+    "id": "mod-007",
+    "provider": "HostYourAI (UE)",
+    "nome": "Kimi K3",
+    "descrizione": "Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
+    "adeguatezzaDocumentale": "media",
+    "notaCosti": "Tariffa HostYourAI: circa 3,2 € per milione di token.",
+    "disponibile": true
+  },
+  {
     "id": "mod-004",
     "provider": "OpenAI",
     "nome": "GPT-5.2",

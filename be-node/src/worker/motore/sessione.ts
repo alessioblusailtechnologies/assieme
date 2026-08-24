@@ -8,6 +8,7 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 
 import { FlussoTesto } from './flusso-testo.js';
+import { ambienteModello, costoATariffa, type ChiaviFornitori } from './fornitori.js';
 
 /**
  * La sessione del motore (doc motore §2, piano §4.3): l'Agent SDK — lo
@@ -77,6 +78,8 @@ export interface OpzioniMotoreSdk {
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
   /** Ogni quanto si controlla l'annullamento fra un messaggio e l'altro. */
   intervalloAnnullamentoMs?: number;
+  /** Le chiavi dei fornitori terzi (RF-D-03): senza, solo Anthropic. */
+  fornitori?: ChiaviFornitori;
 }
 
 export class MotoreAgentSdk implements Motore {
@@ -85,6 +88,7 @@ export class MotoreAgentSdk implements Motore {
   async interroga(richiesta: RichiestaMotore, osservatore: OsservatoreSessione): Promise<EsitoSessione> {
     const inizio = Date.now();
     const modello = richiesta.modello ?? this.opzioni.modello;
+    const fornitore = ambienteModello(modello, this.opzioni.fornitori ?? {});
     const radice = resolve(richiesta.directory);
     const controllo = new AbortController();
     const documentiLetti: string[] = [];
@@ -135,7 +139,8 @@ export class MotoreAgentSdk implements Motore {
     const opzioni: Options = {
       cwd: radice,
       model: modello,
-      ...(this.opzioni.effort && { effort: this.opzioni.effort }),
+      ...(fornitore.env && { env: fornitore.env }),
+      ...(this.opzioni.effort && !fornitore.terzo && { effort: this.opzioni.effort }),
       systemPrompt: richiesta.promptSistema,
       tools: ['Read', 'Grep', 'Glob'],
       allowedTools: ['Read', 'Grep', 'Glob'],
@@ -174,7 +179,15 @@ export class MotoreAgentSdk implements Motore {
             await flusso.fineTurno(evento.delta.stop_reason);
           }
         } else if (messaggio.type === 'result') {
-          esito = this.esitoDa(messaggio, flusso.testoCompleto, documentiLetti, inizio, annullato, modello);
+          esito = this.esitoDa(
+            messaggio,
+            flusso.testoCompleto,
+            documentiLetti,
+            inizio,
+            annullato,
+            modello,
+            fornitore.tariffaUsdPerMilione,
+          );
         }
       }
     } catch (errore) {
@@ -219,6 +232,7 @@ export class MotoreAgentSdk implements Motore {
     inizio: number,
     annullato: boolean,
     modello: string,
+    tariffa?: number,
   ): EsitoSessione {
     const token = {
       input: m.usage.input_tokens,
@@ -230,7 +244,8 @@ export class MotoreAgentSdk implements Motore {
       modello,
       turni: m.num_turns,
       durataMs: Date.now() - inizio,
-      costoUsd: m.total_cost_usd,
+      /* Un fornitore terzo non è nel listino dell'SDK: il costo si calcola alla tariffa del catalogo. */
+      costoUsd: tariffa !== undefined ? costoATariffa(token, tariffa) : m.total_cost_usd,
       token,
       documentiLetti,
     };

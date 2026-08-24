@@ -3,7 +3,7 @@ import type { FastifyInstance } from 'fastify';
 import { configurazione } from '../../config.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import {
-  CATALOGO_MODELLI,
+  catalogoModelli,
   modelloAttivo,
   schemaSceltaModello,
   versoModello,
@@ -25,7 +25,10 @@ import { registraStorico } from '../template/rotte.js';
  */
 export function registraRotteModelli(app: FastifyInstance): void {
   /** RF-D-03: i modelli offerti dalla piattaforma, disponibili e non. */
-  app.get('/api/modelli', () => CATALOGO_MODELLI.map(versoModello));
+  /** Le voci HostYourAI (RF-D-03) sono selezionabili solo con la chiave in .env: il catalogo dice la verità. */
+  const catalogo = () => catalogoModelli({ hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY) });
+
+  app.get('/api/modelli', () => catalogo().map(versoModello));
 
   app.get('/api/modelli/attivo', async (richiesta) => {
     const scelta = await sceltaDelTenant(richiesta.identita.tenantId);
@@ -38,12 +41,14 @@ export function registraRotteModelli(app: FastifyInstance): void {
     const esito = schemaSceltaModello.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Indica il modello da attivare.');
 
-    const modello = CATALOGO_MODELLI.find((m) => m.id === esito.data.modelloId);
+    const modello = catalogo().find((m) => m.id === esito.data.modelloId);
     if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
     if (!modello.disponibile || !modello.sdk) {
       throw ErroreApi.conflitto(
         'NON_DISPONIBILE',
-        `${modello.nome} non è ancora disponibile sulla piattaforma.`,
+        modello.fornitore === 'hostyourai'
+          ? `${modello.nome} richiede la chiave HostYourAI della piattaforma, non ancora configurata.`
+          : `${modello.nome} non è ancora disponibile sulla piattaforma.`,
       );
     }
 

@@ -13,6 +13,7 @@ import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { EstrattoreMotore } from './memoria/estrattore.js';
 import { creaGestoreMemoria } from './memoria/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
+import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
@@ -44,6 +45,11 @@ let agenteVero: GestoreJob | undefined;
 let memoriaVera: GestoreJob | undefined;
 let estrattoreVero: EstrattoreMotore | undefined;
 
+/** Le chiavi dei fornitori terzi (RF-D-03), lette una volta dalla configurazione. */
+const fornitori = (c: ReturnType<typeof configurazione>): ChiaviFornitori => ({
+  hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+});
+
 /** La memoria (Fase 8) usa lo stesso motore della chat, col modello del tenant: pochi turni, nessun documento. */
 function estrattoreMemoria(): EstrattoreMotore {
   if (!estrattoreVero) {
@@ -53,6 +59,7 @@ function estrattoreMemoria(): EstrattoreMotore {
         modello: c.MODELLO_MOTORE,
         maxTurni: 4,
         budgetUsd: c.MOTORE_BUDGET_USD,
+        fornitori: fornitori(c),
         ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
       }),
       resolve(c.CARTELLA_WORKER),
@@ -80,6 +87,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
           modello: c.MODELLO_MOTORE,
           maxTurni: c.MOTORE_MAX_TURNI,
           budgetUsd: c.MOTORE_BUDGET_USD,
+          fornitori: fornitori(c),
           ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
         }),
         archivio: new ArchivioStorage(),
@@ -101,6 +109,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
           modello: c.MODELLO_MOTORE,
           maxTurni: c.MOTORE_MAX_TURNI,
           budgetUsd: c.MOTORE_BUDGET_USD,
+          fornitori: fornitori(c),
           ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
         }),
         archivio: new ArchivioStorage(),
@@ -119,6 +128,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
           modello: c.MODELLO_TABELLE ?? c.MODELLO_MOTORE,
           maxTurni: c.MOTORE_MAX_TURNI,
           budgetUsd: c.MOTORE_BUDGET_USD,
+          fornitori: fornitori(c),
           ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
         }),
         archivio: new ArchivioStorage(),

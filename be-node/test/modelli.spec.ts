@@ -47,7 +47,12 @@ describe('le rotte', () => {
       'Claude Sonnet 5',
       'Claude Haiku 4.5',
     ]);
-    expect(modelli.filter((m) => !m.disponibile).map((m) => m.provider)).toEqual(['OpenAI', 'Mistral']);
+    /* Le voci HostYourAI seguono la chiave in .env: senza, sono schede; con, si scelgono. */
+    expect(modelli.filter((m) => !m.disponibile && m.provider !== 'HostYourAI (UE)').map((m) => m.provider)).toEqual([
+      'OpenAI',
+      'Mistral',
+    ]);
+    expect(modelli.filter((m) => m.provider === 'HostYourAI (UE)').map((m) => m.nome)).toEqual(['GLM 5.2', 'Kimi K3']);
   });
 
   it('PUT: 403 per l’operatore, 400 senza modello, 404 sull’ignoto, 409 sul non disponibile', async () => {

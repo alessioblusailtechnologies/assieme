@@ -43,6 +43,14 @@ const schemaAmbiente = z.object({
    * quando i numeri di `consumi` lo giustificano.
    */
   MODELLO_TABELLE: z.string().optional(),
+  /**
+   * Modelli open hostati in Europa via HostYourAI (API Anthropic-compatibili,
+   * RF-D-03): con la chiave, le voci HostYourAI del catalogo diventano
+   * selezionabili e il motore le chiama con la stessa sessione, cambiando
+   * solo endpoint e chiave. Senza, restano schede informative.
+   */
+  HOSTYOURAI_API_KEY: z.string().optional(),
+  HOSTYOURAI_BASE_URL: z.string().url().default('https://hostyourai.com'),
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),

@@ -19,10 +19,20 @@ export interface ModelloAI {
   disponibile: boolean;
 }
 
+/** Chi serve davvero il modello: Anthropic diretta, o HostYourAI (API Anthropic-compatibili, datacenter UE). */
+export type Fornitore = 'anthropic' | 'hostyourai';
+
 /** La voce di catalogo con l'id del modello per l'SDK (non esce dall'API). */
 export interface VoceCatalogo extends ModelloAI {
   /** Assente per i provider non ancora integrati. */
   sdk?: string;
+  fornitore?: Fornitore;
+  /**
+   * Per i fornitori terzi l'SDK non sa il prezzo: il costo in  si
+   * calcola dai token con questa tariffa (per milione, input e output
+   * insieme, come la espone il listino HostYourAI, in euro ≈ dollari).
+   */
+  tariffaUsdPerMilione?: number;
 }
 
 export const CATALOGO_MODELLI: VoceCatalogo[] = [
@@ -31,6 +41,7 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     provider: 'Anthropic',
     nome: 'Claude Opus 5',
     sdk: 'claude-opus-5',
+    fornitore: 'anthropic',
     descrizione:
       'Il modello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È il modello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.',
     adeguatezzaDocumentale: 'alta',
@@ -42,6 +53,7 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     provider: 'Anthropic',
     nome: 'Claude Sonnet 5',
     sdk: 'claude-sonnet-5',
+    fornitore: 'anthropic',
     descrizione:
       'Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.',
     adeguatezzaDocumentale: 'alta',
@@ -53,10 +65,37 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     provider: 'Anthropic',
     nome: 'Claude Haiku 4.5',
     sdk: 'claude-haiku-4-5-20251001',
+    fornitore: 'anthropic',
     descrizione:
       'Rapido ed economico, adatto a domande puntuali e automazioni ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.',
     adeguatezzaDocumentale: 'media',
     notaCosti: 'Riduce il consumo del piano di circa due terzi.',
+    disponibile: true,
+  },
+  {
+    id: 'mod-glm-5-2',
+    provider: 'HostYourAI (UE)',
+    nome: 'GLM 5.2',
+    sdk: 'zai-org/GLM-5.2',
+    fornitore: 'hostyourai',
+    tariffaUsdPerMilione: 1.73,
+    descrizione:
+      'Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti: 'Tariffa HostYourAI: circa 1,7 € per milione di token.',
+    disponibile: true,
+  },
+  {
+    id: 'mod-kimi-k3',
+    provider: 'HostYourAI (UE)',
+    nome: 'Kimi K3',
+    sdk: 'moonshotai/Kimi-K3',
+    fornitore: 'hostyourai',
+    tariffaUsdPerMilione: 3.17,
+    descrizione:
+      'Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti: 'Tariffa HostYourAI: circa 3,2 € per milione di token.',
     disponibile: true,
   },
   {
@@ -81,10 +120,27 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
   },
 ];
 
-/** La forma pubblica: l'id SDK resta un dettaglio del backend. */
+/**
+ * Il catalogo come sta davvero: una voce HostYourAI è selezionabile solo se
+ * la chiave è configurata — il catalogo dice la verità (Fase 6).
+ */
+export function catalogoModelli(chiaviPresenti: { hostyourai: boolean }): VoceCatalogo[] {
+  return CATALOGO_MODELLI.map((m) =>
+    m.fornitore === 'hostyourai' && !chiaviPresenti.hostyourai ? { ...m, disponibile: false } : m,
+  );
+}
+
+/** La voce di catalogo per un id SDK (anche fuori catalogo: allora undefined). */
+export function vocePerSdk(sdk: string): VoceCatalogo | undefined {
+  return CATALOGO_MODELLI.find((m) => m.sdk === sdk);
+}
+
+/** La forma pubblica: l'id SDK, il fornitore e la tariffa restano dettagli del backend. */
 export function versoModello(voce: VoceCatalogo): ModelloAI {
-  const pubblico = { ...voce };
+  const pubblico: VoceCatalogo = { ...voce };
   delete pubblico.sdk;
+  delete pubblico.fornitore;
+  delete pubblico.tariffaUsdPerMilione;
   return pubblico;
 }
 
