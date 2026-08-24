@@ -143,9 +143,41 @@
       messaggio. Colonna a destra, sempre in vista: l'utente deve sapere su
       quali documenti l'assistente sta ragionando — e poterli togliere.
     -->
-    <aside class="contesto" aria-label="Contesto documentale della conversazione">
-      <p class="mono contesto__etichetta">Contesto</p>
-      @if (contesto().length) {
+    <aside
+      class="contesto"
+      [class.is-compresso]="contestoCompresso()"
+      aria-label="Contesto documentale della conversazione"
+    >
+      @if (contestoCompresso()) {
+        <!-- Compresso: una stecca stretta che dice cosa c'è e si riapre con un gesto. -->
+        <button
+          type="button"
+          class="contesto__apri"
+          (click)="contestoCompresso.set(false)"
+          aria-expanded="false"
+          aria-label="Mostra il contesto documentale"
+          title="Mostra il contesto"
+        >
+          <ui-icon name="comprimi-barra" [size]="15" class="contesto__freccia" />
+          <span class="mono contesto__verticale">
+            Contesto{{ contesto().length ? ' · ' + contesto().length : '' }}
+          </span>
+        </button>
+      } @else {
+        <div class="contesto__testata">
+          <p class="mono contesto__etichetta">Contesto</p>
+          <button
+            type="button"
+            class="contesto__chiudi"
+            (click)="contestoCompresso.set(true)"
+            aria-expanded="true"
+            aria-label="Nascondi il contesto documentale"
+            title="Nascondi il contesto"
+          >
+            <ui-icon name="comprimi-barra" [size]="14" class="contesto__freccia" />
+          </button>
+        </div>
+        @if (contesto().length) {
         <ul class="contesto__elenco">
           @for (doc of contesto(); track doc.id) {
             <li class="contesto__doc">
@@ -171,11 +203,12 @@
             </li>
           }
         </ul>
-      } @else {
-        <p class="contesto__nessuno">
-          Nessun documento. Referenzia con «@» dal campo del messaggio: le risposte diventano
-          fondate e citabili.
-        </p>
+        } @else {
+          <p class="contesto__nessuno">
+            Nessun documento. Referenzia con «@» dal campo del messaggio: le risposte diventano
+            fondate e citabili.
+          </p>
+        }
       }
     </aside>
   </div>

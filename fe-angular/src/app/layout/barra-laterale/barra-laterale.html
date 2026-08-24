@@ -125,10 +125,9 @@
   class="comprimi"
   (click)="compressa.set(!compressa())"
   [attr.aria-label]="compressa() ? 'Espandi la barra laterale' : 'Comprimi la barra laterale'"
+  [attr.title]="compressa() ? 'Espandi la barra laterale' : 'Comprimi la barra laterale'"
   [attr.aria-expanded]="!compressa()"
 >
+  <!-- Solo l'icona: il gesto si spiega da sé, la parola era rumore. -->
   <ui-icon name="comprimi-barra" [size]="16" />
-  @if (!compressa()) {
-    <span>Comprimi</span>
-  }
 </button>

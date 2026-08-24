@@ -154,6 +154,9 @@ export class Conversazione {
   /** La citazione aperta nel pannello laterale del visualizzatore. */
   protected readonly citazioneAperta = signal<Citazione | undefined>(undefined);
 
+  /** Il pannello del contesto si comprime: su un confronto largo, 300px sono lettura. */
+  protected readonly contestoCompresso = signal(false);
+
   protected apriCitazione(citazione: Citazione): void {
     this.citazioneAperta.set(citazione);
   }
