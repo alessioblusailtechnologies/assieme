@@ -102,7 +102,14 @@ export class Conversazione {
     this.seguiFondo = el.scrollHeight - el.scrollTop - el.clientHeight < SOGLIA_FONDO_PX;
   }
 
-  protected readonly contesto = computed(() => this.store.attiva()?.documentiInContesto ?? []);
+  protected readonly contesto = computed(() => {
+    /* Il contesto dell'elenco più i riferimenti del messaggio in volo: il
+       server li ha già aggiunti, ma l'elenco si ricarica a fine stream — e
+       intanto i chip del messaggio appena inviato devono avere un titolo. */
+    const noti = this.store.attiva()?.documentiInContesto ?? [];
+    const presenti = new Set(noti.map((d) => d.id));
+    return [...noti, ...this.store.riferimentiInVolo().filter((d) => !presenti.has(d.id))];
+  });
   protected readonly idContesto = computed(() => this.contesto().map((d) => d.id));
 
   // --- Rinomina (RF-C-01) -------------------------------------------------

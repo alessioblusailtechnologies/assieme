@@ -92,10 +92,13 @@ describe('FlussoTesto: cosa vede l’utente e cosa legge il validatore', () => {
     }
     await flusso.fineTurno('end_turn');
     expect(testo()).toBe('La franchigia è € 200 *(DIP, pag. 3)*. Altre righe di risposta qui.');
-    expect(passi.every((p) => p.tipo === 'testo')).toBe(true);
     expect(flusso.testoVisibile).toBe(testo());
     expect(flusso.testoCompleto).toContain(MARCATORE_CITAZIONI);
     expect(flusso.testoCompleto.startsWith(flusso.testoVisibile)).toBe(true);
+    /* Quando comincia il blocco, l'utente lo sa — e l'annuncio arriva DOPO
+       l'ultimo testo, così nessun delta successivo lo spegne. */
+    expect(passi.at(-1)).toEqual({ tipo: 'attivita', testo: 'Raccolgo le fonti della risposta' });
+    expect(passi.filter((p) => p.tipo === 'attivita')).toHaveLength(1);
   });
 
   it('un testo breve prima di un tool è narrazione → attività; uno lungo è già risposta', async () => {
@@ -114,13 +117,14 @@ describe('FlussoTesto: cosa vede l’utente e cosa legge il validatore', () => {
     expect(flusso.testoVisibile).toBe('Una risposta che supera la soglia di quaranta caratteri e continua ancora.\n\nFine.');
   });
 
-  it('una risposta sotto soglia arriva tutta a fine turno, e il blocco non passa mai', async () => {
-    const { flusso, testo } = registratore();
+  it('una risposta sotto soglia parte appena compare il blocco, che non passa mai', async () => {
+    const { flusso, passi, testo } = registratore();
     flusso.inizioTurno();
     await flusso.delta(`Sì.\n${MARCATORE_CITAZIONI}\n{"citazioni":[],"nonSupportato":true}\n\`\`\``);
     await flusso.fineTurno('end_turn');
     expect(testo()).toBe('Sì.');
     expect(flusso.testoCompleto).toContain('"nonSupportato":true');
+    expect(passi.map((p) => p.tipo)).toEqual(['testo', 'attivita']);
   });
 });
 

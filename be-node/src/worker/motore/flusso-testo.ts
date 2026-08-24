@@ -1,3 +1,4 @@
+import { MARCATORE_CITAZIONI } from './regole.js';
 import { limiteInoltro } from './validazione.js';
 
 export type PassoTesto =
@@ -29,6 +30,7 @@ export class FlussoTesto {
   private inviato = 0;
   private inStreaming = false;
   private coda = '';
+  private fontiAnnunciate = false;
 
   constructor(
     private readonly emetti: (p: PassoTesto) => Promise<void>,
@@ -49,10 +51,23 @@ export class FlussoTesto {
     this.inviato = 0;
     this.inStreaming = false;
     this.coda = '';
+    this.fontiAnnunciate = false;
   }
 
   async delta(testo: string): Promise<void> {
     this.buffer += testo;
+    /* Il marcatore dice due cose: questo è l'ultimo turno (si inoltra tutto
+       il visibile, anche sotto soglia) e da qui in poi il modello scrive il
+       blocco delle citazioni, che l'utente non vede — senza un'attività
+       sembrerebbe tutto fermo. L'annuncio va DOPO l'ultimo testo: un testo
+       successivo lo spegnerebbe. */
+    if (!this.fontiAnnunciate && this.buffer.includes(MARCATORE_CITAZIONI)) {
+      this.fontiAnnunciate = true;
+      this.inStreaming = true;
+      await this.inoltra(limiteInoltro(this.buffer));
+      await this.emetti({ tipo: 'attivita', etichetta: 'Raccolgo le fonti della risposta' });
+      return;
+    }
     if (this.inStreaming || this.buffer.length >= this.soglia) {
       this.inStreaming = true;
       await this.inoltra(limiteInoltro(this.buffer));

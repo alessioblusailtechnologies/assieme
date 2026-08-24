@@ -36,6 +36,15 @@
         ></div>
       }
 
+      @if (m.testo && m.inCorso && m.attivita) {
+        <!-- Il motore lavora ancora dopo il testo (raccoglie le fonti): si vede, non si tace. -->
+        <p class="attesa" aria-live="polite">
+          <span class="attesa__punto"></span><span class="attesa__punto"></span
+          ><span class="attesa__punto"></span>
+          <span class="attesa__testo">{{ m.attivita }}</span>
+        </p>
+      }
+
       @if (m.erroreStream) {
         <p class="errore-stream">
           <ui-icon name="errore" [size]="14" />

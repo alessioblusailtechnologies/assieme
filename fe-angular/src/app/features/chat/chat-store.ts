@@ -44,6 +44,12 @@ interface StreamAttivo {
   conversazioneId: Id;
   utente: Messaggio;
   assistente?: MessaggioInStream;
+  /**
+   * I documenti referenziati col messaggio in volo: il server li ha già
+   * messi nel contesto, ma l'elenco locale si ricarica solo a fine stream —
+   * finché dura, i titoli dei chip si risolvono da qui.
+   */
+  riferimenti: RiferimentoDocumento[];
 }
 
 /**
@@ -187,6 +193,9 @@ export class ChatStore {
   /** RF-C-02: i documenti scelti col selettore `@`, in attesa dell'invio. */
   readonly riferimentiBozza = signal<RiferimentoDocumento[]>([]);
 
+  /** I riferimenti del messaggio in volo: contesto già vero sul server, non ancora nell'elenco locale. */
+  readonly riferimentiInVolo = computed(() => this.streamAttivo()?.riferimenti ?? []);
+
   aggiungiRiferimento(documento: RiferimentoDocumento): void {
     this.riferimentiBozza.update((r) =>
       r.some((d) => d.id === documento.id) ? r : [...r, documento],
@@ -284,6 +293,7 @@ export class ChatStore {
         citazioni: [],
         provenienze: [],
       },
+      riferimenti,
     };
     this.streamAttivo.set(stream);
 
@@ -327,7 +337,9 @@ export class ChatStore {
         this.aggiornaAssistente((m) => ({ ...m, attivita: evento.etichetta }));
         break;
       case 'testo':
-        this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + evento.delta }));
+        /* Il testo azzera l'attività: se il motore torna a lavorare (per
+           esempio a raccogliere le fonti) lo dirà con un'attività nuova. */
+        this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + evento.delta, attivita: undefined }));
         break;
       case 'citazione':
         this.aggiornaAssistente((m) => ({ ...m, citazioni: [...m.citazioni, evento.citazione] }));
