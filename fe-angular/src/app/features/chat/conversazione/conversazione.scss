@@ -83,26 +83,37 @@
   white-space: nowrap;
 }
 
-.testata__stacco {
-  flex: none;
-  width: 1px;
-  height: 16px;
-  background: var(--c-line);
-}
-
-/* I metadati stanno al margine: presenti, mai protagonisti. */
-.testata__meta {
+/* Le azioni a destra: fantasma finché non servono, come nel resto dell'app. */
+.testata__azioni {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
   margin-left: auto;
-  font-size: var(--t-mono);
-  color: var(--c-text-mute);
-  white-space: nowrap;
 }
 
-.testata__meta-stacco {
-  color: var(--c-text-ghost);
+.testata__azione {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.testata__azione:hover,
+.testata__azione:focus-visible {
+  color: var(--c-text);
+  background: var(--c-page-alt);
+}
+
+/* Condivisa: il pulsante porta lo stato, senza badge accanto. */
+.testata__azione.is-attiva {
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
 }
 
 /* ---------- Corpo: conversazione a sinistra, contesto a destra ---------- */

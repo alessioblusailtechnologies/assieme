@@ -10,17 +10,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { BollaMessaggio } from './bolla-messaggio';
-import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
-import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { ChatStore } from '../chat-store';
-import { Citazione } from '@core/models';
+import { Citazione, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -44,11 +41,8 @@ const SOGLIA_FONDO_PX = 120;
 @Component({
   selector: 'app-conversazione',
   imports: [
-    Badge,
     BollaMessaggio,
     Bottone,
-    Briciole,
-    DatePipe,
     Cassetto,
     Composer,
     Icona,
@@ -99,11 +93,34 @@ export class Conversazione {
     this.seguiFondo = el.scrollHeight - el.scrollTop - el.clientHeight < SOGLIA_FONDO_PX;
   }
 
-  /** La testata parla la lingua delle altre pagine: percorso, poi il titolo. */
-  protected readonly briciole: VoceBriciola[] = [
-    { etichetta: 'Chat', percorso: '/chat' },
-    { etichetta: 'Conversazione' },
-  ];
+  /** RF-C-15: condivide con l'agenzia, o revoca — il pulsante mostra lo stato. */
+  protected condividi(): void {
+    const attiva = this.store.attiva();
+    if (attiva) this.store.condividi(attiva.id, !attiva.condivisa);
+  }
+
+  /**
+   * Scarica la conversazione com'è: un Markdown con domande, risposte e
+   * fonti. Lato client, dai messaggi già in pagina — nessun contratto nuovo.
+   */
+  protected scaricaConversazione(): void {
+    const attiva = this.store.attiva();
+    if (!attiva) return;
+    const parti = this.store.messaggi().map((m) => {
+      const voce = m.autore === 'utente' ? '## Domanda' : '## Risposta';
+      const fonti = m.citazioni.length
+        ? `\n\nFonti:\n${m.citazioni.map((c) => `- ${etichettaCitazione(c)}`).join('\n')}`
+        : '';
+      return `${voce}\n\n${m.testo}${fonti}`;
+    });
+    const contenuto = `# ${attiva.titolo}\n\n${parti.join('\n\n---\n\n')}\n`;
+    const url = URL.createObjectURL(new Blob([contenuto], { type: 'text/markdown' }));
+    const collegamento = document.createElement('a');
+    collegamento.href = url;
+    collegamento.download = `${attiva.titolo.toLowerCase().replace(/[^a-z0-9à-ù]+/g, '-').replace(/^-+|-+$/g, '') || 'conversazione'}.md`;
+    collegamento.click();
+    URL.revokeObjectURL(url);
+  }
 
   protected readonly contesto = computed(() => {
     /* Il contesto dell'elenco più i riferimenti del messaggio in volo: il

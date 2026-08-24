@@ -100,6 +100,11 @@ export class ChatStore {
     });
   }
 
+  /** RF-C-15: condivide (o smette di condividere) con i colleghi del tenant. */
+  condividi(id: Id, condivisa: boolean): void {
+    this.api.condividi(id, condivisa).subscribe({ next: () => this.storico.ricarica() });
+  }
+
   // --- Conversazione attiva -----------------------------------------------
 
   readonly idAttiva = signal<Id | undefined>(undefined);

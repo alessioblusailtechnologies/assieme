@@ -21,30 +21,43 @@
   </div>
 } @else {
   <!--
-    La testata è lettura, nella lingua delle altre pagine: briciole, stacco,
-    titolo serif, stato e metadati. Rinomina ed eliminazione vivono nella
-    lista dello storico (barra laterale), al passaggio sulla voce.
+    Testata essenziale: il titolo a sinistra, due azioni a destra — scarica
+    la conversazione, condividila con l'agenzia (RF-C-15). Rinomina ed
+    eliminazione vivono nella lista dello storico, al passaggio sulla voce.
   -->
   <header class="testata">
-    <ui-briciole [voci]="briciole" />
-    <span class="testata__stacco" aria-hidden="true"></span>
     <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
 
-    @if (store.attiva()?.condivisa) {
-      <ui-badge variante="accento" title="Condivisa con l'agenzia">condivisa</ui-badge>
-    }
-
-    @if (store.attiva(); as conversazione) {
-      <span class="testata__meta mono">
-        <span title="Ultimo aggiornamento">{{ conversazione.aggiornataIl | date: 'dd/MM HH:mm' }}</span>
-        @if (contesto().length) {
-          <span class="testata__meta-stacco" aria-hidden="true">·</span>
-          <span title="Documenti nel contesto">
-            {{ contesto().length }} {{ contesto().length === 1 ? 'documento' : 'documenti' }}
-          </span>
-        }
-      </span>
-    }
+    <span class="testata__azioni">
+      <button
+        type="button"
+        class="testata__azione"
+        (click)="scaricaConversazione()"
+        aria-label="Scarica la conversazione"
+        title="Scarica la conversazione (Markdown)"
+      >
+        <ui-icon name="scarica" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="testata__azione"
+        [class.is-attiva]="store.attiva()?.condivisa"
+        (click)="condividi()"
+        [attr.aria-pressed]="store.attiva()?.condivisa ?? false"
+        [attr.aria-label]="
+          store.attiva()?.condivisa
+            ? 'Smetti di condividere con l’agenzia'
+            : 'Condividi con l’agenzia'
+        "
+        [title]="
+          store.attiva()?.condivisa
+            ? 'Condivisa con l’agenzia — clic per revocare'
+            : 'Condividi con l’agenzia'
+        "
+      >
+        <ui-icon name="condividi" [size]="16" />
+      </button>
+    </span>
   </header>
 
   <div class="corpo">

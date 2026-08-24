@@ -65,6 +65,11 @@ export class ConversazioniApi {
     return this.http.patch<Conversazione>(`${this.base}/${id}`, { titolo });
   }
 
+  /** RF-C-15: condivisa con i colleghi del tenant, o di nuovo personale. */
+  condividi(id: Id, condivisa: boolean): Observable<Conversazione> {
+    return this.http.patch<Conversazione>(`${this.base}/${id}`, { condivisa });
+  }
+
   elimina(id: Id): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
