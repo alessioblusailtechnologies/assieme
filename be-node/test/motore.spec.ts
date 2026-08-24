@@ -281,6 +281,8 @@ describe('workspace e sessione, le parti pure', () => {
     expect(REGOLE_MOTORE).toContain('aspetta la conferma');
     expect(REGOLE_MOTORE).toContain('Il mondo interno non si nomina');
     expect(REGOLE_MOTORE).toContain('«Archivio Pubblico» e «Archivio Privato»');
+    expect(REGOLE_MOTORE).toContain('Dai del tu');
+    expect(REGOLE_MOTORE).not.toContain('vuole che proceda');
   });
 
   it('avvisiEsposizione segnala percorsi e nomi di file nel testo visibile', () => {
