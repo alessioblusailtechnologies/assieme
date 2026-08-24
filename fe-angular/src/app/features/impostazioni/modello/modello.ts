@@ -1,12 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 
 import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Icona } from '@shared/ui/icona/icona';
 import { ImpostazioniApi } from '@core/api/impostazioni-api';
-import { Id, ModelloAI, VoceStoricoImpostazioni } from '@core/models';
+import { Id, ModelloAI } from '@core/models';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -19,13 +18,14 @@ import { Tag } from '@shared/ui/tag/tag';
  * vede quale modello è in uso e le sue caratteristiche — sapere con che
  * cosa si sta lavorando non è un privilegio.
  *
- * Sotto, lo storico delle modifiche (RF-D-07): chi ha cambiato modello e
- * quando. È il primo posto dove guardare quando «le risposte sono diverse
- * da ieri».
+ * La pagina mostra solo i modelli disponibili: i «in arrivo» del catalogo
+ * restano un fatto del backend finché non si possono scegliere davvero. Lo
+ * storico delle modifiche (RF-D-07) resta registrato dal server; qui non si
+ * mostra.
  */
 @Component({
   selector: 'app-modello',
-  imports: [Badge, Bottone, DatePipe, Icona, Scheletro, StatoVuoto, Tag],
+  imports: [Badge, Bottone, Icona, Scheletro, StatoVuoto, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './modello.html',
   styleUrl: './modello.scss',
@@ -36,18 +36,12 @@ export class Modello {
 
   private readonly risorsaModelli = httpResource<ModelloAI[]>(() => this.api.urlModelli());
   private readonly risorsaAttivo = httpResource<ModelloAI>(() => this.api.urlModelloAttivo());
-  private readonly risorsaStorico = httpResource<VoceStoricoImpostazioni[]>(() =>
-    this.api.urlStorico(['modello']),
-  );
 
   protected readonly modelli = computed(() =>
-    this.risorsaModelli.hasValue() ? this.risorsaModelli.value() : [],
+    this.risorsaModelli.hasValue() ? this.risorsaModelli.value().filter((m) => m.disponibile) : [],
   );
   protected readonly attivo = computed(() =>
     this.risorsaAttivo.hasValue() ? this.risorsaAttivo.value() : undefined,
-  );
-  protected readonly storico = computed(() =>
-    this.risorsaStorico.hasValue() ? this.risorsaStorico.value() : [],
   );
   protected readonly inCaricamento = this.risorsaModelli.isLoading;
   protected readonly errore = this.risorsaModelli.error;
@@ -67,7 +61,6 @@ export class Modello {
     this.api.scegliModello(modello.id).subscribe({
       next: (attivo) => {
         this.risorsaAttivo.set(attivo);
-        this.risorsaStorico.reload();
         this.inSalvataggio.set(undefined);
       },
       error: () => this.inSalvataggio.set(undefined),

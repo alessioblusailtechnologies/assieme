@@ -30,17 +30,11 @@
 } @else {
   <ul class="modelli">
     @for (modello of modelli(); track modello.id) {
-      <li
-        class="modello"
-        [class.is-attivo]="modello.id === attivo()?.id"
-        [class.is-indisponibile]="!modello.disponibile"
-      >
+      <li class="modello" [class.is-attivo]="modello.id === attivo()?.id">
         <div class="modello__testa">
           <p class="mono modello__provider">{{ modello.provider }}</p>
           @if (modello.id === attivo()?.id) {
             <ui-tag variante="accento">in uso</ui-tag>
-          } @else if (!modello.disponibile) {
-            <ui-tag>in arrivo</ui-tag>
           }
         </div>
 
@@ -69,21 +63,4 @@
       </li>
     }
   </ul>
-
-  <section class="storico" aria-label="Storico delle modifiche al modello">
-    <p class="mono">Storico modifiche</p>
-    @if (storico().length) {
-      <ul class="storico__voci">
-        @for (voce of storico(); track voce.id) {
-          <li class="storico__voce">
-            <span class="mono storico__quando">{{ voce.istante | date: 'dd/MM/yyyy HH:mm' }}</span>
-            <span class="storico__cosa">{{ voce.descrizione }}</span>
-            <span class="storico__chi">{{ voce.utenteNome }}</span>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="storico__vuoto">Nessuna modifica registrata.</p>
-    }
-  </section>
 }
