@@ -32,10 +32,13 @@ describe.skipIf(!pronto)('scelta del modello col progetto Supabase', () => {
   let app: FastifyInstance;
   let tokenAdmin: string;
 
-  const pulizia = () =>
-    poolDb().query(`delete from velia.impostazioni_storico where tenant_id = $1 and oggetto = 'modello'`, [
-      TENANT_COLLAUDO,
-    ]);
+  const pulizia = async (): Promise<void> => {
+    await poolDb().query(
+      `delete from velia.impostazioni_storico where tenant_id = $1 and oggetto = 'modello'`,
+      [TENANT_COLLAUDO],
+    );
+    await poolDb().query(`update velia.tenant set modello_motore = null where id = $1`, [TENANT_COLLAUDO]);
+  };
 
   beforeAll(async () => {
     app = creaApp({ logger: false });
@@ -55,15 +58,35 @@ describe.skipIf(!pronto)('scelta del modello col progetto Supabase', () => {
     await chiudiPool();
   });
 
-  it('confermare il modello attivo risponde col modello e registra la voce nello storico', async () => {
+  it('la scelta è reale: si scrive sul tenant, l’attivo la riflette, lo storico la racconta', async () => {
+    const senzaScelta = await app.inject({
+      method: 'GET',
+      url: '/api/modelli/attivo',
+      headers: { authorization: `Bearer ${tokenAdmin}` },
+    });
+    expect(senzaScelta.json<ModelloAI>().nome).toBe('Claude Opus 5'); // il default di piattaforma
+
     const r = await app.inject({
       method: 'PUT',
       url: '/api/modelli/attivo',
       headers: { authorization: `Bearer ${tokenAdmin}` },
-      payload: { modelloId: 'mod-claude-opus-5' },
+      payload: { modelloId: 'mod-claude-sonnet-5' },
     });
     expect(r.statusCode).toBe(200);
-    expect(r.json<ModelloAI>()).toMatchObject({ nome: 'Claude Opus 5', disponibile: true });
+    expect(r.json<ModelloAI>()).toMatchObject({ nome: 'Claude Sonnet 5', disponibile: true });
+
+    const tenant = await poolDb().query<{ modello_motore: string | null }>(
+      `select modello_motore from velia.tenant where id = $1`,
+      [TENANT_COLLAUDO],
+    );
+    expect(tenant.rows[0]!.modello_motore).toBe('claude-sonnet-5'); // è ciò che il worker leggerà a ogni job
+
+    const attivo = await app.inject({
+      method: 'GET',
+      url: '/api/modelli/attivo',
+      headers: { authorization: `Bearer ${tokenAdmin}` },
+    });
+    expect(attivo.json<ModelloAI>().nome).toBe('Claude Sonnet 5');
 
     const voci = await poolDb().query<{ azione: string; descrizione: string }>(
       `select azione, descrizione from velia.impostazioni_storico
@@ -71,7 +94,7 @@ describe.skipIf(!pronto)('scelta del modello col progetto Supabase', () => {
       [TENANT_COLLAUDO],
     );
     expect(voci.rows).toEqual([
-      { azione: 'modifica', descrizione: 'Scelto il modello Claude Opus 5 (Anthropic)' },
+      { azione: 'modifica', descrizione: 'Scelto il modello Claude Sonnet 5 (Anthropic)' },
     ]);
   });
 });

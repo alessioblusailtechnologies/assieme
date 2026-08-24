@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
+import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/rotte.js';
 import { registraRotteModelli } from './modelli/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
@@ -11,6 +12,7 @@ import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
 import { registraRotteSessione } from './sessione/rotte.js';
 import { registraRotteTabelle, type OpzioniTabelle } from './tabelle/rotte.js';
 import { registraRotteTemplate, type OpzioniTemplate } from './template/rotte.js';
+import { registraRotteUtenti } from './utenti/rotte.js';
 
 export interface OpzioniApp {
   logger?: boolean | object;
@@ -24,6 +26,8 @@ export interface OpzioniApp {
   template?: OpzioniTemplate;
   /** Nei test: Storage finto per l'esportazione delle tabelle. */
   tabelle?: OpzioniTabelle;
+  /** Nei test: Storage finto per i documenti di riferimento. */
+  istruzioni?: OpzioniIstruzioni;
 }
 
 /**
@@ -62,6 +66,8 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteTemplate(app, opzioni.template);
   registraRotteTabelle(app, opzioni.tabelle);
   registraRotteModelli(app);
+  registraRotteIstruzioni(app, opzioni.istruzioni);
+  registraRotteUtenti(app);
 
   return app;
 }

@@ -1,13 +1,12 @@
 import { z } from 'zod';
 
 /**
- * Modello e provider (RF-D-02/03) — il primo pezzo della Fase 6: il
- * catalogo dice la verità sul motore. Oggi chat e tabelle girano su Claude
- * Opus 5 (`MODELLO_MOTORE`, collaudato con citazioni verificate): è l'unico
- * selezionabile. Gli altri sono in catalogo come schede informative
- * (RF-D-03) ma non disponibili: la scelta per agenzia — con l'astrazione
- * del provider e il modello portato dentro al job — arriva col
- * completamento della fase, e a quel punto si alza `disponibile`.
+ * Modello e provider (RF-D-02/03): il catalogo dice la verità sul motore.
+ * La scelta vale per tutto il tenant (`velia.tenant.modello_motore`, null =
+ * default di piattaforma, oggi Claude Opus 5) e viaggia fino al job: chat e
+ * tabelle la leggono a ogni sessione. I provider terzi restano schede
+ * informative non disponibili finché l'integrazione multi-provider non
+ * esiste davvero.
  */
 
 export interface ModelloAI {
@@ -44,10 +43,10 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     nome: 'Claude Sonnet 5',
     sdk: 'claude-sonnet-5',
     descrizione:
-      'Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. La scelta per agenzia si abilita col completamento delle Impostazioni.',
+      'Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.',
     adeguatezzaDocumentale: 'alta',
-    notaCosti: 'Ridurrebbe il consumo del piano di circa la metà.',
-    disponibile: false,
+    notaCosti: 'Riduce il consumo del piano di circa la metà.',
+    disponibile: true,
   },
   {
     id: 'mod-claude-haiku-4-5',
@@ -57,8 +56,8 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     descrizione:
       'Rapido ed economico, adatto a domande puntuali e automazioni ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.',
     adeguatezzaDocumentale: 'media',
-    notaCosti: 'Ridurrebbe il consumo del piano di circa due terzi.',
-    disponibile: false,
+    notaCosti: 'Riduce il consumo del piano di circa due terzi.',
+    disponibile: true,
   },
   {
     id: 'mod-gpt-5-2',

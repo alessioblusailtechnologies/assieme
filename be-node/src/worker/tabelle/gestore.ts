@@ -54,12 +54,15 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
       throw new ErroreNonRitentabile('payload del job senza tabellaId');
     }
 
-    const t = await db.query<{ tenant_id: string }>(
-      `select tenant_id from velia.tabelle where id = $1`,
+    const t = await db.query<{ tenant_id: string; modello_motore: string | null }>(
+      `select tb.tenant_id, te.modello_motore
+       from velia.tabelle tb join velia.tenant te on te.id = tb.tenant_id
+       where tb.id = $1`,
       [tabellaId],
     );
     const tenantId = t.rows[0]?.tenant_id;
     if (!tenantId) return; // tabella eliminata: il job è orfano, non un errore
+    const modelloTenant = t.rows[0]?.modello_motore ?? undefined;
 
     const annullato = async (): Promise<boolean> => {
       const r = await db.query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [job.id]);
@@ -159,6 +162,7 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
           {
             directory: workspace.directory,
             titoloPer: (p) => workspace!.perPath.get(p)?.titolo,
+            ...(modelloTenant && { modello: modelloTenant }),
             promptSistema: PROMPT_ESTRAZIONE,
             promptUtente: promptRigaEstrazione({
               path,

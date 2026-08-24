@@ -37,16 +37,17 @@ describe('le rotte', () => {
   const daOperatore = creaApp({ logger: false, verificaToken: verifica('operatore') });
   const daAmministratore = creaApp({ logger: false, verificaToken: verifica('amministratore') });
 
-  it('GET: il catalogo intero e l’attivo — oggi Claude Opus 5, quello di chat e tabelle', async () => {
+  it('GET: il catalogo intero — gli Anthropic selezionabili, i provider terzi non ancora', async () => {
     const elenco = await daOperatore.inject({ method: 'GET', url: '/api/modelli', headers: autenticato });
     expect(elenco.statusCode).toBe(200);
     const modelli = elenco.json<ModelloAI[]>();
     expect(modelli.length).toBeGreaterThanOrEqual(5);
-    expect(modelli.filter((m) => m.disponibile).map((m) => m.nome)).toEqual(['Claude Opus 5']);
-
-    const attivo = await daOperatore.inject({ method: 'GET', url: '/api/modelli/attivo', headers: autenticato });
-    expect(attivo.statusCode).toBe(200);
-    expect(attivo.json<ModelloAI>()).toMatchObject({ nome: 'Claude Opus 5', provider: 'Anthropic', disponibile: true });
+    expect(modelli.filter((m) => m.disponibile).map((m) => m.nome)).toEqual([
+      'Claude Opus 5',
+      'Claude Sonnet 5',
+      'Claude Haiku 4.5',
+    ]);
+    expect(modelli.filter((m) => !m.disponibile).map((m) => m.provider)).toEqual(['OpenAI', 'Mistral']);
   });
 
   it('PUT: 403 per l’operatore, 400 senza modello, 404 sull’ignoto, 409 sul non disponibile', async () => {
@@ -74,7 +75,7 @@ describe('le rotte', () => {
       method: 'PUT',
       url: '/api/modelli/attivo',
       headers: autenticato,
-      payload: { modelloId: 'mod-claude-sonnet-5' },
+      payload: { modelloId: 'mod-gpt-5-2' },
     });
     expect(nonDisponibile.statusCode).toBe(409);
     expect(nonDisponibile.json()).toMatchObject({ codice: 'NON_DISPONIBILE' });

@@ -176,9 +176,10 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
 
       await db.query(
         `update velia.documenti
-         set stato = 'pronto', numero_pagine = $2, path_md = $3, errore_elaborazione = null
+         set stato = 'pronto', numero_pagine = $2, path_md = $3,
+             dimensione_md_byte = $4, errore_elaborazione = null
          where id = $1`,
-        [documentoId, totale, pathMd],
+        [documentoId, totale, pathMd, Buffer.byteLength(markdown, 'utf8')],
       );
       await emettiEvento(db, job.id, 'ingestion-fine', { documentoId, pagine: totale, pathMd });
     } catch (errore) {

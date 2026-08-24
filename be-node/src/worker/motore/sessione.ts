@@ -34,6 +34,11 @@ export interface RichiestaMotore {
   promptSistema: string;
   promptUtente: string;
   /**
+   * RF-D-02: il modello scelto dal tenant, quando c'è — vince sul default
+   * di piattaforma con cui il motore è stato costruito.
+   */
+  modello?: string;
+  /**
    * Il titolo del documento per un path relativo della workspace: le
    * attività parlano all'utente coi titoli che conosce, mai coi nomi dei
    * file — che sono architettura, non contenuto.
@@ -79,6 +84,7 @@ export class MotoreAgentSdk implements Motore {
 
   async interroga(richiesta: RichiestaMotore, osservatore: OsservatoreSessione): Promise<EsitoSessione> {
     const inizio = Date.now();
+    const modello = richiesta.modello ?? this.opzioni.modello;
     const radice = resolve(richiesta.directory);
     const controllo = new AbortController();
     const documentiLetti: string[] = [];
@@ -128,7 +134,7 @@ export class MotoreAgentSdk implements Motore {
 
     const opzioni: Options = {
       cwd: radice,
-      model: this.opzioni.modello,
+      model: modello,
       ...(this.opzioni.effort && { effort: this.opzioni.effort }),
       systemPrompt: richiesta.promptSistema,
       tools: ['Read', 'Grep', 'Glob'],
@@ -168,7 +174,7 @@ export class MotoreAgentSdk implements Motore {
             await flusso.fineTurno(evento.delta.stop_reason);
           }
         } else if (messaggio.type === 'result') {
-          esito = this.esitoDa(messaggio, flusso.testoCompleto, documentiLetti, inizio, annullato);
+          esito = this.esitoDa(messaggio, flusso.testoCompleto, documentiLetti, inizio, annullato, modello);
         }
       }
     } catch (errore) {
@@ -176,7 +182,7 @@ export class MotoreAgentSdk implements Motore {
         esito = {
           testo: flusso.testoCompleto,
           terminato: 'annullato',
-          modello: this.opzioni.modello,
+          modello,
           turni: 0,
           durataMs: Date.now() - inizio,
           costoUsd: 0,
@@ -195,7 +201,7 @@ export class MotoreAgentSdk implements Motore {
         testo: flusso.testoCompleto,
         terminato: annullato ? 'annullato' : 'errore',
         ...(!annullato && { errore: 'la sessione si è chiusa senza un risultato' }),
-        modello: this.opzioni.modello,
+        modello,
         turni: 0,
         durataMs: Date.now() - inizio,
         costoUsd: 0,
@@ -212,6 +218,7 @@ export class MotoreAgentSdk implements Motore {
     documentiLetti: string[],
     inizio: number,
     annullato: boolean,
+    modello: string,
   ): EsitoSessione {
     const token = {
       input: m.usage.input_tokens,
@@ -220,7 +227,7 @@ export class MotoreAgentSdk implements Motore {
       cacheScrittura: m.usage.cache_creation_input_tokens,
     };
     const base = {
-      modello: this.opzioni.modello,
+      modello,
       turni: m.num_turns,
       durataMs: Date.now() - inizio,
       costoUsd: m.total_cost_usd,

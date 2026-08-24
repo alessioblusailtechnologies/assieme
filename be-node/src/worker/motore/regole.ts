@@ -91,8 +91,12 @@ export interface DnaAgenzia {
 
 /**
  * Carica istruzioni attive pertinenti (generali + per ramo/compagnia dei
- * documenti in contesto), i documenti di riferimento promossi (RF-D-14/15)
- * e i ricordi attivi del tenant e personali dell'utente (RF-G-02/04).
+ * documenti in contesto), i documenti di riferimento (RF-D-14/15) e i
+ * ricordi attivi del tenant e personali dell'utente (RF-G-02/04).
+ *
+ * I riferimenti passano dal loro governo (Fase 6, `velia.riferimenti`):
+ * contano solo le voci attive con ambito pertinente — il flag sul documento
+ * dice che il ruolo esiste, la voce dice quando si applica.
  */
 export async function caricaDna(
   db: pg.Pool,
@@ -101,7 +105,7 @@ export async function caricaDna(
   ambiti: { ramiIds: string[]; compagnieIds: string[] },
   riferimentiInWorkspace: Map<string, DocumentoWorkspace>,
 ): Promise<DnaAgenzia> {
-  const [istruzioni, ricordi] = await Promise.all([
+  const [istruzioni, ricordi, voci] = await Promise.all([
     db.query<Istruzione>(
       `select id::text, titolo, testo from velia.istruzioni
        where tenant_id = $1 and attiva
@@ -117,10 +121,23 @@ export async function caricaDna(
        order by created_at`,
       [tenantId, utenteId],
     ),
+    db.query<{ documento_id: string }>(
+      `select r.documento_id from velia.riferimenti r
+       where r.tenant_id = $1 and r.attivo
+         and (r.ambito_tipo = 'generale'
+              or (r.ambito_tipo = 'ramo' and r.ambito_ramo_id = any($2))
+              or (r.ambito_tipo = 'compagnia' and r.ambito_compagnia_id = any($3)))
+       order by r.created_at`,
+      [tenantId, ambiti.ramiIds, ambiti.compagnieIds],
+    ),
   ]);
+
+  const perId = new Map<string, { path: string; titolo: string }>();
+  for (const [path, d] of riferimentiInWorkspace) perId.set(d.id, { path, titolo: d.titolo });
   const riferimenti: DocumentoDiRiferimento[] = [];
-  for (const [path, d] of riferimentiInWorkspace) {
-    if (d.documentoDiRiferimento) riferimenti.push({ id: d.id, titolo: d.titolo, path });
+  for (const voce of voci.rows) {
+    const doc = perId.get(voce.documento_id);
+    if (doc) riferimenti.push({ id: voce.documento_id, titolo: doc.titolo, path: doc.path });
   }
   return { istruzioni: istruzioni.rows, ricordi: ricordi.rows, riferimenti };
 }

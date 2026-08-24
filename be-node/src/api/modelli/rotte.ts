@@ -14,23 +14,23 @@ import { richiediAmministratore } from '../plugins/auth.js';
 import { registraStorico } from '../template/rotte.js';
 
 /**
- * Modello e provider (RF-D-02/03), il primo pezzo della Fase 6 portato dal
- * backend: il catalogo e il modello attivo — che È quello del motore
- * (`MODELLO_MOTORE`, oggi Claude Opus 5 per chat e tabelle), non una
- * preferenza salvata da qualche parte che il worker ignora.
+ * Modello e provider (RF-D-02/03): il catalogo e il modello attivo — che È
+ * quello con cui il tenant lavora davvero: la sua scelta se c'è
+ * (`velia.tenant.modello_motore`, letta dal worker a ogni job), altrimenti
+ * il default di piattaforma (`MODELLO_MOTORE`).
  *
- * La scelta (PUT) tiene il contratto del mock: 404 sull'ignoto, 409
- * NON_DISPONIBILE su ciò che non si può ancora selezionare. Finché la
- * scelta per agenzia non è cablata fino al job, l'unico disponibile è il
- * modello configurato: confermarlo è idempotente e lascia la voce nello
- * storico; tutto il resto risponde con un motivo leggibile invece di
- * fingere un cambio che non avverrebbe.
+ * La scelta si scrive con la connessione di sistema dopo la guardia da
+ * amministratore: la riga di tenant porta i limiti di piano, e una policy
+ * di update la consegnerebbe a chiunque via PostgREST.
  */
 export function registraRotteModelli(app: FastifyInstance): void {
   /** RF-D-03: i modelli offerti dalla piattaforma, disponibili e non. */
   app.get('/api/modelli', () => CATALOGO_MODELLI.map(versoModello));
 
-  app.get('/api/modelli/attivo', () => versoModello(modelloAttivo(configurazione().MODELLO_MOTORE)));
+  app.get('/api/modelli/attivo', async (richiesta) => {
+    const scelta = await sceltaDelTenant(richiesta.identita.tenantId);
+    return versoModello(modelloAttivo(scelta ?? configurazione().MODELLO_MOTORE));
+  });
 
   /** RF-D-02: la scelta vale per tutto il tenant. Solo amministratore. */
   app.put('/api/modelli/attivo', async (richiesta) => {
@@ -40,13 +40,17 @@ export function registraRotteModelli(app: FastifyInstance): void {
 
     const modello = CATALOGO_MODELLI.find((m) => m.id === esito.data.modelloId);
     if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
-    if (!modello.disponibile) {
+    if (!modello.disponibile || !modello.sdk) {
       throw ErroreApi.conflitto(
         'NON_DISPONIBILE',
         `${modello.nome} non è ancora disponibile sulla piattaforma.`,
       );
     }
 
+    await poolDb().query(`update velia.tenant set modello_motore = $2 where id = $1`, [
+      richiesta.identita.tenantId,
+      modello.sdk,
+    ]);
     await conIdentita(poolDb(), richiesta.identita, (client) =>
       registraStorico(
         client,
@@ -58,4 +62,12 @@ export function registraRotteModelli(app: FastifyInstance): void {
     );
     return versoModello(modello);
   });
+}
+
+async function sceltaDelTenant(tenantId: string): Promise<string | undefined> {
+  const r = await poolDb().query<{ modello_motore: string | null }>(
+    `select modello_motore from velia.tenant where id = $1`,
+    [tenantId],
+  );
+  return r.rows[0]?.modello_motore ?? undefined;
 }

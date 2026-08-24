@@ -448,6 +448,22 @@ export function registraRotteArchivioPrivato(
            where id = $1 and tenant_id = $2 and archivio = 'privato'`,
           [richiesta.params.id, tenantId, metodo === 'put'],
         );
+        /* Fase 6: il ruolo ha un governo (ambito, attivazione) in
+           `velia.riferimenti`. La promozione crea la voce coi valori di
+           partenza — chi promuove vuole che il documento conti; la
+           demozione la toglie. */
+        if (metodo === 'put') {
+          await client.query(
+            `insert into velia.riferimenti (tenant_id, documento_id, origine, caricato_da)
+             values ($1, $2, 'promosso', $3)
+             on conflict (documento_id) do update set attivo = true`,
+            [tenantId, richiesta.params.id, richiesta.identita.utenteId],
+          );
+        } else {
+          await client.query(`delete from velia.riferimenti where documento_id = $1`, [
+            richiesta.params.id,
+          ]);
+        }
         return { ...documento, documentoDiRiferimento: metodo === 'put' };
       });
     });

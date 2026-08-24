@@ -54,6 +54,8 @@ interface RigaConversazione {
   id: string;
   tenant_id: string;
   documenti_in_contesto: string[];
+  /** RF-D-02: il modello scelto dal tenant; null = default di piattaforma. */
+  modello_motore: string | null;
 }
 
 const MESSAGGIO_BUDGET =
@@ -68,7 +70,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     const emetti = (evento: EventoStream) => emettiEvento(db, job.id, evento.tipo, evento);
 
     const conv = await db.query<RigaConversazione>(
-      `select id, tenant_id, documenti_in_contesto from velia.conversazioni where id = $1`,
+      `select c.id, c.tenant_id, c.documenti_in_contesto, t.modello_motore
+       from velia.conversazioni c
+       join velia.tenant t on t.id = c.tenant_id
+       where c.id = $1`,
       [payload.conversazioneId],
     );
     const conversazione = conv.rows[0];
@@ -129,6 +134,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         {
           directory: workspace.directory,
           titoloPer: (path) => workspace!.perPath.get(path)?.titolo,
+          ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
           promptSistema: promptSistema(dna),
           promptUtente: promptUtente({
             documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
