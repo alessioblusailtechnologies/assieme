@@ -226,8 +226,14 @@ console.log(`catalogo aggiornato: ${catalogo.length} righe`);
 
 /* --------------------------------------------------------------- manifesto */
 
+/* Il manifesto si AGGIORNA, non si riscrive: l'albero di lavorazione di
+   solito contiene un set solo, e le voci degli altri set devono restare. */
 const percorsoManifesto = join(QUI, '..', 'dati', 'catalogo-archivio.json');
-writeFileSync(percorsoManifesto, JSON.stringify(catalogo, null, 1) + '\n', 'utf8');
-console.log(`manifesto scritto: ${percorsoManifesto}`);
+const esistente = existsSync(percorsoManifesto) ? JSON.parse(readFileSync(percorsoManifesto, 'utf8')) : [];
+const perId = new Map(esistente.map((d) => [d.id, d]));
+for (const d of catalogo) perId.set(d.id, d);
+const unito = [...perId.values()].sort((a, b) => a.id.localeCompare(b.id));
+writeFileSync(percorsoManifesto, JSON.stringify(unito, null, 1) + '\n', 'utf8');
+console.log(`manifesto aggiornato: ${percorsoManifesto} (${unito.length} voci, ${catalogo.length} da questo albero)`);
 
 await db.end();

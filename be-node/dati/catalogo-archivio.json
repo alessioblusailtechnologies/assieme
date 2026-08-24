@@ -1,5 +1,59 @@
 [
  {
+  "id": "doc-cattolica-active-veicoli-autopiu-ed-2025-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-cattolica",
+  "ramoId": "ram-auto",
+  "prodotto": "Active Veicoli AUTOPIÙ",
+  "titolo": "Condizioni di Assicurazione — Cattolica Active Veicoli AUTOPIÙ",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 133,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-active-veicoli-autopiu-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-cattolica-active-veicoli-autopiu-ed-2025-07-dip",
+  "compagniaId": "cmp-cattolica",
+  "ramoId": "ram-auto",
+  "prodotto": "Active Veicoli AUTOPIÙ",
+  "titolo": "DIP Danni — Cattolica Active Veicoli AUTOPIÙ",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-active-veicoli-autopiu-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/dip.md",
+  "pathPdf": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-cattolica-active-veicoli-autopiu-ed-2025-07-dip-aggiuntivo",
+  "compagniaId": "cmp-cattolica",
+  "ramoId": "ram-auto",
+  "prodotto": "Active Veicoli AUTOPIÙ",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Cattolica Active Veicoli AUTOPIÙ",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-active-veicoli-autopiu-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
@@ -19,25 +73,6 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
  },
  {
-  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip-aggiuntivo",
-  "compagniaId": "cmp-unipolsai",
-  "ramoId": "ram-auto",
-  "prodotto": "Km&Servizi Autovetture",
-  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
-  "tipologia": "dip-aggiuntivo",
-  "numeroPagine": 24,
-  "paginaInizio": 6,
-  "edizione": {
-   "id": "edz-km-servizi-autovetture-2019-01",
-   "etichetta": "ed. 01/2019",
-   "validaDal": "2019-01-01",
-   "corrente": false,
-   "validaAl": "2022-10-31"
-  },
-  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/dip-aggiuntivo.md",
-  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
- },
- {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
@@ -54,6 +89,25 @@
    "validaAl": "2022-10-31"
   },
   "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 24,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2019-01",
+   "etichetta": "ed. 01/2019",
+   "validaDal": "2019-01-01",
+   "corrente": false,
+   "validaAl": "2022-10-31"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2019-01/originale.pdf"
  },
  {
@@ -113,24 +167,6 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
  },
  {
-  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip-aggiuntivo",
-  "compagniaId": "cmp-unipolsai",
-  "ramoId": "ram-auto",
-  "prodotto": "Km&Servizi Autovetture",
-  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
-  "tipologia": "dip-aggiuntivo",
-  "numeroPagine": 30,
-  "paginaInizio": 7,
-  "edizione": {
-   "id": "edz-km-servizi-autovetture-2022-11",
-   "etichetta": "ed. 11/2022",
-   "validaDal": "2022-11-01",
-   "corrente": true
-  },
-  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/dip-aggiuntivo.md",
-  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
- },
- {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
@@ -146,6 +182,24 @@
    "corrente": true
   },
   "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — UnipolSai Km&Servizi Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 30,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2022-11",
+   "etichetta": "ed. 11/2022",
+   "validaDal": "2022-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
  },
  {

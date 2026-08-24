@@ -58,8 +58,9 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    expect(pagina.totale).toBe(10);
-    expect(pagina.elementi).toHaveLength(10);
+    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025). */
+    expect(pagina.totale).toBe(13);
+    expect(pagina.elementi).toHaveLength(13);
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;
     expect(primo.archivio).toBe('pubblico');

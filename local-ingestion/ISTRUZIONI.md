@@ -20,6 +20,17 @@ attiva per quel tipo di documento.
   dell'analisi requisiti).
 - `be-node/.env` configurato (serve per il caricamento su Storage e catalogo).
 
+## 0. Da qui in poi c'è la skill
+
+Il procedimento è incapsulato nella skill `/ingest-pubblico <compagnia> <prodotto> [url-o-pdf]`
+(`.claude/skills/ingest-pubblico/SKILL.md`): ricerca e download del PDF, estrazione
+locale del testo con `be-node/tools/estrai-testo-pdf.mjs` (pdfjs, nessun modello,
+ancore `[pag. N]` già al posto giusto), rifinitura in sessione, controlli, caricamento.
+I PDF a due colonne (i DIP) vanno riscritti guardando la pagina con Read; le pagine
+con informazioni solo in immagine si trascrivono a mano e si segnalano nel report.
+Il manifesto `catalogo-archivio.json` si AGGIORNA per id: l'albero di lavorazione può
+contenere un set solo.
+
 ## 1. Studia il PDF prima di convertire
 
 Leggi le prime pagine del PDF (strumento Read, il PDF si legge a pagine).
