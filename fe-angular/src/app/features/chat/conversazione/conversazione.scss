@@ -83,27 +83,6 @@
   white-space: nowrap;
 }
 
-.testata__rinomina {
-  flex: 1;
-  max-width: 60ch;
-}
-
-.testata__azione {
-  display: inline-flex;
-  border-radius: var(--radius-sm);
-  align-items: center;
-  padding: var(--sp-1);
-  border: 0;
-  background: transparent;
-  color: var(--c-text-3);
-  cursor: pointer;
-}
-
-.testata__azione:hover,
-.testata__azione:focus-visible {
-  color: var(--c-accent);
-}
-
 .testata__condivisa {
   display: inline-flex;
   align-items: center;
@@ -113,10 +92,6 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--c-text-3);
-}
-
-.testata__spazio {
-  flex: 1;
 }
 
 /* ---------- Corpo: conversazione a sinistra, contesto a destra ---------- */

@@ -14,7 +14,6 @@ import { RouterLink } from '@angular/router';
 
 import { BollaMessaggio } from './bolla-messaggio';
 import { Bottone } from '@shared/ui/bottone/bottone';
-import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { ChatStore } from '../chat-store';
@@ -44,7 +43,6 @@ const SOGLIA_FONDO_PX = 120;
   imports: [
     BollaMessaggio,
     Bottone,
-    Campo,
     Cassetto,
     Composer,
     Icona,
@@ -68,7 +66,6 @@ export class Conversazione {
   readonly id = input<string>();
 
   private readonly filo = viewChild<ElementRef<HTMLElement>>('filo');
-  private readonly campoRinomina = viewChild<ElementRef<HTMLInputElement>>('campoRinomina');
 
   /**
    * Lo scorrimento segue la risposta solo finché l'utente sta al fondo: se è
@@ -88,12 +85,6 @@ export class Conversazione {
       const el = this.filo()?.nativeElement;
       if (el && this.seguiFondo) el.scrollTop = el.scrollHeight;
     });
-
-    /* Il campo di rinomina compare su richiesta: quando c'è, il fuoco è suo
-       — chi ha premuto «rinomina» vuole scrivere, non cercare il campo. */
-    afterRenderEffect(() => {
-      this.campoRinomina()?.nativeElement.focus();
-    });
   }
 
   protected suScorrimento(): void {
@@ -111,43 +102,6 @@ export class Conversazione {
     return [...noti, ...this.store.riferimentiInVolo().filter((d) => !presenti.has(d.id))];
   });
   protected readonly idContesto = computed(() => this.contesto().map((d) => d.id));
-
-  // --- Rinomina (RF-C-01) -------------------------------------------------
-
-  protected readonly inRinomina = signal(false);
-  protected readonly titoloBozza = signal('');
-
-  protected avviaRinomina(): void {
-    const attiva = this.store.attiva();
-    if (!attiva) return;
-    this.titoloBozza.set(attiva.titolo);
-    this.inRinomina.set(true);
-  }
-
-  protected confermaRinomina(): void {
-    const attiva = this.store.attiva();
-    if (attiva && this.titoloBozza().trim() && this.titoloBozza().trim() !== attiva.titolo) {
-      this.store.rinomina(attiva.id, this.titoloBozza());
-    }
-    this.inRinomina.set(false);
-  }
-
-  // --- Eliminazione -------------------------------------------------------
-
-  /* Conferma a due passi, come nella scheda documento: il primo clic arma,
-     il secondo esegue, un clic altrove disarma. */
-  protected readonly confermaEliminazione = signal(false);
-
-  protected elimina(): void {
-    const attiva = this.store.attiva();
-    if (!attiva) return;
-    if (!this.confermaEliminazione()) {
-      this.confermaEliminazione.set(true);
-      return;
-    }
-    this.store.elimina(attiva.id);
-    this.confermaEliminazione.set(false);
-  }
 
   // --- Citazioni (RF-C-05) ------------------------------------------------
 

@@ -20,64 +20,18 @@
     </div>
   </div>
 } @else {
+  <!--
+    La testata è lettura: titolo e stato. Rinomina ed eliminazione vivono
+    nella lista dello storico (barra laterale), al passaggio sulla voce.
+  -->
   <header class="testata">
-    @if (inRinomina()) {
-      <input
-        uiCampo
-        class="testata__rinomina"
-        [value]="titoloBozza()"
-        (input)="titoloBozza.set($any($event.target).value)"
-        (keydown.enter)="confermaRinomina()"
-        (keydown.escape)="inRinomina.set(false)"
-        (blur)="confermaRinomina()"
-        aria-label="Nuovo titolo della conversazione"
-        #campoRinomina
-      />
-    } @else {
-      <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
-      <button
-        type="button"
-        class="testata__azione"
-        (click)="avviaRinomina()"
-        aria-label="Rinomina la conversazione"
-        title="Rinomina"
-      >
-        <ui-icon name="modifica" [size]="15" />
-      </button>
-    }
+    <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
 
     @if (store.attiva()?.condivisa) {
       <span class="testata__condivisa" title="Condivisa con l'agenzia">
         <ui-icon name="condividi" [size]="13" />
         condivisa
       </span>
-    }
-
-    <span class="testata__spazio"></span>
-
-    @if (confermaEliminazione()) {
-      <button uiBottone variante="pericolo" dimensione="piccolo" type="button" (click)="elimina()">
-        Elimina davvero?
-      </button>
-      <button
-        uiBottone
-        variante="testo"
-        dimensione="piccolo"
-        type="button"
-        (click)="confermaEliminazione.set(false)"
-      >
-        Annulla
-      </button>
-    } @else {
-      <button
-        type="button"
-        class="testata__azione"
-        (click)="elimina()"
-        aria-label="Elimina la conversazione"
-        title="Elimina"
-      >
-        <ui-icon name="elimina" [size]="15" />
-      </button>
     }
   </header>
 

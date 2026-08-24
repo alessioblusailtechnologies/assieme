@@ -191,8 +191,16 @@
   scrollbar-width: thin;
 }
 
+.conversazioni__riga {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .conversazioni__voce {
   display: block;
+  flex: 1;
+  min-width: 0;
   padding: var(--sp-2) var(--sp-2);
   border-radius: var(--radius-sm);
   color: var(--c-text-3);
@@ -208,6 +216,59 @@
   background: var(--c-page-alt);
   color: var(--c-text);
   text-decoration: none;
+}
+
+/* Le azioni compaiono al passaggio (o col fuoco da tastiera), sopra la coda del titolo. */
+.conversazioni__azioni {
+  position: absolute;
+  right: 2px;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding-left: var(--sp-1);
+  background: var(--c-page-alt);
+}
+
+.conversazioni__riga:hover .conversazioni__azioni,
+.conversazioni__riga:focus-within .conversazioni__azioni {
+  display: inline-flex;
+}
+
+.conversazioni__azione {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-mute);
+  cursor: pointer;
+}
+
+.conversazioni__azione:hover,
+.conversazioni__azione:focus-visible {
+  color: var(--c-text);
+  background: var(--c-line-soft);
+}
+
+/* Cestino armato: il secondo clic elimina davvero. */
+.conversazioni__azione.is-armata {
+  color: var(--c-neg);
+  background: var(--c-neg-soft);
+}
+
+.conversazioni__rinomina {
+  flex: 1;
+  min-width: 0;
+  margin: 2px;
+  padding: calc(var(--sp-2) - 3px) var(--sp-1);
+  border: 1px solid var(--c-accent);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--t-sm);
+  outline: none;
 }
 
 .conversazioni__voce.is-attiva {

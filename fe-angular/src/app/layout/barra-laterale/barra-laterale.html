@@ -99,15 +99,54 @@
                   </li>
                 } @else {
                   @for (c of storico.conversazioni(); track c.id) {
-                    <li>
-                      <a
-                        class="conversazioni__voce"
-                        [routerLink]="['/chat', c.id]"
-                        routerLinkActive="is-attiva"
-                        [title]="c.titolo"
-                      >
-                        {{ c.titolo }}
-                      </a>
+                    <li class="conversazioni__riga" (mouseleave)="disarma()">
+                      @if (inRinomina() === c.id) {
+                        <input
+                          class="conversazioni__rinomina"
+                          [value]="titoloBozza()"
+                          (input)="titoloBozza.set($any($event.target).value)"
+                          (keydown.enter)="confermaRinomina()"
+                          (keydown.escape)="inRinomina.set(undefined)"
+                          (blur)="confermaRinomina()"
+                          aria-label="Nuovo titolo della conversazione"
+                          #campoRinomina
+                        />
+                      } @else {
+                        <a
+                          class="conversazioni__voce"
+                          [routerLink]="['/chat', c.id]"
+                          routerLinkActive="is-attiva"
+                          [title]="c.titolo"
+                        >
+                          {{ c.titolo }}
+                        </a>
+                        <!-- Le azioni vivono qui, al passaggio: la testata della chat è lettura. -->
+                        <span class="conversazioni__azioni">
+                          <button
+                            type="button"
+                            class="conversazioni__azione"
+                            (click)="avviaRinomina(c.id, c.titolo)"
+                            [attr.aria-label]="'Rinomina «' + c.titolo + '»'"
+                            title="Rinomina"
+                          >
+                            <ui-icon name="modifica" [size]="13" />
+                          </button>
+                          <button
+                            type="button"
+                            class="conversazioni__azione"
+                            [class.is-armata]="eliminazioneArmata() === c.id"
+                            (click)="elimina(c.id)"
+                            [attr.aria-label]="
+                              eliminazioneArmata() === c.id
+                                ? 'Conferma l’eliminazione di «' + c.titolo + '»'
+                                : 'Elimina «' + c.titolo + '»'
+                            "
+                            [title]="eliminazioneArmata() === c.id ? 'Elimina davvero?' : 'Elimina'"
+                          >
+                            <ui-icon name="elimina" [size]="13" />
+                          </button>
+                        </span>
+                      }
                     </li>
                   }
                 }

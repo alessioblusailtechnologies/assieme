@@ -419,24 +419,6 @@ export class ChatStore {
 
   // --- Azioni sulla conversazione ----------------------------------------
 
-  rinomina(id: Id, titolo: string): void {
-    const pulito = titolo.trim();
-    if (!pulito) return;
-    this.api.rinomina(id, pulito).subscribe({ next: () => this.storico.ricarica() });
-  }
-
-  elimina(id: Id): void {
-    this.api.elimina(id).subscribe({
-      next: () => {
-        this.storico.ricarica();
-        if (this.idAttiva() === id) {
-          this.apri(undefined);
-          void this.router.navigate(['/chat']);
-        }
-      },
-    });
-  }
-
   // --- Contesto documentale (RF-C-03) -------------------------------------
 
   aggiungiAlContesto(documento: RiferimentoDocumento): void {
