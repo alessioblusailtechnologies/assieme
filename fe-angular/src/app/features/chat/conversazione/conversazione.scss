@@ -64,13 +64,16 @@
 
 /* ---------- Testata ---------- */
 
+/*
+ * Non una seconda barra sotto quella superiore: la testata è parte del
+ * foglio — sfondo trasparente, nessun filo — e il titolo galleggia sopra
+ * la conversazione, con le azioni al margine.
+ */
 .testata {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-6);
-  border-bottom: 1px solid var(--c-line-soft);
-  background: var(--c-surface);
+  padding: var(--sp-4) var(--sp-6) 0;
   flex: none;
 }
 
