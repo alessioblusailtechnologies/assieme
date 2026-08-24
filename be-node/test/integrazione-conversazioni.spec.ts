@@ -334,7 +334,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     const eventi = eventiDa(r.body);
     expect(eventi[0]?.tipo).toBe('inizio');
     // RF-G-01: a risposta scritta la memoria impara nello stesso stream — il passo, poi l'esito.
-    expect(eventi.some((e) => e.tipo === 'attivita' && e.etichetta === 'Aggiorno la memoria')).toBe(true);
+    expect(eventi.some((e) => e.tipo === 'attivita' && e.etichetta === 'Cerco qualcosa da ricordare')).toBe(true);
     const memoria = eventi.find((e) => e.tipo === 'memoria');
     expect(memoria?.tipo === 'memoria' && memoria.ricordi).toMatchObject([{ categoria: 'prassi', ambito: 'tenant' }]);
     const ricordi = await pool().query(`select 1 from velia.ricordi where origine_conversazione_id = $1`, [convId]);

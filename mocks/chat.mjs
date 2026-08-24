@@ -377,7 +377,7 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
      vede, l'esito arriva solo se qualcosa è stato imparato. */
   if (scenario.ricordiAppresi?.length) {
     if (interrotto) return;
-    invia({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
+    invia({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
     await attendi(900);
     if (interrotto) return;
     invia({ tipo: 'memoria', ricordi: scenario.ricordiAppresi });

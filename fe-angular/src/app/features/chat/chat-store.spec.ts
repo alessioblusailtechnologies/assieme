@@ -155,13 +155,13 @@ describe('ChatStore', () => {
 
     let ricevuto = blocco({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' });
     ricevuto += blocco({ tipo: 'testo', delta: 'Franchigia fissa.' });
-    ricevuto += blocco({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
+    ricevuto += blocco({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
     stream.event({
       type: HttpEventType.DownloadProgress,
       loaded: ricevuto.length,
       partialText: ricevuto,
     } as HttpDownloadProgressEvent);
-    expect(store.messaggi()[1].attivita).toBe('Aggiorno la memoria');
+    expect(store.messaggi()[1].attivita).toBe('Cerco qualcosa da ricordare');
 
     ricevuto += blocco({
       tipo: 'memoria',

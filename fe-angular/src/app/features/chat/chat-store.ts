@@ -362,7 +362,7 @@ export class ChatStore {
         this.aggiornaAssistente((m) => ({ ...m, nonSupportato: true }));
         break;
       case 'memoria':
-        /* L'esito chiude anche l'attività «Aggiorno la memoria». */
+        /* L'esito chiude anche l'attività «Cerco qualcosa da ricordare». */
         this.aggiornaAssistente((m) => ({ ...m, ricordiAppresi: evento.ricordi, attivita: undefined }));
         break;
       case 'errore':

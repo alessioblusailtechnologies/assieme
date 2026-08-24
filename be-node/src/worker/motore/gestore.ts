@@ -273,7 +273,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
          scritta, prima del `fine`, così l'utente vede il passo e l'esito.
          Un apprendimento mancato non è un errore della risposta. */
       if (conversazione.memoria_attiva && dip.estrattore && !(await annullato())) {
-        await emetti({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
+        await emetti({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
         try {
           const esito = await apprendi(db, dip.estrattore, payload.conversazioneId, job.id);
           if (esito.appresi.length) await emetti({ tipo: 'memoria', ricordi: esito.appresi });

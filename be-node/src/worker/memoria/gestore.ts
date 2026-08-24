@@ -11,7 +11,7 @@ import { ambitoEffettivo, valutaPerimetro } from './perimetro.js';
 /**
  * L'apprendimento durante la conversazione (RF-G-01): il gestore della chat
  * lo chiama appena ha persistito la risposta, prima del `fine`, così
- * l'utente vede «Aggiorno la memoria» e poi ciò che è stato imparato.
+ * l'utente vede «Cerco qualcosa da ricordare» e poi ciò che è stato imparato.
  * Si leggono gli scambi non ancora appresi, si chiedono al motore (lo
  * stesso della chat, col modello del tenant) i candidati, si applica il
  * perimetro (RF-G-05), si scartano i doppioni e si persiste ciò che resta
