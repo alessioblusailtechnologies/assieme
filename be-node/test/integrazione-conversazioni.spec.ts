@@ -170,9 +170,20 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       radice,
       attesaAllegatiMs: 1000,
       generatoreTitolo: { genera: () => Promise.resolve('Franchigie cristalli Km&Servizi') },
+      /* La memoria impara in linea a ogni risposta (Fase 8): un estrattore
+         a copione, col primo candidato dentro il perimetro. */
+      estrattore: {
+        estrai: () =>
+          Promise.resolve({
+            candidati: [
+              { testo: 'Per la garanzia cristalli l’agenzia segnala sempre la franchigia al cliente.', categoria: 'prassi', ambito: 'tenant' },
+            ],
+            modello: 'finto',
+            token: { input: 10, output: 5, cacheLettura: 0, cacheScrittura: 0 },
+            costoUsd: 0.001,
+          }),
+      },
     });
-    // La memoria impara a ogni risposta (Fase 8): qui si verifica l'accodamento, non si impara.
-    gestori.memoria = () => Promise.resolve();
     // E un'ingestion finta per gli allegati: il .md compare nello Storage finto e il documento diventa pronto.
     gestori.ingestion = async (job, { db }) => {
       const id = String(job.payload['documentoId']);
@@ -322,12 +333,12 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(r.headers['content-type']).toContain('text/event-stream');
     const eventi = eventiDa(r.body);
     expect(eventi[0]?.tipo).toBe('inizio');
-    // RF-G-01: a risposta scritta il job di memoria è in coda per questa conversazione.
-    const memoria = await pool().query(
-      `select 1 from velia.jobs where tipo = 'memoria' and payload->>'conversazioneId' = $1`,
-      [convId],
-    );
-    expect(memoria.rowCount).toBe(1);
+    // RF-G-01: a risposta scritta la memoria impara nello stesso stream — il passo, poi l'esito.
+    expect(eventi.some((e) => e.tipo === 'attivita' && e.etichetta === 'Aggiorno la memoria')).toBe(true);
+    const memoria = eventi.find((e) => e.tipo === 'memoria');
+    expect(memoria?.tipo === 'memoria' && memoria.ricordi).toMatchObject([{ categoria: 'prassi', ambito: 'tenant' }]);
+    const ricordi = await pool().query(`select 1 from velia.ricordi where origine_conversazione_id = $1`, [convId]);
+    expect(ricordi.rowCount).toBe(1);
     expect(eventi.map((e) => e.tipo)).toEqual(
       expect.arrayContaining(['inizio', 'attivita', 'testo', 'citazione', 'provenienza', 'fine']),
     );

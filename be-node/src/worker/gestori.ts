@@ -42,6 +42,24 @@ let interrogazioneVera: GestoreJob | undefined;
 let tabellaVera: GestoreJob | undefined;
 let agenteVero: GestoreJob | undefined;
 let memoriaVera: GestoreJob | undefined;
+let estrattoreVero: EstrattoreMotore | undefined;
+
+/** La memoria (Fase 8) usa lo stesso motore della chat, col modello del tenant: pochi turni, nessun documento. */
+function estrattoreMemoria(): EstrattoreMotore {
+  if (!estrattoreVero) {
+    const c = configurazione();
+    estrattoreVero = new EstrattoreMotore(
+      new MotoreAgentSdk({
+        modello: c.MODELLO_MOTORE,
+        maxTurni: 4,
+        budgetUsd: c.MOTORE_BUDGET_USD,
+        ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+      }),
+      resolve(c.CARTELLA_WORKER),
+    );
+  }
+  return estrattoreVero;
+}
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
@@ -67,6 +85,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         archivio: new ArchivioStorage(),
         generatoreTitolo: new GeneratoreTitoloHaiku(),
         generatoreSuggerimenti: new GeneratoreSuggerimentiHaiku(),
+        estrattore: estrattoreMemoria(),
         radice: resolve(c.CARTELLA_WORKER),
       });
     }
@@ -109,22 +128,9 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
     await tabellaVera(job, strumenti);
   },
 
-  /** Fase 8: l'apprendimento durante la conversazione — lo stesso motore, modello del tenant. */
+  /** Fase 8: il job di memoria a sé (rilavorare una conversazione a mano); la chat impara in linea. */
   memoria: async (job, strumenti) => {
-    if (!memoriaVera) {
-      const c = configurazione();
-      memoriaVera = creaGestoreMemoria({
-        estrattore: new EstrattoreMotore(
-          new MotoreAgentSdk({
-            modello: c.MODELLO_MOTORE,
-            maxTurni: 4,
-            budgetUsd: c.MOTORE_BUDGET_USD,
-            ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
-          }),
-          resolve(c.CARTELLA_WORKER),
-        ),
-      });
-    }
+    memoriaVera ??= creaGestoreMemoria({ estrattore: estrattoreMemoria() });
     await memoriaVera(job, strumenti);
   },
 

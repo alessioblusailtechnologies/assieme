@@ -81,8 +81,18 @@ export type EventoStream =
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }
   | { tipo: 'non-supportato' }
+  /** RF-G-01: ciò che la memoria ha imparato da questo scambio (solo se ha imparato qualcosa). */
+  | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
+
+/** Un ricordo appena appreso, nella forma minima che la bolla mostra e collega al pannello. */
+export interface RicordoAppreso {
+  id: string;
+  testo: string;
+  categoria: 'prassi' | 'cliente' | 'preferenza' | 'decisione' | 'altro';
+  ambito: 'tenant' | 'personale';
+}
 
 export const TITOLO_NUOVA = 'Nuova conversazione';
 

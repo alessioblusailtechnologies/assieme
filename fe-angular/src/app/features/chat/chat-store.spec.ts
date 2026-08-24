@@ -149,6 +149,31 @@ describe('ChatStore', () => {
     expect(http.match('/api/conversazioni').length).toBe(1);
   });
 
+  it('mostra ciò che la memoria ha imparato dallo scambio (RF-G-01) e chiude l’attività', async () => {
+    await avvia();
+    const stream = await invia('Come gestiamo le franchigie?');
+
+    let ricevuto = blocco({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' });
+    ricevuto += blocco({ tipo: 'testo', delta: 'Franchigia fissa.' });
+    ricevuto += blocco({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
+    stream.event({
+      type: HttpEventType.DownloadProgress,
+      loaded: ricevuto.length,
+      partialText: ricevuto,
+    } as HttpDownloadProgressEvent);
+    expect(store.messaggi()[1].attivita).toBe('Aggiorno la memoria');
+
+    ricevuto += blocco({
+      tipo: 'memoria',
+      ricordi: [{ id: 'ric-9', testo: 'L’agenzia privilegia le franchigie fisse.', categoria: 'prassi', ambito: 'tenant' }],
+    });
+    ricevuto += blocco({ tipo: 'fine' });
+    stream.flush(ricevuto);
+    const risposta = store.messaggi()[1];
+    expect(risposta.attivita).toBeUndefined();
+    expect(risposta.ricordiAppresi?.map((r) => r.id)).toEqual(['ric-9']);
+  });
+
   it('segnala la risposta non fondata sui documenti (RF-C-08)', async () => {
     await avvia();
     const stream = await invia('Copre la grandine?');

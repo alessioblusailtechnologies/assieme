@@ -91,8 +91,22 @@ export type EventoStream =
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }
   | { tipo: 'non-supportato' }
+  /**
+   * RF-G-01: la memoria impara durante la conversazione. Arriva dopo le
+   * fonti e prima del `fine`, solo se qualcosa è stato imparato: la bolla
+   * lo mostra e lo collega al pannello Memoria, dove si governa.
+   */
+  | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
+
+/** Un ricordo appena appreso, nella forma minima che la bolla mostra. */
+export interface RicordoAppreso {
+  id: Id;
+  testo: string;
+  categoria: 'prassi' | 'cliente' | 'preferenza' | 'decisione' | 'altro';
+  ambito: 'tenant' | 'personale';
+}
 
 /** Corpo della richiesta di invio messaggio. */
 export interface NuovoMessaggio {

@@ -8,6 +8,7 @@ import {
   EventoStream,
   Id,
   Messaggio,
+  RicordoAppreso,
   RiferimentoDocumento,
   TemplateOutput,
 } from '@core/models';
@@ -37,6 +38,8 @@ export interface MessaggioInStream extends Messaggio {
   interrotto?: boolean;
   /** L'ultimo passo di lavoro del motore, finché il testo non arriva. */
   attivita?: string;
+  /** RF-G-01: ciò che la memoria ha imparato da questo scambio (vive solo nello stream). */
+  ricordiAppresi?: RicordoAppreso[];
 }
 
 /** La coppia domanda/risposta che sta attraversando lo stream. */
@@ -357,6 +360,10 @@ export class ChatStore {
         break;
       case 'non-supportato':
         this.aggiornaAssistente((m) => ({ ...m, nonSupportato: true }));
+        break;
+      case 'memoria':
+        /* L'esito chiude anche l'attività «Aggiorno la memoria». */
+        this.aggiornaAssistente((m) => ({ ...m, ricordiAppresi: evento.ricordi, attivita: undefined }));
         break;
       case 'errore':
         this.aggiornaAssistente((m) => ({ ...m, inCorso: false, erroreStream: evento.messaggio }));

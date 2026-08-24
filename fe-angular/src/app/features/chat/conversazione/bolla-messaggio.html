@@ -90,6 +90,29 @@
         </div>
       }
 
+      @if (m.ricordiAppresi?.length) {
+        <!--
+          RF-G-01/G-03: ciò che la memoria ha appena imparato da questo
+          scambio si vede subito, e porta al pannello dove si corregge o si
+          cancella. Un'informazione appresa senza dirlo non genera fiducia.
+        -->
+        <div class="memoria" aria-live="polite">
+          <span class="memoria__tipo">Memorizzato</span>
+          <ul class="memoria__elenco">
+            @for (r of m.ricordiAppresi; track r.id) {
+              <li>
+                <a class="memoria__ricordo" routerLink="/memoria" uiSuggerimento="Apri il pannello Memoria per correggere o eliminare">
+                  {{ r.testo }}
+                  @if (r.ambito === 'personale') {
+                    <span class="memoria__ambito">personale</span>
+                  }
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
       @if (!m.inCorso && m.testo) {
         <div class="azioni">
           <button

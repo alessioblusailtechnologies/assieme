@@ -153,6 +153,16 @@ Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è qu
         etichetta: 'tiene conto del ricordo "franchigie fisse per i clienti con più veicoli"',
       },
     ],
+    /* RF-G-01: la memoria impara durante la conversazione — a risposta data
+       il sistema dice cosa ha memorizzato, e la bolla lo collega al pannello. */
+    ricordiAppresi: [
+      {
+        id: 'ric-007',
+        testo: 'Per i clienti che temono il danno parziale l’agenzia presenta la franchigia fissa come formula più prevedibile.',
+        categoria: 'prassi',
+        ambito: 'tenant',
+      },
+    ],
   };
 }
 
@@ -360,6 +370,17 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   for (const p of scenario.provenienze) {
     if (interrotto) return;
     invia({ tipo: 'provenienza', provenienza: p });
+    await attendi(120);
+  }
+
+  /* RF-G-01: la memoria impara in linea, prima del `fine`: il passo si
+     vede, l'esito arriva solo se qualcosa è stato imparato. */
+  if (scenario.ricordiAppresi?.length) {
+    if (interrotto) return;
+    invia({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
+    await attendi(900);
+    if (interrotto) return;
+    invia({ tipo: 'memoria', ricordi: scenario.ricordiAppresi });
     await attendi(120);
   }
 

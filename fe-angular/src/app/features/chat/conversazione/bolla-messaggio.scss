@@ -342,6 +342,58 @@
   color: var(--c-prov-memoria);
 }
 
+/* ---------- Memoria: ciò che è stato appena imparato ---------- */
+
+.memoria {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.memoria__tipo {
+  align-self: flex-start;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--c-prov-memoria-soft);
+  color: var(--c-prov-memoria);
+}
+
+.memoria__elenco {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memoria__ricordo {
+  color: inherit;
+  text-decoration: none;
+  font-style: italic;
+}
+
+.memoria__ricordo:hover,
+.memoria__ricordo:focus-visible {
+  color: var(--c-text);
+}
+
+.memoria__ambito {
+  margin-left: var(--sp-1);
+  font-style: normal;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
 /* ---------- Azioni ---------- */
 
 .azioni {

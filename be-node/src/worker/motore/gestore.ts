@@ -1,10 +1,12 @@
 import type pg from 'pg';
 
 import type { Citazione, EventoStream, Provenienza } from '../../contratto/conversazioni.js';
-import { accoda, type Job } from '../coda.js';
+import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
+import type { EstrattoreRicordi } from '../memoria/estrattore.js';
+import { apprendi } from '../memoria/gestore.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
 import type { GeneratoreSuggerimenti } from './suggeritore.js';
@@ -34,6 +36,8 @@ export interface DipendenzeInterrogazione {
   generatoreSuggerimenti?: GeneratoreSuggerimenti;
   /** Quanto aspettare un allegato ancora in elaborazione prima di partire senza. */
   attesaAllegatiMs?: number;
+  /** RF-G-01: chi impara dagli scambi a risposta data; senza, la memoria non si aggiorna. */
+  estrattore?: EstrattoreRicordi;
 }
 
 interface PayloadInterrogazione {
@@ -266,11 +270,13 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       await registraConsumi(db, tenantId, job.id, esito);
 
       /* RF-G-01: la memoria impara durante la conversazione — a risposta
-         scritta si accoda il job che legge gli scambi nuovi. Un accodamento
-         mancato non è un errore della risposta. */
-      if (conversazione.memoria_attiva) {
+         scritta, prima del `fine`, così l'utente vede il passo e l'esito.
+         Un apprendimento mancato non è un errore della risposta. */
+      if (conversazione.memoria_attiva && dip.estrattore && !(await annullato())) {
+        await emetti({ tipo: 'attivita', etichetta: 'Aggiorno la memoria' });
         try {
-          await accoda(db, 'memoria', { conversazioneId: payload.conversazioneId }, { tenantId, utenteId: payload.utenteId });
+          const esito = await apprendi(db, dip.estrattore, payload.conversazioneId, job.id);
+          if (esito.appresi.length) await emetti({ tipo: 'memoria', ricordi: esito.appresi });
         } catch (errore) {
           await emettiEvento(db, job.id, 'memoria-saltata', {
             motivo: errore instanceof Error ? errore.message : String(errore),
