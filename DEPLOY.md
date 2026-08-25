@@ -6,12 +6,23 @@ Tre pezzi, tre posti:
 |---|---|---|
 | Sito (Astro) | Cloudflare Pages | già lì |
 | App (Angular, `fe-angular/`) | Cloudflare Pages, `app.sonovelia.it` | è statica: CDN, TLS e DNS sullo stesso account del sito |
-| Backend (`be-node/`: API + worker) | Railway, regione **Amsterdam** (`europe-west4`), `api.sonovelia.it` | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
+| Backend (`be-node/`: API + worker) | **Render**, regione **Francoforte**, `api.sonovelia.it` (Blueprint `render.yaml` alla radice del repo; la guida Railway sotto resta come riferimento, i passi sono equivalenti) | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
 | Database e Storage | Supabase (già in cloud, progetto `hcxiloivukbdcfcugksg`) | invariato |
 
 ---
 
-## 1. Backend su Railway
+## 1. Backend su Render (scelto il 25/08/2026)
+
+Il Blueprint `render.yaml` alla radice del repo definisce i due servizi dalla stessa immagine `be-node/Dockerfile`:
+
+1. Render → *New* → *Blueprint* → connetti il repo GitHub: legge `render.yaml` e crea **velia-api** (Web Service, Docker, health check `/api/salute`, piano Starter) e **velia-worker** (Background Worker, Docker, disco 5 GB su `/app/.velia-worker`, piano Standard: 2 GB di memoria per il processo figlio dell'Agent SDK). Regione Francoforte.
+2. Al primo *Apply* Render chiede i valori con `sync: false`: gli stessi di `be-node/.env` (Supabase, `DATABASE_URL` in **modalità sessione** porta 5432, chiavi Anthropic/HostYourAI, e per il worker `FLY_API_TOKEN` e `ANTHROPIC_API_KEY_SANDBOX`).
+3. *velia-api → Settings → Custom Domains*: `api.sonovelia.it` (Render dà il CNAME per Cloudflare DNS; proxy Cloudflare va bene, lo stream SSE manda un battito ogni pochi secondi).
+4. Deploy automatico a ogni push su `main`. Controllo: `curl https://api.sonovelia.it/api/salute`; nei log del worker «avviato, in ascolto sulla coda».
+
+Da sapere su Render: `PORT` la assegna lui (il server la legge); i piani gratuiti si addormentano e non hanno dischi, quindi non vanno bene né per l'API (SSE) né per il worker; il disco persistente fa sì che il worker non possa scalare a più istanze (e va bene così: la coda è una).
+
+## 1b. Backend su Railway (alternativa, stessa immagine)
 
 Un'immagine sola (`be-node/Dockerfile`) e **due servizi** dallo stesso repo: il comando di avvio li distingue.
 
@@ -73,7 +84,7 @@ Poi login dall'app e una domanda in chat: il job passa dal worker (log del servi
 
 ## 2b. Sandbox dell'Esportazione elaborata su Fly.io
 
-Railway resta per API e worker; l'Esportazione elaborata (il motore documentale con Python, LibreOffice e Chromium) gira in una **Machine Fly.io per job**, ad Amsterdam, senza rete verso i nostri servizi e senza segreti: il worker la crea, le manda i file, esegue i comandi del modello, ritira i documenti e la distrugge. Si paga solo il tempo delle Machine attive.
+Render (o Railway) tiene API e worker; l'Esportazione elaborata (il motore documentale con Python, LibreOffice e Chromium) gira in una **Machine Fly.io per job**, ad Amsterdam, senza rete verso i nostri servizi e senza segreti: il worker la crea, le manda i file, esegue i comandi del modello, ritira i documenti e la distrugge. Si paga solo il tempo delle Machine attive.
 
 Fatto una volta (25/08/2026, org `personal`): app `velia-sandbox` creata via Machines API, IPv4 condiviso e IPv6 allocati (servono al worker per raggiungere la Machine passando dal proxy di Fly con l'intestazione `fly-force-instance-id`).
 
@@ -87,7 +98,7 @@ docker tag velia-sandbox registry.fly.io/velia-sandbox:latest
 docker push registry.fly.io/velia-sandbox:latest
 ```
 
-Variabili del **worker** su Railway: `SANDBOX_AVVIATORE=fly`, `SANDBOX_IMMAGINE=registry.fly.io/velia-sandbox:latest`, `FLY_API_TOKEN` (token di organizzazione), `FLY_APP_SANDBOX=velia-sandbox`, `FLY_REGIONE=ams`, **`ANTHROPIC_API_KEY_SANDBOX`** (una chiave dedicata, creata in un workspace Anthropic separato con tetto di spesa mensile: è quella che entra nella Machine, dietro un proxy locale; senza, si usa `ANTHROPIC_API_KEY`). Senza `SANDBOX_AVVIATORE` l'Esportazione elaborata si dichiara non disponibile e il resto funziona.
+Variabili del **worker** (già nel `render.yaml`): `SANDBOX_AVVIATORE=fly`, `SANDBOX_IMMAGINE=registry.fly.io/velia-sandbox:latest`, `FLY_API_TOKEN` (token di organizzazione), `FLY_APP_SANDBOX=velia-sandbox`, `FLY_REGIONE=ams`, **`ANTHROPIC_API_KEY_SANDBOX`** (una chiave dedicata, creata in un workspace Anthropic separato con tetto di spesa mensile: è quella che entra nella Machine, dietro un proxy locale; senza, si usa `ANTHROPIC_API_KEY`). Senza `SANDBOX_AVVIATORE` l'Esportazione elaborata si dichiara non disponibile e il resto funziona.
 
 Dentro la Machine gira Claude Code (Agent SDK) con le skill documentali di Anthropic, in un network namespace isolato che raggiunge solo il proxy della chiave (nessun accesso a Internet dal modello). In locale, con Docker, il container parte con `--cap-add NET_ADMIN --cap-add SYS_ADMIN` per creare lo stesso namespace.
 
@@ -95,8 +106,8 @@ Prova dal locale: `npx tsx tools/collaudo-elaborata.ts pdf "<istruzioni>" [templ
 
 ## 3. Cose da sapere
 
-- **Segreti**: solo nelle variabili di Railway, mai nell'immagine né nel repo. `.env` resta locale.
+- **Segreti**: solo nelle variabili della piattaforma (Render/Railway), mai nell'immagine né nel repo. `.env` resta locale.
 - **CORS**: l'API accetta solo le origini in `CORS_ORIGINI`. Il token viaggia in `Authorization`, non nei cookie.
-- **Costi**: Railway a consumo (~15-25 $/mese per i due servizi con poco traffico); Pages gratis. I costi AI sono in `velia.consumi`, per tenant.
-- **Residenza dei dati**: Railway Amsterdam e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte).
-- **Aggiornare**: push su `main` → Railway e Pages ricostruiscono. Le migrazioni prima, a mano.
+- **Costi**: Render Starter (7 $) per l'API + Standard (25 $) per il worker + disco (~1 $); Pages gratis; Fly solo a consumo. I costi AI sono in `velia.consumi`, per tenant.
+- **Residenza dei dati**: Render Francoforte, Fly Amsterdam e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte).
+- **Aggiornare**: push su `main` → Render e Pages ricostruiscono. Le migrazioni prima, a mano.

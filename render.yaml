@@ -1,0 +1,92 @@
+# Blueprint Render per il backend di VELIA: un'immagine sola (be-node/Dockerfile),
+# due servizi, regione Francoforte (UE). L'app Angular sta su Cloudflare Pages
+# (vedi DEPLOY.md §2); la sandbox dell'Esportazione elaborata su Fly.io (§2b).
+#
+# Render → New → Blueprint → questo repo: legge questo file e crea i servizi.
+# I segreti (sync: false) li chiede una volta nel pannello; il resto è qui.
+services:
+  # --- API: HTTP pubblico, health check su /api/salute ---------------------
+  - type: web
+    name: velia-api
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    rootDir: be-node
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node dist/src/api/server.js
+    healthCheckPath: /api/salute
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LIVELLO
+        value: info
+      - key: CORS_ORIGINI
+        value: https://app.sonovelia.it
+      - key: MODELLO_MOTORE
+        value: claude-opus-5
+      - key: SUPABASE_URL
+        value: https://hcxiloivukbdcfcugksg.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: HOSTYOURAI_API_KEY
+        sync: false
+
+  # --- Worker: nessuna porta, disco per la cache delle workspace -----------
+  - type: worker
+    name: velia-worker
+    runtime: docker
+    region: frankfurt
+    plan: standard
+    rootDir: be-node
+    dockerfilePath: ./Dockerfile
+    dockerCommand: node dist/src/worker/main.js
+    autoDeploy: true
+    disk:
+      name: velia-worker-cache
+      mountPath: /app/.velia-worker
+      sizeGB: 5
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LIVELLO
+        value: info
+      - key: MODELLO_MOTORE
+        value: claude-opus-5
+      - key: CARTELLA_WORKER
+        value: /app/.velia-worker
+      - key: SUPABASE_URL
+        value: https://hcxiloivukbdcfcugksg.supabase.co
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: HOSTYOURAI_API_KEY
+        sync: false
+      # Esportazione elaborata: una Machine Fly.io per job (DEPLOY.md §2b).
+      - key: SANDBOX_AVVIATORE
+        value: fly
+      - key: SANDBOX_IMMAGINE
+        value: registry.fly.io/velia-sandbox:latest
+      - key: FLY_APP_SANDBOX
+        value: velia-sandbox
+      - key: FLY_REGIONE
+        value: ams
+      - key: FLY_API_TOKEN
+        sync: false
+      - key: ANTHROPIC_API_KEY_SANDBOX
+        sync: false
