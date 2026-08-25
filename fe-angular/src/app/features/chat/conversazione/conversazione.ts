@@ -21,7 +21,9 @@ import { httpResource } from '@angular/common/http';
 import { ChatStore } from '../chat-store';
 import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
-import { Citazione, etichettaCitazione } from '@core/models';
+import { Campo } from '@shared/ui/campo/campo';
+import { Citazione, FormatoGenerazione, etichettaCitazione } from '@core/models';
+import { Select } from '@shared/ui/select/select';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -47,12 +49,14 @@ const SOGLIA_FONDO_PX = 120;
   imports: [
     BollaMessaggio,
     Bottone,
+    Campo,
     Cassetto,
     Composer,
     Icona,
     MenuAzioni,
     RouterLink,
     Scheletro,
+    Select,
     StatoVuoto,
     VisualizzatorePdf,
   ],
@@ -200,6 +204,73 @@ export class Conversazione {
   protected apriEsporta(evento: Event, messaggioId: string): void {
     this.messaggioDaEsportare = messaggioId;
     this.menuEsporta()?.apri(evento);
+  }
+
+  // --- Esportazione elaborata ---------------------------------------------
+
+  /**
+   * Il modulo dell'Esportazione elaborata: la risposta da impaginare, il
+   * template (o il predefinito del formato), il formato, le istruzioni.
+   * Alla conferma parte come un messaggio: il lavoro del motore documentale
+   * si vede nel filo e il chip compare quando il documento è pronto.
+   */
+  protected readonly elaborataAperta = signal(false);
+  protected readonly elaborataMessaggioId = signal<string | undefined>(undefined);
+  protected readonly elaborataFormato = signal<FormatoGenerazione>('pdf');
+  protected readonly elaborataTemplateId = signal<string | undefined>(undefined);
+  protected readonly elaborataIstruzioni = signal('');
+
+  protected readonly formatiElaborata: { valore: FormatoGenerazione; etichetta: string }[] = [
+    { valore: 'pdf', etichetta: 'PDF' },
+    { valore: 'docx', etichetta: 'Word (DOCX)' },
+    { valore: 'xlsx', etichetta: 'Excel (XLSX)' },
+  ];
+
+  /** I template del formato scelto; il predefinito per primo. */
+  protected readonly templateElaborata = computed(() =>
+    this.store
+      .template()
+      .filter((t) => t.formato === this.elaborataFormato())
+      .sort((a, b) => Number(b.predefinito) - Number(a.predefinito))
+      .map((t) => ({ valore: t.id, etichetta: t.predefinito ? `${t.nome} (predefinito)` : t.nome })),
+  );
+
+  protected apriElaborata(messaggioId: string): void {
+    this.elaborataMessaggioId.set(messaggioId);
+    this.elaborataTemplateId.set(undefined);
+    this.elaborataIstruzioni.set('');
+    this.elaborataAperta.set(true);
+  }
+
+  protected cambiaFormatoElaborata(valore: unknown): void {
+    this.elaborataFormato.set(valore as FormatoGenerazione);
+    this.elaborataTemplateId.set(undefined);
+  }
+
+  protected avviaElaborata(): void {
+    const messaggioId = this.elaborataMessaggioId();
+    if (!messaggioId) return;
+    const formato = this.elaborataFormato();
+    const templateId = this.elaborataTemplateId();
+    const istruzioni = this.elaborataIstruzioni().trim();
+    const template = this.store.template().find((t) => t.id === templateId);
+    const descrizione = [
+      `documento ${formato.toUpperCase()}`,
+      template ? `sul template «${template.nome}»` : undefined,
+      istruzioni ? `— ${istruzioni}` : undefined,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    this.elaborataAperta.set(false);
+    this.store.inviaEsportazione(
+      {
+        formato,
+        messaggioId,
+        ...(templateId && { templateId }),
+        ...(istruzioni && { istruzioni }),
+      },
+      descrizione,
+    );
   }
 
   /**

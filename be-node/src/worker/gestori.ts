@@ -15,6 +15,8 @@ import { creaGestoreMemoria } from './memoria/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
+import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
+import { AvviatoreDocker, AvviatoreFly, type AvviatoreSandbox } from './sandbox/sandbox.js';
 import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
 import { creaGestoreTabelle } from './tabelle/gestore.js';
@@ -49,6 +51,40 @@ let estrattoreVero: EstrattoreMotore | undefined;
 const fornitori = (c: ReturnType<typeof configurazione>): ChiaviFornitori => ({
   hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
 });
+
+/**
+ * L'Esportazione elaborata: la sandbox documentale (Docker in locale, Machine
+ * su Fly.io) e un motore con tetti suoi. Senza `SANDBOX_AVVIATORE` non c'è.
+ */
+let sandboxVera: { avviatore: AvviatoreSandbox; sessione: OpzioniSessioneDocumentale } | undefined;
+function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
+  if (sandboxVera) return sandboxVera;
+  /* La chiave che entra nella sandbox: dedicata se c'è, altrimenti quella della chat (sviluppo). */
+  const chiaveApi = c.ANTHROPIC_API_KEY_SANDBOX ?? c.ANTHROPIC_API_KEY;
+  if (!chiaveApi) return undefined;
+  let avviatore: AvviatoreSandbox | undefined;
+  if (c.SANDBOX_AVVIATORE === 'docker') avviatore = new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi);
+  if (c.SANDBOX_AVVIATORE === 'fly' && c.FLY_API_TOKEN) {
+    avviatore = new AvviatoreFly({
+      token: c.FLY_API_TOKEN,
+      app: c.FLY_APP_SANDBOX,
+      immagine: c.SANDBOX_IMMAGINE,
+      regione: c.FLY_REGIONE,
+      chiaveApi,
+    });
+  }
+  if (!avviatore) return undefined;
+  sandboxVera = {
+    avviatore,
+    sessione: {
+      modello: c.MODELLO_MOTORE,
+      maxTurni: c.SANDBOX_MAX_TURNI,
+      budgetUsd: c.SANDBOX_BUDGET_USD,
+      ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+    },
+  };
+  return sandboxVera;
+}
 
 /** La memoria (Fase 8) usa lo stesso motore della chat, col modello del tenant: pochi turni, nessun documento. */
 function estrattoreMemoria(): EstrattoreMotore {
@@ -97,6 +133,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         generatoreSuggerimenti: new GeneratoreSuggerimentiHaiku(),
         estrattore: estrattoreMemoria(),
         radice: resolve(c.CARTELLA_WORKER),
+        ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
       });
     }
     await interrogazioneVera(job, strumenti);

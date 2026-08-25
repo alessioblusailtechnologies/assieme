@@ -50,7 +50,12 @@ export interface RichiestaMotore {
    * Strumenti oltre alla lettura (la chat: `genera_documento`), come server
    * MCP in-process dell'SDK. Senza, il modello ha i soli tool di lettura.
    */
-  strumenti?: { server: McpSdkServerConfigWithInstance; nomi: string[] };
+  strumenti?: {
+    server: McpSdkServerConfigWithInstance;
+    nomi: string[];
+    /** Solo questi strumenti, niente lettura locale: la sessione documentale vive nella sandbox. */
+    esclusivi?: boolean;
+  };
 }
 
 export interface OsservatoreSessione {
@@ -158,8 +163,11 @@ export class MotoreAgentSdk implements Motore {
       ...(fornitore.env && { env: fornitore.env }),
       ...(this.opzioni.effort && !fornitore.terzo && { effort: this.opzioni.effort }),
       systemPrompt: richiesta.promptSistema,
-      tools: ['Read', 'Grep', 'Glob'],
-      allowedTools: ['Read', 'Grep', 'Glob', ...(richiesta.strumenti?.nomi ?? [])],
+      tools: richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob'],
+      allowedTools: [
+        ...(richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob']),
+        ...(richiesta.strumenti?.nomi ?? []),
+      ],
       ...(richiesta.strumenti && { mcpServers: { velia: richiesta.strumenti.server } }),
       disallowedTools: ['Bash', 'Write', 'Edit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Skill'],
       permissionMode: 'default',
@@ -411,9 +419,22 @@ export function etichettaAttivita(
       if (!cosa.titolo) return oltre ? 'Continuo a leggere' : 'Leggo un documento';
       return `${oltre ? 'Continuo a leggere' : 'Leggo'} «${cosa.titolo}»`;
     }
-    case 'mcp__velia__genera_documento': {
+    case 'mcp__velia__esporta_subito': {
       const titolo = typeof input['titolo'] === 'string' ? accorcia(input['titolo'], 70) : '';
       return titolo ? `Preparo il documento «${titolo}»` : 'Preparo il documento';
+    }
+    case 'mcp__velia__esportazione_elaborata':
+      return 'Esportazione elaborata in corso';
+    case 'mcp__velia__esegui':
+    case 'mcp__velia__scrivi_file':
+    case 'mcp__velia__leggi_file':
+    case 'mcp__velia__consegna': {
+      /* Nella sandbox il modello dice lui cosa sta facendo (`nota`), a parole da utente. */
+      const nota = typeof input['nota'] === 'string' ? accorcia(input['nota'], 80) : '';
+      if (nota) return nota;
+      if (tool === 'mcp__velia__leggi_file') return 'Controllo il risultato';
+      if (tool === 'mcp__velia__consegna') return 'Consegno il documento';
+      return 'Lavoro al documento';
     }
     default:
       return 'Sto lavorando alla risposta';

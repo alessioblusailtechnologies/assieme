@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { RigaTemplate } from '../src/generazione/catalogo.js';
-import { NOME_TOOL_DOCUMENTO, scegliTemplate } from '../src/worker/motore/strumenti.js';
+import { NOME_TOOL_ESPORTA_SUBITO, scegliTemplate } from '../src/worker/motore/strumenti.js';
 import { etichettaAttivita } from '../src/worker/motore/sessione.js';
 import { promptSistema } from '../src/worker/motore/regole.js';
 
@@ -68,18 +68,19 @@ describe('scegliTemplate', () => {
 
 describe('il tool nel motore', () => {
   it('l’attività si racconta col titolo del documento, mai col nome del tool', () => {
-    expect(etichettaAttivita(NOME_TOOL_DOCUMENTO, { titolo: 'Proposta RC Auto Rossi' }, 'C:/ws')).toBe(
+    expect(etichettaAttivita(NOME_TOOL_ESPORTA_SUBITO, { titolo: 'Proposta RC Auto Rossi' }, 'C:/ws')).toBe(
       'Preparo il documento «Proposta RC Auto Rossi»',
     );
-    expect(etichettaAttivita(NOME_TOOL_DOCUMENTO, {}, 'C:/ws')).toBe('Preparo il documento');
+    expect(etichettaAttivita(NOME_TOOL_ESPORTA_SUBITO, {}, 'C:/ws')).toBe('Preparo il documento');
   });
 
   it('il prompt elenca i template per nome e spiega quando usare lo strumento', () => {
     const vuoto = { istruzioni: [], riferimenti: [], ricordi: [] };
     const conTemplate = promptSistema(vuoto, [{ nome: 'Proposta breve', formato: 'docx', predefinito: true }]);
-    expect(conTemplate).toContain('genera_documento');
+    expect(conTemplate).toContain('esporta_subito');
+    expect(conTemplate).toContain('esportazione_elaborata');
     expect(conTemplate).toContain('«Proposta breve» (DOCX, predefinito per il formato)');
     expect(promptSistema(vuoto, [])).toContain('non ha template caricati');
-    expect(promptSistema(vuoto)).not.toContain('genera_documento');
+    expect(promptSistema(vuoto)).not.toContain('esporta_subito');
   });
 });

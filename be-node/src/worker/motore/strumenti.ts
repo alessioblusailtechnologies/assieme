@@ -24,7 +24,8 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 
 /**
  * Gli strumenti che la chat dà al motore oltre alla lettura: il tool
- * `genera_documento`, con cui l'utente ottiene un file sul template
+ * `esporta_subito` (deterministico, istantaneo) ed `esportazione_elaborata`
+ * (sandbox documentale), con cui l'utente ottiene un file sul template
  * dell'agenzia senza uscire dalla conversazione («esporta con Proposta
  * breve», «fammelo in Excel»).
  *
@@ -36,7 +37,10 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
  */
 
 export const NOME_SERVER = 'velia';
-export const NOME_TOOL_DOCUMENTO = `mcp__${NOME_SERVER}__genera_documento`;
+export const NOME_TOOL_ESPORTA_SUBITO = `mcp__${NOME_SERVER}__esporta_subito`;
+export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`;
+/** @deprecated nome storico */
+export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
 /** Un template come lo vede il prompt: nome, formato, se è il predefinito. */
 export interface TemplateNelPrompt {
@@ -54,6 +58,18 @@ export interface ContestoStrumenti {
   messaggioId: string;
   /** Chiamato a ogni documento generato: l'evento verso il FE parte da qui. */
   suDocumento: (documento: DocumentoGenerato) => Promise<void>;
+  /**
+   * L'Esportazione elaborata richiamata a parole in chat: il gestore la
+   * esegue (sandbox documentale) e ritorna il messaggio finale del motore
+   * documentale. Assente = la sandbox non è configurata e il tool non c'è.
+   */
+  elaborata?: (richiesta: {
+    formato: FormatoGenerazione;
+    template?: string | undefined;
+    istruzioni: string;
+    contenuto?: string | undefined;
+    titolo?: string | undefined;
+  }) => Promise<{ testo: string; documenti: DocumentoGenerato[] }>;
 }
 
 export interface StrumentiMotore {
@@ -107,8 +123,8 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   const generati: DocumentoGenerato[] = [];
   const percorsi: string[] = [];
 
-  const generaDocumentoTool = tool(
-    'genera_documento',
+  const esportaSubito = tool(
+    'esporta_subito',
     [
       'Genera un documento (PDF, DOCX o XLSX) sul template dell’agenzia e lo allega alla risposta, pronto da scaricare.',
       'Usalo SOLO quando l’utente chiede esplicitamente un file, un documento, un’esportazione, un allegato o un template',
@@ -192,10 +208,88 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  const esportazioneElaborata = tool(
+    'esportazione_elaborata',
+    [
+      'Fa preparare un documento di qualità professionale (PDF, DOCX o XLSX) al motore documentale, che lavora in una',
+      'sandbox con Python, Node, LibreOffice e Chromium: apre il template o il documento di esempio, lo copia e lo adatta',
+      'conservando impaginazione e stili, controlla il risultato pagina per pagina e lo allega alla risposta.',
+      'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
+      '«da consegnare», una proposta o un report impaginato, o nomina l’Esportazione elaborata. Per un semplice',
+      '«esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
+      'Passa in `istruzioni` tutto ciò che il motore documentale deve sapere (cosa produrre, per chi, con quali dati e',
+      'da quali documenti della workspace) e in `contenuto` il testo di partenza già scritto, se c’è.',
+      'Dopo l’esito, chiudi con UNA riga: il documento è pronto sotto la risposta.',
+    ].join(' '),
+    {
+      formato: z.enum(FORMATI_GENERAZIONE).describe('Il formato del file: pdf, docx o xlsx.'),
+      template: z.string().optional().describe('Il nome del template o del documento di esempio da usare, come lo ha detto l’utente.'),
+      istruzioni: z.string().min(1).max(4000).describe('Le istruzioni per il motore documentale.'),
+      contenuto: z.string().optional().describe('Il testo di partenza in Markdown, se già scritto.'),
+      titolo: z.string().max(160).optional(),
+    },
+    async (args) => {
+      if (!contesto.elaborata) {
+        return { content: [{ type: 'text', text: 'L’Esportazione elaborata non è disponibile in questo ambiente.' }], isError: true };
+      }
+      const template = args.template?.trim() ? await risolviNomeTemplate(contesto, args.template) : undefined;
+      if (template === null) {
+        return {
+          content: [{ type: 'text', text: `Nessun template chiamato «${args.template}»: chiedi all’utente quale usare o procedi senza.` }],
+          isError: true,
+        };
+      }
+      let esito;
+      try {
+        esito = await contesto.elaborata({
+          formato: args.formato,
+          template,
+          istruzioni: args.istruzioni,
+          contenuto: args.contenuto,
+          titolo: args.titolo,
+        });
+      } catch (errore) {
+        /* Il motivo arriva al modello, così lo dice all'utente invece di «problema tecnico». */
+        const motivo = errore instanceof Error ? errore.message : String(errore);
+        return {
+          content: [{ type: 'text', text: `L’Esportazione elaborata non è partita: ${motivo.slice(0, 300)}. Non riprovare da solo: dillo all’utente.` }],
+          isError: true,
+        };
+      }
+      const consegnati = esito.documenti.map((d) => `«${d.nome}» (${d.formato.toUpperCase()})`).join(', ');
+      return {
+        content: [
+          {
+            type: 'text',
+            text: consegnati
+              ? `Esportazione elaborata completata: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
+              : `L’Esportazione elaborata non ha consegnato file. Nota del motore documentale: ${esito.testo}`,
+          },
+        ],
+        ...(!consegnati && { isError: true }),
+      };
+    },
+  );
+
   return {
-    server: createSdkMcpServer({ name: NOME_SERVER, version: '1.0.0', tools: [generaDocumentoTool] }),
-    nomi: [NOME_TOOL_DOCUMENTO],
+    server: createSdkMcpServer({
+      name: NOME_SERVER,
+      version: '1.0.0',
+      tools: [esportaSubito, ...(contesto.elaborata ? [esportazioneElaborata] : [])],
+    }),
+    nomi: [NOME_TOOL_ESPORTA_SUBITO, ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : [])],
     generati,
     percorsi,
   };
+}
+
+/** Il nome detto dall'utente → l'id del template (null se non c'è nulla di simile). */
+async function risolviNomeTemplate(contesto: ContestoStrumenti, nome: string): Promise<string | null> {
+  const client = await contesto.db.connect();
+  try {
+    const scelta = scegliTemplate(await templateDelTenant(client, contesto.tenantId), { template: nome });
+    return scelta.esito === 'ok' && scelta.template.id ? scelta.template.id : null;
+  } finally {
+    client.release();
+  }
 }

@@ -142,9 +142,26 @@ export const schemaModificheConversazione = z
   })
   .passthrough();
 
+/**
+ * La richiesta di Esportazione elaborata (25/08/2026): il messaggio chiede
+ * un documento, non una risposta. Il job apre la sandbox documentale sul
+ * template scelto (o sul predefinito del formato) e consegna il file come
+ * `documento` della risposta. `messaggioId` è la risposta di partenza da
+ * impaginare, se si esporta una risposta esistente.
+ */
+export const schemaEsportazioneElaborata = z.object({
+  formato: z.enum(['pdf', 'docx', 'xlsx']),
+  templateId: z.string().min(1).optional(),
+  messaggioId: z.string().min(1).optional(),
+  istruzioni: z.string().max(4000).optional(),
+});
+
+export type EsportazioneElaborata = z.infer<typeof schemaEsportazioneElaborata>;
+
 export const schemaNuovoMessaggio = z.object({
   testo: z.string(),
   documentiReferenziati: z.array(z.string().min(1)).max(100).default([]),
+  esportazione: schemaEsportazioneElaborata.optional(),
 });
 
 export type NuovoMessaggio = z.infer<typeof schemaNuovoMessaggio>;

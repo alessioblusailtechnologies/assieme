@@ -99,10 +99,26 @@
                     class="azione-esporta"
                     (click)="apriEsporta($event, m.id)"
                     aria-haspopup="menu"
-                    aria-label="Esporta la risposta su un template"
+                    aria-label="Esporta subito la risposta su un template"
                   >
                     <ui-icon name="esporta" [size]="13" />
-                    <span>Esporta</span>
+                    <span>Esporta subito</span>
+                  </button>
+                  <!--
+                    L'Esportazione elaborata: il motore documentale in sandbox,
+                    che parte dal template o da un esempio, impagina, controlla e
+                    consegna. Ci mette un minuto o due e costa crediti: si chiede
+                    con un modulo, non con un clic.
+                  -->
+                  <button
+                    azioni-extra
+                    type="button"
+                    class="azione-esporta"
+                    (click)="apriElaborata(m.id)"
+                    aria-label="Esportazione elaborata della risposta"
+                  >
+                    <ui-icon name="documento" [size]="13" />
+                    <span>Esportazione elaborata</span>
                   </button>
                 }
               </app-bolla-messaggio>
@@ -230,4 +246,67 @@
       </a>
     </div>
   }
+</ui-cassetto>
+
+<!-- Esportazione elaborata: il modulo prima di far partire il motore documentale -->
+<ui-cassetto
+  [aperto]="elaborataAperta()"
+  (apertoChange)="elaborataAperta.set($event)"
+  titolo="Esportazione elaborata"
+>
+  <div class="elaborata">
+    <p class="elaborata__spiega">
+      Il motore documentale prepara un documento vero: parte dal template o da un documento di
+      esempio dell'agenzia, lo adatta conservando l'impaginazione, controlla il risultato pagina
+      per pagina e lo consegna qui in chat. Ci mette uno o due minuti e usa crediti come una
+      risposta.
+    </p>
+
+    <div class="elaborata__campo">
+      <span class="elaborata__nome">Formato</span>
+      <ui-select
+        [valore]="elaborataFormato()"
+        (valoreChange)="cambiaFormatoElaborata($event)"
+        [opzioni]="formatiElaborata"
+        campoEtichetta="etichetta"
+        campoValore="valore"
+        ariaLabel="Formato del documento"
+      />
+    </div>
+
+    <div class="elaborata__campo">
+      <span class="elaborata__nome">Template o documento di esempio</span>
+      <ui-select
+        [valore]="elaborataTemplateId()"
+        (valoreChange)="elaborataTemplateId.set($any($event) || undefined)"
+        [opzioni]="templateElaborata()"
+        campoEtichetta="etichetta"
+        campoValore="valore"
+        [azzerabile]="true"
+        [placeholder]="templateElaborata().length ? 'Predefinito del formato' : 'Nessun template: layout di VELIA'"
+        ariaLabel="Template da usare"
+      />
+    </div>
+
+    <label class="elaborata__campo">
+      <span class="elaborata__nome">Istruzioni</span>
+      <textarea
+        uiCampo
+        rows="4"
+        [value]="elaborataIstruzioni()"
+        (input)="elaborataIstruzioni.set($any($event.target).value)"
+        placeholder="Es. «Proposta per il cliente Rossi, come quella fatta a Bianchi: aggiungi il confronto con la polizza in scadenza»"
+      ></textarea>
+    </label>
+
+    <div class="elaborata__azioni">
+      <button uiBottone variante="primario" type="button" (click)="avviaElaborata()">
+        <ui-icon name="documento" [size]="15" />
+        <span>Prepara il documento</span>
+      </button>
+      <button uiBottone variante="testo" type="button" (click)="elaborataAperta.set(false)">
+        <span>Annulla</span>
+      </button>
+    </div>
+  </div>
 </ui-cassetto>

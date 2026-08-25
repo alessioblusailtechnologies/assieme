@@ -441,3 +441,32 @@
     padding-bottom: calc(var(--sp-3) + var(--safe-bottom));
   }
 }
+
+/* ---------- Esportazione elaborata ---------- */
+
+.elaborata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.elaborata__spiega {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.elaborata__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.elaborata__nome {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.elaborata__azioni {
+  display: flex;
+  gap: var(--sp-2);
+}

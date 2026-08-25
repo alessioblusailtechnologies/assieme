@@ -1,6 +1,13 @@
 import type pg from 'pg';
 
-import type { Citazione, EventoStream, Provenienza } from '../../contratto/conversazioni.js';
+import type {
+  Citazione,
+  EsportazioneElaborata,
+  EventoStream,
+  Provenienza,
+} from '../../contratto/conversazioni.js';
+import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
+import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
 import type { Job } from '../coda.js';
 import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
@@ -41,6 +48,12 @@ export interface DipendenzeInterrogazione {
   attesaAllegatiMs?: number;
   /** RF-G-01: chi impara dagli scambi a risposta data; senza, la memoria non si aggiorna. */
   estrattore?: EstrattoreRicordi;
+  /**
+   * L'Esportazione elaborata: la sandbox documentale e il motore con i suoi
+   * tetti (più turni e più spesa della chat). Senza, il tool non c'è e una
+   * richiesta esplicita risponde che non è disponibile.
+   */
+  sandbox?: { avviatore: AvviatoreSandbox; sessione: OpzioniSessioneDocumentale };
 }
 
 interface PayloadInterrogazione {
@@ -55,6 +68,8 @@ interface PayloadInterrogazione {
    * solo se è ancora questo — se l'utente ha rinominato, la sua parola vince.
    */
   titoloProvvisorio?: string;
+  /** L'Esportazione elaborata chiesta dal pulsante: il job produce un documento, non una risposta. */
+  esportazione?: EsportazioneElaborata;
 }
 
 interface RigaConversazione {
@@ -148,6 +163,101 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         `select nome, formato, predefinito from velia.template where tenant_id = $1 order by created_at, id`,
         [tenantId],
       );
+      /* L'Esportazione elaborata (sandbox documentale), sia dal pulsante sia
+         a parole: la stessa funzione, con la workspace già materializzata. */
+      const elaborata = dip.sandbox
+        ? async (r: {
+            formato: 'pdf' | 'docx' | 'xlsx';
+            templateId?: string | undefined;
+            istruzioni?: string | undefined;
+            contenuto?: string | undefined;
+            titolo?: string | undefined;
+          }) => {
+            const e = await eseguiEsportazioneElaborata(
+              {
+                db,
+                archivio: dip.archivio,
+                avviatore: dip.sandbox!.avviatore,
+                sessione: dip.sandbox!.sessione,
+                workspace: workspace!,
+                emetti,
+                annullato,
+              },
+              {
+                tenantId,
+                conversazioneId: payload.conversazioneId,
+                jobId: job.id,
+                formato: r.formato,
+                templateId: r.templateId,
+                istruzioni: r.istruzioni,
+                contenuto: r.contenuto,
+                titolo: r.titolo,
+                modello: conversazione.modello_motore ?? undefined,
+              },
+            );
+            await registraConsumi(db, tenantId, job.id, e.esito);
+            await addebitaCrediti(db, {
+              tenantId,
+              jobId: job.id,
+              operazione: 'risposta',
+              modello: e.esito.modello,
+              costoUsd: e.esito.costoUsd,
+              token: e.esito.token,
+              tokenStimati: e.esito.tokenStimati,
+              utenteId: payload.utenteId,
+              descrizione: `Esportazione elaborata: ${(r.titolo ?? r.istruzioni ?? '').slice(0, 70)}`,
+            });
+            return e;
+          }
+        : undefined;
+
+      if (payload.esportazione) {
+        /* Il job È un'esportazione: niente risposta del motore di chat. */
+        const richiesta = payload.esportazione;
+        if (!elaborata) {
+          await emetti({
+            tipo: 'errore',
+            messaggio: 'L’Esportazione elaborata non è disponibile in questo ambiente.',
+          });
+          throw new ErroreNonRitentabile('sandbox non configurata');
+        }
+        let contenuto: string | undefined;
+        if (richiesta.messaggioId) {
+          const m = await db.query<{ testo: string }>(
+            `select testo from velia.messaggi where id = $1 and conversazione_id = $2 and autore = 'assistente'`,
+            [richiesta.messaggioId, payload.conversazioneId],
+          );
+          contenuto = m.rows[0]?.testo;
+        }
+        const e = await elaborata({
+          formato: richiesta.formato,
+          templateId: richiesta.templateId,
+          istruzioni: richiesta.istruzioni,
+          contenuto,
+        });
+        if (e.esito.terminato === 'annullato') return;
+        if (e.esito.terminato === 'errore') {
+          await dip.archivio.elimina(e.percorsi).catch(() => undefined);
+          await emetti({ tipo: 'errore', messaggio: 'Il motore documentale si è interrotto.' });
+          throw new ErroreNonRitentabile(e.esito.errore ?? 'sessione documentale terminata con errore');
+        }
+        const testo = e.generati.length
+          ? separaBlocco(e.esito.testo).visibile.trim() || 'Il documento è pronto qui sotto.'
+          : `${separaBlocco(e.esito.testo).visibile.trim()}\n\n*(L’Esportazione elaborata non ha consegnato un documento.)*`.trim();
+        await db.query(
+          `insert into velia.messaggi
+             (id, conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati,
+              citazioni, provenienze, non_supportato, job_id, documenti)
+           values ($1, $2, $3, 'assistente', $4, $5, '{}', '[]', '[]', false, $6, $7)
+           on conflict (id) do update set testo = excluded.testo, documenti = excluded.documenti`,
+          [payload.messaggioAssistenteId, payload.conversazioneId, tenantId, payload.utenteId, testo, job.id, JSON.stringify(e.generati)],
+        );
+        documentiSalvati = true;
+        await db.query(`update velia.conversazioni set updated_at = now() where id = $1`, [payload.conversazioneId]);
+        await emetti({ tipo: 'fine' });
+        return;
+      }
+
       strumentiChat = creaStrumentiMotore({
         db,
         archivio: dip.archivio,
@@ -157,6 +267,22 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         suDocumento: async (documento) => {
           await emetti({ tipo: 'documento', documento });
         },
+        ...(elaborata && {
+          elaborata: async (r) => {
+            const nomeTemplate = r.template;
+            const e = await elaborata({
+              formato: r.formato,
+              templateId: nomeTemplate,
+              istruzioni: r.istruzioni,
+              contenuto: r.contenuto,
+              titolo: r.titolo,
+            });
+            /* I file consegnati dalla sandbox sono documenti della risposta di chat. */
+            strumentiChat!.generati.push(...e.generati);
+            strumentiChat!.percorsi.push(...e.percorsi);
+            return { testo: separaBlocco(e.esito.testo).visibile.trim(), documenti: e.generati };
+          },
+        }),
       });
 
       const esito = await dip.motore.interroga(

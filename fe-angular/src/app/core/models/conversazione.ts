@@ -125,8 +125,22 @@ export interface RicordoAppreso {
   ambito: 'tenant' | 'personale';
 }
 
+/**
+ * La richiesta di Esportazione elaborata: il messaggio chiede un documento,
+ * non una risposta. Il motore documentale lavora in sandbox sul template
+ * scelto (o sul predefinito del formato) e consegna il file come
+ * `documento` della risposta. `messaggioId` è la risposta da impaginare.
+ */
+export interface EsportazioneElaborata {
+  formato: 'pdf' | 'docx' | 'xlsx';
+  templateId?: Id;
+  messaggioId?: Id;
+  istruzioni?: string;
+}
+
 /** Corpo della richiesta di invio messaggio. */
 export interface NuovoMessaggio {
   testo: string;
   documentiReferenziati: Id[];
+  esportazione?: EsportazioneElaborata;
 }

@@ -355,7 +355,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     if (!esito.success || !esito.data.testo.trim()) {
       throw new ErroreApi(400, 'MESSAGGIO_VUOTO', 'Il messaggio è vuoto.');
     }
-    const { testo, documentiReferenziati } = esito.data;
+    const { testo, documentiReferenziati, esportazione } = esito.data;
     const { tenantId, utenteId } = richiesta.identita;
     /* Pricing: senza crediti la domanda non parte (429 CREDITI_ESAURITI). */
     await richiediCrediti(poolDb(), tenantId);
@@ -401,6 +401,8 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         utenteId,
         testo,
         ...(titoloProvvisorio && { titoloProvvisorio }),
+        /* L'Esportazione elaborata: il job produce un documento, non una risposta. */
+        ...(esportazione && { esportazione }),
       },
       { tenantId, utenteId },
     );

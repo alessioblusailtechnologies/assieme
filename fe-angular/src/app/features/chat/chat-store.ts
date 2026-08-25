@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 
 import {
   ErroreApi,
+  EsportazioneElaborata,
   EventoStream,
   Id,
   Messaggio,
@@ -296,7 +297,23 @@ export class ChatStore {
     });
   }
 
-  private avviaStream(id: Id, testo: string, riferimenti: RiferimentoDocumento[]): void {
+  /**
+   * L'Esportazione elaborata: un messaggio che chiede un documento. Viaggia
+   * sullo stesso stream della chat (attività, documento, fine), così il filo
+   * mostra il lavoro del motore documentale e il chip quando è pronto.
+   */
+  inviaEsportazione(richiesta: EsportazioneElaborata, descrizione: string): void {
+    const id = this.idAttiva();
+    if (!id || this.inRisposta()) return;
+    this.avviaStream(id, `Esportazione elaborata: ${descrizione}`, [], richiesta);
+  }
+
+  private avviaStream(
+    id: Id,
+    testo: string,
+    riferimenti: RiferimentoDocumento[],
+    esportazione?: EsportazioneElaborata,
+  ): void {
     const stream: StreamAttivo = {
       conversazioneId: id,
       utente: {
@@ -314,7 +331,11 @@ export class ChatStore {
     this.streamAttivo.set(stream);
 
     this.sottoscrizioneStream = this.api
-      .invia(id, { testo, documentiReferenziati: riferimenti.map((r) => r.id) })
+      .invia(id, {
+        testo,
+        documentiReferenziati: riferimenti.map((r) => r.id),
+        ...(esportazione && { esportazione }),
+      })
       .subscribe({
         next: (evento) => this.applica(evento),
         error: () => {

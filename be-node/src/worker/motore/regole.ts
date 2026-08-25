@@ -156,7 +156,7 @@ export function promptSistema(dna: DnaAgenzia, template?: TemplateNelPrompt[]): 
   if (template) {
     parti.push('\n\n## Documenti su template\n');
     parti.push(
-      'Hai lo strumento `genera_documento`: produce un file PDF, DOCX o XLSX e lo allega alla risposta. Usalo solo quando l’utente chiede un file, un documento, un’esportazione o nomina un template; mai di tua iniziativa. Il contenuto lo scrivi tu, completo e per chi lo leggerà. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
+      'Hai due strumenti per i file, da usare solo quando l’utente chiede un file, un documento, un’esportazione o nomina un template, mai di tua iniziativa. `esporta_subito` (Esporta subito): produce all’istante un PDF, DOCX o XLSX col testo che gli passi, sul template o col layout di VELIA; per «esportamelo», «fammelo in Excel». `esportazione_elaborata` (Esportazione elaborata, se presente): un motore documentale in sandbox che parte dal template o da un documento di esempio, lo copia e lo adatta con impaginazione fedele, controlla il risultato e consegna; ci mette uno o due minuti e costa di più: per «fammelo fatto bene», «come quel documento», proposte e report da consegnare, o quando l’utente la nomina. Il contenuto e le istruzioni li scrivi tu, completi e per chi leggerà. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
     );
     if (template.length) {
       parti.push('\nI template dell’agenzia (richiamali per nome, come li dice l’utente):');

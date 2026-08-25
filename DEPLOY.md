@@ -71,6 +71,28 @@ Poi login dall'app e una domanda in chat: il job passa dal worker (log del servi
 
 ---
 
+## 2b. Sandbox dell'Esportazione elaborata su Fly.io
+
+Railway resta per API e worker; l'Esportazione elaborata (il motore documentale con Python, LibreOffice e Chromium) gira in una **Machine Fly.io per job**, ad Amsterdam, senza rete verso i nostri servizi e senza segreti: il worker la crea, le manda i file, esegue i comandi del modello, ritira i documenti e la distrugge. Si paga solo il tempo delle Machine attive.
+
+Fatto una volta (25/08/2026, org `personal`): app `velia-sandbox` creata via Machines API, IPv4 condiviso e IPv6 allocati (servono al worker per raggiungere la Machine passando dal proxy di Fly con l'intestazione `fly-force-instance-id`).
+
+Aggiornare l'immagine (ogni volta che cambia `be-node/sandbox/`):
+
+```
+cd be-node
+docker build -t velia-sandbox -f sandbox/Dockerfile sandbox
+echo "$FLY_API_TOKEN" | docker login registry.fly.io -u x --password-stdin
+docker tag velia-sandbox registry.fly.io/velia-sandbox:latest
+docker push registry.fly.io/velia-sandbox:latest
+```
+
+Variabili del **worker** su Railway: `SANDBOX_AVVIATORE=fly`, `SANDBOX_IMMAGINE=registry.fly.io/velia-sandbox:latest`, `FLY_API_TOKEN` (token di organizzazione), `FLY_APP_SANDBOX=velia-sandbox`, `FLY_REGIONE=ams`, **`ANTHROPIC_API_KEY_SANDBOX`** (una chiave dedicata, creata in un workspace Anthropic separato con tetto di spesa mensile: è quella che entra nella Machine, dietro un proxy locale; senza, si usa `ANTHROPIC_API_KEY`). Senza `SANDBOX_AVVIATORE` l'Esportazione elaborata si dichiara non disponibile e il resto funziona.
+
+Dentro la Machine gira Claude Code (Agent SDK) con le skill documentali di Anthropic, in un network namespace isolato che raggiunge solo il proxy della chiave (nessun accesso a Internet dal modello). In locale, con Docker, il container parte con `--cap-add NET_ADMIN --cap-add SYS_ADMIN` per creare lo stesso namespace.
+
+Prova dal locale: `npx tsx tools/collaudo-elaborata.ts pdf "<istruzioni>" [template]` con `SANDBOX_AVVIATORE=fly` in `.env`.
+
 ## 3. Cose da sapere
 
 - **Segreti**: solo nelle variabili di Railway, mai nell'immagine né nel repo. `.env` resta locale.

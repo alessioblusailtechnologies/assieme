@@ -71,6 +71,26 @@ const schemaAmbiente = z.object({
    */
   CORS_ORIGINI: z.string().optional(),
   LOG_LIVELLO: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  /**
+   * La sandbox dell'Esportazione elaborata: `docker` (in locale, immagine
+   * costruita da `sandbox/Dockerfile`) o `fly` (una Machine per job).
+   * Senza, l'Esportazione elaborata risponde che non è disponibile.
+   */
+  SANDBOX_AVVIATORE: z.enum(['docker', 'fly']).optional(),
+  SANDBOX_IMMAGINE: z.string().default('velia-sandbox'),
+  /** Tetto di turni e di spesa per una sessione documentale (più alti della chat: guarda e corregge). */
+  SANDBOX_MAX_TURNI: z.coerce.number().int().min(1).default(60),
+  SANDBOX_BUDGET_USD: z.coerce.number().positive().default(4),
+  /**
+   * La chiave Anthropic che entra nella sandbox (dedicata, con tetto di
+   * spesa, in un workspace suo). In locale può essere la stessa della chat:
+   * senza, si usa `ANTHROPIC_API_KEY`.
+   */
+  ANTHROPIC_API_KEY_SANDBOX: z.string().optional(),
+  FLY_API_TOKEN: z.string().optional(),
+  FLY_APP_SANDBOX: z.string().default('velia-sandbox'),
+  FLY_REGIONE: z.string().default('ams'),
 });
 
 export type Configurazione = z.infer<typeof schemaAmbiente>;
