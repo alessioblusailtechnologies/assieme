@@ -422,9 +422,19 @@ async function trasmettiStream(
   risposta: FastifyReply,
   o: { jobId: string; inizio: EventoStream; ponte: PonteEventi; battitoMs: number },
 ): Promise<void> {
+  /* Il plugin CORS ha già messo i suoi header sulla reply di Fastify; con
+     l'hijack si scrive direttamente sul socket e andrebbero persi: si
+     copiano. Senza, il browser blocca lo stream quando app e API stanno su
+     host diversi (Render: app-dev → api-dev). */
+  const intestazioniCors = Object.fromEntries(
+    Object.entries(risposta.getHeaders())
+      .filter(([nome]) => nome.toLowerCase().startsWith('access-control-') || nome.toLowerCase() === 'vary')
+      .map(([nome, valore]) => [nome, Array.isArray(valore) ? valore.join(', ') : String(valore)]),
+  );
   risposta.hijack();
   const raw = risposta.raw;
   raw.writeHead(200, {
+    ...intestazioniCors,
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     Connection: 'keep-alive',
