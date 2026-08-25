@@ -49,11 +49,25 @@
           @if (htmlStabile()) {
             <div [innerHTML]="htmlStabile()"></div>
           }
-          <p class="testo__corrente">
-            @for (p of paroleCorrenti(); track $index) {
-              <span class="parola">{{ p }}</span>
-            }
-          </p>
+          @if (tabellaInArrivo(); as t) {
+            <!-- Una tabella sta arrivando: lo scheletro cresce con le righe, il Markdown non si vede. -->
+            <div class="tabella-in-arrivo" role="status" aria-label="Sto componendo una tabella">
+              <p class="tabella-in-arrivo__nota">Compongo la tabella…</p>
+              <div class="tabella-in-arrivo__griglia" [style.grid-template-columns]="'repeat(' + t.colonne + ', 1fr)'">
+                @for (riga of celleScheletro(); track $index) {
+                  @for (c of riga; track c) {
+                    <span class="tabella-in-arrivo__cella" [class.is-testata]="$index === 0 && riga === celleScheletro()[0]"></span>
+                  }
+                }
+              </div>
+            </div>
+          } @else {
+            <p class="testo__corrente">
+              @for (p of paroleCorrenti(); track $index) {
+                <span class="parola">{{ p }}</span>
+              }
+            </p>
+          }
         </div>
       } @else {
         <div class="testo" [innerHTML]="html()" aria-live="polite"></div>

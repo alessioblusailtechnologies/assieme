@@ -545,3 +545,47 @@
   font-size: var(--t-xs);
   color: var(--c-text-3);
 }
+
+/* ---------- Tabella in arrivo ---------- */
+
+.tabella-in-arrivo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--c-line-soft);
+}
+
+.tabella-in-arrivo__nota {
+  margin: 0;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.04em;
+  color: var(--c-text-3);
+}
+
+.tabella-in-arrivo__griglia {
+  display: grid;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.tabella-in-arrivo__cella {
+  display: block;
+  height: 0.9em;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--c-page-alt) 0%, var(--c-line) 50%, var(--c-page-alt) 100%);
+  background-size: 250% 100%;
+  animation: scorrimento 1.8s ease-in-out infinite;
+}
+
+.tabella-in-arrivo__cella.is-testata {
+  height: 0.7em;
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabella-in-arrivo__cella {
+    animation: none;
+    background: var(--c-page-alt);
+  }
+}

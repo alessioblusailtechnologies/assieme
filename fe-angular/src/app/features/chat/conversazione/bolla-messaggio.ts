@@ -64,6 +64,25 @@ export class BollaMessaggio {
 
   protected readonly htmlStabile = computed(() => htmlRisposta(this.spezzato().stabile));
 
+  /**
+   * Una tabella Markdown che sta arrivando (righe che cominciano con «|»)
+   * non si mostra come testo grezzo: al suo posto uno scheletro di tabella
+   * che cresce con le righe ricevute, finché il blocco si chiude e la
+   * tabella vera prende il suo posto.
+   */
+  protected readonly tabellaInArrivo = computed(() => {
+    const corrente = this.spezzato().corrente;
+    if (!/^\s*\|/m.test(corrente)) return undefined;
+    const righe = corrente.split('\n').filter((r) => /^\s*\|/.test(r) && !/^\s*\|[\s:|-]+\|?\s*$/.test(r));
+    const colonne = Math.max(2, Math.min(6, (righe[0]?.match(/\|/g)?.length ?? 3) - 1));
+    return { righe: Math.max(2, Math.min(8, righe.length)), colonne };
+  });
+
+  protected readonly celleScheletro = computed(() => {
+    const t = this.tabellaInArrivo();
+    return t ? Array.from({ length: t.righe }, () => Array.from({ length: t.colonne }, (_, i) => i)) : [];
+  });
+
   /** Le parole del paragrafo in corso, spazi compresi: una sola per span, tracciate per posizione. */
   protected readonly paroleCorrenti = computed(() =>
     this.spezzato()
