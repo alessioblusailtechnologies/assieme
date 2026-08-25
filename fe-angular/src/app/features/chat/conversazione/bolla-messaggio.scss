@@ -203,8 +203,35 @@
   margin-bottom: 0;
 }
 
+/* Il paragrafo in corso: ogni parola nuova nasce trasparente e si posa in
+   un attimo, come nelle risposte di Claude. Le parole già uscite non si
+   toccano (tracciate per posizione), quindi l'animazione parte una volta sola. */
+.testo__corrente {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.parola {
+  animation: apparizione 0.45s ease-out both;
+}
+
+@keyframes apparizione {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parola {
+    animation: none;
+  }
+}
+
 /* Il cursore di streaming: il testo sta ancora crescendo. */
-.testo.is-in-corso ::ng-deep p:last-child::after {
+.testo.is-in-corso .testo__corrente::after {
   content: '';
   display: inline-block;
   width: 7px;

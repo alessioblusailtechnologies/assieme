@@ -46,6 +46,31 @@ export class BollaMessaggio {
 
   protected readonly html = computed(() => htmlRisposta(this.messaggio().testo));
 
+  /**
+   * Mentre la risposta esce, i paragrafi già chiusi si rendono in Markdown
+   * e l'ultimo, quello che sta crescendo, si rende parola per parola: ogni
+   * parola nuova nasce con una dissolvenza (vedi `.parola` nello stile). A
+   * risposta finita torna tutto Markdown, in un colpo solo.
+   */
+  protected readonly inDattilografia = computed(() => Boolean(this.messaggio().inCorso) && !!this.messaggio().testo);
+
+  private readonly spezzato = computed(() => {
+    const testo = this.messaggio().testo;
+    const taglio = testo.lastIndexOf('\n\n');
+    return taglio < 0
+      ? { stabile: '', corrente: testo }
+      : { stabile: testo.slice(0, taglio), corrente: testo.slice(taglio + 2) };
+  });
+
+  protected readonly htmlStabile = computed(() => htmlRisposta(this.spezzato().stabile));
+
+  /** Le parole del paragrafo in corso, spazi compresi: una sola per span, tracciate per posizione. */
+  protected readonly paroleCorrenti = computed(() =>
+    this.spezzato()
+      .corrente.split(/(\s+)/)
+      .filter((p) => p.length > 0),
+  );
+
   protected readonly referenziati = computed(() => {
     const perId = new Map(this.contesto().map((d) => [d.id, d]));
     return this.messaggio()

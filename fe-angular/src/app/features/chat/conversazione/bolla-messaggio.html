@@ -27,13 +27,23 @@
           ><span class="attesa__punto"></span>
           <span class="attesa__testo">{{ m.attivita || 'Sto preparando la risposta…' }}</span>
         </p>
+      } @else if (inDattilografia()) {
+        <!--
+          In streaming: i paragrafi chiusi in Markdown, l'ultimo parola per
+          parola, e ogni parola nuova appare in dissolvenza.
+        -->
+        <div class="testo is-in-corso" aria-live="polite">
+          @if (htmlStabile()) {
+            <div [innerHTML]="htmlStabile()"></div>
+          }
+          <p class="testo__corrente">
+            @for (p of paroleCorrenti(); track $index) {
+              <span class="parola">{{ p }}</span>
+            }
+          </p>
+        </div>
       } @else {
-        <div
-          class="testo"
-          [class.is-in-corso]="m.inCorso"
-          [innerHTML]="html()"
-          aria-live="polite"
-        ></div>
+        <div class="testo" [innerHTML]="html()" aria-live="polite"></div>
       }
 
       @if (m.testo && m.inCorso && m.attivita) {
