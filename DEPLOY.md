@@ -5,7 +5,7 @@ Tre pezzi, tre posti:
 | Pezzo | Dove | Perché |
 |---|---|---|
 | Sito (Astro) | Cloudflare Pages | già lì |
-| App (Angular, `fe-angular/`) | Cloudflare Pages, `app.sonovelia.it` | è statica: CDN, TLS e DNS sullo stesso account del sito |
+| App (Angular, `fe-angular/`) | **Render** Static Site `velia-app` (nel Blueprint), `app.sonovelia.it` | statica, gratis, stesso pannello di API e worker; Cloudflare Pages resta l'alternativa (§2) |
 | Backend (`be-node/`: API + worker) | **Render**, regione **Francoforte**, `api.sonovelia.it` (Blueprint `render.yaml` alla radice del repo; la guida Railway sotto resta come riferimento, i passi sono equivalenti) | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
 | Database e Storage | Supabase (già in cloud, progetto `hcxiloivukbdcfcugksg`) | invariato |
 
@@ -68,7 +68,11 @@ Poi login dall'app e una domanda in chat: il job passa dal worker (log del servi
 
 ---
 
-## 2. App su Cloudflare Pages
+## 2. App: Render Static Site (nel Blueprint) o Cloudflare Pages
+
+Col Blueprint nasce anche **velia-app** (Static Site: root `fe-angular`, build `npm ci && npx ng build`, publish `dist/fe-angular/browser`, `NODE_VERSION=24`, rewrite `/*` → `/index.html` per il routing della SPA). Custom domain `app.sonovelia.it` dal pannello del servizio, CNAME su Cloudflare DNS. L'API la legge da `public/config.js`, come sotto.
+
+In alternativa, Cloudflare Pages:
 
 1. Cloudflare → *Workers & Pages* → *Create* → *Pages* → connetti il repo.
 2. Impostazioni di build:
