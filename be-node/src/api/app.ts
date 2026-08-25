@@ -75,7 +75,11 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraAuth(app, opzioni.verificaToken);
 
   /** Sonda di vita per deploy e sviluppo: non è parte del contratto FE. */
-  app.get('/api/salute', () => ({ stato: 'ok' }));
+  app.get('/api/salute', () => ({
+    stato: 'ok',
+    /* Il commit in esecuzione (Render lo mette in RENDER_GIT_COMMIT): per sapere cosa gira davvero. */
+    ...(process.env['RENDER_GIT_COMMIT'] && { versione: process.env['RENDER_GIT_COMMIT'].slice(0, 7) }),
+  }));
 
   registraRotteSessione(app);
   registraRotteDocumenti(app);
