@@ -1,0 +1,2 @@
+# Gli script e i sorgenti della sandbox girano in Linux: sempre LF, anche su checkout Windows.
+* text eol=lf
