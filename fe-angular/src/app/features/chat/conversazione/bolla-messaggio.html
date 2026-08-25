@@ -52,7 +52,6 @@
           @if (tabellaInArrivo(); as t) {
             <!-- Una tabella sta arrivando: lo scheletro cresce con le righe, il Markdown non si vede. -->
             <div class="tabella-in-arrivo" role="status" aria-label="Sto componendo una tabella">
-              <p class="tabella-in-arrivo__nota">Compongo la tabella…</p>
               <div class="tabella-in-arrivo__griglia" [style.grid-template-columns]="'repeat(' + t.colonne + ', 1fr)'">
                 @for (riga of celleScheletro(); track $index) {
                   @for (c of riga; track c) {

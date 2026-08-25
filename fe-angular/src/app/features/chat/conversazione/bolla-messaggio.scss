@@ -556,14 +556,6 @@
   border: 1px solid var(--c-line-soft);
 }
 
-.tabella-in-arrivo__nota {
-  margin: 0;
-  font-family: var(--f-mono);
-  font-size: var(--t-mono-sm);
-  letter-spacing: 0.04em;
-  color: var(--c-text-3);
-}
-
 .tabella-in-arrivo__griglia {
   display: grid;
   gap: var(--sp-2) var(--sp-3);
