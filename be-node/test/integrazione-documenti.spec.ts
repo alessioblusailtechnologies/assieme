@@ -55,12 +55,12 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     app.inject({ method: 'GET', url, headers: { authorization: `Bearer ${token}` } });
 
   it('elenco: busta {elementi, totale, pagina, perPagina} con le fixture', async () => {
-    const r = await richiedi('/api/documenti', tokenAdmin);
+    const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025). */
-    expect(pagina.totale).toBe(13);
-    expect(pagina.elementi).toHaveLength(13);
+    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni). */
+    expect(pagina.totale).toBe(73);
+    expect(pagina.elementi).toHaveLength(73);
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;
     expect(primo.archivio).toBe('pubblico');
@@ -172,7 +172,7 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
 
   it('tassonomie: compagnie e rami dal database', async () => {
     const compagnie = await richiedi('/api/compagnie', tokenAdmin);
-    expect(compagnie.json<unknown[]>()).toHaveLength(10);
+    expect(compagnie.json<unknown[]>()).toHaveLength(11);
     const rami = await richiedi('/api/rami', tokenAdmin);
     expect(rami.json<unknown[]>()).toHaveLength(8);
   });

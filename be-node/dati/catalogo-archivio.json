@@ -54,6 +54,1114 @@
   "pathPdf": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/originale.pdf"
  },
  {
+  "id": "doc-nobis-filo-diretto-car-ed-2023-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "Condizioni di Assicurazione — Nobis Filo diretto Car",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 21,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2023-10",
+   "etichetta": "ed. 10/2023",
+   "validaDal": "2023-10-15",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2023-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "DIP Danni — Nobis Filo diretto Car",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2023-10",
+   "etichetta": "ed. 10/2023",
+   "validaDal": "2023-10-15",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2023-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Filo diretto Car",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 7,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2023-10",
+   "etichetta": "ed. 10/2023",
+   "validaDal": "2023-10-15",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2023-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "Informativa privacy (GDPR) — Nobis Filo diretto Car",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 34,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2023-10",
+   "etichetta": "ed. 10/2023",
+   "validaDal": "2023-10-15",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2023-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "Condizioni di Assicurazione — Nobis Filo diretto Car",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 23,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "DIP Danni — Nobis Filo diretto Car",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Filo diretto Car",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-car-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Car",
+  "titolo": "Informativa privacy (GDPR) — Nobis Filo diretto Car",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 33,
+  "edizione": {
+   "id": "edz-filo-diretto-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2024-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "Condizioni di Assicurazione — Nobis Filo diretto Sat",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 23,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2024-10",
+   "etichetta": "ed. 10/2024",
+   "validaDal": "2024-10-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2024-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "DIP Danni — Nobis Filo diretto Sat",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2024-10",
+   "etichetta": "ed. 10/2024",
+   "validaDal": "2024-10-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2024-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Filo diretto Sat",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2024-10",
+   "etichetta": "ed. 10/2024",
+   "validaDal": "2024-10-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2024-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "Informativa privacy (GDPR) — Nobis Filo diretto Sat",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 33,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2024-10",
+   "etichetta": "ed. 10/2024",
+   "validaDal": "2024-10-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2024-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "Condizioni di Assicurazione — Nobis Filo diretto Sat",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 24,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "DIP Danni — Nobis Filo diretto Sat",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Filo diretto Sat",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-sat-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Sat",
+  "titolo": "Informativa privacy (GDPR) — Nobis Filo diretto Sat",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 34,
+  "edizione": {
+   "id": "edz-filo-diretto-sat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-sat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-tutela-circolazione-ed-2019-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Tutela Circolazione",
+  "titolo": "Condizioni di Assicurazione — Nobis Filo diretto Tutela Circolazione",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 15,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-filo-diretto-tutela-circolazione-2019-10",
+   "etichetta": "ed. 10/2019",
+   "validaDal": "2019-10-30",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-tutela-circolazione-ed-2019-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Tutela Circolazione",
+  "titolo": "DIP Danni — Nobis Filo diretto Tutela Circolazione",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-filo-diretto-tutela-circolazione-2019-10",
+   "etichetta": "ed. 10/2019",
+   "validaDal": "2019-10-30",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-tutela-circolazione-ed-2019-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Tutela Circolazione",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Filo diretto Tutela Circolazione",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 6,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-filo-diretto-tutela-circolazione-2019-10",
+   "etichetta": "ed. 10/2019",
+   "validaDal": "2019-10-30",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-filo-diretto-tutela-circolazione-ed-2019-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Filo diretto Tutela Circolazione",
+  "titolo": "Informativa privacy (GDPR) — Nobis Filo diretto Tutela Circolazione",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 26,
+  "edizione": {
+   "id": "edz-filo-diretto-tutela-circolazione-2019-10",
+   "etichetta": "ed. 10/2019",
+   "validaDal": "2019-10-30",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/filo-diretto-tutela-circolazione/ed-2019-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "Condizioni di Assicurazione — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 13,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-01",
+   "etichetta": "ed. 01/2025",
+   "validaDal": "2025-01-01",
+   "corrente": false,
+   "validaAl": "2025-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-01-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "DIP Danni — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-01",
+   "etichetta": "ed. 01/2025",
+   "validaDal": "2025-01-01",
+   "corrente": false,
+   "validaAl": "2025-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-01-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-01",
+   "etichetta": "ed. 01/2025",
+   "validaDal": "2025-01-01",
+   "corrente": false,
+   "validaAl": "2025-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-01-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "Informativa privacy (GDPR) — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 20,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-01",
+   "etichetta": "ed. 01/2025",
+   "validaDal": "2025-01-01",
+   "corrente": false,
+   "validaAl": "2025-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-01/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "Condizioni di Assicurazione — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 13,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-07-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "DIP Danni — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-07-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-infortuni-conducente-autoveicoli-ed-2025-07-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Infortuni Conducente di Autoveicoli",
+  "titolo": "Informativa privacy (GDPR) — Nobis Infortuni Conducente di Autoveicoli",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 20,
+  "edizione": {
+   "id": "edz-infortuni-conducente-autoveicoli-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/infortuni-conducente-autoveicoli/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "Condizioni di Assicurazione — Nobis Bike",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 41,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-nobis-bike-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "DIP Danni — Nobis Bike",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-bike-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Bike",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-bike-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "Informativa privacy (GDPR) — Nobis Bike",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 51,
+  "edizione": {
+   "id": "edz-nobis-bike-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-06-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "Condizioni di Assicurazione — Nobis Bike",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 54,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-nobis-bike-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2026-07-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "DIP Danni — Nobis Bike",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-bike-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Bike",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-nobis-bike-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-bike-ed-2026-07-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Bike",
+  "titolo": "Informativa privacy (GDPR) — Nobis Bike",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 62,
+  "edizione": {
+   "id": "edz-nobis-bike-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-bike/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2023-08-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "Condizioni di Assicurazione — Nobis Boat",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 18,
+  "paginaInizio": 12,
+  "edizione": {
+   "id": "edz-nobis-boat-2023-08",
+   "etichetta": "ed. 08/2023",
+   "validaDal": "2023-08-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2023-08-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "DIP Danni — Nobis Boat",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-boat-2023-08",
+   "etichetta": "ed. 08/2023",
+   "validaDal": "2023-08-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2023-08-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "DIP Aggiuntivo R.C. Natanti — Nobis Boat",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 6,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-boat-2023-08",
+   "etichetta": "ed. 08/2023",
+   "validaDal": "2023-08-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2023-08-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "Informativa privacy (GDPR) — Nobis Boat",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 30,
+  "edizione": {
+   "id": "edz-nobis-boat-2023-08",
+   "etichetta": "ed. 08/2023",
+   "validaDal": "2023-08-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2023-08/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "Condizioni di Assicurazione — Nobis Boat",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 18,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-nobis-boat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "DIP Danni — Nobis Boat",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-boat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "DIP Aggiuntivo R.C. Natanti — Nobis Boat",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-boat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-boat-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Boat",
+  "titolo": "Informativa privacy (GDPR) — Nobis Boat",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 27,
+  "edizione": {
+   "id": "edz-nobis-boat-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-boat/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "Condizioni di Assicurazione — Nobis Car",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 52,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-nobis-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-04-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "DIP Danni — Nobis Car",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-04-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Car",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-04-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "Informativa privacy (GDPR) — Nobis Car",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 62,
+  "edizione": {
+   "id": "edz-nobis-car-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": false,
+   "validaAl": "2026-04-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "Condizioni di Assicurazione — Nobis Car",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 67,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-nobis-car-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2026-05-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "DIP Danni — Nobis Car",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-car-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Car",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-nobis-car-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-car-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Car",
+  "titolo": "Informativa privacy (GDPR) — Nobis Car",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 76,
+  "edizione": {
+   "id": "edz-nobis-car-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "Condizioni di Assicurazione — Nobis Truck",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 46,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-06-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "DIP Danni — Nobis Truck",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-06-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Truck",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-06-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "Informativa privacy (GDPR) — Nobis Truck",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 56,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2025-09-30"
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "Condizioni di Assicurazione — Nobis Truck",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 45,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-10-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "DIP Danni — Nobis Truck",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Nobis Truck",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-truck-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-auto",
+  "prodotto": "Nobis Truck",
+  "titolo": "Informativa privacy (GDPR) — Nobis Truck",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 55,
+  "edizione": {
+   "id": "edz-nobis-truck-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",

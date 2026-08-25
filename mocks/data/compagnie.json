@@ -2,6 +2,7 @@
   { "id": "cmp-generali", "nome": "Generali Italia", "ultimoAggiornamento": "2026-07-28" },
   { "id": "cmp-cattolica", "nome": "Cattolica Assicurazioni", "ultimoAggiornamento": "2026-07-28" },
   { "id": "cmp-unipolsai", "nome": "UnipolSai Assicurazioni", "ultimoAggiornamento": "2026-07-21" },
+  { "id": "cmp-nobis", "nome": "Nobis Assicurazioni", "ultimoAggiornamento": "2026-08-25" },
   { "id": "cmp-allianz", "nome": "Allianz Italia", "ultimoAggiornamento": "2026-07-14" },
   { "id": "cmp-axa", "nome": "AXA Italia", "ultimoAggiornamento": "2026-06-30" },
   { "id": "cmp-zurich", "nome": "Zurich Italia", "ultimoAggiornamento": "2026-06-30" },
