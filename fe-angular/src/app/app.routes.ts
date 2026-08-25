@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { Shell } from '@layout/shell';
+import { accessoGuard, giaDentroGuard } from '@core/auth/accesso.guard';
 
 /**
  * Mappa delle rotte.
@@ -18,11 +19,14 @@ export const routes: Routes = [
     /* Fuori dalla shell: è una porta, non una stanza. Contro il mock e
        nella demo non serve mai — nessuna rotta 401 e nessun redirect. */
     path: 'accesso',
+    canMatch: [giaDentroGuard],
     loadComponent: () => import('@features/accesso/accesso').then((m) => m.Accesso),
   },
   {
     path: '',
     component: Shell,
+    /* Senza sessione non si entra: la porta prima della stanza. */
+    canMatch: [accessoGuard],
     children: [
       { path: '', redirectTo: 'chat', pathMatch: 'full' },
 

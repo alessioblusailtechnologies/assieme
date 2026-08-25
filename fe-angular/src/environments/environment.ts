@@ -12,4 +12,9 @@ export const environment = {
   apiBase: (globalThis as { veliaApiBase?: string }).veliaApiBase ?? '/api',
   /** Il pannello di sviluppo non deve mai comparire in produzione. */
   devTools: false,
+  /**
+   * Senza sessione si va a `/accesso` prima di entrare (guard). La demo senza
+   * autenticazione lo spegne con `window.veliaSenzaAccesso = true` in config.js.
+   */
+  accessoObbligatorio: (globalThis as { veliaSenzaAccesso?: boolean }).veliaSenzaAccesso !== true,
 };
