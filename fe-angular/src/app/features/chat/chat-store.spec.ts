@@ -22,7 +22,7 @@ const blocco = (evento: EventoStream) => `data: ${JSON.stringify(evento)}\n\n`;
 
 /** Qualche frame: la dattilografia scrive pochi caratteri alla volta. */
 const attendiDattilografia = async () => {
-  for (let i = 0; i < 30; i++) await new Promise<void>((ok) => requestAnimationFrame(() => ok()));
+  for (let i = 0; i < 90; i++) await new Promise<void>((ok) => requestAnimationFrame(() => ok()));
 };
 
 const microtask = () => new Promise((r) => setTimeout(r, 0));

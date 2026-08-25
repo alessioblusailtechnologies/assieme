@@ -429,17 +429,39 @@ export class ChatStore {
    */
   private codaTesto = '';
   private animazione: number | undefined;
+  /** Caratteri maturati ma non ancora scritti (frazioni fra un frame e l'altro). */
+  private maturati = 0;
+  private ultimoFrame = 0;
+
+  /**
+   * Ritmo di base: caratteri al secondo a passo di lettura. Quando la coda
+   * cresce si accelera quanto basta a smaltirla in circa un secondo e mezzo,
+   * mai a scatti: la velocità dipende dal tempo, non dai frame.
+   */
+  private static readonly CARATTERI_AL_SECONDO = 55;
+  private static readonly SECONDI_PER_SMALTIRE = 1.5;
 
   private dattilografa(): void {
     if (this.animazione !== undefined) return;
-    const passo = () => {
+    this.ultimoFrame = performance.now();
+    const passo = (ora: number) => {
       this.animazione = undefined;
       if (!this.codaTesto) return;
-      const n = Math.max(3, Math.ceil(this.codaTesto.length / 8));
-      const pezzo = this.codaTesto.slice(0, n);
-      this.codaTesto = this.codaTesto.slice(n);
-      /* Il testo azzera l'attività: se il motore torna a lavorare lo dirà con un'attività nuova. */
-      this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + pezzo, attivita: undefined }));
+      const secondi = Math.min(0.1, Math.max(0, ora - this.ultimoFrame) / 1000);
+      this.ultimoFrame = ora;
+      const ritmo = Math.max(
+        ChatStore.CARATTERI_AL_SECONDO,
+        this.codaTesto.length / ChatStore.SECONDI_PER_SMALTIRE,
+      );
+      this.maturati += ritmo * secondi;
+      const n = Math.min(this.codaTesto.length, Math.floor(this.maturati));
+      if (n > 0) {
+        this.maturati -= n;
+        const pezzo = this.codaTesto.slice(0, n);
+        this.codaTesto = this.codaTesto.slice(n);
+        /* Il testo azzera l'attività: se il motore torna a lavorare lo dirà con un'attività nuova. */
+        this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + pezzo, attivita: undefined }));
+      }
       if (this.codaTesto) this.animazione = requestAnimationFrame(passo);
     };
     this.animazione = requestAnimationFrame(passo);
@@ -451,6 +473,7 @@ export class ChatStore {
       cancelAnimationFrame(this.animazione);
       this.animazione = undefined;
     }
+    this.maturati = 0;
     if (!this.codaTesto) return;
     const resto = this.codaTesto;
     this.codaTesto = '';
