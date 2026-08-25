@@ -93,8 +93,9 @@
                   caduta a metà non è un documento da consegnare a un cliente.
                 -->
                 @if (m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
+                  <!-- Un nodo solo alla radice dell'@if: è quello che finisce nello slot. -->
+                  <span azioni-extra class="azioni-esporta">
                   <button
-                    azioni-extra
                     type="button"
                     class="azione-esporta"
                     (click)="apriEsporta($event, m.id)"
@@ -111,7 +112,6 @@
                     con un modulo, non con un clic.
                   -->
                   <button
-                    azioni-extra
                     type="button"
                     class="azione-esporta"
                     (click)="apriElaborata(m.id)"
@@ -120,6 +120,7 @@
                     <ui-icon name="documento" [size]="13" />
                     <span>Esportazione elaborata</span>
                   </button>
+                  </span>
                 }
               </app-bolla-messaggio>
             }

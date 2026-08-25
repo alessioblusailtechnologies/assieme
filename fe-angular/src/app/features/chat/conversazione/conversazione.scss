@@ -308,6 +308,12 @@
 
 /* Stesso disegno del pulsante «Copia» della bolla: il contenuto proiettato
    si stila da chi lo proietta. */
+.azioni-esporta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
 .azione-esporta {
   display: inline-flex;
   border-radius: var(--radius-sm);
