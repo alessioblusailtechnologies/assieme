@@ -98,8 +98,7 @@ services:
     rootDir: fe-angular
     # config.js si scrive al build dalla variabile: stesso codice, API diversa per ambiente
     # (prod: api.sonovelia.it; dev, dal ramo develop: api-dev.sonovelia.it).
-    buildCommand: npm ci && npx ng build && printf "window.veliaApiBase = '%s';
-" "$VELIA_API_BASE" > dist/fe-angular/browser/config.js
+    buildCommand: npm ci && npx ng build && printf "window.veliaApiBase = '%s';\n" "$VELIA_API_BASE" > dist/fe-angular/browser/config.js
     staticPublishPath: dist/fe-angular/browser
     autoDeploy: true
     envVars:
