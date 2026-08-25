@@ -1,4 +1,6 @@
-# Blueprint Render per il backend di VELIA: un'immagine sola (be-node/Dockerfile),
+# Blueprint Render di VELIA — ramo develop: ambiente DEV (api-dev / app-dev.sonovelia.it).
+# Su main gli stessi servizi puntano a api. / app.sonovelia.it.
+#: un'immagine sola (be-node/Dockerfile),
 # due servizi, regione Francoforte (UE). L'app Angular sta su Cloudflare Pages
 # (vedi DEPLOY.md §2); la sandbox dell'Esportazione elaborata su Fly.io (§2b).
 #
@@ -22,7 +24,7 @@ services:
       - key: LOG_LIVELLO
         value: info
       - key: CORS_ORIGINI
-        value: https://app.sonovelia.it
+        value: https://app-dev.sonovelia.it
       - key: MODELLO_MOTORE
         value: claude-opus-5
       - key: SUPABASE_URL
@@ -105,7 +107,7 @@ services:
       - key: NODE_VERSION
         value: "24"
       - key: VELIA_API_BASE
-        value: https://api.sonovelia.it/api
+        value: https://api-dev.sonovelia.it/api
     routes:
       - type: rewrite
         source: /*
