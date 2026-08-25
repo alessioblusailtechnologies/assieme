@@ -81,14 +81,24 @@
   color: var(--c-text-2);
 }
 
-.template__tipologia {
-  min-height: 1px;
+.template.is-predefinito {
+  border-color: var(--c-text-3);
+}
+
+.template__rinomina {
+  font-family: var(--f-serif);
+  font-size: var(--t-lead);
 }
 
 .template__azioni {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-2);
+}
+
+.formati-mancanti {
+  color: var(--c-text-3);
 }
 
 /* ---------- Caricamento e identità ---------- */

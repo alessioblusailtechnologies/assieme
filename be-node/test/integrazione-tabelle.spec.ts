@@ -346,7 +346,8 @@ describe.skipIf(!pronto)('tabelle di analisi col progetto Supabase (motore finto
   });
 
   it("l'esportazione passa dalla Fase 4: XLSX su colonne vere, nome file dal titolo della tabella", async () => {
-    const r = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { templateId: 'tpl-004' });
+    /* Senza template caricati per il formato: il layout di piattaforma. */
+    const r = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { formato: 'xlsx' });
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('spreadsheetml');
     expect(r.headers['content-disposition']).toBe('attachment; filename="confronto-rc-auto.xlsx"');
@@ -360,7 +361,7 @@ describe.skipIf(!pronto)('tabelle di analisi col progetto Supabase (motore finto
     expect(valori).toContainEqual(['Documento', 'Franchigia furto e incendio']);
     expect(valori).toContainEqual(['Polizza Rossi RC Auto', 'Franchigia 250 €']);
 
-    const pdf = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { templateId: 'tpl-001' });
+    const pdf = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { formato: 'pdf' });
     expect(pdf.statusCode).toBe(200);
     expect(pdf.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
 

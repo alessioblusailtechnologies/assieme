@@ -14,6 +14,11 @@ import {
 } from '@core/models';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
+import {
+  SceltaEsportazione,
+  nomeFileEsportazione,
+  scelteEsportazione,
+} from '@shared/esportazione/scelte-esportazione';
 
 /**
  * Un file allegato dal composer, nel tratto di strada fra la scelta e il
@@ -87,16 +92,19 @@ export class ChatStore {
     this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
   );
 
-  /** Esporta una risposta sul template scelto e avvia il download. */
-  esporta(messaggioId: Id, template: TemplateOutput): void {
+  /** Le voci del menù di esportazione: template dell'agenzia per formato, o il layout di VELIA. */
+  readonly scelteEsportazione = computed(() => scelteEsportazione(this.template()));
+
+  /** Esporta una risposta sulla scelta fatta (template o formato) e avvia il download. */
+  esporta(messaggioId: Id, scelta: SceltaEsportazione): void {
     const id = this.idAttiva();
     if (!id) return;
-    this.api.esporta(id, messaggioId, template.id).subscribe({
+    this.api.esporta(id, messaggioId, scelta.scelta).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const collegamento = document.createElement('a');
         collegamento.href = url;
-        collegamento.download = `${template.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${template.formato}`;
+        collegamento.download = nomeFileEsportazione(scelta.etichetta, scelta.formato);
         collegamento.click();
         URL.revokeObjectURL(url);
       },
@@ -364,6 +372,9 @@ export class ChatStore {
       case 'memoria':
         /* L'esito chiude anche l'attività «Cerco qualcosa da ricordare». */
         this.aggiornaAssistente((m) => ({ ...m, ricordiAppresi: evento.ricordi, attivita: undefined }));
+        break;
+      case 'documento':
+        this.aggiornaAssistente((m) => ({ ...m, documenti: [...(m.documenti ?? []), evento.documento] }));
         break;
       case 'errore':
         this.aggiornaAssistente((m) => ({ ...m, inCorso: false, erroreStream: evento.messaggio }));

@@ -62,8 +62,23 @@ export interface Messaggio {
    * Non è un errore — è una risposta legittima, e va mostrata come tale.
    */
   nonSupportato?: boolean;
+  /**
+   * I documenti generati su template durante la risposta, su richiesta
+   * dell'utente («esporta con Proposta breve»): da scaricare sotto il testo.
+   */
+  documenti?: DocumentoGenerato[];
   /** Vero mentre lo streaming è in corso: il testo cresce, i pulsanti aspettano. */
   inCorso?: boolean;
+}
+
+/** Un documento generato dal motore in chat: `url` è la rotta che lo serve. */
+export interface DocumentoGenerato {
+  id: Id;
+  nome: string;
+  formato: 'pdf' | 'docx' | 'xlsx';
+  /** Il template usato; assente col layout di piattaforma. */
+  template?: string;
+  url: string;
 }
 
 /**
@@ -97,6 +112,8 @@ export type EventoStream =
    * lo mostra e lo collega al pannello Memoria, dove si governa.
    */
   | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
+  /** Un documento generato su template durante la risposta: si mostra subito, da scaricare. */
+  | { tipo: 'documento'; documento: DocumentoGenerato }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
 

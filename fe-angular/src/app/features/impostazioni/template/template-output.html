@@ -2,9 +2,11 @@
   <h1 class="serif testata__titolo">Template di output</h1>
   <p class="testata__spiega">
     I documenti che escono da VELIA — esportazioni della chat, tabelle, output degli agenti —
-    si generano su questi template, con l'identità dell'agenzia.
+    si generano sui template dell'agenzia. Caricane quanti vuoi, anche più d'uno per formato:
+    in chat basta chiedere «esporta con <em>Proposta breve</em>». Per ogni formato uno è il
+    predefinito; senza template, il documento esce col layout di VELIA e l'identità dell'agenzia.
   </p>
-  <p class="mono testata__formati">Formati al lancio: PDF · DOCX · XLSX — PPTX in valutazione</p>
+  <p class="mono testata__formati">Formati: PDF · DOCX · XLSX — PPTX in valutazione</p>
 </header>
 
 @if (errore()) {
@@ -24,78 +26,126 @@
     <ui-scheletro [numeroRighe]="3" />
   </div>
 } @else {
-  <ul class="griglia-template">
-    @for (t of template(); track t.id) {
-      <li class="template">
-        <div class="template__testa">
-          <span class="mono template__formato">{{ t.formato }}</span>
-          @if (t.personalizzato) {
-            <ui-tag variante="accento">dell'agenzia</ui-tag>
-          }
-        </div>
+  @if (template().length) {
+    <ul class="griglia-template">
+      @for (t of template(); track t.id) {
+        <li class="template" [class.is-predefinito]="t.predefinito">
+          <div class="template__testa">
+            <span class="mono template__formato">{{ t.formato }}</span>
+            @if (t.predefinito) {
+              <ui-tag variante="accento">predefinito per {{ t.formato }}</ui-tag>
+            }
+          </div>
 
-        <h2 class="template__nome">{{ t.nome }}</h2>
-        <p class="template__descrizione">{{ t.descrizione }}</p>
-
-        <div class="template__tipologia">
-          @if (puoGestire()) {
-            <ui-select
-              [valore]="t.tipologiaPredefinita ?? ''"
-              (valoreChange)="cambiaTipologia(t, $event)"
-              [opzioni]="tipologie"
-              campoEtichetta="etichetta"
-              campoValore="valore"
-              [ariaLabel]="'Tipologia predefinita per ' + t.nome"
+          @if (inRinomina() === t.id) {
+            <input
+              uiCampo
+              class="template__rinomina"
+              type="text"
+              [value]="nuovoNome()"
+              (input)="nuovoNome.set($any($event.target).value)"
+              (keydown.enter)="confermaRinomina(t)"
+              (keydown.escape)="annullaRinomina()"
+              (blur)="confermaRinomina(t)"
+              aria-label="Nuovo nome del template"
             />
-          } @else if (t.tipologiaPredefinita) {
-            <ui-tag>predefinito per {{ t.tipologiaPredefinita }}</ui-tag>
+          } @else {
+            <h2 class="template__nome">{{ t.nome }}</h2>
           }
-        </div>
+          <p class="template__descrizione">{{ t.descrizione }}</p>
 
-        <div class="template__azioni">
-          <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(t)">
-            <ui-icon name="documento" [size]="14" />
-            <span>Anteprima</span>
-          </button>
+          <div class="template__azioni">
+            <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(t)">
+              <ui-icon name="documento" [size]="14" />
+              <span>Anteprima</span>
+            </button>
 
-          @if (puoGestire() && t.personalizzato) {
-            @if (confermaEliminazione() === t.id) {
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="pericolo"
-                type="button"
-                (click)="elimina(t)"
-              >
-                <span>Elimina davvero</span>
-              </button>
-            } @else {
+            @if (puoGestire()) {
+              @if (!t.predefinito) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="impostaPredefinito(t, true)"
+                >
+                  <span>Rendi predefinito</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="impostaPredefinito(t, false)"
+                >
+                  <span>Togli predefinito</span>
+                </button>
+              }
+
               <button
                 uiBottone
                 dimensione="piccolo"
                 variante="testo"
                 type="button"
-                (click)="elimina(t)"
+                (click)="iniziaRinomina(t)"
               >
-                <ui-icon name="elimina" [size]="13" />
-                <span>Elimina</span>
+                <span>Rinomina</span>
               </button>
+
+              @if (confermaEliminazione() === t.id) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="pericolo"
+                  type="button"
+                  (click)="elimina(t)"
+                >
+                  <span>Elimina davvero</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="elimina(t)"
+                >
+                  <ui-icon name="elimina" [size]="13" />
+                  <span>Elimina</span>
+                </button>
+              }
             }
-          }
-        </div>
-      </li>
-    }
-  </ul>
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <ui-stato-vuoto
+      icona="documento"
+      titolo="Nessun template caricato"
+      descrizione="Finché non carichi un template, i documenti escono col layout di VELIA e l'identità visiva dell'agenzia."
+    />
+  }
+
+  @if (formatiSenzaTemplate().length && template().length) {
+    <p class="mono formati-mancanti">
+      Senza template per {{ formatiMancantiTesto() }}: vale il layout di VELIA.
+    </p>
+  }
 
   @if (puoGestire()) {
     <section class="carica" aria-label="Carica un template dell'agenzia">
-      <p class="mono">Template propri (RF-D-12)</p>
+      <p class="mono">Carica un template</p>
       <p class="carica__spiega" ngNonBindable>
-        Un template proprio deve rispettare lo schema dei segnaposto:
-        <code>{{titolo}}</code>, <code>{{destinatario}}</code>, <code>{{data}}</code>,
-        <code>{{corpo}}</code>, <code>{{tabella}}</code>.
+        Basta un documento con la tua intestazione (logo, testata, piè di pagina) e il resto
+        bianco: il testo generato va in coda. Se vuoi decidere dove finisce cosa, nel DOCX o
+        XLSX puoi mettere i segnaposto <code>{{contenuto}}</code>, <code>{{titolo}}</code>,
+        <code>{{destinatario}}</code>, <code>{{data}}</code>, <code>{{fonti}}</code>. Un PDF fa
+        da carta intestata: la sua prima pagina è lo sfondo di ogni pagina generata. Il nome del
+        file diventa il nome del template.
       </p>
-      <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx,.pptx" />
+      <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx" />
       @if (coda().length) {
         <ui-coda-caricamento [file]="coda()" (chiudi)="svuotaCoda()" />
       }
@@ -104,7 +154,7 @@
     <section class="identita" aria-label="Identità visiva dell'agenzia">
       <p class="mono">Identità visiva (RF-D-12)</p>
       <p class="identita__spiega">
-        Applicata da tutti i template alla generazione: intestazione, colori, recapiti e firma.
+        Applicata a tutti i documenti generati: intestazione, colori, recapiti e firma.
       </p>
 
       <div class="identita__campi">
@@ -158,7 +208,7 @@
             <input
               #campoLogo
               type="file"
-              accept="image/png,image/jpeg,image/svg+xml"
+              accept="image/png,image/jpeg"
               hidden
               (change)="caricaLogo($event)"
             />

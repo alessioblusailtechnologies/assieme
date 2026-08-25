@@ -10,6 +10,7 @@ import {
   NuovaTabella,
   TabellaAnalisi,
 } from '@core/models';
+import { SceltaEsporta } from '@shared/esportazione/scelte-esportazione';
 
 /**
  * Accesso alle tabelle di analisi (RF-C-11…C-15).
@@ -93,7 +94,7 @@ export class TabelleApi {
    * particolare. La genera il server — è lui che applica il template
    * grafico dell'agenzia — e il client scarica il file.
    */
-  esporta(id: Id, templateId: Id): Observable<Blob> {
-    return this.http.post(`${this.base}/${id}/esporta`, { templateId }, { responseType: 'blob' });
+  esporta(id: Id, scelta: SceltaEsporta): Observable<Blob> {
+    return this.http.post(`${this.base}/${id}/esporta`, scelta, { responseType: 'blob' });
   }
 }

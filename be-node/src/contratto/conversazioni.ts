@@ -71,6 +71,21 @@ export interface Messaggio {
   citazioni: Citazione[];
   provenienze: Provenienza[];
   nonSupportato?: boolean;
+  /** I documenti generati su template durante la risposta (aggiunta additiva, 25/08/2026). */
+  documenti?: DocumentoGenerato[];
+}
+
+/**
+ * Un documento generato dal motore su un template, su richiesta dell'utente
+ * in chat: il file sta nello Storage, `url` è la rotta che lo serve.
+ */
+export interface DocumentoGenerato {
+  id: string;
+  nome: string;
+  formato: 'pdf' | 'docx' | 'xlsx';
+  /** Il template usato, per raccontarlo; assente col layout di piattaforma. */
+  template?: string;
+  url: string;
 }
 
 /** Gli eventi del flusso SSE, uno per frame `data: <json>\n\n`. */
@@ -83,8 +98,16 @@ export type EventoStream =
   | { tipo: 'non-supportato' }
   /** RF-G-01: ciò che la memoria ha imparato da questo scambio (solo se ha imparato qualcosa). */
   | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
+  /** Un documento generato su template durante la risposta: il FE lo mostra da scaricare. */
+  | { tipo: 'documento'; documento: DocumentoGenerato }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
+
+export const percorsoDocumentoGenerato = (tenantId: string, id: string, formato: string): string =>
+  `tenant/${tenantId}/generati/${id}.${formato}`;
+
+export const urlDocumentoGenerato = (conversazioneId: string, id: string): string =>
+  `/api/conversazioni/${conversazioneId}/documenti/${id}`;
 
 /** Un ricordo appena appreso, nella forma minima che la bolla mostra e collega al pannello. */
 export interface RicordoAppreso {

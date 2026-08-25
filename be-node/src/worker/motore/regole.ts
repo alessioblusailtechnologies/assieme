@@ -144,8 +144,32 @@ export async function caricaDna(
 }
 
 /** Il prompt di sistema: regole fisse + DNA d'Agenzia. */
-export function promptSistema(dna: DnaAgenzia): string {
+/** I template dell'agenzia come li racconta il prompt, quando il tool `genera_documento` è attivo. */
+export interface TemplateNelPrompt {
+  nome: string;
+  formato: string;
+  predefinito: boolean;
+}
+
+export function promptSistema(dna: DnaAgenzia, template?: TemplateNelPrompt[]): string {
   const parti = [REGOLE_MOTORE];
+  if (template) {
+    parti.push('\n\n## Documenti su template\n');
+    parti.push(
+      'Hai lo strumento `genera_documento`: produce un file PDF, DOCX o XLSX e lo allega alla risposta. Usalo solo quando l’utente chiede un file, un documento, un’esportazione o nomina un template; mai di tua iniziativa. Il contenuto lo scrivi tu, completo e per chi lo leggerà. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
+    );
+    if (template.length) {
+      parti.push('\nI template dell’agenzia (richiamali per nome, come li dice l’utente):');
+      for (const t of template) {
+        parti.push(`- «${t.nome}» (${t.formato.toUpperCase()}${t.predefinito ? ', predefinito per il formato' : ''})`);
+      }
+      parti.push(
+        'Se l’utente chiede solo un formato, vale il predefinito di quel formato; senza template per il formato esce il layout di VELIA.',
+      );
+    } else {
+      parti.push('L’agenzia non ha template caricati: i documenti escono col layout di VELIA, indica solo il formato.');
+    }
+  }
   if (dna.istruzioni.length || dna.riferimenti.length || dna.ricordi.length) {
     parti.push('\n\n## DNA d’Agenzia\n');
     parti.push(

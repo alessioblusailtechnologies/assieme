@@ -1,0 +1,8 @@
+{
+  "name": "box-agenzie",
+  "private": true,
+  "type": "module",
+  "description": "Tavole di stampa della box Velia per le agenzie",
+  "scripts": { "tavole": "node genera-tavole.mjs" },
+  "dependencies": { "qrcode": "^1.5.4" }
+}

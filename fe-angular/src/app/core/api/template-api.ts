@@ -3,14 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env';
-import { Id, TemplateOutput, TipologiaOutput } from '@core/models';
+import { Id, TemplateOutput } from '@core/models';
 
 /**
  * Libreria dei template di output (RF-D-10…D-13).
  *
- * `GET /api/template` è lo stesso elenco che chat e tabelle usano per
- * esportare (RF-C-10, RF-C-14): la libreria è una, questa schermata è il suo
- * pannello di governo.
+ * `GET /api/template` è lo stesso elenco che chat, tabelle e agenti usano
+ * per esportare (RF-C-10, RF-C-14, RF-E-13): la libreria è una, questa
+ * schermata è il suo pannello di governo.
  */
 @Injectable({ providedIn: 'root' })
 export class TemplateApi {
@@ -30,7 +30,7 @@ export class TemplateApi {
     return `${this.base}/${id}/anteprima`;
   }
 
-  /** RF-D-12: template propri del tenant, conformi allo schema dei segnaposto. */
+  /** RF-D-12: template dell'agenzia, conformi allo schema dei segnaposto. */
   carica(file: File[]): Observable<HttpEvent<{ creati: TemplateOutput[] }>> {
     const corpo = new FormData();
     for (const f of file) corpo.append('file', f, f.name);
@@ -41,17 +41,19 @@ export class TemplateApi {
   }
 
   /**
-   * RF-D-13: associa il template a una tipologia di output come predefinito.
-   * Il server garantisce l'unicità: assegnare una tipologia la toglie a chi
-   * la portava prima. `null` la rimuove.
+   * RF-D-13: il predefinito per il formato del template. Il server garantisce
+   * l'unicità per formato: assegnarlo lo toglie a chi lo portava prima.
+   * Risponde con l'elenco intero.
    */
-  impostaTipologia(id: Id, tipologia: TipologiaOutput | null): Observable<TemplateOutput[]> {
-    return this.http.patch<TemplateOutput[]>(`${this.base}/${id}`, {
-      tipologiaPredefinita: tipologia,
-    });
+  impostaPredefinito(id: Id, predefinito: boolean): Observable<TemplateOutput[]> {
+    return this.http.patch<TemplateOutput[]>(`${this.base}/${id}`, { predefinito });
   }
 
-  /** Solo i personalizzati: i precaricati sono della piattaforma. */
+  /** Il nome con cui il template si richiama in chat e negli agenti. */
+  rinomina(id: Id, nome: string): Observable<TemplateOutput[]> {
+    return this.http.patch<TemplateOutput[]>(`${this.base}/${id}`, { nome });
+  }
+
   elimina(id: Id): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }

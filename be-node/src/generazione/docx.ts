@@ -213,9 +213,39 @@ export function segnapostoDocx(byte: Buffer): string[] {
   return [...trovati];
 }
 
+const paragrafo = (testo: string, stile?: string): string =>
+  `<w:p>${stile ? `<w:pPr><w:pStyle w:val="${stile}"/></w:pPr>` : ''}<w:r><w:t xml:space="preserve">${testo}</w:t></w:r></w:p>`;
+
+/**
+ * Un template senza `{{contenuto}}` è una carta intestata (logo, testata,
+ * piè di pagina, pagina bianca): il testo generato va in coda al corpo,
+ * dopo ciò che il documento già contiene. Si aggiungono i segnaposto
+ * mancanti e poi si riempie come sempre.
+ */
+export function completaSegnapostoDocx(byte: Buffer): Buffer {
+  const presenti = new Set(segnapostoDocx(byte));
+  if (presenti.has('contenuto')) return byte;
+  const zip = new PizZip(byte);
+  const nome = 'word/document.xml';
+  const xml = zip.files[nome]?.asText();
+  if (!xml) return byte;
+  const coda = [
+    ...(presenti.has('titolo') ? [] : [paragrafo('{{titolo}}', 'Title')]),
+    paragrafo('{{contenuto}}'),
+    ...(presenti.has('fonti') ? [] : [paragrafo(''), paragrafo('{{fonti}}')]),
+  ].join('');
+  /* Prima delle proprietà di sezione finali, se ci sono; altrimenti a fine corpo. */
+  const sezione = xml.lastIndexOf('<w:sectPr');
+  const fine = xml.lastIndexOf('</w:body>');
+  const dove = sezione > -1 && sezione < fine ? sezione : fine;
+  if (dove < 0) return byte;
+  zip.file(nome, xml.slice(0, dove) + coda + xml.slice(dove));
+  return zip.generate({ type: 'nodebuffer' });
+}
+
 /** Riempie un template DOCX del tenant coi campi dello schema (RF-D-12). */
 export function riempiDocx(byte: Buffer, campi: CampiTemplate): Buffer {
-  const documento = new Docxtemplater(new PizZip(byte), {
+  const documento = new Docxtemplater(new PizZip(completaSegnapostoDocx(byte)), {
     delimiters: { start: '{{', end: '}}' },
     paragraphLoop: true,
     linebreaks: true,

@@ -9,8 +9,9 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
-import { caricaDna, promptSistema, promptUtente, type MessaggioStoria } from './regole.js';
+import { caricaDna, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
+import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreSuggerimenti } from './suggeritore.js';
 import type { GeneratoreTitolo } from './titolista.js';
 import { avvisiEsposizione, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
@@ -102,6 +103,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       await emetti({ tipo: 'attivita', etichetta: 'Raccolgo i documenti della conversazione' });
     }
     let workspace: Workspace | undefined;
+    let strumentiChat: StrumentiMotore | undefined;
+    /* Una risposta che non arriva al messaggio non lascia file orfani nello Storage. */
+    let documentiSalvati = false;
     try {
       workspace = await materializzaWorkspace({
         db,
@@ -138,12 +142,30 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         workspace.perPath,
       );
 
+      /* I template dell'agenzia nel prompt e il tool `genera_documento`:
+         l'utente ottiene il file senza uscire dalla chat. */
+      const templateAgenzia = await db.query<TemplateNelPrompt>(
+        `select nome, formato, predefinito from velia.template where tenant_id = $1 order by created_at, id`,
+        [tenantId],
+      );
+      strumentiChat = creaStrumentiMotore({
+        db,
+        archivio: dip.archivio,
+        tenantId,
+        conversazioneId: payload.conversazioneId,
+        messaggioId: payload.messaggioAssistenteId,
+        suDocumento: async (documento) => {
+          await emetti({ tipo: 'documento', documento });
+        },
+      });
+
       const esito = await dip.motore.interroga(
         {
           directory: workspace.directory,
           titoloPer: (path) => workspace!.perPath.get(path)?.titolo,
           ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
-          promptSistema: promptSistema(dna),
+          promptSistema: promptSistema(dna, templateAgenzia.rows),
+          strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi },
           promptUtente: promptUtente({
             documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
             mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
@@ -225,10 +247,11 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       await db.query(
         `insert into velia.messaggi
            (id, conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati,
-            citazioni, provenienze, non_supportato, job_id)
-         values ($1, $2, $3, 'assistente', $4, $5, '{}', $6, $7, $8, $9)
+            citazioni, provenienze, non_supportato, job_id, documenti)
+         values ($1, $2, $3, 'assistente', $4, $5, '{}', $6, $7, $8, $9, $10)
          on conflict (id) do update set testo = excluded.testo, citazioni = excluded.citazioni,
-           provenienze = excluded.provenienze, non_supportato = excluded.non_supportato`,
+           provenienze = excluded.provenienze, non_supportato = excluded.non_supportato,
+           documenti = excluded.documenti`,
         [
           payload.messaggioAssistenteId,
           payload.conversazioneId,
@@ -239,8 +262,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           JSON.stringify(provenienze),
           nonSupportato,
           job.id,
+          JSON.stringify(strumentiChat.generati),
         ],
       );
+      documentiSalvati = true;
       await db.query(`update velia.conversazioni set updated_at = now() where id = $1`, [
         payload.conversazioneId,
       ]);
@@ -342,6 +367,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
 
       await emetti({ tipo: 'fine' });
     } finally {
+      if (!documentiSalvati && strumentiChat?.percorsi.length) {
+        await dip.archivio.elimina(strumentiChat.percorsi).catch(() => undefined);
+      }
       await workspace?.rimuovi().catch(() => undefined);
     }
   };

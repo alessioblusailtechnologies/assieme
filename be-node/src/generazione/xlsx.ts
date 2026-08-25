@@ -111,6 +111,33 @@ export async function segnapostoXlsx(byte: Buffer): Promise<string[]> {
 }
 
 /**
+ * Un template senza `{{contenuto}}` è un foglio intestato: il testo generato
+ * va sotto ciò che il primo foglio già contiene, con titolo e fonti se il
+ * file non li colloca altrove.
+ */
+function completaSegnapostoXlsx(cartella: ExcelJS.Workbook): void {
+  const presenti = new Set<string>();
+  cartella.eachSheet((foglio) => {
+    foglio.eachRow((riga) => {
+      riga.eachCell((cella) => {
+        for (const m of cella.text.matchAll(/\{\{\s*([a-zA-Z]+)\s*\}\}/g)) presenti.add(m[1]!);
+      });
+    });
+  });
+  if (presenti.has('contenuto')) return;
+  const foglio = cartella.worksheets[0] ?? cartella.addWorksheet('Documento');
+  let riga = foglio.rowCount + (foglio.rowCount ? 2 : 1);
+  if (!presenti.has('titolo')) {
+    const cella = foglio.getRow(riga).getCell(1);
+    cella.value = '{{titolo}}';
+    cella.font = { bold: true, size: 14 };
+    riga += 2;
+  }
+  foglio.getRow(riga).getCell(1).value = '{{contenuto}}';
+  if (!presenti.has('fonti')) foglio.getRow(riga + 2).getCell(1).value = '{{fonti}}';
+}
+
+/**
  * Riempie un template XLSX del tenant: i campi brevi si sostituiscono nella
  * cella; `{{contenuto}}` e `{{fonti}}` diventano la prima riga del loro
  * blocco più una riga inserita (con lo stile della cella di partenza) per
@@ -119,6 +146,7 @@ export async function segnapostoXlsx(byte: Buffer): Promise<string[]> {
 export async function riempiXlsx(byte: Buffer, campi: CampiTemplate): Promise<Buffer> {
   const cartella = new ExcelJS.Workbook();
   await cartella.xlsx.load(byte as unknown as ExcelJS.Buffer);
+  completaSegnapostoXlsx(cartella);
 
   const brevi: Array<[RegExp, string]> = [
     [/\{\{\s*titolo\s*\}\}/g, campi.titolo],

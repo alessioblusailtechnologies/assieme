@@ -28,9 +28,11 @@ import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import {
+  fontiDaCitazioni,
   identitaDelTenant,
   templatePerId,
   versoIdentitaGenerazione,
+  versoRisolto,
   type RigaIdentita,
 } from '../template/rotte.js';
 
@@ -453,27 +455,15 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       if (!template || !esecuzione.output || esecuzione.stato !== 'completata') {
         throw ErroreApi.nonTrovato('Questa esecuzione non ha prodotto un documento.');
       }
-      if (template.formato === 'pptx') {
-        throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', 'La generazione PPTX non è ancora disponibile.');
-      }
-
-      const fonti = esecuzione.citazioni.map((c) => {
-        const posizione = [
-          c.posizione.articolo ? `art. ${c.posizione.articolo}` : c.posizione.sezione,
-          `p. ${c.posizione.pagina}`,
-        ]
-          .filter(Boolean)
-          .join(', ');
-        return `${c.documentoTitolo} — ${posizione}`;
-      });
-      const fileTemplate = template.path_file ? await archivio().scarica(template.path_file) : undefined;
+      const risolto = versoRisolto(template);
+      const fileTemplate = await archivio().scarica(template.path_file);
       const logo = await caricaLogo(identita);
       const file = await generaDocumento({
-        template: { nome: template.nome, formato: template.formato, personalizzato: Boolean(template.tenant_id) },
-        ...(fileTemplate && { fileTemplate }),
+        template: risolto,
+        fileTemplate,
         titolo: `${agente.nome} — esito`,
         testo: esecuzione.output,
-        fonti,
+        fonti: fontiDaCitazioni(esecuzione.citazioni),
         identita: { ...versoIdentitaGenerazione(identita), ...(logo && { logo }) },
       });
 

@@ -12,6 +12,11 @@ import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { TabelleApi } from '@core/api/tabelle-api';
+import {
+  SceltaEsportazione,
+  nomeFileEsportazione,
+  scelteEsportazione,
+} from '@shared/esportazione/scelte-esportazione';
 import { avanzamentoTabella } from './avanzamento';
 
 /** Ogni quanto si richiede la tabella mentre la generazione è in corso. */
@@ -155,16 +160,19 @@ export class DettaglioTabellaStore {
     this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
   );
 
-  esporta(template: TemplateOutput): void {
+  /** Le voci del menù di esportazione: template dell'agenzia per formato, o il layout di VELIA. */
+  readonly scelteEsportazione = computed(() => scelteEsportazione(this.template()));
+
+  esporta(scelta: SceltaEsportazione): void {
     const id = this.id();
     const tabella = this.tabella();
     if (!id || !tabella) return;
-    this.api.esporta(id, template.id).subscribe({
+    this.api.esporta(id, scelta.scelta).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const collegamento = document.createElement('a');
         collegamento.href = url;
-        collegamento.download = `${tabella.titolo.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${template.formato}`;
+        collegamento.download = nomeFileEsportazione(tabella.titolo, scelta.formato);
         collegamento.click();
         URL.revokeObjectURL(url);
       },

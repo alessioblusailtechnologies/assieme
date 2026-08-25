@@ -55,6 +55,31 @@
         <p class="interrotta">Risposta interrotta: non è stata salvata nella conversazione.</p>
       }
 
+      @if (m.documenti?.length) {
+        <!--
+          I documenti generati su template durante la risposta («esporta con
+          Proposta breve»): sotto il testo, da scaricare con un gesto.
+        -->
+        <div class="documenti" aria-label="Documenti generati">
+          @for (d of m.documenti; track d.id) {
+            <button
+              type="button"
+              class="documento"
+              (click)="scarica(d)"
+              [disabled]="inScaricamento() === d.id"
+              [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
+            >
+              <ui-icon name="scarica" [size]="13" />
+              <span class="documento__nome">{{ d.nome }}</span>
+              <span class="mono documento__formato">{{ d.formato }}</span>
+              @if (d.template) {
+                <span class="documento__template">su «{{ d.template }}»</span>
+              }
+            </button>
+          }
+        </div>
+      }
+
       @if (m.citazioni.length) {
         <!--
           Le fonti sono tante (il motore cita ogni passaggio letto): l'accordion

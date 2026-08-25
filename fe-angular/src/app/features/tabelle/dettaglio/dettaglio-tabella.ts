@@ -147,10 +147,10 @@ export class DettaglioTabella {
   private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
 
   protected readonly vociEsporta = computed<VoceMenu[]>(() =>
-    this.store.template().map((template) => ({
-      etichetta: template.nome,
-      dettaglio: template.formato,
-      azione: () => this.store.esporta(template),
+    this.store.scelteEsportazione().map((scelta) => ({
+      etichetta: scelta.etichetta,
+      dettaglio: scelta.dettaglio,
+      azione: () => this.store.esporta(scelta),
     })),
   );
 

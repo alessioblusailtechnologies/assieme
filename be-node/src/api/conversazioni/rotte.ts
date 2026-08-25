@@ -9,8 +9,10 @@ import {
   schemaNuovoMessaggio,
   titoloDaMessaggio,
   TITOLO_NUOVA,
+  percorsoDocumentoGenerato,
   type Citazione,
   type Conversazione,
+  type DocumentoGenerato,
   type EventoStream,
   type Messaggio,
   type PaginaConversazioni,
@@ -18,6 +20,7 @@ import {
   type RiferimentoDocumento,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
 import { richiediCrediti } from '../crediti/rotte.js';
@@ -62,9 +65,12 @@ interface RigaMessaggio {
   citazioni: Citazione[];
   provenienze: Provenienza[];
   non_supportato: boolean;
+  documenti: DocumentoGenerato[];
 }
 
 const nuovoIdAllegato = (): string => `all-${randomBytes(6).toString('hex')}`;
+/** Gli id dei documenti generati sono uuid: un id malformato è un 404, non un errore SQL. */
+const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const percorsoAllegato = (tenantId: string, id: string): string =>
   `tenant/${tenantId}/allegati/${id}.pdf`;
 
@@ -189,6 +195,38 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     void risposta.header('Content-Type', 'application/pdf').header('Content-Disposition', 'inline').send(pdf);
   });
 
+  /**
+   * Un documento generato in chat su template: il file sta nello Storage,
+   * l'elenco nel messaggio. Visibilità della conversazione via RLS (condivisa
+   * = i colleghi lo scaricano); un id ignoto o altrui è un 404.
+   */
+  app.get<{ Params: { id: string; did: string } }>(
+    '/api/conversazioni/:id/documenti/:did',
+    async (richiesta, risposta) => {
+      if (!E_UUID.test(richiesta.params.did)) throw ErroreApi.nonTrovato('Documento inesistente.');
+      const documento = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const r = await client.query<{ documento: DocumentoGenerato }>(
+          `select d as documento
+           from velia.messaggi m, jsonb_array_elements(m.documenti) d
+           where m.conversazione_id = $1 and d->>'id' = $2`,
+          [richiesta.params.id, richiesta.params.did],
+        );
+        return r.rows[0]?.documento;
+      });
+      if (!documento) throw ErroreApi.nonTrovato('Documento inesistente.');
+
+      const byte = await archivio().scarica(
+        percorsoDocumentoGenerato(richiesta.identita.tenantId, documento.id, documento.formato),
+      );
+      return risposta
+        .header('Content-Type', MIME[documento.formato])
+        .header('Content-Length', byte.length)
+        .header('Content-Disposition', `attachment; filename="${nomeFileGenerato(documento.nome, documento.formato)}"`)
+        .send(byte);
+    },
+  );
+
   app.get<{ Params: { id: string } }>('/api/conversazioni/:id', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
       const riga = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
@@ -220,11 +258,20 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.delete<{ Params: { id: string } }>('/api/conversazioni/:id', async (richiesta, risposta) => {
     await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+      /* I documenti generati in chat se ne vanno con la conversazione (file compresi). */
+      const generati = await client.query<{ documenti: DocumentoGenerato[] }>(
+        `select documenti from velia.messaggi where conversazione_id = $1 and jsonb_array_length(documenti) > 0`,
+        [esistente.id],
+      );
       const r = await client.query(`delete from velia.conversazioni where id = $1 and tenant_id = $2`, [
         esistente.id,
         richiesta.identita.tenantId,
       ]);
       if (!r.rowCount) throw ErroreApi.permessoNegato('Solo chi ha aperto la conversazione può eliminarla.');
+      const fileGenerati = generati.rows.flatMap((m) =>
+        m.documenti.map((d) => percorsoDocumentoGenerato(richiesta.identita.tenantId, d.id, d.formato)),
+      );
+      if (fileGenerati.length) await archivio().elimina(fileGenerati).catch(() => undefined);
       const orfani = await client.query<{ id: string; path_pdf: string | null; path_md: string | null }>(
         `delete from velia.documenti d
          where d.archivio = 'conversazione' and d.tenant_id = $2 and d.id = any($1)
@@ -263,7 +310,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       await conversazionePerId(client, richiesta.identita, richiesta.params.id);
       const righe = await client.query<RigaMessaggio>(
         `select id, conversazione_id, autore, testo, inviato_il, documenti_referenziati,
-                citazioni, provenienze, non_supportato
+                citazioni, provenienze, non_supportato, documenti
          from velia.messaggi where conversazione_id = $1 order by inviato_il, id`,
         [richiesta.params.id],
       );
@@ -513,5 +560,6 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
     citazioni: r.citazioni,
     provenienze: r.provenienze,
     ...(r.non_supportato && { nonSupportato: true }),
+    ...(r.documenti?.length && { documenti: r.documenti }),
   };
 }

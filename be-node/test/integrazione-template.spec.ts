@@ -12,10 +12,10 @@ import type { ArchivioFile } from '../src/worker/ingestion/archivio-file.js';
 
 /**
  * La Fase 4 per intero, contro il progetto vero (tenant di collaudo): la
- * libreria dei quattro precaricati, il caricamento di un template DOCX del
- * tenant coi segnaposto, il predefinito per tipologia (anche tolto a un
- * precaricato), l'identità visiva col logo, l'anteprima PDF e l'esportazione
- * di un messaggio — su precaricato e su template proprio. Lo Storage è una
+ * libreria che parte vuota, il caricamento di due template DOCX del
+ * tenant coi segnaposto, il predefinito per formato e il nome che si cambia,
+ * l’identità visiva col logo, l’anteprima PDF e l’esportazione
+ * di un messaggio — sul layout di piattaforma e su template proprio. Lo Storage è una
  * mappa in memoria, il database è quello vero: RLS compresa.
  */
 let config: Configurazione | undefined;
@@ -105,9 +105,9 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
   let conversazioneId: string;
   let messaggioId: string;
   let templateProprio: TemplateOutput;
+  let templateSecondo: TemplateOutput;
 
   const pulizia = async (): Promise<void> => {
-    await poolDb().query(`delete from velia.template_predefiniti where tenant_id = $1`, [TENANT_COLLAUDO]);
     await poolDb().query(`delete from velia.template where tenant_id = $1`, [TENANT_COLLAUDO]);
     await poolDb().query(`delete from velia.identita_visiva where tenant_id = $1`, [TENANT_COLLAUDO]);
     await poolDb().query(`delete from velia.impostazioni_storico where tenant_id = $1`, [TENANT_COLLAUDO]);
@@ -170,17 +170,13 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     await chiudiPool();
   });
 
-  it('la libreria precaricata: quattro template coi predefiniti di partenza', async () => {
+  it('la libreria parte vuota: i template sono solo quelli che l’agenzia carica', async () => {
     const r = await richiedi('GET', '/api/template', tokenOperatore);
     expect(r.statusCode).toBe(200);
-    const elenco = r.json<TemplateOutput[]>();
-    expect(elenco.map((t) => t.id)).toEqual(['tpl-001', 'tpl-002', 'tpl-003', 'tpl-004']);
-    expect(elenco.every((t) => !t.personalizzato)).toBe(true);
-    expect(elenco.find((t) => t.id === 'tpl-001')?.tipologiaPredefinita).toBe('confronto');
-    expect(elenco.find((t) => t.id === 'tpl-004')?.formato).toBe('xlsx');
+    expect(r.json<TemplateOutput[]>()).toEqual([]);
   });
 
-  it('carica un template DOCX del tenant, conforme allo schema dei segnaposto', async () => {
+  it('carica un template DOCX, conforme allo schema dei segnaposto: il primo del formato è il predefinito', async () => {
     const { corpo, contentType } = multipart([
       {
         nome: 'Carta intestata collaudo.docx',
@@ -199,24 +195,34 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(templateProprio).toMatchObject({
       nome: 'Carta intestata collaudo',
       formato: 'docx',
-      personalizzato: true,
+      predefinito: true,
     });
     expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${templateProprio.id}.docx`)).toBe(true);
 
+    /* Un secondo DOCX: stesso formato, quanti se ne vogliono — ma non è il
+       predefinito. Ed è una carta intestata senza segnaposto: il testo va in coda. */
+    const secondo = multipart([
+      { nome: 'Proposta breve.docx', contenuto: await docxDiProva(['Agenzia di Collaudo — carta intestata']) },
+    ]);
+    const r2 = await app.inject({
+      method: 'POST',
+      url: '/api/template',
+      headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': secondo.contentType },
+      payload: secondo.corpo,
+    });
+    expect(r2.statusCode).toBe(201);
+    templateSecondo = r2.json<{ creati: TemplateOutput[] }>().creati[0]!;
+    expect(templateSecondo).toMatchObject({ nome: 'Proposta breve', formato: 'docx', predefinito: false });
+
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
-    expect(elenco.json<TemplateOutput[]>().at(-1)?.id).toBe(templateProprio.id);
+    expect(elenco.json<TemplateOutput[]>().map((t) => t.id)).toEqual([templateProprio.id, templateSecondo.id]);
   });
 
   it('i caricamenti sbagliati si rifiutano con un motivo leggibile, senza lasciare metà lotto', async () => {
     const casi: Array<{ nome: string; contenuto: Buffer; stato: number; codice: string }> = [
       { nome: 'note.txt', contenuto: Buffer.from('testo'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
       { nome: 'slide.pptx', contenuto: Buffer.from('PK'), stato: 415, codice: 'FORMATO_NON_SUPPORTATO' },
-      {
-        nome: 'senza-posto.docx',
-        contenuto: await docxDiProva(['Solo {{titolo}}, nessun posto per il testo']),
-        stato: 400,
-        codice: 'SEGNAPOSTO_MANCANTI',
-      },
+      { nome: 'finto.docx', contenuto: Buffer.from('non uno zip'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
     ];
     for (const caso of casi) {
       const { corpo, contentType } = multipart([caso]);
@@ -245,37 +251,36 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(elenco.json<TemplateOutput[]>().some((t) => t.nome === 'buono')).toBe(false);
   });
 
-  it('il predefinito per tipologia: assegnare lo toglie a chi lo portava, anche a un precaricato', async () => {
-    const r = await richiedi('PATCH', `/api/template/${templateProprio.id}`, tokenAdmin, {
-      tipologiaPredefinita: 'riepilogo-garanzie',
-    });
+  it('il predefinito per formato: assegnarlo lo toglie a chi lo portava; il nome si cambia', async () => {
+    const r = await richiedi('PATCH', `/api/template/${templateSecondo.id}`, tokenAdmin, { predefinito: true });
     expect(r.statusCode).toBe(200);
     const elenco = r.json<TemplateOutput[]>();
-    expect(elenco.find((t) => t.id === templateProprio.id)?.tipologiaPredefinita).toBe('riepilogo-garanzie');
-    expect(elenco.find((t) => t.id === 'tpl-002')?.tipologiaPredefinita).toBeUndefined();
+    expect(elenco.find((t) => t.id === templateSecondo.id)?.predefinito).toBe(true);
+    expect(elenco.find((t) => t.id === templateProprio.id)?.predefinito).toBe(false);
 
-    const tolto = await richiedi('PATCH', '/api/template/tpl-001', tokenAdmin, {
-      tipologiaPredefinita: null,
+    const tolto = await richiedi('PATCH', `/api/template/${templateSecondo.id}`, tokenAdmin, { predefinito: false });
+    expect(tolto.json<TemplateOutput[]>().every((t) => !t.predefinito)).toBe(true);
+
+    const rinominato = await richiedi('PATCH', `/api/template/${templateProprio.id}`, tokenAdmin, {
+      nome: 'Carta intestata',
+      predefinito: true,
     });
-    expect(
-      tolto.json<TemplateOutput[]>().every((t) => t.tipologiaPredefinita !== 'confronto'),
-    ).toBe(true);
+    expect(rinominato.json<TemplateOutput[]>().find((t) => t.id === templateProprio.id)).toMatchObject({
+      nome: 'Carta intestata',
+      predefinito: true,
+    });
 
-    const ripristino = await richiedi('PATCH', '/api/template/tpl-001', tokenAdmin, {
+    const estraneo = await richiedi('PATCH', `/api/template/${templateProprio.id}`, tokenAdmin, {
       tipologiaPredefinita: 'confronto',
     });
-    expect(ripristino.json<TemplateOutput[]>().find((t) => t.id === 'tpl-001')?.tipologiaPredefinita).toBe(
-      'confronto',
-    );
+    expect(estraneo.statusCode).toBe(400);
   });
 
-  it("l'anteprima è sempre un PDF, precaricato o proprio che sia", async () => {
-    for (const id of ['tpl-002', templateProprio.id]) {
-      const r = await richiedi('GET', `/api/template/${id}/anteprima`, tokenOperatore);
-      expect(r.statusCode, id).toBe(200);
-      expect(r.headers['content-type']).toBe('application/pdf');
-      expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
-    }
+  it("l'anteprima è sempre un PDF, anche per un template DOCX", async () => {
+    const r = await richiedi('GET', `/api/template/${templateProprio.id}/anteprima`, tokenOperatore);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toBe('application/pdf');
+    expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
   it("l'identità visiva: default finché non c'è, poi ciò che l'amministratore salva — col logo", async () => {
@@ -311,30 +316,46 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(servito.rawPayload.equals(PNG_LOGO)).toBe(true);
   });
 
-  it("l'esportazione su un precaricato PDF: download vero, col nome del template", async () => {
+  it("l'esportazione per solo formato senza template: il layout di piattaforma, download vero", async () => {
     const r = await richiedi(
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
       tokenAdmin,
-      { templateId: 'tpl-001' },
+      { formato: 'pdf' },
     );
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toBe('application/pdf');
-    expect(r.headers['content-disposition']).toBe('attachment; filename="confronto-di-garanzie.pdf"');
+    expect(r.headers['content-disposition']).toBe('attachment; filename="documento-velia.pdf"');
     expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
-  it("l'esportazione sul template proprio: i segnaposto portano testo e fonti", async () => {
-    const r = await richiedi(
+  it("l'esportazione sul template proprio (per id o come predefinito del formato): i segnaposto portano testo e fonti", async () => {
+    for (const scelta of [{ templateId: templateProprio.id }, { formato: 'docx' }]) {
+      const r = await richiedi(
+        'POST',
+        `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
+        tokenAdmin,
+        scelta,
+      );
+      expect(r.statusCode, JSON.stringify(scelta)).toBe(200);
+      expect(r.headers['content-type']).toContain('wordprocessingml');
+      expect(r.headers['content-disposition']).toBe('attachment; filename="carta-intestata.docx"');
+      const testo = testoDocx(r.rawPayload);
+      expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
+      expect(testo).toContain('Documento di prova — art. 12, p. 3');
+      expect(testo).not.toContain('{{');
+    }
+
+    /* La carta intestata senza segnaposto: intestazione sua, testo e fonti in coda. */
+    const intestata = await richiedi(
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
       tokenAdmin,
-      { templateId: templateProprio.id },
+      { templateId: templateSecondo.id },
     );
-    expect(r.statusCode).toBe(200);
-    expect(r.headers['content-type']).toContain('wordprocessingml');
-    const testo = testoDocx(r.rawPayload);
-    expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
+    expect(intestata.statusCode).toBe(200);
+    const testo = testoDocx(intestata.rawPayload);
+    expect(testo.indexOf('Agenzia di Collaudo — carta intestata')).toBeLessThan(testo.indexOf('La garanzia Furto'));
     expect(testo).toContain('Documento di prova — art. 12, p. 3');
     expect(testo).not.toContain('{{');
   });
@@ -353,28 +374,25 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
       tokenOperatore,
-      { templateId: 'tpl-001' },
+      { formato: 'pdf' },
     );
     expect(altrui.statusCode).toBe(404);
     expect(altrui.json()).toMatchObject({ messaggio: 'Messaggio inesistente.' });
   });
 
-  it('DELETE: il proprio sparisce da catalogo e Storage, il precaricato è della piattaforma', async () => {
-    const precaricato = await richiedi('DELETE', '/api/template/tpl-001', tokenAdmin);
-    expect(precaricato.statusCode).toBe(409);
-    expect(precaricato.json()).toMatchObject({ codice: 'PRECARICATO' });
+  it('DELETE: il template sparisce da catalogo e Storage; un id ignoto è 404', async () => {
+    const ignoto = await richiedi('DELETE', '/api/template/tpl-001', tokenAdmin);
+    expect(ignoto.statusCode).toBe(404);
 
-    const r = await richiedi('DELETE', `/api/template/${templateProprio.id}`, tokenAdmin);
-    expect(r.statusCode).toBe(204);
-    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${templateProprio.id}.docx`)).toBe(false);
+    for (const t of [templateProprio, templateSecondo]) {
+      const r = await richiedi('DELETE', `/api/template/${t.id}`, tokenAdmin);
+      expect(r.statusCode).toBe(204);
+      expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${t.id}.docx`)).toBe(false);
+    }
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
-    expect(elenco.json<TemplateOutput[]>().map((t) => t.id)).toEqual([
-      'tpl-001',
-      'tpl-002',
-      'tpl-003',
-      'tpl-004',
-    ]);
+    expect(elenco.json<TemplateOutput[]>()).toEqual([]);
   });
+
 
   it('ogni mutazione ha lasciato una voce nello storico (RF-D-07, la rotta arriva in Fase 6)', async () => {
     const r = await poolDb().query<{ azione: string; descrizione: string }>(

@@ -188,11 +188,11 @@ export class Conversazione {
    * pulsante premuto e ricorda per quale messaggio è stato aperto.
    */
   protected readonly vociEsporta = computed<VoceMenu[]>(() =>
-    this.store.template().map((template) => ({
-      etichetta: template.nome,
-      dettaglio: template.formato,
+    this.store.scelteEsportazione().map((scelta) => ({
+      etichetta: scelta.etichetta,
+      dettaglio: scelta.dettaglio,
       azione: () => {
-        if (this.messaggioDaEsportare) this.store.esporta(this.messaggioDaEsportare, template);
+        if (this.messaggioDaEsportare) this.store.esporta(this.messaggioDaEsportare, scelta);
       },
     })),
   );

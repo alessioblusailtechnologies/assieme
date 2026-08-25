@@ -3,6 +3,7 @@ import { isAbsolute, relative, resolve, sep } from 'node:path';
 import {
   query,
   type HookCallback,
+  type McpSdkServerConfigWithInstance,
   type Options,
   type SDKMessage,
 } from '@anthropic-ai/claude-agent-sdk';
@@ -45,6 +46,11 @@ export interface RichiestaMotore {
    * file — che sono architettura, non contenuto.
    */
   titoloPer?: (pathRelativo: string) => string | undefined;
+  /**
+   * Strumenti oltre alla lettura (la chat: `genera_documento`), come server
+   * MCP in-process dell'SDK. Senza, il modello ha i soli tool di lettura.
+   */
+  strumenti?: { server: McpSdkServerConfigWithInstance; nomi: string[] };
 }
 
 export interface OsservatoreSessione {
@@ -144,6 +150,8 @@ export class MotoreAgentSdk implements Motore {
       return {};
     };
 
+    /* `tools` è il set dei tool integrati; quelli MCP (il server `velia`)
+       entrano da `allowedTools`, così non chiedono mai un permesso. */
     const opzioni: Options = {
       cwd: radice,
       model: modello,
@@ -151,7 +159,8 @@ export class MotoreAgentSdk implements Motore {
       ...(this.opzioni.effort && !fornitore.terzo && { effort: this.opzioni.effort }),
       systemPrompt: richiesta.promptSistema,
       tools: ['Read', 'Grep', 'Glob'],
-      allowedTools: ['Read', 'Grep', 'Glob'],
+      allowedTools: ['Read', 'Grep', 'Glob', ...(richiesta.strumenti?.nomi ?? [])],
+      ...(richiesta.strumenti && { mcpServers: { velia: richiesta.strumenti.server } }),
       disallowedTools: ['Bash', 'Write', 'Edit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Skill'],
       permissionMode: 'default',
       maxTurns: this.opzioni.maxTurni,
@@ -401,6 +410,10 @@ export function etichettaAttivita(
       const oltre = typeof input['offset'] === 'number' && input['offset'] > 1;
       if (!cosa.titolo) return oltre ? 'Continuo a leggere' : 'Leggo un documento';
       return `${oltre ? 'Continuo a leggere' : 'Leggo'} «${cosa.titolo}»`;
+    }
+    case 'mcp__velia__genera_documento': {
+      const titolo = typeof input['titolo'] === 'string' ? accorcia(input['titolo'], 70) : '';
+      return titolo ? `Preparo il documento «${titolo}»` : 'Preparo il documento';
     }
     default:
       return 'Sto lavorando alla risposta';

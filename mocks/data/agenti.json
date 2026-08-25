@@ -38,7 +38,7 @@
       { "tipo": "documenti-riferimento" }
     ],
     "formatoOutput": "documento",
-    "templateOutputId": "tpl-001",
+    "templateOutputId": "tpl-006",
     "parametri": [
       {
         "chiave": "preventivo",

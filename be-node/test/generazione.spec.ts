@@ -157,6 +157,16 @@ describe('DOCX (docx + docxtemplater)', () => {
     expect(testo).toContain('Prima riga del contenuto.');
     expect(testo).not.toContain('{{');
   });
+
+  it('una carta intestata senza segnaposto: titolo, testo e fonti in coda a ciò che c’è', async () => {
+    const modello = await docxDiProva(['Agenzia Meridiana — via Roma 1']);
+    expect(segnapostoDocx(modello)).toEqual([]);
+    const testo = testoDocx(riempiDocx(modello, CAMPI));
+    expect(testo.indexOf('Agenzia Meridiana')).toBeLessThan(testo.indexOf('Riepilogo garanzie'));
+    expect(testo.indexOf('Riepilogo garanzie')).toBeLessThan(testo.indexOf('Prima riga del contenuto.'));
+    expect(testo).toContain('p. 34'); // le fonti in coda («&» nell'XML è escapato)
+    expect(testo).not.toContain('{{');
+  });
 });
 
 describe('XLSX (exceljs)', () => {
@@ -190,6 +200,18 @@ describe('XLSX (exceljs)', () => {
     expect(foglio.getCell('A3').text).toBe('Prima riga del contenuto.');
     expect(foglio.getCell('A4').text).toBe('Seconda riga del contenuto.');
     expect(foglio.getCell('A6').text).toBe('dopo'); // la riga inserita spinge il resto in giù
+  });
+
+  it('un foglio intestato senza segnaposto: il testo va sotto, titolo in testa', async () => {
+    const modello = await xlsxDiProva({ A1: 'Agenzia Meridiana' });
+    const byte = await riempiXlsx(modello, CAMPI);
+    const cartella = new ExcelJS.Workbook();
+    await cartella.xlsx.load(byte as unknown as ExcelJS.Buffer);
+    const foglio = cartella.getWorksheet('Modello')!;
+    expect(foglio.getCell('A1').text).toBe('Agenzia Meridiana');
+    expect(foglio.getCell('A3').text).toBe('Riepilogo garanzie');
+    expect(foglio.getCell('A5').text).toBe('Prima riga del contenuto.');
+    expect(foglio.getCell('A6').text).toBe('Seconda riga del contenuto.');
   });
 });
 

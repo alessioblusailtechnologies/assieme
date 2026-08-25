@@ -24,7 +24,7 @@ import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import {
   identitaDelTenant,
-  templatePerId,
+  risolviTemplate,
   versoIdentitaGenerazione,
   type RigaIdentita,
 } from '../template/rotte.js';
@@ -390,35 +390,23 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
    */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/esporta', async (richiesta, risposta) => {
     const esito = schemaEsportaTemplate.safeParse(richiesta.body ?? {});
-    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il template su cui esportare.');
+    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il template o il formato su cui esportare.');
 
     const { tabella, template, identita } = await conIdentita(
       poolDb(),
       richiesta.identita,
       async (client) => ({
         tabella: await tabellaCompleta(client, controllaId(richiesta.params.id)),
-        template: await templatePerId(client, esito.data.templateId),
+        template: await risolviTemplate(client, richiesta.identita.tenantId, esito.data),
         identita: await identitaDelTenant(client, richiesta.identita.tenantId),
       }),
     );
     if (!tabella) throw nonTrovata();
-    if (!template) throw ErroreApi.nonTrovato('Template inesistente.');
-    if (template.formato === 'pptx') {
-      throw new ErroreApi(
-        415,
-        'FORMATO_NON_SUPPORTATO',
-        'La generazione PPTX non è ancora disponibile: scegli un template PDF, DOCX o XLSX.',
-      );
-    }
 
     const fileTemplate = template.path_file ? await archivio().scarica(template.path_file) : undefined;
     const logo = await caricaLogo(identita);
     const file = await generaDocumento({
-      template: {
-        nome: template.nome,
-        formato: template.formato,
-        personalizzato: Boolean(template.tenant_id),
-      },
+      template,
       ...(fileTemplate && { fileTemplate }),
       titolo: tabella.titolo,
       testo: testoTabella(tabella),

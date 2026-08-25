@@ -1,0 +1,43 @@
+Voglio creare una piattaforma per agenti assicurativi che è sostanzialmente un assistente interrogabile a linguaggio naturale con il quale si possono effettuare confronti, chiedere cose sui set informativi, preventivi, polizze etc.. tecnicamente come ottengo questo? Il rag mi sembra limitante ed inclini ad errore nel senso che posso fare un chunking errato ed un retrieval non preciso anche in caso di chunking corretto, in un settore dove la precisione è fondamentale
+
+E se facessi scrivere a Claude cli su un db la sua risposta e poi la leggessi con un'altra chiamata?
+
+
+Valutato approccio asincrono con database per decoupling esecuzione e richieste HTTP
+Valutato approccio asincrono con database per decoupling esecuzione e richieste HTTP
+Ottimo istinto — hai appena reinventato il pattern job asincrono a coda, che è esattamente la forma giusta per la produzione. Solo due correzioni su chi scrive sul DB.
+
+Il flusso corretto: l'app inserisce una riga in una tabella jobs (domanda, cliente, stato "pending") → un worker sulla macchina dell'agenzia pesca il job, lancia l'agente sulla cartella del cliente → a fine esecuzione scrive la risposta in una riga results (testo, citazioni, documenti letti, token usati) → il frontend la legge con polling o riceve una notifica (Postgres LISTEN/NOTIFY o websocket). I vantaggi sono concreti: niente timeout HTTP su esecuzioni agentiche che durano 30-60 secondi, resilienza (se cade la connessione la risposta è comunque persistita), retry gratis, e — non banale nel tuo settore — audit trail automatico: ogni risposta salvata con fonti e timestamp è materiale di compliance. Bonus architetturale: la macchina dell'agenzia fa solo connessioni in uscita verso DB e coda, zero porte esposte in ingresso — semplifica parecchio rete e sicurezza del deployment per-agenzia.
+
+Le due correzioni. Primo: non far scrivere Claude sul DB — non dargli un tool SQL per persistere la propria risposta. Ti fideresti del modello per lo step più delicato (potrebbe scordarselo, scrivere una riga malformata, o peggio avresti credenziali di scrittura nel suo ambiente). Deve scriverla il worker, deterministicamente, dopo aver ricevuto l'output dell'agente e averlo validato contro uno schema (Pydantic/Zod: c'è la risposta? ci sono le citazioni? i campi numerici sono numeri?). Solo ciò che passa la validazione finisce in results; il resto va in errore e retry. Secondo: l'output non lo raccogli dallo stdout della CLI ma dai messaggi strutturati dell'Agent SDK (o, se proprio CLI, claude -p --output-format json) — stesso discorso di prima, ma qui il punto è che validazione-poi-persistenza è ciò che rende il pattern affidabile.
+
+Quindi sì: coda in ingresso, agente in mezzo, DB in uscita — con il worker come unico scrivano. È anche il pezzo che mancava per la concorrenza di cui parlavamo: cinque collaboratori che interrogano insieme diventano semplicemente cinque job in coda, e la macchina li smaltisce al ritmo che regge.
+
+Quindi in questo modo posso utilizzare Claude cli senza problemi?
+
+
+Disambiguated licensing concerns versus legitimate API key usage patterns
+Disambiguated licensing concerns versus legitimate API key usage patterns
+Dipende da quale "problema" intendi — il pattern a coda ne ha risolto uno solo dei due, quindi distinguiamo.
+
+Come strumento tecnico: sì. La modalità headless (claude -p --output-format json) è supportata ufficialmente proprio per l'automazione: un worker che lancia il processo per ogni job, ne raccoglie il JSON, lo valida e lo persiste è un'architettura legittima e robusta. A quel punto CLI vs Agent SDK è quasi solo ergonomia — stesso motore, stessi tool, stesso prezzo; l'SDK ti dà messaggi strutturati, gestione errori e controllo di sessione più puliti, la CLI ti fa partire prima. Puoi tranquillamente iniziare con la CLI nel worker e migrare all'SDK quando serve, senza cambiare architettura.
+
+Come scorciatoia sui costi: no, e la coda non c'entra nulla. Il vincolo era di licenza e fatturazione, non di ingegneria: se la CLI è autenticata con un abbonamento personale Pro/Max, farci girare un prodotto commerciale multi-utente resta contro i termini d'uso — che il processo parta da un terminale o da un worker in coda è indifferente. E resta vero che Anthropic sta chiudendo proprio quel sussidio. La configurazione corretta è la CLI autenticata con API key (variabile ANTHROPIC_API_KEY sulla macchina dell'agenzia): a quel punto sì, zero problemi — di termini, di rate limit e di continuità — ma la fatturazione è a consumo, e i conti tornano per le ottimizzazioni che abbiamo messo in fila (estrazione una tantum, router, caching, Haiku), non per la CLI in sé.
+
+Quindi la risposta secca: CLI sì, abbonamento no. Il pattern a coda ti ha dato affidabilità e concorrenza; l'economia l'avevamo già sistemata altrove.
+
+A livello di tempi di risposta come andiamo?
+
+
+Calibrated latency expectations across multiple query pathways
+Calibrated latency expectations across multiple query pathways
+Dipende dal percorso, ed è un altro motivo per cui il router è centrale. I tempi realistici:
+
+Lookup strutturato ("che massimale ha Rossi?"): query su DB + Haiku che formatta → 1-3 secondi. Percepito come istantaneo.
+Confronto precomputato: è già salvato, lo leggi e basta → sotto il secondo.
+Sessione CAG su una pratica: la prima domanda paga il caricamento del corpus (50-100k token da processare) → 10-25 secondi al primo token; dalle domande successive la cache evita di riprocessare il prefisso → 2-5 secondi. Un motivo in più per il caching: taglia la latenza, non solo i costi.
+Percorso agentico completo (domanda aperta multi-documento): 5-8 turni di tool use → 30-90 secondi end-to-end, di più con Opus, meno con Sonnet.
+Ingestion: asincrona per definizione, minuti — non tocca l'esperienza di query.
+Se il router funziona, il 70-80% delle domande reali cade nei primi due percorsi, quindi l'esperienza media è "risposta immediata" con punte lente solo sulle analisi complesse. E per quelle punte la mossa decisiva non è comprimere i secondi ma gestirli: il pattern a coda che hai appena scelto ti permette di fare streaming del progresso — "sto aprendo il set informativo… confronto le esclusioni a pag. 14…" — e un utente che vede il lavoro in corso tollera benissimo 60 secondi, mentre 15 secondi di spinner muto sembrano un blocco. Distingui anche visivamente in UI la "risposta rapida" dall'"analisi approfondita", così i tempi lunghi diventano un segnale di valore invece che di lentezza.
+
+Due accortezze tecniche: l'extended thinking allunga parecchio i tempi, quindi attivalo solo sul percorso agentico e mai sui lookup; e la Batch API non va mai usata per l'interattivo (consegna in decine di minuti), solo per ingestion e precompute. Quando fai il benchmark Cattolica/Unipol misura anche i secondi oltre ai token: latenza reale per percorso è uno dei numeri che vuoi conoscere prima di mostrare il prodotto a SHARE.

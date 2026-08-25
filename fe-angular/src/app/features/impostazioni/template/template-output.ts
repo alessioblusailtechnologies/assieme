@@ -6,17 +6,10 @@ import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CodaCaricamento, FileInCoda } from '@shared/caricamento/coda-caricamento';
-import {
-  ErroreApi,
-  Id,
-  IdentitaVisiva,
-  TemplateOutput,
-  TipologiaOutput,
-} from '@core/models';
+import { ErroreApi, Id, IdentitaVisiva, TemplateOutput } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 import { ImpostazioniApi } from '@core/api/impostazioni-api';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
-import { Select } from '@shared/ui/select/select';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Tag } from '@shared/ui/tag/tag';
@@ -24,24 +17,17 @@ import { TemplateApi } from '@core/api/template-api';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 
-const TIPOLOGIE: { valore: TipologiaOutput | ''; etichetta: string }[] = [
-  { valore: '', etichetta: 'Nessuna tipologia' },
-  { valore: 'confronto', etichetta: 'Confronto polizze' },
-  { valore: 'riepilogo-garanzie', etichetta: 'Riepilogo garanzie' },
-  { valore: 'proposta-rinnovo', etichetta: 'Proposta di rinnovo' },
-  { valore: 'report-interno', etichetta: 'Report interno' },
-];
-
 /**
- * Libreria dei template di output (RF-D-10…D-13).
+ * I template di output dell'agenzia (RF-D-10…D-13).
  *
- * Gli stessi template su cui chat e tabelle esportano: qui si vede
- * l'anteprima dell'impaginazione, si associa il predefinito per tipologia e
- * si caricano template propri. Sotto, l'identità visiva dell'agenzia
- * (RF-D-12) che i template applicano alla generazione.
+ * Un template è un documento caricato qui — PDF, DOCX o XLSX — quanti se ne
+ * vogliono, anche più d'uno per formato, ognuno col nome con cui lo si
+ * richiama in chat («esporta con Proposta breve») e negli agenti. Per ogni
+ * formato uno è il predefinito: è quello che vale quando si chiede solo il
+ * formato. Senza template per un formato, i documenti escono col layout di
+ * piattaforma. Sotto, l'identità visiva dell'agenzia (RF-D-12).
  *
- * Formati al lancio: PDF, DOCX, XLSX. PPTX è rimandato (punto aperto §6.11
- * dell'analisi): la generazione fedele lì è la più onerosa.
+ * Formati al lancio: PDF, DOCX, XLSX. PPTX è rimandato (punto aperto §6.11).
  */
 @Component({
   selector: 'app-template-output',
@@ -52,7 +38,6 @@ const TIPOLOGIE: { valore: TipologiaOutput | ''; etichetta: string }[] = [
     CodaCaricamento,
     Icona,
     Scheletro,
-    Select,
     StatoVuoto,
     Tag,
     VisualizzatorePdf,
@@ -67,8 +52,6 @@ export class TemplateOutputSezione {
   private readonly apiImpostazioni = inject(ImpostazioniApi);
   private readonly sessione = inject(SessioneStore);
 
-  protected readonly tipologie = TIPOLOGIE;
-
   private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() => this.api.urlElenco());
   private readonly risorsaIdentita = httpResource<IdentitaVisiva>(() =>
     this.apiImpostazioni.urlIdentitaVisiva(),
@@ -82,6 +65,16 @@ export class TemplateOutputSezione {
 
   protected readonly puoGestire = computed(() => this.sessione.puo('template.gestisci'));
 
+  /** I formati per cui manca un template: lì vale il layout di piattaforma. */
+  protected readonly formatiSenzaTemplate = computed(() =>
+    (['pdf', 'docx', 'xlsx'] as const).filter((f) => !this.template().some((t) => t.formato === f)),
+  );
+  protected readonly formatiMancantiTesto = computed(() =>
+    this.formatiSenzaTemplate()
+      .map((f) => f.toUpperCase())
+      .join(', '),
+  );
+
   protected riprova(): void {
     this.risorsaTemplate.reload();
   }
@@ -94,16 +87,37 @@ export class TemplateOutputSezione {
     return this.api.urlAnteprima(template.id);
   }
 
-  // --- Predefiniti per tipologia (RF-D-13) --------------------------------
+  // --- Predefinito per formato (RF-D-13) e nome ---------------------------
 
-  protected cambiaTipologia(template: TemplateOutput, valore: unknown): void {
-    const tipologia = (valore || null) as TipologiaOutput | null;
-    this.api.impostaTipologia(template.id, tipologia).subscribe({
+  protected impostaPredefinito(template: TemplateOutput, predefinito: boolean): void {
+    this.api.impostaPredefinito(template.id, predefinito).subscribe({
       next: (elenco) => this.risorsaTemplate.set(elenco),
     });
   }
 
-  // --- Caricamento template propri (RF-D-12) ------------------------------
+  /** Il template in rinomina, finché non si conferma o si esce. */
+  protected readonly inRinomina = signal<Id | undefined>(undefined);
+  protected readonly nuovoNome = signal('');
+
+  protected iniziaRinomina(template: TemplateOutput): void {
+    this.inRinomina.set(template.id);
+    this.nuovoNome.set(template.nome);
+  }
+
+  protected confermaRinomina(template: TemplateOutput): void {
+    const nome = this.nuovoNome().trim();
+    this.inRinomina.set(undefined);
+    if (!nome || nome === template.nome) return;
+    this.api.rinomina(template.id, nome).subscribe({
+      next: (elenco) => this.risorsaTemplate.set(elenco),
+    });
+  }
+
+  protected annullaRinomina(): void {
+    this.inRinomina.set(undefined);
+  }
+
+  // --- Caricamento (RF-D-12) ----------------------------------------------
 
   private readonly vociCoda = signal<FileInCoda[]>([]);
   protected readonly coda = this.vociCoda.asReadonly();

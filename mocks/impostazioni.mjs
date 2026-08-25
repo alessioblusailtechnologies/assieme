@@ -70,6 +70,28 @@ export function elencoTemplate() {
   return TEMPLATE;
 }
 
+/** Il nome del layout di piattaforma, quando per il formato non c'è un template. */
+export const NOME_LAYOUT_PIATTAFORMA = 'Documento VELIA';
+
+/**
+ * La scelta di esportazione come sul backend: un template preciso, oppure
+ * il predefinito del formato, oppure il layout di piattaforma. Ritorna
+ * `undefined` per un templateId ignoto (404), `null` per un corpo vuoto (400).
+ */
+export function risolviTemplate(corpo) {
+  if (corpo?.templateId) return trovaTemplate(corpo.templateId);
+  const formato = corpo?.formato;
+  if (!['pdf', 'docx', 'xlsx'].includes(formato)) return null;
+  return (
+    TEMPLATE.find((t) => t.formato === formato && t.predefinito) ?? {
+      id: undefined,
+      nome: NOME_LAYOUT_PIATTAFORMA,
+      formato,
+      predefinito: false,
+    }
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Sessione e storico
 // ---------------------------------------------------------------------------
@@ -449,8 +471,9 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
           id: `tpl-${prossimoTemplate++}`,
           nome: f.nome.replace(/\.[^.]+$/, ''),
           formato,
-          descrizione: 'Template caricato dall’agenzia, conforme allo schema dei segnaposto.',
-          personalizzato: true,
+          descrizione: 'Template dell’agenzia: il documento generato ne conserva l’impaginazione.',
+          /* Il primo template di un formato ne è il predefinito. */
+          predefinito: !TEMPLATE.some((t) => t.formato === formato && t.predefinito),
         };
         TEMPLATE.push(template);
         registra(req, 'creazione', 'template', `Caricato il template «${template.nome}»`);
@@ -498,21 +521,33 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
       return true;
     }
 
-    // RF-D-13: template predefinito per tipologia, unico per tipologia
+    // Nome con cui si richiama e/o predefinito per il suo formato (RF-D-13), unico per formato
     if (!rottaTemplate[2] && req.method === 'PATCH') {
       if (!amministratore(req)) return vietato(res, inviaJson);
-      const { tipologiaPredefinita } = await corpoJson();
-      if (tipologiaPredefinita) {
-        for (const altro of TEMPLATE) {
-          if (altro.tipologiaPredefinita === tipologiaPredefinita) {
-            delete altro.tipologiaPredefinita;
+      const { nome, predefinito } = await corpoJson();
+      if (nome === undefined && predefinito === undefined) {
+        inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Modifiche al template non valide.' });
+        return true;
+      }
+      if (typeof nome === 'string' && nome.trim() && nome.trim() !== template.nome) {
+        registra(req, 'modifica', 'template', `Il template «${template.nome}» si chiama ora «${nome.trim()}»`);
+        template.nome = nome.trim();
+      }
+      if (typeof predefinito === 'boolean' && predefinito !== template.predefinito) {
+        if (predefinito) {
+          for (const altro of TEMPLATE) {
+            if (altro.formato === template.formato) altro.predefinito = false;
           }
         }
-        template.tipologiaPredefinita = tipologiaPredefinita;
-        registra(req, 'modifica', 'template', `«${template.nome}» è il predefinito per ${tipologiaPredefinita}`);
-      } else {
-        delete template.tipologiaPredefinita;
-        registra(req, 'modifica', 'template', `«${template.nome}» non è più un predefinito`);
+        template.predefinito = predefinito;
+        registra(
+          req,
+          'modifica',
+          'template',
+          predefinito
+            ? `«${template.nome}» è il template predefinito per ${template.formato.toUpperCase()}`
+            : `«${template.nome}» non è più il predefinito per ${template.formato.toUpperCase()}`,
+        );
       }
       inviaJson(res, 200, TEMPLATE);
       return true;
@@ -520,13 +555,6 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
 
     if (!rottaTemplate[2] && req.method === 'DELETE') {
       if (!amministratore(req)) return vietato(res, inviaJson);
-      if (!template.personalizzato) {
-        inviaJson(res, 409, {
-          codice: 'PRECARICATO',
-          messaggio: 'I template precaricati sono della piattaforma e non si eliminano.',
-        });
-        return true;
-      }
       TEMPLATE.splice(TEMPLATE.indexOf(template), 1);
       registra(req, 'eliminazione', 'template', `Eliminato il template «${template.nome}»`);
       res.writeHead(204).end();

@@ -2,6 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { Document, Packer, Paragraph, TextRun } from 'docx';
 import type { FastifyInstance } from 'fastify';
 import PizZip from 'pizzip';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -52,6 +53,8 @@ const pronto = Boolean(
 const PASSWORD_DEMO = 'velia-demo-2026!';
 const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
 const DOC_FONTE = 'doc-priv-agt00000001';
+/** Un template DOCX dell'agenzia di collaudo: da questa revisione i template sono solo file caricati. */
+const TEMPLATE_AGENTE = 'tpl-agenti-collaudo';
 
 class ArchivioFinto implements ArchivioFile {
   readonly file = new Map<string, Buffer>();
@@ -144,6 +147,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     await pool().query(`delete from velia.jobs where tipo = 'agente' and tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.consumi where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.documenti where id = $1`, [DOC_FONTE]);
+    await pool().query(`delete from velia.template where id = $1`, [TEMPLATE_AGENTE]);
   };
 
   beforeAll(async () => {
@@ -161,6 +165,25 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     expect(tokenAdmin).toBeTruthy();
 
     gestori.agente = creaGestoreAgenti({ motore, archivio, radice });
+
+    const pathTemplate = `tenant/${TENANT_COLLAUDO}/template/${TEMPLATE_AGENTE}.docx`;
+    const docx = await Packer.toBuffer(
+      new Document({
+        sections: [
+          {
+            children: ['{{titolo}}', '{{contenuto}}', 'Fonti: {{fonti}}'].map(
+              (t) => new Paragraph({ children: [new TextRun(t)] }),
+            ),
+          },
+        ],
+      }),
+    );
+    await archivio.carica(pathTemplate, docx);
+    await pool().query(
+      `insert into velia.template (id, tenant_id, nome, formato, descrizione, path_file, predefinito)
+       values ($1, $2, 'Esito agente', 'docx', '', $3, true)`,
+      [TEMPLATE_AGENTE, TENANT_COLLAUDO, pathTemplate],
+    );
 
     const limiti = await pool().query<typeof limitiOriginali>(
       `select limite_agenti_attivi, limite_esecuzioni_concorrenti from velia.tenant where id = $1`,
@@ -197,7 +220,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
       istruzioni: 'Controlla le scadenze e segnala ciò che scade entro 60 giorni.',
       fonti: [{ tipo: 'selezione', archivio: 'privato' }],
       formatoOutput: 'testo',
-      templateOutputId: 'tpl-002',
+      templateOutputId: TEMPLATE_AGENTE,
       parametri: [
         { chiave: 'polizza', etichetta: 'Polizza da controllare', tipo: 'documento', obbligatorio: true },
       ],

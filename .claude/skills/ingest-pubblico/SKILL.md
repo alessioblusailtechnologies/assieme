@@ -1,14 +1,44 @@
 ---
 name: ingest-pubblico
-description: Porta il set informativo di un prodotto assicurativo nell'Archivio Pubblico di VELIA lavorando in sessione (ricerca e download del PDF, estrazione locale del testo, rifinitura in Markdown con ancore, caricamento su Storage e catalogo). Uso: /ingest-pubblico <compagnia> <prodotto> [url-o-file.pdf]. Nessuna chiamata API a consumo.
+description: Popola l'Archivio Pubblico di VELIA lavorando in sessione, senza API a consumo. Con la sola compagnia (e un ramo) scopre il catalogo prodotti sul sito della compagnia e lo propone; con compagnia e prodotto (o un PDF/URL) fa l'ingestion del set informativo (ricerca e download, estrazione locale del testo, rifinitura in Markdown con ancore, caricamento su Storage e catalogo). Uso: /ingest-pubblico <compagnia> [ramo] oppure /ingest-pubblico <compagnia> <prodotto> [url-o-file.pdf].
 ---
 
-# /ingest-pubblico <compagnia> <prodotto> [url-o-file.pdf]
+# /ingest-pubblico
 
 Tutto in sessione, coi token dell'abbonamento: nessun modello via API. Le
 convenzioni di formato sono in `local-ingestion/ISTRUZIONI.md` (header dei
 `.md`, ancore assolute, INDICE, controlli): quel file comanda, questa skill
 è il procedimento.
+
+Due modi di chiamarla:
+
+- `/ingest-pubblico <compagnia> [ramo]` → **scoperta del catalogo** (§0), poi
+  ingestion dei prodotti scelti;
+- `/ingest-pubblico <compagnia> <prodotto> [url-o-file.pdf]` → ingestion
+  diretta (§1 in poi).
+
+## 0. Scopri il catalogo (solo compagnia)
+
+Il committente non deve conoscere i prodotti: li trovi tu.
+
+- Cerca la pagina dei **documenti precontrattuali / set informativi** della
+  compagnia (WebSearch: «<compagnia> set informativo <ramo>», «<compagnia>
+  documenti precontrattuali», «<compagnia> DIP aggiuntivo»), poi leggila con
+  WebFetch chiedendo l'elenco dei prodotti con edizione e URL dei PDF. I
+  grandi gruppi tengono un indice per marchio (es. Generali: «prodotti
+  brand Cattolica»; Unipol: «documentazione prodotti»); segui i link finché
+  non hai gli URL dei PDF.
+- Ramo di default: **auto** (è ciò che l'agenzia pilota confronta); con un
+  ramo esplicito cerca quello. Ignora prodotti chiusi alla vendita, salvo
+  richiesta.
+- Presenta una tabella: prodotto · marchio · tipo veicolo/target · edizione
+  · pagine (se note) · URL del set · già in archivio sì/no (guarda
+  `be-node/dati/catalogo-archivio.json`). Segnala i set che non hai trovato
+  come PDF unico (DIP e Condizioni separati: si caricano come documenti
+  logici dello stesso set).
+- **Aspetta la scelta** del committente (uno, alcuni, «tutti»), poi procedi
+  con §1-6 per ciascun prodotto scelto, uno alla volta, chiedendo la
+  conferma della mappa dei documenti (§2) per ognuno.
 
 ## 1. Trova il PDF
 

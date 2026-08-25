@@ -100,32 +100,27 @@ export interface VoceStoricoImpostazioni {
   descrizione: string;
 }
 
+/** I formati che il server sa generare (PPTX è rimandato, punto aperto §6.11). */
+export type FormatoGenerazione = 'pdf' | 'docx' | 'xlsx';
+
 /**
- * Template di output (RF-D-10/11).
+ * Template di output (RF-D-10…D-13).
  *
- * L'analisi (punto aperto §6.11) segnala che la generazione fedele ha
- * complessità molto diversa per formato: PDF e DOCX più lineari, XLSX e PPTX
- * più onerosi. Per il front-end il formato è soprattutto una scelta da
- * presentare bene; il peso vero sta a valle.
+ * Un template è un documento dell'agenzia caricato dalle Impostazioni:
+ * quanti se ne vogliono, anche più d'uno nello stesso formato, ognuno col
+ * nome con cui lo si richiama (in chat, negli agenti). Per ogni formato ce
+ * n'è al più uno predefinito; per i formati senza template i documenti
+ * escono col layout di piattaforma e l'identità visiva.
  */
 export interface TemplateOutput {
   id: Id;
   nome: string;
-  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  formato: FormatoGenerazione | 'pptx';
   descrizione: string;
   anteprimaUrl?: string;
-  /** RF-D-12: caricato dal tenant invece che precaricato dalla piattaforma. */
-  personalizzato: boolean;
-  /** RF-D-13: template predefinito per una tipologia di output. */
-  tipologiaPredefinita?: TipologiaOutput;
+  /** RF-D-13: il predefinito del suo formato. */
+  predefinito: boolean;
 }
-
-/**
- * Le tipologie di output a cui si associa un template predefinito (RF-D-13).
- * Sono le quattro dell'analisi (punto aperto §6.11); PPTX come formato è
- * rimandato, ma la tipologia non dipende dal formato.
- */
-export type TipologiaOutput = 'confronto' | 'riepilogo-garanzie' | 'proposta-rinnovo' | 'report-interno';
 
 /**
  * RF-D-12: l'identità visiva del tenant, applicata dai template alla

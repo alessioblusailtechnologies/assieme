@@ -16,6 +16,7 @@ import {
   RiferimentoDocumento,
   TemplateOutput,
 } from '@core/models';
+import { SceltaEsporta } from '@shared/esportazione/scelte-esportazione';
 import { leggiBlocchiSse } from './sse';
 
 /** Dati con cui nasce una conversazione; il titolo arriva col primo messaggio. */
@@ -109,6 +110,13 @@ export class ConversazioniApi {
     return `${this.base}/allegati/${id}/file`;
   }
 
+  /** Un documento generato in chat su template: il server lo serve da scaricare. */
+  scaricaDocumento(conversazioneId: Id, documentoId: Id): Observable<Blob> {
+    return this.http.get(`${this.base}/${conversazioneId}/documenti/${documentoId}`, {
+      responseType: 'blob',
+    });
+  }
+
   /**
    * Invia un messaggio e restituisce il flusso di eventi della risposta.
    *
@@ -163,13 +171,14 @@ export class ConversazioniApi {
   }
 
   /**
-   * RF-C-10: esporta una risposta su un template di output. Il server
-   * genera il file nel formato del template e lo restituisce da scaricare.
+   * RF-C-10: esporta una risposta su un template di output (o sul
+   * predefinito del formato, o sul layout di piattaforma). Il server genera
+   * il file e lo restituisce da scaricare.
    */
-  esporta(conversazioneId: Id, messaggioId: Id, templateId: Id): Observable<Blob> {
+  esporta(conversazioneId: Id, messaggioId: Id, scelta: SceltaEsporta): Observable<Blob> {
     return this.http.post(
       `${this.base}/${conversazioneId}/messaggi/${messaggioId}/esporta`,
-      { templateId },
+      scelta,
       { responseType: 'blob' },
     );
   }

@@ -1,0 +1,63 @@
+/* Stili comuni delle tavole di stampa della box Velia.
+   Tutto in millimetri. I colori sono i token del sito: li converte la
+   tipografia (il blu va a tinta piatta, vedi README). */
+
+__FONTS__
+
+:root {
+  --avorio: #faf9f7;
+  --avorio-scuro: #eeedea;
+  --ink: #1c1a15;
+  --blu: #2f4b7c;
+  --blu-su-scuro: #7f97c4;
+  --blu-chiaro: #e9eef6;
+  --blu-bordo: #cfd8e8;
+  --linea: #cfccc4;
+  --linea-soft: #e4e2dd;
+  --mute: #8f8b7f;
+  --caldo: #b0733f;
+  --ft: 'TWK Ghost', 'Helvetica Neue', Arial, sans-serif;
+  --fl: 'Geist', 'Helvetica Neue', Arial, sans-serif;
+  --fv: Georgia, 'Times New Roman', serif;
+}
+
+@page { margin: 0; }
+html, body { margin: 0; padding: 0; background: #fff; }
+body { font-family: var(--fl); color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+* { box-sizing: border-box; }
+p { margin: 0; }
+
+/* Foglio = rifilo + 3 mm di abbondanza + 7 mm per i crocini, su ogni lato. */
+.sheet { position: relative; overflow: hidden; background: #fff; page-break-after: always; break-after: page; }
+.sheet:last-child { page-break-after: auto; break-after: auto; }
+.bleed { position: absolute; left: 7mm; top: 7mm; right: 7mm; bottom: 7mm; overflow: hidden; }
+.trim { position: absolute; left: 3mm; top: 3mm; right: 3mm; bottom: 3mm; }
+.full { position: absolute; inset: 0; }
+
+/* Crocini di taglio: fuori dall'abbondanza, 0.1 mm. */
+.mk { position: absolute; background: #000; }
+.mk.h { height: 0.1mm; width: 5.5mm; }
+.mk.v { width: 0.1mm; height: 5.5mm; }
+.mk.tl-h { left: 0.5mm; top: 10mm; }      .mk.tl-v { left: 10mm; top: 0.5mm; }
+.mk.tr-h { right: 0.5mm; top: 10mm; }     .mk.tr-v { right: 10mm; top: 0.5mm; }
+.mk.bl-h { left: 0.5mm; bottom: 10mm; }   .mk.bl-v { left: 10mm; bottom: 0.5mm; }
+.mk.br-h { right: 0.5mm; bottom: 10mm; }  .mk.br-v { right: 10mm; bottom: 0.5mm; }
+
+/* Etichetta tecnica fuori dal rifilo. */
+.lab { position: absolute; left: 10mm; right: 10mm; bottom: 1.6mm; overflow: hidden; text-overflow: ellipsis; font: 2.1mm/1 var(--fl); color: #000; letter-spacing: .02em; white-space: nowrap; }
+.lab b { font-weight: 600; }
+
+/* Linee guida non stampabili (piega, foro, fustella): solo nelle tavole "guida". */
+.guide { position: absolute; border: 0 dashed #e6007e; }
+
+/* Anteprima: mostra il colore della carta (non va in stampa, la carta è già avorio). */
+body.anteprima .paper-avorio { background: var(--avorio); }
+body.anteprima .paper-bianco { background: #fff; }
+
+/* Elementi ricorrenti */
+.dot { display: inline-block; width: .19em; height: .19em; border-radius: 50%; background: var(--blu); margin-left: .09em; vertical-align: baseline; }
+.eyebrow { font-family: var(--ft); font-weight: 500; text-transform: uppercase; letter-spacing: .14em; color: var(--mute); }
+.chip { display: inline-flex; align-items: baseline; gap: .5em; border: 0.2mm solid var(--blu-bordo); background: var(--blu-chiaro); color: var(--blu); border-radius: 0.6mm; padding: .25em .6em; font-family: var(--ft); font-weight: 500; }
+.chip b { font-weight: 500; letter-spacing: .12em; font-size: .85em; }
+.chip.mem { background: #f7efe6; border-color: #e3ccb0; color: #8a5a2e; }
+.marchio { display: inline-grid; place-items: center; background: var(--blu); color: #fff; font-family: var(--fv); border-radius: 18%; }
