@@ -70,7 +70,7 @@ Poi login dall'app e una domanda in chat: il job passa dal worker (log del servi
 
 ## 2. App: Render Static Site (nel Blueprint) o Cloudflare Pages
 
-Col Blueprint nasce anche **velia-app** (Static Site: root `fe-angular`, build `npm ci && npx ng build`, publish `dist/fe-angular/browser`, `NODE_VERSION=24`, rewrite `/*` → `/index.html` per il routing della SPA). Custom domain `app.sonovelia.it` dal pannello del servizio, CNAME su Cloudflare DNS. L'API la legge da `public/config.js`, come sotto.
+Col Blueprint nasce anche **velia-app** (Static Site: root `fe-angular`, build `npm ci && npx ng build`, publish `dist/fe-angular/browser`, `NODE_VERSION=24`, rewrite `/*` → `/index.html` per il routing della SPA). Custom domain `app.sonovelia.it` dal pannello del servizio, CNAME su Cloudflare DNS. L'indirizzo dell'API lo scrive il build in `config.js` dalla variabile **`VELIA_API_BASE`** del servizio (`https://api.sonovelia.it/api` in produzione). **Ambiente dev su Render** (progetto separato dal ramo `develop`): sul sito statico `VELIA_API_BASE=https://api-dev.sonovelia.it/api`, sull'API dev `CORS_ORIGINI` = l'origine dell'app dev; stesso `render.yaml`, cambiano solo ramo e variabili.
 
 In alternativa, Cloudflare Pages:
 
