@@ -258,35 +258,66 @@
   font-size: var(--t-sm);
 }
 
-.attesa__punto {
-  width: 5px;
-  height: 5px;
-  background: var(--c-text-mute);
-  animation: pulsazione 1.2s ease-in-out infinite;
+/* La V che respira: un lampeggio lento e morbido, mai a scatti. */
+.attesa__segno {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  animation: respiro 2s ease-in-out infinite;
 }
 
-.attesa__punto:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.attesa__punto:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.attesa__testo {
-  margin-left: var(--sp-2);
-}
-
-@keyframes pulsazione {
+@keyframes respiro {
   0%,
   100% {
-    opacity: 0.25;
+    opacity: 0.35;
+    transform: scale(0.92);
   }
-
-  40% {
+  50% {
     opacity: 1;
+    transform: scale(1);
   }
 }
+
+/* Il passaggio laterale che avevano i puntini, ora sul testo: una luce che
+   scorre da sinistra a destra sulle parole dell'attività in corso. */
+.attesa__testo {
+  margin-left: var(--sp-2);
+  background: linear-gradient(
+    90deg,
+    var(--c-text-3) 0%,
+    var(--c-text-3) 35%,
+    var(--c-text) 50%,
+    var(--c-text-3) 65%,
+    var(--c-text-3) 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: scorrimento 2.2s ease-in-out infinite;
+}
+
+@keyframes scorrimento {
+  from {
+    background-position: 125% 0;
+  }
+  to {
+    background-position: -25% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attesa__segno,
+  .attesa__testo {
+    animation: none;
+  }
+
+  .attesa__testo {
+    background: none;
+    color: var(--c-text-3);
+  }
+}
+
 
 /* ---------- Segnali ---------- */
 

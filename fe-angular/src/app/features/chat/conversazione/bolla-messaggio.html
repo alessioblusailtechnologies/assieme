@@ -23,8 +23,21 @@
       -->
       @if (!m.testo && m.inCorso) {
         <p class="attesa" aria-live="polite">
-          <span class="attesa__punto"></span><span class="attesa__punto"></span
-          ><span class="attesa__punto"></span>
+          <!-- Il marchio che respira: la V dell'agenzia al posto dei tre puntini. -->
+          <svg class="attesa__segno" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <rect width="28" height="28" fill="var(--c-accent)" />
+            <text
+              x="14"
+              y="14"
+              text-anchor="middle"
+              dominant-baseline="central"
+              font-family="Georgia, serif"
+              font-size="18"
+              fill="#ffffff"
+            >
+              V
+            </text>
+          </svg>
           <span class="attesa__testo">{{ m.attivita || 'Sto preparando la risposta…' }}</span>
         </p>
       } @else if (inDattilografia()) {
@@ -49,8 +62,21 @@
       @if (m.testo && m.inCorso && m.attivita) {
         <!-- Il motore lavora ancora dopo il testo (raccoglie le fonti): si vede, non si tace. -->
         <p class="attesa" aria-live="polite">
-          <span class="attesa__punto"></span><span class="attesa__punto"></span
-          ><span class="attesa__punto"></span>
+          <!-- Il marchio che respira: la V dell'agenzia al posto dei tre puntini. -->
+          <svg class="attesa__segno" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+            <rect width="28" height="28" fill="var(--c-accent)" />
+            <text
+              x="14"
+              y="14"
+              text-anchor="middle"
+              dominant-baseline="central"
+              font-family="Georgia, serif"
+              font-size="18"
+              fill="#ffffff"
+            >
+              V
+            </text>
+          </svg>
           <span class="attesa__testo">{{ m.attivita }}</span>
         </p>
       }
