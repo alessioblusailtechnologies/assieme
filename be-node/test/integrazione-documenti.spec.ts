@@ -58,8 +58,8 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni). */
-    expect(pagina.totale).toBe(103);
+    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set). */
+    expect(pagina.totale).toBe(125);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;

@@ -555,6 +555,402 @@
   "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/originale.pdf"
  },
  {
+  "id": "doc-axa-auto-protezione-veicoli-diversi-ed-2020-11-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto Protezione veicoli diversi",
+  "titolo": "Condizioni di Assicurazione — AXA Auto Protezione veicoli diversi",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 98,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-auto-protezione-veicoli-diversi-2020-11",
+   "etichetta": "ed. 11/2020",
+   "validaDal": "2020-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/originale.pdf"
+ },
+ {
+  "id": "doc-axa-auto-protezione-veicoli-diversi-ed-2020-11-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto Protezione veicoli diversi",
+  "titolo": "DIP Danni — AXA Auto Protezione veicoli diversi",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-auto-protezione-veicoli-diversi-2020-11",
+   "etichetta": "ed. 11/2020",
+   "validaDal": "2020-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/originale.pdf"
+ },
+ {
+  "id": "doc-axa-auto-protezione-veicoli-diversi-ed-2020-11-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto Protezione veicoli diversi",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Auto Protezione veicoli diversi",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 8,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-auto-protezione-veicoli-diversi-2020-11",
+   "etichetta": "ed. 11/2020",
+   "validaDal": "2020-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/originale.pdf"
+ },
+ {
+  "id": "doc-axa-auto-protezione-veicoli-diversi-ed-2020-11-informativa-privacy",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto Protezione veicoli diversi",
+  "titolo": "Informativa privacy — AXA Auto Protezione veicoli diversi",
+  "tipologia": "altro",
+  "numeroPagine": 11,
+  "paginaInizio": 109,
+  "edizione": {
+   "id": "edz-auto-protezione-veicoli-diversi-2020-11",
+   "etichetta": "ed. 11/2020",
+   "validaDal": "2020-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/axa/auto/auto-protezione-veicoli-diversi/ed-2020-11/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-autovetture-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base autovetture",
+  "titolo": "Condizioni di Assicurazione — AXA Contratto base autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 14,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-autovetture-ed-2026-01-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base autovetture",
+  "titolo": "DIP Danni — AXA Contratto base autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-autovetture-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Contratto base autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-autovetture-ed-2026-01-informativa-privacy",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base autovetture",
+  "titolo": "Informativa privacy — AXA Contratto base autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 12,
+  "paginaInizio": 19,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-autovetture/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-motocicli-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base motocicli e ciclomotori",
+  "titolo": "Condizioni di Assicurazione — AXA Contratto base motocicli e ciclomotori",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 14,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-contratto-base-motocicli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-motocicli-ed-2026-01-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base motocicli e ciclomotori",
+  "titolo": "DIP Danni — AXA Contratto base motocicli e ciclomotori",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-contratto-base-motocicli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-motocicli-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base motocicli e ciclomotori",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Contratto base motocicli e ciclomotori",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-motocicli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-contratto-base-motocicli-ed-2026-01-informativa-privacy",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto base motocicli e ciclomotori",
+  "titolo": "Informativa privacy — AXA Contratto base motocicli e ciclomotori",
+  "tipologia": "altro",
+  "numeroPagine": 12,
+  "paginaInizio": 19,
+  "edizione": {
+   "id": "edz-contratto-base-motocicli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/axa/auto/contratto-base-motocicli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-guida-autocarri-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Guida Autocarri",
+  "titolo": "Condizioni di Assicurazione — AXA Guida Autocarri",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 111,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-guida-autocarri-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-guida-autocarri-ed-2026-01-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Guida Autocarri",
+  "titolo": "DIP Danni — AXA Guida Autocarri",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-guida-autocarri-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-guida-autocarri-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Guida Autocarri",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Guida Autocarri",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-guida-autocarri-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-guida-autocarri-ed-2026-01-informativa-privacy",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Guida Autocarri",
+  "titolo": "Informativa privacy — AXA Guida Autocarri",
+  "tipologia": "altro",
+  "numeroPagine": 12,
+  "paginaInizio": 118,
+  "edizione": {
+   "id": "edz-guida-autocarri-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/axa/auto/guida-autocarri/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-axa-nuova-protezione-auto-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova Protezione Auto",
+  "titolo": "Condizioni di Assicurazione — AXA Nuova Protezione Auto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 125,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-nuova-protezione-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-axa-nuova-protezione-auto-ed-2026-06-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova Protezione Auto",
+  "titolo": "DIP Danni — AXA Nuova Protezione Auto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 133,
+  "edizione": {
+   "id": "edz-nuova-protezione-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-axa-nuova-protezione-auto-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova Protezione Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Nuova Protezione Auto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 129,
+  "edizione": {
+   "id": "edz-nuova-protezione-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/nuova-protezione-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-axa-protezione-inmoto-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Protezione InMoto",
+  "titolo": "Condizioni di Assicurazione — AXA Protezione InMoto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 97,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-protezione-inmoto-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-axa-protezione-inmoto-ed-2026-07-dip",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Protezione InMoto",
+  "titolo": "DIP Danni — AXA Protezione InMoto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-protezione-inmoto-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-axa-protezione-inmoto-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-axa",
+  "ramoId": "ram-auto",
+  "prodotto": "Protezione InMoto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — AXA Protezione InMoto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-protezione-inmoto-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/axa/auto/protezione-inmoto/ed-2026-07/originale.pdf"
+ },
+ {
   "id": "doc-cattolica-active-veicoli-autopiu-ed-2025-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-cattolica",
   "ramoId": "ram-auto",
