@@ -20,6 +20,11 @@ function conversazione(id: string): Conversazione {
 
 const blocco = (evento: EventoStream) => `data: ${JSON.stringify(evento)}\n\n`;
 
+/** Qualche frame: la dattilografia scrive pochi caratteri alla volta. */
+const attendiDattilografia = async () => {
+  for (let i = 0; i < 30; i++) await new Promise<void>((ok) => requestAnimationFrame(() => ok()));
+};
+
 const microtask = () => new Promise((r) => setTimeout(r, 0));
 
 describe('ChatStore', () => {
@@ -105,6 +110,8 @@ describe('ChatStore', () => {
     manda({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' });
     manda({ tipo: 'testo', delta: 'Sulle ' });
     manda({ tipo: 'testo', delta: 'franchigie…' });
+    /* Il testo esce a ritmo di dattilografia, qualche carattere per frame. */
+    await attendiDattilografia();
 
     const messaggi = store.messaggi();
     expect(messaggi.length).toBe(2);

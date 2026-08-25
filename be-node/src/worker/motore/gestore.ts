@@ -15,6 +15,7 @@ import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
+import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
 import { caricaDna, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
 import type { EsitoSessione, Motore } from './sessione.js';
@@ -91,7 +92,19 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
   return async function gestisciInterrogazione(job: Job, strumenti: { db: pg.Pool }): Promise<void> {
     const { db } = strumenti;
     const payload = leggiPayload(job);
-    const emetti = (evento: EventoStream) => emettiEvento(db, job.id, evento.tipo, evento);
+    /* Il testo si accorpa (stream fluido, meno scritture); ogni altro evento
+       lo svuota prima, così l'ordine resta quello del modello. */
+    const accorpatore = new AccorpatoreTesto((delta) =>
+      emettiEvento(db, job.id, 'testo', { tipo: 'testo', delta } satisfies EventoStream),
+    );
+    const emetti = async (evento: EventoStream): Promise<number> => {
+      if (evento.tipo === 'testo') {
+        await accorpatore.aggiungi(evento.delta);
+        return 0;
+      }
+      await accorpatore.svuota();
+      return emettiEvento(db, job.id, evento.tipo, evento);
+    };
 
     const conv = await db.query<RigaConversazione>(
       `select c.id, c.tenant_id, c.documenti_in_contesto, t.modello_motore, t.memoria_attiva

@@ -352,6 +352,11 @@ export class ChatStore {
     const stream = this.streamAttivo();
     if (!stream) return;
 
+    /* Tutto ciò che segue il testo (fonti, provenienze, memoria, documenti,
+       fine, errore) lo vuole già scritto: si svuota la dattilografia prima.
+       Le attività no: possono scorrere mentre il testo sta ancora uscendo. */
+    if (evento.tipo !== 'testo' && evento.tipo !== 'attivita') this.svuotaTesto();
+
     switch (evento.tipo) {
       case 'inizio':
         this.streamAttivo.set({
@@ -374,9 +379,10 @@ export class ChatStore {
         this.aggiornaAssistente((m) => ({ ...m, attivita: evento.etichetta }));
         break;
       case 'testo':
-        /* Il testo azzera l'attività: se il motore torna a lavorare (per
-           esempio a raccogliere le fonti) lo dirà con un'attività nuova. */
-        this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + evento.delta, attivita: undefined }));
+        /* Il testo non si mostra com'è arrivato (chunk irregolari) ma a
+           ritmo costante, come una dattilografia: vedi `dattilografa`. */
+        this.codaTesto += evento.delta;
+        this.dattilografa();
         break;
       case 'citazione':
         this.aggiornaAssistente((m) => ({ ...m, citazioni: [...m.citazioni, evento.citazione] }));
@@ -412,6 +418,45 @@ export class ChatStore {
     this.streamAttivo.set({ ...stream, assistente: modifica(stream.assistente) });
   }
 
+  // --- Dattilografia ------------------------------------------------------
+
+  /**
+   * Il testo arriva dal server a chunk di grandezza e ritmo irregolari (il
+   * modello, il database, la rete). Mostrarlo com'è arriva a scatti; qui
+   * finisce in una coda che si svuota un po' a ogni frame: pochi caratteri
+   * quando la coda è corta, di più quando è lunga, così la lettura è fluida
+   * e non resta mai indietro. È il ritmo delle risposte di Claude.
+   */
+  private codaTesto = '';
+  private animazione: number | undefined;
+
+  private dattilografa(): void {
+    if (this.animazione !== undefined) return;
+    const passo = () => {
+      this.animazione = undefined;
+      if (!this.codaTesto) return;
+      const n = Math.max(3, Math.ceil(this.codaTesto.length / 8));
+      const pezzo = this.codaTesto.slice(0, n);
+      this.codaTesto = this.codaTesto.slice(n);
+      /* Il testo azzera l'attività: se il motore torna a lavorare lo dirà con un'attività nuova. */
+      this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + pezzo, attivita: undefined }));
+      if (this.codaTesto) this.animazione = requestAnimationFrame(passo);
+    };
+    this.animazione = requestAnimationFrame(passo);
+  }
+
+  /** Scrive subito tutto ciò che è in coda: prima di fonti, fine, errore, stop. */
+  private svuotaTesto(): void {
+    if (this.animazione !== undefined) {
+      cancelAnimationFrame(this.animazione);
+      this.animazione = undefined;
+    }
+    if (!this.codaTesto) return;
+    const resto = this.codaTesto;
+    this.codaTesto = '';
+    this.aggiornaAssistente((m) => ({ ...m, testo: m.testo + resto, attivita: undefined }));
+  }
+
   /**
    * A risposta completa la coppia si consolida fra i messaggi caricati e
    * l'elenco si ricarica: titolo, contesto documentale e ordinamento sono
@@ -443,6 +488,7 @@ export class ChatStore {
    */
   ferma(): void {
     this.sottoscrizioneStream?.unsubscribe();
+    this.svuotaTesto();
     const stream = this.streamAttivo();
     if (!stream) return;
 
