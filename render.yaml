@@ -1,8 +1,9 @@
-# Blueprint Render di VELIA — ramo develop: ambiente DEV (api-dev / app-dev.sonovelia.it).
+# Blueprint Render di VELIA, ramo develop: ambiente DEV (api-dev / app-dev.sonovelia.it).
 # Su main gli stessi servizi puntano a api. / app.sonovelia.it.
-#: un'immagine sola (be-node/Dockerfile),
-# due servizi, regione Francoforte (UE). L'app Angular sta su Cloudflare Pages
-# (vedi DEPLOY.md §2); la sandbox dell'Esportazione elaborata su Fly.io (§2b).
+#
+# Un'immagine sola (be-node/Dockerfile) per API e worker, regione Francoforte (UE),
+# più il sito statico dell'app Angular. La sandbox dell'Esportazione elaborata
+# sta su Fly.io (DEPLOY.md §2b) ed è condivisa fra dev e prod.
 #
 # Render → New → Blueprint → questo repo: legge questo file e crea i servizi.
 # I segreti (sync: false) li chiede una volta nel pannello; il resto è qui.
