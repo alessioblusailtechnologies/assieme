@@ -1,5 +1,560 @@
 [
  {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2025-12-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "Condizioni di Assicurazione — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 73,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2025-12-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "DIP Danni — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2025-12-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "Condizioni di Assicurazione — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 73,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2026-04-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "DIP Danni — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-autovetture-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus autovetture e autotassametri",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Bonus Malus autovetture e autotassametri",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-bonus-malus-autovetture-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-autovetture/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2025-12-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "Condizioni di Assicurazione — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 37,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2025-12-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "DIP Danni — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2025-12-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "Condizioni di Assicurazione — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 37,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2026-04-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "DIP Danni — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-bonus-malus-motocicli-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Bonus Malus motocicli e ciclomotori",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Bonus Malus motocicli e ciclomotori",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-bonus-malus-motocicli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/bonus-malus-motocicli/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2025-12-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "Condizioni di Assicurazione — Allianz Nuova 4R",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 64,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-nuova-4r-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2025-12-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "DIP Danni — Allianz Nuova 4R",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-nuova-4r-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2025-12-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Nuova 4R",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nuova-4r-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "Condizioni di Assicurazione — Allianz Nuova 4R",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 64,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-nuova-4r-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2026-04-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "DIP Danni — Allianz Nuova 4R",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-nuova-4r-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-nuova-4r-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Nuova 4R",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Nuova 4R",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nuova-4r-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2025-12-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "Condizioni di Assicurazione — Allianz Patto per i Giovani",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 62,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2025-12-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "DIP Danni — Allianz Patto per i Giovani",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2025-12-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Patto per i Giovani",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "Condizioni di Assicurazione — Allianz Patto per i Giovani",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 62,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2026-04-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "DIP Danni — Allianz Patto per i Giovani",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-patto-per-i-giovani-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "Patto per i Giovani",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz Patto per i Giovani",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-patto-per-i-giovani-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/patto-per-i-giovani/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2025-12-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "Condizioni di Assicurazione — Allianz R.C. Auto altri veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 80,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2025-12-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "DIP Danni — Allianz R.C. Auto altri veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2025-12-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz R.C. Auto altri veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2025-12",
+   "etichetta": "ed. 12/2025",
+   "validaDal": "2025-12-01",
+   "corrente": false,
+   "validaAl": "2026-03-31"
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2025-12/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "Condizioni di Assicurazione — Allianz R.C. Auto altri veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 80,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2026-04-dip",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "DIP Danni — Allianz R.C. Auto altri veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-allianz-rc-auto-altri-veicoli-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-allianz",
+  "ramoId": "ram-auto",
+  "prodotto": "R.C. Auto altri veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Allianz R.C. Auto altri veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-rc-auto-altri-veicoli-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/allianz/auto/rc-auto-altri-veicoli/ed-2026-04/originale.pdf"
+ },
+ {
   "id": "doc-cattolica-active-veicoli-autopiu-ed-2025-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-cattolica",
   "ramoId": "ram-auto",
