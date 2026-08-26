@@ -2,12 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { RouterLink } from '@angular/router';
 
 import { Accordion } from '@shared/ui/accordion/accordion';
-import { Citazione, DocumentoGenerato, RiferimentoDocumento } from '@core/models';
-import { ConversazioniApi } from '@core/api/conversazioni-api';
-import { nomeFileEsportazione } from '@shared/esportazione/scelte-esportazione';
+import { Citazione, RiferimentoDocumento } from '@core/models';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
-import { MessaggioInStream } from '../chat-store';
+import { ChatStore, MessaggioInStream } from '../chat-store';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta } from '@shared/testi/testo-risposta';
 
@@ -107,28 +105,11 @@ export class BollaMessaggio {
   });
 
   /**
-   * I documenti generati in chat su template: si scaricano con HttpClient
-   * (il token viaggia nell'intercettore, non in un link nudo).
+   * I documenti generati stanno nella bolla e nel pannello Output: lo
+   * scaricamento è uno solo, e vive nello store — così le due liste
+   * mostrano la stessa attesa sulla stessa riga.
    */
-  private readonly apiConversazioni = inject(ConversazioniApi);
-  protected readonly inScaricamento = signal<string | undefined>(undefined);
-
-  protected scarica(documento: DocumentoGenerato): void {
-    if (this.inScaricamento()) return;
-    this.inScaricamento.set(documento.id);
-    this.apiConversazioni.scaricaDocumento(this.messaggio().conversazioneId, documento.id).subscribe({
-      next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const collegamento = document.createElement('a');
-        collegamento.href = url;
-        collegamento.download = nomeFileEsportazione(documento.nome, documento.formato);
-        collegamento.click();
-        URL.revokeObjectURL(url);
-        this.inScaricamento.set(undefined);
-      },
-      error: () => this.inScaricamento.set(undefined),
-    });
-  }
+  protected readonly store = inject(ChatStore);
 
   /** RF-C-10: la copia rapida resta sempre disponibile, accanto all'esportazione. */
   protected readonly copiato = signal(false);

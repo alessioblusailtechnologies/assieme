@@ -142,6 +142,7 @@
     <aside
       class="contesto"
       [class.is-compresso]="contestoCompresso()"
+      [class.ha-output]="store.output().length > 0"
       aria-label="Contesto documentale della conversazione"
     >
       @if (contestoCompresso()) {
@@ -156,7 +157,8 @@
         >
           <ui-icon name="comprimi-barra" [size]="15" class="contesto__freccia" />
           <span class="mono contesto__verticale">
-            Contesto{{ contesto().length ? ' · ' + contesto().length : '' }}
+            Contesto{{ contesto().length ? ' · ' + contesto().length : ''
+            }}{{ store.output().length ? ' · output ' + store.output().length : '' }}
           </span>
         </button>
       } @else {
@@ -204,6 +206,45 @@
             Nessun documento. Referenzia con «@» dal campo del messaggio: le risposte diventano
             fondate e citabili.
           </p>
+        }
+
+        <!--
+          Output: ciò che la conversazione ha prodotto. Gli stessi documenti
+          stanno sotto la risposta che li ha generati, ma là si perdono
+          risalendo il filo — qui restano tutti insieme, dal più recente, e
+          si scaricano senza cercarli.
+
+          La sezione compare solo se c'è qualcosa: un titolo su una lista
+          vuota è una promessa che il prodotto non ha ancora mantenuto.
+        -->
+        @if (store.output().length) {
+          <section class="output">
+            <p class="mono output__etichetta">Output</p>
+            <ul class="output__elenco">
+              @for (d of store.output(); track d.id) {
+                <li>
+                  <button
+                    type="button"
+                    class="output__voce"
+                    (click)="store.scaricaDocumento(d)"
+                    [disabled]="store.documentoInScaricamento() === d.id"
+                    [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
+                  >
+                    <ui-icon name="scarica" [size]="14" />
+                    <span class="output__corpo">
+                      <span class="output__nome">{{ d.nome }}</span>
+                      <span class="mono output__meta">
+                        {{ d.formato }} · {{ d.prodottoIl | date: 'dd/MM HH:mm' }}
+                      </span>
+                      @if (d.template) {
+                        <span class="output__template">su «{{ d.template }}»</span>
+                      }
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </section>
         }
       }
     </aside>

@@ -10,6 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { BollaMessaggio } from './bolla-messaggio';
@@ -52,6 +53,7 @@ const SOGLIA_FONDO_PX = 120;
     Campo,
     Cassetto,
     Composer,
+    DatePipe,
     Icona,
     MenuAzioni,
     RouterLink,

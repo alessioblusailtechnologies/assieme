@@ -4,7 +4,7 @@ import { HttpDownloadProgressEvent, HttpEventType, provideHttpClient } from '@an
 import { Router } from '@angular/router';
 
 import { ChatStore } from './chat-store';
-import { Conversazione, EventoStream } from '@core/models';
+import { Conversazione, DocumentoGenerato, EventoStream } from '@core/models';
 
 function conversazione(id: string): Conversazione {
   return {
@@ -271,5 +271,107 @@ describe('ChatStore', () => {
     store.aggiungiRiferimento(doc);
 
     expect(store.riferimentiBozza().length).toBe(1);
+  });
+
+  /* --- Output della conversazione ------------------------------------- */
+
+  /** Un messaggio del filo, con quel che serve a questi test e nulla di più. */
+  function messaggio(
+    id: string,
+    autore: 'utente' | 'assistente',
+    inviatoIl: string,
+    documenti?: DocumentoGenerato[],
+  ) {
+    return {
+      id,
+      conversazioneId: 'cnv-1',
+      autore,
+      testo: 'testo',
+      inviatoIl,
+      documentiReferenziati: [],
+      citazioni: [],
+      provenienze: [],
+      ...(documenti && { documenti }),
+    };
+  }
+
+  const proposta: DocumentoGenerato = {
+    id: 'doc-a',
+    nome: 'Proposta Rossi',
+    formato: 'pdf',
+    template: 'Proposta breve',
+    url: '/api/conversazioni/cnv-1/documenti/doc-a',
+  };
+  const confronto: DocumentoGenerato = {
+    id: 'doc-b',
+    nome: 'Confronto garanzie',
+    formato: 'xlsx',
+    url: '/api/conversazioni/cnv-1/documenti/doc-b',
+  };
+
+  async function conFilo() {
+    await avvia([conversazione('cnv-1')]);
+    store.apri('cnv-1');
+    http
+      .expectOne('/api/conversazioni/cnv-1/messaggi')
+      .flush([
+        messaggio('m-1', 'utente', '2026-08-26T09:00:00+02:00'),
+        messaggio('m-2', 'assistente', '2026-08-26T09:01:00+02:00', [proposta]),
+        messaggio('m-3', 'assistente', '2026-08-26T09:05:00+02:00', [confronto]),
+      ]);
+    await microtask();
+  }
+
+  it('l’output raccoglie i documenti prodotti, dal più recente', async () => {
+    await conFilo();
+
+    expect(store.output().map((d) => d.id)).toEqual(['doc-b', 'doc-a']);
+    /* L'ora è quella della risposta che l'ha generato: di due versioni dello
+       stesso documento è l'unica cosa che le distingue. */
+    expect(store.output()[1].prodottoIl).toBe('2026-08-26T09:01:00+02:00');
+    expect(store.output()[1].template).toBe('Proposta breve');
+  });
+
+  it('un documento arrivato in streaming entra nell’output senza ricaricare', async () => {
+    await avvia();
+    const stream = await invia('Preparami la proposta');
+
+    let ricevuto = '';
+    const manda = (evento: EventoStream) => {
+      ricevuto += blocco(evento);
+      stream.event({
+        type: HttpEventType.DownloadProgress,
+        loaded: ricevuto.length,
+        partialText: ricevuto,
+      } as HttpDownloadProgressEvent);
+    };
+
+    manda({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' });
+    manda({ tipo: 'documento', documento: proposta });
+    await microtask();
+
+    expect(store.output().map((d) => d.id)).toEqual(['doc-a']);
+  });
+
+  it('scarica un documento una volta sola, anche a due clic', async () => {
+    /* jsdom non implementa `createObjectURL`: qui interessa la richiesta, non
+       il file che il browser salverebbe. */
+    const url = URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown };
+    url.createObjectURL = () => 'blob:finto';
+    url.revokeObjectURL = () => undefined;
+
+    await conFilo();
+    store.scaricaDocumento(store.output()[0]);
+    store.scaricaDocumento(store.output()[0]);
+
+    const richieste = http.match('/api/conversazioni/cnv-1/documenti/doc-b');
+    expect(richieste.length).toBe(1);
+    expect(store.documentoInScaricamento()).toBe('doc-b');
+
+    richieste[0].flush(new Blob(['x']));
+    expect(store.documentoInScaricamento()).toBeUndefined();
+
+    delete url.createObjectURL;
+    delete url.revokeObjectURL;
   });
 });

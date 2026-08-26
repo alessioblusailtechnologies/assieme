@@ -114,8 +114,8 @@
             <button
               type="button"
               class="documento"
-              (click)="scarica(d)"
-              [disabled]="inScaricamento() === d.id"
+              (click)="store.scaricaDocumento(d)"
+              [disabled]="store.documentoInScaricamento() === d.id"
               [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
             >
               <ui-icon name="scarica" [size]="13" />

@@ -4,10 +4,12 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import {
+  DocumentoGenerato,
   ErroreApi,
   EsportazioneElaborata,
   EventoStream,
   Id,
+  IsoDateTime,
   Messaggio,
   RicordoAppreso,
   RiferimentoDocumento,
@@ -46,6 +48,18 @@ export interface MessaggioInStream extends Messaggio {
   attivita?: string;
   /** RF-G-01: ciò che la memoria ha imparato da questo scambio (vive solo nello stream). */
   ricordiAppresi?: RicordoAppreso[];
+}
+
+/**
+ * Un documento prodotto dalla conversazione, con l'ora della risposta che
+ * l'ha generato.
+ *
+ * La data non è decorazione: della stessa proposta si finisce per generare
+ * tre versioni nella stessa mezz'ora, con lo stesso nome e lo stesso
+ * template, e l'ora è l'unica cosa che le distingue nell'elenco.
+ */
+export interface OutputConversazione extends DocumentoGenerato {
+  prodottoIl: IsoDateTime;
 }
 
 /** La coppia domanda/risposta che sta attraversando lo stream. */
@@ -101,14 +115,51 @@ export class ChatStore {
     const id = this.idAttiva();
     if (!id) return;
     this.api.esporta(id, messaggioId, scelta.scelta).subscribe({
+      next: (blob) => scaricaBlob(blob, nomeFileEsportazione(scelta.etichetta, scelta.formato)),
+    });
+  }
+
+  // --- Output della conversazione -----------------------------------------
+
+  /**
+   * Tutto ciò che la conversazione ha prodotto, dal più recente.
+   *
+   * Si deriva dai messaggi e non da una chiamata sua: i documenti generati
+   * vivono già sul messaggio che li ha prodotti — ci arrivano con l'evento
+   * `documento` mentre la risposta scorre, e tornano dal server al
+   * ricaricamento. Una seconda fonte di verità qui vorrebbe dire tenerle
+   * allineate a ogni evento dello stream, per nessun guadagno.
+   */
+  readonly output = computed<OutputConversazione[]>(() => {
+    const visti = new Set<Id>();
+    const prodotti: OutputConversazione[] = [];
+    for (const m of this.messaggi()) {
+      for (const d of m.documenti ?? []) {
+        if (visti.has(d.id)) continue;
+        visti.add(d.id);
+        prodotti.push({ ...d, prodottoIl: m.inviatoIl });
+      }
+    }
+    return prodotti.reverse();
+  });
+
+  /** L'id del documento che sta scendendo: la sua riga aspetta, le altre no. */
+  readonly documentoInScaricamento = signal<Id | undefined>(undefined);
+
+  /**
+   * Scarica un documento generato. Passa da `HttpClient` e non da un link
+   * nudo: il token viaggia nell'intercettore, e un `<a href>` non ce l'ha.
+   */
+  scaricaDocumento(documento: DocumentoGenerato): void {
+    const id = this.idAttiva();
+    if (!id || this.documentoInScaricamento()) return;
+    this.documentoInScaricamento.set(documento.id);
+    this.api.scaricaDocumento(id, documento.id).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
-        const collegamento = document.createElement('a');
-        collegamento.href = url;
-        collegamento.download = nomeFileEsportazione(scelta.etichetta, scelta.formato);
-        collegamento.click();
-        URL.revokeObjectURL(url);
+        scaricaBlob(blob, nomeFileEsportazione(documento.nome, documento.formato));
+        this.documentoInScaricamento.set(undefined);
       },
+      error: () => this.documentoInScaricamento.set(undefined),
     });
   }
 
@@ -554,4 +605,14 @@ export class ChatStore {
       next: () => this.storico.ricarica(),
     });
   }
+}
+
+/** Consegna un blob al browser come file scaricato. */
+function scaricaBlob(blob: Blob, nomeFile: string): void {
+  const url = URL.createObjectURL(blob);
+  const collegamento = document.createElement('a');
+  collegamento.href = url;
+  collegamento.download = nomeFile;
+  collegamento.click();
+  URL.revokeObjectURL(url);
 }
