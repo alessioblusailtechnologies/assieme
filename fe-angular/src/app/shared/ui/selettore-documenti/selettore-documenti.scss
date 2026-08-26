@@ -37,10 +37,30 @@
   color: var(--c-text-mute);
 }
 
-/* Il testo scritto dopo la «@», rispecchiato: la stessa voce di lettura del
-   composer, così si riconosce come la propria digitazione e non come
-   un'etichetta del pannello. */
-.barra__query {
+/*
+ * Il campo non ha bordo suo: il bordo è il pannello, e la fascia in cima ne
+ * è già la testata. Un riquadro dentro un riquadro qui suonerebbe come due
+ * campi, e di campo ce n'è uno solo.
+ */
+.barra__campo {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--f-lettura);
+  font-size: var(--t-body);
+  color: var(--c-text);
+}
+
+.barra__campo::placeholder {
+  color: var(--c-text-mute);
+}
+
+/* Senza barra propria il pannello è la tendina di un campo altrui: qui la
+   fascia si limita a ripetere che cosa si sta cercando. */
+.barra__eco {
   flex: 1;
   min-width: 0;
   font-family: var(--f-lettura);
@@ -51,15 +71,15 @@
   white-space: nowrap;
 }
 
-.barra__invito {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--f-lettura);
-  font-size: var(--t-body);
+.barra__eco.is-vuoto {
   color: var(--c-text-mute);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+}
+
+/* Il fuoco è nel campo per definizione — è appena stato dato — e disegnarlo
+   sarebbe un anello permanente attorno a mezzo pannello. Si segna invece
+   l'icona, che dice dove sta il cursore. */
+.barra:focus-within > ui-icon {
+  color: var(--c-accent);
 }
 
 .barra__conteggio {
@@ -284,5 +304,10 @@
   /* Su telefono i tasti non ci sono: resta solo l'invito ad affinare. */
   .piede > .mono:first-child {
     display: none;
+  }
+
+  /* Sotto i 16px iOS ingrandisce la pagina al fuoco del campo. */
+  .barra__campo {
+    font-size: 16px;
   }
 }

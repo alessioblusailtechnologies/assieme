@@ -75,6 +75,9 @@ export class Composer {
   /** Menzione chiusa con Esc: resta chiusa finché si resta su quella `@`. */
   private readonly soppressaDa = signal<number | undefined>(undefined);
 
+  /** Vero per la durata di `referenzia()`: vedi `chiudiSelettore()`. */
+  private inScelta = false;
+
   protected readonly menzione = computed(() => menzioneAlCursore(this.store.bozza(), this.cursore()));
 
   protected readonly selettoreAperto = computed(() => {
@@ -86,10 +89,6 @@ export class Composer {
     ...this.giaInContesto(),
     ...this.store.riferimentiBozza().map((r) => r.id),
   ]);
-
-  protected readonly idOpzioneAttiva = computed(() =>
-    this.selettoreAperto() ? this.selettore()?.idOpzioneAttiva() : undefined,
-  );
 
   constructor() {
     // Lo store → l'editor: ricostruzione sul testo, riconciliazione sui chip.
@@ -126,13 +125,8 @@ export class Composer {
   }
 
   protected suTasto(evento: KeyboardEvent): void {
-    if (this.selettoreAperto()) {
-      const consumato = this.selettore()?.gestisciTasto(evento);
-      if (consumato) {
-        evento.preventDefault();
-        return;
-      }
-    }
+    /* Col selettore aperto il fuoco è nel suo campo di ricerca: qui non
+       arriva più niente, e non c'è nulla da inoltrare. */
     if (evento.key === 'Enter') {
       evento.preventDefault();
       if (evento.shiftKey) this.inserisciTesto('\n');
@@ -147,9 +141,31 @@ export class Composer {
     if (testo) this.inserisciTesto(testo);
   }
 
+  /**
+   * Il selettore si chiude senza scegliere — Esc, Backspace a vuoto, un clic
+   * altrove — e **la `@` se ne va con lui**.
+   *
+   * Era un comando, non testo: con la barra di ricerca dentro al pannello
+   * non porta più con sé ciò che si stava cercando, e lasciarla lì
+   * significherebbe lasciare un segno che l'utente non ha voluto scrivere.
+   *
+   * La soppressione resta come rete: se la cancellazione non andasse a
+   * segno, senza di lei il pannello si riaprirebbe all'istante.
+   */
   protected chiudiSelettore(): void {
+    /* Scegliendo si passa comunque di qui, perché `referenzia()` riporta il
+       fuoco all'editor e il campo di ricerca perde il suo: lì la `@` sta per
+       diventare un chip e non va toccata. */
+    if (this.inScelta || !this.selettoreAperto()) return;
+
     const menzione = this.menzione();
-    if (menzione) this.soppressaDa.set(menzione.inizio);
+    if (!menzione) return;
+    this.soppressaDa.set(menzione.inizio);
+
+    const editor = this.editor;
+    editor.focus();
+    sostituisciIntervallo(editor, menzione.inizio, this.cursore(), document.createTextNode(''));
+    this.aggiorna();
   }
 
   /**
@@ -159,6 +175,9 @@ export class Composer {
    * finiva in mezzo ai due.
    */
   protected referenzia(documento: RiferimentoDocumento): void {
+    /* Il fuoco è nel campo di ricerca del pannello: torna qui, e ci resta
+       perché il pannello sparisce insieme alla menzione. */
+    this.inScelta = true;
     const menzione = this.menzione();
     const chip = this.nuovoChip(documento);
     const editor = this.editor;
@@ -170,6 +189,7 @@ export class Composer {
     scriviDopoChip(editor, chip, ' ');
     this.store.aggiungiRiferimento(documento);
     this.aggiorna();
+    this.inScelta = false;
   }
 
   /**

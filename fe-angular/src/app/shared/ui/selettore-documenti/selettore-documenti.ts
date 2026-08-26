@@ -2,10 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  afterNextRender,
   afterRenderEffect,
   computed,
   effect,
   input,
+  linkedSignal,
   output,
   signal,
   viewChild,
@@ -58,19 +60,16 @@ const RISULTATI_PER_ARCHIVIO = 6;
  * Selettore `@` di referenziazione documentale (RF-C-02).
  *
  * Cerca su **entrambi gli archivi** per titolo, compagnia e prodotto, e
- * presenta i risultati in due gruppi. La digitazione resta dove sta — nel
- * composer della chat, domani nel costruttore di tabelle — e arriva qui come
- * `query`. Stessa cosa per la tastiera: il chiamante inoltra i tasti di
- * navigazione a `gestisciTasto()`, così il fuoco non lascia mai il campo in
- * cui si sta scrivendo.
+ * presenta i risultati in due gruppi.
  *
- * In cima c'è una **barra di ricerca che non è un campo**: rispecchia ciò
- * che si sta scrivendo dopo la `@` e dice quanti risultati ci sono. Sembra
- * un campo perché è così che si capisce che il pannello si filtra scrivendo;
- * ma un `<input>` vero qui farebbe danno, perché il testo dopo la `@` **è
- * testo del messaggio** — spostarlo in un campo separato vorrebbe dire
- * toglierlo di bocca a chi sta scrivendo, e contendere il fuoco al composer
- * a ogni tasto.
+ * In cima c'è una **barra di ricerca vera**, e il pannello se ne prende il
+ * fuoco appena si apre: da lì in poi si scrive qui. La conseguenza è che nel
+ * messaggio resta la sola `@` — il testo cercato non è testo del messaggio,
+ * e finita la ricerca sparisce con lei. Chi ha aperto il pannello e cambia
+ * idea preme Esc, o cancella all'indietro fino a togliere anche la `@`.
+ *
+ * Il chiamante non inoltra più tasti: il campo se li gestisce, e restituisce
+ * il fuoco al composer quando ha finito (`scelto`, `chiuso`, `annullato`).
  *
  * Dei documenti privati si propongono **solo i pronti**: un documento in
  * elaborazione non è referenziabile (RF-B-05), e scoprirlo dopo l'invio è il
@@ -87,12 +86,36 @@ export class SelettoreDocumenti {
   private readonly apiPubblici = inject(DocumentiApi);
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
 
-  readonly query = input.required<string>();
+  /**
+   * Che cosa cercare.
+   *
+   * Con `conRicerca` spento è **la** query, e la scrive il chiamante dal
+   * proprio campo. Acceso è il seme: ciò che stava dopo la `@` all'apertura
+   * — di solito nulla, ma incollare «@bonus» deve trovare il campo pieno —
+   * e da lì in poi comanda il campo interno.
+   */
+  readonly query = input<string>('');
+
+  /**
+   * Se il pannello si porta dentro la propria barra di ricerca.
+   *
+   * Nella chat sì: si arriva qui da una `@` dentro un messaggio, e non c'è
+   * nessun campo a cui appoggiarsi. Nel costruttore di tabelle e
+   * nell'editor degli agenti no: lì il pannello è la tendina di un campo
+   * che c'è già, ed è quello a comandare.
+   */
+  readonly conRicerca = input(false);
+
   /** Documenti da non riproporre: già referenziati o già nel contesto. */
   readonly esclusi = input<Id[]>([]);
 
   readonly scelto = output<RiferimentoDocumento>();
   readonly chiuso = output<void>();
+
+  /** Ciò che si sta cercando: segue l'ingresso, e il campo interno lo riscrive. */
+  protected readonly ricerca = linkedSignal(() => this.query());
+
+  private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campo');
 
   /*
    * La ricerca parte poco dopo l'ultimo tasto, non a ogni tasto: lo stesso
@@ -100,7 +123,7 @@ export class SelettoreDocumenti {
    * all'apertura) passa subito perché il valore iniziale coincide.
    */
   private readonly queryAttesa = toSignal(
-    toObservable(this.query).pipe(debounceTime(200), distinctUntilChanged()),
+    toObservable(this.ricerca).pipe(debounceTime(200), distinctUntilChanged()),
     { initialValue: '' },
   );
 
@@ -121,17 +144,10 @@ export class SelettoreDocumenti {
 
   protected readonly gruppi = computed(() => {
     const esclusi = new Set(this.esclusi());
-    /*
-     * L'evidenziazione va fatta con la query **con cui i risultati sono
-     * stati cercati**, non con quella già digitata: fra il tasto e la
-     * risposta passano duecento millisecondi, e nel mezzo si segnerebbero
-     * termini per cui l'elenco non è ancora stato filtrato.
-     *
-     * Non è solo estetica: `query` è un input obbligatorio, e questo
-     * computed lo legge anche l'effect del costruttore — che gira prima che
-     * l'input sia stato scritto (NG0950). `queryAttesa` ha un valore
-     * iniziale e da lì non passa.
-     */
+    /* L'evidenziazione va fatta con la query **con cui i risultati sono
+       stati cercati**, non con quella già digitata: fra il tasto e la
+       risposta passano duecento millisecondi, e nel mezzo si segnerebbero
+       termini per cui l'elenco non è ancora stato filtrato. */
     const query = this.queryAttesa();
     const gruppo = <T extends Documento>(etichetta: string, elenco: Paginato<T> | undefined) => ({
       etichetta,
@@ -166,6 +182,13 @@ export class SelettoreDocumenti {
   private readonly ospite = inject(ElementRef<HTMLElement>);
 
   constructor() {
+    /* Il pannello nasce col fuoco dentro: da qui in poi si scrive qui, non
+       più nel composer. */
+    afterNextRender(() => this.campo()?.nativeElement.focus());
+    /* Il campo esiste solo con `conRicerca`: dove il pannello è la tendina
+       di un campo altrui, il fuoco deve restare dov'è. */
+
+
     /* Nuovi risultati, selezione da capo: l'elemento evidenziato deve sempre
        esistere ed essere il primo che l'occhio incontra. */
     effect(() => {
@@ -241,8 +264,12 @@ export class SelettoreDocumenti {
     return voce ? `selettore-doc-${voce.riferimento.id}` : undefined;
   });
 
+  protected scrivi(valore: string): void {
+    this.ricerca.set(valore);
+  }
+
   /**
-   * Il chiamante inoltra qui i tasti mentre il selettore è aperto.
+   * Il chiamante che ha un campo suo inoltra qui i tasti di navigazione.
    * Restituisce `true` se il tasto è stato consumato.
    */
   gestisciTasto(evento: KeyboardEvent): boolean {
@@ -268,6 +295,18 @@ export class SelettoreDocumenti {
       default:
         return false;
     }
+  }
+
+  /** I tasti del campo interno: gli stessi, più il disfare all'indietro. */
+  protected suTastoCampo(evento: KeyboardEvent): void {
+    /* Campo già vuoto e si cancella ancora: si sta disfacendo il gesto, ed è
+       la stessa cosa che chiuderlo con Esc. */
+    if (evento.key === 'Backspace' && !this.ricerca()) {
+      evento.preventDefault();
+      this.chiuso.emit();
+      return;
+    }
+    if (this.gestisciTasto(evento)) evento.preventDefault();
   }
 
   protected scegli(voce: VoceSelettore): void {

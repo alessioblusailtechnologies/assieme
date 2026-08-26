@@ -3,6 +3,7 @@
     <ui-selettore-documenti
       class="selettore"
       [query]="menzione()?.query ?? ''"
+      [conRicerca]="true"
       [esclusi]="esclusi()"
       (scelto)="referenzia($event)"
       (chiuso)="chiudiSelettore()"
@@ -35,7 +36,6 @@
       class="campo__testo"
       contenteditable="true"
       spellcheck="true"
-      role="combobox"
       aria-label="Messaggio"
       aria-multiline="true"
       data-placeholder="Fai una domanda sui documenti — «@» per referenziarli"
@@ -43,13 +43,8 @@
       (keydown)="suTasto($event)"
       (keyup)="aggiornaCursore()"
       (click)="aggiornaCursore()"
-      (blur)="chiudiSelettore()"
       (paste)="incolla($event)"
       (drop)="$event.preventDefault()"
-      [attr.aria-expanded]="selettoreAperto()"
-      aria-controls="selettore-documenti"
-      aria-autocomplete="list"
-      [attr.aria-activedescendant]="idOpzioneAttiva()"
     ></div>
 
     <div class="campo__azioni">

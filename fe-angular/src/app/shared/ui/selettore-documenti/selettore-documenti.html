@@ -1,16 +1,35 @@
 <div class="pannello" #pannello>
   <!--
-    La barra di ricerca. Non è un campo, ed è voluto: il testo dopo la «@» è
-    testo del messaggio e resta nel composer — qui si rispecchia, perché è
-    l'unico modo di far capire che il pannello si filtra scrivendo senza
-    contendere il fuoco a ogni tasto.
+    La barra di ricerca: un campo vero, che prende il fuoco all'apertura. Nel
+    messaggio resta la sola «@» — ciò che si cerca non è ciò che si scrive.
   -->
   <div class="barra" [class.is-in-attesa]="inCaricamento()">
     <ui-icon name="cerca" [size]="15" />
-    @if (query()) {
-      <span class="barra__query">{{ query() }}</span>
+    @if (conRicerca()) {
+      <input
+        #campo
+        class="barra__campo"
+        type="text"
+        role="combobox"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Cerca un documento da referenziare"
+        aria-controls="selettore-documenti"
+        aria-autocomplete="list"
+        aria-expanded="true"
+        [attr.aria-activedescendant]="idOpzioneAttiva()"
+        placeholder="Cerca fra i documenti dei due archivi…"
+        [value]="ricerca()"
+        (input)="scrivi($any($event.target).value)"
+        (keydown)="suTastoCampo($event)"
+        (blur)="chiuso.emit()"
+      />
+    } @else if (ricerca()) {
+      <!-- Senza barra propria: il pannello è la tendina di un campo altrui,
+           e qui si limita a ripetere che cosa si sta cercando. -->
+      <span class="barra__eco">{{ ricerca() }}</span>
     } @else {
-      <span class="barra__invito">Scrivi per cercare fra i documenti dei due archivi…</span>
+      <span class="barra__eco is-vuoto">Cerca fra i documenti dei due archivi…</span>
     }
     <span class="mono barra__conteggio" role="status">
       @if (inCaricamento() && !voci().length) {
@@ -45,8 +64,8 @@
         </div>
       } @else {
         <p class="vuoto">
-          @if (query()) {
-            <span class="vuoto__titolo">Nessun documento per «{{ query() }}»</span>
+          @if (ricerca()) {
+            <span class="vuoto__titolo">Nessun documento per «{{ ricerca() }}»</span>
             <span class="vuoto__aiuto">
               Prova col nome della compagnia, del prodotto o del cliente.
             </span>
