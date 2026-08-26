@@ -25,6 +25,7 @@ import {
   SoluzioneIntermediari,
 } from './AstrattiSoluzioni';
 import { IG_FONTE_DUR, IG_FPS, IG_H, IG_W, IgFonte, QUAD_H, QUAD_W } from './SocialIg';
+import { CARD_IG_H, CARD_IG_W, CARD_QUAD_H, CARD_QUAD_W, CardMemoria } from './SocialCard';
 
 export const Root: React.FC = () => (
   <>
@@ -103,6 +104,13 @@ export const Root: React.FC = () => (
       fps={IG_FPS}
       width={QUAD_W}
       height={QUAD_H}
+    />
+    <Still id="CardMemoria" component={CardMemoria} width={CARD_IG_W} height={CARD_IG_H} />
+    <Still
+      id="CardMemoriaQuadrata"
+      component={CardMemoria}
+      width={CARD_QUAD_W}
+      height={CARD_QUAD_H}
     />
     <Composition
       id="SoluzioneCompagnie"
