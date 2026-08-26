@@ -2,42 +2,134 @@
   display: block;
 }
 
+/*
+ * Tre fasce: la barra di ricerca, i risultati che scorrono, il piede coi
+ * tasti. Il pannello non scorre — scorre solo la fascia di mezzo, così barra
+ * e piede restano dove sono anche con venti risultati.
+ */
 .pannello {
   display: flex;
-  border-radius: var(--radius);
   flex-direction: column;
-  max-height: 320px;
-  overflow-y: auto;
+  /* Il tetto vero lo misura il componente sullo spazio che ha sopra: questo
+     è solo il valore prima che la misura arrivi. */
+  max-height: 420px;
+  border-radius: var(--radius);
+  overflow: hidden;
   background: var(--c-surface);
   border: 1px solid var(--c-line);
   box-shadow: 0 -4px 16px var(--c-ombra-lieve);
 }
 
-.vuoto {
-  padding: var(--sp-4);
-  font-size: var(--t-sm);
-  color: var(--c-text-3);
+/* ---------- Barra di ricerca ---------- */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex: none;
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--c-line-soft);
+  background: var(--c-surface-soft);
+}
+
+.barra ui-icon {
+  flex: none;
+  color: var(--c-text-mute);
+}
+
+/* Il testo scritto dopo la «@», rispecchiato: la stessa voce di lettura del
+   composer, così si riconosce come la propria digitazione e non come
+   un'etichetta del pannello. */
+.barra__query {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--f-lettura);
+  font-size: var(--t-body);
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra__invito {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--f-lettura);
+  font-size: var(--t-body);
+  color: var(--c-text-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barra__conteggio {
+  flex: none;
+  color: var(--c-text-4);
+}
+
+/* Mentre la ricerca corre il conteggio respira: dice che i risultati sotto
+   stanno per cambiare, senza far sparire quelli che ci sono. */
+.barra.is-in-attesa .barra__conteggio {
+  animation: respiro 1.2s var(--ease-brand) infinite;
+}
+
+@keyframes respiro {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra.is-in-attesa .barra__conteggio {
+    animation: none;
+  }
+}
+
+/* ---------- Risultati ---------- */
+
+.risultati {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--sp-1);
 }
 
 .gruppo {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-3) var(--sp-1);
   position: sticky;
   top: 0;
   background: var(--c-surface);
 }
 
+.gruppo__nome {
+  color: var(--c-text-3);
+}
+
+/* «6 di 24»: sei risultati su ottanta si leggono come «ce ne sono sei». */
+.gruppo__conteggio {
+  color: var(--c-text-4);
+}
+
 .voce {
   display: flex;
-  border-radius: var(--radius-sm);
   align-items: center;
   gap: var(--sp-3);
   width: 100%;
   padding: var(--sp-2) var(--sp-3);
   border: 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   text-align: left;
   cursor: pointer;
   color: var(--c-text-3);
+}
+
+.voce > ui-icon {
+  flex: none;
 }
 
 .voce.is-attiva {
@@ -49,6 +141,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+  flex: 1;
   min-width: 0;
 }
 
@@ -72,6 +165,13 @@
   white-space: nowrap;
 }
 
+/* Sulla riga evidenziata il fondo del `mark` sparirebbe dentro quello
+   della riga: lì il termine trovato si segna col colore. */
+.voce.is-attiva ::ng-deep mark {
+  background: transparent;
+  color: var(--c-accent);
+}
+
 .voce__storico {
   font-family: var(--f-mono);
   font-size: var(--t-mono-sm);
@@ -83,11 +183,106 @@
   margin-left: var(--sp-1);
 }
 
-.istruzioni {
+/* La freccia d'invio compare sulla riga evidenziata: dice che Invio prende
+   questa, non un'altra. */
+.voce__invio {
+  flex: none;
+  opacity: 0;
+  color: var(--c-accent);
+}
+
+.voce.is-attiva .voce__invio {
+  opacity: 1;
+}
+
+/* ---------- Vuoto e attesa ---------- */
+
+.vuoto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-5) var(--sp-4);
+  font-size: var(--t-sm);
+}
+
+.vuoto__titolo {
+  color: var(--c-text-2);
+}
+
+.vuoto__aiuto {
+  font-size: var(--t-xs);
+  color: var(--c-text-mute);
+}
+
+.scheletri {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-3);
+}
+
+.scheletro {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-1) 0;
+}
+
+.scheletro__quadro {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border-radius: 3px;
+  background: var(--c-page-alt);
+}
+
+.scheletro__righe {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.scheletro__riga {
+  height: 8px;
+  border-radius: 3px;
+  background: var(--c-page-alt);
+}
+
+.scheletro__riga--corta {
+  width: 42%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .scheletro__riga,
+  .scheletro__quadro {
+    animation: respiro 1.4s var(--ease-brand) infinite;
+  }
+}
+
+/* ---------- Piede ---------- */
+
+.piede {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex: none;
   padding: var(--sp-2) var(--sp-3);
   border-top: 1px solid var(--c-line-soft);
-  font-family: var(--f-mono);
   font-size: var(--t-mono-sm);
   letter-spacing: 0.06em;
   color: var(--c-text-4);
+  background: var(--c-surface-soft);
+}
+
+.piede__affina {
+  color: var(--c-text-mute);
+}
+
+@media (max-width: 600px) {
+  /* Su telefono i tasti non ci sono: resta solo l'invito ad affinare. */
+  .piede > .mono:first-child {
+    display: none;
+  }
 }

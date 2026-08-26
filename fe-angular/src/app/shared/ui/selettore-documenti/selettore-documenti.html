@@ -1,45 +1,117 @@
-<div class="pannello" role="listbox" id="selettore-documenti" aria-label="Documenti referenziabili">
-  @if (!voci().length) {
-    <p class="vuoto">
-      @if (inCaricamento()) {
-        Cerco nei due archivi…
-      } @else if (query()) {
-        Nessun documento per «{{ query() }}». Prova con il nome della compagnia o del prodotto.
-      } @else {
-        Nessun documento referenziabile.
+<div class="pannello" #pannello>
+  <!--
+    La barra di ricerca. Non è un campo, ed è voluto: il testo dopo la «@» è
+    testo del messaggio e resta nel composer — qui si rispecchia, perché è
+    l'unico modo di far capire che il pannello si filtra scrivendo senza
+    contendere il fuoco a ogni tasto.
+  -->
+  <div class="barra" [class.is-in-attesa]="inCaricamento()">
+    <ui-icon name="cerca" [size]="15" />
+    @if (query()) {
+      <span class="barra__query">{{ query() }}</span>
+    } @else {
+      <span class="barra__invito">Scrivi per cercare fra i documenti dei due archivi…</span>
+    }
+    <span class="mono barra__conteggio" role="status">
+      @if (inCaricamento() && !voci().length) {
+        cerco…
+      } @else if (voci().length) {
+        {{ voci().length }} {{ voci().length === 1 ? 'risultato' : 'risultati' }}
       }
-    </p>
-  } @else {
-    @for (gruppo of gruppi(); track gruppo.etichetta) {
-      <p class="mono gruppo">{{ gruppo.etichetta }}</p>
-      @for (voce of gruppo.voci; track voce.riferimento.id) {
-        <button
-          type="button"
-          class="voce"
-          role="option"
-          [id]="'selettore-doc-' + voce.riferimento.id"
-          [class.is-attiva]="voci()[indiceAttivo()] === voce"
-          [attr.aria-selected]="voci()[indiceAttivo()] === voce"
-          (click)="scegli(voce)"
-          (mousedown)="$event.preventDefault()"
-          (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
-        >
-          <ui-icon
-            [name]="voce.riferimento.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
-            [size]="15"
-          />
-          <span class="voce__testo">
-            <span class="voce__titolo">{{ voce.riferimento.titolo }}</span>
-            <span class="voce__dettaglio">
-              {{ voce.dettaglio }}
-              @if (voce.storico) {
-                <span class="voce__storico">edizione superata</span>
-              }
+    </span>
+  </div>
+
+  <div
+    class="risultati"
+    #risultati
+    role="listbox"
+    id="selettore-documenti"
+    aria-label="Documenti referenziabili"
+  >
+    @if (!voci().length) {
+      @if (inCaricamento()) {
+        <!-- Righe finte al posto del vuoto: il pannello non si accartoccia
+             e non fa saltare quello che c'è sotto. -->
+        <div class="scheletri" aria-hidden="true">
+          @for (r of [1, 2, 3]; track r) {
+            <div class="scheletro">
+              <span class="scheletro__quadro"></span>
+              <span class="scheletro__righe">
+                <span class="scheletro__riga"></span>
+                <span class="scheletro__riga scheletro__riga--corta"></span>
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="vuoto">
+          @if (query()) {
+            <span class="vuoto__titolo">Nessun documento per «{{ query() }}»</span>
+            <span class="vuoto__aiuto">
+              Prova col nome della compagnia, del prodotto o del cliente.
             </span>
-          </span>
-        </button>
+          } @else {
+            <span class="vuoto__titolo">Nessun documento referenziabile</span>
+            <span class="vuoto__aiuto">
+              Gli archivi sono vuoti, oppure è già tutto nel contesto.
+            </span>
+          }
+        </p>
+      }
+    } @else {
+      @for (gruppo of gruppi(); track gruppo.etichetta) {
+        <p class="gruppo">
+          <span class="mono gruppo__nome">{{ gruppo.etichetta }}</span>
+          @if (gruppo.totale > gruppo.voci.length) {
+            <span class="mono gruppo__conteggio">
+              {{ gruppo.voci.length }} di {{ gruppo.totale }}
+            </span>
+          }
+        </p>
+        @for (voce of gruppo.voci; track voce.riferimento.id) {
+          <button
+            type="button"
+            class="voce"
+            role="option"
+            [id]="'selettore-doc-' + voce.riferimento.id"
+            [class.is-attiva]="voci()[indiceAttivo()] === voce"
+            [attr.aria-selected]="voci()[indiceAttivo()] === voce"
+            (click)="scegli(voce)"
+            (mousedown)="$event.preventDefault()"
+            (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
+          >
+            <ui-icon
+              [name]="
+                voce.riferimento.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'
+              "
+              [size]="15"
+            />
+            <span class="voce__testo">
+              <span class="voce__titolo">
+                <ui-testo-evidenziato [parti]="voce.titoloEvidenziato" />
+              </span>
+              <span class="voce__dettaglio">
+                <ui-testo-evidenziato [parti]="voce.dettaglioEvidenziato" />
+                @if (voce.storico) {
+                  <span class="voce__storico">edizione superata</span>
+                }
+              </span>
+            </span>
+            <ui-icon class="voce__invio" name="invia" [size]="13" />
+          </button>
+        }
       }
     }
-    <p class="istruzioni" aria-hidden="true">↑↓ scorri · Invio referenzia · Esc chiude</p>
-  }
+  </div>
+
+  <!--
+    Il promemoria dei tasti stava in coda alla lista, cioè dentro l'area che
+    scorre: non si vedeva mai, proprio quando serviva. Ora è un piede fisso.
+  -->
+  <p class="piede" aria-hidden="true">
+    <span class="mono">↑↓ scorri · Invio referenzia · Esc chiude</span>
+    @if (cePiuRoba()) {
+      <span class="mono piede__affina">scrivi ancora per restringere</span>
+    }
+  </p>
 </div>
