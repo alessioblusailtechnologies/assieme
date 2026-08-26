@@ -109,7 +109,7 @@ import { SessioneStore } from '@core/auth/sessione-store';
       padding: var(--sp-4);
       margin-right: var(--sp-2);
       background: var(--c-ink);
-      color: var(--c-text-oninverse-2);
+      color: var(--c-text-onink-2);
       border: 1px solid var(--c-line-dark);
     }
 
@@ -120,7 +120,7 @@ import { SessioneStore } from '@core/auth/sessione-store';
     }
 
     .campo .mono {
-      color: var(--c-text-oninverse-mute);
+      color: var(--c-text-onink-mute);
       font-size: var(--t-mono-sm);
     }
 
@@ -128,13 +128,13 @@ import { SessioneStore } from '@core/auth/sessione-store';
       width: 100%;
       padding: var(--sp-1) var(--sp-2);
       background: var(--c-ink-raise-2);
-      color: var(--c-text-oninverse);
+      color: var(--c-text-onink);
       border: 1px solid var(--c-line-dark);
       font-size: var(--t-xs);
     }
 
     .nota {
-      color: var(--c-text-oninverse-mute);
+      color: var(--c-text-onink-mute);
       font-size: var(--t-mono);
       line-height: 1.45;
     }

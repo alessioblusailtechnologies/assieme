@@ -66,8 +66,8 @@
   background:
     linear-gradient(to right, var(--c-surface) 30%, transparent) left / 40px 100% no-repeat,
     linear-gradient(to left, var(--c-surface) 30%, transparent) right / 40px 100% no-repeat,
-    linear-gradient(to right, rgb(28 26 21 / 10%), transparent) left / 14px 100% no-repeat,
-    linear-gradient(to left, rgb(28 26 21 / 10%), transparent) right / 14px 100% no-repeat,
+    linear-gradient(to right, var(--c-ombra-lieve), transparent) left / 14px 100% no-repeat,
+    linear-gradient(to left, var(--c-ombra-lieve), transparent) right / 14px 100% no-repeat,
     var(--c-surface);
   background-attachment: local, local, scroll, scroll, scroll;
 }

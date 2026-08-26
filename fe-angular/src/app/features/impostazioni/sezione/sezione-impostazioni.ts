@@ -45,6 +45,11 @@ const VOCI: VoceSezione[] = [
     spiega: 'VELIA come strumento nei client AI esterni',
     permesso: 'mcp.credenziali',
   },
+  {
+    percorso: 'aspetto',
+    etichetta: 'Aspetto',
+    spiega: 'Tema chiaro o scuro, su questo computer',
+  },
 ];
 
 /**

@@ -114,7 +114,7 @@ import { BarraSuperiore } from './barra-superiore/barra-superiore';
         position: fixed;
         inset: 0;
         z-index: calc(var(--z-overlay) - 1);
-        background: rgb(28 26 21 / 40%);
+        background: var(--c-scrim);
       }
     }
   `,

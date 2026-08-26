@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { environment } from '@env';
 import { Notifiche } from '@shared/ui/notifiche/notifiche';
 import { PannelloSviluppo } from '@core/sviluppo/pannello-sviluppo';
+import { TemaStore } from '@core/tema/tema-store';
 
 /**
  * Radice dell'applicazione.
@@ -23,4 +24,13 @@ import { PannelloSviluppo } from '@core/sviluppo/pannello-sviluppo';
 })
 export class App {
   protected readonly devTools = environment.devTools;
+
+  /*
+   * Iniettato e non usato, di proposito: è qui che il tema si accende.
+   * Lo store vive nella radice dell'iniezione, quindi resta in ascolto della
+   * preferenza di sistema per tutta la sessione — anche sulla schermata di
+   * accesso, che sta fuori dalla struttura e non ha una barra da cui
+   * chiederglielo.
+   */
+  private readonly tema = inject(TemaStore);
 }

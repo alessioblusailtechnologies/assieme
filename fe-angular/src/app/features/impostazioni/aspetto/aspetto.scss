@@ -1,0 +1,186 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  max-width: 980px;
+}
+
+/* La testata è comune alle sottosezioni delle Impostazioni. */
+.testata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.testata__titolo {
+  font-size: var(--t-section);
+  font-weight: 400;
+  letter-spacing: var(--ls-snug);
+}
+
+.testata__spiega {
+  max-width: 62ch;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+/* ---------- Le tre scelte ---------- */
+
+.scelte {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: 780px;
+}
+
+.scelta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-brand),
+    box-shadow var(--dur-fast) var(--ease-brand);
+}
+
+.scelta:hover {
+  border-color: var(--c-text-ghost);
+}
+
+.scelta.is-attiva {
+  border-color: var(--c-accent);
+  box-shadow: 0 0 0 1px var(--c-accent);
+}
+
+/* Il fuoco vive sul radio nascosto: l'anello va disegnato sulla scheda,
+   altrimenti chi naviga da tastiera non vede dove si trova. */
+.scelta:has(input:focus-visible) {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.scelta__testa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text);
+  font-size: var(--t-body);
+}
+
+.scelta__spunta {
+  margin-left: auto;
+  color: var(--c-accent);
+}
+
+.scelta__spiega {
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--c-text-3);
+}
+
+/* ---------- La miniatura ---------- */
+
+.anteprima {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/*
+ * Ogni lato porta la propria palette in variabili locali, presa dai
+ * primitivi (`--n-*` e `--s-*`) che stanno su `:root` in tutti e due i
+ * temi: la miniatura dello scuro resta scura anche mentre l'applicazione è
+ * chiara, e viceversa.
+ */
+.lato {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--a-page);
+}
+
+.lato--chiaro {
+  --a-page: var(--n-100);
+  --a-surface: var(--n-0);
+  --a-line: var(--n-300);
+  --a-riga: var(--n-400);
+  --a-accent: #2f4b7c;
+}
+
+.lato--scuro {
+  --a-page: var(--s-50);
+  --a-surface: var(--s-100);
+  --a-line: var(--s-300);
+  --a-riga: var(--s-500);
+  --a-accent: #3f63a8;
+}
+
+/* «Sistema» è le due cose insieme: il taglio in diagonale scopre lo scuro
+   sopra il chiaro. */
+.is-doppia .lato--scuro {
+  clip-path: polygon(58% 0, 100% 0, 100% 100%, 42% 100%);
+}
+
+.lato__barra {
+  width: 22%;
+  flex: none;
+  border-radius: 3px;
+  background: var(--a-page);
+  border: 1px solid var(--a-line);
+}
+
+.lato__corpo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 3px;
+  background: var(--a-surface);
+  border: 1px solid var(--a-line);
+}
+
+.lato__riga {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--a-riga);
+}
+
+.lato__riga--corta {
+  width: 58%;
+}
+
+.lato__blocco {
+  margin-top: auto;
+  width: 34%;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--a-accent);
+}
+
+/* ---------- Nota ---------- */
+
+.nota {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.nota strong {
+  font-weight: 500;
+}

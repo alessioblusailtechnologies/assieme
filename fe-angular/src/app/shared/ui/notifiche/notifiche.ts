@@ -57,7 +57,7 @@ import { NotificheStore } from '@core/notifiche/notifiche-store';
       background: var(--c-surface);
       border: 1px solid var(--c-line);
       border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgb(28 26 21 / 12%);
+      box-shadow: 0 8px 24px var(--c-ombra);
     }
 
     .notifica > ui-icon {

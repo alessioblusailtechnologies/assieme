@@ -53,7 +53,7 @@ import { ChangeDetectionStrategy, Component, input, model } from '@angular/core'
       content: '';
       width: 9px;
       height: 9px;
-      background: #fff;
+      background: var(--c-azione-testo);
       clip-path: polygon(14% 44%, 0 65%, 40% 100%, 100% 16%, 84% 0%, 38% 66%);
     }
 

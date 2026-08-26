@@ -175,26 +175,53 @@ readonly dato = computed(() => (this.risorsa.hasValue() ? this.risorsa.value() :
 
 ## Tema
 
-Il tema **non** è un foglio di stile: è TypeScript.
+Tutto l'aspetto sta in `styles/_tokens.scss`: due scale primitive di neutri
+caldi — `--n-*` per il chiaro, `--s-*` per lo scuro — e sopra di esse i token
+**semantici, nominati per intento**. I componenti leggono `--c-line`,
+`--c-azione`, `--c-ombra`; mai un gradino della scala primitiva, mai un colore
+scritto a mano. È la ragione per cui la modalità scura è quel file e poco
+altro: nessun componente sa in quale tema sta.
 
-- `styles/theme/assieme-preset.ts` — preset PrimeNG su base **Nora**
-- `styles/theme/ag-grid-theme.ts` — tema AG Grid via Theming API (i CSS dei
-  temi sono deprecati da v33)
+### Le due modalità
 
-Per cambiare l'aspetto di un componente PrimeNG **si parte sempre dal
-preset**. `styles/_primeng-overrides.scss` è l'eccezione, per i dettagli che
-i token non raggiungono, e ogni regola lì dentro va motivata. Tenerlo corto è
-un indicatore di salute del tema.
+Il tema si sceglie con `data-tema="chiaro|scuro"` sull'elemento radice.
 
-Due dettagli che sembrano minori e non lo sono:
+- **Chi lo posa:** `core/tema/tema-store.ts`. Tre scelte — `sistema`
+  (predefinita), `chiaro`, `scuro` — salvate in `localStorage` sotto
+  `velia.tema`. È una preferenza della **postazione**, non dell'account: non
+  passa dal server.
+- **Prima del bootstrap:** lo stesso attributo lo scrive uno script in linea
+  in `index.html`. Senza, chi sta nello scuro prende in faccia qualche
+  fotogramma di avorio mentre Angular parte.
+- **Senza JavaScript:** in coda a `_tokens.scss` c'è una regola
+  `@media (prefers-color-scheme: dark)` che vale finché l'attributo non c'è.
+- **Dove si cambia:** l'interruttore nella barra superiore (chiaro ↔ scuro) e
+  Impostazioni → Aspetto, che è l'unico posto da cui si torna a «come il
+  sistema».
 
-- **`--radius: 0` ovunque.** Nel design originale non esiste un solo elemento
-  arrotondato: è metà del carattere del prodotto.
-- **`color-scheme: light` su `:root`.** I preset PrimeNG esprimono quasi ogni
-  colore con la funzione CSS `light-dark()`, che sceglie in base a
-  `color-scheme` e non al selettore di tema. Senza quella riga, un utente col
-  sistema operativo in modalità scura vedrebbe i valori scuri anche a
-  modalità scura disattivata.
+### Le famiglie che non si ribaltano
+
+Due gruppi di token vanno letti con attenzione, perché il nome non basta:
+
+- **`--c-ink` e `--c-text-onink-*`** sono la **scena scura di marca** — la
+  schermata di accesso, il pannello di sviluppo. Restano scuri in tutti e due
+  i temi: non sono «il tema scuro», sono l'inchiostro del marchio.
+- **`--c-inverse` e `--c-text-oninverse`** sono «il contrario di dove sto», e
+  si ribaltano: il suggerimento a comparsa è una targhetta d'inchiostro nel
+  chiaro e d'avorio nello scuro.
+
+E `color-scheme` sta nei blocchi del tema, non in `_base.scss`: da lì passano
+barre di scorrimento, controlli nativi e il colore che il browser dipinge
+prima del CSS. Dichiararlo dove il tema si decide è l'unico modo perché le
+due cose non divergano.
+
+### Aggiungere un colore
+
+Se serve una tinta nuova, va aggiunta **in tutti e due i blocchi** di
+`_tokens.scss` e mai nel componente. Nello scuro non basta scurire il valore
+chiaro: i colori pieni vanno alzati per reggere come testo, e le ombre
+diventano nero pieno molto più denso, perché su un fondo già scuro un velo
+leggero non separa niente.
 
 ### Icone
 

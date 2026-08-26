@@ -7,6 +7,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#faf9f7" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+
+    <!--
+      Il tema, prima della prima pittura.
+
+      `TemaStore` fa la stessa cosa, ma arriva dopo il bootstrap di Angular:
+      per qualche fotogramma un utente in modalità scura vedrebbe l'avorio in
+      faccia. Sono le tre righe che valgono la pena di stare in linea qui —
+      leggono la stessa chiave e applicano lo stesso attributo.
+
+      Se `localStorage` è negato non fa niente e non è un problema: senza
+      attributo il CSS ricade sulla preferenza di sistema da solo.
+    -->
+    <script>
+      (function () {
+        try {
+          var scelta = localStorage.getItem('velia.tema');
+          var scuro =
+            scelta === 'scuro' ||
+            (scelta !== 'chiaro' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.dataset.tema = scuro ? 'scuro' : 'chiaro';
+          var barra = document.querySelector('meta[name="theme-color"]');
+          if (barra) barra.setAttribute('content', scuro ? '#151412' : '#faf9f7');
+        } catch (errore) {
+          /* decide il CSS */
+        }
+      })();
+    </script>
+
     <!-- Dove sta l'API, deciso al deploy e non alla compilazione (vedi public/config.js). -->
     <script src="config.js"></script>
 

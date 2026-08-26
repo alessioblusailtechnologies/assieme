@@ -1,9 +1,19 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
+import { TemaStore } from '@core/tema/tema-store';
 import { TokenStore } from '@core/auth/token-store';
 
 /**
@@ -46,6 +56,16 @@ import { TokenStore } from '@core/auth/token-store';
     </div>
 
     <div class="lato">
+      <!--
+        L'interruttore del tema. L'icona è la **destinazione**, non lo stato:
+        con la luna sopra si va allo scuro. La scelta fine — seguire il
+        sistema — sta in Impostazioni, qui c'è il gesto di tutti i giorni.
+      -->
+      <button class="tema" type="button" [title]="etichettaTema()" (click)="tema.alterna()">
+        <ui-icon [name]="tema.reso() === 'scuro' ? 'tema-chiaro' : 'tema-scuro'" [size]="16" />
+        <span class="visually-hidden">{{ etichettaTema() }}</span>
+      </button>
+
       <time class="mono orologio" [attr.datetime]="adesso().toISOString()">
         {{ adesso() | date: 'dd/MM/yyyy HH:mm' }}
       </time>
@@ -126,7 +146,6 @@ import { TokenStore } from '@core/auth/token-store';
       .menu {
         display: grid;
       }
-
     }
 
     /* La voce del prodotto e il ruolo: belli, ma sotto i 900px non ci
@@ -229,6 +248,7 @@ import { TokenStore } from '@core/auth/token-store';
       user-select: none;
     }
 
+    .tema,
     .esci {
       display: grid;
       place-items: center;
@@ -242,6 +262,7 @@ import { TokenStore } from '@core/auth/token-store';
       cursor: pointer;
     }
 
+    .tema:hover,
     .esci:hover {
       background: var(--c-page-alt);
       color: var(--c-text);
@@ -264,12 +285,18 @@ export class BarraSuperiore {
   readonly menu = output<void>();
 
   protected readonly sessione = inject(SessioneStore);
+  protected readonly tema = inject(TemaStore);
   private readonly token = inject(TokenStore);
   private readonly router = inject(Router);
 
   protected readonly adesso = signal(new Date());
 
   protected readonly autenticato = computed(() => Boolean(this.token.tokenAccesso()));
+
+  /** Dice dove si va, non dove si è: è quello che il pulsante fa. */
+  protected readonly etichettaTema = computed(() =>
+    this.tema.reso() === 'scuro' ? 'Passa al tema chiaro' : 'Passa al tema scuro',
+  );
 
   protected esci(): void {
     this.token.pulisci();

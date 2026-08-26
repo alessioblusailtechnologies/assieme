@@ -24,6 +24,7 @@ import Calendar03Icon from '@hugeicons/core-free-icons/Calendar03Icon';
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 import Clock01Icon from '@hugeicons/core-free-icons/Clock01Icon';
+import ComputerIcon from '@hugeicons/core-free-icons/ComputerIcon';
 import Copy01Icon from '@hugeicons/core-free-icons/Copy01Icon';
 import Delete02Icon from '@hugeicons/core-free-icons/Delete02Icon';
 import Download03Icon from '@hugeicons/core-free-icons/Download03Icon';
@@ -38,6 +39,7 @@ import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
 import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon';
 import Logout03Icon from '@hugeicons/core-free-icons/Logout03Icon';
 import Menu01Icon from '@hugeicons/core-free-icons/Menu01Icon';
+import Moon02Icon from '@hugeicons/core-free-icons/Moon02Icon';
 import MoreVerticalIcon from '@hugeicons/core-free-icons/MoreVerticalIcon';
 import PauseIcon from '@hugeicons/core-free-icons/PauseIcon';
 import PencilEdit02Icon from '@hugeicons/core-free-icons/PencilEdit02Icon';
@@ -53,6 +55,7 @@ import Share08Icon from '@hugeicons/core-free-icons/Share08Icon';
 import SidebarLeft01Icon from '@hugeicons/core-free-icons/SidebarLeft01Icon';
 import StarIcon from '@hugeicons/core-free-icons/StarIcon';
 import StopIcon from '@hugeicons/core-free-icons/StopIcon';
+import Sun03Icon from '@hugeicons/core-free-icons/Sun03Icon';
 import Table01Icon from '@hugeicons/core-free-icons/Table01Icon';
 import Upload03Icon from '@hugeicons/core-free-icons/Upload03Icon';
 import User03Icon from '@hugeicons/core-free-icons/User03Icon';
@@ -127,6 +130,11 @@ export const REGISTRO_ICONE = {
   'comprimi-barra': SidebarLeft01Icon,
   'espandi-giu': ArrowDown01Icon,
   'espandi-destra': ArrowRight01Icon,
+
+  // --- Tema ---
+  'tema-chiaro': Sun03Icon,
+  'tema-scuro': Moon02Icon,
+  'tema-sistema': ComputerIcon,
 } as const satisfies Record<string, IconSvgObject>;
 
 /** Nomi ammessi in `<ui-icon name="…">`. Un refuso è un errore di compilazione. */

@@ -51,6 +51,13 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
         loadComponent: () => import('./mcp/accesso-mcp').then((m) => m.AccessoMcp),
         title: 'Accesso MCP — Velia',
       },
+      {
+        /* L'unica sottosezione che non tocca il server: il tema è una
+           preferenza della postazione, non dell'agenzia. */
+        path: 'aspetto',
+        loadComponent: () => import('./aspetto/aspetto').then((m) => m.Aspetto),
+        title: 'Aspetto — Velia',
+      },
     ],
   },
 ];

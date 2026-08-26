@@ -72,10 +72,12 @@
 .vivo__velo {
   position: absolute;
   inset: 0;
+  /* Il velo è la carta stessa, sfumata: con `color-mix` segue il tema
+     invece di essere bianco per sempre. */
   background: linear-gradient(
     90deg,
     var(--c-surface) 34%,
-    rgb(255 255 255 / 55%) 56%,
+    color-mix(in srgb, var(--c-surface) 55%, transparent) 56%,
     transparent 78%
   );
   pointer-events: none;
@@ -327,7 +329,11 @@ ui-stato-vuoto {
   }
 
   .vivo__velo {
-    background: linear-gradient(90deg, var(--c-surface) 15%, rgb(255 255 255 / 40%) 100%);
+    background: linear-gradient(
+      90deg,
+      var(--c-surface) 15%,
+      color-mix(in srgb, var(--c-surface) 40%, transparent) 100%
+    );
   }
 
   .vivo__numeri {

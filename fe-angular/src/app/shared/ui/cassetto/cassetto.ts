@@ -49,7 +49,7 @@ import { Icona } from '@shared/ui/icona/icona';
       position: fixed;
       inset: 0;
       z-index: var(--z-dialog);
-      background: rgb(28 26 21 / 40%);
+      background: var(--c-scrim);
     }
 
     .pannello {
@@ -63,7 +63,7 @@ import { Icona } from '@shared/ui/icona/icona';
       max-width: 94vw;
       background: var(--c-surface);
       border-left: 1px solid var(--c-line);
-      box-shadow: -12px 0 32px rgb(28 26 21 / 12%);
+      box-shadow: -12px 0 32px var(--c-ombra);
       padding-top: var(--safe-top);
       padding-bottom: var(--safe-bottom);
     }

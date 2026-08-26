@@ -346,7 +346,7 @@
     padding-top: var(--safe-top);
     padding-bottom: var(--safe-bottom);
     padding-left: var(--safe-left);
-    box-shadow: 0 0 40px rgb(28 26 21 / 18%);
+    box-shadow: 0 0 40px var(--c-ombra-forte);
     transform: translateX(-104%);
     transition: transform var(--dur-fast) var(--ease-brand);
   }

@@ -172,8 +172,12 @@
   cursor: default;
 }
 
+/* Fermare non è inviare: il pulsante passa all'inverso della pagina —
+   inchiostro nel tema chiaro, avorio in quello scuro — e resta la cosa più
+   in vista del composer finché la risposta corre. */
 .campo__invia.is-ferma {
-  background: var(--c-ink);
+  background: var(--c-inverse);
+  color: var(--c-text-oninverse);
 }
 
 /* ---------- Dito, non mouse ---------- */

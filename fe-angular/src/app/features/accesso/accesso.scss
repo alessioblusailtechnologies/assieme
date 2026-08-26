@@ -65,7 +65,7 @@
   font-family: var(--f-sans);
   font-size: 14px;
   letter-spacing: 0.22em;
-  color: var(--c-text-oninverse-3);
+  color: var(--c-text-onink-3);
   margin: 0;
 }
 
@@ -81,7 +81,7 @@
   font-family: var(--f-serif);
   font-size: clamp(22px, 2.2vw, 30px);
   line-height: 1.2;
-  color: var(--c-text-oninverse);
+  color: var(--c-text-onink);
   margin: 0 0 8px;
 }
 
@@ -89,7 +89,7 @@
   font-family: var(--f-lettura);
   font-size: 13px;
   line-height: 1.6;
-  color: var(--c-text-oninverse-3);
+  color: var(--c-text-onink-3);
   margin: 0;
 }
 
@@ -99,7 +99,7 @@
   position: relative;
   z-index: 2;
   width: min(380px, 100%);
-  background: var(--c-surface);
+  background: var(--c-surface-onink);
   border: 1px solid var(--c-line);
   border-radius: 8px;
   padding: 36px 32px;

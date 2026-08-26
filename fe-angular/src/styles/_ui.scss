@@ -76,11 +76,12 @@
 
 .ui-bottone.is-pericolo {
   background: var(--c-neg);
-  color: #ffffff;
+  color: var(--c-azione-testo);
 }
 
 .ui-bottone.is-pericolo:hover:not(:disabled) {
-  filter: brightness(0.92);
+  /* Nel chiaro si scurisce, nello scuro si accende: il token sa in che tema sta. */
+  filter: brightness(var(--luce-hover));
 }
 
 .ui-bottone.is-piccolo {
@@ -215,9 +216,12 @@
   width: max-content;
   max-width: min(340px, 80vw);
   padding: var(--sp-2) var(--sp-3);
-  background: var(--c-ink);
+  /* L’inverso della pagina, non l’inchiostro: nel tema scuro la
+     targhetta è chiara, e resta la cosa più in rilievo dello schermo. */
+  background: var(--c-inverse);
   color: var(--c-text-oninverse);
   border-radius: var(--radius-sm);
+  box-shadow: 0 6px 20px var(--c-ombra);
   font-size: var(--t-xs);
   font-family: var(--f-sans);
   letter-spacing: normal;

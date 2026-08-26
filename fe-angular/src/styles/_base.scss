@@ -15,18 +15,16 @@ body {
 }
 
 /*
- * `color-scheme: light` non è pro forma.
+ * `color-scheme` non sta qui: sta in `_tokens.scss`, accanto ai colori del
+ * tema — è una loro proprietà, non un'impostazione di base.
  *
- * Molte librerie esprimono i colori con la funzione CSS
- * `light-dark(chiaro, scuro)`, che sceglie in base a `color-scheme` — non in
- * base al selettore di tema. Senza questa riga, un utente con il sistema
- * operativo in modalità scura vedrebbe i valori scuri anche se la modalità
- * scura dell'applicazione è disattivata: interfaccia a metà, colori del
- * brand a metà. VELIA per ora è solo chiara, e va dichiarato.
+ * Non è pro forma. Da lì passano le barre di scorrimento, i controlli
+ * nativi dei campi e il colore che il browser dipinge prima del CSS; e
+ * molte librerie esprimono i colori con la funzione `light-dark(chiaro,
+ * scuro)`, che sceglie proprio in base a `color-scheme` e non al selettore
+ * di tema. Dichiararlo dove il tema si decide è l'unico modo perché le due
+ * cose non divergano mai.
  */
-:root {
-  color-scheme: light;
-}
 
 body {
   margin: 0;
@@ -124,5 +122,30 @@ a:hover {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Il passaggio fra i due temi.
+ *
+ * Senza, lo scambio è uno sbattere di palpebre: mille elementi cambiano
+ * colore nello stesso fotogramma. Con una transizione breve su fondi,
+ * bordi e testo, invece, l'interfaccia *si abbassa la luce* — e si capisce
+ * che è successo per volontà di chi ha premuto.
+ *
+ * La classe la mette e la toglie `TemaStore`, e vive un quarto di secondo:
+ * lasciare una transizione su `*` sarebbe far animare mezza pagina a ogni
+ * passaggio del mouse. Chi ha chiesto meno movimento non la vede affatto.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  :root.tema-in-transito,
+  :root.tema-in-transito *,
+  :root.tema-in-transito *::before,
+  :root.tema-in-transito *::after {
+    transition:
+      background-color 220ms var(--ease-brand),
+      border-color 220ms var(--ease-brand),
+      box-shadow 220ms var(--ease-brand),
+      color 220ms var(--ease-brand) !important;
   }
 }

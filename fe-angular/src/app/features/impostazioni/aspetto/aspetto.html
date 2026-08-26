@@ -1,0 +1,65 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Aspetto</h1>
+  <p class="testata__spiega">
+    Come VELIA si presenta su questo computer. La scelta resta qui e non segue l'account: la stessa
+    persona può volere lo scuro sul portatile della sera e il chiaro sul monitor dell'ufficio.
+  </p>
+</header>
+
+<fieldset class="scelte">
+  <legend class="visually-hidden">Tema dell'interfaccia</legend>
+
+  @for (opzione of opzioni; track opzione.valore) {
+    <label class="scelta" [class.is-attiva]="tema.scelta() === opzione.valore">
+      <input
+        class="visually-hidden"
+        type="radio"
+        name="tema"
+        [value]="opzione.valore"
+        [checked]="tema.scelta() === opzione.valore"
+        (change)="tema.imposta(opzione.valore)"
+      />
+
+      <!--
+        La miniatura non è un'icona: è l'interfaccia in piccolo, dipinta con
+        i primitivi veri dei due temi. Se domani la palette cambia, cambia
+        anche qui — non c'è nessun colore scritto a mano.
+      -->
+      <span class="anteprima" [class.is-doppia]="opzione.lati.length > 1" aria-hidden="true">
+        @for (lato of opzione.lati; track lato) {
+          <span
+            class="lato"
+            [class.lato--chiaro]="lato === 'chiaro'"
+            [class.lato--scuro]="lato === 'scuro'"
+          >
+            <span class="lato__barra"></span>
+            <span class="lato__corpo">
+              <span class="lato__riga"></span>
+              <span class="lato__riga lato__riga--corta"></span>
+              <span class="lato__blocco"></span>
+            </span>
+          </span>
+        }
+      </span>
+
+      <span class="scelta__testa">
+        <ui-icon [name]="opzione.icona" [size]="15" />
+        <span class="scelta__nome">{{ opzione.nome }}</span>
+        @if (tema.scelta() === opzione.valore) {
+          <ui-icon class="scelta__spunta" name="pronto" [size]="15" />
+        }
+      </span>
+
+      <span class="scelta__spiega">{{ opzione.spiega }}</span>
+    </label>
+  }
+</fieldset>
+
+@if (tema.scelta() === 'sistema') {
+  <p class="nota">
+    <ui-icon name="informazione" [size]="14" />
+    Adesso il sistema è in modalità
+    <strong>{{ tema.reso() === 'scuro' ? 'scura' : 'chiara' }}</strong
+    >, e VELIA la segue. Cambierà da sola quando cambia lui.
+  </p>
+}

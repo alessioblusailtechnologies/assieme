@@ -185,6 +185,8 @@ code {
   max-width: 180px;
   border: 1px solid var(--c-line-soft);
   padding: var(--sp-1);
+  /* Bianco anche nel tema scuro, e di proposito: il logo dell'agenzia è
+     quasi sempre scuro su trasparente, e su fondo scuro sparirebbe. */
   background: #fff;
 }
 

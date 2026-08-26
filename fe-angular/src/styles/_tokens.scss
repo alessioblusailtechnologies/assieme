@@ -8,14 +8,30 @@
  * gradino della scala primitiva. Cambiare la palette è cambiare questa
  * sezione, non i componenti.
  *
- * L'estetica: fondo avorio, superfici bianche con bordi tenui e angoli
- * arrotondati, un'unica azione primaria scura per schermata, accento blu
+ * L'estetica chiara: fondo avorio, superfici bianche con bordi tenui e
+ * angoli arrotondati, un'unica azione primaria per schermata, accento blu
  * VELIA per collegamenti, selezioni e stati attivi.
+ *
+ * ## I due temi
+ *
+ * Le scale primitive sono due — `--n-*` per il chiaro, `--s-*` per lo scuro —
+ * e i semantici cambiano puntamento in blocco. È il motivo per cui la
+ * modalità scura è **questo file e poco altro**: nessun componente sa in
+ * quale tema sta.
+ *
+ * Il tema si sceglie con `data-tema="chiaro|scuro"` sull'elemento radice —
+ * lo posa `TemaStore`, e prima di lui lo script in `index.html`, così la
+ * prima pittura è già del colore giusto. Senza l'attributo vale la
+ * preferenza di sistema: è la regola in coda, e serve al caso, raro, in cui
+ * il JavaScript non sia ancora arrivato.
+ *
+ * Fuori dai colori nulla cambia fra i due temi: tipografia, spaziature,
+ * angoli e livelli stanno una volta sola, in `:root`.
  */
 
 :root {
   /* ==========================================================
-   * 1. Primitivi — la scala dei neutri caldi
+   * 1. Primitivi — la scala dei neutri caldi (tema chiaro)
    * ========================================================== */
 
   --n-0: #ffffff;
@@ -33,21 +49,68 @@
   --n-950: #1c1a15; /* l'inchiostro caldo */
 
   /* ==========================================================
-   * 2. Semantici — nominati per intento
+   * 2. Primitivi — la scala dello scuro
+   *
+   * Stessa tinta calda, letta al contrario: qui l'indice cresce **verso la
+   * luce**. `--s-50` è la pagina, `--s-950` è il testo.
+   *
+   * Non è la scala chiara ribaltata a specchio. Nel buio i gradini bassi
+   * vanno tenuti stretti — fra pagina e carta corrono pochi punti di
+   * luminosità, altrimenti le superfici si staccano come cartoni
+   * sovrapposti — e quelli alti larghi, perché il grigio chiaro su fondo
+   * scuro perde contrasto molto più in fretta di quanto il grigio scuro lo
+   * perda sul bianco.
    * ========================================================== */
 
+  --s-0: #0f0e0c; /* il fondo più profondo */
+  --s-50: #151412; /* la pagina */
+  --s-100: #1c1b18; /* la carta: pannelli, schede, testata */
+  --s-150: #21201c;
+  --s-200: #272521; /* il rilievo: passaggio del mouse, riga attiva */
+  --s-300: #322f2a; /* i filetti */
+  --s-400: #413d36;
+  --s-500: #5c574e;
+  --s-600: #8b8579;
+  --s-700: #a29c90;
+  --s-800: #c6c0b4;
+  --s-900: #e2ddd3;
+  --s-950: #f2efe8; /* l'inchiostro chiaro: il testo */
+
+  /* ==========================================================
+   * 3. Semantici — nominati per intento (tema chiaro)
+   * ========================================================== */
+
+  color-scheme: light;
+
   /* ---------- Superfici ---------- */
-  --c-ink: var(--n-950);
   --c-page: var(--n-100);
   --c-page-alt: var(--n-200);
   --c-surface: var(--n-0);
   --c-surface-soft: var(--n-50);
   --c-surface-tint: var(--n-150);
 
-  /* ---------- Superfici scure ---------- */
+  /* ---------- La scena scura di marca ----------
+   * Non è «il tema scuro»: è l'inchiostro del marchio, e resta lo stesso
+   * nei due temi — la schermata di accesso e il pannello di sviluppo sono
+   * scuri anche quando l'applicazione è chiara, e restano tali quando è
+   * scura. Il testo che ci sta sopra è la famiglia `--c-text-onink-*`.
+   */
+  --c-ink: var(--n-950);
+  /* La carta posata sulla scena: la scheda di accesso. Nel chiaro è bianca
+     sull'inchiostro; nello scuro non può esserlo — dentro ci vivono campi e
+     testo del tema — e diventa il gradino sollevato, che dal cielo si
+     stacca lo stesso. */
+  --c-surface-onink: var(--n-0);
   --c-ink-raise: var(--n-900);
   --c-ink-raise-2: var(--n-800);
   --c-ink-hatch: var(--n-900);
+
+  /* ---------- L'inverso della pagina ----------
+   * Questo invece si ribalta col tema: è «il contrario di dove sto» — il
+   * suggerimento a comparsa, il pulsante che ferma la risposta.
+   */
+  --c-inverse: var(--n-950);
+  --c-text-oninverse: #ffffff;
 
   /* ---------- Bordi ---------- */
   --c-line: var(--n-300);
@@ -64,16 +127,21 @@
   --c-text-mute: var(--n-500);
   --c-text-ghost: var(--n-400);
 
-  --c-text-oninverse: #ffffff;
-  --c-text-oninverse-2: #d9d6cd;
-  --c-text-oninverse-3: #a5a196;
-  --c-text-oninverse-4: #b9b6ac;
-  --c-text-oninverse-mute: #6f6b60;
-  --c-text-oninverse-hatch: #7d7970;
+  /* Sulla scena scura di marca: fermi nei due temi. */
+  --c-text-onink: #ffffff;
+  --c-text-onink-2: #d9d6cd;
+  --c-text-onink-3: #a5a196;
+  --c-text-onink-4: #b9b6ac;
+  --c-text-onink-mute: #6f6b60;
+  --c-text-onink-hatch: #7d7970;
 
   /* ---------- Azione primaria ----------
    * Una per schermata, piena, nel blu del marchio — lo stesso del quadrato
    * del logo. Il gesto principale si riconosce prima di leggerlo.
+   *
+   * Nel chiaro coincide con l'accento; nello scuro no, ed è il motivo per
+   * cui è un token suo: lì l'accento si alza per reggere come testo, e a
+   * quel punto il bianco sopra non tiene più.
    */
   --c-azione: var(--c-accent);
   --c-azione-hover: var(--c-accent-hover);
@@ -88,9 +156,32 @@
   --c-accent-hover: #263c63;
   --c-accent-hairline: #cfccc2;
 
+  /* ---------- Marchio ----------
+   * Il quadrato con la V. Non segue l'accento: quello nello scuro si
+   * schiarisce, e la lettera bianca ci si perderebbe dentro.
+   */
+  --c-marchio: #2f4b7c;
+  --c-marchio-segno: #ffffff;
+
   /* ---------- Semantico ---------- */
   --c-neg: #a63d2f; /* condizione peggiorativa */
   --c-pos: #2e6b4f; /* condizione migliorativa */
+
+  /* ---------- Ombre e veli ----------
+   * Un colore, non un'ombra intera: il componente compone l'offset che
+   * serve a lui (`0 8px 24px var(--c-ombra)`) e il tema decide soltanto di
+   * che colore e di quanto peso. Nello scuro non sono le stesse ombre più
+   * cupe: sono nero pieno e molto più dense, perché su un fondo già scuro
+   * un velo leggero non separa niente.
+   */
+  --c-ombra: rgb(28 26 21 / 12%);
+  --c-ombra-forte: rgb(28 26 21 / 18%);
+  --c-ombra-lieve: rgb(28 26 21 / 9%);
+  --c-scrim: rgb(28 26 21 / 40%); /* il fondo dietro cassetti e finestre */
+
+  /* Quanto schiarire o scurire al passaggio del mouse: nel chiaro si
+     scurisce, nello scuro si accende. */
+  --luce-hover: 0.92;
 
   /* ---------- Tipografia ----------
    * Un solo carattere per tutto: TWK Ghost (self-ospitato, `_fonts.scss`) —
@@ -182,4 +273,117 @@
   --z-dialog: 200;
   --z-toast: 300;
   --z-devtools: 900;
+}
+
+/* ==========================================================
+ * 4. Il tema scuro
+ *
+ * Solo i colori: tutto il resto è già in `:root` e non cambia. I token
+ * derivati per riferimento — `--c-info`, gli `--c-stato-*` — seguono da
+ * soli, perché una variabile CSS si risolve dove la si usa e non dove la si
+ * scrive: basta spostare la base.
+ * ========================================================== */
+
+@mixin tema-scuro {
+  /*
+   * `color-scheme: dark` non è pro forma: da lì passano le barre di
+   * scorrimento, i controlli nativi dei campi e il colore che il browser
+   * dipinge prima del CSS. Senza, restano bianchi in mezzo al buio.
+   */
+  color-scheme: dark;
+
+  /* ---------- Superfici ----------
+   * La carta resta più chiara della pagina, come nel tema chiaro: il
+   * rilievo si legge nello stesso verso, e nessun componente deve
+   * ripensare la propria gerarchia.
+   */
+  --c-page: var(--s-50);
+  --c-page-alt: var(--s-200);
+  --c-surface: var(--s-100);
+  --c-surface-soft: var(--s-150);
+  --c-surface-tint: var(--s-200);
+
+  /* ---------- L'inverso della pagina ----------
+   * Qui il contrario di «scuro» è chiaro: il suggerimento a comparsa
+   * diventa una targhetta d'avorio, come nel chiaro era una targhetta
+   * d'inchiostro.
+   */
+  --c-inverse: var(--s-900);
+  --c-text-oninverse: var(--s-0);
+
+  --c-surface-onink: var(--s-200);
+
+  /* ---------- Bordi ---------- */
+  --c-line: var(--s-300);
+  --c-line-soft: var(--s-200);
+  --c-line-dark: var(--s-400);
+
+  /* ---------- Testo ----------
+   * Il vertice non è il bianco pieno: su fondo scuro il #fff vibra e
+   * affatica sulle righe lunghe. `--s-950` è un avorio molto chiaro, e a
+   * 14:1 di contrasto non toglie nulla alla leggibilità.
+   */
+  --c-text: var(--s-950);
+  --c-text-2: var(--s-800);
+  --c-text-3: var(--s-700);
+  --c-text-4: #948e82;
+  --c-text-mute: var(--s-600);
+  --c-text-ghost: var(--s-500);
+
+  /* ---------- Azione e accento ----------
+   * L'accento si alza per reggere come testo sul fondo scuro (7:1); il blu
+   * dell'azione resta pieno ma schiarito quanto basta a tenersi il bianco
+   * sopra (5,9:1). E al passaggio del mouse, qui, si schiarisce.
+   */
+  --c-accent: #8fa7d6;
+  --c-accent-soft: #23304a;
+  --c-accent-hover: #4b73c0;
+  --c-accent-hairline: #3d3931;
+
+  --c-azione: #3f63a8;
+  --c-azione-hover: #4b73c0;
+  --c-azione-testo: #ffffff;
+
+  --c-marchio: #3f63a8;
+
+  /* ---------- Semantico ---------- */
+  --c-neg: #e58575;
+  --c-neg-soft: #331d19;
+  --c-pos: #6ec49b;
+  --c-pos-soft: #16281f;
+  --c-warn: #dda94b;
+  --c-warn-soft: #2f2410;
+
+  /* ---------- Provenienza ---------- */
+  --c-prov-regola: #bda0dd;
+  --c-prov-regola-soft: #271f33;
+  --c-prov-riferimento: #82c0cf;
+  --c-prov-riferimento-soft: #14272c;
+  --c-prov-memoria: #d6ab7c;
+  --c-prov-memoria-soft: #2c2116;
+
+  /* ---------- Ombre e veli ---------- */
+  --c-ombra: rgb(0 0 0 / 55%);
+  --c-ombra-forte: rgb(0 0 0 / 68%);
+  --c-ombra-lieve: rgb(0 0 0 / 45%);
+  --c-scrim: rgb(0 0 0 / 62%);
+
+  --luce-hover: 1.12;
+}
+
+/* La scelta esplicita dell'utente. */
+:root[data-tema='scuro'] {
+  @include tema-scuro;
+}
+
+/*
+ * La preferenza di sistema, per il solo istante in cui l'attributo non c'è
+ * ancora — o per sempre, se il JavaScript non parte.
+ * `:not([data-tema='chiaro'])` e non `:not([data-tema])`: chi ha scelto il
+ * chiaro lo vuole anche col sistema in scuro.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema='chiaro']) {
+    @include tema-scuro;
+  }
 }
