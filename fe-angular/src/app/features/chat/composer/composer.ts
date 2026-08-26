@@ -24,6 +24,7 @@ import {
   posizionaCursore,
   posizioneCursore,
   ripulisciSeVuoto,
+  scriviDopoChip,
   sostituisciIntervallo,
   testoEditor,
 } from './editor-testo';
@@ -153,7 +154,9 @@ export class Composer {
 
   /**
    * Documento scelto: la `@query` diventa il chip, lì dove stava. Il fuoco
-   * non si è mai mosso dal campo; il cursore resta subito dopo il chip.
+   * non si è mai mosso dal campo; il cursore resta subito dopo il chip —
+   * anche quando davanti ce n'è già un altro, che è il caso in cui prima
+   * finiva in mezzo ai due.
    */
   protected referenzia(documento: RiferimentoDocumento): void {
     const menzione = this.menzione();
@@ -164,7 +167,7 @@ export class Composer {
     const a = menzione ? this.cursore() : this.cursore();
     sostituisciIntervallo(editor, da, a, chip);
     // Uno spazio dopo il chip: si continua a scrivere senza incollarsi.
-    sostituisciIntervallo(editor, testoAlPunto(editor, chip), testoAlPunto(editor, chip), document.createTextNode(' '));
+    scriviDopoChip(editor, chip, ' ');
     this.store.aggiungiRiferimento(documento);
     this.aggiorna();
   }
@@ -258,14 +261,4 @@ export class Composer {
     ripulisciSeVuoto(editor);
     this.cursore.set(posizioneCursore(editor, document.getSelection()));
   }
-}
-
-/** La posizione di testo subito dopo un chip (i chip non contano caratteri). */
-function testoAlPunto(editor: HTMLElement, chip: HTMLElement): number {
-  const intervallo = editor.ownerDocument.createRange();
-  intervallo.setStart(editor, 0);
-  intervallo.setEndAfter(chip);
-  const contenitore = document.createElement('div');
-  contenitore.append(intervallo.cloneContents());
-  return testoEditor(contenitore).length;
 }

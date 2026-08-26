@@ -166,6 +166,36 @@ export function sostituisciIntervallo(radice: HTMLElement, da: number, a: number
   radice.normalize();
 }
 
+/**
+ * Scrive del testo **subito dopo un chip** e ci lascia il cursore.
+ *
+ * Non passa dalle posizioni di testo, e non è un dettaglio: i chip non
+ * contano caratteri, quindi in `[chip A]" "[chip B]` la posizione 1 è due
+ * punti diversi del DOM — dopo lo spazio e dopo il chip B — e
+ * `puntoDaPosizione` sceglie sempre il primo. Chiedere «lo spazio dopo il
+ * secondo chip» per posizione lo faceva finire *fra* i due, cursore
+ * compreso. Qui il riferimento è il chip, e l'ambiguità non si pone.
+ */
+export function scriviDopoChip(radice: HTMLElement, chip: HTMLElement, testo: string): void {
+  const documento = radice.ownerDocument;
+  chip.parentNode?.insertBefore(documento.createTextNode(testo), chip.nextSibling);
+
+  /* Prima si normalizza, poi si punta: `normalize()` fonde il nodo appena
+     messo con il testo che segue, e un cursore posato prima resterebbe
+     appeso a un nodo che non esiste più. */
+  radice.normalize();
+
+  const selezione = documento.getSelection();
+  if (!selezione) return;
+  const seguito = chip.nextSibling;
+  const intervallo = documento.createRange();
+  if (seguito?.nodeType === Node.TEXT_NODE) intervallo.setStart(seguito, testo.length);
+  else intervallo.setStartAfter(chip);
+  intervallo.collapse(true);
+  selezione.removeAllRanges();
+  selezione.addRange(intervallo);
+}
+
 /** L'editor è vuoto davvero (niente testo, niente chip)? Allora si svuota anche dei `<br>` residui. */
 export function ripulisciSeVuoto(radice: HTMLElement): boolean {
   if (testoEditor(radice).trim() === '' && !radice.querySelector(`.${CLASSE_CHIP}`)) {

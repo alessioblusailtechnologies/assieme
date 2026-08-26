@@ -6,6 +6,7 @@ import {
   posizioneCursore,
   puntoDaPosizione,
   ripulisciSeVuoto,
+  scriviDopoChip,
   sostituisciIntervallo,
   testoEditor,
 } from './editor-testo';
@@ -17,6 +18,17 @@ function editorDiProva(): { radice: HTMLDivElement; chip: HTMLElement } {
   const chip = creaChipDocumento({ id: 'doc-1', titolo: 'DIP Danni', archivio: 'pubblico' }, () => undefined);
   radice.append(document.createTextNode('Ciao '), chip, document.createTextNode(' come va'));
   return { radice, chip };
+}
+
+/** La struttura dell'editor in una riga: `[doc-1]" "[doc-2]`. */
+function mappa(radice: HTMLElement): string {
+  return Array.from(radice.childNodes)
+    .map((n) =>
+      n.nodeType === Node.ELEMENT_NODE && (n as HTMLElement).classList.contains('riferimento')
+        ? `[${(n as HTMLElement).getAttribute('data-id')}]`
+        : JSON.stringify(n.textContent),
+    )
+    .join('');
 }
 
 describe('editor-testo', () => {
@@ -87,5 +99,53 @@ describe('editor-testo', () => {
     vuoto.append(document.createElement('br'));
     expect(ripulisciSeVuoto(vuoto)).toBe(true);
     expect(vuoto.childNodes.length).toBe(0);
+  });
+
+  it('scriviDopoChip fonde col testo che segue e lascia il cursore dopo lo spazio', () => {
+    const radice = document.createElement('div');
+    document.body.append(radice);
+    const chip = creaChipDocumento({ id: 'doc-1', titolo: 'DIP', archivio: 'pubblico' }, () => undefined);
+    radice.append(chip, document.createTextNode('poi'));
+
+    scriviDopoChip(radice, chip, ' ');
+
+    /* Un nodo di testo solo: `normalize()` ha fuso lo spazio con «poi». */
+    expect(mappa(radice)).toBe('[doc-1]" poi"');
+    const selezione = document.getSelection()!;
+    expect(selezione.focusNode).toBe(chip.nextSibling);
+    expect(selezione.focusOffset).toBe(1);
+  });
+
+  /*
+   * Il difetto: i chip non contano caratteri, quindi in `[A]" "[B]` la
+   * posizione di testo 1 è due punti diversi del DOM. Chiedere lo spazio
+   * «alla posizione dopo B» lo faceva finire prima di B, e il cursore con
+   * lui — in mezzo ai due riferimenti.
+   */
+  it('il secondo riferimento non lascia il cursore fra i due chip', () => {
+    const radice = document.createElement('div');
+    document.body.append(radice);
+
+    // Primo: si digita «@», si sceglie, e dopo il chip resta uno spazio.
+    radice.append(document.createTextNode('@'));
+    const primo = creaChipDocumento({ id: 'doc-1', titolo: 'DIP', archivio: 'pubblico' }, () => undefined);
+    sostituisciIntervallo(radice, 0, 1, primo);
+    scriviDopoChip(radice, primo, ' ');
+    expect(mappa(radice)).toBe('[doc-1]" "');
+    expect(posizioneCursore(radice, document.getSelection())).toBe(1);
+
+    // Secondo: la «@» si scrive in coda e diventa il chip lì dov'era.
+    sostituisciIntervallo(radice, 1, 1, document.createTextNode('@'));
+    const secondo = creaChipDocumento({ id: 'doc-2', titolo: 'CdA', archivio: 'privato' }, () => undefined);
+    sostituisciIntervallo(radice, 1, 2, secondo);
+    scriviDopoChip(radice, secondo, ' ');
+
+    expect(mappa(radice)).toBe('[doc-1]" "[doc-2]" "');
+    expect(idChip(radice)).toEqual(['doc-1', 'doc-2']);
+    expect(testoEditor(radice)).toBe('  ');
+
+    const selezione = document.getSelection()!;
+    expect(selezione.focusNode).toBe(secondo.nextSibling);
+    expect(selezione.focusOffset).toBe(1);
   });
 });
