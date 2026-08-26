@@ -44,6 +44,13 @@ const schemaAmbiente = z.object({
    */
   MODELLO_TABELLE: z.string().optional(),
   /**
+   * Il modello dell'estrazione dei ricordi (Fase 8): un compito da lettore,
+   * non da consulente, che gira dopo OGNI risposta. Fisso, non segue il
+   * modello del tenant: su Opus pesava fino al 40% dei job semplici
+   * (analisi consumi del 26/08/2026) per dire quasi sempre «niente».
+   */
+  MODELLO_MEMORIA: z.string().default('claude-sonnet-5'),
+  /**
    * Modelli open hostati in Europa via HostYourAI (API Anthropic-compatibili,
    * RF-D-03): con la chiave, le voci HostYourAI del catalogo diventano
    * selezionabili e il motore le chiama con la stessa sessione, cambiando
@@ -54,6 +61,13 @@ const schemaAmbiente = z.object({
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
+  /**
+   * Ripresa di sessione nel multi-turno: il messaggio successivo riprende la
+   * sessione SDK del precedente (trascrizione sul disco del worker) invece
+   * di ripartire con la storia nel prompt. Misura del 26/08/2026: follow-up
+   * a -76% di costo. `no` per tornare al job pieno a ogni messaggio.
+   */
+  MOTORE_RIPRESA: z.enum(['si', 'no']).default('si'),
   /**
    * Quanto silenzio del modello (nessun evento di stream) prima di chiudere
    * la sessione con errore: una chiamata appesa su un gateway terzo non

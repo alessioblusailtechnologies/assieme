@@ -56,6 +56,14 @@ export interface RichiestaMotore {
     /** Solo questi strumenti, niente lettura locale: la sessione documentale vive nella sandbox. */
     esclusivi?: boolean;
   };
+  /**
+   * Ripresa di sessione (multi-turno): con `persisti` la trascrizione resta
+   * su disco e l'esito riporta il `sessioneId`; con `riprendi` la sessione
+   * riparte da quella trascrizione, e il prompt utente è la sola domanda
+   * nuova — i documenti già letti sono nel contesto (in cache), non si
+   * rileggono. Vale solo con la stessa `directory` di lavoro.
+   */
+  sessione?: { persisti: boolean; riprendi?: string };
 }
 
 export interface OsservatoreSessione {
@@ -78,6 +86,8 @@ export interface EsitoSessione {
   documentiLetti: string[];
   /** Vero se l'input in `token` è stimato dal contesto (gateway che non lo riporta). */
   tokenStimati?: boolean;
+  /** L'id della sessione SDK, da riprendere al messaggio successivo (solo se persistita). */
+  sessioneId?: string;
 }
 
 export interface Motore {
@@ -173,7 +183,8 @@ export class MotoreAgentSdk implements Motore {
       permissionMode: 'default',
       maxTurns: this.opzioni.maxTurni,
       maxBudgetUsd: this.opzioni.budgetUsd,
-      persistSession: false,
+      persistSession: richiesta.sessione?.persisti ?? false,
+      ...(richiesta.sessione?.riprendi && { resume: richiesta.sessione.riprendi }),
       settingSources: [],
       includePartialMessages: true,
       abortController: controllo,
@@ -212,9 +223,11 @@ export class MotoreAgentSdk implements Motore {
     let inputStimato = false;
 
     let esito: EsitoSessione | undefined;
+    let sessioneId: string | undefined;
     try {
       for await (const messaggio of sessione) {
         ultimoSegnale = Date.now();
+        if (messaggio.type === 'system' && messaggio.subtype === 'init') sessioneId = messaggio.session_id;
         if (messaggio.type === 'stream_event' && messaggio.parent_tool_use_id === null) {
           const evento = messaggio.event;
           /* I token si contano qui, turno per turno, dagli eventi grezzi: il
@@ -260,6 +273,7 @@ export class MotoreAgentSdk implements Motore {
             contati,
             inputStimato,
           );
+          if (richiesta.sessione?.persisti && sessioneId) esito.sessioneId = sessioneId;
         }
       }
     } catch (errore) {

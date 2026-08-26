@@ -9,8 +9,9 @@ import type { CandidatoRicordo } from './perimetro.js';
 
 /**
  * L'estrazione dei candidati ricordi (RF-G-01) dagli scambi di una
- * conversazione: lo STESSO motore della chat e delle tabelle (Agent SDK,
- * modello del tenant — RF-D-02: lo switch da Impostazioni vale anche qui)
+ * conversazione: lo STESSO motore della chat e delle tabelle (Agent SDK)
+ * ma col suo modello (MODELLO_MEMORIA, non quello del tenant: è un compito
+ * da lettore che gira dopo ogni risposta, non vale un modello di punta)
  * legge gli scambi e propone ciò che vale la pena tenere — prassi
  * dell'agenzia, contesto su un cliente, preferenze dell'utente, decisioni.
  * Il worker poi valida (perimetro GDPR, doppioni) e persiste: il modello

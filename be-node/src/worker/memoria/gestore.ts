@@ -92,10 +92,11 @@ export async function apprendi(
   );
   const impronteNote = new Set(noti.rows.map((r) => r.impronta));
 
+  /* Il modello è quello dell'estrattore (MODELLO_MEMORIA), non quello del
+     tenant: è un compito da lettore che gira dopo ogni risposta. */
   const esito = await estrattore.estrai(
     scambi.rows.map(({ autore, testo }) => ({ autore, testo })),
     noti.rows.map((r) => r.testo),
-    { ...(conversazione.modello_motore && { modello: conversazione.modello_motore }) },
   );
   await db.query(
     `insert into velia.consumi

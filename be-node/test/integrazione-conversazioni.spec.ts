@@ -117,10 +117,15 @@ class MotoreFinto implements Motore {
       costoUsd: 0.01,
       token: { input: 100, output: 50, cacheLettura: 0, cacheScrittura: 0 },
       documentiLetti: [],
+      /* Come l'SDK: una sessione persistita ha un id, e riprendendola resta lo stesso. */
+      ...(r.sessione?.persisti && { sessioneId: r.sessione.riprendi ?? 'sessione-finta' }),
       ...parziale,
     };
   }
 }
+
+/** Le trascrizioni «sul disco» del worker finto: il test decide quali esistono ancora. */
+const trascrizioni = new Set<string>();
 
 describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
   const pool = () => poolDb();
@@ -169,6 +174,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       archivio,
       radice,
       attesaAllegatiMs: 1000,
+      ripresaSessione: { esiste: (id) => Promise.resolve(trascrizioni.has(id)) },
       generatoreTitolo: { genera: () => Promise.resolve('Franchigie cristalli Km&Servizi') },
       /* La memoria impara in linea a ogni risposta (Fase 8): un estrattore
          a copione, col primo candidato dentro il perimetro. */
@@ -366,6 +372,42 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(consumi.rowCount).toBeGreaterThan(0);
     const job = await pool().query<{ stato: string }>(`select stato from velia.jobs where tipo = 'interrogazione' and payload->>'conversazioneId' = $1 order by created_at desc limit 1`, [convId]);
     expect(job.rows[0]?.stato).toBe('completato');
+
+    // La prima risposta ha persistito la sessione SDK: la conversazione ne ricorda l'id.
+    expect(motore.richieste.at(-1)?.sessione).toEqual({ persisti: true });
+    const sess = await pool().query<{ sessione_sdk: string | null }>(`select sessione_sdk from velia.conversazioni where id = $1`, [convId]);
+    expect(sess.rows[0]?.sessione_sdk).toBe('sessione-finta');
+  });
+
+  it('il messaggio dopo riprende la sessione SDK (niente storia nel prompt); senza trascrizione riparte pieno, con la storia', async () => {
+    const risposta = (domanda: string) =>
+      `${domanda} → ok.\n\n${MARCATORE_CITAZIONI}\n${JSON.stringify({ citazioni: [], provenienze: [], nonSupportato: true })}\n\`\`\``;
+    motore.copione = (r) => Promise.resolve({ testo: risposta(r.promptUtente.split('\n').at(-1) ?? '') });
+
+    /* La trascrizione c'è: si riprende, e la domanda nuova è tutto il prompt. */
+    trascrizioni.add('sessione-finta');
+    let stream = richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: 'E per il furto?', documentiReferenziati: [] });
+    await aspettaJob('E per il furto?');
+    await lavoraTutto();
+    expect((await stream).statusCode).toBe(200);
+    let r = motore.richieste.at(-1)!;
+    expect(r.sessione).toEqual({ persisti: true, riprendi: 'sessione-finta' });
+    expect(r.promptUtente).not.toContain('Conversazione finora');
+    expect(r.promptUtente).not.toContain('Che franchigia');
+    expect(r.promptUtente).toContain('E per il furto?');
+
+    /* La trascrizione non c'è più (altro host, disco pulito): job pieno con la storia dal DB. */
+    trascrizioni.clear();
+    stream = richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: 'E l’incendio?', documentiReferenziati: [] });
+    await aspettaJob('E l’incendio?');
+    await lavoraTutto();
+    expect((await stream).statusCode).toBe(200);
+    r = motore.richieste.at(-1)!;
+    expect(r.sessione).toEqual({ persisti: true });
+    expect(r.promptUtente).toContain('Conversazione finora');
+    expect(r.promptUtente).toContain('Che franchigia');
+    expect(r.promptUtente).toContain('E per il furto?');
+    expect(r.promptUtente).toContain('E l’incendio?');
   });
 
   it('messaggio vuoto → 400; una risposta con citazioni inventate → evento errore, niente messaggio, job fallito', async () => {

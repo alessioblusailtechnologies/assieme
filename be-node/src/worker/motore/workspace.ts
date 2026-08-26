@@ -86,6 +86,12 @@ export interface OpzioniWorkspace {
   /** Radice delle workspace e della cache sul disco del worker. */
   radice: string;
   jobId: string;
+  /**
+   * Il nome della cartella sotto `workspace/`: di default il job. La chat
+   * passa la conversazione, perché la ripresa di sessione dell'SDK richiede
+   * la stessa directory di lavoro da un messaggio all'altro.
+   */
+  cartella?: string;
   /** Gli id del contesto della conversazione (allegati compresi). */
   contestoIds: string[];
 }
@@ -95,7 +101,7 @@ const TTL_INDICI_MS = 60 * 60 * 1000;
 
 export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<Workspace> {
   const { db, archivio, tenantId, radice, jobId, contestoIds } = opzioni;
-  const directory = join(radice, 'workspace', jobId);
+  const directory = join(radice, 'workspace', opzioni.cartella ?? jobId);
   const cache = new Cache(join(radice, 'cache'), archivio);
   await rm(directory, { recursive: true, force: true });
   await mkdir(directory, { recursive: true });

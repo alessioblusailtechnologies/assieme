@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 
+import { getSessionInfo } from '@anthropic-ai/claude-agent-sdk';
 import type pg from 'pg';
 
 import { configurazione } from '../config.js';
@@ -86,13 +87,13 @@ function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
   return sandboxVera;
 }
 
-/** La memoria (Fase 8) usa lo stesso motore della chat, col modello del tenant: pochi turni, nessun documento. */
+/** La memoria (Fase 8) usa lo stesso motore della chat ma col suo modello (MODELLO_MEMORIA): pochi turni, nessun documento. */
 function estrattoreMemoria(): EstrattoreMotore {
   if (!estrattoreVero) {
     const c = configurazione();
     estrattoreVero = new EstrattoreMotore(
       new MotoreAgentSdk({
-        modello: c.MODELLO_MOTORE,
+        modello: c.MODELLO_MEMORIA,
         maxTurni: 4,
         budgetUsd: c.MOTORE_BUDGET_USD,
         fornitori: fornitori(c),
@@ -134,6 +135,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         estrattore: estrattoreMemoria(),
         radice: resolve(c.CARTELLA_WORKER),
         ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
+        ...(c.MOTORE_RIPRESA === 'si' && { ripresaSessione: { esiste: (id) => getSessionInfo(id).then((s) => Boolean(s)) } }),
       });
     }
     await interrogazioneVera(job, strumenti);

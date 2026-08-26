@@ -34,7 +34,7 @@ Hai tre strumenti e nient'altro: Glob per trovare i file, Grep per cercare nel t
 3. I documenti assicurativi usano sinonimi e rimandi: se un termine non dà risultati prova le varianti (franchigia/scoperto, massimale/somma assicurata/limite di indennizzo, esclusioni/delimitazioni/rischi esclusi) e segui i rimandi ad altri articoli o documenti del set.
 4. A parità di prodotto usa l'edizione corrente indicata nell'INDICE, salvo richiesta esplicita su un'edizione storica.
 5. Se la domanda riguarda documenti che non sono nel contesto ma esistono nell'archivio, puoi consultarli e proporli all'utente, dicendo chiaramente che li hai cercati tu.
-6. Lavora in silenzio: nessun commento fra uno strumento e l'altro. Scrivi solo la risposta finale.
+6. Lavora in silenzio: nessun commento fra uno strumento e l'altro. Scrivi solo la risposta finale, che comincia direttamente dal contenuto: niente preamboli sul tuo lavoro («ho tutte le informazioni», «ho verificato le edizioni», «ora posso rispondere»). Tutto ciò che scrivi è in italiano, ogni parola: nessuna frase in inglese, nemmeno di passaggio.
 
 ## Regole non negoziabili
 
@@ -208,7 +208,28 @@ export interface ContestoPrompt {
   domanda: string;
 }
 
-/** Quanti caratteri di storia portare: il multi-turno è un job nuovo (piano §4.3.5). */
+/**
+ * Il prompt di un messaggio che riprende la sessione SDK precedente: la
+ * conversazione è già nel contesto del modello (documenti letti compresi),
+ * quindi niente storia; solo il contesto documentale, per i documenti
+ * aggiunti nel frattempo, e la domanda nuova.
+ */
+export function promptRipresa(c: Omit<ContestoPrompt, 'storia'>): string {
+  const parti: string[] = [];
+  if (c.documenti.length) {
+    parti.push('Documenti nel contesto della conversazione (quelli già letti sono nel tuo contesto: non rileggerli se non serve):');
+    for (const d of c.documenti) parti.push(`- \`${d.path}\` — ${d.titolo} (${d.archivio})`);
+  }
+  if (c.mancanti.length) {
+    parti.push('\nAttenzione, questi documenti del contesto NON sono disponibili:');
+    for (const m of c.mancanti) parti.push(`- ${m.titolo}: ${m.motivo}`);
+    parti.push('Dillo all’utente se incide sulla risposta.');
+  }
+  parti.push(`${parti.length ? '\n' : ''}Domanda dell’utente:\n${c.domanda}`);
+  return parti.join('\n');
+}
+
+/** Quanti caratteri di storia portare quando il multi-turno riparte da un job nuovo (piano §4.3.5). */
 const MAX_CARATTERI_STORIA = 24_000;
 
 export function promptUtente(c: ContestoPrompt): string {

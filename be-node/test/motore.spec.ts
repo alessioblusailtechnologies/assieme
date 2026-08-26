@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
-import { MARCATORE_CITAZIONI, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
+import { MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import { interpretaSuggerimenti } from '../src/worker/motore/suggeritore.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
@@ -330,5 +330,20 @@ describe('workspace e sessione, le parti pure', () => {
     expect(utente).toContain('`tenant/documenti/p/a.md`');
     expect(utente).toContain('B: elaborazione non ancora conclusa');
     expect(utente.indexOf('Prima domanda')).toBeLessThan(utente.indexOf('Seconda domanda'));
+  });
+
+  it('il prompt di ripresa: niente storia (è già nel contesto della sessione), contesto e domanda sì', () => {
+    const conDocumenti = promptRipresa({
+      documenti: [{ path: 'tenant/documenti/p/a.md', titolo: 'A', archivio: 'privato' }],
+      mancanti: [{ titolo: 'B', motivo: 'elaborazione non ancora conclusa' }],
+      domanda: 'Seconda domanda',
+    });
+    expect(conDocumenti).toContain('`tenant/documenti/p/a.md`');
+    expect(conDocumenti).toContain('B: elaborazione non ancora conclusa');
+    expect(conDocumenti).not.toContain('Conversazione finora');
+    expect(conDocumenti.trimEnd().endsWith('Seconda domanda')).toBe(true);
+    /* Senza contesto non si manda a cercare negli archivi: la sessione sa già cosa ha letto. */
+    const nudo = promptRipresa({ documenti: [], mancanti: [], domanda: 'E per i cristalli?' });
+    expect(nudo).toBe('Domanda dell’utente:\nE per i cristalli?');
   });
 });

@@ -17,8 +17,8 @@ import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
 import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
-import { caricaDna, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
-import type { EsitoSessione, Motore } from './sessione.js';
+import { caricaDna, promptRipresa, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
+import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreSuggerimenti } from './suggeritore.js';
 import type { GeneratoreTitolo } from './titolista.js';
@@ -32,8 +32,11 @@ import { materializzaWorkspace, type Workspace } from './workspace.js';
  * messaggio solo a risposta completa, audit e consumi.
  *
  * Il worker è l'unico scrivano: il modello produce testo, qui lo si verifica
- * e lo si scrive. Ogni messaggio è un job nuovo; la storia si ricostruisce
- * dal database (piano §4.3.5).
+ * e lo si scrive. Ogni messaggio è un job nuovo; il motore però riprende la
+ * sessione SDK del messaggio precedente quando la sua trascrizione è ancora
+ * sul disco del worker (i documenti già letti restano nel contesto, in
+ * cache: follow-up a -76% di costo, misura del 26/08/2026); altrimenti la
+ * storia si ricostruisce dal database (piano §4.3.5).
  */
 
 export interface DipendenzeInterrogazione {
@@ -55,6 +58,12 @@ export interface DipendenzeInterrogazione {
    * richiesta esplicita risponde che non è disponibile.
    */
   sandbox?: { avviatore: AvviatoreSandbox; sessione: OpzioniSessioneDocumentale };
+  /**
+   * La ripresa di sessione fra un messaggio e l'altro: `esiste` dice se la
+   * trascrizione di una sessione SDK è ancora su questo disco. Senza, ogni
+   * messaggio riparte con la storia nel prompt.
+   */
+  ripresaSessione?: { esiste: (sessioneId: string) => Promise<boolean> };
 }
 
 interface PayloadInterrogazione {
@@ -81,6 +90,8 @@ interface RigaConversazione {
   modello_motore: string | null;
   /** RF-G-01: se il tenant impara dalle conversazioni. */
   memoria_attiva: boolean;
+  /** La sessione SDK dell'ultima risposta, da riprendere; null = mai risposto (o ripresa spenta). */
+  sessione_sdk: string | null;
 }
 
 const MESSAGGIO_BUDGET =
@@ -107,7 +118,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     };
 
     const conv = await db.query<RigaConversazione>(
-      `select c.id, c.tenant_id, c.documenti_in_contesto, t.modello_motore, t.memoria_attiva
+      `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, t.modello_motore, t.memoria_attiva
        from velia.conversazioni c
        join velia.tenant t on t.id = c.tenant_id
        where c.id = $1`,
@@ -141,8 +152,17 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         tenantId,
         radice: dip.radice,
         jobId: job.id,
+        /* La stessa directory da un messaggio all'altro: la ripresa di sessione la richiede. */
+        cartella: payload.conversazioneId,
         contestoIds: conversazione.documenti_in_contesto,
       });
+
+      /* Si riprende solo se la trascrizione è ancora su questo disco (altro
+         host, disco ripulito: no): il job pieno resta il piano B, sempre. */
+      const riprendi =
+        dip.ripresaSessione && conversazione.sessione_sdk && (await dip.ripresaSessione.esiste(conversazione.sessione_sdk))
+          ? conversazione.sessione_sdk
+          : undefined;
 
       const storia = await db.query<MessaggioStoria & { id: string }>(
         `select id, autore, testo from velia.messaggi
@@ -298,28 +318,52 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         }),
       });
 
-      const esito = await dip.motore.interroga(
-        {
-          directory: workspace.directory,
-          titoloPer: (path) => workspace!.perPath.get(path)?.titolo,
-          ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
-          promptSistema: promptSistema(dna, templateAgenzia.rows),
-          strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi },
-          promptUtente: promptUtente({
-            documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
-            mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
-            storia: storia.rows.map(({ autore, testo }) => ({ autore, testo })),
-            domanda: payload.testo,
-          }),
+      const contestoPrompt = {
+        documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
+        mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
+        domanda: payload.testo,
+      };
+      const richiestaBase = {
+        directory: workspace.directory,
+        titoloPer: (path: string) => workspace!.perPath.get(path)?.titolo,
+        ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
+        promptSistema: promptSistema(dna, templateAgenzia.rows),
+        strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi },
+      };
+      const osservatore = {
+        passo: async (p: PassoSessione) => {
+          if (p.tipo === 'attivita') await emetti({ tipo: 'attivita', etichetta: p.etichetta });
+          else await emetti({ tipo: 'testo', delta: p.delta });
         },
-        {
-          passo: async (p) => {
-            if (p.tipo === 'attivita') await emetti({ tipo: 'attivita', etichetta: p.etichetta });
-            else await emetti({ tipo: 'testo', delta: p.delta });
-          },
-          annullato,
-        },
-      );
+        annullato,
+      };
+      const richiestaPiena = () => ({
+        ...richiestaBase,
+        promptUtente: promptUtente({ ...contestoPrompt, storia: storia.rows.map(({ autore, testo }) => ({ autore, testo })) }),
+        ...(dip.ripresaSessione && { sessione: { persisti: true } }),
+      });
+
+      let esito: EsitoSessione;
+      if (riprendi) {
+        esito = await dip.motore.interroga(
+          { ...richiestaBase, promptUtente: promptRipresa(contestoPrompt), sessione: { persisti: true, riprendi } },
+          osservatore,
+        );
+        /* Una ripresa che muore prima del primo turno (trascrizione corrotta,
+           SDK che non la ritrova) non deve costare la risposta: job pieno. */
+        if (esito.terminato === 'errore' && esito.turni === 0 && !esito.testo) {
+          await registraConsumi(db, tenantId, job.id, esito);
+          esito = await dip.motore.interroga(richiestaPiena(), osservatore);
+        }
+      } else {
+        esito = await dip.motore.interroga(richiestaPiena(), osservatore);
+      }
+      if (esito.sessioneId && esito.terminato !== 'errore') {
+        await db.query(`update velia.conversazioni set sessione_sdk = $2, sessione_sdk_al = now() where id = $1`, [
+          payload.conversazioneId,
+          esito.sessioneId,
+        ]);
+      }
 
       if (esito.terminato === 'annullato') {
         /* Niente persistenza, niente `fine`: il client se n'è già andato e

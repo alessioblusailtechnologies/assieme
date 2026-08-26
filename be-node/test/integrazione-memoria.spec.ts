@@ -52,7 +52,7 @@ class EstrattoreFinto implements EstrattoreRicordi {
     this.chiamate.push({ scambi, giaNoti, opzioni });
     return Promise.resolve({
       candidati: this.candidati,
-      modello: opzioni.modello ?? 'finto',
+      modello: opzioni.modello ?? 'claude-sonnet-5',
       token: { input: 100, output: 20, cacheLettura: 0, cacheScrittura: 0 },
       costoUsd: 0.002,
     });
@@ -190,8 +190,8 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     expect(scarti[1]).toBe('già noto');
     expect(eventi.rows.find((e) => e.tipo === 'fine')?.dati.appresi).toBe(2);
 
-    // RF-D-02: lo stesso motore switch-abile della chat — il modello scelto dal tenant.
-    expect(estrattore.chiamate.at(-1)?.opzioni.modello).toBe('claude-sonnet-5');
+    // Il modello è quello dell'estrattore (MODELLO_MEMORIA), non quello del tenant.
+    expect(estrattore.chiamate.at(-1)?.opzioni.modello).toBeUndefined();
     expect(estrattore.chiamate.at(-1)?.scambi.map((s) => s.autore)).toEqual(['utente', 'assistente']);
 
     const perAdmin = await elenco(tokenAdmin);
