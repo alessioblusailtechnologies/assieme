@@ -19,29 +19,16 @@
       aria-hidden="true"
       tabindex="-1"
     />
-    <button
-      type="button"
-      class="campo__allega"
-      (click)="file.click()"
-      aria-label="Allega un file alla conversazione"
-      title="Allega un file — resta in questa conversazione, non entra negli archivi"
-    >
-      <ui-icon name="allega" [size]="17" />
-    </button>
-    <button
-      type="button"
-      class="campo__allega"
-      (click)="apriDaPulsante()"
-      aria-label="Referenzia un documento degli archivi"
-      title="Referenzia un documento (@)"
-    >
-      <ui-icon name="referenzia" [size]="17" />
-    </button>
 
     <!--
       L'editor: testo e, tra le parole, i chip dei documenti referenziati e
       degli allegati. Il contenuto lo governa il componente (editor-testo.ts),
       non il template: qui solo il contenitore e i suoi eventi.
+
+      Sta in cima e prende tutta la larghezza: il testo comincia dove comincia
+      il riquadro. Le azioni stanno sotto, su una riga loro — e per chi arriva
+      da tastiera il campo viene prima dei pulsanti, che è l'ordine in cui si
+      usa il composer.
     -->
     <div
       #area
@@ -65,27 +52,48 @@
       [attr.aria-activedescendant]="idOpzioneAttiva()"
     ></div>
 
-    @if (store.inRisposta()) {
+    <div class="campo__azioni">
       <button
         type="button"
-        class="campo__invia is-ferma"
-        (click)="store.ferma()"
-        aria-label="Ferma la risposta"
-        title="Ferma la risposta"
+        class="campo__allega"
+        (click)="file.click()"
+        aria-label="Allega un file alla conversazione"
+        title="Allega un file — resta in questa conversazione, non entra negli archivi"
       >
-        <ui-icon name="ferma" [size]="16" />
+        <ui-icon name="allega" [size]="17" />
       </button>
-    } @else {
       <button
         type="button"
-        class="campo__invia"
-        (click)="invia()"
-        [disabled]="!store.bozza().trim()"
-        aria-label="Invia il messaggio"
-        title="Invia (Invio)"
+        class="campo__allega"
+        (click)="apriDaPulsante()"
+        aria-label="Referenzia un documento degli archivi"
+        title="Referenzia un documento (@)"
       >
-        <ui-icon name="invia" [size]="16" />
+        <ui-icon name="referenzia" [size]="17" />
       </button>
-    }
+
+      @if (store.inRisposta()) {
+        <button
+          type="button"
+          class="campo__invia is-ferma"
+          (click)="store.ferma()"
+          aria-label="Ferma la risposta"
+          title="Ferma la risposta"
+        >
+          <ui-icon name="ferma" [size]="16" />
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="campo__invia"
+          (click)="invia()"
+          [disabled]="!store.bozza().trim()"
+          aria-label="Invia il messaggio"
+          title="Invia (Invio)"
+        >
+          <ui-icon name="invia" [size]="16" />
+        </button>
+      }
+    </div>
   </div>
 </div>

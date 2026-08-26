@@ -93,12 +93,20 @@
 
 /* ---------- Campo ---------- */
 
+/*
+ * Due righe, non una: l'editor sopra a tutta larghezza, le azioni sotto.
+ *
+ * Con i pulsanti in linea il testo partiva dopo di loro — un rientro di un
+ * centinaio di pixel che il riquadro non spiegava, e che con i chip su più
+ * righe lasciava le icone in basso e la prima parola in alto a destra. Qui
+ * il testo comincia dove comincia il riquadro.
+ */
 .campo {
   display: flex;
-  border-radius: var(--radius);
-  align-items: flex-end;
+  flex-direction: column;
   gap: var(--sp-2);
-  padding: var(--sp-2);
+  border-radius: var(--radius);
+  padding: var(--sp-3);
   background: var(--c-surface);
   border: 1px solid var(--c-line);
   transition: border-color var(--dur-fast) var(--ease-brand);
@@ -110,14 +118,16 @@
 
 .campo__testo {
   /* L'editor contenteditable: cresce col testo fino al tetto, poi scorre. */
-  flex: 1;
+  width: 100%;
   min-width: 0;
   min-height: 1.5em;
   max-height: 168px;
   overflow-y: auto;
   outline: none;
   background: transparent;
-  padding: var(--sp-2);
+  /* Il rientro orizzontale lo fa il riquadro: qui resta solo l'aria sopra e
+     sotto, perché il testo si allinei al bordo interno come le azioni. */
+  padding: var(--sp-1) 0;
   font-family: var(--f-lettura);
   font-size: var(--t-body);
   line-height: 1.5;
@@ -131,6 +141,13 @@
   content: attr(data-placeholder);
   color: var(--c-text-mute);
   pointer-events: none;
+}
+
+/* Allegato e «@» a sinistra, l'invio spinto a destra dal margine automatico. */
+.campo__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
 }
 
 .campo__allega,
@@ -158,6 +175,7 @@
 }
 
 .campo__invia {
+  margin-left: auto;
   background: var(--c-azione);
   color: var(--c-azione-testo);
 }
