@@ -107,7 +107,7 @@ const CASO_PILOTA = {
       estratto: 'La garanzia è prestata con applicazione di una franchigia fissa di euro 250 per ciascun sinistro.',
     },
     'infortuni-conducente': {
-      valore: 'Inclusa — massimale 100.000 €',
+      valore: 'Inclusa - massimale 100.000 €',
       posizione: { pagina: 52, articolo: '35', sezione: 'Infortuni del conducente' },
       estratto: 'La garanzia infortuni del conducente è prestata con un massimale di euro 100.000 per persona.',
     },
@@ -146,7 +146,7 @@ const CASO_PILOTA = {
 const VALORI = {
   'massimale-rc': ['6.450.000 € per sinistro', '7.500.000 € per sinistro', '10.000.000 € per sinistro'],
   'franchigia-furto': ['Franchigia fissa di 250 €', 'Scoperto 10% con minimo di 500 €', 'Franchigia fissa di 400 €'],
-  'infortuni-conducente': ['Inclusa — massimale 100.000 €', 'Inclusa — massimale 150.000 €', 'Opzionale, con sovrappremio'],
+  'infortuni-conducente': ['Inclusa - massimale 100.000 €', 'Inclusa - massimale 150.000 €', 'Opzionale, con sovrappremio'],
   assistenza: ['Traino fino a 50 km', 'Traino illimitato', 'Traino fino a 100 km e veicolo sostitutivo'],
   cristalli: ['Massimale 1.000 €, franchigia 100 €', 'Massimale 1.500 €, senza franchigia', 'Massimale 800 €, franchigia 150 €'],
   eventi: ['Inclusa, scoperto 10%', 'Inclusa, franchigia 500 €', 'Opzionale, con sovrappremio'],
@@ -313,7 +313,7 @@ const riepilogo = (t) => ({
 /** Etichetta di riga già pronta, come la vuole il contratto (`RigaTabella`). */
 function etichettaRiga(documento) {
   if (documento.archivio === 'pubblico') {
-    const base = `${documento.compagnia.nome} — ${documento.prodotto}`;
+    const base = `${documento.compagnia.nome} - ${documento.prodotto}`;
     return documento.edizione.corrente ? base : `${base} (${documento.edizione.etichetta})`;
   }
   return documento.titolo;
@@ -350,6 +350,7 @@ function nuovaRiga(documento, colonne) {
     documentoId: documento.id,
     archivio: documento.archivio,
     etichetta: etichettaRiga(documento),
+    tipologia: documento.tipologia,
     celle,
   };
 }
@@ -370,7 +371,7 @@ function titoloPredefinito(documenti) {
 // ---------------------------------------------------------------------------
 
 function testoCella(cella) {
-  if (!cella || cella.stato === 'in-attesa') return '—';
+  if (!cella || cella.stato === 'in-attesa') return '-';
   switch (cella.esito) {
     case 'presente':
       return cella.valore;
@@ -394,7 +395,7 @@ function fontiTabella(tabella) {
         ]
           .filter(Boolean)
           .join(', ');
-        fonti.push(`${riga.etichetta} · ${colonna.intestazione}: ${c.documentoTitolo} — ${posizione}`);
+        fonti.push(`${riga.etichetta} · ${colonna.intestazione}: ${c.documentoTitolo} - ${posizione}`);
       }
     }
   }

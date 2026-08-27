@@ -23,7 +23,7 @@ function tabella(
       {
         documentoId: 'doc-pub-003',
         archivio: 'pubblico',
-        etichetta: 'Generali — AUTOPIÙ',
+        etichetta: 'Generali - AUTOPIÙ',
         celle: { c1: stato === 'completa' ? { stato: 'pronta', esito: 'non-presente' } : { stato: 'in-attesa' } },
       },
     ],

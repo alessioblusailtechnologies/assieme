@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { TipologiaDocumento } from '../../contratto/documenti.js';
 import type pg from 'pg';
 
 import type { Citazione } from '../../contratto/conversazioni.js';
@@ -516,13 +517,18 @@ export async function tabellaCompleta(
      where tabella_id = $1 order by posizione, id`,
     [id],
   );
+  /* La tipologia si legge dal documento, non dalla riga: l'etichetta è
+     stata composta all'inserimento, la tipologia non cambia mai. */
   const righe = await client.query<{
     documento_id: string;
     archivio: 'pubblico' | 'privato' | 'conversazione';
     etichetta: string;
+    tipologia: TipologiaDocumento;
   }>(
-    `select documento_id, archivio, etichetta from velia.tabelle_righe
-     where tabella_id = $1 order by posizione, documento_id`,
+    `select r.documento_id, r.archivio, r.etichetta, d.tipologia
+     from velia.tabelle_righe r
+     left join velia.documenti d on d.id = r.documento_id
+     where r.tabella_id = $1 order by r.posizione, r.documento_id`,
     [id],
   );
   const celle = await client.query<RigaCellaDb>(
@@ -556,6 +562,7 @@ export async function tabellaCompleta(
       documentoId: r.documento_id,
       archivio: r.archivio,
       etichetta: r.etichetta,
+      tipologia: r.tipologia,
       celle: perRiga.get(r.documento_id) ?? {},
     })),
   };
@@ -601,7 +608,7 @@ async function risolviDocumenti(
 /** Etichetta di riga già pronta, come la vuole il contratto (mock). */
 export function etichettaRiga(d: RigaDocumentoScelto): string {
   if (d.archivio === 'pubblico' && d.compagnia_nome && d.prodotto) {
-    const base = `${d.compagnia_nome} — ${d.prodotto}`;
+    const base = `${d.compagnia_nome} - ${d.prodotto}`;
     return d.edizione_corrente || !d.edizione_etichetta ? base : `${base} (${d.edizione_etichetta})`;
   }
   return d.titolo;
@@ -672,7 +679,7 @@ async function accodaGenerazione(
 // ---------------------------------------------------------------------------
 
 export function testoCella(cella: CellaTabella | undefined): string {
-  if (!cella || cella.stato === 'in-attesa') return '—';
+  if (!cella || cella.stato === 'in-attesa') return '-';
   switch (cella.esito) {
     case 'presente':
       return cella.valore;
@@ -713,7 +720,7 @@ export function fontiTabella(tabella: TabellaAnalisi): string[] {
         ]
           .filter(Boolean)
           .join(', ');
-        fonti.push(`${riga.etichetta} · ${colonna.intestazione}: ${c.documentoTitolo} — ${posizione}`);
+        fonti.push(`${riga.etichetta} · ${colonna.intestazione}: ${c.documentoTitolo} - ${posizione}`);
       }
     }
   }

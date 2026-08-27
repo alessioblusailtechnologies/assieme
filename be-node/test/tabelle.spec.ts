@@ -15,7 +15,7 @@ import type { DocumentoWorkspace } from '../src/worker/motore/workspace.js';
 
 /**
  * Il contratto delle tabelle senza database: gli schemi Zod, le risposte
- * che le rotte danno prima di toccare il db, e le parti pure — la lettura
+ * che le rotte danno prima di toccare il db, e le parti pure - la lettura
  * del blocco `velia-celle` e la regola dura di RF-C-12: un valore senza una
  * fonte verificabile non diventa mai una cella che afferma.
  */
@@ -119,7 +119,7 @@ describe('il blocco velia-celle e la sua valutazione', () => {
     });
   });
 
-  it('senza fonte che regge — file inesistente, pagina oltre, INDICE — il valore si scarta (RF-C-12)', () => {
+  it('senza fonte che regge - file inesistente, pagina oltre, INDICE - il valore si scarta (RF-C-12)', () => {
     const casi = [
       { file: 'tenant/documenti/polizza/inventato.md', pagina: 1 },
       { file: 'tenant/documenti/polizza/polizza-rossi--doc-priv-x.md', pagina: 99 },
@@ -186,7 +186,8 @@ describe("l'esportazione: la tabella come Markdown", () => {
       {
         documentoId: 'd1',
         archivio: 'pubblico',
-        etichetta: 'Generali — AUTOPIÙ',
+        etichetta: 'Generali - AUTOPIÙ',
+        tipologia: 'dip',
         celle: {
           c1: {
             stato: 'pronta',
@@ -206,21 +207,27 @@ describe("l'esportazione: la tabella come Markdown", () => {
           c2: { stato: 'pronta', esito: 'non-presente' },
         },
       },
-      { documentoId: 'd2', archivio: 'privato', etichetta: 'Preventivo Rossi', celle: {} },
+      {
+        documentoId: 'd2',
+        archivio: 'privato',
+        etichetta: 'Preventivo Rossi',
+        tipologia: 'preventivo',
+        celle: {},
+      },
     ],
   };
 
-  it('celle su colonne vere, «—» per le celle in attesa, il | delle celle non rompe la tabella', () => {
+  it('celle su colonne vere, «-» per le celle in attesa, il | delle celle non rompe la tabella', () => {
     const testo = testoTabella(tabella);
     expect(testo).toContain('| Documento | Massimale | Franchigia |');
-    expect(testo).toContain('| Generali — AUTOPIÙ | 6.450.000 € / per sinistro | Non presente |');
-    expect(testo).toContain('| Preventivo Rossi | — | — |');
+    expect(testo).toContain('| Generali - AUTOPIÙ | 6.450.000 € / per sinistro | Non presente |');
+    expect(testo).toContain('| Preventivo Rossi | - | - |');
     expect(testoCella({ stato: 'pronta', esito: 'non-determinabile', motivo: 'x' })).toBe('Non determinabile');
   });
 
   it('le fonti in coda, nella forma del mock', () => {
     expect(fontiTabella(tabella)).toEqual([
-      'Generali — AUTOPIÙ · Massimale: Condizioni AUTOPIÙ — art. 12, p. 14',
+      'Generali - AUTOPIÙ · Massimale: Condizioni AUTOPIÙ - art. 12, p. 14',
     ]);
   });
 });

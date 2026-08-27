@@ -18,7 +18,14 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CellaValore } from './celle/cella-valore';
-import { Citazione, CriterioPredefinito, Id, RiferimentoDocumento } from '@core/models';
+import {
+  Citazione,
+  CriterioPredefinito,
+  Id,
+  RiferimentoDocumento,
+  RigaTabella,
+  TabellaAnalisi,
+} from '@core/models';
 import { DettaglioTabellaStore } from './dettaglio-tabella-store';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -26,6 +33,7 @@ import { Icona } from '@shared/ui/icona/icona';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
+import { etichettaTipologiaBreve } from '@shared/testi/etichette';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { TabelleApi } from '@core/api/tabelle-api';
@@ -161,19 +169,11 @@ export class DettaglioTabella {
   // --- Aggiunta di documenti (RF-C-14) ------------------------------------
 
   protected readonly cassettoDocumenti = signal(false);
-  protected readonly ricercaDocumento = signal('');
-  private readonly selettore = viewChild(SelettoreDocumenti);
-
-  protected suTastoRicerca(evento: KeyboardEvent): void {
-    const selettore = this.selettore();
-    if (selettore?.gestisciTasto(evento)) evento.preventDefault();
-  }
 
   protected aggiungiDocumento(documento: RiferimentoDocumento): void {
     /* Il cassetto resta aperto: chi allarga un confronto aggiunge spesso
        più di un documento di fila. */
     this.store.aggiungiDocumento(documento.id);
-    this.ricercaDocumento.set('');
   }
 
   // --- Aggiunta di colonne (RF-C-14) --------------------------------------
@@ -212,6 +212,21 @@ export class DettaglioTabella {
   }
 
   /** La scheda del documento di una riga, per il collegamento. */
+  /** La riga dice anche che documento è: senza, tre righe dello stesso prodotto sono indistinguibili. */
+  protected dettaglioRiga(riga: RigaTabella): string | undefined {
+    return riga.tipologia ? etichettaTipologiaBreve(riga.tipologia) : undefined;
+  }
+
+  /**
+   * Sotto questa larghezza la tabella scorre invece di comprimersi: 260px per
+   * la colonna dei documenti e almeno 220px per ogni criterio, che è il
+   * minimo per leggere un valore e il suo chip senza andare a capo a ogni
+   * parola.
+   */
+  protected larghezzaMinima(tabella: TabellaAnalisi): number {
+    return 260 + tabella.colonne.length * 220;
+  }
+
   protected percorsoDocumento(riga: { documentoId: Id; archivio: string }): string[] {
     return ['/archivio', riga.archivio === 'pubblico' ? 'pubblico' : 'privato', riga.documentoId];
   }

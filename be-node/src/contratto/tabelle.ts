@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TipologiaDocumento } from './documenti.js';
 
 import type { Citazione } from './conversazioni.js';
 
@@ -31,6 +32,8 @@ export interface RigaTabella {
   archivio: 'pubblico' | 'privato' | 'conversazione';
   /** Etichetta di riga già pronta: compagnia + prodotto, o titolo del privato. */
   etichetta: string;
+  /** Che documento è: l'etichetta da sola non distingue tre documenti dello stesso prodotto. */
+  tipologia: TipologiaDocumento;
   /** Chiave = `ColonnaTabella.id`. */
   celle: Record<string, CellaTabella>;
 }

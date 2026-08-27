@@ -1,5 +1,5 @@
 import { Citazione } from './citazione';
-import { Archivio } from './documento';
+import { Archivio, TipologiaDocumento } from './documento';
 import { Id, IsoDateTime, ValoreEstratto } from './comune';
 
 /**
@@ -68,6 +68,12 @@ export interface RigaTabella {
   archivio: Archivio;
   /** Etichetta di riga già pronta: compagnia + prodotto, o titolo del privato. */
   etichetta: string;
+  /**
+   * Che documento è (DIP, condizioni, preventivo…): l'etichetta da sola non
+   * distingue tre documenti dello stesso prodotto. Facoltativa perché le
+   * tabelle salvate prima non la portano.
+   */
+  tipologia?: TipologiaDocumento;
   /** Chiave = `ColonnaTabella.id`. */
   celle: Record<Id, CellaTabella>;
 }

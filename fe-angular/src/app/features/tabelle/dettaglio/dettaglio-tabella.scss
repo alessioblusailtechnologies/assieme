@@ -128,14 +128,25 @@
   min-height: 240px;
 }
 
+/*
+ * Larghezza governata: con `table-layout: fixed` le colonne si dividono lo
+ * spazio del contenitore (o della larghezza minima, se è maggiore) invece di
+ * allargarsi sul contenuto più lungo. Prima un chip di citazione con un
+ * titolo lungo — che non va a capo — portava ogni colonna a cinquecento
+ * pixel e la tabella a tre schermi: qui i valori vanno a capo, i chip si
+ * troncano, e ogni contenuto resta nella propria cella.
+ */
+.griglia .ui-tabella {
+  table-layout: fixed;
+}
+
 /* La prima colonna resta ferma mentre le altre scorrono: su otto criteri
    senza etichetta di riga non si sa più cosa si sta leggendo. */
 .col-documento {
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 220px;
-  max-width: 300px;
+  width: 260px;
   background: var(--c-surface);
 }
 
@@ -158,15 +169,15 @@
 }
 
 .riga__documento {
-  display: inline-flex;
-  align-items: center;
+  display: flex;
+  align-items: flex-start;
   gap: var(--sp-2);
   color: var(--c-text);
   text-decoration: none;
   min-width: 0;
 }
 
-.riga__documento:hover span {
+.riga__documento:hover .riga__etichetta {
   color: var(--c-accent);
   text-decoration: underline;
 }
@@ -174,6 +185,25 @@
 .riga__documento ui-icon {
   color: var(--c-text-3);
   flex: none;
+  margin-top: 3px;
+}
+
+.riga__testo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Titoli senza spazi (i nomi file dei preventivi) si spezzano invece di
+   allargare la colonna, che ha una larghezza sua. */
+.riga__etichetta {
+  overflow-wrap: anywhere;
+}
+
+.riga__dettaglio {
+  color: var(--c-text-3);
+  font-size: var(--t-mono-sm);
 }
 
 .riga__togli,
@@ -195,7 +225,6 @@
 }
 
 .col-criterio {
-  min-width: 200px;
   vertical-align: top;
 }
 
@@ -203,13 +232,14 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
+  max-width: 100%;
 }
 
 .criterio__nome {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 260px;
 }
 
 .col-azioni {
@@ -259,10 +289,6 @@
 .aggiungi__spiega {
   font-size: var(--t-sm);
   color: var(--c-text-3);
-}
-
-.aggiungi input {
-  width: 100%;
 }
 
 .aggiungi__personalizzata {

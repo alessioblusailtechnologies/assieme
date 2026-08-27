@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { CellaTabella, Citazione } from '@core/models';
+import { Accordion } from '@shared/ui/accordion/accordion';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
@@ -16,7 +17,7 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
  */
 @Component({
   selector: 'app-cella-valore',
-  imports: [ChipCitazione, Icona, Suggerimento],
+  imports: [Accordion, ChipCitazione, Icona, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let c = cella();
@@ -28,11 +29,18 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
       @switch (c.esito) {
         @case ('presente') {
           <p class="valore">{{ c.valore }}</p>
-          <span class="citazioni">
-            @for (citazione of c.citazioni; track citazione.id) {
-              <ui-chip-citazione [citazione]="citazione" (apri)="apri.emit($event)" />
-            }
-          </span>
+          @if (c.citazioni.length) {
+            <!-- Come nella chat: le fonti stanno in un accordion che nasce
+                 chiuso, e il riepilogo dice già quanti passaggi ci sono. Una
+                 griglia di chip aperti a ogni cella soffocava i valori. -->
+            <ui-accordion class="fonti" etichetta="Fonti" [riepilogo]="riepilogo(c.citazioni)">
+              <div class="fonti__elenco">
+                @for (citazione of c.citazioni; track citazione.id) {
+                  <ui-chip-citazione [citazione]="citazione" (apri)="apri.emit($event)" />
+                }
+              </div>
+            </ui-accordion>
+          }
         }
         @case ('non-presente') {
           <p class="assenza" [uiSuggerimento]="c.nota ?? ''">non presente</p>
@@ -82,14 +90,22 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
       overflow-wrap: anywhere;
     }
 
-    .citazioni {
+    .fonti {
+      margin-top: var(--sp-1);
+      font-size: var(--t-xs);
+    }
+
+    /* Un chip per riga: nella cella la larghezza è poca, e affiancati si
+       troncherebbero tutti a tre lettere. */
+    .fonti__elenco {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-start;
       gap: var(--sp-1);
     }
 
     /* RF-C-12 con RF-C-08: l'assenza dichiarata, nella voce mono dei
-       metadati — è un'annotazione del sistema, non un dato del documento. */
+       metadati - è un'annotazione del sistema, non un dato del documento. */
     .assenza,
     .dubbio {
       display: inline-flex;
@@ -116,4 +132,9 @@ export class CellaValore {
 
   /** RF-C-05: chi ospita la griglia apre il visualizzatore sul passaggio. */
   readonly apri = output<Citazione>();
+
+  /** Lo stesso patto dell'accordion in chat: da chiuso dice già quanto c'è. */
+  protected riepilogo(citazioni: Citazione[]): string {
+    return citazioni.length === 1 ? '1 passaggio' : `${citazioni.length} passaggi`;
+  }
 }

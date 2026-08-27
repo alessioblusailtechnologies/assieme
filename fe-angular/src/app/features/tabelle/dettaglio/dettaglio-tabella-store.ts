@@ -100,11 +100,6 @@ export class DettaglioTabellaStore {
   }
 
   /** RF-C-15: condivisione nel tenant, reversibile. */
-  condividi(condivisa: boolean): void {
-    const id = this.id();
-    if (!id) return;
-    this.api.modifica(id, { condivisa }).subscribe({ next: this.applica });
-  }
 
   /** RF-C-15: la copia con cui si prosegue in autonomia. Si naviga alla copia. */
   duplica(): void {

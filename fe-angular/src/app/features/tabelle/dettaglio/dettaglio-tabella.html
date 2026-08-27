@@ -44,6 +44,7 @@
           (click)="avviaRinomina()"
           aria-label="Rinomina la tabella"
           uiSuggerimento="Rinomina"
+          uiSuggerimentoPosizione="sotto"
         >
           <ui-icon name="modifica" [size]="14" />
         </button>
@@ -54,20 +55,20 @@
       <ui-tag variante="accento">condivisa nel tenant</ui-tag>
     }
     @if (store.soloLettura()) {
-      <ui-tag>di un collega — sola lettura</ui-tag>
+      <ui-tag>di un collega - sola lettura</ui-tag>
     }
   </header>
 
   <!--
     L'avanzamento sta in testata e parla da solo (aria-live): la generazione
-    è lenta per natura, e l'utente deve vedere che procede — non un velo
+    è lenta per natura, e l'utente deve vedere che procede - non un velo
     d'attesa, ma la tabella che si riempie (RF-C-11).
   -->
   @if (store.inGenerazione() && store.avanzamento(); as avanzamento) {
     <div class="generazione" role="status" aria-live="polite">
       <ui-icon name="in-corso" [size]="15" class="generazione__icona" />
       <span>
-        Generazione in corso — {{ avanzamento.pronte }} di {{ avanzamento.totali }} celle
+        Generazione in corso - {{ avanzamento.pronte }} di {{ avanzamento.totali }} celle
       </span>
       <span class="generazione__barra" aria-hidden="true">
         <span class="generazione__pieno" [style.width.%]="avanzamento.percentuale"></span>
@@ -111,16 +112,6 @@
     </button>
 
     @if (!store.soloLettura()) {
-      <button
-        uiBottone
-        dimensione="piccolo"
-        type="button"
-        (click)="store.condividi(!tabella.condivisa)"
-      >
-        <ui-icon name="condividi" [size]="14" />
-        <span>{{ tabella.condivisa ? 'Non condividere più' : 'Condividi nel tenant' }}</span>
-      </button>
-
       <span class="azioni__spazio" aria-hidden="true"></span>
 
       @if (!confermaEliminazione()) {
@@ -145,17 +136,28 @@
     }
   </div>
 
+  <!--
+    Larghezza governata (`table-layout: fixed`): le colonne si dividono lo
+    spazio invece di allargarsi sul contenuto più lungo, i valori vanno a
+    capo e i chip si troncano. Sotto la larghezza minima il contenitore
+    scorre in orizzontale, con la colonna dei documenti ferma.
+  -->
   <div class="ui-tabella-contenitore griglia">
-    <table class="ui-tabella">
+    <table class="ui-tabella" [style.min-width.px]="larghezzaMinima(tabella)">
       <thead>
         <tr>
           <th class="col-documento" scope="col">Documento</th>
           @for (colonna of tabella.colonne; track colonna.id) {
             <th scope="col" class="col-criterio">
-              <span class="criterio">
-                <span class="criterio__nome" [uiSuggerimento]="colonna.criterio ?? ''">
-                  {{ colonna.intestazione }}
-                </span>
+              <!-- Il suggerimento si aggancia al contenitore: il nome ha
+                   overflow nascosto per i puntini, e taglierebbe anche il
+                   fumetto. -->
+              <span
+                class="criterio"
+                [uiSuggerimento]="colonna.criterio ?? ''"
+                uiSuggerimentoPosizione="sotto"
+              >
+                <span class="criterio__nome">{{ colonna.intestazione }}</span>
                 @if (!store.soloLettura() && tabella.colonne.length > 1) {
                   <button
                     type="button"
@@ -185,7 +187,15 @@
                   [name]="riga.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
                   [size]="14"
                 />
-                <span>{{ riga.etichetta }}</span>
+                <span class="riga__testo">
+                  <span class="riga__etichetta">{{ riga.etichetta }}</span>
+                  <!-- Compagnia e prodotto non bastano: DIP, condizioni e
+                       DIP aggiuntivo dello stesso prodotto sarebbero tre
+                       righe uguali. -->
+                  @if (dettaglioRiga(riga); as dettaglio) {
+                    <span class="mono riga__dettaglio">{{ dettaglio }}</span>
+                  }
+                </span>
               </a>
             </th>
             @for (colonna of tabella.colonne; track colonna.id) {
@@ -226,7 +236,7 @@
 
 <!--
   RF-C-05 dalla cella: la citazione si apre accanto alla griglia, non al suo
-  posto — si verifica la fonte senza perdere il confronto sott'occhio.
+  posto - si verifica la fonte senza perdere il confronto sott'occhio.
 -->
 <ui-cassetto
   [aperto]="!!citazioneAperta()"
@@ -274,21 +284,11 @@
       <p class="aggiungi__spiega">
         Ogni documento diventa una riga: le sue celle si generano sui criteri già in tabella.
       </p>
-      <label class="ui-campo-icona">
-        <ui-icon name="cerca" [size]="16" />
-        <input
-          uiCampo
-          type="search"
-          [value]="ricercaDocumento()"
-          (input)="ricercaDocumento.set($any($event.target).value)"
-          (keydown)="suTastoRicerca($event)"
-          placeholder="Cerca per compagnia, prodotto o titolo…"
-          aria-label="Cerca un documento da aggiungere"
-        />
-      </label>
+      <!-- Incassato nel cassetto: la barra di ricerca è la sua, e un clic
+           altrove non lo chiude. -->
       <ui-selettore-documenti
-        [query]="ricercaDocumento()"
         [esclusi]="idDocumenti()"
+        [chiusuraAlBlur]="false"
         (scelto)="aggiungiDocumento($event)"
         (chiuso)="cassettoDocumenti.set(false)"
       />

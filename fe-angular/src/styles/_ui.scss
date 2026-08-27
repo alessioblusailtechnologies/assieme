@@ -234,6 +234,12 @@
   transition: opacity var(--dur-fast) var(--ease-brand);
 }
 
+/* Sotto il bersaglio, dove sopra verrebbe tagliato dal contenitore. */
+[data-suggerimento-posizione='sotto']::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
 [data-suggerimento]:hover::after,
 [data-suggerimento]:focus-visible::after {
   opacity: 1;

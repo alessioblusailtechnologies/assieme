@@ -32,11 +32,23 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
     </button>
   `,
   styles: `
+    /* L'host può stringersi fino a troncare il titolo: senza min-width a zero
+       un elemento flessibile non scende sotto il proprio contenuto, e in
+       una cella di tabella il chip sporgeva nella colonna accanto. */
+    :host {
+      display: inline-flex;
+      min-width: 0;
+      max-width: 100%;
+    }
+
     .chip {
       display: inline-flex;
       align-items: center;
       gap: var(--sp-1);
       max-width: 100%;
+      /* Niente esce dal bordo: se lo spazio manca, prima cede il titolo e
+         poi anche la posizione, sempre coi puntini. */
+      overflow: hidden;
       padding: 3px 8px;
       border: 1px solid var(--c-line);
       border-radius: var(--radius-pieno);
@@ -53,15 +65,22 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
       color: var(--c-accent);
     }
 
+    /* Se manca spazio cede prima il titolo (si riconosce anche mozzo), e la
+       posizione resta leggibile il più a lungo possibile. */
     .chip__titolo {
-      min-width: 0;
+      flex: 1 10 auto;
+      min-width: 3ch;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
     .chip__posizione {
-      flex: none;
+      flex: 0 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       font-family: var(--f-mono);
       font-size: var(--t-mono-sm);
       letter-spacing: 0.08em;
