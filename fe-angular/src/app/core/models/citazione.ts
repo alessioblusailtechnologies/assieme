@@ -48,7 +48,7 @@ export interface PosizioneDocumento {
 
 /**
  * Etichetta compatta e leggibile di una citazione, es.
- * `DIP Aggiuntivo — art. 12, p. 8`.
+ * `DIP Aggiuntivo - art. 12, p. 8`.
  *
  * Sta qui e non in una pipe perché la stessa stringa serve anche dove non
  * c'è un template: nomi di file esportati, testo copiato negli appunti,
@@ -59,5 +59,5 @@ export function etichettaCitazione(c: Citazione): string {
   if (c.posizione.articolo) parti.push(`art. ${c.posizione.articolo}`);
   else if (c.posizione.sezione) parti.push(c.posizione.sezione);
   parti.push(`p. ${c.posizione.pagina}`);
-  return parti.join(' — ');
+  return parti.join(' - ');
 }

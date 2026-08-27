@@ -11,17 +11,17 @@ export const TABELLE_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () => import('./elenco/elenco-tabelle').then((m) => m.ElencoTabelle),
-    title: 'Tabelle di analisi — Velia',
+    title: 'Tabelle di analisi - Velia',
   },
   {
     path: 'nuova',
     loadComponent: () =>
       import('./costruttore/costruttore-tabella').then((m) => m.CostruttoreTabella),
-    title: 'Nuova tabella di analisi — Velia',
+    title: 'Nuova tabella di analisi - Velia',
   },
   {
     path: ':id',
     loadComponent: () => import('./dettaglio/dettaglio-tabella').then((m) => m.DettaglioTabella),
-    title: 'Tabella di analisi — Velia',
+    title: 'Tabella di analisi - Velia',
   },
 ];

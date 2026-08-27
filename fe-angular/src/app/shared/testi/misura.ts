@@ -14,7 +14,7 @@ const GB = MB * 1024;
  * ci si può permettere.
  */
 export function dimensioneLeggibile(byte: number | undefined): string {
-  if (byte === undefined || !Number.isFinite(byte) || byte < 0) return '—';
+  if (byte === undefined || !Number.isFinite(byte) || byte < 0) return '-';
   if (byte < KB) return `${byte} B`;
   if (byte < MB) return `${Math.round(byte / KB)} KB`;
   if (byte < GB) return `${(byte / MB).toFixed(1)} MB`;

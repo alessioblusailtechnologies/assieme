@@ -127,7 +127,7 @@ export function fontiDaCitazioni(citazioni: Citazione[]): string[] {
     ]
       .filter(Boolean)
       .join(', ');
-    return `${c.documentoTitolo} — ${posizione}`;
+    return `${c.documentoTitolo} - ${posizione}`;
   });
 }
 

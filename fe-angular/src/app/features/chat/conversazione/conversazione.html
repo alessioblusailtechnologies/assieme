@@ -21,7 +21,7 @@
   </div>
 } @else {
   <!--
-    Testata essenziale: il titolo a sinistra, due azioni a destra — scarica
+    Testata essenziale: il titolo a sinistra, due azioni a destra - scarica
     la conversazione, condividila con l'agenzia (RF-C-15). Rinomina ed
     eliminazione vivono nella lista dello storico, al passaggio sulla voce.
   -->
@@ -51,7 +51,7 @@
         "
         [title]="
           store.attiva()?.condivisa
-            ? 'Condivisa con l’agenzia — clic per revocare'
+            ? 'Condivisa con l’agenzia - clic per revocare'
             : 'Condividi con l’agenzia'
         "
       >
@@ -137,7 +137,7 @@
     <!--
       RF-C-03: il contesto documentale è della conversazione, non del singolo
       messaggio. Colonna a destra, sempre in vista: l'utente deve sapere su
-      quali documenti l'assistente sta ragionando — e poterli togliere.
+      quali documenti l'assistente sta ragionando - e poterli togliere.
     -->
     <aside
       class="contesto"
@@ -211,7 +211,7 @@
         <!--
           Output: ciò che la conversazione ha prodotto. Gli stessi documenti
           stanno sotto la risposta che li ha generati, ma là si perdono
-          risalendo il filo — qui restano tutti insieme, dal più recente, e
+          risalendo il filo - qui restano tutti insieme, dal più recente, e
           si scaricano senza cercarli.
 
           La sezione compare solo se c'è qualcosa: un titolo su una lista
@@ -253,7 +253,7 @@
 
 <!--
   RF-C-05: la citazione si apre accanto alla conversazione, non al suo
-  posto — si verifica la fonte senza perdere il filo del discorso.
+  posto - si verifica la fonte senza perdere il filo del discorso.
 -->
 <ui-cassetto
   [aperto]="!!citazioneAperta()"

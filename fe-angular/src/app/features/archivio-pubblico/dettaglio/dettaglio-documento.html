@@ -34,7 +34,7 @@
 
     <h1 class="serif testata__titolo">{{ doc.titolo }}</h1>
 
-    <p class="testata__prodotto">{{ doc.compagnia.nome }} — {{ doc.prodotto }}</p>
+    <p class="testata__prodotto">{{ doc.compagnia.nome }} - {{ doc.prodotto }}</p>
 
     @if (doc.edizione.corrente) {
       <ui-badge variante="corrente">edizione corrente</ui-badge>
@@ -46,7 +46,7 @@
   <div class="colonne">
     <div class="principale">
       <!-- Il set dell'edizione è un PDF unico: ci si apre dove il documento
-           comincia — il DIP al DIP, le Condizioni alle Condizioni. -->
+           comincia - il DIP al DIP, le Condizioni alle Condizioni. -->
       <ui-visualizzatore-pdf
         [fileUrl]="doc.fileUrl"
         [posizione]="doc.paginaInizio ? { pagina: doc.paginaInizio } : undefined"

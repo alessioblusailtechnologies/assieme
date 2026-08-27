@@ -74,7 +74,7 @@ const citazione = (dati) => ({ id: `cit-${prossimaCitazione++}`, ...dati });
 
 const CITAZIONE_FRANCHIGIA_GENERALI = {
   documentoId: 'doc-pub-003',
-  documentoTitolo: 'Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica',
+  documentoTitolo: 'Condizioni di Assicurazione - Active Veicoli AUTOPIÙ con Telematica',
   archivio: 'pubblico',
   posizione: {
     pagina: 41,
@@ -88,7 +88,7 @@ const CITAZIONE_FRANCHIGIA_GENERALI = {
 
 const CITAZIONE_SCOPERTO_UNIPOL = {
   documentoId: 'doc-priv-001',
-  documentoTitolo: 'Preventivo UnipolSai — Fiat 500X targa GK492ZR',
+  documentoTitolo: 'Preventivo UnipolSai - Fiat 500X targa GK492ZR',
   archivio: 'privato',
   posizione: {
     pagina: 3,
@@ -100,7 +100,7 @@ const CITAZIONE_SCOPERTO_UNIPOL = {
 
 const CITAZIONE_MASSIMALE_GENERALI = {
   documentoId: 'doc-pub-002',
-  documentoTitolo: 'DIP Aggiuntivo — Active Veicoli AUTOPIÙ con Telematica',
+  documentoTitolo: 'DIP Aggiuntivo - Active Veicoli AUTOPIÙ con Telematica',
   archivio: 'pubblico',
   posizione: {
     pagina: 8,
@@ -142,7 +142,7 @@ function scenarioFranchigie() {
 
 **Il preventivo UnipolSai** prevede invece uno scoperto del 10% con un minimo di 500 €: su un danno da 8.000 € restano a carico del cliente 800 €, e il minimo scatta anche sui danni piccoli.
 
-Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è quasi sempre la formula più prevedibile — ed è la prassi che la tua agenzia segue per i clienti con più veicoli.`,
+Per un cliente che teme soprattutto il danno parziale, la franchigia fissa è quasi sempre la formula più prevedibile - ed è la prassi che la tua agenzia segue per i clienti con più veicoli.`,
     citazioni: [citazione(CITAZIONE_FRANCHIGIA_GENERALI), citazione(CITAZIONE_SCOPERTO_UNIPOL)],
     /* RF-G-03: quando la risposta si fonda su un ricordo il sistema lo rende
        riconoscibile. Il ricordo esiste davvero nelle fixture della memoria. */
@@ -171,13 +171,13 @@ function scenarioConfronto() {
   return {
     testo: `Ho confrontato le due proposte sulle voci che incidono di più sul premio e sulla tutela dell'assicurato.
 
-**Massimale RC** — Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.
+**Massimale RC** - Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.
 
-**Franchigia furto e incendio** — Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 €. Su un sinistro da 8.000 € significa 250 € contro 800 €.
+**Franchigia furto e incendio** - Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 €. Su un sinistro da 8.000 € significa 250 € contro 800 €.
 
-**Garanzia infortuni del conducente** — Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai.
+**Garanzia infortuni del conducente** - Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai.
 
-**Assistenza stradale** — Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.
+**Assistenza stradale** - Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.
 
 In sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla persona del conducente; quella UnipolSai è più conveniente sull'assistenza. La scelta dipende dall'uso prevalente del veicolo.`,
     citazioni: [
@@ -533,7 +533,7 @@ export async function gestisci(req, res, url, deps) {
       ]
         .filter(Boolean)
         .join(', ');
-      return `${c.documentoTitolo} — ${posizione}`;
+      return `${c.documentoTitolo} - ${posizione}`;
     });
 
     let file;

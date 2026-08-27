@@ -1,12 +1,12 @@
 <header class="testata">
   <h1 class="serif testata__titolo">Template di output</h1>
   <p class="testata__spiega">
-    I documenti che escono da VELIA — esportazioni della chat, tabelle, output degli agenti —
+    I documenti che escono da VELIA - esportazioni della chat, tabelle, output degli agenti -
     si generano sui template dell'agenzia. Caricane quanti vuoi, anche più d'uno per formato:
     in chat basta chiedere «esporta con <em>Proposta breve</em>». Per ogni formato uno è il
     predefinito; senza template, il documento esce col layout di VELIA e l'identità dell'agenzia.
   </p>
-  <p class="mono testata__formati">Formati: PDF · DOCX · XLSX — PPTX in valutazione</p>
+  <p class="mono testata__formati">Formati: PDF · DOCX · XLSX - PPTX in valutazione</p>
 </header>
 
 @if (errore()) {
@@ -244,7 +244,7 @@
 <ui-cassetto
   [aperto]="!!anteprima()"
   (apertoChange)="!$event && anteprima.set(undefined)"
-  [titolo]="anteprima() ? 'Anteprima — ' + anteprima()!.nome : ''"
+  [titolo]="anteprima() ? 'Anteprima - ' + anteprima()!.nome : ''"
 >
   @if (anteprima(); as t) {
     <div class="anteprima">

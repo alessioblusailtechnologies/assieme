@@ -428,7 +428,7 @@ export function registraRotteIstruzioni(app: FastifyInstance, opzioni: OpzioniIs
           id: v.id,
           istante: v.istante.toISOString(),
           utenteId: v.utente_id ?? '',
-          utenteNome: v.utente_nome || '—',
+          utenteNome: v.utente_nome || '-',
           azione: v.azione,
           oggetto: v.oggetto,
           descrizione: v.descrizione,

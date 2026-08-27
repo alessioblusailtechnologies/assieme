@@ -259,7 +259,7 @@ function avviaGrafo(cv: HTMLCanvasElement): () => void {
       width="1040"
       height="1000"
       role="img"
-      aria-label="Rappresentazione della memoria viva dell'agenzia: centinaia di nodi — documenti, regole e casistica risolta — raggruppati in temi e collegati fra loro."
+      aria-label="Rappresentazione della memoria viva dell'agenzia: centinaia di nodi - documenti, regole e casistica risolta - raggruppati in temi e collegati fra loro."
     ></canvas>
   `,
   styles: `

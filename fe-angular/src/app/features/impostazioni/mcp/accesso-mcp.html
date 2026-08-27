@@ -152,7 +152,7 @@
     <div class="genera">
       @if (!generata()) {
         <p class="genera__spiega">
-          Un nome che dica dove verrà usata — postazione, persona o integrazione. Il token
+          Un nome che dica dove verrà usata - postazione, persona o integrazione. Il token
           comparirà una volta sola.
         </p>
         <input
@@ -161,7 +161,7 @@
           [value]="bozzaNome()"
           (input)="bozzaNome.set($any($event.target).value)"
           (keydown.enter)="genera()"
-          placeholder="es. Postazione Paolo — Claude Desktop"
+          placeholder="es. Postazione Paolo - Claude Desktop"
           aria-label="Nome della credenziale"
         />
         <footer class="genera__azioni">

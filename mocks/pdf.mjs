@@ -23,7 +23,7 @@ const ALTEZZA = 842;
  */
 function sanifica(testo) {
   return testo
-    .replaceAll('—', '-')
+    .replaceAll('-', '-')
     .replaceAll('–', '-')
     .replaceAll('’', "'")
     .replaceAll('‘', "'")

@@ -19,13 +19,13 @@ export const ARCHIVIO_PUBBLICO_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () => import('./elenco/elenco-documenti').then((m) => m.ElencoDocumenti),
-        title: 'Archivio pubblico — Velia',
+        title: 'Archivio pubblico - Velia',
       },
       {
         path: ':id',
         loadComponent: () =>
           import('./dettaglio/dettaglio-documento').then((m) => m.DettaglioDocumento),
-        title: 'Documento — Velia',
+        title: 'Documento - Velia',
       },
     ],
   },

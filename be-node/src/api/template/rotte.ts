@@ -293,7 +293,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
     ].join('\n');
 
     const pdf = await componiPdf({
-      titolo: `Anteprima — ${template.nome}`,
+      titolo: `Anteprima - ${template.nome}`,
       blocchi: analizzaMarkdown(testo),
       fonti: [],
       identita: await identitaPerGenerazione(archivio(), identita),
@@ -488,7 +488,7 @@ async function verificaTemplate(nome: string, contenuto: Buffer, troncato: boole
     throw new ErroreApi(
       415,
       'FORMATO_NON_SUPPORTATO',
-      `«${nome}»: la generazione PPTX non è ancora disponibile — carica un template PDF, DOCX o XLSX.`,
+      `«${nome}»: la generazione PPTX non è ancora disponibile - carica un template PDF, DOCX o XLSX.`,
     );
   }
 

@@ -23,12 +23,12 @@ export const CHAT_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () => import('./conversazione/conversazione').then((m) => m.Conversazione),
-        title: 'Chat — Velia',
+        title: 'Chat - Velia',
       },
       {
         path: ':id',
         loadComponent: () => import('./conversazione/conversazione').then((m) => m.Conversazione),
-        title: 'Conversazione — Velia',
+        title: 'Conversazione - Velia',
       },
     ],
   },

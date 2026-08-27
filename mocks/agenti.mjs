@@ -84,7 +84,7 @@ function etichettaFonte(fonte, trovaDocumento) {
     RAMI.find((r) => r.id === fonte.ramoId)?.nome,
     fonte.soloPreferiti ? 'solo preferiti' : undefined,
   ].filter(Boolean);
-  return dettagli.length ? `${parti[0]} — ${dettagli.join(', ')}` : `${parti[0]} — tutto`;
+  return dettagli.length ? `${parti[0]} - ${dettagli.join(', ')}` : `${parti[0]} - tutto`;
 }
 
 /** L'agente nella forma del contratto: fonti idratate, campi interni fuori. */
@@ -148,18 +148,18 @@ function esitoVerificaPreventivo(parametri, trovaDocumento) {
     return {
       output:
         'Confronto fra il preventivo UnipolSai per la Fiat 500X targa GK492ZR e le Condizioni AUTOPIÙ in essere.\n\n' +
-        '**Massimale RC**: identico nelle due offerte — 6.450.000 € per sinistro, di cui 1.300.000 € per danni a cose.\n\n' +
+        '**Massimale RC**: identico nelle due offerte - 6.450.000 € per sinistro, di cui 1.300.000 € per danni a cose.\n\n' +
         '**Furto e incendio**: AUTOPIÙ applica una franchigia fissa di 250 € per sinistro, il preventivo UnipolSai uno scoperto del 10% con minimo di 500 €. Su un furto parziale da 3.000 € la differenza è di 50 € a favore di AUTOPIÙ; su danni maggiori lo scoperto cresce senza tetto.\n\n' +
         '**Infortuni del conducente**: la garanzia non compare nel preventivo UnipolSai né nelle condizioni da esso richiamate. Secondo i criteri dell’agenzia questa assenza non va segnalata come carenza: la copertura è gestita con polizza dedicata.\n\n' +
         '**Assistenza stradale**: il preventivo prevede traino illimitato e veicolo sostitutivo fino a 7 giorni, contro il traino a 50 km di AUTOPIÙ.',
       citazioni: [
-        citazione('doc-pub-003', 'Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
+        citazione('doc-pub-003', 'Condizioni di Assicurazione - Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
           { pagina: 41, articolo: '27', sezione: 'Furto e incendio' },
           'La garanzia è prestata con applicazione di una franchigia fissa di euro 250 per ciascun sinistro.'),
-        citazione('doc-priv-001', 'Preventivo UnipolSai — Fiat 500X targa GK492ZR', 'privato',
+        citazione('doc-priv-001', 'Preventivo UnipolSai - Fiat 500X targa GK492ZR', 'privato',
           { pagina: 3, sezione: 'Garanzie accessorie' },
           'Furto e Incendio: scoperto 10% con il minimo di euro 500 per ciascun sinistro.'),
-        citazione('doc-pub-003', 'Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
+        citazione('doc-pub-003', 'Condizioni di Assicurazione - Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
           { pagina: 52, articolo: '35', sezione: 'Infortuni del conducente' },
           'La garanzia infortuni del conducente è prestata con un massimale di euro 100.000 per persona.'),
       ],
@@ -172,7 +172,7 @@ function esitoVerificaPreventivo(parametri, trovaDocumento) {
       '**Massimale RC**: le Condizioni AUTOPIÙ prevedono 6.450.000 € per sinistro, di cui 1.300.000 € per danni a cose.\n\n' +
       `Nei documenti forniti non è presente un quadro di garanzie confrontabile voce per voce: per ${titolo} il confronto puntuale su franchigie e scoperti non è determinabile con le fonti disponibili, e viene dichiarato invece che dedotto.`,
     citazioni: [
-      citazione('doc-pub-003', 'Condizioni di Assicurazione — Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
+      citazione('doc-pub-003', 'Condizioni di Assicurazione - Active Veicoli AUTOPIÙ con Telematica', 'pubblico',
         { pagina: 14, articolo: '12', sezione: 'Responsabilità civile' },
         'Il massimale per sinistro è pari a euro 6.450.000, di cui euro 1.300.000 per danni a cose.'),
     ],
@@ -193,8 +193,8 @@ function componiEsito(agente, parametri, trovaDocumento) {
       return {
         output:
           'Negli ultimi sette giorni sono entrati nell’Archivio Privato **2 documenti**.\n\n' +
-          '**Preventivi**: Preventivo Reale Mutua — Protezione Casa via Dante 14 (Davide Lo Bianco, ancora in elaborazione).\n\n' +
-          '**Da sistemare**: la scansione del questionario sanitario di Verdi Anna resta in errore di elaborazione — il file va ricaricato in qualità migliore.\n\n' +
+          '**Preventivi**: Preventivo Reale Mutua - Protezione Casa via Dante 14 (Davide Lo Bianco, ancora in elaborazione).\n\n' +
+          '**Da sistemare**: la scansione del questionario sanitario di Verdi Anna resta in errore di elaborazione - il file va ricaricato in qualità migliore.\n\n' +
           'Spazio occupato: 84 MB su 2 GB del piano.',
         citazioni: [],
       };
@@ -204,9 +204,9 @@ function componiEsito(agente, parametri, trovaDocumento) {
       return {
         output:
           '**Una scadenza nei prossimi sessanta giorni.**\n\n' +
-          'La Convenzione Generali — Agenzia Meridiana 2026 scade il **30 settembre 2026**: il rinnovo va concordato con la direzione commerciale entro fine agosto per non perdere le condizioni riservate.',
+          'La Convenzione Generali - Agenzia Meridiana 2026 scade il **30 settembre 2026**: il rinnovo va concordato con la direzione commerciale entro fine agosto per non perdere le condizioni riservate.',
         citazioni: [
-          citazione('doc-priv-003', 'Convenzione Generali — Agenzia Meridiana 2026', 'privato',
+          citazione('doc-priv-003', 'Convenzione Generali - Agenzia Meridiana 2026', 'privato',
             { pagina: 6, articolo: '14', sezione: 'Durata e rinnovo' },
             'La presente convenzione ha validità fino al 30 settembre 2026 e si intende rinnovata solo previo accordo scritto fra le parti.'),
         ],
@@ -333,12 +333,12 @@ function etichettaCitazione(c) {
   const dove = [c.posizione.articolo ? `art. ${c.posizione.articolo}` : c.posizione.sezione, `p. ${c.posizione.pagina}`]
     .filter(Boolean)
     .join(', ');
-  return `${c.documentoTitolo} — ${dove}`;
+  return `${c.documentoTitolo} - ${dove}`;
 }
 
 function scaricaDocumento(res, agente, esecuzione) {
   const template = trovaTemplate(agente.templateOutputId);
-  const titolo = `${agente.nome} — esito`;
+  const titolo = `${agente.nome} - esito`;
   const corpo = testoPiano(esecuzione.output ?? '');
   const fonti = esecuzione.citazioni.map(etichettaCitazione);
 

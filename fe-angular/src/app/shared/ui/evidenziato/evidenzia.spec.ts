@@ -8,8 +8,8 @@ const reso = (testo: string, query: string) =>
 
 describe('evidenziaTermini', () => {
   it('segna il termine dovunque compaia, senza badare alle maiuscole', () => {
-    expect(reso('DIP Danni — Allianz Bonus Malus autovetture', 'bonus')).toBe(
-      'DIP Danni — Allianz [Bonus] Malus autovetture',
+    expect(reso('DIP Danni - Allianz Bonus Malus autovetture', 'bonus')).toBe(
+      'DIP Danni - Allianz [Bonus] Malus autovetture',
     );
     expect(reso('auto e Autovetture', 'auto')).toBe('[auto] e [Auto]vetture');
   });

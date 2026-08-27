@@ -56,7 +56,7 @@ export function etichettaAmbito(
 /** Le opzioni del select: Generale in testa, poi i rami, poi le compagnie. */
 export function opzioniAmbito(rami: Ramo[], compagnie: Compagnia[]): OpzioneAmbito[] {
   return [
-    { valore: 'generale', etichetta: 'Generale — vale sempre' },
+    { valore: 'generale', etichetta: 'Generale - vale sempre' },
     ...rami.map((r) => ({ valore: `ramo:${r.id}`, etichetta: `Ramo · ${r.nome}` })),
     ...compagnie.map((c) => ({ valore: `compagnia:${c.id}`, etichetta: `Compagnia · ${c.nome}` })),
   ];

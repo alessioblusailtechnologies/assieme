@@ -160,7 +160,7 @@ export class CodaCaricamento {
     const inCorso = voci.filter((v) => v.stato === 'in-corso').length;
     const errori = voci.filter((v) => v.stato === 'errore').length;
 
-    if (inCorso) return `caricamento — ${inCorso} di ${voci.length}`;
+    if (inCorso) return `caricamento - ${inCorso} di ${voci.length}`;
     if (errori) return `${errori} ${errori === 1 ? 'file non caricato' : 'file non caricati'}`;
     return `${voci.length} ${voci.length === 1 ? 'file caricato' : 'file caricati'}`;
   });

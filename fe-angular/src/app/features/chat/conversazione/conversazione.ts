@@ -259,7 +259,7 @@ export class Conversazione {
     const descrizione = [
       `documento ${formato.toUpperCase()}`,
       template ? `sul template «${template.nome}»` : undefined,
-      istruzioni ? `— ${istruzioni}` : undefined,
+      istruzioni ? `- ${istruzioni}` : undefined,
     ]
       .filter(Boolean)
       .join(' ');

@@ -463,7 +463,7 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         if (formato === 'pptx') {
           inviaJson(res, 415, {
             codice: 'FORMATO_NON_SUPPORTATO',
-            messaggio: `«${f.nome}»: la generazione PPTX non è ancora disponibile — carica un template PDF, DOCX o XLSX.`,
+            messaggio: `«${f.nome}»: la generazione PPTX non è ancora disponibile - carica un template PDF, DOCX o XLSX.`,
           });
           return true;
         }
@@ -501,16 +501,16 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         '',
         'Struttura del template:',
         '',
-        '{{titolo}} — titolo del documento',
-        '{{destinatario}} — cliente o pratica',
-        '{{data}} — data di generazione',
-        '{{contenuto}} — il testo generato da VELIA',
-        '{{fonti}} — le citazioni, in coda',
+        '{{titolo}} - titolo del documento',
+        '{{destinatario}} - cliente o pratica',
+        '{{data}} - data di generazione',
+        '{{contenuto}} - il testo generato da VELIA',
+        '{{fonti}} - le citazioni, in coda',
         '',
         `Intestazione e piè di pagina applicano l’identità visiva dell’agenzia:`,
         `colore ${IDENTITA.colorePrimario}, recapiti e firma configurati nelle Impostazioni.`,
       ].join('\n');
-      const pdf = generaPdfDaTesto(`Anteprima — ${template.nome}`, testo);
+      const pdf = generaPdfDaTesto(`Anteprima - ${template.nome}`, testo);
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
         'Content-Length': pdf.length,

@@ -461,7 +461,7 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       const file = await generaDocumento({
         template: risolto,
         fileTemplate,
-        titolo: `${agente.nome} — esito`,
+        titolo: `${agente.nome} - esito`,
         testo: esecuzione.output,
         fonti: fontiDaCitazioni(esecuzione.citazioni),
         identita: { ...versoIdentitaGenerazione(identita), ...(logo && { logo }) },
@@ -549,7 +549,7 @@ async function idrataFonti(
       }
       if (fonte.soloPreferiti) dettagli.push('solo preferiti');
       const radice = fonte.archivio === 'pubblico' ? 'Archivio Pubblico' : 'Archivio Privato';
-      idratate.push({ ...fonte, etichetta: dettagli.length ? `${radice} — ${dettagli.join(', ')}` : `${radice} — tutto` });
+      idratate.push({ ...fonte, etichetta: dettagli.length ? `${radice} - ${dettagli.join(', ')}` : `${radice} - tutto` });
     }
   }
   return idratate;

@@ -33,7 +33,7 @@ import { Select } from '@shared/ui/select/select';
       <form class="modulo" (submit)="invia($event)">
         @if (documento(); as doc) {
           <p class="riferimento">
-            {{ doc.titolo }} — {{ doc.compagnia.nome }}, {{ doc.edizione.etichetta }}
+            {{ doc.titolo }} - {{ doc.compagnia.nome }}, {{ doc.edizione.etichetta }}
           </p>
         }
 
