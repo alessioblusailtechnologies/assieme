@@ -1,5 +1,5 @@
 <div class="marchio">
-  <a class="marchio__link" routerLink="/chat" aria-label="Velia — vai alla chat">
+  <a class="marchio__link" routerLink="/chat" aria-label="Velia - vai alla chat">
     <!--
       Il segno è un SVG e non una lettera in una scatola CSS.
       Centrare otticamente una maiuscola con `place-items: center` non
@@ -77,7 +77,7 @@
 
             <!--
               RF-C-01: lo storico sta nella navigazione, non dentro la
-              sezione — raggiungibile da ovunque, e la conversazione aperta
+              sezione - raggiungibile da ovunque, e la conversazione aperta
               tiene tutta la larghezza per sé.
             -->
             @if (voce.percorso === '/chat' && !compressa() && conversazioniEspanse()) {
@@ -98,7 +98,7 @@
                     }
                   </li>
                 } @else {
-                  @for (c of storico.conversazioni(); track c.id) {
+                  @for (c of conversazioniRecenti(); track c.id) {
                     <li class="conversazioni__riga" (mouseleave)="disarma()">
                       @if (inRinomina() === c.id) {
                         <input
@@ -149,6 +149,21 @@
                       }
                     </li>
                   }
+
+                  <!-- Nella barra solo le più recenti: il resto sta nella sezione
+                       Conversazioni. In fondo alla lista, dove si arriva dopo
+                       averla scorsa e non aver trovato quella che si cercava. -->
+                  <li class="conversazioni__tutte">
+                    <a
+                      uiBottone
+                      dimensione="piccolo"
+                      routerLink="/conversazioni"
+                      [attr.aria-label]="'Mostra tutte le ' + storico.conversazioni().length + ' conversazioni'"
+                    >
+                      <span>Mostra tutte</span>
+                      <ui-icon name="espandi-destra" [size]="14" />
+                    </a>
+                  </li>
                 }
               </ul>
             }

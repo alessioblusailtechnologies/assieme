@@ -75,8 +75,14 @@
 
 /* ---------- Navigazione ---------- */
 
+/* Colonna flessibile: serve perché lo storico delle conversazioni possa
+   cedere altezza (vedi `.conversazioni`). Lo scorrimento resta come rete di
+   sicurezza, ma con la catena sotto non dovrebbe mai comparire. */
 .nav {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--sp-4) var(--sp-2);
 }
@@ -176,16 +182,31 @@
  * navigazione, senza rientro — è la spaziatura a dirne la gerarchia, non
  * lo spostamento. Voci più ariose delle etichette che sono.
  *
- * Altezza a tetto fisso e scorrimento interno: uno storico lungo non deve
- * spingere Archivi e Impostazioni fuori dallo schermo — scorre lui, non la
- * navigazione.
+ * Scorre lui, non la navigazione: uno storico lungo non deve spingere
+ * Archivi e Impostazioni fuori dallo schermo, né far comparire una barra di
+ * scorrimento a tutta la navigazione. Il tetto non è un numero fisso ma lo
+ * spazio che avanza dopo gli altri gruppi: la lista può stringersi
+ * (`flex-shrink`), gli altri gruppi no. Perché la stretta arrivi fino a
+ * lei, ogni antenato fra `.nav` e la lista deve essere a sua volta un
+ * elemento flessibile che accetta di scendere sotto il proprio contenuto
+ * (`min-height: 0`), altrimenti il primo che si rifiuta blocca la catena.
  */
+.nav__gruppo:has(.conversazioni),
+.nav__gruppo:has(.conversazioni) > ul,
+.nav__gruppo:has(.conversazioni) > ul > li:has(.conversazioni) {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
 .conversazioni {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
   margin: var(--sp-2) 0 var(--sp-3);
-  max-height: 264px;
+  flex: 0 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
@@ -293,6 +314,20 @@
   text-decoration: underline;
 }
 
+/* «Mostra tutte»: ultima voce della lista, centrata, con il pulsante di
+   sistema — lo stesso dell'«Apri» nelle tabelle. Si scorre fino a lei. */
+.conversazioni__tutte {
+  display: flex;
+  justify-content: center;
+  flex: none;
+  padding: var(--sp-2) 0 var(--sp-1);
+}
+
+.conversazioni__tutte a,
+.conversazioni__tutte a:hover {
+  text-decoration: none;
+}
+
 /* ---------- Comprimi ---------- */
 
 .comprimi {
@@ -359,6 +394,21 @@
   /* Da cassetto la compressione non ha senso: si apre intero o non c'è. */
   .comprimi {
     display: none;
+  }
+
+  /* Nel cassetto la navigazione scorre intera, da toccare: lo storico torna
+     a un tetto fisso e non si stringe, altrimenti in orizzontale su un
+     telefono sparirebbe. */
+  .nav__gruppo:has(.conversazioni),
+  .nav__gruppo:has(.conversazioni) > ul,
+  .nav__gruppo:has(.conversazioni) > ul > li:has(.conversazioni) {
+    flex: none;
+    min-height: auto;
+  }
+
+  .conversazioni {
+    flex: none;
+    max-height: 264px;
   }
 }
 

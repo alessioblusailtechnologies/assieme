@@ -11,10 +11,14 @@ import {
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
+import { Bottone } from '@shared/ui/bottone/bottone';
 import { GruppoNavigazione, NAVIGAZIONE } from '../navigazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
+
+/** Quante conversazioni stanno nella barra: le altre si ritrovano nella sezione Conversazioni. */
+const RECENTI_IN_BARRA = 20;
 
 /**
  * Barra laterale di navigazione.
@@ -33,7 +37,7 @@ import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
  */
 @Component({
   selector: 'app-barra-laterale',
-  imports: [Icona, RouterLink, RouterLinkActive],
+  imports: [Bottone, Icona, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './barra-laterale.html',
   styleUrl: './barra-laterale.scss',
@@ -50,6 +54,12 @@ export class BarraLaterale {
 
   /** Lo storico si ripiega senza uscire dalla chat: è una preferenza, non navigazione. */
   protected readonly conversazioniEspanse = signal(true);
+
+  /* La barra è un accesso rapido, non un archivio: oltre le venti più
+     recenti si va nella sezione, dove si cerca per titolo. */
+  protected readonly conversazioniRecenti = computed(() =>
+    this.storico.conversazioni().slice(0, RECENTI_IN_BARRA),
+  );
 
   // --- Rinomina ed eliminazione dalla lista (RF-C-01) ----------------------
 

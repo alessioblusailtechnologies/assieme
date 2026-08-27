@@ -36,6 +36,15 @@ export const routes: Routes = [
         loadChildren: () => import('@features/chat/chat.routes').then((m) => m.CHAT_ROUTES),
       },
       {
+        /* Tutte le conversazioni: la barra laterale ne mostra solo le ultime venti. */
+        path: 'conversazioni',
+        loadComponent: () =>
+          import('@features/conversazioni/elenco-conversazioni').then(
+            (m) => m.ElencoConversazioni,
+          ),
+        title: 'Conversazioni - Velia',
+      },
+      {
         /* Fase 4 — costruita. */
         path: 'tabelle',
         loadChildren: () => import('@features/tabelle/tabelle.routes').then((m) => m.TABELLE_ROUTES),
@@ -68,7 +77,7 @@ export const routes: Routes = [
         path: 'memoria',
         loadComponent: () =>
           import('@features/memoria/pannello-memoria').then((m) => m.PannelloMemoria),
-        title: 'Memoria — Velia',
+        title: 'Memoria - Velia',
       },
       {
         /* Fase 5 — costruita; il figlio `mcp` è arrivato con la Fase 7. */
