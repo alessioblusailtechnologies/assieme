@@ -23,7 +23,7 @@
       type="text"
       [value]="descrizione()"
       (input)="descrizione.set($any($event.target).value)"
-      placeholder="A cosa serve, in una riga — la leggeranno i colleghi nell'elenco."
+      placeholder="A cosa serve, in una riga - la leggeranno i colleghi nell'elenco."
       aria-label="Descrizione dell'agente"
     />
   </section>
@@ -53,31 +53,23 @@
       porzione è un insieme vivo: i documenti che entrano in archivio domani ne fanno parte.
     </p>
 
+    <!-- Lo stesso selettore della chat, barra di ricerca compresa. -->
     <div class="cerca">
-      <label class="ui-campo-icona cerca__campo">
-        <ui-icon name="cerca" [size]="16" />
-        <input
-          uiCampo
-          type="search"
-          [value]="ricerca()"
-          (input)="aggiornaRicerca($event)"
-          (focus)="pannelloAperto.set(true)"
-          (blur)="chiudiPannello()"
-          (keydown)="suTasto($event)"
-          placeholder="Cerca un documento da aggiungere…"
-          role="combobox"
-          aria-label="Cerca un documento da aggiungere alle fonti"
-          [attr.aria-expanded]="pannelloAperto()"
-          aria-controls="selettore-documenti"
-          aria-autocomplete="list"
-          [attr.aria-activedescendant]="idOpzioneAttiva()"
-        />
-      </label>
+      <button
+        uiBottone
+        type="button"
+        (mousedown)="$event.preventDefault()"
+        (click)="pannelloAperto.set(!pannelloAperto())"
+        [attr.aria-expanded]="pannelloAperto()"
+        aria-controls="selettore-documenti"
+      >
+        <ui-icon name="aggiungi" [size]="14" />
+        <span>Aggiungi documenti</span>
+      </button>
 
       @if (pannelloAperto()) {
         <ui-selettore-documenti
           class="cerca__pannello"
-          [query]="ricerca()"
           [esclusi]="idDocumentiScelti()"
           (scelto)="aggiungiDocumento($event)"
           (chiuso)="chiudiPannello()"
@@ -188,7 +180,7 @@
         [opzioni]="opzioniTemplate()"
         campoEtichetta="etichetta"
         campoValore="valore"
-        [placeholder]="serveTemplate() ? 'Scegli il template — obbligatorio' : 'Nessun template'"
+        [placeholder]="serveTemplate() ? 'Scegli il template - obbligatorio' : 'Nessun template'"
         [azzerabile]="!serveTemplate()"
         [valore]="templateId()"
         (valoreChange)="templateId.set($any($event))"
@@ -203,7 +195,7 @@
 
   <!-- 5 · Parametri (RF-E-05) -->
   <section class="passo" aria-labelledby="passo-parametri">
-    <p class="mono" id="passo-parametri">5 · Parametri all'avvio — facoltativi</p>
+    <p class="mono" id="passo-parametri">5 · Parametri all'avvio - facoltativi</p>
     <p class="passo__spiega">
       Ciò che cambia a ogni esecuzione manuale, come il documento su cui operare quella volta.
     </p>
@@ -274,7 +266,7 @@
 
   <!-- 6 · Pianificazione (RF-E-04) -->
   <section class="passo" aria-labelledby="passo-pianificazione">
-    <p class="mono" id="passo-pianificazione">6 · Pianificazione — facoltativa</p>
+    <p class="mono" id="passo-pianificazione">6 · Pianificazione - facoltativa</p>
 
     <label class="pianifica" for="pianificazione-attiva">
       <ui-checkbox

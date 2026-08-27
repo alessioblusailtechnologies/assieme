@@ -3,7 +3,6 @@
     <ui-selettore-documenti
       class="selettore"
       [query]="menzione()?.query ?? ''"
-      [conRicerca]="true"
       [esclusi]="esclusi()"
       (scelto)="referenzia($event)"
       (chiuso)="chiudiSelettore()"
@@ -27,7 +26,7 @@
       non il template: qui solo il contenitore e i suoi eventi.
 
       Sta in cima e prende tutta la larghezza: il testo comincia dove comincia
-      il riquadro. Le azioni stanno sotto, su una riga loro — e per chi arriva
+      il riquadro. Le azioni stanno sotto, su una riga loro - e per chi arriva
       da tastiera il campo viene prima dei pulsanti, che è l'ordine in cui si
       usa il composer.
     -->
@@ -38,7 +37,7 @@
       spellcheck="true"
       aria-label="Messaggio"
       aria-multiline="true"
-      data-placeholder="Fai una domanda sui documenti — «@» per referenziarli"
+      data-placeholder="Fai una domanda sui documenti - «@» per referenziarli"
       (input)="aggiorna()"
       (keydown)="suTasto($event)"
       (keyup)="aggiornaCursore()"
@@ -53,7 +52,7 @@
         class="campo__allega"
         (click)="file.click()"
         aria-label="Allega un file alla conversazione"
-        title="Allega un file — resta in questa conversazione, non entra negli archivi"
+        title="Allega un file - resta in questa conversazione, non entra negli archivi"
       >
         <ui-icon name="allega" [size]="17" />
       </button>

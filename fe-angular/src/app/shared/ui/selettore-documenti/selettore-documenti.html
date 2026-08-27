@@ -1,36 +1,35 @@
-<div class="pannello" #pannello>
+<!--
+  Un clic dentro al pannello non deve togliere il fuoco al campo: vale per le
+  voci, ma anche per la barra di scorrimento dell'elenco, che non è
+  focalizzabile e senza questo faceva scattare il `blur` - e il pannello si
+  chiudeva sotto il mouse. Il campo è escluso, o non si potrebbe più
+  posizionare il cursore con un clic.
+-->
+<div class="pannello" #pannello (mousedown)="tieniIlFuoco($event)">
   <!--
     La barra di ricerca: un campo vero, che prende il fuoco all'apertura. Nel
-    messaggio resta la sola «@» — ciò che si cerca non è ciò che si scrive.
+    messaggio resta la sola «@» - ciò che si cerca non è ciò che si scrive.
   -->
   <div class="barra" [class.is-in-attesa]="inCaricamento()">
     <ui-icon name="cerca" [size]="15" />
-    @if (conRicerca()) {
-      <input
-        #campo
-        class="barra__campo"
-        type="text"
-        role="combobox"
-        autocomplete="off"
-        spellcheck="false"
-        aria-label="Cerca un documento da referenziare"
-        aria-controls="selettore-documenti"
-        aria-autocomplete="list"
-        aria-expanded="true"
-        [attr.aria-activedescendant]="idOpzioneAttiva()"
-        placeholder="Cerca fra i documenti dei due archivi…"
-        [value]="ricerca()"
-        (input)="scrivi($any($event.target).value)"
-        (keydown)="suTastoCampo($event)"
-        (blur)="chiuso.emit()"
-      />
-    } @else if (ricerca()) {
-      <!-- Senza barra propria: il pannello è la tendina di un campo altrui,
-           e qui si limita a ripetere che cosa si sta cercando. -->
-      <span class="barra__eco">{{ ricerca() }}</span>
-    } @else {
-      <span class="barra__eco is-vuoto">Cerca fra i documenti dei due archivi…</span>
-    }
+    <input
+      #campo
+      class="barra__campo"
+      type="text"
+      role="combobox"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Cerca un documento da referenziare"
+      aria-controls="selettore-documenti"
+      aria-autocomplete="list"
+      aria-expanded="true"
+      [attr.aria-activedescendant]="idOpzioneAttiva()"
+      placeholder="Cerca fra i documenti dei due archivi…"
+      [value]="ricerca()"
+      (input)="scrivi($any($event.target).value)"
+      (keydown)="suTastoCampo($event)"
+      (blur)="suBlur()"
+    />
     <span class="mono barra__conteggio" role="status">
       @if (inCaricamento() && !voci().length) {
         cerco…
@@ -96,7 +95,6 @@
             [class.is-attiva]="voci()[indiceAttivo()] === voce"
             [attr.aria-selected]="voci()[indiceAttivo()] === voce"
             (click)="scegli(voce)"
-            (mousedown)="$event.preventDefault()"
             (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
           >
             <ui-icon

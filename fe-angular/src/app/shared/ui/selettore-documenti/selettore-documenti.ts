@@ -63,13 +63,19 @@ const RISULTATI_PER_ARCHIVIO = 6;
  * presenta i risultati in due gruppi.
  *
  * In cima c'è una **barra di ricerca vera**, e il pannello se ne prende il
- * fuoco appena si apre: da lì in poi si scrive qui. La conseguenza è che nel
- * messaggio resta la sola `@` — il testo cercato non è testo del messaggio,
- * e finita la ricerca sparisce con lei. Chi ha aperto il pannello e cambia
- * idea preme Esc, o cancella all'indietro fino a togliere anche la `@`.
+ * fuoco appena si apre: da lì in poi si scrive qui. Nella chat la
+ * conseguenza è che nel messaggio resta la sola `@` — il testo cercato non è
+ * testo del messaggio, e finita la ricerca sparisce con lei. Chi ha aperto
+ * il pannello e cambia idea preme Esc, o cancella all'indietro fino a
+ * togliere anche la `@`.
  *
- * Il chiamante non inoltra più tasti: il campo se li gestisce, e restituisce
- * il fuoco al composer quando ha finito (`scelto`, `chiuso`, `annullato`).
+ * È lo stesso pannello ovunque — chat, costruttore di tabelle, agenti — e
+ * la barra è sempre la sua: un chiamante con un campo proprio finiva per
+ * mostrare qui una barra che sembrava un campo e non lo era. Il chiamante
+ * non inoltra tasti: il campo se li gestisce, e avvisa quando ha finito
+ * (`scelto`, `chiuso`). Dopo una scelta la ricerca si svuota da sé: chi
+ * sceglie più documenti di fila riparte da zero, chi chiude non se ne
+ * accorge.
  *
  * Dei documenti privati si propongono **solo i pronti**: un documento in
  * elaborazione non è referenziabile (RF-B-05), e scoprirlo dopo l'invio è il
@@ -87,24 +93,21 @@ export class SelettoreDocumenti {
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
 
   /**
-   * Che cosa cercare.
-   *
-   * Con `conRicerca` spento è **la** query, e la scrive il chiamante dal
-   * proprio campo. Acceso è il seme: ciò che stava dopo la `@` all'apertura
-   * — di solito nulla, ma incollare «@bonus» deve trovare il campo pieno —
-   * e da lì in poi comanda il campo interno.
+   * Il seme della ricerca: ciò che stava dopo la `@` all'apertura — di
+   * solito nulla, ma incollare «@bonus» deve trovare il campo pieno. Da lì
+   * in poi comanda il campo interno.
    */
   readonly query = input<string>('');
 
   /**
-   * Se il pannello si porta dentro la propria barra di ricerca.
+   * Se perdere il fuoco chiude il pannello.
    *
-   * Nella chat sì: si arriva qui da una `@` dentro un messaggio, e non c'è
-   * nessun campo a cui appoggiarsi. Nel costruttore di tabelle e
-   * nell'editor degli agenti no: lì il pannello è la tendina di un campo
-   * che c'è già, ed è quello a comandare.
+   * Vero dove il pannello galleggia sopra la pagina (chat, costruttore,
+   * editor): un clic altrove è un modo di chiuderlo. Falso dove è incassato
+   * in un cassetto o in un modulo: lì fa parte della pagina, e sparire
+   * perché si è cliccato una frase accanto sarebbe un difetto.
    */
-  readonly conRicerca = input(false);
+  readonly chiusuraAlBlur = input(true);
 
   /** Documenti da non riproporre: già referenziati o già nel contesto. */
   readonly esclusi = input<Id[]>([]);
@@ -185,9 +188,6 @@ export class SelettoreDocumenti {
     /* Il pannello nasce col fuoco dentro: da qui in poi si scrive qui, non
        più nel composer. */
     afterNextRender(() => this.campo()?.nativeElement.focus());
-    /* Il campo esiste solo con `conRicerca`: dove il pannello è la tendina
-       di un campo altrui, il fuoco deve restare dov'è. */
-
 
     /* Nuovi risultati, selezione da capo: l'elemento evidenziato deve sempre
        esistere ed essere il primo che l'occhio incontra. */
@@ -268,11 +268,8 @@ export class SelettoreDocumenti {
     this.ricerca.set(valore);
   }
 
-  /**
-   * Il chiamante che ha un campo suo inoltra qui i tasti di navigazione.
-   * Restituisce `true` se il tasto è stato consumato.
-   */
-  gestisciTasto(evento: KeyboardEvent): boolean {
+  /** I tasti di navigazione della lista. Restituisce `true` se consumato. */
+  private gestisciTasto(evento: KeyboardEvent): boolean {
     const voci = this.voci();
     switch (evento.key) {
       case 'ArrowDown':
@@ -286,7 +283,7 @@ export class SelettoreDocumenti {
       case 'Enter':
       case 'Tab': {
         const voce = voci[this.indiceAttivo()];
-        if (voce) this.scelto.emit(voce.riferimento);
+        if (voce) this.consegna(voce);
         return true;
       }
       case 'Escape':
@@ -310,7 +307,23 @@ export class SelettoreDocumenti {
   }
 
   protected scegli(voce: VoceSelettore): void {
+    this.consegna(voce);
+  }
+
+  protected tieniIlFuoco(evento: MouseEvent): void {
+    if (evento.target !== this.campo()?.nativeElement) evento.preventDefault();
+  }
+
+  protected suBlur(): void {
+    if (this.chiusuraAlBlur()) this.chiuso.emit();
+  }
+
+  /* Scelto un documento, la ricerca riparte da zero: chi ne aggiunge un
+     altro di fila non deve cancellare a mano, e chi chiude il pannello non
+     se ne accorge. */
+  private consegna(voce: VoceSelettore): void {
     this.scelto.emit(voce.riferimento);
+    this.ricerca.set('');
   }
 }
 
@@ -321,7 +334,7 @@ function voce(d: Documento, query: string): VoceSelettore {
   });
 
   if (d.archivio === 'pubblico') {
-    const dettaglio = `${d.compagnia.nome} — ${d.prodotto} · ${d.edizione.etichetta}`;
+    const dettaglio = `${d.compagnia.nome} - ${d.prodotto} · ${d.edizione.etichetta}`;
     return {
       riferimento: { id: d.id, titolo: d.titolo, archivio: 'pubblico' },
       dettaglio,
@@ -332,7 +345,7 @@ function voce(d: Documento, query: string): VoceSelettore {
 
   const parti = [etichettaTipologiaBreve(d.tipologia)];
   if (d.riferimentoCliente) parti.push(d.riferimentoCliente);
-  const dettaglio = parti.join(' — ');
+  const dettaglio = parti.join(' - ');
   return {
     riferimento: { id: d.id, titolo: d.titolo, archivio: 'privato' },
     dettaglio,

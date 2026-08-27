@@ -6,7 +6,6 @@ import {
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -105,10 +104,8 @@ export class DettaglioAgente {
   protected readonly cassettoAvvio = signal(false);
   protected readonly valoriTesto = signal<Record<string, string>>({});
   protected readonly documentiScelti = signal<Record<string, RiferimentoDocumento>>({});
-  protected readonly ricercaParametro = signal('');
   /** La chiave del parametro-documento la cui ricerca è aperta. */
   protected readonly parametroInRicerca = signal<string | undefined>(undefined);
-  private readonly selettore = viewChild(SelettoreDocumenti);
 
   protected readonly parametri = computed(() => this.store.agente()?.parametri ?? []);
 
@@ -119,7 +116,6 @@ export class DettaglioAgente {
     }
     this.valoriTesto.set({});
     this.documentiScelti.set({});
-    this.ricercaParametro.set('');
     this.parametroInRicerca.set(undefined);
     this.cassettoAvvio.set(true);
   }
@@ -130,12 +126,6 @@ export class DettaglioAgente {
 
   protected apriRicerca(chiave: string): void {
     this.parametroInRicerca.set(chiave);
-    this.ricercaParametro.set('');
-  }
-
-  protected suTastoRicerca(evento: KeyboardEvent): void {
-    const selettore = this.selettore();
-    if (selettore?.gestisciTasto(evento)) evento.preventDefault();
   }
 
   protected scegliDocumento(documento: RiferimentoDocumento): void {
@@ -143,7 +133,6 @@ export class DettaglioAgente {
     if (!chiave) return;
     this.documentiScelti.update((d) => ({ ...d, [chiave]: documento }));
     this.parametroInRicerca.set(undefined);
-    this.ricercaParametro.set('');
   }
 
   protected togliDocumento(chiave: string): void {

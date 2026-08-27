@@ -58,23 +58,6 @@
   color: var(--c-text-mute);
 }
 
-/* Senza barra propria il pannello è la tendina di un campo altrui: qui la
-   fascia si limita a ripetere che cosa si sta cercando. */
-.barra__eco {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--f-lettura);
-  font-size: var(--t-body);
-  color: var(--c-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.barra__eco.is-vuoto {
-  color: var(--c-text-mute);
-}
-
 /* Il fuoco è nel campo per definizione — è appena stato dato — e disegnarlo
    sarebbe un anello permanente attorno a mezzo pannello. Si segna invece
    l'icona, che dice dove sta il cursore. */

@@ -35,7 +35,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-  max-width: 860px;
 }
 
 .passo {
@@ -62,14 +61,6 @@
 
 .cerca {
   position: relative;
-}
-
-.cerca__campo {
-  display: block;
-}
-
-.cerca__campo input {
-  width: 100%;
 }
 
 .cerca__pannello {

@@ -7,37 +7,33 @@
 <div class="corpo">
   <!-- 1 · Documenti -->
   <section class="passo" aria-labelledby="passo-documenti">
-    <p class="mono" id="passo-documenti">1 · Documenti — le righe</p>
+    <p class="mono" id="passo-documenti">1 · Documenti - le righe</p>
     <p class="passo__spiega">
       Scegli i documenti da confrontare, da entrambi gli archivi. Con due o più il confronto
       rende di più, ma anche un documento solo si può interrogare.
     </p>
 
+    <!--
+      Lo stesso selettore della chat, barra di ricerca compresa: si apre dal
+      pulsante, prende il fuoco, e resta aperto dopo ogni scelta perché chi
+      costruisce un confronto aggiunge quasi sempre più di un documento di fila.
+    -->
     <div class="cerca">
-      <label class="ui-campo-icona cerca__campo">
-        <ui-icon name="cerca" [size]="16" />
-        <input
-          uiCampo
-          type="search"
-          [value]="ricerca()"
-          (input)="aggiornaRicerca($event)"
-          (focus)="pannelloAperto.set(true)"
-          (blur)="chiudiPannello()"
-          (keydown)="suTasto($event)"
-          placeholder="Cerca per compagnia, prodotto o titolo…"
-          role="combobox"
-          aria-label="Cerca un documento da aggiungere"
-          [attr.aria-expanded]="pannelloAperto()"
-          aria-controls="selettore-documenti"
-          aria-autocomplete="list"
-          [attr.aria-activedescendant]="idOpzioneAttiva()"
-        />
-      </label>
+      <button
+        uiBottone
+        type="button"
+        (mousedown)="$event.preventDefault()"
+        (click)="pannelloAperto.set(!pannelloAperto())"
+        [attr.aria-expanded]="pannelloAperto()"
+        aria-controls="selettore-documenti"
+      >
+        <ui-icon name="aggiungi" [size]="14" />
+        <span>Aggiungi documenti</span>
+      </button>
 
       @if (pannelloAperto()) {
         <ui-selettore-documenti
           class="cerca__pannello"
-          [query]="ricerca()"
           [esclusi]="idDocumenti()"
           (scelto)="aggiungiDocumento($event)"
           (chiuso)="chiudiPannello()"
@@ -72,7 +68,7 @@
 
   <!-- 2 · Criteri -->
   <section class="passo" aria-labelledby="passo-criteri">
-    <p class="mono" id="passo-criteri">2 · Criteri — le colonne</p>
+    <p class="mono" id="passo-criteri">2 · Criteri - le colonne</p>
 
     @if (!documenti().length) {
       <p class="passo__vuoto">
@@ -143,14 +139,14 @@
 
   <!-- 3 · Titolo -->
   <section class="passo" aria-labelledby="passo-titolo">
-    <p class="mono" id="passo-titolo">3 · Titolo — facoltativo</p>
+    <p class="mono" id="passo-titolo">3 · Titolo - facoltativo</p>
     <input
       uiCampo
       type="text"
       class="passo__titolo"
       [value]="titolo()"
       (input)="titolo.set($any($event.target).value)"
-      placeholder="es. Confronto RC Auto — AUTOPIÙ vs preventivo UnipolSai"
+      placeholder="es. Confronto RC Auto - AUTOPIÙ vs preventivo UnipolSai"
       aria-label="Titolo della tabella"
     />
     <p class="passo__vuoto">Se lo lasci vuoto lo ricaviamo dai documenti scelti.</p>

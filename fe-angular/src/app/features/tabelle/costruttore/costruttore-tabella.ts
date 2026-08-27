@@ -4,7 +4,6 @@ import {
   computed,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
@@ -28,8 +27,8 @@ import { componiColonne } from './colonne';
  * propone guardando i documenti scelti. Il titolo è facoltativo: se manca lo
  * ricava il server dai documenti.
  *
- * La ricerca riusa il selettore dei due archivi della chat: pannello
- * passivo, digitazione e tasti restano al campo.
+ * La ricerca è il selettore dei due archivi della chat, barra compresa: si
+ * apre dal pulsante e da lì in poi si scrive lì.
  */
 @Component({
   selector: 'app-costruttore-tabella',
@@ -53,33 +52,14 @@ export class CostruttoreTabella {
   protected readonly documenti = signal<RiferimentoDocumento[]>([]);
   protected readonly idDocumenti = computed(() => this.documenti().map((d) => d.id));
 
-  protected readonly ricerca = signal('');
   protected readonly pannelloAperto = signal(false);
-  private readonly selettore = viewChild(SelettoreDocumenti);
-
-  protected readonly idOpzioneAttiva = computed(() =>
-    this.pannelloAperto() ? this.selettore()?.idOpzioneAttiva() : undefined,
-  );
-
-  protected aggiornaRicerca(evento: Event): void {
-    this.ricerca.set((evento.target as HTMLInputElement).value);
-    this.pannelloAperto.set(true);
-  }
-
-  /** I tasti di navigazione vanno al pannello; il fuoco resta al campo. */
-  protected suTasto(evento: KeyboardEvent): void {
-    const selettore = this.selettore();
-    if (!this.pannelloAperto() || !selettore) return;
-    if (selettore.gestisciTasto(evento)) evento.preventDefault();
-  }
 
   protected aggiungiDocumento(documento: RiferimentoDocumento): void {
     this.documenti.update((d) =>
       d.some((x) => x.id === documento.id) ? d : [...d, documento],
     );
-    /* Il pannello resta aperto e la ricerca si azzera: chi costruisce un
-       confronto aggiunge quasi sempre più di un documento di fila. */
-    this.ricerca.set('');
+    /* Il pannello resta aperto, e svuota da sé la ricerca: chi costruisce
+       un confronto aggiunge quasi sempre più di un documento di fila. */
   }
 
   protected rimuoviDocumento(id: Id): void {

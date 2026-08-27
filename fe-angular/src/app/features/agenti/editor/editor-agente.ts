@@ -6,7 +6,6 @@ import {
   inject,
   input,
   signal,
-  viewChild,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
@@ -187,30 +186,13 @@ export class EditorAgente {
 
   // --- Fonti (RF-E-02) ----------------------------------------------------
 
-  protected readonly ricerca = signal('');
   protected readonly pannelloAperto = signal(false);
-  private readonly selettore = viewChild(SelettoreDocumenti);
 
   protected readonly idDocumentiScelti = computed(() =>
     this.fonti()
       .filter((f) => f.tipo === 'documento')
       .map((f) => f.documentoId),
   );
-
-  protected readonly idOpzioneAttiva = computed(() =>
-    this.pannelloAperto() ? this.selettore()?.idOpzioneAttiva() : undefined,
-  );
-
-  protected aggiornaRicerca(evento: Event): void {
-    this.ricerca.set((evento.target as HTMLInputElement).value);
-    this.pannelloAperto.set(true);
-  }
-
-  protected suTasto(evento: KeyboardEvent): void {
-    const selettore = this.selettore();
-    if (!this.pannelloAperto() || !selettore) return;
-    if (selettore.gestisciTasto(evento)) evento.preventDefault();
-  }
 
   protected chiudiPannello(): void {
     this.pannelloAperto.set(false);
@@ -234,7 +216,6 @@ export class EditorAgente {
             },
           ],
     );
-    this.ricerca.set('');
   }
 
   /* La porzione di archivio in costruzione (RF-E-02: insiemi che cambiano da
@@ -260,7 +241,7 @@ export class EditorAgente {
       this.rami().find((r) => r.id === ramoId)?.nome,
       soloPreferiti ? 'solo preferiti' : undefined,
     ].filter(Boolean);
-    const etichetta = `${archivio === 'pubblico' ? 'Archivio Pubblico' : 'Archivio Privato'} — ${
+    const etichetta = `${archivio === 'pubblico' ? 'Archivio Pubblico' : 'Archivio Privato'} - ${
       dettagli.length ? dettagli.join(', ') : 'tutto'
     }`;
 
@@ -300,9 +281,9 @@ export class EditorAgente {
   // --- Output (RF-E-02, RF-E-13) ------------------------------------------
 
   protected readonly opzioniFormato: { valore: FormatoOutputAgente; etichetta: string }[] = [
-    { valore: 'testo', etichetta: 'Testo — risposta discorsiva con citazioni' },
-    { valore: 'tabella', etichetta: 'Tabella — estrazione strutturata con citazioni' },
-    { valore: 'documento', etichetta: 'Documento — file generato su un template' },
+    { valore: 'testo', etichetta: 'Testo - risposta discorsiva con citazioni' },
+    { valore: 'tabella', etichetta: 'Tabella - estrazione strutturata con citazioni' },
+    { valore: 'documento', etichetta: 'Documento - file generato su un template' },
   ];
 
   /** Il formato `documento` senza template non produce nulla: il vincolo sta qui. */
