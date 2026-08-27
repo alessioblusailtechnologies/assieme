@@ -10,7 +10,6 @@ import { CellaDocumento } from './celle/cella-documento';
 import { CellaStato } from './celle/cella-stato';
 import { CellaTipologia } from '@shared/griglia/cella-tipologia';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
-import { CodaCaricamento } from '@shared/caricamento/coda-caricamento';
 import { Icona } from '@shared/ui/icona/icona';
 import { Paginazione } from '@shared/ui/paginazione/paginazione';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -18,6 +17,7 @@ import { Select } from '@shared/ui/select/select';
 import { StatoElaborazione, TipologiaDocumento } from '@core/models';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
+import { dimensioneLeggibile } from '@shared/testi/misura';
 
 const STATI: { valore: StatoElaborazione; etichetta: string }[] = [
   { valore: 'pronto', etichetta: 'Pronti' },
@@ -40,7 +40,7 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
  *
  * La differenza sostanziale rispetto all'archivio pubblico è che qui si
  * scrive: si carica, si etichetta, si elimina. Ne discendono la colonna di
- * stato (RF-B-05), la zona di caricamento e la coda.
+ * stato (RF-B-05) e la zona di caricamento.
  */
 @Component({
   selector: 'app-elenco-privati',
@@ -53,7 +53,6 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
     CellaStato,
     CellaTipologia,
     Checkbox,
-    CodaCaricamento,
     DatePipe,
     Icona,
     Paginazione,
@@ -79,17 +78,26 @@ export class ElencoPrivati {
 
   protected readonly documenti = computed(() => this.store.documenti());
 
-  /** RF-B-08: quanto spazio resta, in forma leggibile. */
+  /** Quanti file stanno salendo e a che punto sono, in una cifra sola. */
+  protected readonly caricamento = computed(() => {
+    const inCorso = this.store.coda().filter((v) => v.stato === 'in-corso');
+    if (!inCorso.length) return undefined;
+    const somma = inCorso.reduce((s, v) => s + v.percentuale, 0);
+    return { conteggio: inCorso.length, percentuale: Math.round(somma / inCorso.length) };
+  });
+
+  /**
+   * RF-B-08: quanto pesa l'archivio, accanto al conteggio. Il limite serve
+   * solo alla misura massima del singolo file sotto la zona di caricamento.
+   */
   protected readonly spazio = computed(() => {
     const s = this.store.spazio();
     if (!s) return undefined;
-    const percentuale = Math.round((s.usatoByte / s.limiteByte) * 100);
     return {
-      testo: `${(s.usatoByte / 1024 / 1024).toFixed(0)} MB di ${(s.limiteByte / 1024 / 1024 / 1024).toFixed(0)} GB`,
-      percentuale,
+      usato: dimensioneLeggibile(s.usatoByte),
       /* Si accende solo quando il problema è vicino: un indicatore sempre
          colorato smette di essere un segnale. */
-      inEsaurimento: percentuale >= 80,
+      inEsaurimento: s.usatoByte / s.limiteByte >= 0.8,
       limiteFileByte: s.limiteFileByte,
     };
   });

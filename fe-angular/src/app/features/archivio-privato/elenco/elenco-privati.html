@@ -3,30 +3,24 @@
 
   <ui-briciole [voci]="briciole" />
 
-  <span class="testata__stacco" aria-hidden="true"></span>
-
-  <p class="testata__spiega">
-    I documenti della tua agenzia. Nessun altro tenant può vederli.
-  </p>
-
-  @if (spazio(); as s) {
-    <!--
-      RF-B-08: lo spazio non è lì per essere guardato ogni giorno, ma perché
-      il giorno in cui finisce l'utente lo abbia già visto avvicinarsi.
-    -->
-    <span class="spazio" [class.is-esaurimento]="s.inEsaurimento">
-      <span class="spazio__barra" aria-hidden="true">
-        <span class="spazio__pieno" [style.width.%]="s.percentuale"></span>
-      </span>
-      <span class="mono">{{ s.testo }}</span>
-    </span>
-  }
-
-  <span class="testata__conteggio mono" role="status" aria-live="polite">
+  <!--
+    RF-B-08: quanti documenti e quanto pesano, in una riga sola. Il limite di
+    spazio non si mostra: il giorno in cui si avvicina, è il colore della
+    cifra a dirlo.
+  -->
+  <span
+    class="testata__conteggio mono"
+    [class.is-esaurimento]="spazio()?.inEsaurimento"
+    role="status"
+    aria-live="polite"
+  >
     @if (store.inCaricamento() && !documenti().length) {
       ricerca in corso…
     } @else if (!store.errore()) {
       {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+      @if (spazio(); as s) {
+        · {{ s.usato }}
+      }
     }
   </span>
 </header>
@@ -38,8 +32,16 @@
   (scelti)="store.carica($event)"
 />
 
-@if (store.coda().length) {
-  <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
+<!--
+  Nessun riepilogo dei caricamenti: le righe compaiono nell'elenco appena il
+  file è arrivato, ognuna col proprio stato, e se qualcosa va storto lo dice
+  la notifica. Resta una riga sola finché i byte salgono, perché un
+  trascinamento senza risposta per qualche secondo sembra non aver funzionato.
+-->
+@if (caricamento(); as c) {
+  <p class="caricamento mono" role="status" aria-live="polite">
+    caricamento in corso · {{ c.conteggio }} file · {{ c.percentuale }}%
+  </p>
 }
 
 <section class="filtri" aria-label="Filtri dell'archivio">

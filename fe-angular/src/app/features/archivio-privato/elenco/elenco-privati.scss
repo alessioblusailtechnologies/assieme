@@ -1,17 +1,24 @@
 /*
- * Stessa impalcatura dell'archivio pubblico: colonna flessibile alta quanto
- * la finestra, testata e filtri fissi, griglia che si prende il resto.
+ * Colonna flessibile alta almeno quanto la finestra: testata, zona di
+ * caricamento e filtri prendono lo spazio che serve loro, la griglia si
+ * prende il resto.
  *
- * In più ci sono zona di caricamento e coda, che stanno fra i filtri e la
- * griglia e non si comprimono: sono il gesto principale della schermata.
+ * A differenza dell'archivio pubblico, qui la griglia non scorre al proprio
+ * interno: sopra ha la zona di caricamento, che è il gesto principale della
+ * schermata e non si comprime, e su un portatile quello che avanzava erano
+ * quattro righe con una barra di scorrimento tutta loro. Così, invece, la
+ * griglia cresce con le righe e a scorrere è l'area di lavoro: si arriva in
+ * fondo col gesto di sempre, e le intestazioni restano ferme perché la
+ * tabella è sticky rispetto a chi scorre.
  */
 :host {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-  height: 100%;
+  /* Minimo, non fisso: un elenco vuoto riempie comunque la finestra, uno
+     lungo la supera e la fa scorrere. */
+  min-height: 100%;
   padding: var(--sp-6);
-  min-height: 0;
 }
 
 /* ---------- Testata ---------- */
@@ -24,62 +31,26 @@
   flex: none;
 }
 
-.testata__stacco {
-  width: 1px;
-  height: 16px;
-  background: var(--c-line);
-}
-
-.testata__spiega {
-  flex: 0 1 auto;
-  min-width: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: var(--t-sm);
-  color: var(--c-text-3);
-}
-
 .testata__conteggio {
-  min-width: 11ch;
+  margin-left: auto;
   text-align: right;
 }
 
-/* Lo spazio precede il conteggio e lo spinge a destra. */
-.spazio {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-left: auto;
-  color: var(--c-text-3);
-}
-
-.spazio__barra {
-  display: block;
-  width: 72px;
-  height: 4px;
-  background: var(--c-page-alt);
-}
-
-.spazio__pieno {
-  display: block;
-  height: 100%;
-  background: var(--c-text-mute);
-}
-
-.spazio.is-esaurimento {
+.testata__conteggio.is-esaurimento {
   color: var(--c-warn);
-}
-
-.spazio.is-esaurimento .spazio__pieno {
-  background: var(--c-warn);
 }
 
 /* ---------- Caricamento ---------- */
 
-ui-zona-caricamento,
-ui-coda-caricamento {
+ui-zona-caricamento {
   flex: none;
+}
+
+/* Una riga di servizio, non una card: sta il tempo dell'upload e sparisce. */
+.caricamento {
+  flex: none;
+  margin-top: calc(-1 * var(--sp-2));
+  color: var(--c-text-3);
 }
 
 /* ---------- Filtri ---------- */
@@ -149,14 +120,22 @@ ui-stato-vuoto {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 240px;
 }
 
-/* La tabella riempie il blocco e scorre al proprio interno: le intestazioni
-   sono appiccicose, la paginazione resta ferma sotto. */
+/* Cresce col contenuto: nessun `min-height: 0`, altrimenti il blocco si
+   stringerebbe sotto la tabella e la lascerebbe uscire dal bordo. */
 .griglia {
   flex: 1;
-  min-height: 0;
+}
+
+/* Sopra i 900px la tabella ci sta in larghezza e il contenitore può restare
+   aperto: lo scorrimento è dell'area di lavoro e le intestazioni si
+   appiccicano al suo bordo superiore. Sotto vale la regola globale, che
+   fa scorrere le colonne in orizzontale. */
+@media (min-width: 901px) {
+  .griglia {
+    overflow: visible;
+  }
 }
 
 .cella-numerica {
@@ -187,11 +166,6 @@ ui-stato-vuoto {
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
-  }
-
-  .testata__spiega,
-  .testata__stacco {
-    display: none;
   }
 
   .filtri {

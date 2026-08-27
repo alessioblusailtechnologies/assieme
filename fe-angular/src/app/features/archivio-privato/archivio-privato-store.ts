@@ -153,9 +153,10 @@ export class ArchivioPrivatoStore {
   /**
    * RF-B-02: caricamento singolo e multiplo.
    *
-   * Non apriamo una finestra modale: le righe compaiono nell'elenco e la
-   * coda resta un riepilogo in testata. Chi lascia dieci file continua a
-   * lavorare mentre salgono, invece di guardare una barra.
+   * Non apriamo una finestra modale: le righe compaiono nell'elenco appena
+   * il file è arrivato, e la coda serve solo a dire quanti stanno ancora
+   * salendo. Chi lascia dieci file continua a lavorare mentre salgono,
+   * invece di guardare una barra.
    */
   carica(file: File[]): void {
     if (!file.length) return;

@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import { mkdirSync } from 'node:fs';
 
 const BASE = 'http://localhost:4200';
-const OUT = new URL('../.screenshot/', import.meta.url).pathname.replace(/^/([A-Za-z]:)/, '$1');
+const OUT = new URL('../.screenshot/', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 mkdirSync(OUT, { recursive: true });
 
 const rotte = (process.argv[2] ?? 'chat,tabelle,archivio/pubblico,archivio/privato,agenti,memoria,impostazioni').split(',');
