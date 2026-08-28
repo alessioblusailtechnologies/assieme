@@ -28,6 +28,19 @@
   letter-spacing: var(--ls-tight);
 }
 
+/* Lo scheletro del saluto: la riga che il titolo occuperà, una barra lunga
+   quanto una frase, senza far muovere ciò che sta sotto all'arrivo. */
+.benvenuto__titolo--scheletro {
+  display: flex;
+  align-items: center;
+  min-height: 1.2em;
+
+  ui-scheletro {
+    --altezza: 0.75em;
+    width: min(100%, 18ch);
+  }
+}
+
 .benvenuto__spiega {
   font-size: var(--t-lead);
   color: var(--c-text-3);
@@ -43,6 +56,26 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--sp-2);
+}
+
+/* Lo scheletro dei suggerimenti: la stessa pillola, senza testo, che
+   respira piano come `ui-scheletro`. */
+.suggerimento--scheletro {
+  max-width: 100%;
+  background: var(--c-page-alt);
+  border-color: transparent;
+  cursor: default;
+  animation: respiro 1.6s var(--ease-brand) infinite;
+}
+
+@keyframes respiro {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 
 .suggerimento {

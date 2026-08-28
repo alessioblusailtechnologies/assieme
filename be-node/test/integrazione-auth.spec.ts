@@ -1,9 +1,15 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { creaApp } from '../src/api/app.js';
+import {
+  ServizioSuggerimenti,
+  type ContestoSuggerimenti,
+  type GeneratoreSuggerimenti,
+} from '../src/api/conversazioni/suggeritore.js';
+import { ServizioSaluti, type GeneratoreSaluti } from '../src/api/sessione/saluti.js';
 import { configurazione, type Configurazione } from '../src/config.js';
 import type { EsitoAccesso, Sessione } from '../src/contratto/sessione.js';
-import { chiudiPool } from '../src/db/pool.js';
+import { chiudiPool, poolDb } from '../src/db/pool.js';
 
 /**
  * Accesso e sessione contro il progetto Supabase VERO: login degli utenti
@@ -31,6 +37,12 @@ const pronto = Boolean(
 
 describe.skipIf(!pronto)('accesso e sessione col progetto Supabase', () => {
   afterAll(async () => {
+    // I lotti finti non devono restare: la home degli utenti li leggerebbe.
+    await poolDb().query(`delete from velia.saluti where modello = 'finto'`);
+    await poolDb().query(
+      `delete from velia.suggerimenti where utente_id = (select id from velia.utenti where email = $1)`,
+      ['p.ricciardi@assicurazionimeridiana.it'],
+    );
     await chiudiPool();
   });
 
@@ -97,6 +109,97 @@ describe.skipIf(!pronto)('accesso e sessione col progetto Supabase', () => {
       'archivio-privato.carica',
       'archivio-privato.elimina',
       'agenti.crea',
+    ]);
+  });
+
+  it('i saluti della home viaggiano con la sessione: lotto generato in background, letto attraverso la RLS', async () => {
+    const generatore: GeneratoreSaluti = {
+      genera: () =>
+        Promise.resolve({
+          mattina: ['Prova {nome}, su cosa lavoriamo?', 'senza segnaposto', 'Prova {nome} — dimmi tu'],
+          sera: ['Buonasera {nome}, chiudiamo bene?'],
+        }),
+    };
+    const saluti = new ServizioSaluti({ generatore, pool: poolDb, oreValidita: 24, adesso: () => new Date() });
+    const app = creaApp({ logger: false, sessione: { saluti } });
+    const accesso = await app.inject({
+      method: 'POST',
+      url: '/api/sessione/accesso',
+      payload: { email: 'p.ricciardi@assicurazionimeridiana.it', password: PASSWORD_DEMO },
+    });
+    expect(accesso.statusCode).toBe(200);
+    const { tokenAccesso } = accesso.json<EsitoAccesso>();
+
+    // Il lotto in tabella (di un altro test, o del modello vero) potrebbe essere
+    // fresco: per provare la generazione la si forza con un servizio scaduto.
+    const forzato = new ServizioSaluti({ generatore, pool: poolDb, oreValidita: 0.000001 });
+    const appForzata = creaApp({ logger: false, sessione: { saluti: forzato } });
+    const prima = await appForzata.inject({
+      method: 'GET',
+      url: '/api/sessione',
+      headers: { authorization: `Bearer ${tokenAccesso}` },
+    });
+    expect(prima.statusCode).toBe(200);
+    await forzato.attendi();
+
+    const dopo = await app.inject({
+      method: 'GET',
+      url: '/api/sessione',
+      headers: { authorization: `Bearer ${tokenAccesso}` },
+    });
+    const sessione = dopo.json<Sessione>();
+    expect(sessione.saluti).toBeDefined();
+    expect(sessione.saluti!.frasi.mattina).toEqual([
+      'Prova {nome}, su cosa lavoriamo?',
+      'Prova {nome} - dimmi tu',
+    ]);
+    expect(sessione.saluti!.frasi.sera).toEqual(['Buonasera {nome}, chiudiamo bene?']);
+    expect(sessione.saluti!.frasi.notte).toEqual([]);
+    expect(Date.now() - Date.parse(sessione.saluti!.generatoIl)).toBeLessThan(60_000);
+  });
+
+  it('i suggerimenti della home: contesto letto attraverso la RLS, lotto per utente generato in background', async () => {
+    let contestoVisto: ContestoSuggerimenti | undefined;
+    const generatore: GeneratoreSuggerimenti = {
+      genera: (contesto) => {
+        contestoVisto = contesto;
+        return Promise.resolve([
+          'Confronta le franchigie furto di AUTOPIÙ e Km&Servizi',
+          '"Che massimali ha la Kasko?"',
+          'Confronta le franchigie furto di AUTOPIÙ e Km&Servizi',
+        ]);
+      },
+    };
+    const servizio = new ServizioSuggerimenti({ generatore, pool: poolDb, oreValidita: 0.000001 });
+    const app = creaApp({ logger: false, conversazioni: { suggerimenti: servizio } });
+    const accesso = await app.inject({
+      method: 'POST',
+      url: '/api/sessione/accesso',
+      payload: { email: 'p.ricciardi@assicurazionimeridiana.it', password: PASSWORD_DEMO },
+    });
+    const { tokenAccesso, sessione } = accesso.json<EsitoAccesso>();
+
+    const prima = await app.inject({
+      method: 'GET',
+      url: '/api/suggerimenti',
+      headers: { authorization: `Bearer ${tokenAccesso}` },
+    });
+    expect(prima.statusCode).toBe(200);
+    await servizio.attendi(sessione.utente.id);
+
+    expect(contestoVisto).toBeDefined();
+    // L'archivio pubblico è popolato nel progetto vero: la sezione arriva compilata.
+    expect(contestoVisto!.archivioPubblico.length).toBeGreaterThan(0);
+    expect(contestoVisto!.archivioPubblico[0]).toMatch(/^.+ - .+ \(.+\)$/);
+
+    const dopo = await app.inject({
+      method: 'GET',
+      url: '/api/suggerimenti',
+      headers: { authorization: `Bearer ${tokenAccesso}` },
+    });
+    expect(dopo.json<string[]>()).toEqual([
+      'Confronta le franchigie furto di AUTOPIÙ e Km&Servizi',
+      'Che massimali ha la Kasko?',
     ]);
   });
 

@@ -18,7 +18,6 @@ import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly, type AvviatoreSandbox } from './sandbox/sandbox.js';
-import { GeneratoreSuggerimentiHaiku } from './motore/suggeritore.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
 import { creaGestoreTabelle } from './tabelle/gestore.js';
 
@@ -131,7 +130,6 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         }),
         archivio: new ArchivioStorage(),
         generatoreTitolo: new GeneratoreTitoloHaiku(),
-        generatoreSuggerimenti: new GeneratoreSuggerimentiHaiku(),
         estrattore: estrattoreMemoria(),
         radice: resolve(c.CARTELLA_WORKER),
         ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),

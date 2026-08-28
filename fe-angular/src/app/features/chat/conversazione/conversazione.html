@@ -2,7 +2,14 @@
   <!-- Nuova conversazione: la stessa pagina, prima della prima domanda. -->
   <div class="benvenuto">
     <div class="benvenuto__centro">
-      <h1 class="serif benvenuto__titolo">{{ saluto() }}</h1>
+      @if (saluto(); as testo) {
+        <h1 class="serif benvenuto__titolo">{{ testo }}</h1>
+      } @else {
+        <!-- Stessa riga, stessa altezza: quando la sessione arriva la pagina non si muove. -->
+        <div class="serif benvenuto__titolo benvenuto__titolo--scheletro">
+          <ui-scheletro [numeroRighe]="1" />
+        </div>
+      }
       <p class="benvenuto__spiega">
         Fai una domanda e referenzia con «@» i documenti dei due archivi: la risposta arriverà con
         le citazioni ai passaggi da cui è tratta.
@@ -11,10 +18,19 @@
       <app-composer />
 
       <div class="benvenuto__suggerimenti">
-        @for (s of suggerimenti(); track s) {
-          <button type="button" class="suggerimento" (click)="usaSuggerimento(s)">
-            {{ s }}
-          </button>
+        @if (suggerimenti(); as voci) {
+          @for (s of voci; track s) {
+            <button type="button" class="suggerimento" (click)="usaSuggerimento(s)">
+              {{ s }}
+            </button>
+          }
+        } @else {
+          <!-- Le stesse pillole, vuote: la riga non cambia altezza quando arrivano le domande. -->
+          @for (larghezza of scheletriSuggerimenti; track $index) {
+            <span class="suggerimento suggerimento--scheletro" [style.width]="larghezza" aria-hidden="true">
+              &nbsp;
+            </span>
+          }
         }
       </div>
     </div>

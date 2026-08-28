@@ -73,8 +73,18 @@ export class Conversazione {
   private readonly apiConversazioni = inject(ConversazioniApi);
   private readonly sessione = inject(SessioneStore);
 
-  /** Il saluto della schermata iniziale: contestuale all'ora e alla persona. */
-  protected readonly saluto = computed(() => salutoPer(new Date(), this.sessione.utente()?.nome));
+  /**
+   * Il saluto della schermata iniziale: contestuale all'ora e alla persona,
+   * con le frasi arrivate con la sessione. Finché la sessione non c'è è
+   * `undefined` e al suo posto sta uno scheletro: mostrare una frase neutra
+   * e poi sostituirla fa sussultare la pagina. La frase neutra resta solo
+   * per il caso in cui la sessione sia fallita.
+   */
+  protected readonly saluto = computed(() => {
+    const sessione = this.sessione.sessione();
+    if (!sessione) return this.sessione.errore() ? salutoPer(new Date()) : undefined;
+    return salutoPer(new Date(), sessione.utente.nome, sessione.saluti);
+  });
 
   /** Dalla rotta; assente su `/chat`, la schermata «nuova conversazione». */
   readonly id = input<string>();
@@ -276,9 +286,13 @@ export class Conversazione {
   }
 
   /**
-   * I suggerimenti della schermata vuota: li scrive il motore a fine
-   * risposta, su misura dell'ultima conversazione; gli esempi fissi
-   * completano fino a tre e reggono da soli il primo giorno (o il mock).
+   * I suggerimenti della schermata vuota: domande di partenza sul contesto
+   * dell'agenzia (archivio, ricordi, temi ricorrenti), generate dal server
+   * per utente e rinnovate ogni giorno. Il server ne tiene fino a sei, qui
+   * se ne mostrano tre scelte per ora, così cambiano nella giornata. Gli
+   * esempi fissi completano fino a tre e reggono da soli il primo giorno (o
+   * il mock). Finché la risposta non c'è, `undefined`: al suo posto uno
+   * scheletro, non gli esempi che poi vengono sostituiti.
    */
   private readonly esempi = [
     'Confronta il set informativo AUTOPIÙ con il preventivo UnipolSai per la Fiat 500X',
@@ -286,18 +300,32 @@ export class Conversazione {
     'La polizza copre i danni da grandine?',
   ];
 
+  /** Le larghezze dello scheletro: tre pillole, come tre domande di lunghezza diversa. */
+  protected readonly scheletriSuggerimenti = ['34ch', '22ch', '27ch'];
+
   private readonly risorsaSuggerimenti = httpResource<string[]>(() =>
     this.apiConversazioni.urlSuggerimenti(),
   );
 
   protected readonly suggerimenti = computed(() => {
+    if (this.risorsaSuggerimenti.isLoading() && !this.risorsaSuggerimenti.hasValue()) return undefined;
     const generati = this.risorsaSuggerimenti.hasValue() ? this.risorsaSuggerimenti.value() : [];
+    if (generati.length > 3) return sceltiPerOra(generati, 3);
     return [...generati, ...this.esempi.filter((e) => !generati.includes(e))].slice(0, 3);
   });
 
   protected usaSuggerimento(testo: string): void {
     this.store.bozza.set(testo);
   }
+}
+
+/**
+ * Una finestra di `quanti` voci che scorre con l'ora del giorno: stabile
+ * nella stessa ora, diversa in quella dopo, senza mai ripetere una voce.
+ */
+export function sceltiPerOra(voci: string[], quanti: number, momento = new Date()): string[] {
+  const inizio = momento.getHours() % voci.length;
+  return Array.from({ length: Math.min(quanti, voci.length) }, (_, i) => voci[(inizio + i) % voci.length]);
 }
 
 /** La preferenza vive sul browser: è comodità di chi guarda, non stato del dominio. */

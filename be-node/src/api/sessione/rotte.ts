@@ -7,10 +7,17 @@ import {
   schemaAccesso,
   schemaAggiorna,
   type EsitoAccesso,
+  type LottoSaluti,
   type Sessione,
 } from '../../contratto/sessione.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { ServizioSaluti } from './saluti.js';
+
+export interface OpzioniSessione {
+  /** Nei test: il servizio dei saluti con un generatore finto. */
+  saluti?: ServizioSaluti;
+}
 
 /** La riga di profilo con il suo tenant, come esce dalla query. */
 interface RigaProfilo {
@@ -35,7 +42,7 @@ const SQL_PROFILO = `
   join velia.tenant t on t.id = u.tenant_id
   where u.id = $1`;
 
-function versoSessione(riga: RigaProfilo): Sessione {
+function versoSessione(riga: RigaProfilo, saluti: LottoSaluti | undefined): Sessione {
   return {
     utente: {
       id: riga.id,
@@ -53,6 +60,7 @@ function versoSessione(riga: RigaProfilo): Sessione {
       ...(riga.tenant_logo_url && { logoUrl: riga.tenant_logo_url }),
     },
     permessi: permessiPerRuolo(riga.ruolo),
+    ...(saluti && { saluti }),
   };
 }
 
@@ -88,7 +96,12 @@ async function chiediToken(
  * `GET /api/sessione` mantiene la promessa scritta in `SessioneStore`:
  * cambia solo chi risponde, la forma è quella della fixture del mock.
  */
-export function registraRotteSessione(app: FastifyInstance): void {
+export function registraRotteSessione(app: FastifyInstance, opzioni: OpzioniSessione = {}): void {
+  /* I saluti della home viaggiano con la sessione (28/08/2026): così ci
+     sono al primo dipinto, senza una chiamata in più. Il lotto si rinfresca
+     in background quando è scaduto; la risposta non aspetta. */
+  const saluti = opzioni.saluti ?? new ServizioSaluti();
+
   /**
    * Login. La verifica delle credenziali la fa Supabase Auth; il profilo e
    * il suo stato li governa il nostro schema:
@@ -128,11 +141,14 @@ export function registraRotteSessione(app: FastifyInstance): void {
     profilo.stato = 'attivo';
     profilo.ultimo_accesso = adesso;
 
+    const lotto = await ServizioSaluti.leggi(db);
+    saluti.rinfresca(lotto, richiesta.log);
+
     const esito: EsitoAccesso = {
       tokenAccesso: token.access_token,
       tokenAggiornamento: token.refresh_token,
       scadeInSecondi: token.expires_in,
-      sessione: versoSessione(profilo),
+      sessione: versoSessione(profilo, lotto),
     };
     return esito;
   });
@@ -161,11 +177,12 @@ export function registraRotteSessione(app: FastifyInstance): void {
    * prima dimostrazione d'uso del meccanismo.
    */
   app.get('/api/sessione', async (richiesta) => {
-    const profilo = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+    const { profilo, lotto } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const righe = await client.query<RigaProfilo>(SQL_PROFILO, [richiesta.identita.utenteId]);
-      return righe.rows[0];
+      return { profilo: righe.rows[0], lotto: await ServizioSaluti.leggi(client) };
     });
     if (!profilo) throw ErroreApi.permessoNegato();
-    return versoSessione(profilo);
+    saluti.rinfresca(lotto, richiesta.log);
+    return versoSessione(profilo, lotto);
   });
 }

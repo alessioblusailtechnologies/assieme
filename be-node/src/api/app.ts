@@ -13,7 +13,7 @@ import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteRicordi } from './ricordi/rotte.js';
 import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
-import { registraRotteSessione } from './sessione/rotte.js';
+import { registraRotteSessione, type OpzioniSessione } from './sessione/rotte.js';
 import { registraRotteTabelle, type OpzioniTabelle } from './tabelle/rotte.js';
 import { registraRotteTemplate, type OpzioniTemplate } from './template/rotte.js';
 import { registraRotteUtenti } from './utenti/rotte.js';
@@ -36,6 +36,8 @@ export interface OpzioniApp {
   agenti?: OpzioniAgenti;
   /** Nei test: le origini CORS senza passare dalla configurazione. */
   corsOrigini?: string;
+  /** Nei test: il servizio dei saluti con un generatore finto. */
+  sessione?: OpzioniSessione;
 }
 
 /**
@@ -81,7 +83,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
     ...(process.env['RENDER_GIT_COMMIT'] && { versione: process.env['RENDER_GIT_COMMIT'].slice(0, 7) }),
   }));
 
-  registraRotteSessione(app);
+  registraRotteSessione(app, opzioni.sessione);
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);

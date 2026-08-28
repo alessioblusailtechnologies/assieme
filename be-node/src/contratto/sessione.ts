@@ -37,6 +37,24 @@ export interface Sessione {
     piano: 'base' | 'professionale' | 'agenzia';
   };
   permessi: Permesso[];
+  /**
+   * Il lotto di saluti per la schermata iniziale, generato dal modello e
+   * valido per tutti (le frasi portano il segnaposto `{nome}`). Assente se
+   * nessun lotto è ancora stato generato: il FE usa le sue frasi fisse.
+   */
+  saluti?: LottoSaluti;
+}
+
+/**
+ * Le fasce orarie del saluto: l'ora la decide il browser dell'utente, il
+ * server fornisce solo le frasi per ciascuna. Specchio di `saluto.ts` nel FE.
+ */
+export const FASCE_SALUTO = ['notte', 'alba', 'mattina', 'pranzo', 'pomeriggio', 'sera'] as const;
+export type FasciaSaluto = (typeof FASCE_SALUTO)[number];
+
+export interface LottoSaluti {
+  generatoIl: string;
+  frasi: Record<FasciaSaluto, string[]>;
 }
 
 /**

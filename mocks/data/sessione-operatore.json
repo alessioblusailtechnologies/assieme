@@ -13,5 +13,38 @@
     "nome": "Assicurazioni Meridiana S.r.l.",
     "piano": "agenzia"
   },
-  "permessi": ["archivio-privato.carica", "archivio-privato.elimina", "agenti.crea"]
+  "permessi": [
+    "archivio-privato.carica",
+    "archivio-privato.elimina",
+    "agenti.crea"
+  ],
+  "saluti": {
+    "generatoIl": "2026-08-28T06:00:00+02:00",
+    "frasi": {
+      "notte": [
+        "Le luci accese a quest’ora, {nome}: di cosa hai bisogno?",
+        "Notte lunga, {nome}. Dimmi tu."
+      ],
+      "alba": [
+        "Prima del telefono che squilla, {nome}: su cosa lavoriamo?",
+        "Buongiorno {nome}, la giornata è tutta davanti."
+      ],
+      "mattina": [
+        "Buongiorno {nome}, la mattina è per i confronti: dimmi tu.",
+        "Ciao {nome}, una polizza da leggere insieme?"
+      ],
+      "pranzo": [
+        "Un boccone e una domanda, {nome}?",
+        "Ciao {nome}, riprendiamo il filo?"
+      ],
+      "pomeriggio": [
+        "Buon pomeriggio {nome}, quale preventivo guardiamo?",
+        "Ciao {nome}, su cosa lavoriamo?"
+      ],
+      "sera": [
+        "Buonasera {nome}, chiudiamo bene la giornata?",
+        "Ancora qui, {nome}? Facciamo in fretta."
+      ]
+    }
+  }
 }

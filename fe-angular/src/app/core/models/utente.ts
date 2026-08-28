@@ -62,11 +62,29 @@ export interface Tenant {
   piano: 'base' | 'professionale' | 'agenzia';
 }
 
+/**
+ * Le fasce orarie del saluto della home: l'ora la decide il browser, il
+ * server fornisce le frasi per ciascuna. Specchio di
+ * `be-node/src/contratto/sessione.ts`.
+ */
+export type FasciaSaluto = 'notte' | 'alba' | 'mattina' | 'pranzo' | 'pomeriggio' | 'sera';
+
+/**
+ * Il lotto di saluti generato dal modello, uguale per tutti: le frasi
+ * portano il segnaposto `{nome}`. Una fascia vuota lascia le frasi fisse.
+ */
+export interface LottoSaluti {
+  generatoIl: IsoDateTime;
+  frasi: Record<FasciaSaluto, string[]>;
+}
+
 /** Quel che serve sapere all'avvio dell'applicazione. */
 export interface Sessione {
   utente: Utente;
   tenant: Tenant;
   permessi: Permesso[];
+  /** Assente finché nessun lotto è stato generato. */
+  saluti?: LottoSaluti;
 }
 
 /** Corpo di `POST /api/sessione/accesso`. */

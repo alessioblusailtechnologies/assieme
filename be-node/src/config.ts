@@ -51,6 +51,30 @@ const schemaAmbiente = z.object({
    */
   MODELLO_MEMORIA: z.string().default('claude-sonnet-5'),
   /**
+   * I saluti della schermata iniziale (28/08/2026): un lotto di frasi per
+   * fascia oraria, generato dall'API quando quello in tabella è più vecchio
+   * di `SALUTI_ORE_VALIDITA`. Una chiamata al giorno da pochi centesimi:
+   * il confronto del 29/08/2026 sullo stesso prompt dava Haiku legnoso,
+   * Sonnet naturale, Opus con un gradino in più di concretezza d'agenzia
+   * («Caffè e prime pratiche», «Il telefono tace un po'»); per ~1,5 $ al
+   * mese la prima riga che l'utente legge merita Opus. Si cambia da qui.
+   */
+  MODELLO_SALUTI: z.string().default('claude-opus-5'),
+  SALUTI_ORE_VALIDITA: z.coerce.number().positive().default(24),
+  /** `no` spegne la generazione (i test la tengono spenta): restano le frasi fisse del FE. */
+  SALUTI_GENERAZIONE: z.enum(['si', 'no']).default('si'),
+  /**
+   * I suggerimenti della home (29/08/2026): domande di partenza sul
+   * contesto dell'agenzia, un lotto per utente generato dall'API quando
+   * quello in tabella è scaduto o l'archivio privato è cambiato. Per utente
+   * e per giorno: Sonnet regge il rapporto qualità/costo (~1 centesimo a
+   * lotto); Opus se si vuole il gradino in più.
+   */
+  MODELLO_SUGGERIMENTI: z.string().default('claude-sonnet-5'),
+  SUGGERIMENTI_ORE_VALIDITA: z.coerce.number().positive().default(24),
+  /** `no` spegne la generazione (i test la tengono spenta): restano gli esempi del FE. */
+  SUGGERIMENTI_GENERAZIONE: z.enum(['si', 'no']).default('si'),
+  /**
    * Modelli open hostati in Europa via HostYourAI (API Anthropic-compatibili,
    * RF-D-03): con la chiave, le voci HostYourAI del catalogo diventano
    * selezionabili e il motore le chiama con la stessa sessione, cambiando

@@ -27,6 +27,7 @@ import { richiediCrediti } from '../crediti/rotte.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import { PonteEventi } from './ponte-eventi.js';
+import { ServizioSuggerimenti } from './suggeritore.js';
 
 /**
  * La chat (Fase 3): conversazioni, contesto documentale, allegati, e la
@@ -43,6 +44,8 @@ export interface OpzioniConversazioni {
   ponte?: PonteEventi;
   /** Ogni quanto tenere vivo lo stream con un commento SSE. */
   battitoMs?: number;
+  /** Nei test: il servizio dei suggerimenti con un generatore finto. */
+  suggerimenti?: ServizioSuggerimenti;
 }
 
 interface RigaConversazione {
@@ -82,6 +85,10 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.addHook('onClose', async () => {
     await ponteProprio?.chiudi();
   });
+  /* I suggerimenti della home (29/08/2026): domande di partenza sul contesto
+     dell'agenzia, generate in background per utente quando il lotto è
+     scaduto o l'archivio è cambiato. La risposta non aspetta. */
+  const suggerimenti = opzioni.suggerimenti ?? new ServizioSuggerimenti();
 
   /** RF-C-01: lo storico, il più recente in cima; il contesto idratato. */
   app.get('/api/conversazioni', async (richiesta) => {
@@ -294,14 +301,11 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
    * non ce ne sono: la home ricade sugli esempi.
    */
   app.get('/api/suggerimenti', async (richiesta) => {
-    return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const righe = await client.query<{ testo: string }>(
-        `select testo from velia.suggerimenti
-         where utente_id = $1 order by created_at desc, id limit 3`,
-        [richiesta.identita.utenteId],
-      );
-      return righe.rows.map((r) => r.testo);
-    });
+    const stato = await conIdentita(poolDb(), richiesta.identita, (client) =>
+      ServizioSuggerimenti.leggi(client, richiesta.identita),
+    );
+    suggerimenti.rinfresca(stato, richiesta.identita, richiesta.log);
+    return stato.lotto?.testi ?? [];
   });
 
   /** Il filo intero, dal più vecchio: un array nudo, senza paginazione. */
