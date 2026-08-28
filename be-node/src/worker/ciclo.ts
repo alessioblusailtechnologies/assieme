@@ -1,6 +1,6 @@
 import type pg from 'pg';
 
-import { aggiornaStatoJob, archivia, prossimo } from './coda.js';
+import { aggiornaStatoJob, archivia, estendiVisibilita, prossimo } from './coda.js';
 import { ErroreNonRitentabile } from './errori.js';
 import { emettiEvento } from './eventi.js';
 import { gestori, type StrumentiJob } from './gestori.js';
@@ -23,7 +23,8 @@ export interface OpzioniCiclo {
  */
 export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promise<boolean> {
   const tentativiMassimi = opzioni.tentativiMassimi ?? 3;
-  const messaggio = await prossimo(db, opzioni.visibilitaSecondi ?? 60);
+  const visibilitaSecondi = opzioni.visibilitaSecondi ?? 60;
+  const messaggio = await prossimo(db, visibilitaSecondi);
   if (!messaggio) return false;
 
   const { job, msgId, consegne } = messaggio;
@@ -48,6 +49,14 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
      agenti ci decidono il «fallimento definitivo»). */
   job.tentativi = consegne;
   const strumenti: StrumentiJob = { db };
+
+  /* Il battito: finché il gestore lavora, il messaggio resta invisibile
+     agli altri consumer. Un battito mancato (rete) non è un errore: il
+     prossimo lo recupera, e nel peggiore dei casi vale la regola di prima. */
+  const battito = setInterval(
+    () => void estendiVisibilita(db, msgId, visibilitaSecondi).catch(() => undefined),
+    Math.max(5_000, Math.floor((visibilitaSecondi * 1000) / 3)),
+  );
 
   try {
     await gestore(job, strumenti);
@@ -82,6 +91,8 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
         di: tentativiMassimi,
       });
     }
+  } finally {
+    clearInterval(battito);
   }
   return true;
 }

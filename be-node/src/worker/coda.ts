@@ -88,6 +88,17 @@ export async function prossimo(
   return undefined;
 }
 
+/**
+ * Allunga l'invisibilità di un messaggio in lavorazione: un job che dura
+ * più di `visibilitaSecondi` non deve ricomparire e finire a un secondo
+ * consumer mentre il primo lo sta ancora lavorando (29/08/2026: il worker
+ * dev su Render, sulla stessa coda, ripeteva le risposte lunghe col suo
+ * codice, e l'ultima scrittura vinceva).
+ */
+export async function estendiVisibilita(db: pg.Pool, msgId: number, secondi: number): Promise<void> {
+  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [CODA_LAVORI, msgId, secondi]);
+}
+
 /** Toglie il messaggio dalla coda conservandolo nell'archivio pgmq. */
 export async function archivia(db: pg.Pool | pg.ClientBase, msgId: number): Promise<void> {
   await db.query('select pgmq.archive($1, $2::bigint)', [CODA_LAVORI, msgId]);
