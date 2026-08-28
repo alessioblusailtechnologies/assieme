@@ -47,6 +47,8 @@ const MS_INTERROGAZIONE = 1200;
  */
 @Component({
   selector: 'app-esecuzione-agente',
+  /* I chip dei rimandi nell'esito sono ancore dentro `[innerHTML]`: il click si raccoglie sull'host. */
+  host: { '(click)': 'suRimando($event)' },
   imports: [
     Badge,
     Bottone,
@@ -139,11 +141,22 @@ export class EsecuzioneAgentePagina {
     this.risorsa.reload();
   }
 
-  /** L'output è markdown minimo, come le risposte della chat. */
+  /** L'output è markdown minimo, come le risposte della chat, con le fonti come chip nel punto esatto. */
   protected readonly outputHtml = computed(() => {
-    const output = this.esecuzione()?.output;
-    return output ? htmlRisposta(output) : '';
+    const e = this.esecuzione();
+    return e?.output ? htmlRisposta(e.output, { citazioni: e.citazioni }) : '';
   });
+
+  /** Il click su un chip nel testo apre il documento, come il chip in coda. */
+  protected suRimando(evento: Event): void {
+    const ancora = (evento.target as HTMLElement | null)?.closest?.('a.rimando');
+    if (!ancora) return;
+    evento.preventDefault();
+    const href = ancora.getAttribute('href') ?? '';
+    if (!href.startsWith('#fonte:')) return;
+    const citazione = this.esecuzione()?.citazioni.find((c) => c.id === href.slice('#fonte:'.length));
+    if (citazione) this.citazioneAperta.set(citazione);
+  }
 
   /** I parametri dell'avvio, con l'etichetta dichiarata dall'agente (RF-E-05). */
   protected readonly parametriMostrati = computed(() => {

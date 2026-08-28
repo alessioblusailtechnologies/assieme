@@ -16,6 +16,8 @@
  * quello che c'è (una tabella a metà è una tabella con meno righe).
  */
 
+import { Citazione, Provenienza, etichettaCitazione } from '@core/models';
+
 const RIGA_TITOLO = /^(#{1,6})\s+(.+?)\s*#*$/;
 const RIGA_ELENCO = /^\s*(?:[-*•]|\d+[.)])\s+/;
 const RIGA_ELENCO_NUMERATO = /^\s*\d+[.)]\s+/;
@@ -28,13 +30,124 @@ function scappaHtml(testo: string): string {
   return testo.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-/** Grassetto, corsivo, codice in linea — sul testo già scappato. */
+function scappaAttributo(testo: string): string {
+  return scappaHtml(testo).replaceAll('"', '&quot;');
+}
+
+/* ---------- I rimandi: fonti e provenienze nel punto esatto ---------- */
+
+/**
+ * Il motore richiama le fonti nel testo con `[1]`, `[2]`… (posizione nel
+ * blocco delle citazioni) e istruzioni, riferimenti e memoria con `[a]`,
+ * `[b]`… (posizione nelle provenienze). Qui ogni rimando diventa un chip
+ * nel punto in cui sta: un'ancora con frammento (`#fonte:id`,
+ * `#provenienza:id`) che il sanitizer lascia passare, e che la bolla
+ * intercetta al click. In streaming (`attesa`) le fonti non sono ancora
+ * arrivate: il rimando si mostra come pillola in attesa.
+ */
+export interface RimandiRisposta {
+  citazioni?: Citazione[];
+  provenienze?: Provenienza[];
+  /** Vero mentre la risposta esce: i rimandi senza fonte aspettano, non spariscono. */
+  attesa?: boolean;
+}
+
+/** `[a]` è la prima provenienza (1). */
+export function letteraRimando(n: number): string {
+  return String.fromCharCode(96 + n);
+}
+
+/** Il titolo del documento senza il prodotto: «DIP Danni — Allianz Bonus Malus…» → «DIP Danni». */
+export function titoloBreve(titolo: string): string {
+  return titolo.split(/\s+[—–-]\s+/)[0]?.trim() || titolo;
+}
+
+const ETICHETTE_PROVENIENZA: Record<Provenienza['tipo'], string> = {
+  regola: 'Istruzione',
+  'documento-riferimento': 'Riferimento',
+  memoria: 'Memoria',
+};
+
+/** Il nome dentro l'etichetta: `valutato secondo la regola "Massimali prudenziali"` → «Massimali prudenziali». */
+function nomeProvenienza(p: Provenienza): string | undefined {
+  return p.tipo === 'memoria' ? undefined : /"([^"]+)"/.exec(p.etichetta)?.[1];
+}
+
+interface MappaRimandi {
+  fonti: Map<number, Citazione>;
+  provenienze: Map<string, Provenienza>;
+  attesa: boolean;
+  /** Senza alcun rimando dichiarato (messaggi vecchi, testo qualsiasi) le parentesi restano testo. */
+  attivi: boolean;
+}
+
+function mappaRimandi(r: RimandiRisposta | undefined): MappaRimandi {
+  const fonti = new Map<number, Citazione>();
+  for (const c of r?.citazioni ?? []) for (const n of c.rimandi ?? []) fonti.set(n, c);
+  const provenienze = new Map<string, Provenienza>();
+  for (const p of r?.provenienze ?? []) for (const n of p.rimandi ?? []) provenienze.set(letteraRimando(n), p);
+  const attesa = Boolean(r?.attesa);
+  return { fonti, provenienze, attesa, attivi: attesa || fonti.size > 0 || provenienze.size > 0 };
+}
+
+/** Lo stato della resa in corso: `htmlRisposta` lo imposta, `inlinea` lo legge. */
+let rimandi: MappaRimandi = mappaRimandi(undefined);
+
+function chipFonte(c: Citazione): string {
+  const posizione = c.posizione.articolo ? `art. ${c.posizione.articolo}, p. ${c.posizione.pagina}` : `p. ${c.posizione.pagina}`;
+  const titolo = scappaAttributo(`${c.documentoTitolo} - ${posizione}: «${c.estratto}»`);
+  return (
+    `<a class="rimando rimando--fonte" href="#fonte:${c.id}" title="${titolo}">` +
+    `${scappaHtml(titoloBreve(c.documentoTitolo))}<span class="rimando__pos">p. ${c.posizione.pagina}</span></a>`
+  );
+}
+
+function chipProvenienza(p: Provenienza): string {
+  const nome = nomeProvenienza(p);
+  return (
+    `<a class="rimando rimando--${p.tipo}" href="#provenienza:${p.origineId}" title="${scappaAttributo(p.etichetta)}">` +
+    `${ETICHETTE_PROVENIENZA[p.tipo]}${nome ? `<span class="rimando__pos">${scappaHtml(nome)}</span>` : ''}</a>`
+  );
+}
+
+/** I rimandi `[n]` e `[a]` dentro un frammento già formattato. */
+function rimandiInlinea(html: string): string {
+  if (!rimandi.attivi) return html;
+  return html.replace(/ ?\[(\d{1,2}|[a-z])\]/g, (tutto, chiave: string) => {
+    const spazio = tutto.startsWith(' ') ? ' ' : '';
+    const numero = Number(chiave);
+    const fonte = Number.isInteger(numero) ? rimandi.fonti.get(numero) : undefined;
+    if (fonte) return `${spazio}${chipFonte(fonte)}`;
+    const provenienza = Number.isInteger(numero) ? undefined : rimandi.provenienze.get(chiave);
+    if (provenienza) return `${spazio}${chipProvenienza(provenienza)}`;
+    // Senza fonte: in attesa mentre la risposta esce, altrimenti sparisce (l'audit lo sa già).
+    return rimandi.attesa ? `${spazio}<span class="rimando rimando--attesa">${chiave}</span>` : '';
+  });
+}
+
+/** Grassetto, corsivo, codice in linea — sul testo già scappato — e i rimandi. */
 function inlinea(testo: string): string {
-  return scappaHtml(testo)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
-    // Corsivo: asterischi aderenti al testo, così «2 * 3 * 4» resta aritmetica.
-    .replace(/(^|[^*\w])\*(\S(?:[^*\n]*?\S)?)\*(?!\*)/g, '$1<em>$2</em>');
+  return rimandiInlinea(
+    scappaHtml(testo)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>')
+      // Corsivo: asterischi aderenti al testo, così «2 * 3 * 4» resta aritmetica.
+      .replace(/(^|[^*\w])\*(\S(?:[^*\n]*?\S)?)\*(?!\*)/g, '$1<em>$2</em>'),
+  );
+}
+
+/**
+ * Il testo per la copia e per chi non vede i chip: ogni `[n]` diventa la
+ * fonte per esteso fra parentesi, i rimandi alle provenienze spariscono.
+ */
+export function testoConFontiPerEsteso(testo: string, r: RimandiRisposta): string {
+  const mappa = mappaRimandi({ ...r, attesa: false });
+  if (!mappa.attivi) return testo;
+  return testo.replace(/ ?\[(\d{1,2}|[a-z])\]/g, (tutto, chiave: string) => {
+    const fonte = mappa.fonti.get(Number(chiave));
+    if (fonte) return ` (${etichettaCitazione(fonte)})`;
+    return mappa.provenienze.has(chiave) ? '' : tutto;
+  });
 }
 
 /** Le celle di una riga di tabella, senza i pipe ai bordi. */
@@ -53,8 +166,9 @@ function iniziaBlocco(riga: string): boolean {
   );
 }
 
-/** Da Markdown a HTML per `[innerHTML]`. */
-export function htmlRisposta(testo: string): string {
+/** Da Markdown a HTML per `[innerHTML]`; con i rimandi, le fonti diventano chip nel punto esatto. */
+export function htmlRisposta(testo: string, conRimandi?: RimandiRisposta): string {
+  rimandi = mappaRimandi(conRimandi);
   const righe = testo.replaceAll('\r\n', '\n').split('\n');
   const uscita: string[] = [];
   let i = 0;

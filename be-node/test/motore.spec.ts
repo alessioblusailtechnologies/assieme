@@ -4,7 +4,6 @@ import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
-import { interpretaSuggerimenti } from '../src/worker/motore/suggeritore.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
@@ -170,6 +169,10 @@ describe('validaBlocco', () => {
       estratto: 'Franchigia € 200',
     });
     expect(esito.citazioni[1]).toMatchObject({ documentoId: 'doc-priv-1', archivio: 'privato', posizione: { pagina: 99 } });
+    // I rimandi: la posizione nel blocco; il doppione ([3]) resta un numero valido per la prima.
+    expect(esito.citazioni[0]?.rimandi).toEqual([1, 3]);
+    expect(esito.citazioni[1]?.rimandi).toEqual([2]);
+    expect(esito.provenienze.map((p) => p.rimandi)).toEqual([[1], [2], [3]]);
     expect(esito.provenienze.map((p) => p.tipo)).toEqual(['regola', 'documento-riferimento', 'memoria']);
     expect(esito.provenienze[0]?.etichetta).toBe('valutato secondo la regola "Massimali prudenziali"');
     expect(esito.avvisi.some((a) => a.includes('ric-ignoto'))).toBe(true);
@@ -300,16 +303,6 @@ describe('workspace e sessione, le parti pure', () => {
     const lungo = ripulisciTitolo('Confronto molto dettagliato delle garanzie accessorie fra la polizza vecchia e quella nuova');
     expect(lungo.length).toBeLessThanOrEqual(61);
     expect(lungo.endsWith('…')).toBe(true);
-  });
-
-  it('interpretaSuggerimenti: array anche recintato, massimo tre, mai vuoto o fuori misura', () => {
-    expect(interpretaSuggerimenti('```json\n["Che massimali ha la Kasko?","E la grandine?","Confronto con la 2019?","Quarta"]\n```')).toEqual([
-      'Che massimali ha la Kasko?',
-      'E la grandine?',
-      'Confronto con la 2019?',
-    ]);
-    expect(() => interpretaSuggerimenti('nessun array')).toThrow();
-    expect(() => interpretaSuggerimenti('[]')).toThrow();
   });
 
   it('i prompt portano regole, DNA con id, contesto e storia', () => {

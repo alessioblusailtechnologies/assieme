@@ -126,9 +126,12 @@ export function validaBlocco(
   const avvisi: string[] = [];
   const errori: string[] = [];
   const citazioni: Citazione[] = [];
-  const viste = new Set<string>();
+  /* Per chiave di passaggio: un doppione nel blocco non produce una seconda
+     citazione, ma il suo numero resta valido come rimando alla prima. */
+  const viste = new Map<string, Citazione>();
 
-  for (const c of blocco.citazioni) {
+  for (const [indice, c] of blocco.citazioni.entries()) {
+    const rimando = indice + 1;
     const path = normalizzaPath(c.file);
     if (/(^|\/)INDICE\.md$/.test(path)) {
       // Gli indici sono mappe, non fonti: non hanno un documento da aprire.
@@ -147,9 +150,12 @@ export function validaBlocco(
       continue;
     }
     const chiave = `${doc.id}|${c.pagina}|${c.estratto}`;
-    if (viste.has(chiave)) continue;
-    viste.add(chiave);
-    citazioni.push({
+    const doppione = viste.get(chiave);
+    if (doppione) {
+      doppione.rimandi = [...(doppione.rimandi ?? []), rimando];
+      continue;
+    }
+    const citazione: Citazione = {
       id: randomUUID(),
       documentoId: doc.id,
       documentoTitolo: doc.titolo,
@@ -160,20 +166,28 @@ export function validaBlocco(
         ...(c.sezione && { sezione: c.sezione }),
       },
       estratto: c.estratto,
-    });
+      rimandi: [rimando],
+    };
+    viste.set(chiave, citazione);
+    citazioni.push(citazione);
   }
 
   if (errori.length) throw new ErroreValidazione('citazioni non verificabili', errori);
 
   const provenienze: Provenienza[] = [];
-  for (const p of blocco.provenienze) {
+  for (const [indice, p] of blocco.provenienze.entries()) {
+    const rimando = indice + 1;
     const trovata = etichettaProvenienza(p, dna);
     if (!trovata) {
       avvisi.push(`provenienza ignorata: ${p.tipo} ${p.id} non è nel DNA`);
       continue;
     }
-    if (provenienze.some((x) => x.tipo === p.tipo && x.origineId === p.id)) continue;
-    provenienze.push({ tipo: p.tipo, origineId: p.id, etichetta: trovata });
+    const doppione = provenienze.find((x) => x.tipo === p.tipo && x.origineId === p.id);
+    if (doppione) {
+      doppione.rimandi = [...(doppione.rimandi ?? []), rimando];
+      continue;
+    }
+    provenienze.push({ tipo: p.tipo, origineId: p.id, etichetta: trovata, rimandi: [rimando] });
   }
 
   if (!citazioni.length && !blocco.nonSupportato) {
@@ -181,6 +195,34 @@ export function validaBlocco(
   }
 
   return { citazioni, provenienze, nonSupportato: blocco.nonSupportato, avvisi };
+}
+
+/** Le lettere dei rimandi alle provenienze: `[a]` è la prima voce (1). */
+export function letteraRimando(n: number): string {
+  return String.fromCharCode(96 + n);
+}
+
+/**
+ * I rimandi nel testo contro il blocco: un `[n]` senza fonte è un numero
+ * morto in faccia all'utente, una fonte mai richiamata finisce fra le
+ * «altre fonti». Avvisi per l'audit, non errori: la risposta resta valida.
+ */
+export function avvisiRimandi(testoVisibile: string, citazioni: Citazione[], provenienze: Provenienza[]): string[] {
+  const avvisi: string[] = [];
+  const numeriNoti = new Set(citazioni.flatMap((c) => c.rimandi ?? []));
+  const lettereNote = new Set(provenienze.flatMap((p) => (p.rimandi ?? []).map(letteraRimando)));
+  const numeriUsati = new Set([...testoVisibile.matchAll(/\[(\d{1,2})\]/g)].map((m) => Number(m[1])));
+  const lettereUsate = new Set([...testoVisibile.matchAll(/\[([a-z])\]/g)].map((m) => m[1]!));
+  for (const n of numeriUsati) if (!numeriNoti.has(n)) avvisi.push(`rimando [${n}] senza fonte nel blocco`);
+  for (const l of lettereUsate) if (!lettereNote.has(l)) avvisi.push(`rimando [${l}] senza provenienza nel blocco`);
+  if (numeriUsati.size || lettereUsate.size) {
+    for (const c of citazioni) {
+      if (!(c.rimandi ?? []).some((n) => numeriUsati.has(n))) {
+        avvisi.push(`fonte [${c.rimandi?.[0] ?? '?'}] («${c.documentoTitolo}», pag. ${c.posizione.pagina}) mai richiamata nel testo`);
+      }
+    }
+  }
+  return avvisi;
 }
 
 function etichettaProvenienza(p: { tipo: Provenienza['tipo']; id: string }, dna: DnaAgenzia): string | undefined {

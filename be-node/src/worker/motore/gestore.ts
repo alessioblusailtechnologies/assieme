@@ -20,9 +20,8 @@ import { ancoraCitazioni } from './ancoraggio.js';
 import { caricaDna, promptRipresa, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
-import type { GeneratoreSuggerimenti } from './suggeritore.js';
 import type { GeneratoreTitolo } from './titolista.js';
-import { avvisiEsposizione, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
+import { avvisiEsposizione, avvisiRimandi, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
 import { materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
@@ -46,8 +45,6 @@ export interface DipendenzeInterrogazione {
   radice: string;
   /** Il titolo sensato al posto del provvisorio; senza, resta il provvisorio. */
   generatoreTitolo?: GeneratoreTitolo;
-  /** Le prossime domande per la schermata iniziale; senza, la home usa gli esempi. */
-  generatoreSuggerimenti?: GeneratoreSuggerimenti;
   /** Quanto aspettare un allegato ancora in elaborazione prima di partire senza. */
   attesaAllegatiMs?: number;
   /** RF-G-01: chi impara dagli scambi a risposta data; senza, la memoria non si aggiorna. */
@@ -410,7 +407,12 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           citazioni = ancorate.citazioni;
           provenienze = valido.provenienze;
           nonSupportato = valido.nonSupportato;
-          avvisi = [...valido.avvisi, ...ancorate.avvisi, ...avvisiEsposizione(testoFinale)];
+          avvisi = [
+            ...valido.avvisi,
+            ...ancorate.avvisi,
+            ...avvisiEsposizione(testoFinale),
+            ...avvisiRimandi(testoFinale, citazioni, provenienze),
+          ];
         } catch (errore) {
           await registraConsumi(db, tenantId, job.id, esito);
           await emetti({
@@ -526,28 +528,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         }
       }
 
-      /* Le prossime domande per la home: fresche a ogni risposta, per
-         utente. Un giro mancato non è un errore: restano le precedenti. */
-      if (dip.generatoreSuggerimenti) {
-        try {
-          const proposte = await dip.generatoreSuggerimenti.genera(payload.testo, testoFinale);
-          if (proposte.length) {
-            await db.query(`delete from velia.suggerimenti where utente_id = $1`, [payload.utenteId]);
-            for (const testoProposta of proposte) {
-              await db.query(
-                `insert into velia.suggerimenti (tenant_id, utente_id, testo, conversazione_id)
-                 values ($1, $2, $3, $4)`,
-                [tenantId, payload.utenteId, testoProposta, payload.conversazioneId],
-              );
-            }
-          }
-        } catch (errore) {
-          await emettiEvento(db, job.id, 'suggerimenti-saltati', {
-            motivo: errore instanceof Error ? errore.message : String(errore),
-          });
-        }
-      }
-
+      /* I suggerimenti della home non si scrivono più qui (29/08/2026): non
+         sono «le prossime domande» di questa conversazione ma domande di
+         partenza sul contesto dell'agenzia, generate dall'API. */
       await emetti({ tipo: 'fine' });
     } finally {
       if (!documentiSalvati && strumentiChat?.percorsi.length) {

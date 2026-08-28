@@ -25,6 +25,12 @@ export interface Citazione {
   posizione: PosizioneDocumento;
   /** Il passaggio testuale da cui il dato è tratto, per l'anteprima. */
   estratto: string;
+  /**
+   * I numeri con cui il testo richiama questa fonte (`[1]`, `[2]`…): il
+   * rimando si rende come chip nel punto esatto della risposta. Assente
+   * nei messaggi precedenti al 29/08/2026, che tengono l'elenco in coda.
+   */
+  rimandi?: number[];
 }
 
 /**

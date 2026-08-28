@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Citazione, RiferimentoDocumento } from '@core/models';
@@ -7,7 +7,7 @@ import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatStore, MessaggioInStream } from '../chat-store';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
-import { htmlRisposta } from '@shared/testi/testo-risposta';
+import { htmlRisposta, letteraRimando, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
 
 /**
  * Un messaggio del filo: domanda dell'utente o risposta dell'assistente.
@@ -26,6 +26,10 @@ import { htmlRisposta } from '@shared/testi/testo-risposta';
   host: {
     '[class.is-utente]': 'messaggio().autore === "utente"',
     '[class.is-assistente]': 'messaggio().autore === "assistente"',
+    /* I chip dei rimandi sono ancore dentro `[innerHTML]`: il click si
+       raccoglie sull'host (le ancore sono già focalizzabili e rispondono a
+       Invio da sole) e si smista in `suRimando`. */
+    '(click)': 'suRimando($event)',
   },
 })
 export class BollaMessaggio {
@@ -42,7 +46,67 @@ export class BollaMessaggio {
 
   readonly apriCitazione = output<Citazione>();
 
-  protected readonly html = computed(() => htmlRisposta(this.messaggio().testo));
+  private readonly router = inject(Router);
+
+  /**
+   * Fonti e provenienze come rimandi nel testo (29/08/2026): il motore
+   * scrive `[1]`, `[a]` nel punto esatto e il renderer li fa diventare chip.
+   * In streaming le fonti arrivano dopo il testo: i rimandi aspettano.
+   */
+  private readonly rimandi = computed<RimandiRisposta>(() => {
+    const m = this.messaggio();
+    return { citazioni: m.citazioni, provenienze: m.provenienze, attesa: Boolean(m.inCorso) };
+  });
+
+  protected readonly html = computed(() => htmlRisposta(this.messaggio().testo, this.rimandi()));
+
+  /** Il messaggio usa i rimandi: gli elenchi in coda servono solo per ciò che il testo non richiama. */
+  protected readonly haRimandi = computed(() => {
+    const m = this.messaggio();
+    return m.citazioni.some((c) => c.rimandi?.length) || m.provenienze.some((p) => p.rimandi?.length);
+  });
+
+  /** I rimandi che compaiono davvero nel testo: numeri per le fonti, lettere per le provenienze. */
+  private readonly rimandiUsati = computed(() => {
+    const testo = this.messaggio().testo;
+    return {
+      numeri: new Set([...testo.matchAll(/\[(\d{1,2})\]/g)].map((r) => Number(r[1]))),
+      lettere: new Set([...testo.matchAll(/\[([a-z])\]/g)].map((r) => r[1])),
+    };
+  });
+
+  /** Le fonti elencate dal motore ma mai richiamate nel testo: in coda, per completezza. */
+  protected readonly altreFonti = computed(() => {
+    if (!this.haRimandi() || this.messaggio().inCorso) return [];
+    const { numeri } = this.rimandiUsati();
+    return this.messaggio().citazioni.filter((c) => !(c.rimandi ?? []).some((n) => numeri.has(n)));
+  });
+
+  protected readonly altreProvenienze = computed(() => {
+    if (!this.haRimandi() || this.messaggio().inCorso) return [];
+    const { lettere } = this.rimandiUsati();
+    return this.messaggio().provenienze.filter((p) => !(p.rimandi ?? []).some((n) => lettere.has(letteraRimando(n))));
+  });
+
+  /**
+   * I chip nel testo sono ancore con frammento dentro `[innerHTML]`: il
+   * click si intercetta qui, una volta per bolla, e si smista a chi apre il
+   * documento o al pannello che governa la provenienza.
+   */
+  protected suRimando(evento: Event): void {
+    const ancora = (evento.target as HTMLElement | null)?.closest?.('a.rimando');
+    if (!ancora) return;
+    evento.preventDefault();
+    const href = ancora.getAttribute('href') ?? '';
+    if (href.startsWith('#fonte:')) {
+      const citazione = this.messaggio().citazioni.find((c) => c.id === href.slice('#fonte:'.length));
+      if (citazione) this.apriCitazione.emit(citazione);
+    } else if (href.startsWith('#provenienza:')) {
+      const id = href.slice('#provenienza:'.length);
+      const provenienza = this.messaggio().provenienze.find((p) => p.origineId === id);
+      if (provenienza) void this.router.navigateByUrl(this.percorsiProvenienza[provenienza.tipo]!);
+    }
+  }
 
   /**
    * Mentre la risposta esce, i paragrafi già chiusi si rendono in Markdown
@@ -60,7 +124,7 @@ export class BollaMessaggio {
       : { stabile: testo.slice(0, taglio), corrente: testo.slice(taglio + 2) };
   });
 
-  protected readonly htmlStabile = computed(() => htmlRisposta(this.spezzato().stabile));
+  protected readonly htmlStabile = computed(() => htmlRisposta(this.spezzato().stabile, this.rimandi()));
 
   /**
    * Una tabella Markdown che sta arrivando (righe che cominciano con «|»)
@@ -115,7 +179,9 @@ export class BollaMessaggio {
   protected readonly copiato = signal(false);
 
   protected copia(): void {
-    void navigator.clipboard.writeText(this.messaggio().testo).then(() => {
+    /* Negli appunti i rimandi non dicono niente: le fonti vanno per esteso. */
+    const testo = testoConFontiPerEsteso(this.messaggio().testo, this.rimandi());
+    void navigator.clipboard.writeText(testo).then(() => {
       this.copiato.set(true);
       setTimeout(() => this.copiato.set(false), 2000);
     });

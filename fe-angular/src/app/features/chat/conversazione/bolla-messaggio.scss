@@ -581,3 +581,90 @@
     background: var(--c-page-alt);
   }
 }
+
+/* ---------- I rimandi nel testo: fonti e provenienze nel punto esatto ---------- */
+
+/* Un chip in linea, alto quanto la riga: si legge come parte della frase,
+   non come una nota a piè di pagina. In `[innerHTML]`, quindi ::ng-deep. */
+.testo ::ng-deep .rimando {
+  display: inline;
+  margin: 0 1px;
+  padding: 1px 7px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font-size: var(--t-xs);
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  box-decoration-break: clone;
+  transition:
+    border-color var(--dur-fast) var(--ease-brand),
+    color var(--dur-fast) var(--ease-brand);
+}
+
+.testo ::ng-deep a.rimando:hover,
+.testo ::ng-deep a.rimando:focus-visible {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  text-decoration: none;
+}
+
+.testo ::ng-deep .rimando__pos {
+  margin-left: 5px;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-3);
+}
+
+.testo ::ng-deep .rimando--regola {
+  border-color: transparent;
+  background: var(--c-prov-regola-soft);
+  color: var(--c-prov-regola);
+}
+
+.testo ::ng-deep .rimando--documento-riferimento {
+  border-color: transparent;
+  background: var(--c-prov-riferimento-soft);
+  color: var(--c-prov-riferimento);
+}
+
+.testo ::ng-deep .rimando--memoria {
+  border-color: transparent;
+  background: var(--c-prov-memoria-soft);
+  color: var(--c-prov-memoria);
+}
+
+.testo ::ng-deep :is(.rimando--regola, .rimando--documento-riferimento, .rimando--memoria) .rimando__pos {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* In streaming: la fonte non è ancora arrivata, il numero respira. */
+.testo ::ng-deep .rimando--attesa {
+  border-color: transparent;
+  background: var(--c-page-alt);
+  color: var(--c-text-3);
+  font-family: var(--f-mono);
+  animation: respiro 1.6s var(--ease-brand) infinite;
+}
+
+/* Quel che il testo non richiama, in coda e sottovoce. */
+.altre {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.altre__tipo {
+  align-self: flex-start;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}

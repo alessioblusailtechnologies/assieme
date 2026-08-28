@@ -69,6 +69,7 @@
           }
         </div>
       } @else {
+        <!-- Le fonti e le provenienze stanno nel testo, come chip nel punto esatto: il click lo raccoglie l'host. -->
         <div class="testo" [innerHTML]="html()" aria-live="polite"></div>
       }
 
@@ -129,10 +130,36 @@
         </div>
       }
 
-      @if (m.citazioni.length) {
+      @if (altreFonti().length || altreProvenienze().length) {
         <!--
-          Le fonti sono tante (il motore cita ogni passaggio letto): l'accordion
-          nasce chiuso e il riepilogo dice già quanto e da dove.
+          Col testo che porta i rimandi, in coda resta solo ciò che il motore
+          ha elencato senza richiamarlo: poco, e sottovoce.
+        -->
+        <div class="altre" aria-label="Altre fonti e provenienze">
+          <span class="altre__tipo">Altre fonti</span>
+          <div class="citazioni__elenco">
+            @for (c of altreFonti(); track c.id) {
+              <ui-chip-citazione [citazione]="c" (apri)="apriCitazione.emit($event)" />
+            }
+            @for (p of altreProvenienze(); track p.origineId) {
+              <a
+                class="provenienza"
+                [class]="'is-' + p.tipo"
+                [routerLink]="percorsiProvenienza[p.tipo]"
+                [uiSuggerimento]="p.tipo === 'memoria' ? 'Apri il pannello Memoria' : 'Apri le Istruzioni'"
+              >
+                <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
+                {{ p.etichetta }}
+              </a>
+            }
+          </div>
+        </div>
+      }
+
+      @if (!haRimandi() && m.citazioni.length) {
+        <!--
+          Messaggi precedenti ai rimandi (29/08/2026): le fonti sono tante,
+          l'accordion nasce chiuso e il riepilogo dice già quanto e da dove.
         -->
         <ui-accordion class="citazioni" etichetta="Fonti" [riepilogo]="riepilogoFonti()">
           <div class="citazioni__elenco">
@@ -143,9 +170,9 @@
         </ui-accordion>
       }
 
-      @if (m.provenienze.length) {
+      @if (!haRimandi() && m.provenienze.length) {
         <!--
-          RF-G-03 (con RF-D-05/15): chiuse in un accordion come le Fonti, e
+          RF-G-03 (con RF-D-05/15), messaggi senza rimandi: chiuse in un accordion come le Fonti, e
           ogni voce porta al pannello che la governa - la memoria si corregge
           in Memoria, la regola nelle Istruzioni. Riconoscibile e
           raggiungibile, non solo dichiarato.

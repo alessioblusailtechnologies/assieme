@@ -82,6 +82,8 @@ export interface Provenienza {
   origineId: Id;
   /** Testo breve da mostrare, es. `valutato secondo la regola "Infortuni conducente"`. */
   etichetta: string;
+  /** Come per le citazioni, ma il testo le richiama con lettere: `[a]` è la prima (1). */
+  rimandi?: number[];
 }
 
 /** Errore applicativo normalizzato, così com'è esposto dall'API. */

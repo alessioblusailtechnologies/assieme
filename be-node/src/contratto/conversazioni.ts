@@ -51,12 +51,21 @@ export interface Citazione {
   archivio: ArchivioRiferimento;
   posizione: PosizioneDocumento;
   estratto: string;
+  /**
+   * I numeri con cui il testo richiama questa fonte (`[1]`, `[2]`…): la
+   * posizione nell'elenco del blocco finale, più eventuali doppioni
+   * accorpati. Il FE rende ogni rimando come chip nel punto esatto.
+   * Assente nei messaggi precedenti al 29/08/2026.
+   */
+  rimandi?: number[];
 }
 
 export interface Provenienza {
   tipo: 'regola' | 'documento-riferimento' | 'memoria';
   origineId: string;
   etichetta: string;
+  /** Come per le citazioni, ma il testo le richiama con lettere: `[a]` è la prima (1). */
+  rimandi?: number[];
 }
 
 export type AutoreMessaggio = 'utente' | 'assistente';
