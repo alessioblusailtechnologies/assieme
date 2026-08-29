@@ -13,6 +13,7 @@
  *                           → text/event-stream di { i, e }: e = attivita | testo | consegna | fine
  *   GET  /sessione/eventi?da=N                → lo stesso stream dal numero N (riaggancio)
  *   DELETE /sessione                          → annulla la sessione in corso
+ *   POST /reset                               → svuota /lavoro fra un job e l'altro (409 con sessione in corso)
  *
  * Ogni richiesta porta il token del job in `x-velia-token`. La chiave
  * Anthropic non è qui: sta nel processo `proxy.mjs` (utente `proxy`, nel
@@ -22,7 +23,7 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { mkdir, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
@@ -30,12 +31,21 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { createSdkMcpServer, query, tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 
-const PORTA = Number(process.env.PORTA ?? 8080);
+const PORTA = Number(process.env.PORT ?? process.env.PORTA ?? 8080);
 const PORTA_PROXY = 8787;
 const TOKEN = process.env.SANDBOX_TOKEN ?? '';
 const CHIAVE = process.env.SANDBOX_CHIAVE === '1';
+/* Il namespace di rete isolato c'è (Docker con NET_ADMIN, Fly) o no (Render): lo dice avvio.sh. */
+const NETNS = process.env.SANDBOX_NETNS !== '0';
 const RADICE = resolve(process.env.SANDBOX_RADICE ?? '/lavoro');
 const TIMEOUT_MAX_MS = 10 * 60 * 1000;
+
+/** Come utente `lavoro`, nel namespace isolato se c'è: il prefisso di ogni comando del modello. */
+const PREFISSO_LAVORO = NETNS
+  ? ['ip', 'netns', 'exec', 'lavoro', 'setpriv', '--reuid=lavoro', '--regid=lavoro', '--init-groups']
+  : ['setpriv', '--reuid=lavoro', '--regid=lavoro', '--init-groups'];
+/** Dove la CLI trova il proxy della chiave: dall'altro capo del cavo virtuale, o in locale. */
+const URL_PROXY = `http://${NETNS ? '10.200.0.1' : '127.0.0.1'}:${PORTA_PROXY}`;
 
 if (!TOKEN) {
   console.error('SANDBOX_TOKEN mancante: la sandbox non parte senza un token di job.');
@@ -70,9 +80,10 @@ function esegui({ cmd, timeoutMs, cwd }) {
     const limite = Math.min(Number(timeoutMs) || 120_000, TIMEOUT_MAX_MS);
     /* Nel namespace isolato, come utente `lavoro`: niente rete, niente chiave. */
     const dove = cwd ? dentro(cwd) : RADICE;
+    const [programma, ...argomenti] = PREFISSO_LAVORO;
     const figlio = spawn(
-      'ip',
-      ['netns', 'exec', 'lavoro', 'setpriv', '--reuid=lavoro', '--regid=lavoro', '--init-groups', 'bash', '-lc', `cd '${dove}' && ${String(cmd)}`],
+      programma,
+      [...argomenti, 'bash', '-lc', `cd '${dove}' && ${String(cmd)}`],
       { env: { ...process.env, SANDBOX_TOKEN: '', HOME: RADICE, LANG: 'it_IT.UTF-8' } },
     );
     let stdout = '';
@@ -238,7 +249,7 @@ async function eseguiSessione(s, parametri) {
         abortController: controllo,
         env: {
           ...process.env,
-          ANTHROPIC_BASE_URL: `http://10.200.0.1:${PORTA_PROXY}`,
+          ANTHROPIC_BASE_URL: URL_PROXY,
           ANTHROPIC_API_KEY: 'velia-sandbox',
           HOME: RADICE,
         },
@@ -306,8 +317,24 @@ async function eseguiSessione(s, parametri) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? '/', 'http://sandbox');
-    if (url.pathname === '/salute') return json(res, 200, { pronto: true, chiave: CHIAVE });
+    if (url.pathname === '/salute') return json(res, 200, { pronto: true, chiave: CHIAVE, rete: NETNS ? 'isolata' : 'aperta' });
     if (req.headers['x-velia-token'] !== TOKEN) return json(res, 401, { errore: 'token' });
+
+    /* Il runner che resta acceso fra un job e l'altro (Render): prima di un
+       nuovo lavoro si svuota /lavoro (restano le skill) e si dimentica il
+       diario. Con una sessione in corso si risponde 409: il worker aspetta. */
+    if (req.method === 'POST' && url.pathname === '/reset') {
+      if (sessioneInCorso && !sessioneInCorso.conclusa) return json(res, 409, { errore: 'sessione in corso' });
+      sessioneInCorso = undefined;
+      for (const voce of await readdir(RADICE)) {
+        if (voce === '.claude') continue;
+        await rm(join(RADICE, voce), { recursive: true, force: true });
+      }
+      await mkdir(join(RADICE, 'output'), { recursive: true });
+      spawnSync('chown', ['-R', 'lavoro:lavoro', RADICE]);
+      res.writeHead(204).end();
+      return;
+    }
 
     if (req.method === 'POST' && url.pathname === '/esegui') {
       const richiesta = JSON.parse((await corpo(req)).toString('utf8') || '{}');

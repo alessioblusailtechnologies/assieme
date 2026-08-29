@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { promptRichiesta, promptSandbox } from '../src/worker/sandbox/istruzioni.js';
-import { AvviatoreDocker, Sandbox, interpretaVoce, motivoDocker } from '../src/worker/sandbox/sandbox.js';
+import { AvviatoreDocker, AvviatoreRemoto, Sandbox, interpretaVoce, motivoDocker } from '../src/worker/sandbox/sandbox.js';
 
 /**
  * La sandbox dell'Esportazione elaborata: il prompt (puro) e, se Docker e
@@ -161,5 +161,54 @@ describe('la sessione si riaggancia quando lo stream cade', () => {
   it('una voce del diario porta il numero; un evento nudo passa senza', () => {
     expect(interpretaVoce('{"i":4,"e":{"tipo":"testo","delta":"x"}}')).toEqual({ indice: 4, evento: { tipo: 'testo', delta: 'x' } });
     expect(interpretaVoce('{"tipo":"testo","delta":"x"}')).toEqual({ evento: { tipo: 'testo', delta: 'x' } });
+  });
+});
+
+/*
+ * L'avviatore del runner fisso (Render): aspetta che il runner si liberi
+ * (409 finché una sessione è in corso), poi lo usa; a fine job lo svuota.
+ */
+describe('AvviatoreRemoto', () => {
+  it('aspetta il 409, parte al 204, e chiude con un altro reset', async () => {
+    const { createServer } = await import('node:http');
+    const richieste: string[] = [];
+    let occupato = 1;
+    const server = createServer((req, res) => {
+      richieste.push(`${req.method} ${req.url} ${String(req.headers['x-velia-token'] ?? '-')}`);
+      if (req.url === '/salute') return res.writeHead(200, { 'content-type': 'application/json' }).end('{"pronto":true}');
+      if (req.headers['x-velia-token'] !== 'segreto-condiviso-di-prova') return res.writeHead(401).end();
+      if (req.method === 'POST' && req.url === '/reset') {
+        if (occupato-- > 0) return res.writeHead(409).end();
+        return res.writeHead(204).end();
+      }
+      res.writeHead(404).end();
+    });
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+    try {
+      const a = new AvviatoreRemoto({ url, token: 'segreto-condiviso-di-prova', attesaMs: 20_000 });
+      const inizio = Date.now();
+      const ist = await a.avvia();
+      expect(Date.now() - inizio).toBeGreaterThanOrEqual(2500); // un giro di attesa sul 409
+      expect(ist.url).toBe(url);
+      expect(ist.token).toBe('segreto-condiviso-di-prova');
+      await ist.chiudi();
+      expect(richieste.filter((r) => r.startsWith('POST /reset'))).toHaveLength(3);
+      expect(richieste.some((r) => r.startsWith('GET /salute'))).toBe(true);
+    } finally {
+      server.close();
+    }
+  }, 15_000);
+
+  it('con un token sbagliato non aspetta: lo dice subito', async () => {
+    const { createServer } = await import('node:http');
+    const server = createServer((_req, res) => res.writeHead(401).end());
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+    try {
+      await expect(new AvviatoreRemoto({ url, token: 'x', attesaMs: 5000 }).avvia()).rejects.toThrow(/SANDBOX_TOKEN/);
+    } finally {
+      server.close();
+    }
   });
 });

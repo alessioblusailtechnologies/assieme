@@ -17,7 +17,7 @@ import { creaGestoreInterrogazione } from './motore/gestore.js';
 import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
-import { AvviatoreDocker, AvviatoreFly, type AvviatoreSandbox } from './sandbox/sandbox.js';
+import { AvviatoreDocker, AvviatoreFly, AvviatoreRemoto, type AvviatoreSandbox } from './sandbox/sandbox.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
 import { creaGestoreTabelle } from './tabelle/gestore.js';
 
@@ -64,6 +64,10 @@ function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
   if (!chiaveApi) return undefined;
   let avviatore: AvviatoreSandbox | undefined;
   if (c.SANDBOX_AVVIATORE === 'docker') avviatore = new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi);
+  /* Il runner fisso su Render (29/08/2026): la chiave Anthropic sta sul servizio, non passa da qui. */
+  if (c.SANDBOX_AVVIATORE === 'render' && c.SANDBOX_URL && c.SANDBOX_TOKEN) {
+    avviatore = new AvviatoreRemoto({ url: c.SANDBOX_URL, token: c.SANDBOX_TOKEN, attesaMs: c.SANDBOX_ATTESA_MS });
+  }
   if (c.SANDBOX_AVVIATORE === 'fly' && c.FLY_API_TOKEN) {
     avviatore = new AvviatoreFly({
       token: c.FLY_API_TOKEN,

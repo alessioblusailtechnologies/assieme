@@ -84,18 +84,43 @@ services:
         sync: false
       - key: HOSTYOURAI_API_KEY
         sync: false
-      # Esportazione elaborata: una Machine Fly.io per job (DEPLOY.md §2b).
+      # Generazione documenti da template: il runner della sandbox è il servizio
+      # privato velia-sandbox qui sotto (DEPLOY.md §2b), raggiunto sulla rete
+      # privata di Render col segreto condiviso.
       - key: SANDBOX_AVVIATORE
-        value: fly
-      - key: SANDBOX_IMMAGINE
-        value: registry.fly.io/velia-sandbox:latest
-      - key: FLY_APP_SANDBOX
-        value: velia-sandbox
-      - key: FLY_REGIONE
-        value: ams
-      - key: FLY_API_TOKEN
-        sync: false
-      - key: ANTHROPIC_API_KEY_SANDBOX
+        value: render
+      - key: SANDBOX_URL
+        fromService:
+          name: velia-sandbox
+          type: pserv
+          property: hostport
+      - key: SANDBOX_TOKEN
+        fromService:
+          name: velia-sandbox
+          type: pserv
+          envVarKey: SANDBOX_TOKEN
+
+  # --- Sandbox documentale: il runner sempre acceso, un job per volta -------
+  # Stessa immagine della sandbox (LibreOffice, Chromium, Python, Claude Code),
+  # senza namespace di rete (Render non dà NET_ADMIN): SANDBOX_RETE=aperta.
+  # Nessun database né Storage qui: solo la workspace del job corrente.
+  - type: pserv
+    name: velia-sandbox
+    runtime: docker
+    region: frankfurt
+    plan: pro
+    rootDir: be-node/sandbox
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: SANDBOX_RETE
+        value: aperta
+      - key: SANDBOX_TOKEN
+        generateValue: true
+      # La chiave che entra nel proxy del runner: dedicata, con tetto di spesa.
+      - key: ANTHROPIC_API_KEY
         sync: false
 
   # --- App Angular: sito statico, routing della SPA con la rewrite ---------

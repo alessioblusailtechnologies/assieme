@@ -316,6 +316,68 @@ export function motivoDocker(errore: unknown, immagine: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Runner remoto sempre acceso (Render, Private Service): un servizio, un job
+// per volta, /lavoro svuotato fra l'uno e l'altro
+// ---------------------------------------------------------------------------
+
+export interface OpzioniRemoto {
+  /** L'indirizzo del servizio sulla rete privata, es. `http://velia-sandbox:10000`. */
+  url: string;
+  /** Il segreto condiviso con cui il runner è stato avviato (`SANDBOX_TOKEN`). */
+  token: string;
+  /** Quanto aspettare che il runner si liberi da un altro job. */
+  attesaMs?: number;
+}
+
+/**
+ * Il runner della sandbox come servizio fisso (29/08/2026): dopo che le
+ * Machine su Fly morivano a 5 minuti esatti, il runner gira su Render
+ * accanto al worker, sulla rete privata, senza proxy pubblici in mezzo e
+ * senza boot. Un solo job per volta: `POST /reset` risponde 409 finché una
+ * sessione è in corso e il worker aspetta il suo turno. Sul runner non ci
+ * sono database né Storage: solo la workspace del job, cancellata dopo.
+ */
+export class AvviatoreRemoto implements AvviatoreSandbox {
+  readonly nome = 'render';
+  constructor(private readonly o: OpzioniRemoto) {}
+
+  private async reset(): Promise<number> {
+    const r = await fetch(`${this.o.url}/reset`, {
+      method: 'POST',
+      headers: { 'x-velia-token': this.o.token },
+      signal: AbortSignal.timeout(30_000),
+    }).catch(() => undefined);
+    return r?.status ?? 0;
+  }
+
+  async avvia(): Promise<SandboxAvviata> {
+    const scadenza = Date.now() + (this.o.attesaMs ?? 10 * 60_000);
+    for (;;) {
+      const stato = await this.reset();
+      if (stato === 204) break;
+      if (stato === 401) throw new Error('il motore documentale rifiuta il token: SANDBOX_TOKEN diverso fra worker e runner');
+      if (Date.now() > scadenza) {
+        throw new Error(
+          stato === 409
+            ? 'il motore documentale è occupato da un altro lavoro: riprova fra qualche minuto'
+            : 'il motore documentale non risponde',
+        );
+      }
+      await new Promise((ok) => setTimeout(ok, 3000));
+    }
+    await aspettaPronta(this.o.url, undefined, 30_000);
+    return {
+      url: this.o.url,
+      token: this.o.token,
+      chiudi: async () => {
+        /* A fine job si svuota subito: i documenti del tenant non restano lì in attesa del prossimo. */
+        await this.reset();
+      },
+    };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Fly.io Machines (produzione): una micro-VM per job, distrutta alla fine
 // ---------------------------------------------------------------------------
 

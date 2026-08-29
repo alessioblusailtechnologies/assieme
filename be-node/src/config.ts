@@ -136,8 +136,17 @@ const schemaAmbiente = z.object({
    * costruita da `sandbox/Dockerfile`) o `fly` (una Machine per job).
    * Senza, l'Esportazione elaborata risponde che non è disponibile.
    */
-  SANDBOX_AVVIATORE: z.enum(['docker', 'fly']).optional(),
+  SANDBOX_AVVIATORE: z.enum(['docker', 'fly', 'render']).optional(),
   SANDBOX_IMMAGINE: z.string().default('velia-sandbox'),
+  /**
+   * `render` (29/08/2026): il runner della sandbox è un servizio sempre
+   * acceso sulla rete privata (Render Private Service dalla stessa immagine,
+   * con `SANDBOX_RETE=aperta`): qui il suo indirizzo e il segreto condiviso.
+   */
+  SANDBOX_URL: z.string().url().optional(),
+  SANDBOX_TOKEN: z.string().min(16).optional(),
+  /** Quanto il worker aspetta che il runner si liberi da un altro job (ms). */
+  SANDBOX_ATTESA_MS: z.coerce.number().int().positive().default(10 * 60_000),
   /** Tetto di turni e di spesa per una sessione documentale (più alti della chat: guarda e corregge). */
   SANDBOX_MAX_TURNI: z.coerce.number().int().min(1).default(60),
   SANDBOX_BUDGET_USD: z.coerce.number().positive().default(4),

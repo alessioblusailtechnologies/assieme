@@ -89,7 +89,15 @@ In alternativa, Cloudflare Pages:
 
 ---
 
-## 2b. Sandbox dell'Esportazione elaborata su Fly.io
+## 2b. Sandbox documentale: il runner su Render (dal 29/08/2026)
+
+La generazione di documenti da template gira nel servizio privato **`velia-sandbox`** del Blueprint (`type: pserv`, stessa immagine `be-node/sandbox/Dockerfile`, piano con 4 GB), sempre acceso, sulla rete privata di Render: il worker lo raggiunge con `SANDBOX_AVVIATORE=render`, `SANDBOX_URL` (host e porta interni, `fromService`) e `SANDBOX_TOKEN` (segreto generato da Render e condiviso ai due servizi). Un job per volta: `POST /reset` svuota `/lavoro` fra un job e l'altro e risponde 409 finché una sessione è in corso (il worker aspetta fino a `SANDBOX_ATTESA_MS`, 10 minuti). Sul runner non ci sono database né Storage: solo la workspace del job corrente. Render non concede `NET_ADMIN`, quindi il runner parte con `SANDBOX_RETE=aperta`: la CLI e i comandi del modello girano come utente `lavoro` ma con la rete del container (la chiave Anthropic resta nel processo `proxy`, con un altro utente). Variabili del servizio: `PORT=10000`, `SANDBOX_RETE=aperta`, `SANDBOX_TOKEN` (generato), `ANTHROPIC_API_KEY` (dedicata, con tetto di spesa). Per più documenti in parallelo si alzano le istanze del servizio.
+
+In locale: `docker run -d -e SANDBOX_RETE=aperta -e PORT=10000 -e SANDBOX_TOKEN=<segreto> -e ANTHROPIC_API_KEY=... -p 127.0.0.1:18080:10000 velia-sandbox` e nel `.env` del worker `SANDBOX_AVVIATORE=render`, `SANDBOX_URL=http://127.0.0.1:18080`, `SANDBOX_TOKEN=<segreto>`; oppure `SANDBOX_AVVIATORE=docker` (un container per job, con namespace di rete isolato: è la configurazione più sicura, quando c'è Docker).
+
+## 2c. Sandbox su Fly.io (dismessa il 29/08/2026)
+
+Le Machine Fly morivano a 300 s esatti dallo start, anche da ferme e con `autostop` spento (stop richiesto via API da qualcosa fuori dal nostro codice; causa non trovata). L'avviatore `fly` resta nel codice per chi volesse riprovare; quanto segue è la configurazione di allora.
 
 Render (o Railway) tiene API e worker; l'Esportazione elaborata (il motore documentale con Python, LibreOffice e Chromium) gira in una **Machine Fly.io per job**, ad Amsterdam, senza rete verso i nostri servizi e senza segreti: il worker la crea, le manda i file, esegue i comandi del modello, ritira i documenti e la distrugge. Si paga solo il tempo delle Machine attive.
 
