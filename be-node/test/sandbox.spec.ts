@@ -175,7 +175,7 @@ describe('AvviatoreRemoto', () => {
     let occupato = 1;
     const server = createServer((req, res) => {
       richieste.push(`${req.method} ${req.url} ${String(req.headers['x-velia-token'] ?? '-')}`);
-      if (req.url === '/salute') return res.writeHead(200, { 'content-type': 'application/json' }).end('{"pronto":true}');
+      if (req.url === '/salute') return res.writeHead(200, { 'content-type': 'application/json' }).end('{"pronto":true,"chiave":true}');
       if (req.headers['x-velia-token'] !== 'segreto-condiviso-di-prova') return res.writeHead(401).end();
       if (req.method === 'POST' && req.url === '/reset') {
         if (occupato-- > 0) return res.writeHead(409).end();
@@ -229,6 +229,23 @@ describe('AvviatoreRemoto: l\'indirizzo come lo dà Render', () => {
       expect(ist.url).toBe(`http://127.0.0.1:${porta}`);
       expect(visti).toContain('/reset');
       expect(visti.some((v) => v.includes('//'))).toBe(false);
+    } finally {
+      server.close();
+    }
+  });
+});
+
+describe('AvviatoreRemoto: il runner senza chiave', () => {
+  it('lo dice subito, col nome della variabile', async () => {
+    const { createServer } = await import('node:http');
+    const server = createServer((req, res) => {
+      if (req.url === '/salute') return res.writeHead(200, { 'content-type': 'application/json' }).end('{"pronto":true,"chiave":false}');
+      res.writeHead(204).end();
+    });
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const porta = (server.address() as { port: number }).port;
+    try {
+      await expect(new AvviatoreRemoto({ url: `http://127.0.0.1:${porta}`, token: 'x' }).avvia()).rejects.toThrow(/ANTHROPIC_API_KEY sul servizio velia-sandbox/);
     } finally {
       server.close();
     }

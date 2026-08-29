@@ -376,6 +376,14 @@ export class AvviatoreRemoto implements AvviatoreSandbox {
       await new Promise((ok) => setTimeout(ok, 3000));
     }
     await aspettaPronta(this.o.url, undefined, 30_000);
+    /* La chiave Anthropic sta sul servizio del runner, non qui: se manca lo
+       si dice prima di caricare la workspace, con il nome della variabile. */
+    const salute = (await fetch(`${this.o.url}/salute`, { signal: AbortSignal.timeout(10_000) })
+      .then((r) => r.json())
+      .catch(() => ({}))) as { chiave?: unknown };
+    if (salute.chiave === false) {
+      throw new Error('il runner della sandbox non ha la chiave Anthropic: imposta ANTHROPIC_API_KEY sul servizio velia-sandbox');
+    }
     return {
       url: this.o.url,
       token: this.o.token,
