@@ -184,16 +184,19 @@
   --luce-hover: 0.92;
 
   /* ---------- Tipografia ----------
-   * Un solo carattere per tutto: TWK Ghost (self-ospitato, `_fonts.scss`) —
-   * lo stesso del riferimento Harvey. I tre ruoli restano token distinti:
-   * se domani titoli o etichette torneranno ad avere una voce propria,
-   * cambierà questa sezione e non i componenti.
+   * Due voci. TWK Ghost (self-ospitato, `_fonts.scss`) parla nei titoli e
+   * nei testi grandi: è la voce di marca. Geist parla in tutto il resto -
+   * corpo, etichette, chat - perché si legge a lungo e in denso, e la stessa
+   * voce delle risposte deve accompagnare anche i comandi che le circondano.
+   * I ruoli restano token distinti: se domani cambierà una voce, cambierà
+   * questa sezione e non i componenti.
    */
   --f-serif: 'TWK Ghost', georgia, 'Times New Roman', times, serif;
-  --f-sans: 'TWK Ghost', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
-  --f-mono: 'TWK Ghost', ui-monospace, 'SF Mono', menlo, consolas, monospace;
-  /* La voce di lettura: dove si sta sul testo a lungo — risposte della
-     chat, celle di tabella. Ghost resta la voce dell'interfaccia. */
+  --f-sans: 'Geist', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
+  --f-mono: 'Geist', ui-monospace, 'SF Mono', menlo, consolas, monospace;
+  /* La voce di lettura: oggi coincide col sans, ma resta un token a sé per
+     le risposte della chat e le celle di tabella, dove si sta sul testo a
+     lungo. */
   --f-lettura: 'Geist', 'Helvetica Neue', helvetica, arial, 'Segoe UI', roboto, sans-serif;
 
   --ls-tight: -0.02em;

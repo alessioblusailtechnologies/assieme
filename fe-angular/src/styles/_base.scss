@@ -37,6 +37,17 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/*
+ * I titoli parlano con la voce di marca, il corpo con quella di lettura.
+ * Vale sui tag, così una testata non deve ricordarsi di chiedere il serif;
+ * la classe `.serif` resta per gli elementi che titoli non sono ma ne hanno
+ * la voce (il saluto, un numero grande).
+ */
+h1,
+h2 {
+  font-family: var(--f-serif);
+}
+
 h1,
 h2,
 h3,
