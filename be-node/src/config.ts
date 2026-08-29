@@ -71,6 +71,12 @@ const schemaAmbiente = z.object({
    * lotto); Opus se si vuole il gradino in più.
    */
   MODELLO_SUGGERIMENTI: z.string().default('claude-sonnet-5'),
+  /**
+   * «Scrivi il prompt» nel composer (29/08/2026): riscrive l'abbozzo
+   * dell'utente come richiesta completa. Una chiamata breve a ogni clic,
+   * senza crediti: Sonnet basta e costa poco.
+   */
+  MODELLO_PROMPT: z.string().default('claude-sonnet-5'),
   SUGGERIMENTI_ORE_VALIDITA: z.coerce.number().positive().default(24),
   /** `no` spegne la generazione (i test la tengono spenta): restano gli esempi del FE. */
   SUGGERIMENTI_GENERAZIONE: z.enum(['si', 'no']).default('si'),
@@ -82,6 +88,21 @@ const schemaAmbiente = z.object({
    */
   HOSTYOURAI_API_KEY: z.string().optional(),
   HOSTYOURAI_BASE_URL: z.string().url().default('https://hostyourai.com'),
+  /**
+   * L'invio email («Invia email» sotto una risposta, 29/08/2026): Resend via
+   * HTTP, nessuna dipendenza. Senza chiave, fuori produzione l'email finisce
+   * nel log e l'invio si dichiara simulato (il flusso si prova lo stesso);
+   * in produzione l'invio risponde 503. Il mittente va verificato su Resend.
+   */
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_MITTENTE: z.string().default('Velia <noreply@sonovelia.it>'),
+  /**
+   * La dettatura nel composer (29/08/2026): Voxtral di Mistral (dati in
+   * UE, 0,003 $/min). Senza chiave il microfono dice che non è configurato.
+   * `voxtral-mini-latest` è Voxtral Mini Transcribe 2.
+   */
+  MISTRAL_API_KEY: z.string().optional(),
+  MODELLO_TRASCRIZIONE: z.string().default('voxtral-mini-latest'),
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),

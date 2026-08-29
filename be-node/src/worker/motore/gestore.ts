@@ -235,7 +235,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
               token: e.esito.token,
               tokenStimati: e.esito.tokenStimati,
               utenteId: payload.utenteId,
-              descrizione: `Esportazione elaborata: ${(r.titolo ?? r.istruzioni ?? '').slice(0, 70)}`,
+              descrizione: `Documento da template: ${(r.titolo ?? r.istruzioni ?? '').slice(0, 70)}`,
             });
             return e;
           }
@@ -247,7 +247,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         if (!elaborata) {
           await emetti({
             tipo: 'errore',
-            messaggio: 'L’Esportazione elaborata non è disponibile in questo ambiente.',
+            messaggio: 'La generazione di documenti da template non è disponibile in questo ambiente.',
           });
           throw new ErroreNonRitentabile('sandbox non configurata');
         }
@@ -259,12 +259,22 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           );
           contenuto = m.rows[0]?.testo;
         }
-        const e = await elaborata({
-          formato: richiesta.formato,
-          templateId: richiesta.templateId,
-          istruzioni: richiesta.istruzioni,
-          contenuto,
-        });
+        let e;
+        try {
+          e = await elaborata({
+            formato: richiesta.formato,
+            templateId: richiesta.templateId,
+            istruzioni: richiesta.istruzioni,
+            contenuto,
+          });
+        } catch (errore) {
+          /* La sandbox non è partita (Docker spento, immagine assente, Fly
+             irraggiungibile): il motivo, già ripulito dall'avviatore, va
+             detto in chat; ritentare non cambierebbe niente. */
+          const motivo = errore instanceof Error ? errore.message : String(errore);
+          await emetti({ tipo: 'errore', messaggio: `Il motore documentale non è partito: ${motivo}` });
+          throw new ErroreNonRitentabile(`sandbox non avviata: ${motivo}`);
+        }
         if (e.esito.terminato === 'annullato') return;
         if (e.esito.terminato === 'errore') {
           await dip.archivio.elimina(e.percorsi).catch(() => undefined);
@@ -273,7 +283,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         }
         const testo = e.generati.length
           ? separaBlocco(e.esito.testo).visibile.trim() || 'Il documento è pronto qui sotto.'
-          : `${separaBlocco(e.esito.testo).visibile.trim()}\n\n*(L’Esportazione elaborata non ha consegnato un documento.)*`.trim();
+          : `${separaBlocco(e.esito.testo).visibile.trim()}\n\n*(Il motore documentale non ha consegnato un documento.)*`.trim();
         await db.query(
           `insert into velia.messaggi
              (id, conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati,

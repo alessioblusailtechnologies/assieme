@@ -205,15 +205,27 @@ export class AvviatoreDocker implements AvviatoreSandbox {
   async avvia(jobId: string): Promise<SandboxAvviata> {
     const token = nuovoToken();
     const nome = `velia-sandbox-${jobId.slice(0, 8)}-${Date.now().toString(36)}`;
-    await eseguiFile('docker', [
-      'run', '-d', '--rm', '--name', nome,
-      '--cap-add', 'NET_ADMIN', '--cap-add', 'SYS_ADMIN',
-      '--memory', '3g', '--cpus', '2',
-      '-e', `SANDBOX_TOKEN=${token}`,
-      '-e', `ANTHROPIC_API_KEY=${this.chiaveApi}`,
-      '-p', '127.0.0.1:0:8080',
-      this.immagine,
-    ]);
+    /* I segreti NON stanno sulla riga di comando: `-e NOME` senza valore fa
+       leggere a Docker l'ambiente del processo `docker`. Così non finiscono
+       né in `ps`, né nel messaggio «Command failed: docker run …» che
+       execFile compone con gli argomenti e che risale fino all'utente. */
+    try {
+      await eseguiFile(
+        'docker',
+        [
+          'run', '-d', '--rm', '--name', nome,
+          '--cap-add', 'NET_ADMIN', '--cap-add', 'SYS_ADMIN',
+          '--memory', '3g', '--cpus', '2',
+          '-e', 'SANDBOX_TOKEN',
+          '-e', 'ANTHROPIC_API_KEY',
+          '-p', '127.0.0.1:0:8080',
+          this.immagine,
+        ],
+        { env: { ...process.env, SANDBOX_TOKEN: token, ANTHROPIC_API_KEY: this.chiaveApi } },
+      );
+    } catch (errore) {
+      throw new Error(motivoDocker(errore, this.immagine), { cause: errore });
+    }
     const porta = await eseguiFile('docker', ['port', nome, '8080/tcp']);
     const numero = /:(\d+)\s*$/m.exec(porta.stdout)?.[1];
     if (!numero) {
@@ -235,6 +247,24 @@ export class AvviatoreDocker implements AvviatoreSandbox {
       },
     };
   }
+}
+
+/**
+ * Il perché di un `docker run` fallito, detto a chi legge la chat: il daemon
+ * spento (in locale: Rancher Desktop non avviato) e l'immagine mancante sono
+ * i due casi veri; il resto porta lo stderr, corto, mai la riga di comando.
+ */
+export function motivoDocker(errore: unknown, immagine: string): string {
+  const stderr = (errore as { stderr?: unknown })?.stderr;
+  const dettaglio = (typeof stderr === 'string' ? stderr : errore instanceof Error ? errore.message : String(errore)).trim();
+  if (/docker_engine|docker\.sock|Cannot connect to the Docker daemon|daemon running|error during connect/i.test(dettaglio)) {
+    return 'Docker non è in esecuzione: avvia Rancher Desktop (o Docker Desktop) e riprova.';
+  }
+  if (/Unable to find image|No such image|pull access denied|not found: manifest/i.test(dettaglio)) {
+    return `l'immagine della sandbox «${immagine}» non c'è: va costruita con «docker build -t ${immagine} -f sandbox/Dockerfile sandbox».`;
+  }
+  const riga = dettaglio.split('\n').filter((r) => r.trim() && !r.startsWith('Command failed')).at(-1) ?? 'motivo sconosciuto';
+  return `docker run non riuscito: ${riga.slice(0, 300)}`;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { creaApp, type OpzioniApp } from '../src/api/app.js';
-import { schemaEsporta, schemaIdentitaVisiva, schemaPatchTemplate } from '../src/contratto/template.js';
+import { schemaEsporta, schemaEsportaRisposta, schemaIdentitaVisiva, schemaPatchTemplate } from '../src/contratto/template.js';
 
 /**
  * Il contratto dei template senza database: gli schemi Zod e le risposte che
@@ -33,6 +33,13 @@ describe('schemi del contratto', () => {
     expect(schemaEsporta.safeParse({ formato: 'docx' }).success).toBe(true);
     expect(schemaEsporta.safeParse({ formato: 'pptx' }).success).toBe(false);
     expect(schemaEsporta.safeParse({}).success).toBe(false);
+  });
+
+  it("l'«Esporta come» della chat ammette anche il testo semplice; le tabelle no", () => {
+    expect(schemaEsportaRisposta.safeParse({ formato: 'txt' }).success).toBe(true);
+    expect(schemaEsportaRisposta.safeParse({ formato: 'docx' }).success).toBe(true);
+    expect(schemaEsportaRisposta.safeParse({}).success).toBe(false);
+    expect(schemaEsporta.safeParse({ formato: 'txt' }).success).toBe(false);
   });
 
   it("l'identità visiva pretende un colore esadecimale", () => {

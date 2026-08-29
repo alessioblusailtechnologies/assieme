@@ -103,6 +103,9 @@ export interface VoceStoricoImpostazioni {
 /** I formati che il server sa generare (PPTX è rimandato, punto aperto §6.11). */
 export type FormatoGenerazione = 'pdf' | 'docx' | 'xlsx';
 
+/** L'«Esporta come» di una risposta: i formati generabili più il testo semplice, senza template. */
+export type FormatoEsportaRisposta = FormatoGenerazione | 'txt';
+
 /**
  * Template di output (RF-D-10…D-13).
  *

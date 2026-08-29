@@ -4,22 +4,31 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type pg from 'pg';
 
 import {
+  schemaEmailRisposta,
   schemaModificheConversazione,
   schemaNuovaConversazione,
   schemaNuovoMessaggio,
+  schemaRichiestaPrompt,
   titoloDaMessaggio,
   TITOLO_NUOVA,
   percorsoDocumentoGenerato,
   type Citazione,
   type Conversazione,
   type DocumentoGenerato,
+  type EsitoEmailRisposta,
   type EventoStream,
   type Messaggio,
   type PaginaConversazioni,
   type Provenienza,
   type RiferimentoDocumento,
+  type RispostaPrompt,
+  type RispostaTrascrizione,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { configurazione } from '../../config.js';
+import { inviaEmail } from '../../email/invio.js';
+import { fontiDaCitazioni, identitaDelTenant } from '../../generazione/catalogo.js';
+import { componiEmailRisposta } from '../../generazione/email.js';
 import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
@@ -27,7 +36,9 @@ import { richiediCrediti } from '../crediti/rotte.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import { PonteEventi } from './ponte-eventi.js';
+import { scrittoreDallaConfigurazione, type ScrittorePrompt } from './scrittore-prompt.js';
 import { ServizioSuggerimenti } from './suggeritore.js';
+import { trascrittoreDallaConfigurazione, type Trascrittore } from './trascrittore.js';
 
 /**
  * La chat (Fase 3): conversazioni, contesto documentale, allegati, e la
@@ -46,7 +57,14 @@ export interface OpzioniConversazioni {
   battitoMs?: number;
   /** Nei test: il servizio dei suggerimenti con un generatore finto. */
   suggerimenti?: ServizioSuggerimenti;
+  /** Nei test: lo scrittore di prompt finto. Di default quello Anthropic, costruito al primo uso. */
+  scrittorePrompt?: ScrittorePrompt;
+  /** Nei test: il trascrittore finto. Di default Voxtral, costruito al primo uso. */
+  trascrittore?: Trascrittore;
 }
+
+/** Una dettatura è breve: sopra questo, non è una dettatura. */
+const LIMITE_AUDIO_BYTE = 15 * 1024 * 1024;
 
 interface RigaConversazione {
   id: string;
@@ -418,6 +436,120 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       battitoMs: opzioni.battitoMs ?? 15_000,
     });
   });
+
+  /**
+   * «Scrivi il prompt» nel composer (29/08/2026): l'abbozzo dell'utente
+   * torna riscritto come richiesta completa, coi documenti del contesto
+   * nominati per titolo. Non risponde alla domanda, la formula; niente
+   * crediti. La visibilità dei documenti la decide la RLS: un id altrui
+   * semplicemente non si nomina.
+   */
+  let scrittore: ScrittorePrompt | undefined | null = opzioni.scrittorePrompt ?? null;
+  app.post('/api/conversazioni/prompt', async (richiesta): Promise<RispostaPrompt> => {
+    const esito = schemaRichiestaPrompt.safeParse(richiesta.body ?? {});
+    if (!esito.success) throw ErroreApi.datiNonValidi('Scrivi prima qualcosa: il prompt si costruisce dal tuo testo.');
+    if (scrittore === null) scrittore = scrittoreDallaConfigurazione();
+    if (!scrittore) {
+      throw new ErroreApi(503, 'PROMPT_NON_DISPONIBILE', 'La scrittura del prompt non è disponibile su questo ambiente.');
+    }
+    const { tenantId } = richiesta.identita;
+    /* Gli id dei documenti sono slug (`doc-allianz-…`), non uuid: nessun filtro di forma, la query è parametrica. */
+    const ids = esito.data.documenti;
+    const { documenti, agenzia } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const d = ids.length
+        ? await client.query<{ titolo: string }>(`select titolo from velia.documenti where id = any($1::text[]) order by titolo`, [ids])
+        : { rows: [] as { titolo: string }[] };
+      const t = await client.query<{ nome: string }>(`select nome from velia.tenant where id = $1`, [tenantId]);
+      return { documenti: d.rows.map((r) => r.titolo), agenzia: t.rows[0]?.nome ?? 'agenzia' };
+    });
+    const prompt = await scrittore.scrivi({ abbozzo: esito.data.testo, documenti, agenzia });
+    if (!prompt) throw new ErroreApi(502, 'PROMPT_VUOTO', 'Non è uscito un prompt sensato: riprova, magari con qualche parola in più.');
+    return { prompt };
+  });
+
+  /**
+   * La dettatura (29/08/2026): l'audio registrato dal browser (campo
+   * multipart `audio`) torna come testo. Nessuna conversazione richiesta,
+   * niente crediti, niente persistenza: l'audio passa e non resta.
+   */
+  let trascrittore: Trascrittore | undefined | null = opzioni.trascrittore ?? null;
+  app.post('/api/conversazioni/trascrizioni', async (richiesta): Promise<RispostaTrascrizione> => {
+    if (!richiesta.isMultipart()) throw ErroreApi.datiNonValidi('La dettatura arriva come multipart/form-data.');
+    if (trascrittore === null) trascrittore = trascrittoreDallaConfigurazione();
+    if (!trascrittore) {
+      throw new ErroreApi(503, 'TRASCRIZIONE_NON_CONFIGURATA', 'La dettatura non è configurata su questo ambiente.');
+    }
+    let audio: { byte: Buffer; tipo: string; nome: string; troncato: boolean } | undefined;
+    for await (const parte of richiesta.parts()) {
+      if (parte.type !== 'file' || audio) continue;
+      const byte = await parte.toBuffer();
+      audio = { byte, tipo: parte.mimetype || 'audio/webm', nome: parte.filename || 'dettatura.webm', troncato: parte.file.truncated };
+    }
+    if (!audio || !audio.byte.length) throw new ErroreApi(400, 'AUDIO_MANCANTE', 'Nessun audio nella richiesta.');
+    if (audio.troncato || audio.byte.length > LIMITE_AUDIO_BYTE) {
+      throw new ErroreApi(413, 'AUDIO_TROPPO_LUNGO', 'La dettatura è troppo lunga: registra in più riprese.');
+    }
+    const testo = await trascrittore.trascrivi(audio, { log: richiesta.log });
+    return { testo };
+  });
+
+  /**
+   * «Invia email» sotto una risposta (29/08/2026): il testo con le fonti,
+   * nell'identità dell'agenzia, all'indirizzo dell'utente registrato (`me`)
+   * o a uno scritto a mano. Visibilità della conversazione via RLS; il
+   * mittente è quello di piattaforma, chi manda si legge in coda al testo.
+   */
+  app.post<{ Params: { id: string; mid: string } }>(
+    '/api/conversazioni/:id/messaggi/:mid/email',
+    async (richiesta): Promise<EsitoEmailRisposta> => {
+      const esito = schemaEmailRisposta.safeParse(richiesta.body ?? {});
+      if (!esito.success) throw ErroreApi.datiNonValidi('Indica «me» oppure un indirizzo email valido.');
+      if (!E_UUID.test(richiesta.params.id) || !E_UUID.test(richiesta.params.mid)) {
+        throw ErroreApi.nonTrovato('Messaggio inesistente.');
+      }
+      const { tenantId, utenteId } = richiesta.identita;
+
+      const { conversazione, messaggio, identita } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const c = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const m = await client.query<{ testo: string; citazioni: Citazione[] }>(
+          `select testo, citazioni from velia.messaggi
+           where conversazione_id = $1 and id = $2 and autore = 'assistente'`,
+          [richiesta.params.id, richiesta.params.mid],
+        );
+        return { conversazione: c, messaggio: m.rows[0], identita: await identitaDelTenant(client, tenantId) };
+      });
+      if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
+
+      const u = await poolDb().query<{ nome: string; cognome: string; email: string; tenant_nome: string }>(
+        `select u.nome, u.cognome, u.email, t.nome as tenant_nome
+         from velia.utenti u join velia.tenant t on t.id = u.tenant_id
+         where u.id = $1 and u.tenant_id = $2`,
+        [utenteId, tenantId],
+      );
+      const utente = u.rows[0];
+      if (!utente) throw ErroreApi.nonTrovato('Utente inesistente.');
+
+      const a = esito.data.a === 'me' ? utente.email : esito.data.a;
+      const email = componiEmailRisposta({
+        titolo: conversazione.titolo,
+        testo: messaggio.testo,
+        fonti: fontiDaCitazioni(messaggio.citazioni),
+        daParteDi: { nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome },
+        identita: { colorePrimario: identita.colore_primario, firma: identita.firma, recapiti: identita.recapiti },
+      });
+      const config = configurazione();
+      const { simulata } = await inviaEmail(
+        { a, ...email, rispondiA: utente.email },
+        {
+          apiKey: config.RESEND_API_KEY,
+          mittente: config.EMAIL_MITTENTE,
+          produzione: process.env['NODE_ENV'] === 'production',
+          log: richiesta.log,
+        },
+      );
+      return { a, simulata };
+    },
+  );
 }
 
 /** Lo stream vero e proprio: header, `inizio`, inoltro degli eventi, chiusura. */

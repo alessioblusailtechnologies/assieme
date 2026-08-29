@@ -13,8 +13,10 @@ import {
 
 import { ChatStore, type AllegatoInCorso } from '../chat-store';
 import { Icona } from '@shared/ui/icona/icona';
+import { NotificheStore } from '@core/notifiche/notifiche-store';
 import { RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
+import { ErroreMicrofono, Registratore } from './registratore';
 import {
   chipAllegatoPerChiave,
   chipPerId,
@@ -218,6 +220,50 @@ export class Composer {
   protected invia(): void {
     if (this.store.inRisposta() || !this.store.bozza().trim()) return;
     this.store.invia();
+  }
+
+  /** «Scrivi il prompt»: lo store riscrive la bozza; l'editor la segue da solo (effetto sopra). */
+  protected scriviPrompt(): void {
+    this.store.generaPrompt();
+    this.editor.focus();
+  }
+
+  protected ripristina(): void {
+    this.store.ripristinaAbbozzo();
+    this.editor.focus();
+  }
+
+  // --- La dettatura ---------------------------------------------------------
+
+  private readonly notifiche = inject(NotificheStore);
+  private readonly registratore = new Registratore();
+
+  /** Vero dal clic che apre il microfono al clic che lo chiude. */
+  protected readonly inRegistrazione = signal(false);
+
+  protected readonly microfonoDisponibile = Registratore.supportato();
+
+  /**
+   * Un clic apre il microfono, il successivo lo chiude e manda l'audio a
+   * trascrivere: il testo arriva in coda a ciò che c'è nel campo. Il
+   * permesso lo chiede il browser al primo clic; un rifiuto si spiega, non
+   * si ripete in silenzio.
+   */
+  protected async dettatura(): Promise<void> {
+    if (this.inRegistrazione()) {
+      this.inRegistrazione.set(false);
+      const audio = await this.registratore.ferma();
+      this.store.trascrivi(audio);
+      this.editor.focus();
+      return;
+    }
+    try {
+      await this.registratore.avvia();
+      this.inRegistrazione.set(true);
+    } catch (errore) {
+      const messaggio = errore instanceof ErroreMicrofono ? errore.message : 'Il microfono non è partito.';
+      this.notifiche.aggiungi({ gravita: 'errore', titolo: 'Dettatura non disponibile', dettaglio: messaggio });
+    }
   }
 
   private inserisciTesto(testo: string): void {

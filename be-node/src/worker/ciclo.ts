@@ -76,7 +76,13 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
         tentativi: consegne,
         errore: messaggioErrore,
       });
-      await emettiEvento(db, job.id, 'errore', { messaggio: messaggioErrore });
+      /* All'utente non va il messaggio dell'eccezione: è roba interna
+         (comandi, percorsi, a volte ciò che un comando aveva in riga) e il
+         gestore, quando ha qualcosa di sensato da dire, lo ha già detto con
+         un evento suo. Il dettaglio resta nel job, per l'audit. */
+      await emettiEvento(db, job.id, 'errore', {
+        messaggio: 'Il lavoro si è interrotto per un problema tecnico. Riprova fra poco.',
+      });
       await archivia(db, msgId);
     } else {
       // Si lascia il messaggio in coda: ricomparirà da solo allo scadere

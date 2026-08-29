@@ -23,8 +23,7 @@ import { ChatStore } from '../chat-store';
 import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { Campo } from '@shared/ui/campo/campo';
-import { Citazione, FormatoGenerazione, etichettaCitazione } from '@core/models';
-import { Select } from '@shared/ui/select/select';
+import { Citazione, TemplateOutput, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -58,7 +57,6 @@ const SOGLIA_FONDO_PX = 120;
     MenuAzioni,
     RouterLink,
     Scheletro,
-    Select,
     StatoVuoto,
     VisualizzatorePdf,
   ],
@@ -192,96 +190,98 @@ export class Conversazione {
     }
   }
 
-  // --- Esportazione su template (RF-C-10) ---------------------------------
+  // --- Le azioni sotto una risposta (RF-C-10) ------------------------------
 
-  private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
-
-  /** Il messaggio su cui è stato chiesto «esporta», finché il menu è aperto. */
-  private messaggioDaEsportare?: string;
-
-  /**
+  /*
    * Un solo menu per tutto il filo, non uno per messaggio: si aggancia al
-   * pulsante premuto e ricorda per quale messaggio è stato aperto.
+   * pulsante premuto e ricorda per quale messaggio è stato aperto. Vale per
+   * l'«Esporta come» e per l'«Invia email».
    */
-  protected readonly vociEsporta = computed<VoceMenu[]>(() =>
-    this.store.scelteEsportazione().map((scelta) => ({
-      etichetta: scelta.etichetta,
-      dettaglio: scelta.dettaglio,
-      azione: () => {
-        if (this.messaggioDaEsportare) this.store.esporta(this.messaggioDaEsportare, scelta);
-      },
-    })),
-  );
+  private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
+  private readonly menuEmail = viewChild<MenuAzioni>('menuEmail');
+
+  /** Il messaggio su cui è stata chiesta un'azione, finché il menu o il modulo è aperto. */
+  private messaggioInAzione?: string;
+
+  // «Esporta come»: Word, PDF, testo semplice - un download immediato.
+
+  protected readonly vociEsporta: VoceMenu[] = this.store.scelteEsportazione.map((scelta) => ({
+    etichetta: scelta.etichetta,
+    dettaglio: scelta.dettaglio,
+    azione: () => {
+      if (this.messaggioInAzione) this.store.esporta(this.messaggioInAzione, scelta);
+    },
+  }));
 
   protected apriEsporta(evento: Event, messaggioId: string): void {
-    this.messaggioDaEsportare = messaggioId;
+    this.messaggioInAzione = messaggioId;
     this.menuEsporta()?.apri(evento);
   }
 
-  // --- Esportazione elaborata ---------------------------------------------
+  // «Invia email»: a me (l'indirizzo con cui sono registrato) o a un altro indirizzo.
 
-  /**
-   * Il modulo dell'Esportazione elaborata: la risposta da impaginare, il
-   * template (o il predefinito del formato), il formato, le istruzioni.
-   * Alla conferma parte come un messaggio: il lavoro del motore documentale
-   * si vede nel filo e il chip compare quando il documento è pronto.
-   */
-  protected readonly elaborataAperta = signal(false);
-  protected readonly elaborataMessaggioId = signal<string | undefined>(undefined);
-  protected readonly elaborataFormato = signal<FormatoGenerazione>('pdf');
-  protected readonly elaborataTemplateId = signal<string | undefined>(undefined);
-  protected readonly elaborataIstruzioni = signal('');
+  protected readonly emailAperta = signal(false);
+  protected readonly emailDestinatario = signal('');
+  protected readonly emailValida = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.emailDestinatario().trim()));
 
-  protected readonly formatiElaborata: { valore: FormatoGenerazione; etichetta: string }[] = [
-    { valore: 'pdf', etichetta: 'PDF' },
-    { valore: 'docx', etichetta: 'Word (DOCX)' },
-    { valore: 'xlsx', etichetta: 'Excel (XLSX)' },
-  ];
+  protected readonly vociEmail = computed<VoceMenu[]>(() => [
+    {
+      etichetta: 'A me',
+      dettaglio: this.sessione.utente()?.email ?? '',
+      azione: () => {
+        if (this.messaggioInAzione) this.store.inviaEmail(this.messaggioInAzione, 'me');
+      },
+    },
+    {
+      etichetta: 'A un altro indirizzo…',
+      azione: () => {
+        this.emailDestinatario.set('');
+        this.emailAperta.set(true);
+      },
+    },
+  ]);
 
-  /** I template del formato scelto; il predefinito per primo. */
-  protected readonly templateElaborata = computed(() =>
+  protected apriEmail(evento: Event, messaggioId: string): void {
+    this.messaggioInAzione = messaggioId;
+    this.menuEmail()?.apri(evento);
+  }
+
+  protected inviaEmailAltro(evento: Event): void {
+    evento.preventDefault();
+    const a = this.emailDestinatario().trim();
+    if (!this.messaggioInAzione || !this.emailValida()) return;
+    this.store.inviaEmail(this.messaggioInAzione, a, () => this.emailAperta.set(false));
+  }
+
+  // «Genera documento da template»: si sceglie il template, alla conferma
+  // parte come un messaggio - il lavoro del motore documentale si vede nel
+  // filo e l'allegato compare sotto la risposta quando è pronto.
+
+  protected readonly templateAperto = signal(false);
+  protected readonly templateScelto = signal<string | undefined>(undefined);
+
+  /** I template dell'agenzia che si sanno generare, il predefinito del formato per primo. */
+  protected readonly templateDisponibili = computed<TemplateOutput[]>(() =>
     this.store
       .template()
-      .filter((t) => t.formato === this.elaborataFormato())
-      .sort((a, b) => Number(b.predefinito) - Number(a.predefinito))
-      .map((t) => ({ valore: t.id, etichetta: t.predefinito ? `${t.nome} (predefinito)` : t.nome })),
+      .filter((t) => t.formato !== 'pptx')
+      .sort((a, b) => Number(b.predefinito) - Number(a.predefinito) || a.nome.localeCompare(b.nome)),
   );
 
-  protected apriElaborata(messaggioId: string): void {
-    this.elaborataMessaggioId.set(messaggioId);
-    this.elaborataTemplateId.set(undefined);
-    this.elaborataIstruzioni.set('');
-    this.elaborataAperta.set(true);
+  protected apriTemplate(messaggioId: string): void {
+    this.messaggioInAzione = messaggioId;
+    this.templateScelto.set(this.templateDisponibili()[0]?.id);
+    this.templateAperto.set(true);
   }
 
-  protected cambiaFormatoElaborata(valore: unknown): void {
-    this.elaborataFormato.set(valore as FormatoGenerazione);
-    this.elaborataTemplateId.set(undefined);
-  }
-
-  protected avviaElaborata(): void {
-    const messaggioId = this.elaborataMessaggioId();
-    if (!messaggioId) return;
-    const formato = this.elaborataFormato();
-    const templateId = this.elaborataTemplateId();
-    const istruzioni = this.elaborataIstruzioni().trim();
-    const template = this.store.template().find((t) => t.id === templateId);
-    const descrizione = [
-      `documento ${formato.toUpperCase()}`,
-      template ? `sul template «${template.nome}»` : undefined,
-      istruzioni ? `- ${istruzioni}` : undefined,
-    ]
-      .filter(Boolean)
-      .join(' ');
-    this.elaborataAperta.set(false);
+  protected avviaTemplate(): void {
+    const messaggioId = this.messaggioInAzione;
+    const template = this.templateDisponibili().find((t) => t.id === this.templateScelto());
+    if (!messaggioId || !template || template.formato === 'pptx') return;
+    this.templateAperto.set(false);
     this.store.inviaEsportazione(
-      {
-        formato,
-        messaggioId,
-        ...(templateId && { templateId }),
-        ...(istruzioni && { istruzioni }),
-      },
-      descrizione,
+      { formato: template.formato, templateId: template.id, messaggioId },
+      `«${template.nome}» (${template.formato.toUpperCase()})`,
     );
   }
 

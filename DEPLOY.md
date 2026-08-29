@@ -47,6 +47,9 @@ Un'immagine sola (`be-node/Dockerfile`) e **due servizi** dallo stesso repo: il 
    | `DATABASE_URL` | pooler Supabase in **modalità sessione** (porta 5432) | il worker usa LISTEN/NOTIFY: non il transaction pooler |
    | `ANTHROPIC_API_KEY` | chiave Anthropic | segreto |
    | `HOSTYOURAI_API_KEY` | chiave HostYourAI (`hyai-…`) | opzionale: senza, GLM/Kimi restano schede |
+   | `RESEND_API_KEY` | chiave Resend (`re_…`) | opzionale: senza, «Invia email» risponde 503 in produzione (in locale l'invio è simulato nel log) |
+   | `EMAIL_MITTENTE` | `Velia <noreply@sonovelia.it>` | default; il dominio va verificato su Resend |
+   | `MISTRAL_API_KEY` | chiave Mistral | opzionale: senza, la dettatura nel composer risponde 503 |
    | `MODELLO_MOTORE` | `claude-opus-5` | default |
    | `MOTORE_EFFORT` | `medium` | opzionale, vedi costi |
    | `CORS_ORIGINI` | `https://app.sonovelia.it` | **solo api** |

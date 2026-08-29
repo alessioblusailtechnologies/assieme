@@ -126,10 +126,10 @@ export interface RicordoAppreso {
 }
 
 /**
- * La richiesta di Esportazione elaborata: il messaggio chiede un documento,
- * non una risposta. Il motore documentale lavora in sandbox sul template
- * scelto (o sul predefinito del formato) e consegna il file come
- * `documento` della risposta. `messaggioId` è la risposta da impaginare.
+ * La richiesta «Genera documento da template»: il messaggio chiede un
+ * documento, non una risposta. Il motore documentale lavora in sandbox sul
+ * template scelto e consegna il file come `documento` della risposta.
+ * `messaggioId` è la risposta da impaginare.
  */
 export interface EsportazioneElaborata {
   formato: 'pdf' | 'docx' | 'xlsx';
@@ -143,4 +143,26 @@ export interface NuovoMessaggio {
   testo: string;
   documentiReferenziati: Id[];
   esportazione?: EsportazioneElaborata;
+}
+
+/**
+ * «Invia email» sotto una risposta: `me` è l'indirizzo dell'utente
+ * registrato, altrimenti un indirizzo scritto a mano. L'esito dice a chi è
+ * partita; `simulata` solo negli ambienti senza provider (mai in produzione).
+ */
+export type DestinatarioEmail = 'me' | string;
+
+export interface EsitoEmailRisposta {
+  a: string;
+  simulata: boolean;
+}
+
+/** «Scrivi il prompt» nel composer: l'abbozzo riscritto come richiesta completa. */
+export interface RispostaPrompt {
+  prompt: string;
+}
+
+/** La dettatura nel composer: l'audio registrato torna come testo. */
+export interface RispostaTrascrizione {
+  testo: string;
 }

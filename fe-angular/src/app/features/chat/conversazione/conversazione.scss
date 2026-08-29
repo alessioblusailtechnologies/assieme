@@ -601,31 +601,95 @@
   }
 }
 
-/* ---------- Esportazione elaborata ---------- */
+/* ---------- I moduli delle azioni: «Genera documento da template», «Invia email» ---------- */
 
-.elaborata {
+.modulo {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
 }
 
-.elaborata__spiega {
+.modulo__spiega,
+.modulo__vuoto {
   font-size: var(--t-sm);
   color: var(--c-text-3);
 }
 
-.elaborata__campo {
+.modulo__campo {
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
 }
 
-.elaborata__nome {
+.modulo__nome {
   font-size: var(--t-xs);
   color: var(--c-text-3);
 }
 
-.elaborata__azioni {
+.modulo__azioni {
   display: flex;
   gap: var(--sp-2);
+}
+
+/* La scelta del template: una riga per template, il radio nativo tenuto
+   per la tastiera e lo screen reader, la riga intera che risponde al clic. */
+.scelte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.scelta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-brand),
+    background var(--dur-fast) var(--ease-brand);
+}
+
+.scelta:hover {
+  border-color: var(--c-accent-hairline);
+}
+
+.scelta.is-scelta {
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
+.scelta__radio {
+  flex: none;
+  margin: 0;
+  accent-color: var(--c-accent);
+}
+
+.scelta__testo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.scelta__nome {
+  font-size: var(--t-body);
+  color: var(--c-text);
+}
+
+.scelta__descrizione {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scelta__formato {
+  flex: none;
+  white-space: nowrap;
 }

@@ -42,6 +42,10 @@ services:
         sync: false
       - key: HOSTYOURAI_API_KEY
         sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MISTRAL_API_KEY
+        sync: false
 
   # --- Worker: nessuna porta, disco per la cache delle workspace -----------
   - type: worker

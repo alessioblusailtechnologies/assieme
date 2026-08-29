@@ -10,6 +10,7 @@ import type { IconSvgObject } from '@hugeicons/angular';
  * risolvere e servire migliaia di moduli a ogni avvio del dev server.
  * Il sottopercorso costa qualche riga in più e la ricarica resta immediata.
  */
+import AiMagicIcon from '@hugeicons/core-free-icons/AiMagicIcon';
 import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon';
 import AlertCircleIcon from '@hugeicons/core-free-icons/AlertCircleIcon';
 import AtIcon from '@hugeicons/core-free-icons/AtIcon';
@@ -38,6 +39,7 @@ import LibraryIcon from '@hugeicons/core-free-icons/LibraryIcon';
 import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
 import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon';
 import Logout03Icon from '@hugeicons/core-free-icons/Logout03Icon';
+import Mic01Icon from '@hugeicons/core-free-icons/Mic01Icon';
 import Menu01Icon from '@hugeicons/core-free-icons/Menu01Icon';
 import Moon02Icon from '@hugeicons/core-free-icons/Moon02Icon';
 import MoreVerticalIcon from '@hugeicons/core-free-icons/MoreVerticalIcon';
@@ -101,6 +103,10 @@ export const REGISTRO_ICONE = {
   filtra: FilterIcon,
   aggiungi: PlusSignIcon,
   modifica: PencilEdit02Icon,
+  /* La bacchetta AI: «Scrivi il prompt» nel composer. */
+  bacchetta: AiMagicIcon,
+  /* Il microfono: dettatura nel composer. */
+  microfono: Mic01Icon,
   elimina: Delete02Icon,
   duplica: Copy01Icon,
   condividi: Share08Icon,

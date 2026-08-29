@@ -8,7 +8,7 @@ import type { Citazione } from '../../contratto/conversazioni.js';
 
 import { ErroreApi } from '../../contratto/errori.js';
 import {
-  schemaEsporta,
+  schemaEsportaRisposta,
   schemaIdentitaVisiva,
   schemaPatchTemplate,
   type FormatoGenerazione,
@@ -28,6 +28,7 @@ import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { analizzaMarkdown } from '../../generazione/blocchi.js';
 import { segnapostoDocx } from '../../generazione/docx.js';
+import { testoSemplice } from '../../generazione/email.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { componiPdf } from '../../generazione/pdf.js';
 import { segnapostoXlsx } from '../../generazione/xlsx.js';
@@ -387,16 +388,19 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
   /**
    * Il testo del messaggio e le sue fonti, impaginati sul template scelto (o
    * sul predefinito del formato, o sul layout di piattaforma). Sincrona: un
-   * documento sta sotto qualche secondo.
+   * documento sta sotto qualche secondo. Il formato `txt` («Esporta come»,
+   * 29/08/2026) non passa da nessun template: è il testo piatto con le fonti.
    */
   app.post<{ Params: { id: string; mid: string } }>(
     '/api/conversazioni/:id/messaggi/:mid/esporta',
     async (richiesta, risposta) => {
-      const esito = schemaEsporta.safeParse(richiesta.body ?? {});
+      const esito = schemaEsportaRisposta.safeParse(richiesta.body ?? {});
       if (!esito.success) throw ErroreApi.datiNonValidi('Indica il template o il formato su cui esportare.');
       if (!E_UUID.test(richiesta.params.id) || !E_UUID.test(richiesta.params.mid)) {
         throw ErroreApi.nonTrovato('Messaggio inesistente.');
       }
+      const scelta = esito.data;
+      const testoSolo = scelta.formato === 'txt' && !scelta.templateId;
 
       const { messaggio, template, identita } = await conIdentita(
         poolDb(),
@@ -408,14 +412,23 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
              where m.conversazione_id = $1 and m.id = $2 and m.tenant_id = $3`,
             [richiesta.params.id, richiesta.params.mid, richiesta.identita.tenantId],
           );
+          if (testoSolo) return { messaggio: m.rows[0] };
           return {
             messaggio: m.rows[0],
-            template: await risolviTemplate(client, richiesta.identita.tenantId, esito.data),
+            template: await risolviTemplate(client, richiesta.identita.tenantId, {
+              ...(scelta.templateId && { templateId: scelta.templateId }),
+              ...(scelta.formato && scelta.formato !== 'txt' && { formato: scelta.formato }),
+            }),
             identita: await identitaDelTenant(client, richiesta.identita.tenantId),
           };
         },
       );
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
+
+      if (!template || !identita) {
+        const testo = testoSemplice(messaggio.testo, fontiDaCitazioni(messaggio.citazioni));
+        return inviaFile(risposta, Buffer.from(testo, 'utf8'), 'text/plain; charset=utf-8', 'attachment; filename="risposta.txt"');
+      }
 
       const file = await generaDocumento({
         template,

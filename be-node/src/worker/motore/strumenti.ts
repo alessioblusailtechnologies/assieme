@@ -215,7 +215,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       'sandbox con Python, Node, LibreOffice e Chromium: apre il template o il documento di esempio, lo copia e lo adatta',
       'conservando impaginazione e stili, controlla il risultato pagina per pagina e lo allega alla risposta.',
       'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
-      '«da consegnare», una proposta o un report impaginato, o nomina l’Esportazione elaborata. Per un semplice',
+      '«da consegnare», una proposta o un report impaginato, o chiede un documento «da template». Per un semplice',
       '«esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
       'Passa in `istruzioni` tutto ciò che il motore documentale deve sapere (cosa produrre, per chi, con quali dati e',
       'da quali documenti della workspace) e in `contenuto` il testo di partenza già scritto, se c’è.',
@@ -230,7 +230,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
     async (args) => {
       if (!contesto.elaborata) {
-        return { content: [{ type: 'text', text: 'L’Esportazione elaborata non è disponibile in questo ambiente.' }], isError: true };
+        return { content: [{ type: 'text', text: 'La generazione di documenti da template non è disponibile in questo ambiente.' }], isError: true };
       }
       const template = args.template?.trim() ? await risolviNomeTemplate(contesto, args.template) : undefined;
       if (template === null) {
@@ -252,7 +252,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         /* Il motivo arriva al modello, così lo dice all'utente invece di «problema tecnico». */
         const motivo = errore instanceof Error ? errore.message : String(errore);
         return {
-          content: [{ type: 'text', text: `L’Esportazione elaborata non è partita: ${motivo.slice(0, 300)}. Non riprovare da solo: dillo all’utente.` }],
+          content: [{ type: 'text', text: `Il motore documentale non è partito: ${motivo.slice(0, 300)}. Non riprovare da solo: dillo all’utente.` }],
           isError: true,
         };
       }
@@ -262,8 +262,8 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
           {
             type: 'text',
             text: consegnati
-              ? `Esportazione elaborata completata: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
-              : `L’Esportazione elaborata non ha consegnato file. Nota del motore documentale: ${esito.testo}`,
+              ? `Documento da template pronto: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
+              : `Il motore documentale non ha consegnato file. Nota: ${esito.testo}`,
           },
         ],
         ...(!consegnati && { isError: true }),

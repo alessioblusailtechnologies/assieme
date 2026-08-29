@@ -66,6 +66,58 @@
         <ui-icon name="referenzia" [size]="17" />
       </button>
 
+      <!--
+        «Scrivi il prompt»: due parole buttate giù diventano una richiesta
+        completa, coi documenti del contesto nominati. Il testo si sostituisce
+        nel campo, e finché non lo si tocca si può tornare al proprio.
+      -->
+      @if (store.promptRipristinabile()) {
+        <button
+          type="button"
+          class="campo__allega"
+          (click)="ripristina()"
+          aria-label="Ripristina il testo che avevi scritto"
+          title="Ripristina il tuo testo"
+        >
+          <ui-icon name="riprova" [size]="17" />
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="campo__allega"
+          [class.is-attivo]="store.promptInScrittura()"
+          (click)="scriviPrompt()"
+          [disabled]="store.promptInScrittura() || store.inRisposta()"
+          aria-label="Scrivi il prompt a partire dal testo"
+          title="Scrivi il prompt: Velia riscrive il tuo testo come una richiesta completa, da rileggere prima di inviare"
+        >
+          <ui-icon [name]="store.promptInScrittura() ? 'in-corso' : 'bacchetta'" [size]="17" />
+        </button>
+      }
+
+      <!-- A destra, attaccato a Invia, il microfono: si parla e si manda. -->
+      <span class="campo__strumenti">
+        <!--
+          La dettatura: un clic apre il microfono (il pulsante si accende e
+          pulsa), il clic dopo lo chiude e il parlato arriva nel campo come
+          testo. Se il browser non sa registrare, il pulsante non c'è.
+        -->
+        @if (microfonoDisponibile) {
+          <button
+            type="button"
+            class="campo__allega campo__microfono"
+            [class.is-registrazione]="inRegistrazione()"
+            (click)="dettatura()"
+            [disabled]="store.trascrizioneInCorso()"
+            [attr.aria-pressed]="inRegistrazione()"
+            [attr.aria-label]="inRegistrazione() ? 'Ferma la dettatura' : 'Detta il messaggio'"
+            [title]="inRegistrazione() ? 'Ferma la dettatura' : store.trascrizioneInCorso() ? 'Trascrivo…' : 'Detta il messaggio'"
+          >
+            <ui-icon [name]="store.trascrizioneInCorso() ? 'in-corso' : inRegistrazione() ? 'ferma' : 'microfono'" [size]="17" />
+          </button>
+        }
+      </span>
+
       @if (store.inRisposta()) {
         <button
           type="button"

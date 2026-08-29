@@ -83,3 +83,22 @@ export const schemaEsporta = z
   });
 
 export type RichiestaEsporta = z.infer<typeof schemaEsporta>;
+
+/**
+ * L'«Esporta come» di una risposta in chat (29/08/2026): i formati
+ * generabili più il testo semplice, che non passa da nessun template.
+ */
+export const FORMATI_ESPORTA_RISPOSTA = [...FORMATI_GENERAZIONE, 'txt'] as const;
+
+export type FormatoEsportaRisposta = (typeof FORMATI_ESPORTA_RISPOSTA)[number];
+
+export const schemaEsportaRisposta = z
+  .object({
+    templateId: z.string().min(1).optional(),
+    formato: z.enum(FORMATI_ESPORTA_RISPOSTA).optional(),
+  })
+  .refine((e) => e.templateId !== undefined || e.formato !== undefined, {
+    message: 'Indica il template o il formato.',
+  });
+
+export type RichiestaEsportaRisposta = z.infer<typeof schemaEsportaRisposta>;

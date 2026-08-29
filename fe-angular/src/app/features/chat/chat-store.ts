@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import {
+  DestinatarioEmail,
   DocumentoGenerato,
   ErroreApi,
   EsportazioneElaborata,
@@ -17,10 +18,11 @@ import {
 } from '@core/models';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
+import { NotificheStore } from '@core/notifiche/notifiche-store';
 import {
+  SCELTE_ESPORTA_COME,
   SceltaEsportazione,
   nomeFileEsportazione,
-  scelteEsportazione,
 } from '@shared/esportazione/scelte-esportazione';
 
 /**
@@ -92,6 +94,7 @@ interface StreamAttivo {
 export class ChatStore {
   private readonly api = inject(ConversazioniApi);
   private readonly router = inject(Router);
+  private readonly notifiche = inject(NotificheStore);
 
   /* Lo storico sta in `core`, condiviso con la barra laterale che lo mostra
      sotto la voce Chat: qui lo si legge e lo si ricarica dopo le scritture. */
@@ -107,15 +110,43 @@ export class ChatStore {
     this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
   );
 
-  /** Le voci del menù di esportazione: template dell'agenzia per formato, o il layout di VELIA. */
-  readonly scelteEsportazione = computed(() => scelteEsportazione(this.template()));
+  /** Le voci dell'«Esporta come»: Word, PDF, testo semplice. */
+  readonly scelteEsportazione = SCELTE_ESPORTA_COME;
 
-  /** Esporta una risposta sulla scelta fatta (template o formato) e avvia il download. */
+  /** Esporta una risposta nel formato scelto e avvia il download, col titolo della conversazione come nome. */
   esporta(messaggioId: Id, scelta: SceltaEsportazione): void {
     const id = this.idAttiva();
     if (!id) return;
     this.api.esporta(id, messaggioId, scelta.scelta).subscribe({
-      next: (blob) => scaricaBlob(blob, nomeFileEsportazione(scelta.etichetta, scelta.formato)),
+      next: (blob) => scaricaBlob(blob, nomeFileEsportazione(this.attiva()?.titolo ?? 'risposta', scelta.formato)),
+    });
+  }
+
+  // --- Invia email ----------------------------------------------------------
+
+  readonly emailInInvio = signal(false);
+
+  /**
+   * «Invia email»: il server compone la risposta con le fonti e la spedisce
+   * a me o all'indirizzo dato. L'esito arriva come notifica; l'errore lo
+   * dice già l'interceptor. Torna `true` a invio riuscito, per chiudere il
+   * modulo.
+   */
+  inviaEmail(messaggioId: Id, a: DestinatarioEmail, fatto?: () => void): void {
+    const id = this.idAttiva();
+    if (!id || this.emailInInvio()) return;
+    this.emailInInvio.set(true);
+    this.api.inviaEmail(id, messaggioId, a).subscribe({
+      next: (esito) => {
+        this.emailInInvio.set(false);
+        this.notifiche.aggiungi({
+          gravita: 'successo',
+          titolo: esito.simulata ? 'Email simulata' : 'Email inviata',
+          dettaglio: esito.simulata ? `A ${esito.a}: su questo ambiente l'invio non è configurato.` : `A ${esito.a}.`,
+        });
+        fatto?.();
+      },
+      error: () => this.emailInInvio.set(false),
     });
   }
 
@@ -261,6 +292,85 @@ export class ChatStore {
   /** RF-C-02: i documenti scelti col selettore `@`, in attesa dell'invio. */
   readonly riferimentiBozza = signal<RiferimentoDocumento[]>([]);
 
+  // --- «Scrivi il prompt» ---------------------------------------------------
+
+  readonly promptInScrittura = signal(false);
+
+  /** L'abbozzo dell'utente prima della riscrittura, finché la bozza è ancora il prompt generato. */
+  private readonly promptOriginale = signal<{ abbozzo: string; generato: string } | undefined>(undefined);
+
+  /** Si può tornare al testo dell'utente: il prompt è in bozza così com'è uscito. */
+  readonly promptRipristinabile = computed(() => {
+    const p = this.promptOriginale();
+    return !!p && this.bozza() === p.generato;
+  });
+
+  /**
+   * L'abbozzo riscritto come richiesta completa: prende la bozza, i
+   * documenti referenziati e quelli nel contesto (per nominarli) e mette il
+   * risultato al posto del testo; l'abbozzo resta a portata di «Ripristina».
+   */
+  generaPrompt(): void {
+    const abbozzo = this.bozza().trim();
+    if (this.promptInScrittura()) return;
+    if (!abbozzo) {
+      this.notifiche.aggiungi({
+        gravita: 'informazione',
+        titolo: 'Scrivi prima due parole',
+        dettaglio: 'La bacchetta le trasforma in una richiesta completa per Velia.',
+      });
+      return;
+    }
+    const documenti = [
+      ...this.riferimentiBozza().map((r) => r.id),
+      ...(this.attiva()?.documentiInContesto ?? []).map((r) => r.id),
+    ];
+    this.promptInScrittura.set(true);
+    this.api.generaPrompt(abbozzo, [...new Set(documenti)]).subscribe({
+      next: ({ prompt }) => {
+        this.promptInScrittura.set(false);
+        if (!prompt.trim()) return;
+        this.promptOriginale.set({ abbozzo: this.bozza(), generato: prompt });
+        this.bozza.set(prompt);
+      },
+      error: () => this.promptInScrittura.set(false),
+    });
+  }
+
+  ripristinaAbbozzo(): void {
+    const p = this.promptOriginale();
+    if (!p) return;
+    this.promptOriginale.set(undefined);
+    this.bozza.set(p.abbozzo);
+  }
+
+  // --- La dettatura ---------------------------------------------------------
+
+  readonly trascrizioneInCorso = signal(false);
+
+  /**
+   * L'audio del microfono al server, il testo in coda alla bozza (con uno
+   * spazio, se c'era già qualcosa). L'errore lo dice l'interceptor; qui si
+   * spegne solo l'attesa.
+   */
+  trascrivi(audio: Blob): void {
+    if (!audio.size || this.trascrizioneInCorso()) return;
+    this.trascrizioneInCorso.set(true);
+    this.api.trascrivi(audio).subscribe({
+      next: ({ testo }) => {
+        this.trascrizioneInCorso.set(false);
+        const dettato = testo.trim();
+        if (!dettato) {
+          this.notifiche.aggiungi({ gravita: 'informazione', titolo: 'Non ho sentito niente', dettaglio: 'Riprova parlando più vicino al microfono.' });
+          return;
+        }
+        const prima = this.bozza();
+        this.bozza.set(prima.trim() ? `${prima.replace(/\s+$/, '')} ${dettato}` : dettato);
+      },
+      error: () => this.trascrizioneInCorso.set(false),
+    });
+  }
+
   /** I riferimenti del messaggio in volo: contesto già vero sul server, non ancora nell'elenco locale. */
   readonly riferimentiInVolo = computed(() => this.streamAttivo()?.riferimenti ?? []);
 
@@ -349,14 +459,15 @@ export class ChatStore {
   }
 
   /**
-   * L'Esportazione elaborata: un messaggio che chiede un documento. Viaggia
-   * sullo stesso stream della chat (attività, documento, fine), così il filo
-   * mostra il lavoro del motore documentale e il chip quando è pronto.
+   * «Genera documento da template»: un messaggio che chiede un documento.
+   * Viaggia sullo stesso stream della chat (attività, documento, fine), così
+   * il filo mostra il lavoro del motore documentale e l'allegato quando è
+   * pronto.
    */
   inviaEsportazione(richiesta: EsportazioneElaborata, descrizione: string): void {
     const id = this.idAttiva();
     if (!id || this.inRisposta()) return;
-    this.avviaStream(id, `Esportazione elaborata: ${descrizione}`, [], richiesta);
+    this.avviaStream(id, `Genera documento da template: ${descrizione}`, [], richiesta);
   }
 
   private avviaStream(

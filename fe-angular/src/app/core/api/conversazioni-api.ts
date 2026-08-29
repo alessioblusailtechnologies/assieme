@@ -9,11 +9,15 @@ import { Observable } from 'rxjs';
 import { environment } from '@env';
 import {
   Conversazione,
+  DestinatarioEmail,
+  EsitoEmailRisposta,
   EventoStream,
   Id,
   Messaggio,
   NuovoMessaggio,
   RiferimentoDocumento,
+  RispostaPrompt,
+  RispostaTrascrizione,
   TemplateOutput,
 } from '@core/models';
 import { SceltaEsporta } from '@shared/esportazione/scelte-esportazione';
@@ -180,6 +184,27 @@ export class ConversazioniApi {
       `${this.base}/${conversazioneId}/messaggi/${messaggioId}/esporta`,
       scelta,
       { responseType: 'blob' },
+    );
+  }
+
+  /** La dettatura: l'audio del microfono va al server, torna il testo. */
+  trascrivi(audio: Blob): Observable<RispostaTrascrizione> {
+    const corpo = new FormData();
+    const estensione = audio.type.includes('mp4') ? 'mp4' : audio.type.includes('ogg') ? 'ogg' : audio.type.includes('wav') ? 'wav' : 'webm';
+    corpo.append('audio', audio, `dettatura.${estensione}`);
+    return this.http.post<RispostaTrascrizione>(`${this.base}/trascrizioni`, corpo);
+  }
+
+  /** «Scrivi il prompt»: l'abbozzo torna riscritto come richiesta completa, coi documenti nominati. */
+  generaPrompt(testo: string, documenti: Id[]): Observable<RispostaPrompt> {
+    return this.http.post<RispostaPrompt>(`${this.base}/prompt`, { testo, documenti });
+  }
+
+  /** «Invia email»: il server compone e spedisce la risposta con le fonti, a me o a un indirizzo. */
+  inviaEmail(conversazioneId: Id, messaggioId: Id, a: DestinatarioEmail): Observable<EsitoEmailRisposta> {
+    return this.http.post<EsitoEmailRisposta>(
+      `${this.base}/${conversazioneId}/messaggi/${messaggioId}/email`,
+      { a },
     );
   }
 }

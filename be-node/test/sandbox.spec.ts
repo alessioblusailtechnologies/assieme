@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { promptRichiesta, promptSandbox } from '../src/worker/sandbox/istruzioni.js';
-import { AvviatoreDocker, Sandbox } from '../src/worker/sandbox/sandbox.js';
+import { AvviatoreDocker, Sandbox, motivoDocker } from '../src/worker/sandbox/sandbox.js';
 
 /**
  * La sandbox dell'Esportazione elaborata: il prompt (puro) e, se Docker e
@@ -80,4 +80,35 @@ describe.skipIf(!(await dockerConImmagine()))('la sandbox Docker vera', () => {
     expect(fuori.codice).toBe(0); // dentro il container si può; è il container a essere il confine
     await expect(sandbox.leggi('../etc/passwd')).rejects.toThrow();
   }, 180_000);
+});
+
+/*
+ * Il perché di un `docker run` fallito, come arriva in chat: leggibile, e
+ * senza mai la riga di comando (che un tempo portava le variabili d'ambiente).
+ */
+describe('motivoDocker', () => {
+  const comando = 'Command failed: docker run -d --rm -e SANDBOX_TOKEN -e ANTHROPIC_API_KEY velia-sandbox';
+
+  it('daemon spento (Windows e Linux) → avvia Rancher/Docker', () => {
+    const windows = Object.assign(new Error(comando), {
+      stderr: 'failed to connect to the docker API at npipe:////./pipe/docker_engine; check if the path is correct and if the daemon is running',
+    });
+    expect(motivoDocker(windows, 'velia-sandbox')).toMatch(/Docker non è in esecuzione/);
+    const linux = Object.assign(new Error(comando), { stderr: 'Cannot connect to the Docker daemon at unix:///var/run/docker.sock' });
+    expect(motivoDocker(linux, 'velia-sandbox')).toMatch(/Docker non è in esecuzione/);
+  });
+
+  it('immagine mancante → come costruirla', () => {
+    const e = Object.assign(new Error(comando), { stderr: "Unable to find image 'velia-sandbox:latest' locally" });
+    expect(motivoDocker(e, 'velia-sandbox')).toContain('docker build -t velia-sandbox');
+  });
+
+  it('altro → lo stderr, corto, mai la riga di comando', () => {
+    const e = Object.assign(new Error(comando), { stderr: 'docker: Error response from daemon: qualcosa.\nSee docker run --help.' });
+    const motivo = motivoDocker(e, 'velia-sandbox');
+    expect(motivo).toContain('docker run non riuscito');
+    expect(motivo).not.toContain('Command failed');
+    expect(motivo).not.toContain('ANTHROPIC_API_KEY');
+    expect(motivoDocker(new Error(comando), 'velia-sandbox')).not.toContain('Command failed');
+  });
 });

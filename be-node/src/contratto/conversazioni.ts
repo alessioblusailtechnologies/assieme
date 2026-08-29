@@ -173,6 +173,45 @@ export const schemaNuovoMessaggio = z.object({
 
 export type NuovoMessaggio = z.infer<typeof schemaNuovoMessaggio>;
 
+/**
+ * Corpo di `POST /api/conversazioni/:id/messaggi/:mid/email` («Invia email»
+ * sotto una risposta, 29/08/2026): `me` per l'indirizzo dell'utente
+ * registrato, oppure un indirizzo scritto a mano.
+ */
+export const schemaEmailRisposta = z.object({
+  a: z.union([z.literal('me'), z.string().trim().email()]),
+});
+
+export type EmailRisposta = z.infer<typeof schemaEmailRisposta>;
+
+/** L'esito: a chi è partita; `simulata` quando l'ambiente non ha un provider (mai in produzione). */
+export interface EsitoEmailRisposta {
+  a: string;
+  simulata: boolean;
+}
+
+/**
+ * Corpo di `POST /api/conversazioni/prompt` («Scrivi il prompt» nel
+ * composer, 29/08/2026): l'abbozzo dell'utente e gli id dei documenti nel
+ * contesto o referenziati, per nominarli. Nessuna conversazione richiesta:
+ * vale anche sulla schermata iniziale.
+ */
+export const schemaRichiestaPrompt = z.object({
+  testo: z.string().trim().min(1).max(4000),
+  documenti: z.array(z.string().min(1)).max(50).default([]),
+});
+
+export type RichiestaPromptApi = z.infer<typeof schemaRichiestaPrompt>;
+
+export interface RispostaPrompt {
+  prompt: string;
+}
+
+/** `POST /api/conversazioni/trascrizioni` (multipart, campo `audio`): la dettatura trascritta. */
+export interface RispostaTrascrizione {
+  testo: string;
+}
+
 /* Le forme che il worker valida prima di persistere: il modello produce,
    il worker verifica (doc motore §2.5), e solo ciò che passa diventa
    messaggio. */

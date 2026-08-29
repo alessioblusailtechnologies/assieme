@@ -114,34 +114,44 @@
                   <button
                     type="button"
                     class="azione-esporta"
+                    (click)="apriEmail($event, m.id)"
+                    aria-haspopup="menu"
+                    aria-label="Invia la risposta per email"
+                  >
+                    <ui-icon name="invia" [size]="13" />
+                    <span>Invia email</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="azione-esporta"
                     (click)="apriEsporta($event, m.id)"
                     aria-haspopup="menu"
-                    aria-label="Esporta subito la risposta su un template"
+                    aria-label="Esporta la risposta come Word, PDF o testo"
                   >
                     <ui-icon name="esporta" [size]="13" />
-                    <span>Esporta subito</span>
+                    <span>Esporta come</span>
                   </button>
                   <!--
-                    L'Esportazione elaborata: il motore documentale in sandbox,
-                    che parte dal template o da un esempio, impagina, controlla e
-                    consegna. Ci mette un minuto o due e costa crediti: si chiede
-                    con un modulo, non con un clic.
+                    Il motore documentale in sandbox: parte dal template scelto,
+                    impagina, controlla e allega qui in chat. Ci mette un minuto o
+                    due e costa crediti: si chiede con un modulo, non con un clic.
                   -->
                   <button
                     type="button"
                     class="azione-esporta"
-                    (click)="apriElaborata(m.id)"
-                    aria-label="Esportazione elaborata della risposta"
+                    (click)="apriTemplate(m.id)"
+                    aria-label="Genera un documento da un template dell'agenzia"
                   >
                     <ui-icon name="documento" [size]="13" />
-                    <span>Esportazione elaborata</span>
+                    <span>Genera documento da template</span>
                   </button>
                   </span>
                 }
               </app-bolla-messaggio>
             }
           </div>
-          <ui-menu-azioni #menuEsporta [voci]="vociEsporta()" />
+          <ui-menu-azioni #menuEsporta [voci]="vociEsporta" />
+          <ui-menu-azioni #menuEmail [voci]="vociEmail()" />
         }
       </div>
 
@@ -306,65 +316,95 @@
   }
 </ui-cassetto>
 
-<!-- Esportazione elaborata: il modulo prima di far partire il motore documentale -->
+<!-- Genera documento da template: si sceglie il template, poi parte il motore documentale -->
 <ui-cassetto
-  [aperto]="elaborataAperta()"
-  (apertoChange)="elaborataAperta.set($event)"
-  titolo="Esportazione elaborata"
+  [aperto]="templateAperto()"
+  (apertoChange)="templateAperto.set($event)"
+  titolo="Genera documento da template"
 >
-  <div class="elaborata">
-    <p class="elaborata__spiega">
-      Il motore documentale prepara un documento vero: parte dal template o da un documento di
-      esempio dell'agenzia, lo adatta conservando l'impaginazione, controlla il risultato pagina
-      per pagina e lo consegna qui in chat. Ci mette uno o due minuti e usa crediti come una
-      risposta.
+  <div class="modulo">
+    <p class="modulo__spiega">
+      Il motore documentale parte dal template scelto, lo adatta alla risposta conservando
+      l'impaginazione, controlla il risultato pagina per pagina e lo allega qui in chat. Ci mette
+      uno o due minuti e usa crediti come una risposta.
     </p>
 
-    <div class="elaborata__campo">
-      <span class="elaborata__nome">Formato</span>
-      <ui-select
-        [valore]="elaborataFormato()"
-        (valoreChange)="cambiaFormatoElaborata($event)"
-        [opzioni]="formatiElaborata"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        ariaLabel="Formato del documento"
-      />
-    </div>
+    @if (templateDisponibili().length) {
+      <div class="scelte" role="radiogroup" aria-label="Template dell'agenzia">
+        @for (t of templateDisponibili(); track t.id) {
+          <label class="scelta" [class.is-scelta]="templateScelto() === t.id">
+            <input
+              class="scelta__radio"
+              type="radio"
+              name="template"
+              [value]="t.id"
+              [checked]="templateScelto() === t.id"
+              (change)="templateScelto.set(t.id)"
+            />
+            <span class="scelta__testo">
+              <span class="scelta__nome">{{ t.nome }}</span>
+              @if (t.descrizione) {
+                <span class="scelta__descrizione">{{ t.descrizione }}</span>
+              }
+            </span>
+            <span class="mono scelta__formato">{{ t.formato }}@if (t.predefinito) { · predefinito }</span>
+          </label>
+        }
+      </div>
+    } @else {
+      <p class="modulo__vuoto">
+        L'agenzia non ha ancora template: se ne carica uno in
+        <a routerLink="/impostazioni/template">Impostazioni › Template di output</a>.
+      </p>
+    }
 
-    <div class="elaborata__campo">
-      <span class="elaborata__nome">Template o documento di esempio</span>
-      <ui-select
-        [valore]="elaborataTemplateId()"
-        (valoreChange)="elaborataTemplateId.set($any($event) || undefined)"
-        [opzioni]="templateElaborata()"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [azzerabile]="true"
-        [placeholder]="templateElaborata().length ? 'Predefinito del formato' : 'Nessun template: layout di VELIA'"
-        ariaLabel="Template da usare"
-      />
-    </div>
-
-    <label class="elaborata__campo">
-      <span class="elaborata__nome">Istruzioni</span>
-      <textarea
-        uiCampo
-        rows="4"
-        [value]="elaborataIstruzioni()"
-        (input)="elaborataIstruzioni.set($any($event.target).value)"
-        placeholder="Es. «Proposta per il cliente Rossi, come quella fatta a Bianchi: aggiungi il confronto con la polizza in scadenza»"
-      ></textarea>
-    </label>
-
-    <div class="elaborata__azioni">
-      <button uiBottone variante="primario" type="button" (click)="avviaElaborata()">
+    <div class="modulo__azioni">
+      <button
+        uiBottone
+        variante="primario"
+        type="button"
+        [disabled]="!templateScelto() || store.inRisposta()"
+        (click)="avviaTemplate()"
+      >
         <ui-icon name="documento" [size]="15" />
-        <span>Prepara il documento</span>
+        <span>Genera il documento</span>
       </button>
-      <button uiBottone variante="testo" type="button" (click)="elaborataAperta.set(false)">
+      <button uiBottone variante="testo" type="button" (click)="templateAperto.set(false)">
         <span>Annulla</span>
       </button>
     </div>
   </div>
+</ui-cassetto>
+
+<!-- Invia email a un altro indirizzo: «a me» non ha bisogno del modulo -->
+<ui-cassetto [aperto]="emailAperta()" (apertoChange)="emailAperta.set($event)" titolo="Invia email">
+  <form class="modulo" (submit)="inviaEmailAltro($event)">
+    <p class="modulo__spiega">
+      La risposta con le sue fonti, nell'identità dell'agenzia. Parte dall'indirizzo di Velia e
+      dice a chi la riceve che l'hai inviata tu.
+    </p>
+
+    <label class="modulo__campo">
+      <span class="modulo__nome">Indirizzo email</span>
+      <input
+        uiCampo
+        type="email"
+        name="destinatario"
+        autocomplete="email"
+        placeholder="nome@dominio.it"
+        [value]="emailDestinatario()"
+        (input)="emailDestinatario.set($any($event.target).value)"
+      />
+    </label>
+
+    <div class="modulo__azioni">
+      <button uiBottone variante="primario" type="submit" [disabled]="!emailValida() || store.emailInInvio()">
+        <ui-icon name="invia" [size]="15" />
+        <span>{{ store.emailInInvio() ? 'Invio…' : 'Invia' }}</span>
+      </button>
+      <button uiBottone variante="testo" type="button" (click)="emailAperta.set(false)">
+        <span>Annulla</span>
+      </button>
+    </div>
+  </form>
 </ui-cassetto>

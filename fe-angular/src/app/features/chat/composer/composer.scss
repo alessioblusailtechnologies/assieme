@@ -174,8 +174,49 @@
   background: var(--c-page-alt);
 }
 
-.campo__invia {
+/* La bacchetta mentre scrive: si vede che sta lavorando. */
+.campo__allega.is-attivo {
+  color: var(--c-accent);
+}
+
+/* Il microfono aperto: rosso e che respira, perché un microfono acceso non
+   deve mai passare inosservato. */
+.campo__microfono.is-registrazione {
+  color: var(--c-neg);
+  background: color-mix(in srgb, var(--c-neg) 12%, transparent);
+  animation: respiro-microfono 1.4s var(--ease-brand) infinite;
+}
+
+@keyframes respiro-microfono {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-neg) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--c-neg) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campo__microfono.is-registrazione {
+    animation: none;
+  }
+}
+
+.campo__allega:disabled {
+  cursor: default;
+}
+
+/* Il microfono sta a destra, attaccato a Invia: si parla e si manda. */
+.campo__strumenti {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
   margin-left: auto;
+}
+
+.campo__invia {
+  margin-left: var(--sp-1);
   background: var(--c-azione);
   color: var(--c-azione-testo);
 }
