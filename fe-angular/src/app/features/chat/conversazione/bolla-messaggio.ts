@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Citazione, RiferimentoDocumento } from '@core/models';
@@ -7,7 +7,7 @@ import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatStore, MessaggioInStream } from '../chat-store';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
-import { htmlRisposta, letteraRimando, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
+import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
 
 /**
  * Un messaggio del filo: domanda dell'utente o risposta dell'assistente.
@@ -46,66 +46,47 @@ export class BollaMessaggio {
 
   readonly apriCitazione = output<Citazione>();
 
-  private readonly router = inject(Router);
-
   /**
-   * Fonti e provenienze come rimandi nel testo (29/08/2026): il motore
-   * scrive `[1]`, `[a]` nel punto esatto e il renderer li fa diventare chip.
-   * In streaming le fonti arrivano dopo il testo: i rimandi aspettano.
+   * Le fonti come rimandi nel testo (29/08/2026): il motore scrive `[1]` nel
+   * punto esatto e il renderer lo fa diventare chip. In streaming le fonti
+   * arrivano dopo il testo: i rimandi aspettano. Istruzioni e memoria non
+   * entrano nel testo: stanno nel loro accordion in coda al messaggio.
    */
   private readonly rimandi = computed<RimandiRisposta>(() => {
     const m = this.messaggio();
-    return { citazioni: m.citazioni, provenienze: m.provenienze, attesa: Boolean(m.inCorso) };
+    return { citazioni: m.citazioni, attesa: Boolean(m.inCorso) };
   });
 
   protected readonly html = computed(() => htmlRisposta(this.messaggio().testo, this.rimandi()));
 
-  /** Il messaggio usa i rimandi: gli elenchi in coda servono solo per ciò che il testo non richiama. */
-  protected readonly haRimandi = computed(() => {
-    const m = this.messaggio();
-    return m.citazioni.some((c) => c.rimandi?.length) || m.provenienze.some((p) => p.rimandi?.length);
-  });
+  /** Il messaggio usa i rimandi: l'elenco delle fonti in coda serve solo per ciò che il testo non richiama. */
+  protected readonly haRimandi = computed(() => this.messaggio().citazioni.some((c) => c.rimandi?.length));
 
-  /** I rimandi che compaiono davvero nel testo: numeri per le fonti, lettere per le provenienze. */
-  private readonly rimandiUsati = computed(() => {
-    const testo = this.messaggio().testo;
-    return {
-      numeri: new Set([...testo.matchAll(/\[(\d{1,2})\]/g)].map((r) => Number(r[1]))),
-      lettere: new Set([...testo.matchAll(/\[([a-z])\]/g)].map((r) => r[1])),
-    };
-  });
+  /** I numeri che compaiono davvero nel testo. */
+  private readonly numeriUsati = computed(
+    () => new Set([...this.messaggio().testo.matchAll(/\[(\d{1,2})\]/g)].map((r) => Number(r[1]))),
+  );
 
   /** Le fonti elencate dal motore ma mai richiamate nel testo: in coda, per completezza. */
   protected readonly altreFonti = computed(() => {
     if (!this.haRimandi() || this.messaggio().inCorso) return [];
-    const { numeri } = this.rimandiUsati();
+    const numeri = this.numeriUsati();
     return this.messaggio().citazioni.filter((c) => !(c.rimandi ?? []).some((n) => numeri.has(n)));
-  });
-
-  protected readonly altreProvenienze = computed(() => {
-    if (!this.haRimandi() || this.messaggio().inCorso) return [];
-    const { lettere } = this.rimandiUsati();
-    return this.messaggio().provenienze.filter((p) => !(p.rimandi ?? []).some((n) => lettere.has(letteraRimando(n))));
   });
 
   /**
    * I chip nel testo sono ancore con frammento dentro `[innerHTML]`: il
-   * click si intercetta qui, una volta per bolla, e si smista a chi apre il
-   * documento o al pannello che governa la provenienza.
+   * click si intercetta qui, una volta per bolla, e si passa a chi apre il
+   * documento.
    */
   protected suRimando(evento: Event): void {
     const ancora = (evento.target as HTMLElement | null)?.closest?.('a.rimando');
     if (!ancora) return;
     evento.preventDefault();
     const href = ancora.getAttribute('href') ?? '';
-    if (href.startsWith('#fonte:')) {
-      const citazione = this.messaggio().citazioni.find((c) => c.id === href.slice('#fonte:'.length));
-      if (citazione) this.apriCitazione.emit(citazione);
-    } else if (href.startsWith('#provenienza:')) {
-      const id = href.slice('#provenienza:'.length);
-      const provenienza = this.messaggio().provenienze.find((p) => p.origineId === id);
-      if (provenienza) void this.router.navigateByUrl(this.percorsiProvenienza[provenienza.tipo]!);
-    }
+    if (!href.startsWith('#fonte:')) return;
+    const citazione = this.messaggio().citazioni.find((c) => c.id === href.slice('#fonte:'.length));
+    if (citazione) this.apriCitazione.emit(citazione);
   }
 
   /**

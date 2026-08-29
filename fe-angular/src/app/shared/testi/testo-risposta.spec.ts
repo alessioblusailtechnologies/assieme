@@ -1,4 +1,4 @@
-import { Citazione, Provenienza } from '@core/models';
+import { Citazione } from '@core/models';
 
 import { htmlRisposta, testoConFontiPerEsteso } from './testo-risposta';
 
@@ -87,11 +87,6 @@ describe('htmlRisposta con i rimandi', () => {
       rimandi: [1, 3],
     },
   ];
-  const provenienze: Provenienza[] = [
-    { tipo: 'regola', origineId: 'ist-1', etichetta: 'valutato secondo la regola "Massimali prudenziali"', rimandi: [1] },
-    { tipo: 'memoria', origineId: 'ric-1', etichetta: 'tenuto conto di: le officine…', rimandi: [2] },
-  ];
-
   it('un rimando alla fonte diventa un chip con titolo breve, pagina e frammento per il click', () => {
     expect(htmlRisposta('Copre la grandine [1].', { citazioni })).toBe(
       '<p>Copre la grandine <a class="rimando rimando--fonte" href="#fonte:cit-1" ' +
@@ -102,12 +97,8 @@ describe('htmlRisposta con i rimandi', () => {
     expect(htmlRisposta('Sì [3]', { citazioni })).toContain('href="#fonte:cit-1"');
   });
 
-  it('i rimandi alle provenienze: istruzione col suo nome, memoria senza', () => {
-    const html = htmlRisposta('Escluso [a], come al solito [b].', { citazioni, provenienze });
-    expect(html).toContain(
-      '<a class="rimando rimando--regola" href="#provenienza:ist-1" title="valutato secondo la regola &quot;Massimali prudenziali&quot;">Istruzione<span class="rimando__pos">Massimali prudenziali</span></a>',
-    );
-    expect(html).toContain('<a class="rimando rimando--memoria" href="#provenienza:ric-1" title="tenuto conto di: le officine…">Memoria</a>');
+  it('le lettere delle provenienze spariscono dal testo: istruzioni e memoria stanno nel loro accordion', () => {
+    expect(htmlRisposta('Escluso [a], come al solito [b].', { citazioni })).toBe('<p>Escluso, come al solito.</p>');
   });
 
   it('funziona anche dentro le celle di tabella', () => {
@@ -126,8 +117,8 @@ describe('htmlRisposta con i rimandi', () => {
     expect(htmlRisposta('Vedi [1].', { citazioni: [{ ...citazioni[0], rimandi: undefined }] })).toBe('<p>Vedi [1].</p>');
   });
 
-  it('la copia scrive le fonti per esteso e toglie i rimandi alle provenienze', () => {
-    expect(testoConFontiPerEsteso('Copre la grandine [1], come da prassi [a].', { citazioni, provenienze })).toBe(
+  it('la copia scrive le fonti per esteso e toglie le lettere', () => {
+    expect(testoConFontiPerEsteso('Copre la grandine [1], come da prassi [a].', { citazioni })).toBe(
       'Copre la grandine (DIP Danni — Allianz Bonus Malus autovetture - art. 1 - p. 2), come da prassi.',
     );
     expect(testoConFontiPerEsteso('Vedi [1].', {})).toBe('Vedi [1].');

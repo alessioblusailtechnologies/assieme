@@ -69,7 +69,7 @@
           }
         </div>
       } @else {
-        <!-- Le fonti e le provenienze stanno nel testo, come chip nel punto esatto: il click lo raccoglie l'host. -->
+        <!-- Le fonti stanno nel testo, come chip nel punto esatto (il click lo raccoglie l'host); istruzioni e memoria nel loro accordion, sotto. -->
         <div class="testo" [innerHTML]="html()" aria-live="polite"></div>
       }
 
@@ -130,27 +130,16 @@
         </div>
       }
 
-      @if (altreFonti().length || altreProvenienze().length) {
+      @if (altreFonti().length) {
         <!--
           Col testo che porta i rimandi, in coda resta solo ciò che il motore
           ha elencato senza richiamarlo: poco, e sottovoce.
         -->
-        <div class="altre" aria-label="Altre fonti e provenienze">
+        <div class="altre" aria-label="Altre fonti">
           <span class="altre__tipo">Altre fonti</span>
           <div class="citazioni__elenco">
             @for (c of altreFonti(); track c.id) {
               <ui-chip-citazione [citazione]="c" (apri)="apriCitazione.emit($event)" />
-            }
-            @for (p of altreProvenienze(); track p.origineId) {
-              <a
-                class="provenienza"
-                [class]="'is-' + p.tipo"
-                [routerLink]="percorsiProvenienza[p.tipo]"
-                [uiSuggerimento]="p.tipo === 'memoria' ? 'Apri il pannello Memoria' : 'Apri le Istruzioni'"
-              >
-                <span class="provenienza__tipo">{{ etichetteProvenienza[p.tipo] }}</span>
-                {{ p.etichetta }}
-              </a>
             }
           </div>
         </div>
@@ -170,10 +159,12 @@
         </ui-accordion>
       }
 
-      @if (!haRimandi() && m.provenienze.length) {
+      @if (m.provenienze.length) {
         <!--
-          RF-G-03 (con RF-D-05/15), messaggi senza rimandi: chiuse in un accordion come le Fonti, e
-          ogni voce porta al pannello che la governa - la memoria si corregge
+          RF-G-03 (con RF-D-05/15): sempre chiuse in un accordion, anche quando
+          le fonti stanno nel testo come chip: istruzioni e memoria non si
+          leggono nella frase, si consultano a parte. Ogni voce porta al
+          pannello che la governa - la memoria si corregge
           in Memoria, la regola nelle Istruzioni. Riconoscibile e
           raggiungibile, non solo dichiarato.
         -->

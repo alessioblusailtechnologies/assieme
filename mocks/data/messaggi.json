@@ -17,7 +17,7 @@
     "id": "msg-002",
     "conversazioneId": "cnv-001",
     "autore": "assistente",
-    "testo": "Ho confrontato le due proposte sulle voci che incidono di più sul premio e sulla tutela dell'assicurato.\n\n**Massimale RC** — Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose [1]. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.\n\n**Franchigia furto e incendio** — Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 € [2]. Su un sinistro da 8.000 € significa 250 € contro 800 €.\n\n**Garanzia infortuni del conducente** — Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai [3], voce che l'agenzia valuta sempre [a].\n\n**Assistenza stradale** — Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.\n\nIn sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla persona del conducente; quella UnipolSai è più conveniente sull'assistenza. La scelta dipende dall'uso prevalente del veicolo.",
+    "testo": "Ho confrontato le due proposte sulle voci che incidono di più sul premio e sulla tutela dell'assicurato.\n\n**Massimale RC** — Le due proposte si equivalgono: 6.450.000 € per sinistro su entrambe, di cui 1.300.000 € per danni a cose [1]. È il massimale minimo di legge, quindi nessuna delle due offre un vantaggio su questa voce.\n\n**Franchigia furto e incendio** — Qui la differenza è netta. La proposta Generali applica una franchigia fissa di 250 €, quella UnipolSai uno scoperto del 10% con un minimo di 500 € [2]. Su un sinistro da 8.000 € significa 250 € contro 800 €.\n\n**Garanzia infortuni del conducente** — Presente nella proposta Generali con massimale di 100.000 €, assente in quella UnipolSai [3], voce che l'agenzia valuta sempre.\n\n**Assistenza stradale** — Entrambe la prevedono, ma la proposta UnipolSai include il traino illimitato mentre quella Generali lo limita a 50 km dal luogo del fermo.\n\nIn sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla persona del conducente; quella UnipolSai è più conveniente sull'assistenza. La scelta dipende dall'uso prevalente del veicolo.",
     "inviatoIl": "2026-08-04T09:15:40+02:00",
     "documentiReferenziati": [],
     "citazioni": [
@@ -88,10 +88,7 @@
       {
         "tipo": "regola",
         "origineId": "ist-003",
-        "etichetta": "valutato secondo la regola \"Infortuni del conducente\"",
-        "rimandi": [
-          1
-        ]
+        "etichetta": "valutato secondo la regola \"Infortuni del conducente\""
       }
     ]
   },

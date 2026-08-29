@@ -174,20 +174,17 @@ export function validaBlocco(
 
   if (errori.length) throw new ErroreValidazione('citazioni non verificabili', errori);
 
+  /* Le provenienze non hanno rimandi nel testo: il FE le mostra nel loro
+     accordion, in coda al messaggio. Un doppione nel blocco non si ripete. */
   const provenienze: Provenienza[] = [];
-  for (const [indice, p] of blocco.provenienze.entries()) {
-    const rimando = indice + 1;
+  for (const p of blocco.provenienze) {
     const trovata = etichettaProvenienza(p, dna);
     if (!trovata) {
       avvisi.push(`provenienza ignorata: ${p.tipo} ${p.id} non è nel DNA`);
       continue;
     }
-    const doppione = provenienze.find((x) => x.tipo === p.tipo && x.origineId === p.id);
-    if (doppione) {
-      doppione.rimandi = [...(doppione.rimandi ?? []), rimando];
-      continue;
-    }
-    provenienze.push({ tipo: p.tipo, origineId: p.id, etichetta: trovata, rimandi: [rimando] });
+    if (provenienze.some((x) => x.tipo === p.tipo && x.origineId === p.id)) continue;
+    provenienze.push({ tipo: p.tipo, origineId: p.id, etichetta: trovata });
   }
 
   if (!citazioni.length && !blocco.nonSupportato) {
@@ -197,25 +194,21 @@ export function validaBlocco(
   return { citazioni, provenienze, nonSupportato: blocco.nonSupportato, avvisi };
 }
 
-/** Le lettere dei rimandi alle provenienze: `[a]` è la prima voce (1). */
-export function letteraRimando(n: number): string {
-  return String.fromCharCode(96 + n);
-}
-
 /**
  * I rimandi nel testo contro il blocco: un `[n]` senza fonte è un numero
  * morto in faccia all'utente, una fonte mai richiamata finisce fra le
- * «altre fonti». Avvisi per l'audit, non errori: la risposta resta valida.
+ * «altre fonti», una lettera `[a]` è un rimando alle provenienze che il
+ * modello non deve scrivere (il FE la toglie). Avvisi per l'audit, non
+ * errori: la risposta resta valida.
  */
-export function avvisiRimandi(testoVisibile: string, citazioni: Citazione[], provenienze: Provenienza[]): string[] {
+export function avvisiRimandi(testoVisibile: string, citazioni: Citazione[]): string[] {
   const avvisi: string[] = [];
   const numeriNoti = new Set(citazioni.flatMap((c) => c.rimandi ?? []));
-  const lettereNote = new Set(provenienze.flatMap((p) => (p.rimandi ?? []).map(letteraRimando)));
   const numeriUsati = new Set([...testoVisibile.matchAll(/\[(\d{1,2})\]/g)].map((m) => Number(m[1])));
   const lettereUsate = new Set([...testoVisibile.matchAll(/\[([a-z])\]/g)].map((m) => m[1]!));
   for (const n of numeriUsati) if (!numeriNoti.has(n)) avvisi.push(`rimando [${n}] senza fonte nel blocco`);
-  for (const l of lettereUsate) if (!lettereNote.has(l)) avvisi.push(`rimando [${l}] senza provenienza nel blocco`);
-  if (numeriUsati.size || lettereUsate.size) {
+  for (const l of lettereUsate) avvisi.push(`rimando [${l}] alle provenienze nel testo: non previsto`);
+  if (numeriUsati.size) {
     for (const c of citazioni) {
       if (!(c.rimandi ?? []).some((n) => numeriUsati.has(n))) {
         avvisi.push(`fonte [${c.rimandi?.[0] ?? '?'}] («${c.documentoTitolo}», pag. ${c.posizione.pagina}) mai richiamata nel testo`);

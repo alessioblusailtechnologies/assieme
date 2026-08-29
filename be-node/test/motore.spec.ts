@@ -172,7 +172,6 @@ describe('validaBlocco', () => {
     // I rimandi: la posizione nel blocco; il doppione ([3]) resta un numero valido per la prima.
     expect(esito.citazioni[0]?.rimandi).toEqual([1, 3]);
     expect(esito.citazioni[1]?.rimandi).toEqual([2]);
-    expect(esito.provenienze.map((p) => p.rimandi)).toEqual([[1], [2], [3]]);
     expect(esito.provenienze.map((p) => p.tipo)).toEqual(['regola', 'documento-riferimento', 'memoria']);
     expect(esito.provenienze[0]?.etichetta).toBe('valutato secondo la regola "Massimali prudenziali"');
     expect(esito.avvisi.some((a) => a.includes('ric-ignoto'))).toBe(true);

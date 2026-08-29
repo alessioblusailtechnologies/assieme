@@ -64,8 +64,6 @@ export interface Provenienza {
   tipo: 'regola' | 'documento-riferimento' | 'memoria';
   origineId: string;
   etichetta: string;
-  /** Come per le citazioni, ma il testo le richiama con lettere: `[a]` è la prima (1). */
-  rimandi?: number[];
 }
 
 export type AutoreMessaggio = 'utente' | 'assistente';

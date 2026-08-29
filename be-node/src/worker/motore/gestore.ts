@@ -411,7 +411,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
             ...valido.avvisi,
             ...ancorate.avvisi,
             ...avvisiEsposizione(testoFinale),
-            ...avvisiRimandi(testoFinale, citazioni, provenienze),
+            ...avvisiRimandi(testoFinale, citazioni),
           ];
         } catch (errore) {
           await registraConsumi(db, tenantId, job.id, esito);
