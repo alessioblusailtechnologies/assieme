@@ -212,3 +212,25 @@ describe('AvviatoreRemoto', () => {
     }
   });
 });
+
+describe('AvviatoreRemoto: l\'indirizzo come lo dà Render', () => {
+  it('completa lo schema e toglie la barra finale', async () => {
+    const { createServer } = await import('node:http');
+    const visti: string[] = [];
+    const server = createServer((req, res) => {
+      visti.push(req.url ?? '');
+      if (req.url === '/salute') return res.writeHead(200, { 'content-type': 'application/json' }).end('{"pronto":true}');
+      res.writeHead(204).end();
+    });
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const porta = (server.address() as { port: number }).port;
+    try {
+      const ist = await new AvviatoreRemoto({ url: `127.0.0.1:${porta}/`, token: 'segreto-condiviso-di-prova' }).avvia();
+      expect(ist.url).toBe(`http://127.0.0.1:${porta}`);
+      expect(visti).toContain('/reset');
+      expect(visti.some((v) => v.includes('//'))).toBe(false);
+    } finally {
+      server.close();
+    }
+  });
+});

@@ -342,7 +342,14 @@ export interface OpzioniRemoto {
  */
 export class AvviatoreRemoto implements AvviatoreSandbox {
   readonly nome = 'render';
-  constructor(private readonly o: OpzioniRemoto) {}
+  private readonly o: OpzioniRemoto;
+
+  constructor(o: OpzioniRemoto) {
+    /* Render (`fromService … hostport`) dà «velia-sandbox:10000», senza schema:
+       si completa qui, e si toglie una barra finale che raddoppierebbe i path. */
+    const url = (/^https?:\/\//i.test(o.url) ? o.url : `http://${o.url}`).replace(/\/+$/, '');
+    this.o = { ...o, url };
+  }
 
   private async reset(): Promise<number> {
     const r = await fetch(`${this.o.url}/reset`, {

@@ -143,7 +143,8 @@ const schemaAmbiente = z.object({
    * acceso sulla rete privata (Render Private Service dalla stessa immagine,
    * con `SANDBOX_RETE=aperta`): qui il suo indirizzo e il segreto condiviso.
    */
-  SANDBOX_URL: z.string().url().optional(),
+  /* Anche senza schema («velia-sandbox:10000», com'è da Render): lo completa l'avviatore. */
+  SANDBOX_URL: z.string().min(1).optional(),
   SANDBOX_TOKEN: z.string().min(16).optional(),
   /** Quanto il worker aspetta che il runner si liberi da un altro job (ms). */
   SANDBOX_ATTESA_MS: z.coerce.number().int().positive().default(10 * 60_000),
