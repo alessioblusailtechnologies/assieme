@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { promptRichiesta, promptSandbox } from '../src/worker/sandbox/istruzioni.js';
-import { AvviatoreDocker, Sandbox, motivoDocker } from '../src/worker/sandbox/sandbox.js';
+import { AvviatoreDocker, Sandbox, interpretaVoce, motivoDocker } from '../src/worker/sandbox/sandbox.js';
 
 /**
  * La sandbox dell'Esportazione elaborata: il prompt (puro) e, se Docker e
@@ -110,5 +110,56 @@ describe('motivoDocker', () => {
     expect(motivo).not.toContain('Command failed');
     expect(motivo).not.toContain('ANTHROPIC_API_KEY');
     expect(motivoDocker(new Error(comando), 'velia-sandbox')).not.toContain('Command failed');
+  });
+});
+
+/*
+ * Il riaggancio: un runner finto che numera gli eventi, tronca lo stream a
+ * metà (come un proxy che chiude), e serve il diario da `?da=N`. Il worker
+ * deve riprendere dal numero mancante senza perdere né ripetere niente.
+ */
+describe('la sessione si riaggancia quando lo stream cade', () => {
+  it('riceve tutti gli eventi una volta sola, fino alla fine', async () => {
+    const { createServer } = await import('node:http');
+    const diario = [
+      { i: 0, e: { tipo: 'attivita', strumento: 'Bash', input: { command: 'ls' } } },
+      { i: 1, e: { tipo: 'testo', delta: 'ciao' } },
+      { i: 2, e: { tipo: 'attivita', strumento: 'Write', input: { file_path: '/lavoro/output/a.pdf' } } },
+      { i: 3, e: { tipo: 'fine', esito: { terminato: 'completato', testo: 'fatto', turni: 2, durataMs: 1, costoUsd: 0, token: { input: 0, output: 0, cacheLettura: 0, cacheScrittura: 0 }, modello: 'm' }, consegnati: [] } },
+    ];
+    const richieste: string[] = [];
+    const server = createServer((req, res) => {
+      const url = new URL(req.url ?? '/', 'http://x');
+      richieste.push(`${req.method} ${url.pathname}${url.search}`);
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      if (req.method === 'POST' && url.pathname === '/sessione') {
+        // I primi due, un battito, poi il socket muore senza `fine`.
+        res.write(`data: ${JSON.stringify(diario[0])}\n\n:\n\ndata: ${JSON.stringify(diario[1])}\n\n`);
+        setTimeout(() => res.socket?.destroy(), 50);
+        return;
+      }
+      if (req.method === 'GET' && url.pathname === '/sessione/eventi') {
+        const da = Number(url.searchParams.get('da'));
+        // Il diario riparte da uno prima, come farebbe un runner prudente: il doppione va scartato.
+        for (const voce of diario.slice(Math.max(0, da - 1))) res.write(`data: ${JSON.stringify(voce)}\n\n`);
+        res.end();
+      }
+    });
+    await new Promise<void>((ok) => server.listen(0, '127.0.0.1', ok));
+    const porta = (server.address() as { port: number }).port;
+    try {
+      const sandbox = new Sandbox({ url: `http://127.0.0.1:${porta}`, token: 't', chiudi: () => Promise.resolve() });
+      const ricevuti: string[] = [];
+      for await (const evento of sandbox.sessione({ promptSistema: 's', promptUtente: 'u', modello: 'm' })) ricevuti.push(evento.tipo);
+      expect(ricevuti).toEqual(['attivita', 'testo', 'attivita', 'fine']);
+      expect(richieste).toEqual(['POST /sessione', 'GET /sessione/eventi?da=2']);
+    } finally {
+      server.close();
+    }
+  });
+
+  it('una voce del diario porta il numero; un evento nudo passa senza', () => {
+    expect(interpretaVoce('{"i":4,"e":{"tipo":"testo","delta":"x"}}')).toEqual({ indice: 4, evento: { tipo: 'testo', delta: 'x' } });
+    expect(interpretaVoce('{"tipo":"testo","delta":"x"}')).toEqual({ evento: { tipo: 'testo', delta: 'x' } });
   });
 });

@@ -10,7 +10,8 @@
  *   PUT  /archivio?dir=…    corpo zip         → 204 (estratto con unzip)
  *   POST /esegui            { cmd, timeoutMs, cwd } → { stdout, stderr, codice, scaduto }
  *   POST /sessione          { promptSistema, promptUtente, modello, maxTurni, budgetUsd, effort }
- *                           → text/event-stream: attivita | testo | consegna | fine | errore
+ *                           → text/event-stream di { i, e }: e = attivita | testo | consegna | fine
+ *   GET  /sessione/eventi?da=N                → lo stesso stream dal numero N (riaggancio)
  *   DELETE /sessione                          → annulla la sessione in corso
  *
  * Ogni richiesta porta il token del job in `x-velia-token`. La chiave
@@ -123,24 +124,67 @@ function json(res, stato, dati) {
 // La sessione di Claude Code
 // ---------------------------------------------------------------------------
 
-let sessioneInCorso; // { controllo: AbortController }
+/*
+ * Una sessione per volta, e il suo diario: gli eventi numerati, così chi
+ * ascolta può perdere la connessione (un proxy che chiude, una rete che
+ * cade: il 29/08/2026 il worker su Render perdeva il socket verso la Machine
+ * dopo 5 minuti esatti, a lavoro quasi finito) e riprendere da dove era con
+ * `GET /sessione/eventi?da=N`. La sessione non muore col socket: muore con
+ * DELETE, a fine lavoro, o se nessuno la ascolta più per ASCOLTO_MAX_MS.
+ */
+let sessioneInCorso; // { controllo, eventi: [{ i, e }], conclusa, ascoltatori: Set<res>, ultimoAscolto }
+const ASCOLTO_MAX_MS = 5 * 60 * 1000;
 
 const STRUMENTI = ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'Skill', 'TodoWrite'];
 const VIETATI = ['WebFetch', 'WebSearch', 'Task', 'NotebookEdit', 'KillShell'];
 
-async function sessione(req, res, parametri) {
-  if (sessioneInCorso) return json(res, 409, { errore: 'sessione già in corso' });
-  const controllo = new AbortController();
-  sessioneInCorso = { controllo };
+/** Un evento nel diario e a chi sta ascoltando: `{ i, e }`, il numero e l'evento. */
+function emettiSessione(s, evento) {
+  const voce = { i: s.eventi.length, e: evento };
+  s.eventi.push(voce);
+  const riga = `data: ${JSON.stringify(voce)}\n\n`;
+  for (const res of s.ascoltatori) if (!res.writableEnded) res.write(riga);
+}
 
+/** Uno stream SSE dal numero `da`: il diario finora, poi il vivo fino alla fine. */
+function ascolta(req, res, s, da) {
   res.writeHead(200, {
     'content-type': 'text/event-stream; charset=utf-8',
     'cache-control': 'no-cache',
     connection: 'keep-alive',
   });
-  const emetti = (evento) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(evento)}\n\n`); };
+  for (const voce of s.eventi.slice(Math.max(0, da))) res.write(`data: ${JSON.stringify(voce)}\n\n`);
+  if (s.conclusa) return res.end();
+  s.ascoltatori.add(res);
+  s.ultimoAscolto = Date.now();
   const battito = setInterval(() => { if (!res.writableEnded) res.write(':\n\n'); }, 10_000);
-  req.on('close', () => controllo.abort());
+  req.on('close', () => {
+    clearInterval(battito);
+    s.ascoltatori.delete(res);
+    s.ultimoAscolto = Date.now();
+  });
+}
+
+/* Nessuno ascolta da troppo (il worker è morto davvero): si smette di spendere. */
+setInterval(() => {
+  const s = sessioneInCorso;
+  if (s && !s.conclusa && s.ascoltatori.size === 0 && Date.now() - s.ultimoAscolto > ASCOLTO_MAX_MS) {
+    console.log('sessione senza ascoltatori da troppo: la annullo');
+    s.controllo.abort();
+  }
+}, 30_000).unref();
+
+async function sessione(req, res, parametri) {
+  if (sessioneInCorso && !sessioneInCorso.conclusa) return json(res, 409, { errore: 'sessione già in corso' });
+  const s = { controllo: new AbortController(), eventi: [], conclusa: false, ascoltatori: new Set(), ultimoAscolto: Date.now() };
+  sessioneInCorso = s;
+  ascolta(req, res, s, 0);
+  void eseguiSessione(s, parametri);
+}
+
+async function eseguiSessione(s, parametri) {
+  const { controllo } = s;
+  const emetti = (evento) => emettiSessione(s, evento);
 
   const consegnati = [];
   const consegna = tool(
@@ -248,9 +292,10 @@ async function sessione(req, res, parametri) {
       consegnati,
     });
   } finally {
-    clearInterval(battito);
-    sessioneInCorso = undefined;
-    res.end();
+    s.conclusa = true;
+    for (const res of s.ascoltatori) if (!res.writableEnded) res.end();
+    s.ascoltatori.clear();
+    /* Il diario resta: chi si riaggancia tardi trova ancora la `fine`. */
   }
 }
 
@@ -277,9 +322,14 @@ const server = createServer(async (req, res) => {
       if (!CHIAVE) return json(res, 500, { errore: 'la sandbox non ha una chiave Anthropic' });
       return sessione(req, res, parametri);
     }
+    if (req.method === 'GET' && url.pathname === '/sessione/eventi') {
+      if (!sessioneInCorso) return json(res, 404, { errore: 'nessuna sessione' });
+      return ascolta(req, res, sessioneInCorso, Number(url.searchParams.get('da') ?? 0) || 0);
+    }
     if (req.method === 'DELETE' && url.pathname === '/sessione') {
+      const viva = Boolean(sessioneInCorso && !sessioneInCorso.conclusa);
       sessioneInCorso?.controllo.abort();
-      return json(res, 200, { annullata: Boolean(sessioneInCorso) });
+      return json(res, 200, { annullata: viva });
     }
     if (req.method === 'PUT' && url.pathname === '/file') {
       const p = dentro(url.searchParams.get('path'));

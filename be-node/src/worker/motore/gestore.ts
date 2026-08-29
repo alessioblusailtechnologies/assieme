@@ -269,11 +269,16 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           });
         } catch (errore) {
           /* La sandbox non è partita (Docker spento, immagine assente, Fly
-             irraggiungibile): il motivo, già ripulito dall'avviatore, va
-             detto in chat; ritentare non cambierebbe niente. */
-          const motivo = errore instanceof Error ? errore.message : String(errore);
-          await emetti({ tipo: 'errore', messaggio: `Il motore documentale non è partito: ${motivo}` });
-          throw new ErroreNonRitentabile(`sandbox non avviata: ${motivo}`);
+             irraggiungibile) o si è persa a metà lavoro (la Machine è morta,
+             il socket si è chiuso: «terminated»): il motivo, già ripulito
+             dall'avviatore, va detto in chat; ritentare da capo non si fa da
+             soli, costa crediti. */
+          const grezzo = errore instanceof Error ? errore.message : String(errore);
+          const motivo = /^terminated$|other side closed|socket hang up|ECONNRESET/i.test(grezzo)
+            ? 'la connessione con la sandbox si è chiusa a metà lavoro'
+            : grezzo;
+          await emetti({ tipo: 'errore', messaggio: `Il motore documentale si è fermato: ${motivo}.` });
+          throw new ErroreNonRitentabile(`sandbox: ${grezzo}`);
         }
         if (e.esito.terminato === 'annullato') return;
         if (e.esito.terminato === 'errore') {

@@ -128,38 +128,54 @@ export class Sandbox {
 
   /**
    * La sessione di Claude Code nella sandbox: gli eventi arrivano man mano
-   * (attività, testo, consegne), l'ultimo è `fine` con l'esito. Il segnale
-   * di annullamento chiude la connessione e il runner interrompe la CLI.
+   * (attività, testo, consegne), l'ultimo è `fine` con l'esito. Il runner li
+   * numera e li tiene in un diario: se il socket cade (il 29/08/2026 il
+   * worker su Render lo perdeva verso la Machine dopo 5 minuti esatti, a
+   * lavoro quasi finito) ci si riaggancia con `GET /sessione/eventi?da=N`
+   * e si riprende dal numero mancante, senza perdere né ripetere niente. Il
+   * segnale di annullamento ferma tutto: la DELETE la manda chi annulla.
    */
   async *sessione(parametri: ParametriSessione, segnale?: AbortSignal): AsyncGenerator<EventoSandbox> {
-    const r = await fetch(`${this.istanza.url}/sessione`, {
+    let risposta = await fetch(`${this.istanza.url}/sessione`, {
       method: 'POST',
       headers: this.intestazioni('application/json'),
       body: JSON.stringify(parametri),
       ...(segnale && { signal: segnale }),
     });
-    if (!r.ok || !r.body) {
-      throw new Error(`sandbox POST /sessione: ${r.status} ${(await r.text().catch(() => '')).slice(0, 300)}`);
+    if (!risposta.ok || !risposta.body) {
+      throw new Error(`sandbox POST /sessione: ${risposta.status} ${(await risposta.text().catch(() => '')).slice(0, 300)}`);
     }
-    const lettore = r.body.getReader();
-    const decodifica = new TextDecoder();
-    let resto = '';
+
+    let prossimo = 0;
+    let cadute = 0;
     for (;;) {
-      const lettura = (await lettore.read()) as { done: boolean; value?: Uint8Array };
-      if (lettura.done) break;
-      if (lettura.value) resto += decodifica.decode(lettura.value, { stream: true });
-      let confine: number;
-      while ((confine = resto.indexOf('\n\n')) >= 0) {
-        const blocco = resto.slice(0, confine);
-        resto = resto.slice(confine + 2);
-        const dati = blocco
-          .split('\n')
-          .filter((riga) => riga.startsWith('data: '))
-          .map((riga) => riga.slice(6))
-          .join('\n');
-        if (!dati) continue;
-        yield JSON.parse(dati) as EventoSandbox;
+      const corpo = risposta.body;
+      try {
+        if (!corpo) throw new Error('stream senza corpo');
+        for await (const dati of blocchiSse(corpo)) {
+          const { indice, evento } = interpretaVoce(dati);
+          if (indice !== undefined) {
+            if (indice < prossimo) continue; // già visto: il diario riparte da prima
+            prossimo = indice + 1;
+          }
+          cadute = 0;
+          yield evento;
+          if (evento.tipo === 'fine') return;
+        }
+      } catch (errore) {
+        if (segnale?.aborted) throw errore;
       }
+      /* Lo stream si è chiuso senza `fine`: non è la sessione, è il canale. */
+      if (segnale?.aborted) return;
+      if (++cadute > 30) throw new Error('la sandbox ha chiuso lo stream e non risponde più');
+      await new Promise((ok) => setTimeout(ok, 1500));
+      const r = await fetch(`${this.istanza.url}/sessione/eventi?da=${prossimo}`, {
+        headers: this.intestazioni(),
+        ...(segnale && { signal: segnale }),
+      }).catch(() => undefined);
+      if (r?.status === 404) throw new Error('la sandbox ha perso la sessione');
+      if (!r?.ok || !r.body) continue;
+      risposta = r;
     }
   }
 
@@ -173,6 +189,38 @@ export class Sandbox {
 }
 
 const nuovoToken = (): string => randomBytes(24).toString('hex');
+
+/** I blocchi `data:` di uno stream SSE, uno per volta; i commenti (il battito) si saltano. */
+async function* blocchiSse(corpo: ReadableStream<Uint8Array>): AsyncGenerator<string> {
+  const lettore = corpo.getReader();
+  const decodifica = new TextDecoder();
+  let resto = '';
+  for (;;) {
+    const lettura = (await lettore.read()) as { done: boolean; value?: Uint8Array };
+    if (lettura.done) return;
+    if (lettura.value) resto += decodifica.decode(lettura.value, { stream: true });
+    let confine: number;
+    while ((confine = resto.indexOf('\n\n')) >= 0) {
+      const blocco = resto.slice(0, confine);
+      resto = resto.slice(confine + 2);
+      const dati = blocco
+        .split('\n')
+        .filter((riga) => riga.startsWith('data: '))
+        .map((riga) => riga.slice(6))
+        .join('\n');
+      if (dati) yield dati;
+    }
+  }
+}
+
+/** Una voce del diario `{ i, e }`; un evento nudo (runner vecchio) passa senza numero. */
+export function interpretaVoce(dati: string): { indice?: number; evento: EventoSandbox } {
+  const voce = JSON.parse(dati) as { i?: unknown; e?: unknown; tipo?: unknown };
+  if (typeof voce.i === 'number' && voce.e && typeof voce.e === 'object') {
+    return { indice: voce.i, evento: voce.e as EventoSandbox };
+  }
+  return { evento: voce as unknown as EventoSandbox };
+}
 
 /** Aspetta che il runner risponda a /salute: la Machine su Fly parte in pochi secondi, Docker subito. */
 async function aspettaPronta(url: string, intestazioni: Record<string, string> | undefined, attesaMs: number): Promise<void> {
