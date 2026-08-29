@@ -169,9 +169,12 @@ export class Sandbox {
       if (segnale?.aborted) return;
       if (++cadute > 30) throw new Error('la sandbox ha chiuso lo stream e non risponde più');
       await new Promise((ok) => setTimeout(ok, 1500));
+      /* Un tentativo per volta e breve: verso un runner morto un proxy può
+         tenere la connessione appesa a lungo, e il job sembrerebbe fermo. */
+      const limite = AbortSignal.timeout(10_000);
       const r = await fetch(`${this.istanza.url}/sessione/eventi?da=${prossimo}`, {
         headers: this.intestazioni(),
-        ...(segnale && { signal: segnale }),
+        signal: segnale ? AbortSignal.any([segnale, limite]) : limite,
       }).catch(() => undefined);
       if (r?.status === 404) throw new Error('la sandbox ha perso la sessione');
       if (!r?.ok || !r.body) continue;
