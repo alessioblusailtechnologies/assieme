@@ -114,6 +114,17 @@ per continuare: `/ingest-visivo local-ingestion/in-arrivo/<compagnia-slug>-<ramo
 - **generali.it**: set unico per prodotto (copertina + DIP + DIPA +
   Condizioni), edizione in copertina come «Ed. 72025» = 07/2025; il DIP
   Aggiuntivo porta una data propria più recente.
+- **unipol.it** (UnipolSai è diventata Unipol Assicurazioni S.p.A.: stesso
+  `cmp-unipolsai` a catalogo, ragione sociale nuova nell'header): i set
+  stanno nell'archivio documentale `www.unipol.it/api/pub/ueba/download/doc/v1/fascicoli/<uuid>`
+  (fetch diretta ok). **I motori di ricerca indicizzano fascicoli vecchi**:
+  l'uuid corrente è quello linkato dalla pagina prodotto (`elenca-link.mjs
+  <pagina> --tutti | grep fascicol`), e va confrontato col trovato
+  (md5, copertina, edizione a pag. delle Condizioni); l'edizione storica
+  resta scaricabile e può entrare come `ed-` superata. L'edizione è nella
+  copertina interna delle Condizioni («Modello SI/… - Ed. gg/mm/aaaa») e
+  nel retro; il DIP non porta data, il DIP aggiuntivo sì. Pagine prodotto:
+  `/aziende/lavoro/<prodotto>` (PMI), `/persone/…`.
 - **zurich.it**: due marchi con due ragioni sociali. Agenzie: ZuriGò Auto
   / Moto / Altri Veicoli e Zurich BluDrive, prodotti di **Zurich Insurance
   Europe AG - Rappresentanza Generale per l'Italia**, pagine

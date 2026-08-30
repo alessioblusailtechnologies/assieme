@@ -87,6 +87,17 @@ persona nel contesto principale se il set supera le 10 pagine.
 Quando tutti i blocchi sono chiusi: `ls` della cartella deve mostrare un
 file per ogni pagina da 1 a N. Manca un file → rilancia quel blocco.
 
+**Se un blocco muore con «Output blocked by content filtering policy»**
+(è successo, in modo deterministico, sulle pagine «Norme di legge
+richiamate in polizza»: articoli del Codice civile riportati per esteso),
+non insistere oltre un secondo tentativo a blocco più piccolo: per quelle
+sole pagine prendi la lettura Mistral OCR (`lavorazione-visiva/ocr/<pdf>/pag-NNNN.md`,
+la fa `testimone-ocr.mjs`), togli i rimandi alle immagini e il titolo
+corrente, normalizza i titoli (`##` sezione, `### Art. N`), e salvala come
+file-pagina. Quelle pagine vanno **sempre** al secondo sguardo (che le
+confronta con la pagina senza doverle riscrivere) e si dichiarano nel
+report come «ricavate dall'OCR».
+
 ## 3. Assembla
 
 ```

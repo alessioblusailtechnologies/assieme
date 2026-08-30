@@ -22,7 +22,7 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
-const DOCUMENTO = /\.pdf(\?|$)|download\?|get_file\?|archiviodigitale|\/documenti\/|\/pdf\//i;
+const DOCUMENTO = /\.pdf(\?|$)|\/download[/?]|get_file\?|archiviodigitale|fascicol|\/documenti\/|\/pdf\//i;
 
 await principale();
 

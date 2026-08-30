@@ -361,9 +361,11 @@ function modelloDiRiga(riga) {
     .replace(/[–—]/g, '-')       // lo stesso piè di pagina cambia trattino da una pagina all'altra
     .replace(/[*_>#|]/g, '')     // il Markdown non deve far divergere il modello dal grezzo
     .replace(/\d+/g, '@')        // e il numero di pagina cambia a ogni foglio
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .split(/\s+/)                // parole in ordine alfabetico: il titolo corrente
+    .filter(Boolean)             // alterna il lato fra pagine pari e dispari
+    .sort()
+    .join(' ');
 }
 
 function spezzaPerAncora(md) {
@@ -386,6 +388,7 @@ function conta(testo, decorazione) {
 
 function spezza(testo) {
   return testo
+    .replace(/[¹²³⁰⁴-⁹]/g, '') // richiami di nota in apice
     .normalize('NFKC')
     .replace(/­/g, '')
     .replace(/[’‘`]/g, "'")
@@ -409,6 +412,7 @@ function differenza(a, b) {
   return fuori;
 }
 
+/** Un numero che conta: non una cifra sola (richiamo di nota, numero d'elenco) né una parola con la cifra incollata. */
 function haCifre(t) {
-  return /\d/.test(t);
+  return /\d/.test(t) && !/^\d$/.test(t) && !/^[a-zà-ù]{4,}\d{1,2}$/.test(t) && !/\d[%€]?[a-zà-ù]{3,}/.test(t);
 }

@@ -57,16 +57,18 @@ for (const p of pagine) {
   const bordo = [...p.righe.slice(-3).reverse(), ...p.righe.slice(0, 2)];
   const conDi = bordo.find((r) => DI_N.test(r));
   const riga = conDi ?? p.righe[p.righe.length - 1] ?? '';
-  // La firma si ferma a «N di M»: quello che segue sulla stessa riga («Ultimo
-  // aggiornamento…») può andare a capo in modo diverso da pagina a pagina.
+  // Con «N di M» la firma è il totale M: il titolo corrente accanto cambia
+  // lato fra pagine pari e dispari («GLOSSARIO 1 di 36» / «2 di 36 GLOSSARIO»)
+  // e sezione dopo sezione, il totale no. Senza, resta l'ultima riga.
   p.diN = conDi?.match(DI_N);
-  const perFirma = p.diN ? riga.slice(0, p.diN.index + p.diN[0].length) : riga;
-  p.firma = p.righe.length ? modello(perFirma) : '';
+  p.firma = p.righe.length ? (p.diN ? `di${p.diN[2]}` : modello(riga)) : '';
   p.pieDiPagina = riga;
 }
 
-// Gruppi di pagine consecutive con la stessa firma; le bianche si attaccano
-// al gruppo in corso solo se la pagina dopo ha ancora la stessa firma.
+// Gruppi di pagine consecutive con la stessa firma; con «N di M» il gruppo
+// riparte anche quando N torna indietro (due documenti della stessa
+// lunghezza uno dietro l'altro). Le bianche si attaccano al gruppo in corso
+// solo se la pagina dopo ha ancora la stessa firma.
 const gruppi = [];
 for (let i = 0; i < pagine.length; i++) {
   const p = pagine[i];
@@ -77,11 +79,22 @@ for (let i = 0; i < pagine.length; i++) {
     else gruppi.push({ da: p.n, a: p.n, firma: '', bianca: true, esempio: '', titolo: '' });
     continue;
   }
-  if (ultimo && !ultimo.bianca && ultimo.firma === p.firma && p.firma) {
+  const riparte = p.diN && ultimo?.ultimoN !== undefined && Number(p.diN[1]) <= ultimo.ultimoN;
+  if (ultimo && !ultimo.bianca && ultimo.firma === p.firma && p.firma && !riparte) {
     ultimo.a = p.n;
+    if (p.diN) ultimo.ultimoN = Number(p.diN[1]);
     continue;
   }
-  gruppi.push({ da: p.n, a: p.n, firma: p.firma, esempio: p.pieDiPagina, titolo: primaRigaUtile(p.righe), diN: p.diN });
+  gruppi.push({
+    da: p.n,
+    a: p.n,
+    firma: p.firma,
+    esempio: p.pieDiPagina,
+    titolo: primaRigaUtile(p.righe),
+    testa: p.righe.slice(0, 4).join(' '),
+    diN: p.diN,
+    ultimoN: p.diN ? Number(p.diN[1]) : undefined,
+  });
 }
 
 console.log(`# ${basename(file)} — ${totale} pagine\n`);
@@ -106,19 +119,75 @@ for (let i = 0; i < gruppi.length - 1; i++) {
 // Nome di file per gruppo. Un set ha una sola «Condizioni»: se nessun piè di
 // pagina la nomina (AXA: «Contratto Base Autovetture - edizione 05/2025 -
 // pag. 1 di 23»), è il gruppo più lungo fra quelli senza nome.
-for (const g of gruppi) if (!g.bianca) g.nome = nomeFile(g.esempio) === 'altro.md' ? nomeFile(g.esempio + ' ' + g.titolo) : nomeFile(g.esempio);
-if (!gruppi.some((g) => g.nome === 'condizioni-di-assicurazione.md')) {
-  const candidati = gruppi.filter((g) => !g.bianca && g.nome === 'altro.md' && g.a - g.da + 1 >= 5);
-  const piuLungo = candidati.sort((p, q) => q.a - q.da - (p.a - p.da))[0];
-  if (piuLungo) piuLungo.nome = 'condizioni-di-assicurazione.md';
+// Col piè di pagina il nome viene da lì; senza, dalla testa della pagina
+// (l'ultima riga è contenuto: a pag. 3 di un DIP Unipol dice «vedasi il DIP
+// aggiuntivo» e ingannerebbe).
+for (const g of gruppi) {
+  if (g.bianca) continue;
+  g.nome = g.diN ? nomeFile(g.esempio) : 'altro.md';
+  if (g.nome === 'altro.md') g.nome = nomeFile(g.testa);
 }
+// Pagine consecutive senza «N di M» (il DIP Unipol non ha piè di pagina)
+// sono un documento solo, col nome della prima che ne ha uno.
+for (let i = 0; i < gruppi.length - 1; i++) {
+  const g = gruppi[i];
+  const dopo = gruppi[i + 1];
+  if (g.bianca || dopo.bianca || g.diN || dopo.diN) continue;
+  g.a = dopo.a;
+  if (g.nome === 'altro.md') g.nome = dopo.nome;
+  gruppi.splice(i + 1, 1);
+  i--;
+}
+// Una pagina sola senza numero, subito dopo un DIP o DIP aggiuntivo numerato
+// e prima di una bianca o di un altro documento, è la sua coda (la quarta
+// pagina di un DIP aggiuntivo «di 3»).
+for (let i = 1; i < gruppi.length; i++) {
+  const g = gruppi[i];
+  const prima = gruppi[i - 1];
+  if (g.bianca || g.diN || g.a !== g.da || g.nome !== 'altro.md') continue;
+  if (prima.bianca || !prima.diN || !['dip.md', 'dip-aggiuntivo.md'].includes(prima.nome)) continue;
+  prima.a = g.a;
+  gruppi.splice(i, 1);
+  i--;
+}
+// Un set ha una sola «Condizioni», ed è il gruppo più lungo: se nessun piè
+// di pagina la nomina, è il più lungo fra i senza nome o «glossario» (un
+// glossario di trenta pagine non esiste); se la nominano in più d'uno
+// (una scheda informativa AXA che parla di condizioni), resta al più lungo.
+{
+  const candidati = gruppi.filter(
+    (g) => !g.bianca && (g.nome === 'condizioni-di-assicurazione.md' || (['altro.md', 'glossario.md'].includes(g.nome) && g.a - g.da + 1 >= 5)),
+  );
+  const piuLungo = [...candidati].sort((p, q) => q.a - q.da - (p.a - p.da))[0];
+  for (const g of candidati) {
+    if (g === piuLungo) g.nome = 'condizioni-di-assicurazione.md';
+    else if (g.nome === 'condizioni-di-assicurazione.md') g.nome = 'altro.md';
+  }
+}
+// Copertina interna e indice delle Condizioni stanno subito prima del corpo:
+// una pagina sola, senza numero o col numero della prima, che parla di
+// «condizioni» o «indice», si accoda alle Condizioni.
+for (let i = gruppi.length - 1; i > 0; i--) {
+  const g = gruppi[i];
+  if (g.bianca || g.nome !== 'condizioni-di-assicurazione.md') continue;
+  let j = i - 1;
+  while (j >= 0 && !gruppi[j].bianca && gruppi[j].a === gruppi[j].da && /condizioni|indice|glossario/i.test(gruppi[j].testa)) {
+    g.da = gruppi[j].da;
+    g.esempio = gruppi[j].esempio || g.esempio;
+    g.titolo = gruppi[j].titolo;
+    gruppi.splice(j, 1);
+    i--;
+    j--;
+  }
+}
+
 // Un gruppo di una pagina sola senza «N di M» (copertina, retro di copertina,
 // foglio di cortesia) è dubbio e resta fuori dallo scheletro, ma si stampa
 // perché sia chi guarda a decidere. Un fascicolo può anche partire col DIP.
 const visti = new Map();
 for (const g of gruppi) {
   if (g.bianca) continue;
-  g.dubbio = g.a === g.da && !g.diN;
+  g.dubbio = g.a === g.da && !g.diN && g.nome === 'altro.md';
   if (g.dubbio) continue;
   const k = visti.get(g.nome) || 0;
   visti.set(g.nome, k + 1);

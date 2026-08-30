@@ -212,10 +212,12 @@ for (const doc of set.documenti) {
     const lettoPdfjs = cieco ? null : conta(p.pdfjs.testo, cornice);
     const lettoPdfjsGrezzo = cieco ? null : conta(p.pdfjs.testo, new Set());
 
+    // I «comparsi» si giudicano per presenza, non per molteplicità: una cella
+    // unita ripetuta su ogni riga della tabella non è un numero inventato.
     const persiOcr = differenza(lettoOcr, trascritto);
-    const comparsiOcr = differenza(trascritto, lettoOcrGrezzo);
+    const comparsiOcr = assenti(trascritto, lettoOcrGrezzo);
     const persiPdfjs = lettoPdfjs ? differenza(lettoPdfjs, trascritto) : [];
-    const comparsiPdfjs = lettoPdfjs ? differenza(trascritto, lettoPdfjsGrezzo) : [];
+    const comparsiPdfjs = lettoPdfjs ? assenti(trascritto, lettoPdfjsGrezzo) : [];
 
     const numeriCerti = lettoPdfjs
       ? [...intersezione(persiOcr.filter(haCifre), persiPdfjs.filter(haCifre)), ...intersezione(comparsiOcr.filter(haCifre), comparsiPdfjs.filter(haCifre)).map((t) => `+${t}`)]
@@ -302,9 +304,20 @@ function conta(testo, cornice) {
   return c;
 }
 
+/** I token di a che in b non compaiono mai (presenza, non molteplicità). */
+function assenti(a, b) {
+  const fuori = [];
+  for (const [t, n] of a) if (!b.get(t)) for (let i = 0; i < n; i++) fuori.push(t);
+  return fuori;
+}
+
 function spezza(testo) {
-  return testo
-    .normalize('NFKC')
+  return (
+    testo
+      // richiami di nota in apice: ¹ ² ³ nel PDF, $^{1}$ nell'OCR; non sono numeri del contratto
+      .replace(/\$\^\{[^}]*\}\$/g, ' ')
+      .replace(/[¹²³⁰⁴-⁹]/g, '')
+      .normalize('NFKC')
     .replace(/­/g, '')
     .replace(/[’‘`]/g, "'")
     .replace(/[“”]/g, '"')
@@ -316,18 +329,26 @@ function spezza(testo) {
     .toLowerCase()
     .split(/[\s.,;:!?()[\]"'/\\•●▪·◦○§«»✓✗]+/)
     .map((t) => t.replace(/^-+|-+$/g, ''))
-    .filter((t) => t.length > 1 || /\d/.test(t));
+    .filter((t) => t.length > 1 || /\d/.test(t))
+  );
 }
 
+/**
+ * Il modello di una riga di bordo: cifre mascherate, parole in ordine
+ * alfabetico. Il titolo corrente alterna il lato fra pagine pari e dispari
+ * («7 di 36 NORME…» / «NORME… 8 di 36») e deve restare lo stesso modello.
+ */
 function modelloDiRiga(riga) {
   return riga
     .replace(/[.·]{3,}/g, '…')
     .replace(/[–—]/g, '-') // lo stesso piè di pagina cambia trattino da una pagina all'altra
     .replace(/[*_>#|]/g, '')
     .replace(/\d+/g, '@')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort()
+    .join(' ');
 }
 
 function differenza(a, b) {
@@ -351,6 +372,13 @@ function intersezione(a, b) {
   return fuori;
 }
 
+/**
+ * Un numero che conta: importi, percentuali, articoli, date, termini a due
+ * cifre. Una cifra sola è quasi sempre un richiamo di nota o un numero
+ * d'elenco; una parola con una cifra incollata («nellagaranzia4») è il layer
+ * di testo che ha perso lo spazio prima del richiamo. Entrambi restano nel
+ * confronto delle parole, con la sua tolleranza.
+ */
 function haCifre(t) {
-  return /\d/.test(t);
+  return /\d/.test(t) && !/^\d$/.test(t) && !/^[a-zà-ù]{4,}\d{1,2}$/.test(t) && !/\d[%€]?[a-zà-ù]{3,}/.test(t);
 }
