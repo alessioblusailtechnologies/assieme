@@ -1005,6 +1005,60 @@
   "pathPdf": "archivio-pubblico/cattolica/auto/active-veicoli-autopiu/ed-2025-07/originale.pdf"
  },
  {
+  "id": "doc-generali-contratto-base-autovetture-ed-2025-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base Autovetture",
+  "titolo": "Condizioni di Assicurazione — Generali Italia Contratto Base Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 17,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-contratto-base-autovetture-ed-2025-07-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base Autovetture",
+  "titolo": "DIP Danni — Generali Italia Contratto Base Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/dip.md",
+  "pathPdf": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-contratto-base-autovetture-ed-2025-07-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Generali Italia Contratto Base Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-contratto-base-autovetture-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/auto/contratto-base-autovetture/ed-2025-07/originale.pdf"
+ },
+ {
   "id": "doc-nobis-filo-diretto-car-ed-2023-10-condizioni-di-assicurazione",
   "compagniaId": "cmp-nobis",
   "ramoId": "ram-auto",
