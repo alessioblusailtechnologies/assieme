@@ -1,6 +1,6 @@
 ---
 name: ingest-visivo
-description: Popola l'Archivio Pubblico di VELIA leggendo ogni pagina del PDF con gli occhi del modello, senza estrazione deterministica del testo come fonte. Il modello trascrive pagina per pagina a blocchi piccoli (subagenti a contesto fresco), due testimoni meccanici confrontano numeri e parole (Mistral OCR sul PDF intero, una chiamata; il layer di testo pdfjs), un secondo sguardo in contesto separato controlla le pagine segnalate. Uso: /ingest-visivo <manifesto.json> oppure /ingest-visivo <compagnia> <prodotto> [url-o-file.pdf].
+description: Popola l'Archivio Pubblico di VELIA leggendo ogni pagina del PDF con gli occhi del modello, senza estrazione deterministica del testo come fonte. Il modello trascrive pagina per pagina a blocchi piccoli (subagenti a contesto fresco), due testimoni meccanici confrontano numeri e parole (Mistral OCR sul PDF intero, una chiamata; il layer di testo pdfjs), un secondo sguardo in contesto separato controlla le pagine segnalate. Uso: /ingest-visivo <cartella-di-lotto di /procura-set> (salta la ricerca) oppure /ingest-visivo <manifesto.json> oppure /ingest-visivo <compagnia> <prodotto> [url-o-file.pdf].
 ---
 
 # /ingest-visivo
@@ -29,21 +29,36 @@ Albero di lavoro (gitignorato): `local-ingestion/lavorazione-visiva/`
 - `ocr/<nome-pdf-senza-estensione>/` la lettura Mistral OCR per pagina
   (testimone, §4a), richiesta una volta sola per PDF.
 
-## 1. Trova il PDF e fai la mappa
+## 1. Trova i PDF e fai la mappa
 
-- Il PDF sta in `local-ingestion/originali/` (se è un URL:
-  `curl -L -o local-ingestion/originali/<nome>.pdf <url>`; se manca, cerca
-  come in `/ingest-pubblico` §0-1). Verifica la firma `%PDF-`.
-- Guarda con Read le prime pagine (copertina, indice) e l'ultima: ricava
-  compagnia (ragione sociale), prodotto e sinonimi, modello, **edizione
-  gg/mm/aaaa**, i documenti logici coi **range di pagina assoluti** (il
-  DIP Aggiuntivo comincia dove finisce il DIP, ecc.: controlla i confini
-  guardando le pagine, non l'indice), il totale pagine.
-- Scrivi il manifesto. Se il committente ha passato un manifesto già
-  fatto, verificane i confini allo stesso modo.
-- Presenta la mappa in tabella e **aspetta la conferma** del committente.
-  È l'unico punto in cui serve un occhio umano. (Se il committente ha già
-  dato il via libera sul manifesto, procedi.)
+Tre punti di partenza, dal più comodo:
+
+- **Cartella di lotto** di `/procura-set`
+  (`local-ingestion/in-arrivo/<compagnia-slug>-<ramo>/` con i PDF e
+  `LOTTO.json`): **niente ricerca**. Per ogni voce del lotto: copia il PDF
+  in `local-ingestion/originali/` se non c'è già (il caricatore e i
+  testimoni lo cercano lì), poi
+  `node be-node/tools/mappa-set.mjs local-ingestion/originali/<file>.pdf --manifesto local-ingestion/lavorazione-visiva/manifesti/<compagnia-slug>-<prodotto-slug>-<AAAA-MM>.json --compagnia … --compagnia-slug … --ramo … --prodotto … --prodotto-slug … [--edizione …] [--modello …]`
+  coi campi presi da `LOTTO.json`: lo script propone i documenti logici
+  dai piè di pagina («DIP Ed. … 1 di 3») e stampa la copertina. Se nel
+  lotto non c'è LOTTO.json, ricava compagnia e prodotto dalla copertina.
+- **Manifesto già fatto**: verificane i confini come sotto.
+- **Compagnia + prodotto (+ URL o file)**: cerca e scarica come in
+  `/procura-set` §1 e §3, poi come sopra.
+
+Poi, per ogni set: guarda con Read la copertina, le pagine di confine fra
+un documento e l'altro e l'ultima; completa nel manifesto **edizione
+gg/mm/aaaa**, modello, ragione sociale, e correggi i range se il piè di
+pagina ha ingannato (il DIP Aggiuntivo comincia dove finisce il DIP: lo
+decide la pagina, non l'indice). Le pagine bianche fra due documenti
+restano fuori; una bianca dentro un documento ci resta dentro.
+
+Presenta **una sola tabella** per tutto il lotto (set · file · edizione ·
+documenti coi range · pagine) e **aspetta la conferma** del committente.
+È l'unico punto in cui serve un occhio umano. (Se il committente ha già
+dato il via libera, procedi.) Da qui in poi §2-5 per ogni set, in
+sequenza o coi blocchi di più set in parallelo; §6 una volta sola per il
+lotto.
 
 ## 2. Trascrivi: ogni pagina, a occhio, a blocchi da 10
 
@@ -147,7 +162,8 @@ Il worker dev deve essere fermo durante la suite. I test del catalogo
 asseriscono i totali: aggiornali insieme al caricamento. Committa SOLO
 `be-node/dati/catalogo-archivio.json`, `be-node/supabase/seed.sql`,
 `mocks/data/compagnie.json` se è entrata una compagnia, e i test toccati
-(mai PDF né `.md`): `Archivio: entra il set <Compagnia> <Prodotto> (ed. gg/mm/aaaa)`.
+(mai PDF né `.md`): `Archivio: entra il set <Compagnia> <Prodotto> (ed. gg/mm/aaaa)`,
+oppure per un lotto `Archivio: entrano i set <Compagnia> <ramo> (<Prodotto> ed. …, <Prodotto> ed. …)`.
 
 ## 7. Riferisci
 

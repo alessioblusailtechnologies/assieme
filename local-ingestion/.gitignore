@@ -5,3 +5,6 @@ lavorazione/
 
 # Albero della skill /ingest-visivo: pagine trascritte e set assemblati.
 lavorazione-visiva/
+
+# Cartelle di lotto della skill /procura-set: PDF scaricati e LOTTO.json.
+in-arrivo/
