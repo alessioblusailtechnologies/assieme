@@ -1,6 +1,6 @@
 ---
 name: ingest-visivo
-description: Popola l'Archivio Pubblico di VELIA leggendo ogni pagina del PDF con gli occhi del modello, senza estrazione deterministica del testo come fonte. Il modello trascrive pagina per pagina a blocchi piccoli (subagenti a contesto fresco), la macchina fa da testimone (numeri e parole del layer di testo del PDF), un secondo sguardo in contesto separato controlla le pagine segnalate. Uso: /ingest-visivo <manifesto.json> oppure /ingest-visivo <compagnia> <prodotto> [url-o-file.pdf].
+description: Popola l'Archivio Pubblico di VELIA leggendo ogni pagina del PDF con gli occhi del modello, senza estrazione deterministica del testo come fonte. Il modello trascrive pagina per pagina a blocchi piccoli (subagenti a contesto fresco), due testimoni meccanici confrontano numeri e parole (Mistral OCR sul PDF intero, una chiamata; il layer di testo pdfjs), un secondo sguardo in contesto separato controlla le pagine segnalate. Uso: /ingest-visivo <manifesto.json> oppure /ingest-visivo <compagnia> <prodotto> [url-o-file.pdf].
 ---
 
 # /ingest-visivo
@@ -24,8 +24,10 @@ Albero di lavoro (gitignorato): `local-ingestion/lavorazione-visiva/`
   pagina, senza ancora (la mette l'assemblatore). **File vuoto = pagina
   vista e senza testo**; file assente = pagina non ancora trascritta;
 - `archivio-pubblico/<compagnia>/<ramo>/<prodotto>/ed-AAAA-MM/` il set
-  assemblato, nel layout che `carica-archivio.mjs` si aspetta. Un set alla
-  volta: si svuota prima di assemblare il successivo.
+  assemblato, nel layout che `carica-archivio.mjs` si aspetta. Può tenere
+  più set: il caricamento è idempotente e il manifesto si aggiorna per id;
+- `ocr/<nome-pdf-senza-estensione>/` la lettura Mistral OCR per pagina
+  (testimone, §4a), richiesta una volta sola per PDF.
 
 ## 1. Trova il PDF e fai la mappa
 
@@ -83,17 +85,31 @@ report finale.
 
 ## 4. Verifica a due strati
 
-**4a. Testimone meccanico** (costa zero, non può inventare):
+**4a. Due testimoni meccanici**, che non possono inventare:
 
 ```
+node be-node/tools/testimone-ocr.mjs local-ingestion/lavorazione-visiva/manifesti/<set>.json --dettaglio
 node be-node/tools/verifica-fedelta.mjs local-ingestion/lavorazione-visiva/archivio-pubblico --dettaglio
 ```
 
-Per ogni pagina confronta i numeri e le parole del layer di testo del PDF
-con la trascrizione. Un numero **perso** o **comparso** è sempre da
-guardare. Le parole perse oltre la tolleranza pure. Le pagine **sospese**
-(testo dentro un'immagine, pdfjs non vede) non hanno testimone: vanno
-tutte al secondo sguardo.
+Il primo chiama **Mistral OCR una volta sola sul PDF intero** ($4 ogni
+1.000 pagine, chiave `MISTRAL_API_KEY` in `be-node/.env`; la lettura si
+salva in `lavorazione-visiva/ocr/<pdf>/` e non si richiede due volte) e
+confronta, pagina per pagina, la trascrizione con la lettura OCR **e** col
+layer di testo pdfjs: un numero assente nella trascrizione ma presente in
+entrambi i testimoni è **CERTO**; visto da uno solo è da **guardare**; le
+pagine dove pdfjs è cieco (testo dentro immagini, scansioni) le giudica il
+solo OCR, ed è l'unico testimone possibile lì. Chiude con l'elenco delle
+pagine per il secondo sguardo. Mistral non scrive mai il testo finale:
+serve a dire dove guardare (collaudo del 30/08: sui numeri è alla pari
+con la lettura a occhio, ma sbaglia qualche parola in modo plausibile,
+«gestisce» → «gestione», quindi è testimone, non fonte).
+
+Il secondo lavora sul set assemblato col solo pdfjs (senza OCR se la
+chiave manca). Scarti che sono normali e non richiedono correzione:
+«sezione N» comparsa (titoli in grafica che pdfjs non vede), sillabazioni
+del layer di testo, intestazioni ripetute di tabelle a più gruppi di
+colonne unificate.
 
 **4b. Secondo sguardo** in contesto separato (mai lo stesso che ha
 trascritto): un subagente con l'elenco delle pagine da ricontrollare, ossia

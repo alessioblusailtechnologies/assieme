@@ -358,6 +358,7 @@ function trovaDecorazione(pagine, sogliaEsplicita) {
 function modelloDiRiga(riga) {
   return riga
     .replace(/[.·]{3,}/g, '…')   // i puntini di guida dell'indice non si contano uno per uno
+    .replace(/[–—]/g, '-')       // lo stesso piè di pagina cambia trattino da una pagina all'altra
     .replace(/[*_>#|]/g, '')     // il Markdown non deve far divergere il modello dal grezzo
     .replace(/\d+/g, '@')        // e il numero di pagina cambia a ogni foglio
     .replace(/\s+/g, ' ')
