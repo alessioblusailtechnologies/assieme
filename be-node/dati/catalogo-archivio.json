@@ -2404,5 +2404,153 @@
   },
   "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/riferimenti-utili.md",
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2024-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "Condizioni di Assicurazione — UnipolSai Scudo Cyber",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 36,
+  "paginaInizio": 17,
+  "edizione": {
+   "id": "edz-scudo-cyber-2024-07",
+   "etichetta": "ed. 07/2024",
+   "validaDal": "2024-07-01",
+   "corrente": false,
+   "validaAl": "2026-02-28"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2024-07-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "DIP Danni — UnipolSai Scudo Cyber",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-scudo-cyber-2024-07",
+   "etichetta": "ed. 07/2024",
+   "validaDal": "2024-07-01",
+   "corrente": false,
+   "validaAl": "2026-02-28"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2024-07-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "DIP Aggiuntivo Danni — UnipolSai Scudo Cyber",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 7,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-scudo-cyber-2024-07",
+   "etichetta": "ed. 07/2024",
+   "validaDal": "2024-07-01",
+   "corrente": false,
+   "validaAl": "2026-02-28"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2024-07-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "Informativa privacy — UnipolSai Scudo Cyber",
+  "tipologia": "altro",
+  "numeroPagine": 4,
+  "paginaInizio": 55,
+  "edizione": {
+   "id": "edz-scudo-cyber-2024-07",
+   "etichetta": "ed. 07/2024",
+   "validaDal": "2024-07-01",
+   "corrente": false,
+   "validaAl": "2026-02-28"
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2024-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2026-03-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "Condizioni di Assicurazione — Unipol Scudo Cyber",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 38,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-scudo-cyber-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2026-03-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "DIP Danni — Unipol Scudo Cyber",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-scudo-cyber-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2026-03-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Scudo Cyber",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-scudo-cyber-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-scudo-cyber-ed-2026-03-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-cyber",
+  "prodotto": "Scudo Cyber",
+  "titolo": "Informativa privacy — Unipol Scudo Cyber",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 53,
+  "edizione": {
+   "id": "edz-scudo-cyber-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
  }
 ]

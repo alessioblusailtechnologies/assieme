@@ -59,7 +59,7 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
     /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set). */
-    expect(pagina.totale).toBe(131);
+    expect(pagina.totale).toBe(139);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;
@@ -78,9 +78,9 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     }
   });
 
-  it('filtri combinati: compagnia + solo correnti = i 5 documenti ed. 11/2022', async () => {
+  it('filtri combinati: compagnia + ramo + solo correnti = i 5 documenti ed. 11/2022', async () => {
     const r = await richiedi(
-      '/api/documenti?compagniaId=cmp-unipolsai&soloCorrenti=true',
+      '/api/documenti?compagniaId=cmp-unipolsai&ramoId=ram-auto&soloCorrenti=true',
       tokenAdmin,
     );
     const pagina = r.json<PaginaDocumenti>();
@@ -174,7 +174,7 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const compagnie = await richiedi('/api/compagnie', tokenAdmin);
     expect(compagnie.json<unknown[]>()).toHaveLength(11);
     const rami = await richiedi('/api/rami', tokenAdmin);
-    expect(rami.json<unknown[]>()).toHaveLength(8);
+    expect(rami.json<unknown[]>()).toHaveLength(9);
   });
 
   it('documento inesistente: 404 NON_TROVATO', async () => {
