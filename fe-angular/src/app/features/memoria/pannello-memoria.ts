@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
@@ -15,16 +15,23 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { Tag } from '@shared/ui/tag/tag';
 import { MemoriaApi } from '@core/api/memoria-api';
 
-/** Come si chiamano le categorie nell'interfaccia. */
-export const CATEGORIE_RICORDO: { valore: Ricordo['categoria']; etichetta: string }[] = [
-  { valore: 'prassi', etichetta: 'Prassi operativa' },
-  { valore: 'cliente', etichetta: 'Cliente' },
-  { valore: 'preferenza', etichetta: 'Preferenza' },
-  { valore: 'decisione', etichetta: 'Decisione' },
-  { valore: 'altro', etichetta: 'Altro' },
-];
+import { CATEGORIE_RICORDO } from './categorie';
+import { GloboMemoria } from './globo-memoria';
 
 type FiltroAmbito = 'tutti' | Ricordo['ambito'];
+
+type VistaMemoria = 'elenco' | 'globo';
+
+const CHIAVE_VISTA = 'velia.memoria.vista';
+
+/** La vista scelta si ricorda sul browser; senza storage si riparte dall'elenco. */
+function leggiVista(): VistaMemoria {
+  try {
+    return localStorage.getItem(CHIAVE_VISTA) === 'globo' ? 'globo' : 'elenco';
+  } catch {
+    return 'elenco';
+  }
+}
 
 /**
  * Il pannello della memoria (RF-G-03): ciò che il sistema ha imparato,
@@ -48,6 +55,7 @@ type FiltroAmbito = 'tutti' | Ricordo['ambito'];
     Briciole,
     Campo,
     DatePipe,
+    GloboMemoria,
     GrafoMemoria,
     Icona,
     RouterLink,
@@ -79,6 +87,19 @@ export class PannelloMemoria {
   protected riprova(): void {
     this.risorsa.reload();
   }
+
+  // --- Le due viste: l'elenco che governa, il globo che mostra i legami ---
+
+  protected readonly vista = signal<VistaMemoria>(leggiVista());
+
+  private readonly ricordaVista = effect(() => {
+    const vista = this.vista();
+    try {
+      localStorage.setItem(CHIAVE_VISTA, vista);
+    } catch {
+      /* senza storage la scelta vive quanto la pagina */
+    }
+  });
 
   // --- Filtri (a schermo, l'elenco è già tutto qui) -----------------------
 

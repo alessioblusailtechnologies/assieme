@@ -43,6 +43,11 @@
   text-align: right;
 }
 
+.testata__viste {
+  display: flex;
+  gap: var(--sp-1);
+}
+
 /* ---------- La memoria viva: la scena d'apertura ---------- */
 
 /* Carta chiara a tutta larghezza. La figura sborda oltre il bordo destro e

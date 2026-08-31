@@ -28,6 +28,11 @@ export class MemoriaApi {
     return this.base;
   }
 
+  /** Il globo: ricordi, conversazioni d'origine, passaggi citati, documenti, compagnie. */
+  urlGrafo(): string {
+    return `${this.base}/grafo`;
+  }
+
   /** RF-G-03: modificabile — testo, ambito, categoria — e sospendibile. */
   modifica(id: Id, modifiche: ModificheRicordo): Observable<Ricordo> {
     return this.http.patch<Ricordo>(`${this.base}/${id}`, modifiche);

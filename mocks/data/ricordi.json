@@ -4,7 +4,7 @@
     "testo": "L'assenza della garanzia infortuni del conducente non va segnalata come carenza nei confronti: l'agenzia la copre con una polizza dedicata offerta a parte.",
     "ambito": "tenant",
     "categoria": "prassi",
-    "origineConversazioneId": "conv-001",
+    "origineConversazioneId": "cnv-001",
     "creatoIl": "2026-07-18T15:42:00+02:00",
     "aggiornatoIl": "2026-07-18T15:42:00+02:00",
     "attivo": true
@@ -23,7 +23,7 @@
     "testo": "Per i clienti con più veicoli l'agenzia privilegia le franchigie fisse rispetto agli scoperti percentuali: rendono prevedibile il costo dei sinistri di flotta.",
     "ambito": "tenant",
     "categoria": "prassi",
-    "origineConversazioneId": "conv-002",
+    "origineConversazioneId": "cnv-002",
     "creatoIl": "2026-07-29T11:05:00+02:00",
     "aggiornatoIl": "2026-07-29T11:05:00+02:00",
     "attivo": true

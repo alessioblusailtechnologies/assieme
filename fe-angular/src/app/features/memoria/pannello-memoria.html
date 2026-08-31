@@ -17,7 +17,37 @@
       {{ ricordi().length }} {{ ricordi().length === 1 ? 'ricordo' : 'ricordi' }}
     }
   </span>
+
+  <!-- Le due viste della stessa memoria: l'elenco governa, il globo mostra
+       i legami coi passaggi citati dell'archivio. -->
+  <div class="testata__viste" role="group" aria-label="Vista della memoria">
+    <button
+      uiBottone
+      dimensione="piccolo"
+      [variante]="vista() === 'elenco' ? 'primario' : 'secondario'"
+      type="button"
+      (click)="vista.set('elenco')"
+    >
+      <ui-icon name="elenco" [size]="14" />
+      <span>Elenco</span>
+    </button>
+    <button
+      uiBottone
+      dimensione="piccolo"
+      [variante]="vista() === 'globo' ? 'primario' : 'secondario'"
+      type="button"
+      (click)="vista.set('globo')"
+    >
+      <ui-icon name="globo" [size]="14" />
+      <span>Globo</span>
+    </button>
+  </div>
 </header>
+
+@if (vista() === 'globo') {
+  <!-- Il globo è la memoria viva vera: la figura decorativa qui non serve. -->
+  <app-globo-memoria />
+} @else {
 
 <!--
   La memoria viva a tutta larghezza: la figura del sito sborda a destra
@@ -244,3 +274,4 @@
       </p>
     }
 </div>
+}

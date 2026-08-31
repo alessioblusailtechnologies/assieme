@@ -1,3 +1,5 @@
+import { Archivio } from './documento';
+import { Citazione } from './citazione';
 import { Id, IsoDateTime } from './comune';
 
 /**
@@ -37,3 +39,63 @@ export interface Ricordo {
 export type ModificheRicordo = Partial<
   Pick<Ricordo, 'testo' | 'ambito' | 'categoria' | 'attivo'>
 >;
+
+// ---------------------------------------------------------------------------
+// Il globo della memoria (GET /api/ricordi/grafo)
+// ---------------------------------------------------------------------------
+
+/**
+ * Il grafo che il pannello memoria rende come globo. Due strati, entrambi
+ * veri e navigabili: **l'archivio** (rami → compagnie → prodotti →
+ * documenti, le edizioni correnti del pubblico — la trama fitta, i cluster)
+ * e **il lavoro** (ricordi → conversazioni d'origine → passaggi citati →
+ * documenti). Il ricordo non porta riferimenti documentali (il perimetro
+ * dell'apprendimento li esclude apposta): il ponte è la conversazione.
+ *
+ * La visibilità la fa il server come per gli elenchi: l'archivio pubblico è
+ * di tutti, conversazioni proprie o condivise, ricordi del tenant più i
+ * propri — il globo di due colleghi può legittimamente differire.
+ */
+
+export type TipoNodoGrafo =
+  | 'ricordo'
+  | 'conversazione'
+  | 'punto'
+  | 'documento'
+  | 'prodotto'
+  | 'compagnia'
+  | 'ramo';
+
+export interface NodoGrafoMemoria {
+  /** Chiave unica nel grafo, con prefisso di tipo: `ricordo:<id>`, `punto:<documentoId>@<pagina>`. */
+  chiave: string;
+  tipo: TipoNodoGrafo;
+  etichetta: string;
+  /** Quante volte il lavoro l'ha toccato: il raggio del nodo nel globo. */
+  peso: number;
+  /** L'id dell'entità da aprire (assente per i punti: lì parla `citazione`). */
+  id?: Id;
+  /** Solo documento: in quale archivio sta, per la scheda e per il PDF. */
+  archivio?: Archivio | 'conversazione';
+  /** Solo ricordo: come nell'elenco, per colore e stato. */
+  categoria?: Ricordo['categoria'];
+  ambito?: Ricordo['ambito'];
+  attivo?: boolean;
+  /** Solo ricordo: il testo intero — l'etichetta è accorciata per il disegno. */
+  testo?: string;
+  /** Solo punto: la citazione completa — estratto, posizione, documento. */
+  citazione?: Citazione;
+}
+
+export interface LegameGrafoMemoria {
+  /** Chiavi dei nodi collegati. */
+  da: string;
+  a: string;
+  /** Quante volte il legame è stato percorso (1 = un tocco). */
+  peso: number;
+}
+
+export interface GrafoMemoria {
+  nodi: NodoGrafoMemoria[];
+  legami: LegameGrafoMemoria[];
+}

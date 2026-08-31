@@ -1,0 +1,211 @@
+<!--
+  La scena del globo: l'inchiostro di marca in entrambi i temi (è la
+  «memoria viva» del sito, resa navigabile), il canvas sotto, i comandi
+  sopra come strati leggeri. Il cassetto della scheda sta fuori dalla scena:
+  è lo stesso pattern della citazione in chat (RF-C-05).
+-->
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a comporre il globo"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !grafo()) {
+  <div class="attesa">
+    <ui-scheletro [numeroRighe]="4" />
+  </div>
+} @else if (vuoto()) {
+  <ui-stato-vuoto
+    icona="globo"
+    titolo="Il globo si accende lavorando"
+    descrizione="Quando le conversazioni citeranno i documenti dell'archivio e la memoria imparerà, qui vedrai ricordi, passaggi citati e documenti legarsi fra loro."
+  />
+} @else {
+  <div class="scena">
+    <canvas
+      #tela
+      role="application"
+      aria-label="Il globo della memoria: ricordi, conversazioni, passaggi citati, documenti e compagnie come nodi collegati. Trascina per spostarti, usa la rotellina per lo zoom, tocca un nodo per aprirne la scheda."
+    ></canvas>
+
+    <header class="scena__testata">
+      <p class="mono scena__occhiello">Memoria viva · il globo</p>
+      <span class="mono scena__conteggio" role="status">{{ conteggio() }}</span>
+    </header>
+
+    <label class="ui-campo-icona scena__cerca">
+      <ui-icon name="cerca" [size]="16" />
+      <input
+        uiCampo
+        type="search"
+        [value]="ricerca()"
+        (input)="ricerca.set($any($event.target).value)"
+        placeholder="Accendi i nodi che parlano di…"
+        aria-label="Cerca nel globo"
+      />
+    </label>
+
+    <!-- La legenda governa: un tocco accende un tipo e smorza il resto. -->
+    <ul class="legenda" aria-label="Tipi di nodo">
+      @for (voce of legenda(); track voce.tipo) {
+        <li>
+          <button
+            type="button"
+            class="legenda__voce"
+            [class.is-attiva]="tipoEvidenziato() === voce.tipo"
+            [class.is-smorzata]="tipoEvidenziato() && tipoEvidenziato() !== voce.tipo"
+            (click)="alternaTipo(voce.tipo)"
+            [attr.aria-pressed]="tipoEvidenziato() === voce.tipo"
+          >
+            <span class="legenda__segno" [style.background]="voce.colore" aria-hidden="true"></span>
+            <span class="mono">{{ voce.quanti }} {{ voce.etichetta }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+
+    <div class="scena__zoom" role="group" aria-label="Zoom">
+      <button type="button" class="scena__comando" (click)="cambiaZoom(1.35)" aria-label="Avvicina">
+        +
+      </button>
+      <button type="button" class="scena__comando" (click)="cambiaZoom(1 / 1.35)" aria-label="Allontana">
+        −
+      </button>
+      <button type="button" class="scena__comando" (click)="azzeraVista()" aria-label="Inquadra tutto il globo">
+        ⤢
+      </button>
+    </div>
+  </div>
+}
+
+<!-- La scheda del nodo: si verifica la fonte senza perdere il globo. -->
+<ui-cassetto
+  [aperto]="!!selezionato()"
+  (apertoChange)="!$event && selezionato.set(undefined)"
+  [titolo]="titoloScheda()"
+>
+  @if (selezionato(); as nodo) {
+    <div class="scheda">
+      @switch (nodo.tipo) {
+        @case ('ricordo') {
+          <div class="scheda__meta">
+            <span class="scheda__ambito" [class.is-agenzia]="nodo.ambito === 'tenant'">
+              <ui-icon [name]="nodo.ambito === 'tenant' ? 'compagnia' : 'utente'" [size]="13" />
+              {{ nodo.ambito === 'tenant' ? 'agenzia' : 'personale' }}
+            </span>
+            @if (nodo.categoria) {
+              <ui-tag>{{ etichettaCategoria(nodo.categoria) }}</ui-tag>
+            }
+            @if (nodo.attivo === false) {
+              <span class="scheda__stato">
+                <ui-icon name="sospendi" [size]="12" />
+                sospeso
+              </span>
+            }
+          </div>
+          <p class="scheda__testo">{{ nodo.testo ?? nodo.etichetta }}</p>
+          @if (conversazioneDelSelezionato(); as conversazione) {
+            <a uiBottone [routerLink]="['/chat', conversazione.id]">
+              <ui-icon name="chat" [size]="15" />
+              <span>Apri la conversazione da cui è emerso</span>
+            </a>
+          }
+        }
+
+        @case ('punto') {
+          @if (nodo.citazione; as c) {
+            <p class="mono scheda__posizione">
+              pagina {{ c.posizione.pagina }}
+              @if (c.posizione.articolo; as articolo) {
+                · {{ etichettaArticolo(articolo) }}
+              }
+              @if (c.posizione.sezione) {
+                · {{ c.posizione.sezione }}
+              }
+            </p>
+            <blockquote class="scheda__estratto">«{{ c.estratto }}»</blockquote>
+            <ui-visualizzatore-pdf
+              class="scheda__pdf"
+              [fileUrl]="urlFileCitazione(c)"
+              [posizione]="c.posizione"
+            />
+            @if (c.archivio !== 'conversazione') {
+              <a
+                uiBottone
+                [routerLink]="['/archivio', c.archivio === 'pubblico' ? 'pubblico' : 'privato', c.documentoId]"
+              >
+                <ui-icon name="apri-esterno" [size]="15" />
+                <span>Apri la scheda del documento</span>
+              </a>
+            }
+          }
+        }
+
+        @case ('documento') {
+          <p class="mono scheda__posizione">
+            {{ nodo.archivio === 'pubblico' ? 'archivio pubblico' : nodo.archivio === 'privato' ? 'archivio privato' : 'allegato di conversazione' }}
+          </p>
+          <p class="scheda__testo">{{ nodo.etichetta }}</p>
+          @if (nodo.archivio !== 'conversazione' && nodo.id) {
+            <a
+              uiBottone
+              [routerLink]="['/archivio', nodo.archivio === 'pubblico' ? 'pubblico' : 'privato', nodo.id]"
+            >
+              <ui-icon name="apri-esterno" [size]="15" />
+              <span>Apri la scheda del documento</span>
+            </a>
+          }
+        }
+
+        @case ('conversazione') {
+          <p class="scheda__testo">
+            I passaggi citati e i ricordi collegati a questo nodo sono nati qui.
+          </p>
+          @if (nodo.id) {
+            <a uiBottone [routerLink]="['/chat', nodo.id]">
+              <ui-icon name="chat" [size]="15" />
+              <span>Apri la conversazione</span>
+            </a>
+          }
+        }
+
+        @case ('prodotto') {
+          <p class="scheda__testo">
+            Il set informativo di {{ nodo.etichetta }}: i suoi documenti gli stanno intorno nel
+            globo, la compagnia e il ramo lo tengono in posizione.
+          </p>
+          <a uiBottone routerLink="/archivio/pubblico">
+            <ui-icon name="archivio-pubblico" [size]="15" />
+            <span>Sfoglia l'archivio pubblico</span>
+          </a>
+        }
+
+        @case ('compagnia') {
+          <p class="scheda__testo">
+            I prodotti di {{ nodo.etichetta }} in archivio, e i documenti che il lavoro
+            dell'agenzia ha toccato.
+          </p>
+          <a uiBottone routerLink="/archivio/pubblico">
+            <ui-icon name="archivio-pubblico" [size]="15" />
+            <span>Sfoglia l'archivio pubblico</span>
+          </a>
+        }
+
+        @case ('ramo') {
+          <p class="scheda__testo">
+            Il ramo {{ nodo.etichetta }}: raccoglie i prodotti delle compagnie in archivio.
+          </p>
+          <a uiBottone routerLink="/archivio/pubblico">
+            <ui-icon name="archivio-pubblico" [size]="15" />
+            <span>Sfoglia l'archivio pubblico</span>
+          </a>
+        }
+      }
+    </div>
+  }
+</ui-cassetto>

@@ -1,0 +1,254 @@
+:host {
+  display: block;
+}
+
+/* ---------- Stati ---------- */
+
+.attesa {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+ui-stato-vuoto {
+  justify-content: center;
+  padding-block: var(--sp-8);
+}
+
+/* ---------- La scena ---------- */
+
+/* L'inchiostro di marca in entrambi i temi: il globo è la scena scura della
+   memoria viva del sito, resa navigabile — non una carta chiara. Il canvas
+   ha il fondo trasparente e prende questo inchiostro. */
+.scena {
+  position: relative;
+  height: clamp(440px, calc(100dvh - 240px), 860px);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background:
+    radial-gradient(
+      120% 90% at 28% 15%,
+      color-mix(in srgb, var(--c-ink-raise) 85%, transparent),
+      transparent 55%
+    ),
+    var(--c-ink);
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  /* Il pan è del globo, non dello scroll della pagina. */
+  touch-action: none;
+}
+
+/* ---------- Gli strati sopra il canvas ---------- */
+
+.scena__testata {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  right: var(--sp-4);
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  pointer-events: none;
+}
+
+.scena__occhiello {
+  color: var(--c-accent-on-dark);
+}
+
+.scena__conteggio {
+  margin-left: auto;
+  color: var(--c-text-onink-3);
+}
+
+.scena__cerca {
+  position: absolute;
+  top: calc(var(--sp-4) + 32px);
+  left: var(--sp-4);
+  width: min(320px, calc(100% - 2 * var(--sp-4)));
+  color: var(--c-text-onink-3);
+
+  input {
+    background: color-mix(in srgb, var(--c-ink-raise) 78%, transparent);
+    border-color: var(--c-line-onink);
+    color: var(--c-text-onink);
+
+    &::placeholder {
+      color: var(--c-text-onink-mute);
+    }
+
+    &:focus-visible {
+      border-color: var(--c-accent-on-dark);
+    }
+  }
+}
+
+/* La legenda governa: un tocco accende un tipo e smorza il resto. */
+.legenda {
+  position: absolute;
+  left: var(--sp-4);
+  bottom: var(--sp-4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* Il canvas non deve rubare il tocco alla legenda sovrapposta. */
+  max-width: calc(100% - 70px);
+}
+
+.legenda__voce {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px 10px;
+  border: 1px solid var(--c-line-onink);
+  border-radius: var(--radius-pieno);
+  background: color-mix(in srgb, var(--c-ink) 62%, transparent);
+  color: var(--c-text-onink-2);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.legenda__voce:hover,
+.legenda__voce:focus-visible {
+  border-color: var(--c-line-onink-strong);
+  color: var(--c-text-onink);
+}
+
+.legenda__voce.is-attiva {
+  border-color: var(--c-accent-on-dark);
+  color: var(--c-text-onink);
+}
+
+.legenda__voce.is-smorzata {
+  opacity: 0.55;
+}
+
+.legenda__segno {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.scena__zoom {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.scena__comando {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--c-line-onink);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-ink) 62%, transparent);
+  color: var(--c-text-onink-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scena__comando:hover,
+.scena__comando:focus-visible {
+  border-color: var(--c-line-onink-strong);
+  color: var(--c-text-onink);
+}
+
+/* ---------- La scheda nel cassetto ---------- */
+
+.scheda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.scheda__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* La stessa lingua dell'elenco dei ricordi: l'ambito è un'etichetta mono. */
+.scheda__ambito {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.scheda__ambito.is-agenzia {
+  color: var(--c-accent);
+}
+
+.scheda__stato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.scheda__testo {
+  font-family: var(--f-lettura);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+.scheda__posizione {
+  color: var(--c-text-3);
+}
+
+.scheda__estratto {
+  margin: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-left: 2px solid var(--c-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--c-surface-soft);
+  font-family: var(--f-lettura);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+.scheda__pdf {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .scena {
+    height: clamp(360px, 72dvh, 640px);
+  }
+}

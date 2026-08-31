@@ -19,7 +19,14 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const RICORDI = JSON.parse(readFileSync(join(QUI, 'data', 'ricordi.json'), 'utf8'));
+const carica = (nome) => JSON.parse(readFileSync(join(QUI, 'data', nome), 'utf8'));
+
+const RICORDI = carica('ricordi.json');
+const CONVERSAZIONI = carica('conversazioni.json');
+const MESSAGGI = carica('messaggi.json');
+const COMPAGNIE = carica('compagnie.json');
+const RAMI = carica('rami.json');
+const DOCUMENTI = [...carica('documenti-pubblici.json'), ...carica('documenti-privati.json')];
 
 const utenteCorrente = (req) =>
   req?.headers['x-velia-ruolo'] === 'amministratore' ? 'utn-001' : 'utn-004';
@@ -31,6 +38,206 @@ const CATEGORIE = ['prassi', 'cliente', 'preferenza', 'decisione', 'altro'];
 function risposta(ricordo) {
   const { _utenteId, ...pulito } = ricordo;
   return pulito;
+}
+
+// ---------------------------------------------------------------------------
+// Il globo (GET /api/ricordi/grafo) — specchio di `be-node/src/api/ricordi/grafo.ts`
+// ---------------------------------------------------------------------------
+
+/** Un testo lungo si accorcia a parola intera: è un'etichetta, non una scheda. */
+function accorcia(testo, massimo = 64) {
+  const pulito = testo.trim().replace(/\s+/g, ' ');
+  if (pulito.length <= massimo) return pulito;
+  const taglio = pulito.slice(0, massimo);
+  const spazio = taglio.lastIndexOf(' ');
+  return `${taglio.slice(0, spazio > massimo / 2 ? spazio : massimo)}…`;
+}
+
+function etichettaPunto(c) {
+  const articolo = c.posizione.articolo?.trim();
+  if (articolo) {
+    /* Mai «art. Articolo 4»: il prefisso solo quando manca. */
+    return /^art/i.test(articolo) ? accorcia(articolo, 36) : `art. ${accorcia(articolo, 30)}`;
+  }
+  if (c.posizione.sezione) return accorcia(c.posizione.sezione, 32);
+  return `pag. ${c.posizione.pagina}`;
+}
+
+/**
+ * Le stesse regole della rotta vera: un ricordo è sempre un nodo, la
+ * conversazione entra solo se ha citazioni o ha originato ricordi (e solo se
+ * visibile: propria o condivisa — la RLS del mock), il punto è
+ * documento+pagina, il documento porta la compagnia se la riga d'archivio è
+ * visibile.
+ */
+function costruisciGrafo(req) {
+  const utente = utenteCorrente(req);
+  const ricordi = RICORDI.filter((r) => r.ambito === 'tenant' || r._utenteId === utente);
+  const conversazioni = new Map(
+    CONVERSAZIONI.filter((c) => c.autoreId === utente || c.condivisa).map((c) => [c.id, c]),
+  );
+  const documenti = new Map(
+    DOCUMENTI.filter(
+      (d) => !d.visibilita || d.visibilita === 'tenant' || d.caricatoDa === utente,
+    ).map((d) => [d.id, d]),
+  );
+  /* La trama del globo: le edizioni correnti del catalogo pubblico. */
+  const catalogo = new Map(
+    DOCUMENTI.filter((d) => !d.visibilita && d.edizione?.corrente && d.prodotto).map((d) => [
+      d.id,
+      d,
+    ]),
+  );
+
+  const nodi = new Map();
+  const legami = new Map();
+
+  const nodo = (n) => {
+    if (!nodi.has(n.chiave)) nodi.set(n.chiave, n);
+    return nodi.get(n.chiave);
+  };
+  const lega = (da, a) => {
+    const chiave = `${da}|${a}`;
+    const esistente = legami.get(chiave);
+    if (esistente) esistente.peso += 1;
+    else legami.set(chiave, { da, a, peso: 1 });
+  };
+  /* Legame strutturale: esiste una volta sola, non accumula peso. */
+  const legaStruttura = (da, a) => {
+    const chiave = `${da}|${a}`;
+    if (legami.has(chiave)) return false;
+    legami.set(chiave, { da, a, peso: 1 });
+    return true;
+  };
+
+  // --- L'archivio: rami → compagnie → prodotti → documenti ---
+  for (const riga of catalogo.values()) {
+    const compagnia = COMPAGNIE.find((c) => c.id === riga.compagniaId);
+    const ramo = RAMI.find((r) => r.id === riga.ramoId);
+    if (!compagnia || !ramo) continue;
+
+    const nodoRamo = nodo({
+      chiave: `ramo:${ramo.id}`,
+      tipo: 'ramo',
+      etichetta: ramo.nome,
+      peso: 0,
+      id: ramo.id,
+    });
+    const nodoCompagnia = nodo({
+      chiave: `compagnia:${compagnia.id}`,
+      tipo: 'compagnia',
+      etichetta: compagnia.nome,
+      peso: 0,
+      id: compagnia.id,
+    });
+    const chiaveProdotto = `prodotto:${compagnia.id}:${riga.prodotto}`;
+    const nodoProdotto = nodo({
+      chiave: chiaveProdotto,
+      tipo: 'prodotto',
+      etichetta: accorcia(riga.prodotto, 40),
+      peso: 0,
+    });
+    nodo({
+      chiave: `documento:${riga.id}`,
+      tipo: 'documento',
+      etichetta: accorcia(riga.titolo, 56),
+      peso: 1,
+      id: riga.id,
+      archivio: 'pubblico',
+    });
+
+    legaStruttura(`documento:${riga.id}`, chiaveProdotto);
+    nodoProdotto.peso += 1;
+    if (legaStruttura(chiaveProdotto, nodoCompagnia.chiave)) nodoCompagnia.peso += 1;
+    if (legaStruttura(chiaveProdotto, nodoRamo.chiave)) nodoRamo.peso += 1;
+  }
+  const nodoConversazione = (id) => {
+    const conversazione = conversazioni.get(id);
+    if (!conversazione) return undefined;
+    return nodo({
+      chiave: `conversazione:${id}`,
+      tipo: 'conversazione',
+      etichetta: accorcia(conversazione.titolo, 48),
+      peso: 0,
+      id,
+    });
+  };
+
+  for (const r of ricordi) {
+    nodo({
+      chiave: `ricordo:${r.id}`,
+      tipo: 'ricordo',
+      etichetta: accorcia(r.testo),
+      peso: 1,
+      id: r.id,
+      categoria: r.categoria,
+      ambito: r.ambito,
+      attivo: r.attivo,
+      testo: r.testo,
+    });
+    if (!r.origineConversazioneId) continue;
+    const conversazione = nodoConversazione(r.origineConversazioneId);
+    if (!conversazione) continue;
+    conversazione.peso += 1;
+    lega(`ricordo:${r.id}`, conversazione.chiave);
+  }
+
+  for (const messaggio of MESSAGGI) {
+    if (!messaggio.citazioni?.length || !conversazioni.has(messaggio.conversazioneId)) continue;
+    const conversazione = nodoConversazione(messaggio.conversazioneId);
+
+    for (const citazione of messaggio.citazioni) {
+      conversazione.peso += 1;
+
+      const chiavePunto = `punto:${citazione.documentoId}@${citazione.posizione.pagina}`;
+      const punto = nodo({
+        chiave: chiavePunto,
+        tipo: 'punto',
+        etichetta: etichettaPunto(citazione),
+        peso: 0,
+        citazione,
+      });
+      punto.peso += 1;
+      if (!punto.citazione.posizione.articolo && citazione.posizione.articolo) {
+        punto.citazione = citazione;
+        punto.etichetta = etichettaPunto(citazione);
+      }
+
+      const rigaArchivio = documenti.get(citazione.documentoId);
+      const documento = nodo({
+        chiave: `documento:${citazione.documentoId}`,
+        tipo: 'documento',
+        etichetta: accorcia(rigaArchivio?.titolo ?? citazione.documentoTitolo, 56),
+        peso: 0,
+        id: citazione.documentoId,
+        archivio: citazione.archivio,
+      });
+      documento.peso += 1;
+
+      lega(conversazione.chiave, chiavePunto);
+      lega(chiavePunto, documento.chiave);
+
+      /* Il documento del catalogo è già agganciato al suo prodotto; quello
+         fuori catalogo (storico, privato) si appende alla compagnia. */
+      const compagniaId = rigaArchivio?.compagniaId;
+      const compagnia = compagniaId && COMPAGNIE.find((c) => c.id === compagniaId);
+      if (compagnia && !catalogo.has(citazione.documentoId)) {
+        const nodoCompagnia = nodo({
+          chiave: `compagnia:${compagnia.id}`,
+          tipo: 'compagnia',
+          etichetta: compagnia.nome,
+          peso: 0,
+          id: compagnia.id,
+        });
+        if (legaStruttura(documento.chiave, nodoCompagnia.chiave)) nodoCompagnia.peso += 1;
+      }
+    }
+  }
+
+  const ordinati = [...nodi.values()].sort(
+    (a, b) => b.peso - a.peso || a.chiave.localeCompare(b.chiave),
+  );
+  return { nodi: ordinati, legami: [...legami.values()] };
 }
 
 // ---------------------------------------------------------------------------
@@ -55,6 +262,12 @@ export async function gestisci(req, res, url, deps) {
   if (percorso === '/api/ricordi' && req.method === 'GET') {
     const ordinati = [...visibili()].sort((a, b) => b.aggiornatoIl.localeCompare(a.aggiornatoIl));
     inviaJson(res, 200, ordinati.map(risposta));
+    return true;
+  }
+
+  // GET /api/ricordi/grafo — il globo della memoria (prima della rotta /:id)
+  if (percorso === '/api/ricordi/grafo' && req.method === 'GET') {
+    inviaJson(res, 200, costruisciGrafo(req));
     return true;
   }
 

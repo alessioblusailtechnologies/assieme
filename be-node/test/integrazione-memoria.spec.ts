@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { creaApp } from '../src/api/app.js';
 import { configurazione, type Configurazione } from '../src/config.js';
 import type { CorpoErroreApi } from '../src/contratto/errori.js';
-import type { Ricordo } from '../src/contratto/memoria.js';
+import type { GrafoMemoria, Ricordo } from '../src/contratto/memoria.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { lavoraUno } from '../src/worker/ciclo.js';
@@ -225,6 +225,67 @@ describe.skipIf(!pronto)('memoria col progetto Supabase (estrattore finto)', () 
     expect(ultima.scambi.map((s) => s.testo)).toEqual(['E la ditta Bianchi?', 'La ditta Bianchi rinnova a dicembre.']);
     expect(ultima.giaNoti).toHaveLength(2);
     expect(await elenco(tokenAdmin)).toHaveLength(3);
+  });
+
+  it('il globo lega ricordi, conversazione d’origine, punti citati, documento e compagnia — e per il collega la conversazione non condivisa non esiste', async () => {
+    const doc = await pool().query<{ id: string; titolo: string; compagnia_id: string; prodotto: string }>(
+      `select id, titolo, compagnia_id, prodotto from velia.documenti
+        where archivio = 'pubblico' and compagnia_id is not null and ramo_id is not null
+          and edizione_corrente and prodotto is not null and stato = 'pronto' limit 1`,
+    );
+    const documento = doc.rows[0]!;
+
+    const citazioni = [
+      { id: 'cit-globo-1', documentoId: documento.id, documentoTitolo: documento.titolo, archivio: 'pubblico', posizione: { pagina: 3, sezione: 'Franchigie' }, estratto: 'La garanzia è prestata con franchigia fissa.' },
+      { id: 'cit-globo-2', documentoId: documento.id, documentoTitolo: documento.titolo, archivio: 'pubblico', posizione: { pagina: 3, articolo: '2' }, estratto: 'La franchigia è di euro 250 per sinistro.' },
+      { id: 'cit-globo-3', documentoId: documento.id, documentoTitolo: documento.titolo, archivio: 'pubblico', posizione: { pagina: 7 }, estratto: 'Lo scoperto si dimezza con l’antifurto satellitare.' },
+    ];
+    await pool().query(
+      `insert into velia.messaggi (conversazione_id, tenant_id, autore, utente_id, testo, citazioni)
+       values ($1, $2, 'assistente', $3, 'Risposta con fonti.', $4::jsonb)`,
+      [convId, TENANT_COLLAUDO, idAdmin, JSON.stringify(citazioni)],
+    );
+
+    const risposta = await richiedi('GET', '/api/ricordi/grafo', tokenAdmin);
+    expect(risposta.statusCode).toBe(200);
+    const grafo = risposta.json<GrafoMemoria>();
+
+    expect(grafo.nodi.filter((n) => n.tipo === 'ricordo')).toHaveLength(3);
+    const conversazione = grafo.nodi.find((n) => n.tipo === 'conversazione');
+    expect(conversazione).toMatchObject({ id: convId, etichetta: 'Flotta Bianchi', peso: 6 });
+
+    const puntoPagina3 = grafo.nodi.find((n) => n.chiave === `punto:${documento.id}@3`);
+    expect(puntoPagina3).toMatchObject({ tipo: 'punto', etichetta: 'art. 2', peso: 2 });
+    expect(puntoPagina3?.citazione?.estratto).toContain('euro 250');
+    expect(grafo.nodi.find((n) => n.chiave === `punto:${documento.id}@7`)?.etichetta).toBe('pag. 7');
+
+    // Il documento è nel catalogo (peso 1) e citato tre volte; la sua strada
+    // verso la compagnia passa dal prodotto, non dal legame diretto.
+    expect(grafo.nodi.find((n) => n.chiave === `documento:${documento.id}`)).toMatchObject({
+      id: documento.id,
+      archivio: 'pubblico',
+      peso: 4,
+    });
+    expect(grafo.nodi.some((n) => n.chiave === `compagnia:${documento.compagnia_id}`)).toBe(true);
+    expect(grafo.legami).toContainEqual({
+      da: `documento:${documento.id}`,
+      a: `prodotto:${documento.compagnia_id}:${documento.prodotto}`,
+      peso: 1,
+    });
+    expect(grafo.legami).toContainEqual({ da: `conversazione:${convId}`, a: `punto:${documento.id}@3`, peso: 2 });
+    expect(grafo.legami).toContainEqual({ da: `punto:${documento.id}@3`, a: `documento:${documento.id}`, peso: 2 });
+    // Ogni legame punta a nodi che esistono: mai chiavi appese.
+    const chiavi = new Set(grafo.nodi.map((n) => n.chiave));
+    expect(grafo.legami.every((l) => chiavi.has(l.da) && chiavi.has(l.a))).toBe(true);
+
+    // Il collega: catalogo e ricordi del tenant ci sono, la conversazione
+    // non condivisa no — e con lei spariscono punti e legami del lavoro.
+    const perOperatore = (await richiedi('GET', '/api/ricordi/grafo', tokenOperatore)).json<GrafoMemoria>();
+    expect(perOperatore.nodi.filter((n) => n.tipo === 'ricordo')).toHaveLength(2);
+    expect(perOperatore.nodi.some((n) => n.tipo === 'conversazione' || n.tipo === 'punto')).toBe(false);
+    expect(
+      perOperatore.legami.some((l) => l.da.startsWith('ricordo:') || l.da.startsWith('conversazione:')),
+    ).toBe(false);
   });
 
   it('RF-G-02: il collega vede i ricordi del tenant, mai i personali altrui', async () => {

@@ -23,6 +23,7 @@ import BubbleChatIcon from '@hugeicons/core-free-icons/BubbleChatIcon';
 import Building03Icon from '@hugeicons/core-free-icons/Building03Icon';
 import Calendar03Icon from '@hugeicons/core-free-icons/Calendar03Icon';
 import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
+import ChartNetworkIcon from '@hugeicons/core-free-icons/ChartNetworkIcon';
 import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon';
 import Clock01Icon from '@hugeicons/core-free-icons/Clock01Icon';
 import ComputerIcon from '@hugeicons/core-free-icons/ComputerIcon';
@@ -37,6 +38,7 @@ import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
 import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
 import LibraryIcon from '@hugeicons/core-free-icons/LibraryIcon';
 import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
+import ListViewIcon from '@hugeicons/core-free-icons/ListViewIcon';
 import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon';
 import Logout03Icon from '@hugeicons/core-free-icons/Logout03Icon';
 import Mic01Icon from '@hugeicons/core-free-icons/Mic01Icon';
@@ -95,6 +97,9 @@ export const REGISTRO_ICONE = {
   utente: User03Icon,
   pianificazione: Calendar03Icon,
   preferito: StarIcon,
+  /* Le due viste della memoria: l'elenco dei ricordi e il globo dei legami. */
+  elenco: ListViewIcon,
+  globo: ChartNetworkIcon,
 
   // --- Azioni ---
   carica: Upload03Icon,
