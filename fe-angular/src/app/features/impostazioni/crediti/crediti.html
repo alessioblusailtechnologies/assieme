@@ -29,15 +29,13 @@
       <p class="mono saldo__etichetta">Disponibili</p>
       <p class="serif saldo__numero">{{ r.saldo.disponibili | number: '1.0-1' : 'it' }}</p>
       @if (esauriti()) {
-        <p class="saldo__avviso">
-          <ui-icon name="errore" [size]="14" />
+        <ui-avviso tono="errore" role="alert">
           Crediti esauriti: le risposte, le tabelle e gli agenti sono fermi finché non si ricarica.
-        </p>
+        </ui-avviso>
       } @else if (inRiserva()) {
-        <p class="saldo__avviso">
-          <ui-icon name="informazione" [size]="14" />
+        <ui-avviso tono="attenzione" role="status">
           Siete in riserva: meno del 20% dei crediti del mese.
-        </p>
+        </ui-avviso>
       }
     </div>
 

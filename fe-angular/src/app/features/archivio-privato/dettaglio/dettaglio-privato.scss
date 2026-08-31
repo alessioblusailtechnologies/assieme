@@ -28,40 +28,13 @@
 /* ---------- Avvisi ---------- */
 
 /*
- * Gli avvisi stanno sopra il modulo, a tutta larghezza: riguardano il
- * documento nel suo insieme, non un campo. Metterli accanto a un campo li
- * farebbe leggere come errori di validazione, che sono un'altra cosa.
+ * Gli avvisi (`ui-avviso`) stanno sopra il modulo, a tutta larghezza:
+ * riguardano il documento nel suo insieme, non un campo. Metterli accanto
+ * a un campo li farebbe leggere come errori di validazione, che sono
+ * un'altra cosa.
  */
-.avviso {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
+ui-avviso {
   margin-bottom: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: var(--t-sm);
-  border-left: 2px solid;
-}
-
-.avviso p {
-  max-width: 90ch;
-}
-
-.avviso.is-errore {
-  background: var(--c-neg-soft);
-  border-color: var(--c-neg);
-  color: var(--c-neg);
-}
-
-.avviso.is-attesa {
-  background: var(--c-stato-corso-soft);
-  border-color: var(--c-stato-corso);
-  color: var(--c-stato-corso);
-}
-
-.avviso.is-proposta {
-  background: var(--c-page-alt);
-  border-color: var(--c-line-dark);
-  color: var(--c-text-2);
 }
 
 /* ---------- Impaginazione ---------- */

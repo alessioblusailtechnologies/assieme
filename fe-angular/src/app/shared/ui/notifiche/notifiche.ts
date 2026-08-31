@@ -15,10 +15,12 @@ import { NotificheStore } from '@core/notifiche/notifiche-store';
     <div class="pila" aria-live="polite">
       @for (n of store.elenco(); track n.id) {
         <div class="notifica" [class]="'is-' + n.gravita" role="status">
-          <ui-icon
-            [name]="n.gravita === 'errore' ? 'errore' : n.gravita === 'successo' ? 'pronto' : 'informazione'"
-            [size]="16"
-          />
+          <span class="medaglione" aria-hidden="true">
+            <ui-icon
+              [name]="n.gravita === 'errore' ? 'errore' : n.gravita === 'successo' ? 'pronto' : 'informazione'"
+              [size]="16"
+            />
+          </span>
           <div class="notifica__testo">
             <p class="notifica__titolo">{{ n.titolo }}</p>
             @if (n.dettaglio) {
@@ -49,6 +51,9 @@ import { NotificheStore } from '@core/notifiche/notifiche-store';
       width: min(380px, calc(100vw - 2rem));
     }
 
+    /* La stessa lingua di \`ui-avviso\`: carta su superficie, barra di
+       severità a sinistra, icona nel colore del tono. Se quel disegno
+       cambia, va riportato qui. */
     .notifica {
       display: flex;
       align-items: flex-start;
@@ -56,24 +61,47 @@ import { NotificheStore } from '@core/notifiche/notifiche-store';
       padding: var(--sp-3) var(--sp-4);
       background: var(--c-surface);
       border: 1px solid var(--c-line);
+      border-left-width: 3px;
       border-radius: var(--radius);
       box-shadow: 0 8px 24px var(--c-ombra);
     }
 
-    .notifica > ui-icon {
+    /* Il medaglione dell'icona, come in \`ui-avviso\`: il segnale si vede
+       per primo, la carta resta neutra. */
+    .medaglione {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
       flex: none;
-      margin-top: 2px;
     }
 
-    .notifica.is-errore > ui-icon {
-      color: var(--c-neg);
+    .notifica.is-errore {
+      border-left-color: var(--c-stato-errore);
     }
 
-    .notifica.is-successo > ui-icon {
-      color: var(--c-pos);
+    .notifica.is-errore .medaglione {
+      background: var(--c-stato-errore-soft);
+      color: var(--c-stato-errore);
     }
 
-    .notifica.is-informazione > ui-icon {
+    .notifica.is-successo {
+      border-left-color: var(--c-stato-pronto);
+    }
+
+    .notifica.is-successo .medaglione {
+      background: var(--c-stato-pronto-soft);
+      color: var(--c-stato-pronto);
+    }
+
+    .notifica.is-informazione {
+      border-left-color: var(--c-accent);
+    }
+
+    .notifica.is-informazione .medaglione {
+      background: var(--c-accent-soft);
       color: var(--c-accent);
     }
 

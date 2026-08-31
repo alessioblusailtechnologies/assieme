@@ -4,6 +4,7 @@ import { httpResource } from '@angular/common/http';
 
 import { ConnessioneMcp, CredenzialeGenerata, CredenzialeMcp, Id } from '@core/models';
 import { Badge } from '@shared/ui/badge/badge';
+import { Avviso } from '@shared/ui/avviso/avviso';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
@@ -27,7 +28,7 @@ import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
  */
 @Component({
   selector: 'app-accesso-mcp',
-  imports: [Badge, Bottone, Campo, Cassetto, DatePipe, Icona, Scheletro, StatoVuoto],
+  imports: [Avviso, Badge, Bottone, Campo, Cassetto, DatePipe, Icona, Scheletro, StatoVuoto],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './accesso-mcp.html',
   styleUrl: './accesso-mcp.scss',

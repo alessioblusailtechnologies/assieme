@@ -10,13 +10,10 @@
     se è una regola su *come giudicare* è una regola scritta; se va citato,
     o è più lungo di una pagina, è un documento.
   -->
-  <p class="testata__guida">
-    <ui-icon name="informazione" [size]="14" />
-    <span>
-      Se dice <strong>come giudicare</strong>, scrivila come regola. Se va <strong>citato</strong> o
-      è più lungo di una pagina, è un documento di riferimento.
-    </span>
-  </p>
+  <ui-avviso class="testata__guida" titolo="Dove va cosa">
+    Se dice <strong>come giudicare</strong>, scrivila come regola. Se va <strong>citato</strong> o
+    è più lungo di una pagina, è un documento di riferimento.
+  </ui-avviso>
 
   @if (!store.puoGestire()) {
     <p class="testata__nota">
@@ -100,7 +97,7 @@
             <h2 class="voce__titolo">{{ regola.titolo }}</h2>
             <ui-tag>{{ ambito(regola) }}</ui-tag>
             @if (!regola.attiva) {
-              <ui-tag>sospesa</ui-tag>
+              <ui-etichetta-stato icona="sospendi">sospesa</ui-etichetta-stato>
             }
 
             @if (store.puoGestire()) {
@@ -166,14 +163,13 @@
     RF-D-16: il contesto permanente si paga a ogni interrogazione. Il conto
     sta sopra l'elenco, e l'interruttore attivo/sospeso è igiene ordinaria.
   -->
-  <div class="contesto" role="status">
-    <ui-icon name="riferimenti" [size]="15" />
-    <span>{{ store.contesto().testo }}</span>
+  <ui-avviso icona="riferimenti" titolo="Contesto permanente" role="status">
+    {{ store.contesto().testo }}
     <span class="contesto__monito">
       Ogni documento attivo entra nel contesto di ogni domanda: tieni attivo solo ciò che serve
       davvero, sospendi il resto.
     </span>
-  </div>
+  </ui-avviso>
 
   @if (store.puoGestire()) {
     <ui-zona-caricamento (scelti)="store.carica($event)" formati=".pdf,.docx,.doc,.txt" />
@@ -237,7 +233,11 @@
                 </button>
               }
             } @else {
-              <ui-tag>{{ riferimento.attivo ? 'attivo' : 'sospeso' }}</ui-tag>
+              @if (riferimento.attivo) {
+                <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>
+              } @else {
+                <ui-etichetta-stato icona="sospendi">sospeso</ui-etichetta-stato>
+              }
             }
           </div>
 

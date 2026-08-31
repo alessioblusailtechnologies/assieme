@@ -135,20 +135,10 @@ tr.is-revocata td {
   white-space: pre;
 }
 
-/* RF-F-05: chi collega un client esterno deve saperlo da subito. */
-.avvertenza {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-2);
-  font-size: var(--t-sm);
-  color: var(--c-text-2);
+/* RF-F-05: chi collega un client esterno deve saperlo da subito — è un
+   `ui-avviso`; qui resta solo la misura di riga. */
+ui-avviso {
   max-width: 72ch;
-}
-
-.avvertenza ui-icon {
-  flex: none;
-  align-self: center;
-  color: var(--c-warn, var(--c-neg));
 }
 
 /* ---------- Cassetto di generazione ---------- */

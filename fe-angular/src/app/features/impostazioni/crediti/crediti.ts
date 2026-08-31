@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { httpResource } from '@angular/common/http';
 
+import { Avviso } from '@shared/ui/avviso/avviso';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Icona } from '@shared/ui/icona/icona';
 import { ImpostazioniApi } from '@core/api/impostazioni-api';
@@ -28,7 +29,7 @@ const OPERAZIONI: { chiave: OperazioneCrediti; etichetta: string }[] = [
  */
 @Component({
   selector: 'app-crediti',
-  imports: [Bottone, DatePipe, DecimalPipe, Icona, Scheletro, StatoVuoto],
+  imports: [Avviso, Bottone, DatePipe, DecimalPipe, Icona, Scheletro, StatoVuoto],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './crediti.html',
   styleUrl: './crediti.scss',

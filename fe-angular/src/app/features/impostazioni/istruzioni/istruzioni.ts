@@ -13,6 +13,8 @@ import { IstruzioniStore } from './istruzioni-store';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
+import { Avviso } from '@shared/ui/avviso/avviso';
+import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { Tag } from '@shared/ui/tag/tag';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 import { codificaAmbito, decodificaAmbito, etichettaAmbito, opzioniAmbito } from './ambito';
@@ -36,12 +38,14 @@ type Scheda = 'regole' | 'riferimenti';
   selector: 'app-istruzioni',
   providers: [IstruzioniStore],
   imports: [
+    Avviso,
     Bottone,
     Campo,
     Cassetto,
     Checkbox,
     CodaCaricamento,
     DatePipe,
+    EtichettaStato,
     Icona,
     RouterLink,
     Scheletro,

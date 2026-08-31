@@ -34,17 +34,13 @@
       Un documento non leggibile non è referenziabile in chat, e l'utente
       deve sapere subito che deve rifarne una versione leggibile.
     -->
-    <div class="avviso is-errore" role="alert">
-      <ui-icon name="errore" [size]="16" />
-      <p>{{ doc.erroreElaborazione }}</p>
-    </div>
+    <ui-avviso tono="errore" titolo="Non leggibile" role="alert">
+      {{ doc.erroreElaborazione }}
+    </ui-avviso>
   } @else if (doc.stato !== 'pronto') {
-    <div class="avviso is-attesa" role="status">
-      <ui-icon name="in-corso" [size]="16" />
-      <p>
-        Elaborazione in corso: il documento sarà referenziabile in chat fra qualche istante.
-      </p>
-    </div>
+    <ui-avviso tono="attenzione" icona="in-corso" [girante]="true" role="status">
+      Elaborazione in corso: il documento sarà referenziabile in chat fra qualche istante.
+    </ui-avviso>
   }
 
   @if (daConfermare()) {
@@ -54,13 +50,10 @@
       assicurativo una compagnia sbagliata su un documento è un problema
       vero, non un refuso.
     -->
-    <div class="avviso is-proposta">
-      <ui-icon name="informazione" [size]="16" />
-      <p>
-        La classificazione qui a fianco è <strong>proposta dal sistema</strong> a partire dal nome
-        del file. Controllala e salva per confermarla.
-      </p>
-    </div>
+    <ui-avviso titolo="Proposta del sistema">
+      La classificazione qui a fianco è <strong>proposta dal sistema</strong> a partire dal nome
+      del file. Controllala e salva per confermarla.
+    </ui-avviso>
   }
 
   <div class="colonne">
