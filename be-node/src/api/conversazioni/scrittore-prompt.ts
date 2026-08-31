@@ -7,8 +7,7 @@ import { configurazione } from '../../config.js';
  * parole, il modello le riscrive come una richiesta completa per Velia,
  * che l'utente rilegge, ritocca e manda. Non risponde alla domanda: la
  * formula. Stesso schema dei suggerimenti della home: una chiamata breve,
- * un modello economico, nessun credito addebitato (è aiuto alla scrittura,
- * non lavoro sui documenti).
+ * un modello economico: è aiuto alla scrittura, non lavoro sui documenti.
  */
 export interface RichiestaPrompt {
   /** Ciò che l'utente ha scritto, com'è. */

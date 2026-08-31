@@ -73,8 +73,8 @@ const schemaAmbiente = z.object({
   MODELLO_SUGGERIMENTI: z.string().default('claude-sonnet-5'),
   /**
    * «Scrivi il prompt» nel composer (29/08/2026): riscrive l'abbozzo
-   * dell'utente come richiesta completa. Una chiamata breve a ogni clic,
-   * senza crediti: Sonnet basta e costa poco.
+   * dell'utente come richiesta completa. Una chiamata breve a ogni clic:
+   * Sonnet basta e costa poco.
    */
   MODELLO_PROMPT: z.string().default('claude-sonnet-5'),
   SUGGERIMENTI_ORE_VALIDITA: z.coerce.number().positive().default(24),

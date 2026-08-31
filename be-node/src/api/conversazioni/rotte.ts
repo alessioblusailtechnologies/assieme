@@ -32,7 +32,6 @@ import { componiEmailRisposta } from '../../generazione/email.js';
 import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
-import { richiediCrediti } from '../crediti/rotte.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import { PonteEventi } from './ponte-eventi.js';
@@ -379,8 +378,6 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     }
     const { testo, documentiReferenziati, esportazione } = esito.data;
     const { tenantId, utenteId } = richiesta.identita;
-    /* Pricing: senza crediti la domanda non parte (429 CREDITI_ESAURITI). */
-    await richiediCrediti(poolDb(), tenantId);
 
     const { messaggioUtenteId, titoloProvvisorio } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
@@ -440,8 +437,8 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   /**
    * «Scrivi il prompt» nel composer (29/08/2026): l'abbozzo dell'utente
    * torna riscritto come richiesta completa, coi documenti del contesto
-   * nominati per titolo. Non risponde alla domanda, la formula; niente
-   * crediti. La visibilità dei documenti la decide la RLS: un id altrui
+   * nominati per titolo. Non risponde alla domanda, la
+   * formula. La visibilità dei documenti la decide la RLS: un id altrui
    * semplicemente non si nomina.
    */
   let scrittore: ScrittorePrompt | undefined | null = opzioni.scrittorePrompt ?? null;
@@ -470,7 +467,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   /**
    * La dettatura (29/08/2026): l'audio registrato dal browser (campo
    * multipart `audio`) torna come testo. Nessuna conversazione richiesta,
-   * niente crediti, niente persistenza: l'audio passa e non resta.
+   * niente persistenza: l'audio passa e non resta.
    */
   let trascrittore: Trascrittore | undefined | null = opzioni.trascrittore ?? null;
   app.post('/api/conversazioni/trascrizioni', async (richiesta): Promise<RispostaTrascrizione> => {

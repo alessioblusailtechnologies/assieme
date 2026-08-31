@@ -9,7 +9,6 @@ import type {
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
 import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
 import type { Job } from '../coda.js';
-import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -226,17 +225,6 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
               },
             );
             await registraConsumi(db, tenantId, job.id, e.esito);
-            await addebitaCrediti(db, {
-              tenantId,
-              jobId: job.id,
-              operazione: 'risposta',
-              modello: e.esito.modello,
-              costoUsd: e.esito.costoUsd,
-              token: e.esito.token,
-              tokenStimati: e.esito.tokenStimati,
-              utenteId: payload.utenteId,
-              descrizione: `Documento da template: ${(r.titolo ?? r.istruzioni ?? '').slice(0, 70)}`,
-            });
             return e;
           }
         : undefined;
@@ -272,7 +260,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
              irraggiungibile) o si è persa a metà lavoro (la Machine è morta,
              il socket si è chiuso: «terminated»): il motivo, già ripulito
              dall'avviatore, va detto in chat; ritentare da capo non si fa da
-             soli, costa crediti. */
+             soli: è una sessione lunga, e la ripartenza la decide l'utente. */
           const grezzo = errore instanceof Error ? errore.message : String(errore);
           const motivo = /^terminated$|other side closed|socket hang up|ECONNRESET/i.test(grezzo)
             ? 'la connessione con la sandbox si è chiusa a metà lavoro'
@@ -497,19 +485,6 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ],
       );
       await registraConsumi(db, tenantId, job.id, esito);
-      /* Pricing: una risposta scritta è un addebito, proporzionato al lavoro della sessione. */
-      await addebitaCrediti(db, {
-        tenantId,
-        jobId: job.id,
-        operazione: 'risposta',
-        modello: esito.modello,
-        costoUsd: esito.costoUsd,
-        token: esito.token,
-        tokenStimati: esito.tokenStimati,
-        utenteId: payload.utenteId,
-        descrizione: `Risposta in chat: ${payload.testo.slice(0, 80)}`,
-      });
-
       /* RF-G-01: la memoria impara durante la conversazione — a risposta
          scritta, prima del `fine`, così l'utente vede il passo e l'esito.
          Un apprendimento mancato non è un errore della risposta. */

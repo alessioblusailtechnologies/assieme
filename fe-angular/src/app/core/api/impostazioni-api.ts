@@ -27,11 +27,6 @@ export class ImpostazioniApi {
     return `${this.base}/modelli`;
   }
 
-  /** Saldo, listino dei pesi e registro dei movimenti dei crediti. */
-  urlCrediti(): string {
-    return `${this.base}/crediti`;
-  }
-
   urlModelloAttivo(): string {
     return `${this.base}/modelli/attivo`;
   }

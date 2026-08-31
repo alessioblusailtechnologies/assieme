@@ -32,10 +32,6 @@ function messaggioPerUtente(err: HttpErrorResponse): { titolo: string; dettaglio
         dettaglio: 'Potrebbe essere stato eliminato o spostato da un collega.',
       };
     case 429: {
-      /* Crediti finiti: non è «riprova fra poco», è «ricarica». */
-      if (api?.codice === 'CREDITI_ESAURITI') {
-        return { titolo: 'Crediti esauriti', dettaglio: api.messaggio };
-      }
       const attesa = api?.ritentaTraSecondi;
       return {
         titolo: 'Limite del piano raggiunto',

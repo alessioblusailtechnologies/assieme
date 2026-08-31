@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 
 import { configurazione } from '../../config.js';
-import { classeModello } from '../../contratto/crediti.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import {
   catalogoModelli,
@@ -29,18 +28,7 @@ export function registraRotteModelli(app: FastifyInstance): void {
   /** Le voci HostYourAI (RF-D-03) sono selezionabili solo con la chiave in .env: il catalogo dice la verità. */
   const catalogo = () => catalogoModelli({ hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY) });
 
-  /* Il peso in crediti di una risposta, per classe di modello: il cliente
-     vede quanto gli dura il pacchetto, non un aggettivo. */
-  app.get('/api/modelli', async () => {
-    const pesi = await poolDb().query<{ classe: string; crediti: number }>(
-      `select classe, crediti from velia.crediti_pesi`,
-    );
-    const perClasse = new Map(pesi.rows.map((p) => [p.classe, p.crediti]));
-    return catalogo().map((m) => ({
-      ...versoModello(m),
-      ...(m.sdk && perClasse.has(classeModello(m.sdk)) && { creditiPerRisposta: perClasse.get(classeModello(m.sdk)) }),
-    }));
-  });
+  app.get('/api/modelli', () => catalogo().map(versoModello));
 
   app.get('/api/modelli/attivo', async (richiesta) => {
     const scelta = await sceltaDelTenant(richiesta.identita.tenantId);

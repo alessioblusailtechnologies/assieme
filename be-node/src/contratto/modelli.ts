@@ -17,8 +17,6 @@ export interface ModelloAI {
   adeguatezzaDocumentale: 'alta' | 'media' | 'bassa';
   notaCosti?: string;
   disponibile: boolean;
-  /** Il peso di una risposta in crediti (pricing); assente per i modelli non integrati. */
-  creditiPerRisposta?: number;
 }
 
 /** Chi serve davvero il modello: Anthropic diretta, o HostYourAI (API Anthropic-compatibili, datacenter UE). */

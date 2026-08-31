@@ -1,7 +1,6 @@
 import type pg from 'pg';
 
 import type { Job } from '../coda.js';
-import { addebitaCrediti } from '../crediti.js';
 import { emettiEvento } from '../eventi.js';
 import type { ArchivioFile } from './archivio-file.js';
 import {
@@ -183,16 +182,6 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         [documentoId, totale, pathMd, Buffer.byteLength(markdown, 'utf8')],
       );
       await emettiEvento(db, job.id, 'ingestion-fine', { documentoId, pagine: totale, pathMd });
-      /* Pricing: la conversione di un documento del tenant vale 1 credito;
-         i pubblici (job senza tenant) sono della piattaforma. */
-      if (job.tenant_id) {
-        await addebitaCrediti(db, {
-          tenantId: job.tenant_id,
-          jobId: job.id,
-          operazione: 'conversione',
-          descrizione: `Conversione di «${documento.titolo}»`,
-        });
-      }
     } catch (errore) {
       /* RF-B-05/B-06: l'errore è uno stato visibile col suo motivo, non un
          log — e il motivo parla all'utente, non al programmatore. Poi si

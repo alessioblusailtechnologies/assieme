@@ -2,7 +2,6 @@ import type pg from 'pg';
 
 import type { NuovaFonteAgente, ParametroAgente, RigaLog } from '../../contratto/agenti.js';
 import type { Job } from '../coda.js';
-import { addebitaCrediti } from '../crediti.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { ancoraCitazioni } from '../motore/ancoraggio.js';
@@ -152,21 +151,6 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         { passo: () => Promise.resolve(), annullato: () => Promise.resolve(false) },
       );
       await registraConsumi(db, lavoro.tenant_id, job.id, esito);
-      /* Pricing: un'esecuzione conclusa è un addebito, col peso del modello. */
-      if (esito.terminato === 'completato') {
-        await addebitaCrediti(db, {
-          tenantId: lavoro.tenant_id,
-          jobId: job.id,
-          operazione: 'agente',
-          modello: esito.modello,
-          costoUsd: esito.costoUsd,
-          token: esito.token,
-          tokenStimati: esito.tokenStimati,
-          utenteId: lavoro.creato_da,
-          descrizione: `Agente «${lavoro.nome}»`,
-        });
-      }
-
       if (esito.terminato === 'errore' || esito.terminato === 'annullato') {
         throw new Error(esito.errore ?? 'la sessione si è chiusa senza un risultato');
       }

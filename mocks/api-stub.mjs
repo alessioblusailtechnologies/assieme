@@ -44,7 +44,6 @@ import {
 } from './archivio-privato.mjs';
 import { gestisci as gestisciAgenti } from './agenti.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
-import { gestisci as gestisciCrediti } from './crediti.mjs';
 import { gestisci as gestisciImpostazioni } from './impostazioni.mjs';
 import { gestisci as gestisciMcp } from './mcp.mjs';
 import { gestisci as gestisciMemoria } from './memoria.mjs';
@@ -405,11 +404,6 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  /* Pricing: saldo, pesi e movimenti dei crediti. */
-  if (await gestisciCrediti(req, res, url, { inviaJson, leggiCorpo })) {
-    return;
-  }
-
   /* Modulo G: la memoria — ricordi di tenant e personali. */
   if (await gestisciMemoria(req, res, url, { inviaJson, leggiCorpo })) {
     return;
@@ -522,6 +516,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti, /api/ricordi, /api/crediti, /api/mcp',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti, /api/ricordi, /api/mcp',
   );
 });

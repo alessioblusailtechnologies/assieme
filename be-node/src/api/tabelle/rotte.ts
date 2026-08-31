@@ -19,7 +19,6 @@ import {
 import { schemaEsporta as schemaEsportaTemplate } from '../../contratto/template.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
-import { richiediCrediti } from '../crediti/rotte.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
@@ -139,7 +138,6 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
     if (!esito.success) {
       throw new ErroreApi(400, 'TABELLA_VUOTA', 'Servono almeno un documento e una colonna.');
     }
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const corpo = esito.data;
     const documentiIds = [...new Set(corpo.documentiIds)];
 
@@ -209,7 +207,6 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
 
   /** RF-C-15: la copia con cui si prosegue in autonomia una tabella condivisa. */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/duplica', async (richiesta, risposta) => {
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
     const copia = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const originale = await perId(client, controllaId(richiesta.params.id));
       if (!originale) throw nonTrovata();
@@ -269,7 +266,6 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/documenti', async (richiesta) => {
     const esito = schemaAggiungiDocumenti.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Documenti non validi.');
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
 
     const { tabella, aggiunti } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await autoreDi(client, richiesta.identita, controllaId(richiesta.params.id));
@@ -326,7 +322,6 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
     if (!esito.success) {
       throw new ErroreApi(400, 'COLONNA_VUOTA', 'Alla colonna manca il criterio.');
     }
-    await richiediCrediti(poolDb(), richiesta.identita.tenantId);
 
     const { tabella, righe } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await autoreDi(client, richiesta.identita, controllaId(richiesta.params.id));
