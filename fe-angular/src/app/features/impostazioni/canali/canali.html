@@ -1,0 +1,53 @@
+<header class="testata">
+  <h1 class="serif testata__titolo">Canali</h1>
+  <p class="testata__spiega">
+    Da dove arrivano le richieste dei clienti. Su ogni canale collegato valgono le istruzioni
+    dell'agenzia: VELIA legge, prepara la risposta citando i documenti, e la lascia in attesa del
+    tuo via.
+  </p>
+</header>
+
+<!--
+  La spia «collegato» qui è dimostrativa: dirlo è un obbligo verso chi legge,
+  non una nota di cortesia.
+-->
+<ui-avviso icona="informazione" titolo="Anteprima">
+  Il collegamento vero arriva col modulo Canali. Queste due schede mostrano com'è fatto un canale
+  attivo e che cosa VELIA ci fa; i numeri sono di esempio.
+</ui-avviso>
+
+<ul class="canali">
+  @for (canale of canali; track canale.id) {
+    <li class="canale">
+      <div class="canale__testa">
+        <span class="canale__simbolo" aria-hidden="true">
+          <ui-icon [name]="canale.icona" [size]="20" />
+        </span>
+
+        <div class="canale__identita">
+          <h2 class="canale__nome">{{ canale.nome }}</h2>
+          <p class="canale__recapito">{{ canale.recapito }}</p>
+        </div>
+
+        <ui-badge variante="positivo" class="canale__stato">
+          <span class="canale__pallino" aria-hidden="true"></span>
+          collegato
+        </ui-badge>
+      </div>
+
+      <p class="canale__collegamento">{{ canale.collegamento }}</p>
+      <p class="canale__comportamento">{{ canale.comportamento }}</p>
+
+      <p class="mono canale__meta">
+        ultima sincronizzazione {{ canale.ultimaSincronizzazione }} ·
+        {{ canale.richiesteMese }} richieste questo mese ·
+        {{ canale.rispostePreparate }} risposte preparate
+      </p>
+    </li>
+  }
+</ul>
+
+<p class="garanzia">
+  <ui-icon name="informazione" [size]="13" />
+  Su nessun canale la risposta parte da sola: VELIA prepara, l'agenzia manda.
+</p>

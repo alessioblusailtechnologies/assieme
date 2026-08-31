@@ -36,6 +36,12 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
         title: 'Template di output - Velia',
       },
       {
+        /* Dove VELIA lavora, oltre alla chat: anteprima, il modulo vero non c'è. */
+        path: 'canali',
+        loadComponent: () => import('./canali/canali').then((m) => m.Canali),
+        title: 'Canali - Velia',
+      },
+      {
         path: 'utenti',
         loadComponent: () => import('./utenti/utenti').then((m) => m.Utenti),
         title: 'Utenti - Velia',

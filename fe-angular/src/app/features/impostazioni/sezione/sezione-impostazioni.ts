@@ -29,6 +29,11 @@ const VOCI: VoceSezione[] = [
     spiega: 'Documenti generati con l’identità dell’agenzia',
   },
   {
+    percorso: 'canali',
+    etichetta: 'Canali',
+    spiega: 'WhatsApp e posta dell’agenzia, oltre alla chat',
+  },
+  {
     percorso: 'utenti',
     etichetta: 'Utenti',
     spiega: 'Chi accede e con quale ruolo',

@@ -41,6 +41,7 @@ import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
 import ListViewIcon from '@hugeicons/core-free-icons/ListViewIcon';
 import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon';
 import Logout03Icon from '@hugeicons/core-free-icons/Logout03Icon';
+import Mail01Icon from '@hugeicons/core-free-icons/Mail01Icon';
 import Mic01Icon from '@hugeicons/core-free-icons/Mic01Icon';
 import Menu01Icon from '@hugeicons/core-free-icons/Menu01Icon';
 import Moon02Icon from '@hugeicons/core-free-icons/Moon02Icon';
@@ -63,6 +64,7 @@ import Sun03Icon from '@hugeicons/core-free-icons/Sun03Icon';
 import Table01Icon from '@hugeicons/core-free-icons/Table01Icon';
 import Upload03Icon from '@hugeicons/core-free-icons/Upload03Icon';
 import User03Icon from '@hugeicons/core-free-icons/User03Icon';
+import WhatsappIcon from '@hugeicons/core-free-icons/WhatsappIcon';
 
 /**
  * Registro delle icone.
@@ -95,6 +97,9 @@ export const REGISTRO_ICONE = {
   compagnia: Building03Icon,
   citazione: QuotesIcon,
   utente: User03Icon,
+  /* I canali da cui arrivano le richieste dei clienti. */
+  whatsapp: WhatsappIcon,
+  email: Mail01Icon,
   pianificazione: Calendar03Icon,
   preferito: StarIcon,
   /* Le due viste della memoria: l'elenco dei ricordi e il globo dei legami. */
