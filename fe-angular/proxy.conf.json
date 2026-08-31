@@ -3,6 +3,7 @@
   "/api/sessione": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti-privati": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/set-informativi": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/compagnie": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/rami": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/segnalazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },

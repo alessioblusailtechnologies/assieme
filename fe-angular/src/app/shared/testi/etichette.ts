@@ -46,3 +46,17 @@ const ABBREVIAZIONI: Partial<Record<TipologiaDocumento, string>> = {
 export function etichettaTipologiaBreve(t: TipologiaDocumento): string {
   return ABBREVIAZIONI[t] ?? TIPOLOGIE[t];
 }
+
+/**
+ * Ritocchi di sola resa ai nomi delle compagnie: l'archivio conserva i nomi
+ * con cui i documenti sono stati emessi (le edizioni storiche SONO
+ * UnipolSai), ma l'interfaccia parla al presente — e oggi la compagnia si
+ * chiama Unipol. Solo etichetta: id e dati non cambiano mai.
+ */
+const NOMI_COMPAGNIA: Record<string, string> = {
+  'cmp-unipolsai': 'Unipol',
+};
+
+export function nomeCompagnia(id: string | undefined, nome: string): string {
+  return (id && NOMI_COMPAGNIA[id]) || nome;
+}

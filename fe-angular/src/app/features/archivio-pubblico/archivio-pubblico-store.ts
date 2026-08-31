@@ -1,10 +1,11 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, forkJoin } from 'rxjs';
 
-import { Compagnia, Documento, FiltriDocumenti, Id, Paginato, Ramo, TipologiaDocumento } from '@core/models';
+import { Compagnia, FiltriSet, Id, Paginato, Ramo, SetInformativo } from '@core/models';
 import { DocumentiApi } from '@core/api/documenti-api';
+import { nomeCompagnia } from '@shared/testi/etichette';
 
 /**
  * Stato della schermata Archivio Pubblico.
@@ -23,7 +24,6 @@ export class ArchivioPubblicoStore {
 
   readonly compagniaId = signal<Id | undefined>(undefined);
   readonly ramoId = signal<Id | undefined>(undefined);
-  readonly tipologia = signal<TipologiaDocumento | undefined>(undefined);
   readonly soloPreferiti = signal(false);
 
   /**
@@ -60,7 +60,6 @@ export class ArchivioPubblicoStore {
     source: () => [
       this.compagniaId(),
       this.ramoId(),
-      this.tipologia(),
       this.soloCorrenti(),
       this.soloPreferiti(),
       this.ricercaAttesa(),
@@ -68,13 +67,12 @@ export class ArchivioPubblicoStore {
     computation: () => 1,
   });
 
-  readonly perPagina = signal(20);
+  /** Le schede stanno in griglia: dodici per pagina, non venti righe. */
+  readonly perPagina = signal(12);
 
-  readonly filtri = computed<FiltriDocumenti>(() => ({
-    archivio: 'pubblico',
+  readonly filtri = computed<FiltriSet>(() => ({
     compagniaId: this.compagniaId(),
     ramoId: this.ramoId(),
-    tipologia: this.tipologia(),
     q: this.ricercaAttesa() || undefined,
     soloCorrenti: this.soloCorrenti(),
     soloPreferiti: this.soloPreferiti(),
@@ -87,7 +85,6 @@ export class ArchivioPubblicoStore {
     () =>
       !!this.compagniaId() ||
       !!this.ramoId() ||
-      !!this.tipologia() ||
       !!this.ricerca() ||
       this.soloPreferiti() ||
       !this.soloCorrenti(),
@@ -95,8 +92,8 @@ export class ArchivioPubblicoStore {
 
   // --- Risorse ------------------------------------------------------------
 
-  private readonly risorsaElenco = httpResource<Paginato<Documento>>(() =>
-    this.api.urlElenco(this.filtri()),
+  private readonly risorsaElenco = httpResource<Paginato<SetInformativo>>(() =>
+    this.api.urlSetInformativi(this.filtri()),
   );
   private readonly risorsaCompagnie = httpResource<Compagnia[]>(() => this.api.urlCompagnie());
   private readonly risorsaRami = httpResource<Ramo[]>(() => this.api.urlRami());
@@ -107,8 +104,15 @@ export class ArchivioPubblicoStore {
    * modifiche e lascerebbe una pagina bianca proprio quando qualcosa è già
    * andato storto. `hasValue()` è falso sia in caricamento sia in errore.
    */
-  readonly documenti = computed(() =>
-    this.risorsaElenco.hasValue() ? this.risorsaElenco.value().elementi : [],
+  /* Nomi di compagnia al presente (`nomeCompagnia`): il ritocco è di sola
+     resa e si applica qui, all'ingresso — righe e filtro dicono lo stesso. */
+  readonly setInformativi = computed(() =>
+    this.risorsaElenco.hasValue()
+      ? this.risorsaElenco.value().elementi.map((s) => ({
+          ...s,
+          compagnia: { ...s.compagnia, nome: nomeCompagnia(s.compagnia.id, s.compagnia.nome) },
+        }))
+      : [],
   );
   readonly totale = computed(() =>
     this.risorsaElenco.hasValue() ? this.risorsaElenco.value().totale : 0,
@@ -117,7 +121,11 @@ export class ArchivioPubblicoStore {
   readonly errore = this.risorsaElenco.error;
 
   readonly compagnie = computed(() =>
-    this.risorsaCompagnie.hasValue() ? this.risorsaCompagnie.value() : [],
+    this.risorsaCompagnie.hasValue()
+      ? this.risorsaCompagnie
+          .value()
+          .map((c) => ({ ...c, nome: nomeCompagnia(c.id, c.nome) }))
+      : [],
   );
   readonly rami = computed(() => (this.risorsaRami.hasValue() ? this.risorsaRami.value() : []));
 
@@ -126,7 +134,6 @@ export class ArchivioPubblicoStore {
   azzeraFiltri(): void {
     this.compagniaId.set(undefined);
     this.ramoId.set(undefined);
-    this.tipologia.set(undefined);
     this.ricerca.set('');
     this.soloPreferiti.set(false);
     this.soloCorrenti.set(true);
@@ -137,15 +144,15 @@ export class ArchivioPubblicoStore {
   }
 
   /**
-   * Marca o smarca un preferito e ricarica l'elenco.
-   *
-   * Non aggiorniamo la riga localmente prima della risposta: con il filtro
-   * "solo preferiti" attivo, smarcare un documento deve farlo sparire
-   * dall'elenco, e ricalcolarlo a mano qui sarebbe riscrivere sul client la
-   * logica che il server ha già.
+   * La stella della scheda marca il set intero: RF-A-09 resta per-documento
+   * sotto il cofano, quindi si marcano (o smarcano) tutti i suoi documenti
+   * e si ricarica. Non aggiorniamo la scheda localmente prima della
+   * risposta: con «solo preferiti» attivo, smarcare un set deve farlo
+   * sparire dall'elenco, e ricalcolarlo a mano qui sarebbe riscrivere sul
+   * client la logica che il server ha già.
    */
-  cambiaPreferito(documento: Documento, preferito: boolean): void {
-    this.api.impostaPreferito(documento.id, preferito).subscribe({
+  cambiaPreferito(set: SetInformativo, preferito: boolean): void {
+    forkJoin(set.documenti.map((d) => this.api.impostaPreferito(d.id, preferito))).subscribe({
       next: () => this.risorsaElenco.reload(),
     });
   }

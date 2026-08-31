@@ -9,6 +9,7 @@ import {
   DocumentoPubblico,
   Edizione,
   FiltriDocumenti,
+  FiltriSet,
   Id,
   Ramo,
 } from '@core/models';
@@ -55,7 +56,7 @@ export class DocumentiApi {
    * distinguere fra «assente» e «stringa vuota» — distinzione che nessuno
    * ricorda mai di gestire allo stesso modo su tutti gli endpoint.
    */
-  private query(filtri: FiltriDocumenti): string {
+  private query(filtri: FiltriDocumenti | FiltriSet): string {
     let params = new HttpParams();
     for (const [chiave, valore] of Object.entries(filtri)) {
       if (valore === undefined || valore === null || valore === '' || valore === false) continue;
@@ -68,6 +69,13 @@ export class DocumentiApi {
   urlElenco(filtri: FiltriDocumenti): string {
     const query = this.query(filtri);
     return query ? `${this.base}?${query}` : this.base;
+  }
+
+  /** L'elenco dell'archivio come lo legge un intermediario: una riga per set. */
+  urlSetInformativi(filtri: FiltriSet): string {
+    const base = `${environment.apiBase}/set-informativi`;
+    const query = this.query(filtri);
+    return query ? `${base}?${query}` : base;
   }
 
   urlDettaglio(id: Id): string {

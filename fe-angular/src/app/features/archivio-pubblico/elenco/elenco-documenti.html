@@ -29,7 +29,7 @@
     @if (store.inCaricamento()) {
       ricerca in corso…
     } @else if (!store.errore()) {
-      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+      {{ store.totale() }} {{ store.totale() === 1 ? 'set informativo' : 'set informativi' }}
     }
   </span>
 </header>
@@ -43,7 +43,7 @@
       [value]="store.ricerca()"
       (input)="store.ricerca.set($any($event.target).value)"
       placeholder="Cerca per titolo, prodotto, compagnia…"
-      aria-label="Cerca nell'archivio pubblico"
+      aria-label="Cerca nell'archivio"
     />
   </label>
 
@@ -67,17 +67,6 @@
     placeholder="Tutti i rami"
     [azzerabile]="true"
     ariaLabel="Filtra per ramo"
-  />
-
-  <ui-select
-    class="filtri__campo"
-    [(valore)]="store.tipologia"
-    [opzioni]="tipologie"
-    campoEtichetta="etichetta"
-    campoValore="valore"
-    placeholder="Tutte le tipologie"
-    [azzerabile]="true"
-    ariaLabel="Filtra per tipologia di documento"
   />
 
   <div class="filtri__interruttore">
@@ -109,16 +98,16 @@
       <span>Riprova</span>
     </button>
   </ui-stato-vuoto>
-} @else if (store.inCaricamento() && !documenti().length) {
+} @else if (store.inCaricamento() && !store.setInformativi().length) {
   <div class="scheletri">
     @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
       <ui-scheletro [numeroRighe]="1" />
     }
   </div>
-} @else if (!documenti().length) {
+} @else if (!store.setInformativi().length) {
   <ui-stato-vuoto
     icona="cerca"
-    titolo="Nessun documento con questi criteri"
+    titolo="Nessun set informativo con questi criteri"
     descrizione="Prova ad allargare la ricerca: togli un filtro, oppure includi anche le edizioni non più correnti."
   >
     @if (store.filtriAttivi()) {
@@ -130,35 +119,100 @@
   </ui-stato-vuoto>
 } @else {
   <!--
-    Tabella e paginazione stanno nello stesso blocco, senza spazio in mezzo:
-    la paginazione appartiene alla tabella, e staccarla la faceva sembrare un
-    elemento a sé della pagina.
+    Una riga per set, espandibile sui suoi documenti. Tabella e paginazione
+    stanno nello stesso blocco, senza spazio in mezzo: la paginazione
+    appartiene alla tabella.
   -->
   <div class="risultati">
     <div class="ui-tabella-contenitore griglia">
       <table class="ui-tabella">
         <thead>
           <tr>
+            <th class="col-espandi"><span class="visually-hidden">Espandi</span></th>
             <th class="col-prodotto">Prodotto</th>
-            <th class="col-tipologia">Tipologia</th>
+            <th class="col-documenti">Documenti</th>
             <th class="col-compagnia">Compagnia</th>
             <th class="col-ramo">Ramo</th>
             <th class="col-edizione">Edizione</th>
-            <th class="col-azione"></th>
+            <th class="col-stella"><span class="visually-hidden">Preferito</span></th>
           </tr>
         </thead>
         <tbody>
-          @for (doc of documenti(); track doc.id) {
-            <tr>
-              <td class="col-prodotto cella-primaria">{{ doc.prodotto }}</td>
-              <td class="col-tipologia"><app-cella-tipologia [tipologia]="doc.tipologia" /></td>
-              <td class="col-compagnia">{{ doc.compagnia.nome }}</td>
-              <td class="col-ramo">{{ doc.ramo.nome }}</td>
-              <td class="col-edizione"><app-cella-edizione [documento]="doc" /></td>
-              <td class="col-azione">
-                <app-cella-apri base="/archivio/pubblico" [documento]="doc" />
+          @for (set of store.setInformativi(); track set.chiave) {
+            <!-- Tutta la riga è un bersaglio: l'espansione è il gesto
+                 principale, e mirare al solo triangolino è mira di
+                 precisione. La stella si tira fuori dal clic di riga. -->
+            <tr
+              class="set"
+              [class.is-aperto]="espanso(set.chiave)"
+              (click)="alternaEspansione(set.chiave)"
+            >
+              <td class="col-espandi">
+                <button
+                  type="button"
+                  class="espandi"
+                  [attr.aria-expanded]="espanso(set.chiave)"
+                  [attr.aria-label]="
+                    (espanso(set.chiave) ? 'Chiudi i documenti di ' : 'Mostra i documenti di ') +
+                    set.prodotto
+                  "
+                >
+                  <ui-icon [name]="espanso(set.chiave) ? 'espandi-giu' : 'espandi-destra'" [size]="14" />
+                </button>
+              </td>
+              <td class="col-prodotto cella-primaria">{{ set.prodotto }}</td>
+              <td class="col-documenti">
+                <span class="conteggio-documenti mono">
+                  {{ set.documenti.length }} {{ set.documenti.length === 1 ? 'documento' : 'documenti' }}
+                </span>
+              </td>
+              <td class="col-compagnia">{{ set.compagnia.nome }}</td>
+              <td class="col-ramo">{{ set.ramo.nome }}</td>
+              <td class="col-edizione"><app-cella-edizione [edizione]="set.edizione" /></td>
+              <td class="col-stella">
+                <!-- Niente tooltip qui: dentro un contenitore che scorre, la
+                     targhetta invisibile sborda a destra e apre una barra
+                     orizzontale. L'etichetta accessibile dice tutto. -->
+                <button
+                  type="button"
+                  class="stella"
+                  [class.is-attiva]="set.preferito"
+                  (click)="$event.stopPropagation(); store.cambiaPreferito(set, !set.preferito)"
+                  [attr.aria-pressed]="set.preferito"
+                  [attr.aria-label]="
+                    set.preferito
+                      ? 'Togli il set ' + set.prodotto + ' dai preferiti'
+                      : 'Segna il set ' + set.prodotto + ' come preferito'
+                  "
+                >
+                  <ui-icon name="preferito" [size]="15" />
+                </button>
               </td>
             </tr>
+
+            @if (espanso(set.chiave)) {
+              @for (doc of set.documenti; track doc.id) {
+                <tr class="documento">
+                  <td class="col-espandi"></td>
+                  <td class="col-prodotto">
+                    <span class="documento__nome">
+                      <ui-icon name="documento" [size]="14" />
+                      {{ etichettaTipologia(doc.tipologia) }}
+                    </span>
+                  </td>
+                  <td class="col-documenti">
+                    @if (doc.numeroPagine) {
+                      <span class="documento__pagine mono">{{ doc.numeroPagine }} pagg.</span>
+                    }
+                  </td>
+                  <td class="col-compagnia"></td>
+                  <td class="col-ramo"></td>
+                  <td class="col-edizione col-stella-e-apri" colspan="2">
+                    <app-cella-apri base="/archivio/pubblico" [documento]="doc" />
+                  </td>
+                </tr>
+              }
+            }
           }
         </tbody>
       </table>

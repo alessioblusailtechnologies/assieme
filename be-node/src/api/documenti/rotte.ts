@@ -5,16 +5,19 @@ import { ErroreApi } from '../../contratto/errori.js';
 import {
   ORDINE_TIPOLOGIA,
   schemaFiltriDocumenti,
+  schemaFiltriSet,
   type Compagnia,
   type DettaglioDocumento,
   type DocumentoPubblico,
   type EdizioneDiProdotto,
   type PaginaDocumenti,
+  type PaginaSet,
   type Ramo,
 } from '../../contratto/documenti.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { BUCKET_ARCHIVIO, clientServizio } from '../../db/supabase.js';
+import { filtraSet, raggruppaInSet } from './set.js';
 
 /** La riga dell'elenco, con compagnia e ramo già uniti. */
 interface RigaDocumento {
@@ -145,6 +148,52 @@ export function registraRotteDocumenti(app: FastifyInstance): void {
       return {
         elementi: righe.rows.map(versoDocumento),
         totale: Number(righe.rows[0]?.totale ?? (await contaSenzaPagina(client, dove, parametri))),
+        pagina: filtri.pagina,
+        perPagina: filtri.perPagina,
+      };
+    });
+  });
+
+  /**
+   * L'elenco dell'archivio come lo legge un intermediario: una riga per set
+   * informativo (prodotto + edizione), coi documenti dentro. Le righe si
+   * leggono tutte (il catalogo è piccolo, poche centinaia), il
+   * raggruppamento e la paginazione avvengono in memoria: paginare in SQL
+   * spezzerebbe i set a metà pagina, e ricerca e «solo preferiti» vanno
+   * valutati sul set intero (`set.ts` spiega perché).
+   */
+  app.get('/api/set-informativi', async (richiesta) => {
+    const esito = schemaFiltriSet.safeParse(richiesta.query);
+    if (!esito.success) throw ErroreApi.datiNonValidi('Filtri di ricerca non validi.');
+    const filtri = esito.data;
+
+    const condizioni: string[] = [];
+    const parametri: unknown[] = [];
+    const par = (v: unknown): string => {
+      parametri.push(v);
+      return `$${parametri.length}`;
+    };
+    if (filtri.compagniaId) condizioni.push(`d.compagnia_id = ${par(filtri.compagniaId)}`);
+    if (filtri.ramoId) condizioni.push(`d.ramo_id = ${par(filtri.ramoId)}`);
+    if (filtri.soloCorrenti) condizioni.push(`d.edizione_corrente`);
+
+    const dove = condizioni.length ? ` and ${condizioni.join(' and ')}` : '';
+    /* Fra le edizioni dello stesso prodotto: la corrente prima, poi le
+       storiche dalla più recente; dentro il set, l'ordine di lettura. */
+    const ordine = `
+      order by c.nome collate "it-x-icu",
+               d.prodotto collate "it-x-icu",
+               d.edizione_corrente desc,
+               d.edizione_valida_dal desc,
+               array_position(${par([...ORDINE_TIPOLOGIA])}::text[], d.tipologia)`;
+
+    return conIdentita(poolDb(), richiesta.identita, async (client): Promise<PaginaSet> => {
+      const righe = await client.query<RigaDocumento>(`${SQL_BASE}${dove}${ordine}`, parametri);
+      const insiemi = filtraSet(raggruppaInSet(righe.rows.map(versoDocumento)), filtri);
+      const da = (filtri.pagina - 1) * filtri.perPagina;
+      return {
+        elementi: insiemi.slice(da, da + filtri.perPagina),
+        totale: insiemi.length,
         pagina: filtri.pagina,
         perPagina: filtri.perPagina,
       };

@@ -97,3 +97,53 @@ export const schemaFiltriDocumenti = z.object({
 });
 
 export type FiltriDocumenti = z.infer<typeof schemaFiltriDocumenti>;
+
+// ---------------------------------------------------------------------------
+// Set informativi (GET /api/set-informativi)
+// ---------------------------------------------------------------------------
+
+/** Un documento dentro il set: il minimo per aprirlo dalla riga. */
+export interface DocumentoDelSet {
+  id: string;
+  titolo: string;
+  tipologia: TipologiaDocumento;
+  numeroPagine?: number;
+  preferito: boolean;
+}
+
+/**
+ * La riga dell'Archivio Pubblico è il set informativo: il prodotto in una
+ * sua edizione, coi documenti che lo compongono nell'ordine di lettura
+ * (DIP → DIP Aggiuntivo → Condizioni → Glossario). È l'unità con cui un
+ * intermediario ragiona — l'elenco per singolo documento ripeteva lo stesso
+ * prodotto tre o quattro righe di fila.
+ *
+ * `preferito` è del set: vero se almeno un documento è marcato. La stella
+ * della riga marca e smarca tutti i documenti del set (RF-A-09 resta
+ * per-documento sotto il cofano).
+ */
+export interface SetInformativo {
+  /** Chiave stabile della riga: compagnia + prodotto + edizione. */
+  chiave: string;
+  prodotto: string;
+  compagnia: Compagnia;
+  ramo: Ramo;
+  edizione: Edizione;
+  documenti: DocumentoDelSet[];
+  preferito: boolean;
+}
+
+export interface PaginaSet {
+  elementi: SetInformativo[];
+  totale: number;
+  pagina: number;
+  perPagina: number;
+}
+
+/**
+ * Come i filtri dei documenti, senza la tipologia: a livello di set quasi
+ * ogni riga ha DIP e Condizioni, e il filtro non distinguerebbe più nulla.
+ */
+export const schemaFiltriSet = schemaFiltriDocumenti.omit({ tipologia: true });
+
+export type FiltriSet = z.infer<typeof schemaFiltriSet>;

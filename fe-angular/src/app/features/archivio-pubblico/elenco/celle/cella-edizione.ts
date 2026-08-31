@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 
-import { DocumentoPubblico } from '@core/models';
+import { Edizione } from '@core/models';
 
 /**
  * Edizione del documento.
@@ -25,14 +25,14 @@ import { DocumentoPubblico } from '@core/models';
   imports: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <span class="etichetta" [class.is-superata]="!documento().edizione.corrente">
-      {{ documento().edizione.etichetta }}
+    <span class="etichetta" [class.is-superata]="!edizione().corrente">
+      {{ edizione().etichetta }}
     </span>
 
-    @if (!documento().edizione.corrente) {
+    @if (!edizione().corrente) {
       <span class="validita">
-        @if (documento().edizione.validaAl) {
-          fino al {{ documento().edizione.validaAl | date: 'dd/MM/yyyy' }}
+        @if (edizione().validaAl) {
+          fino al {{ edizione().validaAl | date: 'dd/MM/yyyy' }}
         } @else {
           non più in vigore
         }
@@ -80,5 +80,5 @@ import { DocumentoPubblico } from '@core/models';
   `,
 })
 export class CellaEdizione {
-  readonly documento = input.required<DocumentoPubblico>();
+  readonly edizione = input.required<Edizione>();
 }

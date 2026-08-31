@@ -140,7 +140,7 @@
   padding: var(--sp-4);
   background: var(--c-surface);
   border: 1px solid var(--c-line);
-  /* Occupa lo stesso spazio che occuperà la griglia: quando i dati
+  /* Occupa lo stesso spazio che occuperà la tabella: quando i dati
      arrivano, la pagina non si riassesta sotto gli occhi. */
   flex: 1;
   min-height: 0;
@@ -158,13 +158,13 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* ---------- Griglia e paginazione ---------- */
+/* ---------- Tabella e paginazione ---------- */
 
 /*
  * L'altezza arriva da qui, e da nient'altro.
  *
  * `flex: 1` assegna al blocco dei risultati lo spazio che avanza nella
- * colonna; al suo interno la griglia si prende tutto tranne la paginazione.
+ * colonna; al suo interno la tabella si prende tutto tranne la paginazione.
  * `min-height: 0` gli permette di rimpicciolirsi su schermi bassi invece di
  * spingere la paginazione fuori dalla finestra.
  *
@@ -185,25 +185,102 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* La colonna d'identità della riga: piena dove le altre sono attenuate.
-   Basta il colore — il Medium di Ghost a 14px leggeva come un grassetto. */
+/* La colonna d'identità della riga: piena dove le altre sono attenuate. */
 .cella-primaria {
   color: var(--c-text);
 }
 
-.col-tipologia {
-  width: 150px;
+.col-espandi {
+  width: 36px;
+}
+
+.col-documenti {
+  width: 130px;
 }
 
 .col-edizione {
   width: 180px;
 }
 
-.col-azione {
-  width: 110px;
+.col-stella {
+  width: 52px;
 }
 
-/* La paginazione resta sotto la griglia e non scorre con le righe: cambiare
+/* ---------- La riga del set e la sua espansione ---------- */
+
+/* Tutta la riga è il bersaglio dell'espansione. */
+tr.set {
+  cursor: pointer;
+}
+
+.espandi {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+tr.set:hover .espandi,
+.espandi:focus-visible {
+  color: var(--c-text);
+}
+
+.conteggio-documenti {
+  color: var(--c-text-3);
+}
+
+.stella {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-ghost);
+  cursor: pointer;
+}
+
+.stella:hover,
+.stella:focus-visible {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+.stella.is-attiva {
+  color: var(--c-warn);
+}
+
+/* ---------- Le sotto-righe dei documenti ---------- */
+
+/* Carta di fondo, non di superficie: le sotto-righe appartengono alla riga
+   aperta sopra di loro, e lo sfondo lo dice prima del rientro. */
+tr.documento td {
+  background: var(--c-page);
+}
+
+.documento__nome {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  /* Il rientro sotto il prodotto: la gerarchia si legge dalla colonna. */
+  padding-left: var(--sp-4);
+  color: var(--c-text-2);
+}
+
+.documento__pagine {
+  color: var(--c-text-mute);
+}
+
+/* L'azione «Apri» si allinea a destra nello spazio di edizione + stella. */
+.col-stella-e-apri {
+  text-align: right;
+}
+
+/* La paginazione resta sotto la tabella e non scorre con le righe: cambiare
    pagina è il gesto che si fa dopo aver scorso fino in fondo, e doverlo
    cercare risalendo è il modo più rapido per far sembrare lenta
    un'applicazione. */

@@ -154,6 +154,48 @@ export interface SpazioTenant {
   numeroDocumenti: number;
 }
 
+// ---------------------------------------------------------------------------
+// Set informativi (GET /api/set-informativi)
+// ---------------------------------------------------------------------------
+
+/** Un documento dentro il set: il minimo per aprirlo dalla riga. */
+export interface DocumentoDelSet {
+  id: Id;
+  titolo: string;
+  tipologia: TipologiaDocumento;
+  numeroPagine?: number;
+  preferito: boolean;
+}
+
+/**
+ * La riga dell'Archivio Pubblico è il set informativo: il prodotto in una
+ * sua edizione, coi documenti che lo compongono nell'ordine di lettura
+ * (DIP → DIP Aggiuntivo → Condizioni → Glossario). È l'unità con cui un
+ * intermediario ragiona — l'elenco per singolo documento ripeteva lo stesso
+ * prodotto tre o quattro righe di fila.
+ *
+ * `preferito` è del set: vero se almeno un documento è marcato. La stella
+ * della scheda marca e smarca tutti i documenti del set (RF-A-09 resta
+ * per-documento sotto il cofano).
+ */
+export interface SetInformativo {
+  /** Chiave stabile della riga: compagnia + prodotto + edizione. */
+  chiave: string;
+  prodotto: string;
+  compagnia: Compagnia;
+  ramo: Ramo;
+  edizione: Edizione;
+  documenti: DocumentoDelSet[];
+  preferito: boolean;
+}
+
+/**
+ * Come i filtri dei documenti, senza tipologia né archivio: a livello di
+ * set quasi ogni riga ha DIP e Condizioni, e il filtro non distinguerebbe
+ * più nulla.
+ */
+export type FiltriSet = Omit<FiltriDocumenti, 'tipologia' | 'archivio'>;
+
 /** Filtri di navigazione e ricerca (RF-A-03). */
 export interface FiltriDocumenti {
   archivio?: Archivio;

@@ -86,7 +86,6 @@ describe('ArchivioPubblicoStore', () => {
   it('azzera tutti i filtri e ripristina le sole edizioni correnti', async () => {
     store.compagniaId.set('cmp-generali');
     store.ramoId.set('ram-auto');
-    store.tipologia.set('dip');
     store.soloPreferiti.set(true);
     store.soloCorrenti.set(false);
     store.ricerca.set('qualcosa');
@@ -103,9 +102,9 @@ describe('ArchivioPubblicoStore', () => {
 
   it('espone elenco vuoto e nessun errore finché la risposta non arriva', () => {
     /* Il template legge questi segnali prima di qualsiasi risposta: se
-       `documenti()` sollevasse un'eccezione qui, la schermata resterebbe
-       bianca a ogni caricamento. */
-    expect(store.documenti()).toEqual([]);
+       `setInformativi()` sollevasse un'eccezione qui, la schermata
+       resterebbe bianca a ogni caricamento. */
+    expect(store.setInformativi()).toEqual([]);
     expect(store.totale()).toBe(0);
   });
 });

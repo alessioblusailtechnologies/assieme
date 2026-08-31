@@ -272,6 +272,81 @@ function elencoDocumenti(url) {
 }
 
 // ---------------------------------------------------------------------------
+// Endpoint: set informativi (specchio di be-node/src/api/documenti/set.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * La riga dell'archivio è il set: prodotto + edizione, coi documenti dentro
+ * nell'ordine di lettura. Ricerca e «solo preferiti» valutano il set intero
+ * DOPO il raggruppamento: un filtro per riga lascerebbe set mutilati.
+ */
+function elencoSet(url) {
+  const p = url.searchParams;
+  const vero = (nome) => p.get(nome) === 'true';
+
+  let righe = DOCUMENTI.filter((d) => {
+    if (p.get('compagniaId') && d.compagnia.id !== p.get('compagniaId')) return false;
+    if (p.get('ramoId') && d.ramo.id !== p.get('ramoId')) return false;
+    if (vero('soloCorrenti') && !d.edizione.corrente) return false;
+    return true;
+  });
+
+  /* Come l'elenco, più le storiche dalla più recente a parità di prodotto. */
+  righe = [...righe].sort(
+    (a, b) =>
+      confrontaDocumenti(a, b) || b.edizione.validaDal.localeCompare(a.edizione.validaDal),
+  );
+
+  const set = new Map();
+  for (const d of righe) {
+    const chiave = `${d.compagnia.id}:${d.prodotto}:${d.edizione.id}`;
+    let corrente = set.get(chiave);
+    if (!corrente) {
+      corrente = {
+        chiave,
+        prodotto: d.prodotto,
+        compagnia: d.compagnia,
+        ramo: d.ramo,
+        edizione: d.edizione,
+        documenti: [],
+        preferito: false,
+      };
+      set.set(chiave, corrente);
+    }
+    corrente.documenti.push({
+      id: d.id,
+      titolo: d.titolo,
+      tipologia: d.tipologia,
+      ...(d.numeroPagine !== undefined && { numeroPagine: d.numeroPagine }),
+      preferito: Boolean(d.preferito),
+    });
+    if (d.preferito) corrente.preferito = true;
+  }
+
+  const insiemi = [...set.values()].filter((s) => {
+    if (vero('soloPreferiti') && !s.preferito) return false;
+    const termine = p.get('q');
+    if (termine) {
+      const testo = [
+        s.prodotto,
+        s.compagnia.nome,
+        s.ramo.nome,
+        s.edizione.etichetta,
+        ...s.documenti.map((d) => d.titolo),
+      ].join(' ');
+      if (!corrispondeTesto(testo, termine)) return false;
+    }
+    return true;
+  });
+
+  const perPagina = Math.min(Math.max(Number(p.get('perPagina')) || 20, 1), 100);
+  const pagina = Math.max(Number(p.get('pagina')) || 1, 1);
+  const da = (pagina - 1) * perPagina;
+
+  return { elementi: insiemi.slice(da, da + perPagina), totale: insiemi.length, pagina, perPagina };
+}
+
+// ---------------------------------------------------------------------------
 // Instradamento
 // ---------------------------------------------------------------------------
 
@@ -348,6 +423,12 @@ const server = createServer(async (req, res) => {
   // GET /api/documenti
   if (percorso === '/api/documenti' && req.method === 'GET') {
     inviaJson(res, 200, elencoDocumenti(url));
+    return;
+  }
+
+  // GET /api/set-informativi — l'archivio raggruppato per prodotto ed edizione
+  if (percorso === '/api/set-informativi' && req.method === 'GET') {
+    inviaJson(res, 200, elencoSet(url));
     return;
   }
 
