@@ -2221,6 +2221,222 @@
   "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-focus-commercio-autoriparatori-ed-2026-03-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Veicoli + Autoriparatori",
+  "titolo": "Condizioni di Assicurazione — Unipol Focus Commercio Veicoli + Autoriparatori",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 118,
+  "paginaInizio": 15,
+  "edizione": {
+   "id": "edz-focus-commercio-autoriparatori-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-autoriparatori-ed-2026-03-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Veicoli + Autoriparatori",
+  "titolo": "DIP Danni — Unipol Focus Commercio Veicoli + Autoriparatori",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-focus-commercio-autoriparatori-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-autoriparatori-ed-2026-03-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Veicoli + Autoriparatori",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Focus Commercio Veicoli + Autoriparatori",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 6,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-focus-commercio-autoriparatori-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-autoriparatori-ed-2026-03-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Veicoli + Autoriparatori",
+  "titolo": "Informativa privacy — Unipol Focus Commercio Veicoli + Autoriparatori",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 135,
+  "edizione": {
+   "id": "edz-focus-commercio-autoriparatori-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio-autoriparatori/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-ed-2026-03-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio",
+  "titolo": "Condizioni di Assicurazione — Unipol Focus Commercio",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 120,
+  "paginaInizio": 15,
+  "edizione": {
+   "id": "edz-focus-commercio-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-ed-2026-03-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio",
+  "titolo": "DIP Danni — Unipol Focus Commercio",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-focus-commercio-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-ed-2026-03-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Focus Commercio",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 6,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-focus-commercio-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-commercio-ed-2026-03-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio",
+  "titolo": "Informativa privacy — Unipol Focus Commercio",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 137,
+  "edizione": {
+   "id": "edz-focus-commercio-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-commercio/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-ufficio-studi-ed-2026-03-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Uffici + Studi",
+  "titolo": "Condizioni di Assicurazione — Unipol Focus Commercio Uffici + Studi",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 105,
+  "paginaInizio": 15,
+  "edizione": {
+   "id": "edz-focus-ufficio-studi-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-ufficio-studi-ed-2026-03-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Uffici + Studi",
+  "titolo": "DIP Danni — Unipol Focus Commercio Uffici + Studi",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-focus-ufficio-studi-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-ufficio-studi-ed-2026-03-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Uffici + Studi",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Focus Commercio Uffici + Studi",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 6,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-focus-ufficio-studi-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-focus-ufficio-studi-ed-2026-03-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-imprese",
+  "prodotto": "Focus Commercio Uffici + Studi",
+  "titolo": "Informativa privacy — Unipol Focus Commercio Uffici + Studi",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 123,
+  "edizione": {
+   "id": "edz-focus-ufficio-studi-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",

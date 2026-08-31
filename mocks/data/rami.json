@@ -7,5 +7,6 @@
   { "id": "ram-rc-prof", "nome": "RC Professionale", "codice": "rc-professionale" },
   { "id": "ram-tutela", "nome": "Tutela legale", "codice": "tutela-legale" },
   { "id": "ram-viaggi", "nome": "Viaggi e assistenza", "codice": "viaggi" },
-  { "id": "ram-cyber", "nome": "Cyber e rischi informatici", "codice": "cyber" }
+  { "id": "ram-cyber", "nome": "Cyber e rischi informatici", "codice": "cyber" },
+  { "id": "ram-imprese", "nome": "Imprese e attività", "codice": "imprese" }
 ]
