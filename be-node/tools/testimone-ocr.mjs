@@ -265,6 +265,9 @@ async function testoPdfjs(pdf, n) {
   const pagina = await pdf.getPage(n);
   const fr = (await pagina.getTextContent()).items
     .filter((i) => typeof i.str === 'string' && i.str.trim())
+    // i richiami di nota in apice sono cifre a corpo piccolo: nella
+    // trascrizione sono ¹⁸ (e si tolgono), qui diventerebbero un «18» perso
+    .filter((i) => !(/^\d{1,2}$/.test(i.str.trim()) && Math.abs(i.transform[0]) < 6.5))
     .map((i) => ({ testo: i.str, x: i.transform[4], y: i.transform[5], larghezza: i.width || 0 }));
   if (!fr.length) return { testo: '', righe: [], caratteri: 0 };
   fr.sort((p, q) => q.y - p.y || p.x - q.x);
