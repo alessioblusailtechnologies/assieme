@@ -218,23 +218,9 @@ ui-stato-vuoto {
   background: var(--c-line);
 }
 
-/* Lo stato: come sta il ricordo. Chip pieno con il segno, la stessa lingua
-   degli stati di elaborazione — un segnale fatto apposta, non una scritta.
-   Compare solo quando c'è qualcosa da dire: un ricordo attivo tace. */
-.ricordo__stato {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--c-page-alt);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono-sm);
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-  color: var(--c-text-3);
-  white-space: nowrap;
-}
+/* Lo stato del ricordo è `ui-etichetta-stato` (tono neutro): la stessa
+   lingua degli stati di elaborazione, definita in un punto solo. Compare
+   solo quando c'è qualcosa da dire: un ricordo attivo tace. */
 
 /* La lettura è della voce di lettura, come in chat: la memoria si legge.
    `flex: 1` spinge il piè di scheda in basso, pari con i vicini di riga. */

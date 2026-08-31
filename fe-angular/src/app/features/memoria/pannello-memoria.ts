@@ -7,6 +7,7 @@ import { Id, ModificheRicordo, Ricordo } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
+import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -55,6 +56,7 @@ function leggiVista(): VistaMemoria {
     Briciole,
     Campo,
     DatePipe,
+    EtichettaStato,
     GloboMemoria,
     GrafoMemoria,
     Icona,

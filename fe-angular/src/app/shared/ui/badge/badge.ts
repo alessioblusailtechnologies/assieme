@@ -28,10 +28,13 @@ export type VarianteBadge =
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<ng-content />`,
   host: {
-    '[class]': '"badge is-" + variante()',
+    '[class]': '"is-" + variante()',
   },
+  /* Gli stili stanno su `:host`, non su una classe interna: con
+     l'incapsulamento emulato un selettore di classe non raggiunge mai
+     l'elemento ospite, e il badge resterebbe testo nudo. */
   styles: `
-    .badge {
+    :host {
       display: inline-flex;
       align-items: center;
       gap: var(--sp-1);
@@ -44,41 +47,41 @@ export type VarianteBadge =
       border: 1px solid transparent;
     }
 
-    .is-neutro {
+    :host(.is-neutro) {
       background: var(--c-page-alt);
       color: var(--c-text-3);
     }
 
-    .is-accento {
+    :host(.is-accento) {
       background: var(--c-surface);
       border-color: var(--c-line);
       color: var(--c-text-2);
     }
 
-    .is-corrente {
+    :host(.is-corrente) {
       background: var(--c-pos-soft);
       color: var(--c-pos);
     }
 
     /* Le edizioni superate restano consultabili ma non devono competere con
        quella in vigore: solo bordo, nessun fondo. */
-    .is-storico {
+    :host(.is-storico) {
       background: transparent;
       border-color: var(--c-line);
       color: var(--c-text-3);
     }
 
-    .is-attesa {
+    :host(.is-attesa) {
       background: var(--c-stato-corso-soft);
       color: var(--c-stato-corso);
     }
 
-    .is-positivo {
+    :host(.is-positivo) {
       background: var(--c-pos-soft);
       color: var(--c-pos);
     }
 
-    .is-negativo {
+    :host(.is-negativo) {
       background: var(--c-neg-soft);
       color: var(--c-neg);
     }

@@ -160,10 +160,7 @@
                 <ui-tag>{{ etichettaCategoria(ricordo.categoria) }}</ui-tag>
                 <span class="ricordo__spazio" aria-hidden="true"></span>
                 @if (!ricordo.attivo) {
-                  <span class="ricordo__stato">
-                    <ui-icon name="sospendi" [size]="12" />
-                    sospeso
-                  </span>
+                  <ui-etichetta-stato icona="sospendi">sospeso</ui-etichetta-stato>
                 }
               </div>
 

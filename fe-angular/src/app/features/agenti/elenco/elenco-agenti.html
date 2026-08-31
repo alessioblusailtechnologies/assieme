@@ -78,7 +78,7 @@
                   <ui-icon name="pianificazione" [size]="14" />
                   <span>{{ etichettaPianificazione(pianificazione) }}</span>
                   @if (pianificazione.sospesa) {
-                    <ui-badge variante="storico">sospesa</ui-badge>
+                    <ui-etichetta-stato icona="sospendi">sospesa</ui-etichetta-stato>
                   }
                 </span>
               } @else {
@@ -96,10 +96,12 @@
               }
             </td>
             <td class="col-stato">
+              <!-- La stessa etichetta di stato di archivio ed esecuzioni:
+                   attivo è verde col segno del via, disattivo tace in neutro. -->
               @if (a.attivo) {
-                <ui-badge variante="corrente">attivo</ui-badge>
+                <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>
               } @else {
-                <ui-badge variante="storico">disattivo</ui-badge>
+                <ui-etichetta-stato icona="sospendi">disattivo</ui-etichetta-stato>
               }
             </td>
             <td class="col-azione">

@@ -25,11 +25,14 @@ import { MemoriaApi } from '@core/api/memoria-api';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
+import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Tag } from '@shared/ui/tag/tag';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
+
+import { nomeCompagnia } from '@shared/testi/etichette';
 
 import { etichettaCategoria } from './categorie';
 
@@ -166,7 +169,18 @@ function hashChiave(chiave: string): number {
 
 @Component({
   selector: 'app-globo-memoria',
-  imports: [Bottone, Campo, Cassetto, Icona, RouterLink, Scheletro, StatoVuoto, Tag, VisualizzatorePdf],
+  imports: [
+    Bottone,
+    Campo,
+    Cassetto,
+    EtichettaStato,
+    Icona,
+    RouterLink,
+    Scheletro,
+    StatoVuoto,
+    Tag,
+    VisualizzatorePdf,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './globo-memoria.html',
   styleUrl: './globo-memoria.scss',
@@ -360,7 +374,12 @@ export class GloboMemoria {
   private monta(grafo: GrafoMemoria): void {
     this.indicePerChiave = new Map(grafo.nodi.map((n, i) => [n.chiave, i]));
 
-    this.nodi = grafo.nodi.map((dato) => {
+    this.nodi = grafo.nodi.map((originale) => {
+      /* Nomi di compagnia al presente (`nomeCompagnia`): sola resa. */
+      const dato =
+        originale.tipo === 'compagnia'
+          ? { ...originale, etichetta: nomeCompagnia(originale.id, originale.etichetta) }
+          : originale;
       const rnd = pseudoCasuale(hashChiave(dato.chiave));
       const angolo = rnd() * Math.PI * 2;
       /* I nodi collegati nascono sparsi nel cerchio: le molle li tessono. */

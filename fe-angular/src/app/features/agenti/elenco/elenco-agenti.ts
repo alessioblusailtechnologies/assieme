@@ -5,7 +5,7 @@ import { httpResource } from '@angular/common/http';
 
 import { AgentePredefinito, AgenteRiepilogo, LimitiAgenti, Paginato } from '@core/models';
 import { AgentiApi } from '@core/api/agenti-api';
-import { Badge } from '@shared/ui/badge/badge';
+import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { ComponenteStatoEsecuzione } from '../stato-esecuzione';
@@ -29,7 +29,7 @@ import { etichettaPianificazione } from '../pianificazione';
 @Component({
   selector: 'app-elenco-agenti',
   imports: [
-    Badge,
+    EtichettaStato,
     Bottone,
     Briciole,
     ComponenteStatoEsecuzione,

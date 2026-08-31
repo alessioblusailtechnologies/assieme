@@ -208,20 +208,6 @@ canvas {
   color: var(--c-accent);
 }
 
-.scheda__stato {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--c-page-alt);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono-sm);
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-  color: var(--c-text-3);
-}
-
 .scheda__testo {
   font-family: var(--f-lettura);
   font-size: var(--t-sm);

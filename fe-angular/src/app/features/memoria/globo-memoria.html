@@ -102,10 +102,7 @@
               <ui-tag>{{ etichettaCategoria(nodo.categoria) }}</ui-tag>
             }
             @if (nodo.attivo === false) {
-              <span class="scheda__stato">
-                <ui-icon name="sospendi" [size]="12" />
-                sospeso
-              </span>
+              <ui-etichetta-stato icona="sospendi">sospeso</ui-etichetta-stato>
             }
           </div>
           <p class="scheda__testo">{{ nodo.testo ?? nodo.etichetta }}</p>
