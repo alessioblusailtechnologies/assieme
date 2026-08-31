@@ -37,24 +37,36 @@ import { nomeCompagnia } from '@shared/testi/etichette';
 import { etichettaCategoria } from './categorie';
 
 /**
- * Il globo della memoria: il grafo vero di `GET /api/ricordi/grafo`, reso e
- * navigabile — la controparte lavorativa della figura decorativa di
- * `app-grafo-memoria`, di cui riprende palette e deriva lenta perché siano
- * riconoscibili come la stessa «memoria viva».
+ * Il globo della memoria: **la figura del sito, fatta di cose vere**.
  *
- * Ogni nodo si tocca: un passaggio citato apre il PDF sulla pagina esatta
- * con l'estratto (lo stesso pattern delle citazioni in chat, RF-C-05), un
- * documento porta alla sua scheda, una conversazione al filo, un ricordo
- * mostra il testo intero. La ricerca accende i nodi che corrispondono e
- * spegne il resto; la legenda fa lo stesso per tipo.
+ * La composizione è quella di `website/src/scripts/memory-graph.ts` (e della
+ * sua gemella `app-grafo-memoria`): i temi addensati in grappoli sparsi nel
+ * cerchio, la trama fitta dei legami corti, i fili lunghi che attraversano
+ * il quadro, gli anelli perimetrali, la deriva lenta che non si ferma mai.
+ * Lì i pallini sono generati; qui ognuno è un nodo di
+ * `GET /api/ricordi/grafo` — un ricordo, una conversazione, un passaggio
+ * citato, un documento, un prodotto, una compagnia, un ramo.
  *
- * Niente librerie: un layout a forze scritto qui (repulsione fra tutti i
- * nodi, molle sui legami, gravità verso il centro), come il resto della
- * grafica del progetto. I numeri sono piccoli — centinaia di nodi, non
- * migliaia — e l'O(n²) della repulsione resta sotto il millisecondo.
+ * Rispetto al globo di prima cambia il posto dei nodi. Non c'è più un
+ * layout a forze che si assesta e si spegne: i grappoli sono quelli veri
+ * dei dati (una compagnia coi suoi prodotti e documenti, una conversazione
+ * coi suoi passaggi e ricordi), disposti a corona come nella figura, e i
+ * rami stanno al centro perché i loro fili attraversino il quadro. Il posto
+ * è deterministico — stesso seme, stessa figura a ogni apertura — e sopra
+ * ci corre soltanto la deriva.
+ *
+ * Passando sopra un pallino il dettaglio si legge lì: tipo, nome, contesto,
+ * e per un passaggio citato l'estratto. Il clic apre la scheda nel cassetto
+ * (il PDF alla pagina esatta, la conversazione, il documento). La ricerca
+ * accende i nodi che corrispondono e spegne il resto; la legenda fa lo
+ * stesso per tipo.
+ *
+ * Niente librerie: geometria scritta qui, come il resto della grafica del
+ * progetto. Se la figura cambia sul sito va riportata qui e in
+ * `app-grafo-memoria`: sono la stessa cosa e devono restare tali.
  */
 
-/** La palette della memoria viva (grafo-memoria/sito): un colore per tipo. */
+/** La palette della memoria viva (sito e figura decorativa): un colore per tipo. */
 const COLORI_TIPO: Record<TipoNodoGrafo, string> = {
   ricordo: '#c08a6e',
   conversazione: '#8fa8b8',
@@ -88,42 +100,65 @@ const ORDINE_TIPI: TipoNodoGrafo[] = [
 
 /** La taglia di partenza per tipo: la gerarchia si legge prima del peso. */
 const RAGGI_BASE: Record<TipoNodoGrafo, number> = {
-  ricordo: 1.9,
-  conversazione: 1.9,
-  punto: 1.5,
-  documento: 1.7,
-  prodotto: 2,
-  compagnia: 2.4,
-  ramo: 2.8,
+  ramo: 4.6,
+  compagnia: 4,
+  conversazione: 3.6,
+  prodotto: 2.8,
+  ricordo: 2.8,
+  punto: 2.1,
+  documento: 1.9,
 };
 
-/** Lunghezza a riposo della molla, per coppia di tipi (chiave `a|b` ordinata). */
-const LUNGHEZZE: Record<string, number> = {
-  'conversazione|ricordo': 70,
-  'conversazione|punto': 60,
-  'documento|punto': 20,
-  'documento|prodotto': 28,
-  'compagnia|prodotto': 48,
-  'prodotto|ramo': 95,
-  'compagnia|documento': 40,
+/** Cosa fa il clic, per tipo: l'ultima riga del dettaglio in evidenza. */
+const AZIONI: Record<TipoNodoGrafo, string> = {
+  ricordo: 'clic per il ricordo intero',
+  conversazione: 'clic per aprire il filo',
+  punto: 'clic per il passaggio nel PDF',
+  documento: 'clic per la scheda del documento',
+  prodotto: 'clic per la scheda',
+  compagnia: 'clic per la scheda',
+  ramo: 'clic per la scheda',
 };
+
+const DUE_PI = Math.PI * 2;
 
 const ZOOM_MIN = 0.3;
 const ZOOM_MAX = 4;
 
 /**
- * Il raggio del globo in coordinate di mondo: la fisica contiene tutto nel
- * cerchio e i nodi senza legami si posano sull'orlo — la forma è quella
- * della «memoria viva», ma ogni punto è vero e si tocca.
+ * Il raggio del quadro in coordinate di mondo: lo stesso della figura del
+ * sito (là `R = min(W, H) * 0.4` su una tela 1040x1000), così le taglie dei
+ * pallini e l'ampiezza della deriva si portano di peso.
  */
-const RAGGIO_GLOBO = 300;
+const RAGGIO = 400;
+
+/** Gli anelli stanno appena fuori dal quadro: l'inquadratura li tiene dentro. */
+const RAGGIO_INQUADRATURA = RAGGIO * 1.14;
+
+/** Il dettaglio testuale che compare sfiorando un pallino. */
+interface SchedaNodo {
+  tipo: string;
+  titolo: string;
+  /** La riga breve sotto al nome: ambito, archivio, pagina, compagnia. */
+  contesto?: string;
+  /** Il testo lungo: l'estratto citato, i conteggi dei figli. */
+  dettaglio?: string;
+  azione: string;
+}
+
+/** Ciò che il riquadro in evidenza mostra, e dove. */
+interface Evidenza extends SchedaNodo {
+  x: number;
+  y: number;
+  /** Il riquadro sbatterebbe contro il bordo destro: si apre a sinistra. */
+  aSinistra: boolean;
+}
 
 interface NodoDisegno {
   dato: NodoGrafoMemoria;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
+  /** Il posto nel quadro: la deriva ci oscilla intorno, non lo cambia. */
+  bx: number;
+  by: number;
   /** Posizione a schermo dell'ultimo fotogramma, per il colpo di mira. */
   sx: number;
   sy: number;
@@ -133,26 +168,38 @@ interface NodoDisegno {
   ph: number;
   sp: number;
   amp: number;
-  /** Trattenuto dal trascinamento: la fisica non lo sposta. */
-  fisso: boolean;
   vicini: Set<number>;
   /** Vero se passa ricerca e filtro di tipo. */
   acceso: boolean;
-  /**
-   * Un nodo senza legami non vaga: si posa su un anello interno del globo,
-   * come le note orfane nel grafo di Obsidian. L'àncora è il suo posto.
-   */
-  ancora?: { x: number; y: number };
+  scheda: SchedaNodo;
 }
 
 interface LegameDisegno {
   a: number;
   b: number;
   peso: number;
-  lunghezza: number;
+  /** Dentro un grappolo è trama fitta; fuori è un filo lungo, quasi spento. */
+  dentro: boolean;
 }
 
-/** Congruenziale lineare: layout identico a ogni apertura, come la figura del sito. */
+/** Il tema attorno a cui la memoria si addensa: una compagnia, una conversazione. */
+interface Grappolo {
+  seme: number;
+  membri: number[];
+  x: number;
+  y: number;
+  r: number;
+}
+
+/** Un pallino dell'orlo: gli anelli perimetrali della figura del sito. */
+interface PuntoAnello {
+  a: number;
+  r: number;
+  o: number;
+  ph: number;
+}
+
+/** Congruenziale lineare: figura identica a ogni apertura, come sul sito. */
 function pseudoCasuale(seme: number): () => number {
   let stato = seme >>> 0 || 1;
   return () => (stato = (stato * 1664525 + 1013904223) % 4294967296) / 4294967296;
@@ -165,6 +212,74 @@ function hashChiave(chiave: string): number {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+const NOME_ARCHIVIO: Record<string, string> = {
+  pubblico: 'archivio pubblico',
+  privato: 'archivio privato',
+  conversazione: 'allegato di conversazione',
+};
+
+/**
+ * Il dettaglio che si legge sfiorando il pallino. Dice cos'è, come si chiama
+ * e la cosa che conta: il testo di un ricordo, l'estratto di un passaggio,
+ * quanti figli ha un nodo dell'archivio.
+ */
+function schedaDelNodo(nodo: NodoGrafoMemoria, vicini: NodoGrafoMemoria[]): SchedaNodo {
+  const quanti = (tipo: TipoNodoGrafo): number => vicini.filter((v) => v.tipo === tipo).length;
+  const elenca = (...tipi: TipoNodoGrafo[]): string =>
+    tipi
+      .map((tipo) => [quanti(tipo), tipo] as const)
+      .filter(([q]) => q > 0)
+      .map(([q, tipo]) => `${q} ${ETICHETTE_TIPO[tipo][q === 1 ? 0 : 1]}`)
+      .join(' · ');
+
+  const base = {
+    tipo: ETICHETTE_TIPO[nodo.tipo][0],
+    titolo: nodo.etichetta,
+    azione: AZIONI[nodo.tipo],
+  };
+
+  switch (nodo.tipo) {
+    case 'ricordo': {
+      const parti = [nodo.ambito === 'tenant' ? 'agenzia' : 'personale'];
+      if (nodo.categoria) parti.push(etichettaCategoria(nodo.categoria).toLowerCase());
+      if (nodo.attivo === false) parti.push('sospeso');
+      return { ...base, titolo: nodo.testo ?? nodo.etichetta, contesto: parti.join(' · ') };
+    }
+
+    case 'punto': {
+      const c = nodo.citazione;
+      if (!c) return base;
+      const posizione = [`pagina ${c.posizione.pagina}`];
+      if (c.posizione.sezione) posizione.push(c.posizione.sezione);
+      posizione.push(c.documentoTitolo);
+      return { ...base, contesto: posizione.join(' · '), dettaglio: `«${c.estratto}»` };
+    }
+
+    case 'documento':
+      return {
+        ...base,
+        contesto: NOME_ARCHIVIO[nodo.archivio ?? 'pubblico'],
+        dettaglio: elenca('punto') || undefined,
+      };
+
+    case 'prodotto':
+      return {
+        ...base,
+        contesto: vicini.find((v) => v.tipo === 'compagnia')?.etichetta,
+        dettaglio: elenca('documento') || undefined,
+      };
+
+    case 'conversazione':
+      return { ...base, dettaglio: elenca('punto', 'ricordo') || 'nessun passaggio citato' };
+
+    case 'compagnia':
+      return { ...base, dettaglio: elenca('prodotto', 'documento') || undefined };
+
+    case 'ramo':
+      return { ...base, dettaglio: elenca('prodotto', 'compagnia') || undefined };
+  }
 }
 
 @Component({
@@ -211,6 +326,8 @@ export class GloboMemoria {
   protected readonly ricerca = signal('');
   protected readonly tipoEvidenziato = signal<TipoNodoGrafo | undefined>(undefined);
   protected readonly selezionato = signal<NodoGrafoMemoria | undefined>(undefined);
+  /** Il dettaglio del pallino sotto al puntatore: c'è solo mentre lo si sfiora. */
+  protected readonly evidenza = signal<Evidenza | undefined>(undefined);
 
   protected readonly legenda = computed(() => {
     const nodi = this.grafo()?.nodi ?? [];
@@ -280,6 +397,7 @@ export class GloboMemoria {
 
   private nodi: NodoDisegno[] = [];
   private legami: LegameDisegno[] = [];
+  private anelli: PuntoAnello[] = [];
   private indicePerChiave = new Map<string, number>();
 
   private ctx?: CanvasRenderingContext2D;
@@ -289,10 +407,7 @@ export class GloboMemoria {
   private panX = 0;
   private panY = 0;
 
-  /** L'energia della simulazione: alta all'avvio, si spegne da sola. */
-  private alfa = 0;
   private inMira = -1;
-  private trascinato = -1;
   private inPanoramica = false;
   private mosso = false;
   private ultimoPuntatore = { x: 0, y: 0 };
@@ -308,13 +423,13 @@ export class GloboMemoria {
 
   constructor() {
     /* I dati possono arrivare prima o dopo la prima resa: l'effect copre
-       entrambi i casi, e ricostruisce il globo a ogni reload. */
+       entrambi i casi, e ricompone la figura a ogni reload. */
     effect(() => {
       const grafo = this.grafo();
-      if (grafo) this.monta(grafo);
+      if (grafo) this.componi(grafo);
     });
 
-    /* Ricerca e legenda non muovono la fisica: riaccendono solo il disegno. */
+    /* Ricerca e legenda non spostano nulla: riaccendono solo il disegno. */
     effect(() => {
       this.ricerca();
       this.tipoEvidenziato();
@@ -344,7 +459,7 @@ export class GloboMemoria {
     const ridimensiona = new ResizeObserver(() => this.ridimensiona(canvas));
     ridimensiona.observe(canvas);
 
-    /* Nessun motivo di animare un globo che non si vede. */
+    /* Nessun motivo di animare una figura che non si vede. */
     const osservatore = new IntersectionObserver(([voce]) => {
       this.visibile = Boolean(voce?.isIntersecting);
       if (this.visibile) this.avvia();
@@ -369,75 +484,301 @@ export class GloboMemoria {
     });
   }
 
-  // --- Montaggio ----------------------------------------------------------
+  // --- La composizione: i grappoli veri al posto dei cluster generati -----
 
-  private monta(grafo: GrafoMemoria): void {
+  private componi(grafo: GrafoMemoria): void {
     this.indicePerChiave = new Map(grafo.nodi.map((n, i) => [n.chiave, i]));
 
-    this.nodi = grafo.nodi.map((originale) => {
-      /* Nomi di compagnia al presente (`nomeCompagnia`): sola resa. */
-      const dato =
-        originale.tipo === 'compagnia'
-          ? { ...originale, etichetta: nomeCompagnia(originale.id, originale.etichetta) }
-          : originale;
-      const rnd = pseudoCasuale(hashChiave(dato.chiave));
-      const angolo = rnd() * Math.PI * 2;
-      /* I nodi collegati nascono sparsi nel cerchio: le molle li tessono. */
-      const raggio = RAGGIO_GLOBO * (0.15 + rnd() * 0.6);
-      /* Punti piccoli, come nel grafo di Obsidian: la taglia parte dal tipo
-         e cresce con la radice del peso — un hub si vede, non domina. */
-      return {
-        dato,
-        x: Math.cos(angolo) * raggio,
-        y: Math.sin(angolo) * raggio,
-        vx: 0,
-        vy: 0,
-        sx: 0,
-        sy: 0,
-        r: Math.min(RAGGI_BASE[dato.tipo] + 1.15 * Math.sqrt(dato.peso), 9),
-        colore: COLORI_TIPO[dato.tipo],
-        ph: rnd() * Math.PI * 2,
-        sp: 0.25 + rnd() * 0.5,
-        amp: 1.2 + rnd() * 2.2,
-        fisso: false,
-        vicini: new Set<number>(),
-        acceso: true,
-      };
-    });
+    /* Nomi di compagnia al presente (`nomeCompagnia`): sola resa. */
+    const dati = grafo.nodi.map((originale) =>
+      originale.tipo === 'compagnia'
+        ? { ...originale, etichetta: nomeCompagnia(originale.id, originale.etichetta) }
+        : originale,
+    );
 
-    this.legami = grafo.legami.flatMap((legame) => {
+    const adiacenza: number[][] = dati.map(() => []);
+    const legami: LegameDisegno[] = [];
+    for (const legame of grafo.legami) {
       const a = this.indicePerChiave.get(legame.da);
       const b = this.indicePerChiave.get(legame.a);
-      if (a === undefined || b === undefined) return [];
-      this.nodi[a].vicini.add(b);
-      this.nodi[b].vicini.add(a);
-      const tipi = [this.nodi[a].dato.tipo, this.nodi[b].dato.tipo].sort().join('|');
-      return [{ a, b, peso: legame.peso, lunghezza: LUNGHEZZE[tipi] ?? 60 }];
+      if (a === undefined || b === undefined) continue;
+      adiacenza[a].push(b);
+      adiacenza[b].push(a);
+      legami.push({ a, b, peso: legame.peso, dentro: false });
+    }
+    this.legami = legami;
+
+    this.nodi = dati.map((dato, i) => {
+      const rnd = pseudoCasuale(hashChiave(dato.chiave));
+      return {
+        dato,
+        bx: 0,
+        by: 0,
+        sx: 0,
+        sy: 0,
+        /* Le taglie della figura del sito: i pallini piccoli, gli hub appena
+           più grossi. La radice del peso, così un ramo con venti prodotti si
+           vede senza dominare il quadro. */
+        r: Math.min(RAGGI_BASE[dato.tipo] + 0.55 * Math.sqrt(dato.peso), 8.5),
+        colore: COLORI_TIPO[dato.tipo],
+        ph: rnd() * DUE_PI,
+        sp: 0.25 + rnd() * 0.5,
+        amp: 1.4 + rnd() * 2.2,
+        vicini: new Set<number>(adiacenza[i]),
+        acceso: true,
+        scheda: schedaDelNodo(
+          dato,
+          adiacenza[i].map((j) => dati[j]),
+        ),
+      };
     });
 
-    /* Un nodo senza legami si posa sull'orlo del globo, al suo angolo di
-       sempre (seme dalla chiave): come le note orfane nel grafo di Obsidian,
-       fanno corona invece di vagare ai margini. */
-    for (const nodo of this.nodi) {
-      if (nodo.vicini.size) continue;
-      const rnd = pseudoCasuale(hashChiave(nodo.dato.chiave) ^ 0x9e3779b9);
-      const angolo = rnd() * Math.PI * 2;
-      nodo.ancora = {
-        x: Math.cos(angolo) * RAGGIO_GLOBO * 0.9,
-        y: Math.sin(angolo) * RAGGIO_GLOBO * 0.9,
-      };
-      nodo.x = nodo.ancora.x;
-      nodo.y = nodo.ancora.y;
-    }
-
+    this.disponi(dati, adiacenza);
+    this.componiAnelli();
     this.aggiornaAccesi();
-
-    /* Il riscaldamento avviene fuori scena: il globo appare già composto,
-       poi continua ad assestarsi con la deriva lenta della memoria viva. */
-    this.alfa = 1;
-    for (let i = 0; i < 500; i++) this.passo();
     this.inquadra();
     this.avvia();
+  }
+
+  /**
+   * Il posto di ogni nodo. I temi (compagnie e conversazioni) fanno da semi:
+   * una visita in ampiezza dà a ognuno il suo grappolo, i grappoli si
+   * dispongono a corona come i cluster della figura, i rami restano al centro
+   * perché i loro fili attraversino il quadro. Tutto seminato dalla chiave del
+   * nodo: la figura è la stessa a ogni apertura.
+   */
+  private disponi(dati: NodoGrafoMemoria[], adiacenza: number[][]): void {
+    const n = dati.length;
+    const eSeme = (tipo: TipoNodoGrafo): boolean =>
+      tipo === 'compagnia' || tipo === 'conversazione';
+
+    /* Prima le compagnie, poi le conversazioni: a pari distanza un documento
+       d'archivio resta alla sua compagnia, non alla chat che l'ha citato. */
+    const indici = dati.map((_, i) => i);
+    const semi = [
+      ...indici.filter((i) => dati[i].tipo === 'compagnia'),
+      ...indici.filter((i) => dati[i].tipo === 'conversazione'),
+    ];
+
+    const grappoloDi = new Int32Array(n).fill(-1);
+    const padre = new Int32Array(n).fill(-1);
+    const coda: number[] = [];
+    semi.forEach((indice, g) => {
+      grappoloDi[indice] = g;
+      coda.push(indice);
+    });
+
+    /* La coda cresce mentre la si percorre: è la visita in ampiezza, e
+       l'iteratore dell'array legge la lunghezza a ogni passo. */
+    for (const i of coda) {
+      /* Il ramo non fa da ponte: se ci passasse, tutte le compagnie dello
+         stesso ramo finirebbero in un grappolo solo. */
+      if (dati[i].tipo === 'ramo') continue;
+      for (const j of adiacenza[i]) {
+        if (grappoloDi[j] >= 0 || eSeme(dati[j].tipo) || dati[j].tipo === 'ramo') continue;
+        grappoloDi[j] = grappoloDi[i];
+        padre[j] = i;
+        coda.push(j);
+      }
+    }
+
+    const grappoli: Grappolo[] = semi.map((seme) => ({ seme, membri: [], x: 0, y: 0, r: 0 }));
+    for (let i = 0; i < n; i++) {
+      if (grappoloDi[i] >= 0) grappoli[grappoloDi[i]].membri.push(i);
+    }
+
+    /* Il disco del grappolo cresce con la radice dei membri: la densità resta
+       quella della figura, comunque sia fatto l'archivio. */
+    for (const g of grappoli) {
+      g.r = Math.min(Math.max(16 * Math.sqrt(g.membri.length), RAGGIO * 0.08), RAGGIO * 0.3);
+    }
+
+    this.disponiGrappoli(grappoli, dati);
+    for (const g of grappoli) this.disponiMembri(g, dati, padre);
+
+    /* I rami al centro: il tronco da cui parte l'archivio. */
+    const rami = indici.filter((i) => dati[i].tipo === 'ramo');
+    rami.forEach((indice, k) => {
+      const angolo = (k / Math.max(rami.length, 1)) * DUE_PI + 0.4;
+      const distanza = rami.length === 1 ? 0 : RAGGIO * 0.14;
+      this.nodi[indice].bx = Math.cos(angolo) * distanza;
+      this.nodi[indice].by = Math.sin(angolo) * distanza;
+    });
+
+    /* Ciò che non ha né grappolo né tronco è il rumore di fondo della figura
+       del sito: sparso nel cerchio, al suo posto di sempre. */
+    for (let i = 0; i < n; i++) {
+      if (grappoloDi[i] >= 0 || dati[i].tipo === 'ramo') continue;
+      const rnd = pseudoCasuale(hashChiave(dati[i].chiave) ^ 0x9e3779b9);
+      const angolo = rnd() * DUE_PI;
+      const distanza = Math.sqrt(rnd()) * RAGGIO * 0.95;
+      this.nodi[i].bx = Math.cos(angolo) * distanza;
+      this.nodi[i].by = Math.sin(angolo) * distanza;
+    }
+
+    for (const legame of this.legami) {
+      legame.dentro = grappoloDi[legame.a] >= 0 && grappoloDi[legame.a] === grappoloDi[legame.b];
+    }
+  }
+
+  /** I centri dei grappoli: a corona come nella figura, poi distanziati. */
+  private disponiGrappoli(grappoli: Grappolo[], dati: NodoGrafoMemoria[]): void {
+    /* L'ordine attorno alla corona alterna i grappoli grossi e quelli
+       piccoli. Coi dati veri i temi non si somigliano — una compagnia porta
+       quaranta documenti, un'altra cinque — e metterli in fila lascerebbe
+       mezzo quadro vuoto e l'altra metà ammassata. */
+    const perTaglia = [...grappoli].sort((a, b) => b.membri.length - a.membri.length);
+    const corona = perTaglia.map((_, k) =>
+      k % 2 === 0 ? perTaglia[k / 2] : perTaglia[perTaglia.length - 1 - (k - 1) / 2],
+    );
+
+    corona.forEach((g, i) => {
+      if (corona.length === 1) {
+        g.x = 0;
+        g.y = 0;
+        return;
+      }
+      const rnd = pseudoCasuale(hashChiave(dati[g.seme].chiave));
+      const angolo = (i / corona.length) * DUE_PI + rnd() * 0.35;
+      /* La distanza si misura dall'orlo, non dal centro: conta dove arriva
+         il bordo del disco, così un grappolo di tre nodi riempie il quadro
+         quanto uno di quaranta invece di sparire in un angolo. Le due
+         profondità, a coppie, danno alla corona il respiro della figura del
+         sito, dove i cluster non stanno tutti sullo stesso cerchio. */
+      const bersaglio = (Math.floor(i / 2) % 2 === 0 ? 0.9 : 0.64) - 0.05 * rnd();
+      const distanza = Math.max(RAGGIO * bersaglio - g.r * 0.86, RAGGIO * 0.3);
+      g.x = Math.cos(angolo) * distanza;
+      g.y = Math.sin(angolo) * distanza;
+    });
+
+    /* Due dischi sovrapposti sarebbero una macchia sola: qualche passata di
+       distanziamento e la corona si legge. Deterministica come il resto. */
+    for (let passata = 0; passata < 260; passata++) {
+      for (let i = 0; i < grappoli.length; i++) {
+        for (let j = i + 1; j < grappoli.length; j++) {
+          const a = grappoli[i];
+          const b = grappoli[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const d = Math.hypot(dx, dy) || 0.01;
+          const minima = (a.r + b.r) * 0.92 + 10;
+          if (d >= minima) continue;
+          const spinta = ((minima - d) / d) * 0.25;
+          a.x -= dx * spinta;
+          a.y -= dy * spinta;
+          b.x += dx * spinta;
+          b.y += dy * spinta;
+        }
+      }
+      for (const g of grappoli) {
+        /* Il quadro è tondo: nessun disco sfonda l'orlo, e nessuno si siede
+           sul tronco dei rami al centro. */
+        const d = Math.hypot(g.x, g.y) || 0.01;
+        const massima = RAGGIO * 0.94 - g.r;
+        if (d > massima) {
+          g.x *= massima / d;
+          g.y *= massima / d;
+        }
+        const minima = RAGGIO * 0.26 + g.r * 0.45;
+        if (d < minima) {
+          g.x *= minima / d;
+          g.y *= minima / d;
+        }
+      }
+    }
+  }
+
+  /**
+   * Dentro il grappolo: il tema al centro, i suoi figli su un anello, i
+   * nipoti in una nuvoletta attorno al padre. È la densità dei cluster della
+   * figura, con la struttura vera sotto.
+   */
+  private disponiMembri(g: Grappolo, dati: NodoGrafoMemoria[], padre: Int32Array): void {
+    const figli = new Map<number, number[]>();
+    for (const membro of g.membri) {
+      const p = padre[membro];
+      if (p < 0) continue;
+      const elenco = figli.get(p);
+      if (elenco) elenco.push(membro);
+      else figli.set(p, [membro]);
+    }
+
+    this.nodi[g.seme].bx = g.x;
+    this.nodi[g.seme].by = g.y;
+
+    const rndSeme = pseudoCasuale(hashChiave(dati[g.seme].chiave) ^ 0x5bf03635);
+    const scarto = rndSeme() * DUE_PI;
+
+    const primi = figli.get(g.seme) ?? [];
+    primi.forEach((figlio, k) => {
+      const angolo = scarto + (k / Math.max(primi.length, 1)) * DUE_PI;
+      const rnd = pseudoCasuale(hashChiave(dati[figlio].chiave));
+      const distanza = g.r * (0.6 + rnd() * 0.08);
+      const x = g.x + Math.cos(angolo) * distanza;
+      const y = g.y + Math.sin(angolo) * distanza;
+      this.nodi[figlio].bx = x;
+      this.nodi[figlio].by = y;
+      this.disponiNuvola(figlio, x, y, angolo, g, dati, figli, 1);
+    });
+
+    /* Un membro senza padre nel grappolo non resta nell'origine: si posa nel
+       disco come tutto il resto. */
+    for (const membro of g.membri) {
+      if (membro === g.seme || padre[membro] >= 0) continue;
+      const rnd = pseudoCasuale(hashChiave(dati[membro].chiave) ^ 0x2545f491);
+      const angolo = rnd() * DUE_PI;
+      const distanza = Math.sqrt(rnd()) * g.r;
+      this.nodi[membro].bx = g.x + Math.cos(angolo) * distanza;
+      this.nodi[membro].by = g.y + Math.sin(angolo) * distanza;
+    }
+  }
+
+  /** La nuvoletta dei figli attorno al padre, spinta verso l'orlo. */
+  private disponiNuvola(
+    nodo: number,
+    px: number,
+    py: number,
+    verso: number,
+    g: Grappolo,
+    dati: NodoGrafoMemoria[],
+    figli: Map<number, number[]>,
+    profondita: number,
+  ): void {
+    const elenco = figli.get(nodo);
+    if (!elenco?.length || profondita > 3) return;
+
+    const raggio = Math.min(g.r * 0.4, 7 * Math.sqrt(elenco.length) + 4);
+    /* Il centro della nuvoletta sta appena più fuori del padre: i documenti
+       di un prodotto guardano verso l'orlo, non verso il tema. */
+    const cx = px + Math.cos(verso) * raggio * 0.7;
+    const cy = py + Math.sin(verso) * raggio * 0.7;
+
+    elenco.forEach((figlio, k) => {
+      const rnd = pseudoCasuale(hashChiave(dati[figlio].chiave));
+      const angolo = (k / elenco.length) * DUE_PI + rnd() * 0.6;
+      const distanza = Math.sqrt(0.25 + 0.75 * rnd()) * raggio;
+      const x = cx + Math.cos(angolo) * distanza;
+      const y = cy + Math.sin(angolo) * distanza;
+      this.nodi[figlio].bx = x;
+      this.nodi[figlio].by = y;
+      this.disponiNuvola(figlio, x, y, angolo, g, dati, figli, profondita + 1);
+    });
+  }
+
+  /** L'orlo: i due anelli perimetrali della figura del sito, tali e quali. */
+  private componiAnelli(): void {
+    const rnd = pseudoCasuale(20260731);
+    const anelli: PuntoAnello[] = [];
+    for (let anello = 0; anello < 2; anello++) {
+      const rr = RAGGIO * (1 + anello * 0.07);
+      const quanti = 190 + anello * 40;
+      for (let i = 0; i < quanti; i++) {
+        const a = (i / quanti) * DUE_PI + rnd() * 0.02;
+        const scarto = (rnd() - 0.5) * RAGGIO * 0.03;
+        anelli.push({ a, r: rr + scarto, o: anello === 0 ? 0.85 : 0.45, ph: rnd() * DUE_PI });
+      }
+    }
+    this.anelli = anelli;
   }
 
   private aggiornaAccesi(): void {
@@ -456,108 +797,21 @@ export class GloboMemoria {
     }
   }
 
-  // --- Fisica -------------------------------------------------------------
+  // --- Inquadratura -------------------------------------------------------
 
-  private passo(): void {
-    const a = this.alfa;
-    const nodi = this.nodi;
-
-    /* Repulsione a due portate: una spinta corta e decisa perché i punti
-       non si accavallino, una lunga e tenue perché i cluster respirino.
-       Sono le molle a dare la forma — la repulsione non deve vincere. */
-    for (let i = 0; i < nodi.length; i++) {
-      for (let j = i + 1; j < nodi.length; j++) {
-        const dx = nodi[i].x - nodi[j].x;
-        const dy = nodi[i].y - nodi[j].y;
-        const d2 = dx * dx + dy * dy + 0.01;
-        if (d2 > 62_500) continue; // oltre 250 unità non ci si sente più
-        const d = Math.sqrt(d2);
-        let f = 40 / d2;
-        if (d < 60) f += ((60 - d) * 0.05) / d;
-        f *= a;
-        const fx = dx * f;
-        const fy = dy * f;
-        nodi[i].vx += fx;
-        nodi[i].vy += fy;
-        nodi[j].vx -= fx;
-        nodi[j].vy -= fy;
-      }
-    }
-
-    for (const legame of this.legami) {
-      const na = nodi[legame.a];
-      const nb = nodi[legame.b];
-      const dx = nb.x - na.x;
-      const dy = nb.y - na.y;
-      const d = Math.hypot(dx, dy) || 1;
-      /* Un legame percorso più volte tira di più, con un tetto: la molla
-         serve a raggruppare, non a incollare. */
-      const forza = 0.06 + 0.02 * Math.min(legame.peso, 4);
-      const err = ((d - legame.lunghezza) / d) * forza * a;
-      const fx = dx * err;
-      const fy = dy * err;
-      na.vx += fx;
-      na.vy += fy;
-      nb.vx -= fx;
-      nb.vy -= fy;
-    }
-
-    const bordo = RAGGIO_GLOBO * 0.92;
-    for (const nodo of nodi) {
-      if (nodo.fisso) {
-        nodo.vx = 0;
-        nodo.vy = 0;
-        continue;
-      }
-      if (nodo.ancora) {
-        // L'orfano torna al suo posto sull'orlo.
-        nodo.vx += (nodo.ancora.x - nodo.x) * 0.04 * a;
-        nodo.vy += (nodo.ancora.y - nodo.y) * 0.04 * a;
-      } else {
-        nodo.vx -= nodo.x * 0.02 * a;
-        nodo.vy -= nodo.y * 0.02 * a;
-        // Oltre il bordo morbido si viene riaccompagnati dentro.
-        const d = Math.hypot(nodo.x, nodo.y);
-        if (d > bordo) {
-          const spinta = ((d - bordo) / d) * 0.08 * a;
-          nodo.vx -= nodo.x * spinta;
-          nodo.vy -= nodo.y * spinta;
-        }
-      }
-      nodo.vx *= 0.86;
-      nodo.vy *= 0.86;
-      const v = Math.hypot(nodo.vx, nodo.vy);
-      if (v > 6) {
-        nodo.vx = (nodo.vx / v) * 6;
-        nodo.vy = (nodo.vy / v) * 6;
-      }
-      nodo.x += nodo.vx;
-      nodo.y += nodo.vy;
-
-      /* La parete del globo è vera: nulla la oltrepassa — è lei a dare
-         al grafo la silhouette circolare, qualunque cosa faccia la fisica. */
-      const dopo = Math.hypot(nodo.x, nodo.y);
-      const massimo = RAGGIO_GLOBO * 0.96;
-      if (dopo > massimo) {
-        const scala = massimo / dopo;
-        nodo.x *= scala;
-        nodo.y *= scala;
-      }
-    }
-
-    this.alfa = Math.max(this.alfa * 0.993, 0.003);
-  }
-
-  /** Inquadra il cerchio intero: il globo è la composizione. */
+  /** Inquadra il cerchio intero, orlo compreso: la figura è la composizione. */
   private inquadra(): void {
     if (!this.larghezza) return;
-    const raggio = RAGGIO_GLOBO * 1.05;
     this.zoom = Math.min(
-      Math.max((Math.min(this.larghezza, this.altezza) * 0.94) / (raggio * 2), ZOOM_MIN),
+      Math.max(
+        (Math.min(this.larghezza, this.altezza) * 0.96) / (RAGGIO_INQUADRATURA * 2),
+        ZOOM_MIN,
+      ),
       ZOOM_MAX,
     );
     this.panX = 0;
     this.panY = 0;
+    this.evidenza.set(undefined);
     this.chiediFotogramma();
   }
 
@@ -579,6 +833,7 @@ export class GloboMemoria {
     this.zoom = zoom;
     this.panX = sx - cx - wx * zoom;
     this.panY = sy - cy - wy * zoom;
+    this.evidenza.set(undefined);
     this.chiediFotogramma();
   }
 
@@ -588,52 +843,40 @@ export class GloboMemoria {
     canvas.addEventListener('pointerdown', (e) => {
       canvas.setPointerCapture(e.pointerId);
       this.mosso = false;
+      this.inPanoramica = true;
       this.ultimoPuntatore = this.puntoLocale(canvas, e);
-      const colpito = this.colpisci(this.ultimoPuntatore.x, this.ultimoPuntatore.y);
-      if (colpito >= 0) {
-        this.trascinato = colpito;
-        this.nodi[colpito].fisso = true;
-      } else {
-        this.inPanoramica = true;
-      }
     });
 
     canvas.addEventListener('pointermove', (e) => {
       const punto = this.puntoLocale(canvas, e);
-      if (this.trascinato >= 0) {
-        const nodo = this.nodi[this.trascinato];
-        const cx = this.larghezza / 2;
-        const cy = this.altezza / 2;
-        nodo.x = (punto.x - cx - this.panX) / this.zoom;
-        nodo.y = (punto.y - cy - this.panY) / this.zoom;
+      if (this.inPanoramica) {
+        const dx = punto.x - this.ultimoPuntatore.x;
+        const dy = punto.y - this.ultimoPuntatore.y;
+        /* Sotto i due pixel è un clic con la mano ferma, non una panoramica. */
+        if (!this.mosso && Math.hypot(dx, dy) <= 2) return;
         this.mosso = true;
-        this.alfa = Math.max(this.alfa, 0.25);
-        this.avvia();
-      } else if (this.inPanoramica) {
-        this.panX += punto.x - this.ultimoPuntatore.x;
-        this.panY += punto.y - this.ultimoPuntatore.y;
-        if (Math.hypot(punto.x - this.ultimoPuntatore.x, punto.y - this.ultimoPuntatore.y) > 2) {
-          this.mosso = true;
-        }
+        this.panX += dx;
+        this.panY += dy;
         this.ultimoPuntatore = punto;
+        this.evidenza.set(undefined);
         this.chiediFotogramma();
-      } else {
-        const prima = this.inMira;
-        this.inMira = this.colpisci(punto.x, punto.y);
-        canvas.style.cursor = this.inMira >= 0 ? 'pointer' : 'grab';
-        if (prima !== this.inMira) this.chiediFotogramma();
+        return;
+      }
+      const prima = this.inMira;
+      this.inMira = this.colpisci(punto.x, punto.y);
+      canvas.style.cursor = this.inMira >= 0 ? 'pointer' : 'grab';
+      if (prima !== this.inMira) {
+        this.mostraDettaglio(this.inMira);
+        this.chiediFotogramma();
       }
     });
 
     const rilascia = (e: PointerEvent): void => {
-      if (this.trascinato >= 0) {
-        const nodo = this.nodi[this.trascinato];
-        nodo.fisso = false;
-        if (!this.mosso) this.selezionato.set(nodo.dato);
-        this.trascinato = -1;
-      } else if (this.inPanoramica && !this.mosso) {
+      if (this.inPanoramica && !this.mosso) {
+        const punto = this.puntoLocale(canvas, e);
+        const colpito = this.colpisci(punto.x, punto.y);
         /* Un clic sul vuoto chiude la scheda: lo stesso gesto della chat. */
-        this.selezionato.set(undefined);
+        this.selezionato.set(colpito >= 0 ? this.nodi[colpito].dato : undefined);
       }
       this.inPanoramica = false;
       canvas.releasePointerCapture(e.pointerId);
@@ -643,8 +886,10 @@ export class GloboMemoria {
     canvas.addEventListener('pointercancel', rilascia);
 
     canvas.addEventListener('pointerleave', () => {
+      this.inPanoramica = false;
       if (this.inMira >= 0) {
         this.inMira = -1;
+        this.evidenza.set(undefined);
         this.chiediFotogramma();
       }
     });
@@ -663,6 +908,29 @@ export class GloboMemoria {
   private puntoLocale(canvas: HTMLCanvasElement, e: MouseEvent): { x: number; y: number } {
     const r = canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  /**
+   * Il dettaglio in evidenza si àncora al posto fermo del nodo, non a quello
+   * che oscilla: un riquadro che trema mentre lo si legge è illeggibile.
+   */
+  private mostraDettaglio(indice: number): void {
+    if (indice < 0) {
+      this.evidenza.set(undefined);
+      return;
+    }
+    const nodo = this.nodi[indice];
+    const x = this.larghezza / 2 + this.panX + nodo.bx * this.zoom;
+    const y = this.altezza / 2 + this.panY + nodo.by * this.zoom;
+    /* Il riquadro è centrato sul nodo: vicino ai bordi si tiene dentro la
+       scena, anche a costo di non essere esattamente all'altezza del punto. */
+    const margine = Math.min(110, this.altezza / 2);
+    this.evidenza.set({
+      ...nodo.scheda,
+      x,
+      y: Math.min(Math.max(y, margine), this.altezza - margine),
+      aSinistra: x > this.larghezza - 300,
+    });
   }
 
   /** Il nodo sotto al puntatore, il più vicino se più d'uno è a tiro. */
@@ -698,9 +966,8 @@ export class GloboMemoria {
   private avvia(): void {
     if (this.inCorsa || !this.ctx || !this.visibile) return;
     if (this.senzaMovimento) {
-      /* Senza movimento: si assesta subito e resta fermo — le interazioni
+      /* Senza movimento la figura resta, la deriva no: le interazioni
          ridisegnano fotogramma per fotogramma. */
-      while (this.alfa > 0.01) this.passo();
       this.chiediFotogramma();
       return;
     }
@@ -711,7 +978,6 @@ export class GloboMemoria {
       this.raf = requestAnimationFrame(fotogramma);
       if (ts - ultimo < 33) return; // ~30 fps bastano, e costano metà CPU
       ultimo = ts;
-      this.passo();
       this.disegna(ts / 1000);
     };
     this.raf = requestAnimationFrame(fotogramma);
@@ -736,15 +1002,15 @@ export class GloboMemoria {
     const cx = this.larghezza / 2;
     const cy = this.altezza / 2;
     const zoom = this.zoom;
-    /* La deriva si sente solo a simulazione quieta: mentre le forze
-       lavorano sarebbe un tremolio sovrapposto. */
-    const deriva = this.senzaMovimento ? 0 : Math.max(0, 1 - this.alfa * 6);
+    /* La deriva della memoria viva: la stessa formula della figura del sito,
+       in coordinate di mondo perché lo zoom non la ingigantisca. */
+    const deriva = this.senzaMovimento ? 0 : 1;
 
     for (const nodo of this.nodi) {
       const dx = deriva * Math.sin(t * nodo.sp + nodo.ph) * nodo.amp;
       const dy = deriva * Math.cos(t * nodo.sp * 0.85 + nodo.ph) * nodo.amp;
-      nodo.sx = cx + this.panX + (nodo.x + dx) * zoom;
-      nodo.sy = cy + this.panY + (nodo.y + dy) * zoom;
+      nodo.sx = cx + this.panX + (nodo.bx + dx) * zoom;
+      nodo.sy = cy + this.panY + (nodo.by + dy) * zoom;
     }
 
     const selezionata = this.selezionato()?.chiave;
@@ -760,22 +1026,38 @@ export class GloboMemoria {
       const nodo = this.nodi[i];
       if (fuoco >= 0) {
         const nelFuoco = i === fuoco || this.nodi[fuoco].vicini.has(i);
-        return nelFuoco ? 1 : filtroAttivo && !nodo.acceso ? 0.05 : 0.12;
+        return nelFuoco ? 1 : filtroAttivo && !nodo.acceso ? 0.05 : 0.3;
       }
       return !filtroAttivo || nodo.acceso ? 1 : 0.1;
     };
 
-    // --- Legami: fili sottili, non geometrie — la trama, non la gabbia ---
     ctx.lineWidth = Math.max(0.45, 0.6 * Math.min(zoom, 1.3));
+
+    /* I fili lunghi: i rami che tengono i prodotti, un passaggio citato che
+       chiama un documento dall'altra parte del quadro. Sono la trama larga
+       della figura, e a riposo si disegnano in una passata sola. */
+    if (fuoco < 0 && !filtroAttivo) {
+      ctx.strokeStyle = 'rgba(127, 151, 196, 0.10)';
+      ctx.beginPath();
+      for (const legame of this.legami) {
+        if (legame.dentro) continue;
+        ctx.moveTo(this.nodi[legame.a].sx, this.nodi[legame.a].sy);
+        ctx.lineTo(this.nodi[legame.b].sx, this.nodi[legame.b].sy);
+      }
+      ctx.stroke();
+    }
+
+    // --- I legami: fili sottili, non geometrie: la trama, non la gabbia ---
     for (const legame of this.legami) {
       const na = this.nodi[legame.a];
       const nb = this.nodi[legame.b];
-      let alfa = 0.09 + 0.04 * Math.min(legame.peso, 4);
+      let alfa = legame.dentro ? 0.13 + 0.05 * Math.min(legame.peso, 4) : 0;
       if (fuoco >= 0) {
-        alfa = legame.a === fuoco || legame.b === fuoco ? 0.5 : 0.03;
+        alfa = legame.a === fuoco || legame.b === fuoco ? 0.55 : legame.dentro ? 0.07 : 0.04;
       } else if (filtroAttivo) {
-        alfa = na.acceso && nb.acceso ? alfa + 0.12 : 0.03;
+        alfa = na.acceso && nb.acceso ? Math.max(alfa, 0.18) : 0.03;
       }
+      if (alfa <= 0) continue;
       ctx.strokeStyle = `rgba(159, 180, 214, ${alfa.toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(na.sx, na.sy);
@@ -796,12 +1078,12 @@ export class GloboMemoria {
       if (enfasi) {
         ctx.shadowColor = nodo.colore;
         ctx.shadowBlur = 12;
-      } else if (alfa > 0.5 && nodo.r >= 6) {
+      } else if (alfa > 0.5 && nodo.r >= 5) {
         ctx.shadowColor = nodo.colore;
         ctx.shadowBlur = 7;
       }
       ctx.beginPath();
-      ctx.arc(nodo.sx, nodo.sy, raggio, 0, Math.PI * 2);
+      ctx.arc(nodo.sx, nodo.sy, raggio, 0, DUE_PI);
       if (nodo.dato.tipo === 'ricordo' && nodo.dato.attivo === false) {
         /* Il ricordo sospeso è un cerchio vuoto: c'è, ma dorme. */
         ctx.strokeStyle = nodo.colore;
@@ -817,11 +1099,30 @@ export class GloboMemoria {
         ctx.strokeStyle = 'rgba(242, 239, 232, 0.9)';
         ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.arc(nodo.sx, nodo.sy, raggio + 3.5, 0, Math.PI * 2);
+        ctx.arc(nodo.sx, nodo.sy, raggio + 3.5, 0, DUE_PI);
         ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
+
+    // --- L'orlo: gli anelli perimetrali girano piano, come sul sito ---
+    const rotazione = deriva * t * 0.012;
+    const orlo = fuoco >= 0 || filtroAttivo ? 0.6 : 1;
+    const raggioOrlo = Math.max(1, 1.6 * Math.min(zoom, 1.4));
+    for (const punto of this.anelli) {
+      const a = punto.a + rotazione;
+      const rr = punto.r + deriva * Math.sin(t * 0.5 + punto.ph) * 1.6;
+      ctx.fillStyle = `rgba(127, 151, 196, ${(punto.o * orlo).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(
+        cx + this.panX + Math.cos(a) * rr * zoom,
+        cy + this.panY + Math.sin(a) * rr * zoom,
+        raggioOrlo,
+        0,
+        DUE_PI,
+      );
+      ctx.fill();
+    }
 
     // --- Etichette: gli hub sempre, il resto quando conta ---
     ctx.font = `10.5px ${this.fontMono}`;
@@ -829,16 +1130,20 @@ export class GloboMemoria {
     /* L'ombra scura stacca il testo dal fondale di puntini. */
     ctx.shadowColor = 'rgba(12, 11, 9, 0.9)';
     ctx.shadowBlur = 4;
+    /* Un hub con trenta figli non si nomina tutto: sarebbe un muro di testo
+       sopra la figura. Il nodo nel mirino non si nomina affatto, il suo nome
+       sta già nel riquadro del dettaglio. */
+    const vicinato = fuoco >= 0 && this.nodi[fuoco].vicini.size <= 12;
     for (let i = 0; i < this.nodi.length; i++) {
+      if (i === fuoco) continue;
       const nodo = this.nodi[i];
-      const nelFuoco = fuoco >= 0 && (i === fuoco || this.nodi[fuoco].vicini.has(i));
-      /* Con un filtro o una ricerca attivi i nodi accesi si nominano: sono
-         la risposta alla domanda appena fatta. */
+      const nelFuoco = vicinato && this.nodi[fuoco].vicini.has(i);
+      /* Con un filtro o una ricerca attivi i nodi accesi si nominano: sono la
+         risposta alla domanda appena fatta. */
       const daFiltro = fuoco < 0 && filtroAttivo && nodo.acceso;
-      /* A riposo il globo tace: i nomi emergono in dissolvenza con lo zoom
-         — prima gli hub, poi tutto il resto — come nel grafo di Obsidian. */
-      const daZoom =
-        rilievo(i) > 0.5 ? Math.min(1, Math.max(0, (nodo.r * zoom - 9) / 4)) : 0;
+      /* A riposo la figura tace: i nomi emergono in dissolvenza con lo zoom,
+         prima gli hub e poi tutto il resto. */
+      const daZoom = rilievo(i) > 0.5 ? Math.min(1, Math.max(0, (nodo.r * zoom - 9) / 4)) : 0;
       if (!nelFuoco && !daFiltro && daZoom <= 0) continue;
       const alfa = nelFuoco || daFiltro ? 0.95 : daZoom * 0.8;
       ctx.fillStyle = `rgba(230, 227, 218, ${alfa.toFixed(3)})`;

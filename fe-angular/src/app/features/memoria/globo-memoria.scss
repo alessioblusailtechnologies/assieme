@@ -177,6 +177,81 @@ canvas {
   color: var(--c-text-onink);
 }
 
+/* ---------- Il dettaglio del pallino sfiorato ---------- */
+
+/* Sta appeso al nodo, alla sua destra; contro il bordo si apre a sinistra.
+   Non prende il puntatore: è una lettura, non un bersaglio. */
+.dettaglio {
+  position: absolute;
+  z-index: 2;
+  width: max-content;
+  max-width: 270px;
+  padding: var(--sp-3);
+  transform: translate(14px, -50%);
+  border: 1px solid var(--c-line-onink-strong);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--c-ink) 92%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+
+.dettaglio.is-sinistra {
+  transform: translate(calc(-100% - 14px), -50%);
+}
+
+.dettaglio__tipo {
+  color: var(--c-accent-on-dark);
+}
+
+.dettaglio__titolo {
+  margin-top: 2px;
+  font-family: var(--f-lettura);
+  font-size: var(--t-sm);
+  line-height: 1.45;
+  color: var(--c-text-onink);
+  /* Un ricordo lungo o il titolo di un set non devono allungare il riquadro
+     oltre la lettura: tre righe e poi l'ellissi. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.dettaglio__contesto {
+  margin-top: 4px;
+  font-size: var(--t-xs);
+  line-height: 1.4;
+  color: var(--c-text-onink-3);
+}
+
+.dettaglio__testo {
+  margin-top: var(--sp-2);
+  padding-left: var(--sp-2);
+  border-left: 2px solid color-mix(in srgb, var(--c-accent-on-dark) 55%, transparent);
+  font-family: var(--f-lettura);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  color: var(--c-text-onink-2);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.dettaglio__azione {
+  margin-top: var(--sp-2);
+  color: var(--c-text-onink-3);
+}
+
+/* Col dito non c'è sfioramento: il dettaglio non serve, il tocco apre la
+   scheda vera. */
+@media (pointer: coarse) {
+  .dettaglio {
+    display: none;
+  }
+}
+
 /* ---------- La scheda nel cassetto ---------- */
 
 .scheda {

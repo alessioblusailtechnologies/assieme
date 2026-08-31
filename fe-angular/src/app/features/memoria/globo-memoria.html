@@ -30,8 +30,31 @@
     <canvas
       #tela
       role="application"
-      aria-label="Il globo della memoria: ricordi, conversazioni, passaggi citati, documenti e compagnie come nodi collegati. Trascina per spostarti, usa la rotellina per lo zoom, tocca un nodo per aprirne la scheda."
+      aria-label="Il globo della memoria: ricordi, conversazioni, passaggi citati, documenti e compagnie come nodi collegati. Passa sopra un nodo per il dettaglio, toccalo per aprirne la scheda; trascina per spostarti e usa la rotellina per lo zoom."
     ></canvas>
+
+    <!-- Il dettaglio del pallino sfiorato: dice cos'è prima che si debba
+         aprire qualcosa. Non prende il puntatore, altrimenti sfarfallerebbe
+         inseguendo sé stesso. -->
+    @if (evidenza(); as e) {
+      <div
+        class="dettaglio"
+        [class.is-sinistra]="e.aSinistra"
+        [style.left.px]="e.x"
+        [style.top.px]="e.y"
+        aria-hidden="true"
+      >
+        <p class="mono dettaglio__tipo">{{ e.tipo }}</p>
+        <p class="dettaglio__titolo">{{ e.titolo }}</p>
+        @if (e.contesto) {
+          <p class="dettaglio__contesto">{{ e.contesto }}</p>
+        }
+        @if (e.dettaglio) {
+          <p class="dettaglio__testo">{{ e.dettaglio }}</p>
+        }
+        <p class="mono dettaglio__azione">{{ e.azione }}</p>
+      </div>
+    }
 
     <header class="scena__testata">
       <p class="mono scena__occhiello">Memoria viva · il globo</p>
