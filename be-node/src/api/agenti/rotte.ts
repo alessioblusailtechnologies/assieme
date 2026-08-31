@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 
@@ -21,6 +18,7 @@ import {
 } from '../../contratto/agenti.js';
 import type { Citazione } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { leggiDatoDiPiattaforma } from '../../dati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { richiediCrediti } from '../crediti/rotte.js';
@@ -104,9 +102,7 @@ const SQL_ESECUZIONE = `
 /** La libreria dei predefiniti (RF-E-10): dato di piattaforma, già idratato. */
 let predefiniti: unknown[] | undefined;
 function libreriaPredefiniti(): unknown[] {
-  predefiniti ??= JSON.parse(
-    readFileSync(fileURLToPath(new URL('../../../dati/agenti-predefiniti.json', import.meta.url)), 'utf8'),
-  ) as unknown[];
+  predefiniti ??= JSON.parse(leggiDatoDiPiattaforma('agenti-predefiniti.json')) as unknown[];
   return predefiniti;
 }
 

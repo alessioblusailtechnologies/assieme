@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { creaApp, type OpzioniApp } from '../src/api/app.js';
+import { leggiDatoDiPiattaforma } from '../src/dati.js';
 import {
   schemaFonte,
   schemaModificheAgente,
@@ -107,6 +108,19 @@ describe('le rotte prima del database', () => {
     const librerie = r.json<Array<{ id: string; fonti: Array<{ etichetta: string }> }>>();
     expect(librerie.length).toBeGreaterThanOrEqual(3);
     expect(librerie[0]!.fonti[0]!.etichetta).toBeTruthy(); // già idratate
+  });
+
+  /* La prova gira sempre da `src`, l'immagine sempre da `dist/src`: se il
+     percorso del dato di piattaforma vale per un solo livello, la rotta passa
+     qui e risponde 500 in produzione. È successo con i predefiniti. */
+  it('il dato di piattaforma si trova sia da src sia dal compilato in dist', () => {
+    for (const base of ['../src/dati.ts', '../dist/src/dati.js']) {
+      const contenuto = leggiDatoDiPiattaforma(
+        'agenti-predefiniti.json',
+        new URL(base, import.meta.url),
+      );
+      expect((JSON.parse(contenuto) as unknown[]).length).toBeGreaterThanOrEqual(3);
+    }
   });
 
   it('senza token → 401 su ogni rotta del dominio', async () => {
