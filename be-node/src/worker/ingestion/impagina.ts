@@ -180,14 +180,18 @@ export async function impagina(titolo: string, markdown: string): Promise<Docume
   };
 
   nuovaPagina();
-  const titoloPulito = titolo.trim();
+  const blocchi = analizzaMarkdown(markdown);
+  /* Il titolo del documento apre la prima pagina — a meno che il documento
+     non ne abbia già uno suo: un .md che comincia con `# Prassi di agenzia`
+     non deve ritrovarsi il nome del file sopra il proprio titolo. */
+  const titoloPulito = blocchi[0]?.tipo === 'titolo' && blocchi[0].livello === 1 ? '' : titolo.trim();
   if (titoloPulito) {
     paragrafo([{ testo: titoloPulito, grassetto: true }], 15, { dopo: 12 });
     pagine[0] = `# ${titoloPulito}`;
   }
 
   let ultimaVoce = false;
-  for (const blocco of analizzaMarkdown(markdown)) {
+  for (const blocco of blocchi) {
     const dove = pagine.length - 1;
     const sorgente = sorgenteDi(blocco);
     let riuscito: boolean;

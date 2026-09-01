@@ -162,6 +162,16 @@ describe('impaginazione', () => {
     }
   });
 
+  it('il titolo del file non si somma a quello che il documento ha già', async () => {
+    const suo = await impagina('appunti-agenzia', '# Prassi di agenzia\n\nSi segnala sempre la franchigia.');
+    expect(suo.pagine[0]).toContain('# Prassi di agenzia');
+    expect(suo.pagine[0]).not.toContain('appunti-agenzia');
+
+    /* Un CSV o un .txt un titolo non ce l'hanno: quello del file serve. */
+    const senza = await impagina('listino-2026', '| Garanzia | Premio |\n| --- | --- |\n| RCA | 340 |');
+    expect(senza.pagine[0]).toContain('# listino-2026');
+  });
+
   it('le tabelle restano tabelle anche nella mappa', async () => {
     const esito = await impagina('Listino', '| Garanzia | Premio |\n| --- | --- |\n| RCA | 340 |');
     expect(esito.pagine[0]).toContain('| Garanzia | Premio |');
