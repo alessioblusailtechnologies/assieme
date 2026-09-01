@@ -87,10 +87,12 @@ export async function leggiDocumento(
 ): Promise<EsitoLettura> {
   const { pagine, rifiutate } = await trascriviTutto(pdf, totale, dipendenze);
 
+  await dipendenze.avanzamento?.({ fase: 'testimoni', fatte: 0, totali: totale });
   const pdfjs = await leggiConPdfjs(pdf);
   /* Il testimone che non c'è (chiave mancante) o che non risponde non ferma
      l'ingestion: resta l'altro, e il job lo dichiara. */
   const ocr = await leggiConOcr(pdf).catch(() => undefined);
+  await dipendenze.avanzamento?.({ fase: 'testimoni', fatte: totale, totali: totale });
   const senzaOcr = ocr === undefined;
 
   /* §2: le pagine che il filtro dei contenuti ha rifiutato anche a una a una
