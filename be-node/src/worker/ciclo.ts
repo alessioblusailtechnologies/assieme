@@ -1,6 +1,6 @@
 import type pg from 'pg';
 
-import { aggiornaStatoJob, archivia, estendiVisibilita, prossimo } from './coda.js';
+import { aggiornaStatoJob, archivia, estendiVisibilita, prossimo, rimettiInCoda } from './coda.js';
 import { ErroreNonRitentabile } from './errori.js';
 import { emettiEvento } from './eventi.js';
 import { gestori, type StrumentiJob } from './gestori.js';
@@ -10,7 +10,22 @@ export interface OpzioniCiclo {
   tentativiMassimi?: number;
   /** Invisibilità del messaggio mentre il worker lo lavora. */
   visibilitaSecondi?: number;
+  /** Quanto aspetta un tentativo fallito prima di tornare pescabile. */
+  ritentaTraSecondi?: number;
 }
+
+/**
+ * Il respiro fra un tentativo e il successivo (01/09/2026).
+ *
+ * Fino a ieri non c'era: il messaggio restava in coda invisibile e
+ * ricompariva allo scadere della visibilità — un minuto buono di silenzio
+ * per chi in chat stava aspettando una risposta, con la domanda già
+ * partita e nessun segno di vita. Ora si rimette in coda subito; due
+ * secondi bastano perché un guasto momentaneo (un riavvio del worker, il
+ * modello sovraccarico) sia passato, e a non rifare tre giri nello stesso
+ * istante.
+ */
+const RITENTA_TRA_SECONDI = 2;
 
 /**
  * Lavora UN messaggio, se c'è. Restituisce true se ha lavorato qualcosa.
@@ -85,12 +100,25 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
       });
       await archivia(db, msgId);
     } else {
-      // Si lascia il messaggio in coda: ricomparirà da solo allo scadere
-      // della visibilità. Lo stato torna in-coda perché l'utente veda
-      // l'attesa, e il nuovo tentativo sta nel log del job.
+      /* Si ritenta: lo stato torna in-coda perché l'utente veda l'attesa, e
+         il messaggio torna pescabile fra pochi secondi invece che allo
+         scadere della visibilità. */
       await aggiornaStatoJob(db, job.id, 'in-coda', {
         tentativi: consegne,
         errore: messaggioErrore,
+      });
+      await rimettiInCoda(db, msgId, opzioni.ritentaTraSecondi ?? RITENTA_TRA_SECONDI);
+      /* Il perché resta nei log del worker: il job lo dimentica appena un
+         tentativo riesce (`errore = null`), e senza questa riga di un
+         fallimento intermedio non resta traccia leggibile. */
+      console.warn(
+        `[worker] tentativo ${consegne}/${tentativiMassimi} fallito su ${job.tipo} ${job.id}: ${messaggioErrore}`,
+      );
+      /* E l'attesa si racconta: un minuto di silenzio senza spiegazione è
+         peggio di un intoppo dichiarato. */
+      await emettiEvento(db, job.id, 'attivita', {
+        tipo: 'attivita',
+        etichetta: 'Un tentativo non è riuscito: riprovo',
       });
       await emettiEvento(db, job.id, 'nuovo-tentativo', {
         tentativo: consegne,

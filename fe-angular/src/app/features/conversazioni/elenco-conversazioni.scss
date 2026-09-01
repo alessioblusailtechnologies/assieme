@@ -132,26 +132,23 @@ ui-stato-vuoto {
   vertical-align: middle;
 }
 
-.in-risposta__punto {
-  width: 6px;
-  height: 6px;
+.in-risposta__attesa {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--c-line);
+  border-top-color: currentcolor;
   border-radius: 50%;
-  background: currentcolor;
-  animation: battito-risposta 1.6s ease-in-out infinite;
+  animation: gira-risposta 0.7s linear infinite;
 }
 
-@keyframes battito-risposta {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
+@keyframes gira-risposta {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .in-risposta__punto {
+  .in-risposta__attesa {
     animation: none;
   }
 }

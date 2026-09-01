@@ -99,6 +99,17 @@ export async function estendiVisibilita(db: pg.Pool, msgId: number, secondi: num
   await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [CODA_LAVORI, msgId, secondi]);
 }
 
+/**
+ * Rimette un messaggio a disposizione fra `secondi` (01/09/2026).
+ *
+ * È la stessa leva della visibilità, usata al contrario: dopo un tentativo
+ * fallito non si aspetta che la finestra scada da sola — chi sta
+ * aspettando una risposta in chat non ha motivo di pagare quel minuto.
+ */
+export async function rimettiInCoda(db: pg.Pool, msgId: number, secondi: number): Promise<void> {
+  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [CODA_LAVORI, msgId, secondi]);
+}
+
 /** Toglie il messaggio dalla coda conservandolo nell'archivio pgmq. */
 export async function archivia(db: pg.Pool | pg.ClientBase, msgId: number): Promise<void> {
   await db.query('select pgmq.archive($1, $2::bigint)', [CODA_LAVORI, msgId]);

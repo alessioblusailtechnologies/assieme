@@ -301,34 +301,32 @@
 /*
  * Sta rispondendo (01/09/2026).
  *
- * Un punto che respira davanti al titolo: la risposta è un lavoro del
- * server e prosegue anche se si cambia pagina, quindi va riconosciuta
- * dall'elenco, non solo dentro la chat aperta. Un punto e non una barra
- * perché la riga è stretta e il titolo è ciò che conta.
+ * Uno spinner davanti al titolo: la risposta è un lavoro del server e
+ * prosegue anche se si cambia pagina, quindi va riconosciuta dall'elenco,
+ * non solo dentro la chat aperta. Gira, perché è lavoro in corso e non uno
+ * stato: un punto che pulsa sembra una notifica.
  */
-.conversazioni__battito {
+.conversazioni__attesa {
   display: inline-block;
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   margin-right: 6px;
+  border: 1.5px solid var(--c-line);
+  border-top-color: var(--c-accent);
   border-radius: 50%;
-  background: var(--c-accent);
-  vertical-align: 1px;
-  animation: battito-risposta 1.6s ease-in-out infinite;
+  vertical-align: -1px;
+  animation: gira-risposta 0.7s linear infinite;
 }
 
-@keyframes battito-risposta {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 1;
+@keyframes gira-risposta {
+  to {
+    transform: rotate(360deg);
   }
 }
 
+/* Fermo resta un anello: si vede che quella riga è diversa dalle altre. */
 @media (prefers-reduced-motion: reduce) {
-  .conversazioni__battito {
+  .conversazioni__attesa {
     animation: none;
   }
 }
