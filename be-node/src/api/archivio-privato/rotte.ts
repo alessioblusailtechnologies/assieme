@@ -5,16 +5,19 @@ import type pg from 'pg';
 
 import { type Compagnia, type Ramo, type TipologiaDocumento } from '../../contratto/documenti.js';
 import {
+  ELENCO_FORMATI,
   schemaFiltriDocumentiPrivati,
   schemaModificheDocumento,
   type DocumentoPrivato,
   type EsitoCaricamento,
   type Etichetta,
+  type FormatoDocumento,
   type PaginaDocumentiPrivati,
   type SpazioTenant,
   type StatoElaborazione,
 } from '../../contratto/documenti-privati.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { estensionePerFormato, riconosciFormato, type FileRicevuto } from './formati.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -105,28 +108,33 @@ const SQL_BASE = `
 /** Il più recente in cima (lo stub ordina per `caricatoIl` decrescente). */
 const SQL_ORDINE = ` order by d.caricato_il desc, d.id`;
 
-/** Un file arrivato col multipart, già in memoria (max `limiteFileByte`, decine di MB). */
-export interface FileRicevuto {
-  nome: string;
-  mimetype: string;
-  contenuto: Buffer;
-  troncato: boolean;
-}
-
-/** I byte con cui comincia ogni PDF: il nome e il mimetype li dichiara il client, questo no. */
-const FIRMA_PDF = Buffer.from('%PDF-');
-
-export function ePdf(f: FileRicevuto): boolean {
-  const dichiarato = f.mimetype === 'application/pdf' || /\.pdf$/i.test(f.nome);
-  return dichiarato && f.contenuto.subarray(0, 1024).includes(FIRMA_PDF);
-}
+/* Il riconoscimento dei formati sta in `formati.ts` da quando i formati
+   sono più d'uno; questi due restano esportati da qui perché mezzo backend
+   li importa da questo modulo. */
+export type { FileRicevuto } from './formati.js';
+export { ePdf } from './formati.js';
 
 /** Id opaco e testuale come nel contratto (`doc-priv-…`), mai sequenziale. */
 export const nuovoIdPrivato = (): string => `doc-priv-${randomBytes(6).toString('hex')}`;
 
-/** Dove vive un privato nello Storage: sotto il tenant, per id. */
+/**
+ * Dove vive un privato nello Storage: sotto il tenant, per id.
+ *
+ * `percorsoPdf` è il documento **da leggere e da mostrare**: per un PDF è il
+ * file caricato, per tutto il resto è quello che l'ingestion impagina.
+ * `percorsoOriginale` è ciò che è stato caricato, com'era.
+ */
 export const percorsoPdf = (tenantId: string, id: string): string =>
   `tenant/${tenantId}/documenti/${id}.pdf`;
+
+/*
+ * Gli originali che non sono PDF stanno in una cartella loro, e non accanto
+ * al PDF: un .md caricato si chiamerebbe `<id>.md`, cioè esattamente il nome
+ * della trascrizione che l'ingestion scrive lì — e il documento si
+ * mangerebbe da solo.
+ */
+export const percorsoOriginale = (tenantId: string, id: string, estensione: string): string =>
+  estensione === '.pdf' ? percorsoPdf(tenantId, id) : `tenant/${tenantId}/originali/${id}${estensione}`;
 
 export interface OpzioniArchivioPrivato {
   /** Nei test: un archivio finto al posto dello Storage. */
@@ -235,14 +243,17 @@ export function registraRotteArchivioPrivato(
         throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${f.nome}» supera il limite di ${mb} MB per file.`);
       }
     }
+    const formati = new Map<FileRicevuto, FormatoDocumento>();
     for (const f of ricevuti) {
-      if (!ePdf(f)) {
+      const formato = riconosciFormato(f);
+      if (!formato) {
         throw new ErroreApi(
           415,
           'FORMATO_NON_SUPPORTATO',
-          `«${f.nome}» non è un PDF: per ora l'archivio accetta solo documenti PDF.`,
+          `«${f.nome}» non è di un formato che sappiamo leggere: l'archivio accetta ${ELENCO_FORMATI}.`,
         );
       }
+      formati.set(f, formato);
     }
     const pesoLotto = ricevuti.reduce((s, f) => s + f.contenuto.length, 0);
     if (spazio.usatoByte + pesoLotto > spazio.limiteByte) {
@@ -252,28 +263,41 @@ export function registraRotteArchivioPrivato(
     /* Prima i byte nello Storage, poi le righe (firmate dalla RLS), infine
        i job. Se qualcosa si rompe a metà, i byte già caricati si tolgono:
        niente orfani nello Storage. */
-    const daCreare = ricevuti.map((f) => ({ ...f, id: nuovoIdPrivato() }));
+    const daCreare = ricevuti.map((f) => {
+      const formato = formati.get(f)!;
+      const id = nuovoIdPrivato();
+      const estensione = estensionePerFormato(formato, f.nome);
+      return { ...f, id, formato, percorso: percorsoOriginale(tenantId, id, estensione) };
+    });
     const caricati: string[] = [];
     let creati: DocumentoPrivato[];
     try {
       for (const f of daCreare) {
-        const percorso = percorsoPdf(tenantId, f.id);
-        await archivio().carica(percorso, f.contenuto, 'application/pdf');
-        caricati.push(percorso);
+        /* Si conserva l'originale com'era: il PDF da mostrare, quando il
+           documento non è già un PDF, lo compone l'ingestion. */
+        await archivio().carica(f.percorso, f.contenuto, f.mimetype || 'application/octet-stream');
+        caricati.push(f.percorso);
       }
 
       creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const esiti: DocumentoPrivato[] = [];
         for (const f of daCreare) {
+          /* `path_pdf` è dove il documento da mostrare *starà*: per un PDF
+             è il file appena caricato, per gli altri il PDF che l'ingestion
+             comporrà. Fino ad allora il documento non è pronto, e
+             l'anteprima lo dice. */
           await client.query(
             `insert into velia.documenti
-               (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
-                caricato_da, caricato_il, dimensione_byte, classificazione_da_confermare)
-             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, true)`,
+               (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
+                path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
+                classificazione_da_confermare)
+             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true)`,
             [
               f.id,
               tenantId,
               f.nome.replace(/\.[^.]+$/, '') || f.nome,
+              f.formato,
+              f.percorso,
               percorsoPdf(tenantId, f.id),
               f.nome,
               utenteId,
@@ -398,20 +422,30 @@ export function registraRotteArchivioPrivato(
    */
   app.get<{ Params: { id: string } }>('/api/documenti-privati/:id/file', async (richiesta, risposta) => {
     const riga = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const r = await client.query<{ path_pdf: string | null; stato: StatoElaborazione }>(
-        `select path_pdf, stato from velia.documenti
+      const r = await client.query<{
+        path_pdf: string | null;
+        stato: StatoElaborazione;
+        formato: FormatoDocumento;
+      }>(
+        `select path_pdf, stato, formato from velia.documenti
          where archivio = 'privato' and tenant_id = $2 and id = $1`,
         [richiesta.params.id, richiesta.identita.tenantId],
       );
       return r.rows[0];
     });
     if (!riga) throw ErroreApi.nonTrovato('Documento inesistente.');
-    /* Il PDF si apre da subito, anche mentre lo si sta ancora leggendo
+    /* Un PDF si apre da subito, anche mentre lo si sta ancora leggendo
        (01/09/2026): il file è in archivio dal momento del caricamento, e la
-       lettura visiva dura minuti. Rifiutarlo voleva dire un documento
-       appena allegato in chat che per minuti non si poteva nemmeno
-       guardare. Quel che manca finché l'elaborazione non finisce è la
-       trascrizione — quindi le citazioni, non la pagina. */
+       lettura visiva dura minuti. Quel che manca finché l'elaborazione non
+       finisce è la trascrizione — quindi le citazioni, non la pagina.
+       Chi invece è arrivato in un altro formato un PDF non ce l'ha ancora:
+       lo compone l'ingestion, e prima di allora non c'è niente da mostrare. */
+    if (riga.formato !== 'pdf' && riga.stato !== 'pronto') {
+      throw ErroreApi.conflitto(
+        'NON_PRONTO',
+        "L'anteprima di questo documento è disponibile a elaborazione conclusa.",
+      );
+    }
     if (!riga.path_pdf) {
       throw new ErroreApi(404, 'FILE_MANCANTE', 'Il file di questo documento non è più in archivio.');
     }

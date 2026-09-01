@@ -219,20 +219,59 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     });
   });
 
-  it('upload senza file → 400 NESSUN_FILE; un non-PDF → 415 FORMATO_NON_SUPPORTATO', async () => {
+  it('upload senza file → 400 NESSUN_FILE; un formato che non sappiamo leggere → 415', async () => {
     const vuoto = await carica(tokenAdmin, []);
     expect(vuoto.statusCode).toBe(400);
     expect(vuoto.json<CorpoErroreApi>().codice).toBe('NESSUN_FILE');
 
-    const testo = await carica(tokenAdmin, [
-      { nome: 'appunti.txt', contenuto: Buffer.from('ciao'), tipo: 'text/plain' },
+    /* Dal 01/09/2026 il testo entra (Word, Excel, Markdown, testo, CSV,
+       immagini): resta fuori ciò che non sappiamo leggere. */
+    const zip = await carica(tokenAdmin, [
+      { nome: 'lotto.zip', contenuto: Buffer.from('PKqualcosa'), tipo: 'application/zip' },
     ]);
-    expect(testo.statusCode).toBe(415);
-    expect(testo.json<CorpoErroreApi>().codice).toBe('FORMATO_NON_SUPPORTATO');
+    expect(zip.statusCode).toBe(415);
+    expect(zip.json<CorpoErroreApi>().codice).toBe('FORMATO_NON_SUPPORTATO');
 
     // Un .pdf che non è un PDF: il nome non basta.
     const finto = await carica(tokenAdmin, [{ nome: 'finto.pdf', contenuto: Buffer.from('ciao') }]);
     expect(finto.statusCode).toBe(415);
+
+    /* Un .txt che è un binario travestito: la firma non c'è, ma il byte
+       nullo lo tradisce. */
+    const travestito = await carica(tokenAdmin, [
+      { nome: 'appunti.txt', contenuto: Buffer.from([0x41, 0x00, 0x42]), tipo: 'text/plain' },
+    ]);
+    expect(travestito.statusCode).toBe(415);
+  });
+
+  it('un .md entra come documento privato, con l’originale conservato e il PDF ancora da comporre', async () => {
+    const r = await carica(tokenAdmin, [
+      { nome: 'appunti-agenzia.md', contenuto: Buffer.from('# Prassi\n\nSi segnala sempre la franchigia.'), tipo: 'text/markdown' },
+    ]);
+    expect(r.statusCode).toBe(201);
+    const documento = r.json<EsitoCaricamento>().creati[0]!;
+    expect(documento.titolo).toBe('appunti-agenzia');
+
+    const riga = await pool().query<{ formato: string; path_originale: string; path_pdf: string }>(
+      `select formato, path_originale, path_pdf from velia.documenti where id = $1`,
+      [documento.id],
+    );
+    /* L'originale sta in una cartella sua: `<id>.md` accanto al PDF sarebbe
+       lo stesso nome della trascrizione che l'ingestion scriverà. */
+    expect(riga.rows[0]!.formato).toBe('markdown');
+    expect(riga.rows[0]!.path_originale).toMatch(/\/originali\/.*\.md$/);
+    expect(riga.rows[0]!.path_pdf).toMatch(/\/documenti\/.*\.pdf$/);
+
+    /* Il PDF non c'è ancora: l'anteprima lo dice invece di rispondere un
+       file che non esiste. */
+    const anteprima = await richiedi('GET', `/api/documenti-privati/${documento.id}/file`, tokenAdmin);
+    expect(anteprima.statusCode).toBe(409);
+    expect(anteprima.json<CorpoErroreApi>().codice).toBe('NON_PRONTO');
+
+    /* Il conto dei documenti del tenant lo tengono gli altri test: questo
+       si porta via ciò che ha creato. */
+    await pool().query(`delete from velia.jobs where payload->>'documentoId' = $1`, [documento.id]);
+    await pool().query(`delete from velia.documenti where id = $1`, [documento.id]);
   });
 
   it('upload multiplo → 201 {creati}: in coda, titolo dal nome, proposta da confermare, job accodati', async () => {

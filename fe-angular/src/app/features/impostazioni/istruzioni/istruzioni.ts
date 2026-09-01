@@ -7,7 +7,13 @@ import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
 import { CodaCaricamento } from '@shared/caricamento/coda-caricamento';
-import { DocumentoRiferimento, Id, RegolaIstruzione } from '@core/models';
+import {
+  DocumentoRiferimento,
+  ESTENSIONI_DOCUMENTO,
+  FORMATI_DOCUMENTO,
+  Id,
+  RegolaIstruzione,
+} from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 import { IstruzioniStore } from './istruzioni-store';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -60,6 +66,10 @@ type Scheda = 'regole' | 'riferimenti';
 })
 export class Istruzioni {
   protected readonly store = inject(IstruzioniStore);
+
+  /* Gli stessi formati dell'archivio: un riferimento è un documento privato con un ruolo in più. */
+  protected readonly estensioni = ESTENSIONI_DOCUMENTO;
+  protected readonly formati = FORMATI_DOCUMENTO;
 
   protected readonly scheda = signal<Scheda>('regole');
 

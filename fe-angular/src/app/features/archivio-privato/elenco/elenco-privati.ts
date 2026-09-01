@@ -14,7 +14,12 @@ import { Icona } from '@shared/ui/icona/icona';
 import { Paginazione } from '@shared/ui/paginazione/paginazione';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
-import { StatoElaborazione, TipologiaDocumento } from '@core/models';
+import {
+  ESTENSIONI_DOCUMENTO,
+  FORMATI_DOCUMENTO,
+  StatoElaborazione,
+  TipologiaDocumento,
+} from '@core/models';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 import { dimensioneLeggibile } from '@shared/testi/misura';
@@ -69,6 +74,8 @@ export class ElencoPrivati {
   protected readonly store = inject(ArchivioPrivatoStore);
 
   protected readonly stati = STATI;
+  protected readonly estensioni = ESTENSIONI_DOCUMENTO;
+  protected readonly formati = FORMATI_DOCUMENTO;
   protected readonly tipologie = TIPOLOGIE_PRIVATE;
 
   protected readonly briciole: VoceBriciola[] = [

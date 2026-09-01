@@ -19,7 +19,9 @@ import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
-import { percorsoPdf } from '../archivio-privato/rotte.js';
+import { percorsoOriginale, percorsoPdf } from '../archivio-privato/rotte.js';
+import { estensionePerFormato, riconosciFormato } from '../archivio-privato/formati.js';
+import { ELENCO_FORMATI, type FormatoDocumento } from '../../contratto/documenti-privati.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { registraStorico } from '../template/rotte.js';
 
@@ -67,7 +69,6 @@ interface RigaRiferimento {
 }
 
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const FIRMA_PDF = Buffer.from('%PDF-');
 
 export interface OpzioniIstruzioni {
   /** Nei test: un archivio finto al posto dello Storage. */
@@ -226,35 +227,43 @@ export function registraRotteIstruzioni(app: FastifyInstance, opzioni: OpzioniIs
     if (!richiesta.isMultipart()) {
       throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
     }
-    const ricevuti: Array<{ nome: string; contenuto: Buffer }> = [];
+    const ricevuti: Array<{ nome: string; contenuto: Buffer; formato: FormatoDocumento }> = [];
     for await (const parte of richiesta.parts()) {
       if (parte.type !== 'file' || !parte.filename) continue;
       const contenuto = await parte.toBuffer();
       if (parte.file.truncated) {
         throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${parte.filename}» supera il limite per file.`);
       }
-      if (!contenuto.subarray(0, 1024).includes(FIRMA_PDF)) {
+      const formato = riconosciFormato({
+        nome: parte.filename,
+        mimetype: parte.mimetype,
+        contenuto,
+        troncato: false,
+      });
+      if (!formato) {
         throw new ErroreApi(
           415,
           'FORMATO_NON_SUPPORTATO',
-          `«${parte.filename}» non è un PDF: per ora i riferimenti accettano solo documenti PDF.`,
+          `«${parte.filename}» non è di un formato che sappiamo leggere: i riferimenti accettano ${ELENCO_FORMATI}.`,
         );
       }
-      ricevuti.push({ nome: parte.filename, contenuto });
+      ricevuti.push({ nome: parte.filename, contenuto, formato });
     }
     if (!ricevuti.length) {
       throw new ErroreApi(400, 'NESSUN_FILE', 'La richiesta non contiene file.');
     }
 
     const { tenantId, utenteId } = richiesta.identita;
-    const daCreare = ricevuti.map((f) => ({ ...f, id: `doc-priv-${randomBytes(6).toString('hex')}` }));
+    const daCreare = ricevuti.map((f) => {
+      const id = `doc-priv-${randomBytes(6).toString('hex')}`;
+      return { ...f, id, percorso: percorsoOriginale(tenantId, id, estensionePerFormato(f.formato, f.nome)) };
+    });
     const caricati: string[] = [];
     let creati: DocumentoRiferimento[];
     try {
       for (const f of daCreare) {
-        const percorso = percorsoPdf(tenantId, f.id);
-        await archivio().carica(percorso, f.contenuto, 'application/pdf');
-        caricati.push(percorso);
+        await archivio().carica(f.percorso, f.contenuto, 'application/octet-stream');
+        caricati.push(f.percorso);
       }
       creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const esiti: DocumentoRiferimento[] = [];
@@ -262,10 +271,21 @@ export function registraRotteIstruzioni(app: FastifyInstance, opzioni: OpzioniIs
           const titolo = f.nome.replace(/\.[^.]+$/, '') || f.nome;
           await client.query(
             `insert into velia.documenti
-               (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
-                caricato_da, caricato_il, dimensione_byte, documento_di_riferimento)
-             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, true)`,
-            [f.id, tenantId, titolo, percorsoPdf(tenantId, f.id), f.nome, utenteId, f.contenuto.length],
+               (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
+                path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
+                documento_di_riferimento)
+             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true)`,
+            [
+              f.id,
+              tenantId,
+              titolo,
+              f.formato,
+              f.percorso,
+              percorsoPdf(tenantId, f.id),
+              f.nome,
+              utenteId,
+              f.contenuto.length,
+            ],
           );
           const voce = await client.query<{ id: string }>(
             `insert into velia.riferimenti (tenant_id, documento_id, origine, caricato_da)

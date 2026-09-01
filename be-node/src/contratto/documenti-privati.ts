@@ -110,5 +110,28 @@ export const schemaModificheDocumento = z
 
 export type ModificheDocumento = z.infer<typeof schemaModificheDocumento>;
 
-/** I formati che la pipeline sa convertire oggi (RF-B-02: minimo il PDF). */
-export const FORMATI_ACCETTATI = ['application/pdf'] as const;
+/**
+ * Come un documento è entrato in archivio (01/09/2026).
+ *
+ * Quale che sia, quello che si apre nel visualizzatore è sempre un PDF: chi
+ * non arriva già così viene impaginato all'ingestion, e le citazioni
+ * puntano alle pagine di quel PDF. Il formato serve a sapere *come* leggere
+ * il file, non a cambiare ciò che l'utente vede dopo.
+ */
+export const FORMATI_DOCUMENTO = [
+  { formato: 'pdf', estensioni: ['.pdf'], mime: ['application/pdf'], etichetta: 'PDF' },
+  { formato: 'docx', estensioni: ['.docx'], mime: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], etichetta: 'Word' },
+  { formato: 'xlsx', estensioni: ['.xlsx'], mime: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'], etichetta: 'Excel' },
+  { formato: 'markdown', estensioni: ['.md', '.markdown'], mime: ['text/markdown'], etichetta: 'Markdown' },
+  { formato: 'testo', estensioni: ['.txt'], mime: ['text/plain'], etichetta: 'testo' },
+  { formato: 'csv', estensioni: ['.csv'], mime: ['text/csv'], etichetta: 'CSV' },
+  { formato: 'immagine', estensioni: ['.png', '.jpg', '.jpeg'], mime: ['image/png', 'image/jpeg'], etichetta: 'immagini' },
+] as const;
+
+export type FormatoDocumento = (typeof FORMATI_DOCUMENTO)[number]['formato'];
+
+/** Per l'`accept` della finestra di scelta file e per i messaggi d'errore. */
+export const ESTENSIONI_ACCETTATE = FORMATI_DOCUMENTO.flatMap((f) => [...f.estensioni]);
+
+/** «PDF, Word, Excel, Markdown, testo, CSV e immagini», per parlare all'utente. */
+export const ELENCO_FORMATI = FORMATI_DOCUMENTO.map((f) => f.etichetta).join(', ');

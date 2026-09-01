@@ -48,6 +48,26 @@ class ArchivioFinto implements ArchivioFile {
   }
 }
 
+/** Un archivio finto che sa di avere più file, ognuno al suo posto. */
+class ArchivioConFile implements ArchivioFile {
+  readonly file = new Map<string, Buffer>();
+  constructor(iniziali: Record<string, Buffer>) {
+    for (const [percorso, byte] of Object.entries(iniziali)) this.file.set(percorso, byte);
+  }
+  scarica(percorso: string): Promise<Buffer> {
+    const byte = this.file.get(percorso);
+    return byte ? Promise.resolve(byte) : Promise.reject(new Error(`assente: ${percorso}`));
+  }
+  carica(percorso: string, contenuto: Buffer): Promise<void> {
+    this.file.set(percorso, contenuto);
+    return Promise.resolve();
+  }
+  elimina(percorsi: string[]): Promise<void> {
+    for (const p of percorsi) this.file.delete(p);
+    return Promise.resolve();
+  }
+}
+
 class ConvertitoreFinto implements Convertitore {
   readonly chiamate: Array<{ paginaIniziale: number; pagineTotali: number }> = [];
   constructor(private readonly pagineDelBlocco = 2) {}
@@ -144,12 +164,14 @@ describe.skipIf(!dbPronto)('pipeline di ingestion (convertitore finto)', () => {
       `select tipo from velia.eventi_job where job_id = $1 order by id`,
       [job.id],
     );
-    expect(eventi.rows.map((e) => e.tipo)).toEqual([
-      'ingestion-inizio',
-      'ingestion-avanzamento',
-      'ingestion-avanzamento',
-      'ingestion-fine',
-    ]);
+    /* Apre `inizio` e chiude `fine`; in mezzo l'avanzamento blocco per
+       blocco e il verdetto dei testimoni, che dalla lettura visiva
+       (30/08/2026) fa parte del racconto. */
+    const tipi = eventi.rows.map((e) => e.tipo);
+    expect(tipi[0]).toBe('ingestion-inizio');
+    expect(tipi.at(-1)).toBe('ingestion-fine');
+    expect(tipi).toContain('ingestion-avanzamento');
+    expect(tipi).toContain('ingestion-verifica');
   });
 
   it('un errore di conversione lascia il documento in errore, con un motivo che parla all’utente', async () => {
@@ -176,4 +198,49 @@ describe.skipIf(!dbPronto)('pipeline di ingestion (convertitore finto)', () => {
     expect(riga.rows[0]!.errore_elaborazione).not.toContain('modello non raggiungibile');
     expect(riga.rows[0]!.errore_elaborazione).toMatch(/Riprova a caricare/);
   });
+  it('un documento testuale non passa dal modello: si estrae, si impagina, le pagine sono quelle del PDF', async () => {
+    const originale = 'prove/ingestion/originale.md';
+    const daMostrare = 'prove/ingestion/documento.pdf';
+    await pool().query(
+      `update velia.documenti
+       set formato = 'markdown', path_originale = $2, path_pdf = $3, path_md = null,
+           stato = 'in-coda', errore_elaborazione = null
+       where id = $1`,
+      [DOC_ID, originale, daMostrare],
+    );
+    const archivio = new ArchivioConFile({
+      [originale]: Buffer.from(
+        '# Condizioni\n\nLa garanzia **cristalli** ha franchigia di € 200.\n\n| Garanzia | Massimale |\n| --- | --- |\n| RCA | 6.450.000 € |\n',
+        'utf8',
+      ),
+    });
+    const convertitore = new ConvertitoreFinto();
+
+    const job = await creaJob();
+    await creaGestoreIngestion({ convertitore, archivio })(job, { db: pool() });
+
+    /* Il testo c'era già: nessuna pagina da guardare, nessuna chiamata da
+       pagare. */
+    expect(convertitore.chiamate).toEqual([]);
+
+    /* Il PDF da mostrare è stato composto qui, ed è quello che il
+       visualizzatore aprirà. */
+    const pdf = archivio.file.get(daMostrare);
+    expect(pdf?.subarray(0, 5).toString('utf8')).toBe('%PDF-');
+
+    /* La trascrizione sta accanto al PDF, non sopra l'originale: un .md
+       caricato non deve essere sovrascritto dal .md dell'ingestion. */
+    const markdown = archivio.file.get('prove/ingestion/documento.md')?.toString('utf8');
+    expect(markdown).toContain('[pag. 1]');
+    expect(markdown).toContain('**cristalli**');
+    expect(markdown).toContain('| RCA | 6.450.000 € |');
+    expect(archivio.file.get(originale)?.toString('utf8')).toContain('# Condizioni');
+
+    const riga = await pool().query<{ stato: string; numero_pagine: number; path_pdf: string }>(
+      `select stato, numero_pagine, path_pdf from velia.documenti where id = $1`,
+      [DOC_ID],
+    );
+    expect(riga.rows[0]).toEqual({ stato: 'pronto', numero_pagine: 1, path_pdf: daMostrare });
+  });
+
 });

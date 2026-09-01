@@ -343,13 +343,16 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
       return true;
     }
 
-    // Come il backend (Fase 2): la pipeline converte solo PDF, gli altri
-    // formati si rifiutano subito con un motivo leggibile, non in coda.
-    const nonPdf = file.find((f) => !/.pdf$/i.test(f.nome));
-    if (nonPdf) {
+    /* Come il backend (01/09/2026): PDF, Word, Excel, Markdown, testo, CSV e
+       immagini. Ciò che non arriva in PDF viene impaginato in uno
+       all'ingestion; quel che non sappiamo leggere si rifiuta subito, con un
+       motivo leggibile, invece di metterlo in coda. */
+    const ESTENSIONI = ['.pdf', '.docx', '.xlsx', '.md', '.markdown', '.txt', '.csv', '.png', '.jpg', '.jpeg'];
+    const sconosciuto = file.find((f) => !ESTENSIONI.some((e) => f.nome.toLowerCase().endsWith(e)));
+    if (sconosciuto) {
       inviaJson(res, 415, {
         codice: 'FORMATO_NON_SUPPORTATO',
-        messaggio: `«${nonPdf.nome}» non è un PDF: per ora l'archivio accetta solo documenti PDF.`,
+        messaggio: `«${sconosciuto.nome}» non è di un formato che sappiamo leggere: l'archivio accetta PDF, Word, Excel, Markdown, testo, CSV, immagini.`,
       });
       return true;
     }

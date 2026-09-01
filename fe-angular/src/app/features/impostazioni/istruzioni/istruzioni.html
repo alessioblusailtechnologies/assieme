@@ -172,7 +172,11 @@
   </ui-avviso>
 
   @if (store.puoGestire()) {
-    <ui-zona-caricamento (scelti)="store.carica($event)" formati=".pdf,.docx,.doc,.txt" />
+    <ui-zona-caricamento
+      [formati]="estensioni"
+      [descrizioneFormati]="formati"
+      (scelti)="store.carica($event)"
+    />
     @if (store.coda().length) {
       <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
     }

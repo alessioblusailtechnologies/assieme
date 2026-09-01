@@ -15,7 +15,7 @@ import { ChatStore, type AllegatoInCorso, type StatoElaborazioneAllegato } from 
 import { Icona } from '@shared/ui/icona/icona';
 import { MenuAzioni, type VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
-import { Id, ModoAllegato, RiferimentoDocumento } from '@core/models';
+import { ESTENSIONI_DOCUMENTO, Id, ModoAllegato, RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { ErroreMicrofono, Registratore } from './registratore';
 import {
@@ -62,6 +62,10 @@ import { menzioneAlCursore } from './menzione';
 })
 export class Composer {
   protected readonly store = inject(ChatStore);
+
+  /* La finestra di scelta mostra solo ciò che sappiamo leggere: scoprirlo
+     dopo il caricamento, con un 415, è il modo peggiore di apprenderlo. */
+  protected readonly estensioni = ESTENSIONI_DOCUMENTO;
 
   /** Documenti da non riproporre nel selettore: già nel contesto. */
   readonly giaInContesto = input<string[]>([]);

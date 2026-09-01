@@ -11,8 +11,11 @@ import {
 } from './classificatore.js';
 import { headerDocumento } from './convenzioni.js';
 import type { Convertitore } from './convertitore.js';
+import { eTestuale, markdownDaOriginale } from './estrattori.js';
+import { impagina, pdfDaImmagine } from './impagina.js';
 import { leggiDocumento } from './lettura-visiva.js';
 import { contaPagine } from './pdf.js';
+import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
 import type { SecondoSguardo } from './secondo-sguardo.js';
 
 /**
@@ -77,6 +80,8 @@ interface RigaDaConvertire {
   tipologia: string;
   prodotto: string | null;
   nome_file: string | null;
+  formato: FormatoDocumento | null;
+  path_originale: string | null;
   path_pdf: string | null;
   path_md: string | null;
   edizione_valida_dal: string | null;
@@ -113,7 +118,7 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
 
     const righe = await db.query<RigaDaConvertire>(
       `select d.id, d.archivio, d.titolo, d.tipologia, d.prodotto, d.nome_file,
-              d.path_pdf, d.path_md, d.edizione_valida_dal,
+              d.formato, d.path_originale, d.path_pdf, d.path_md, d.edizione_valida_dal,
               d.classificazione_da_confermare, c.nome as compagnia_nome
        from velia.documenti d
        left join velia.compagnie c on c.id = d.compagnia_id
@@ -122,7 +127,14 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
     );
     const documento = righe.rows[0];
     if (!documento) throw new Error(`documento ${documentoId} inesistente`);
-    if (!documento.path_pdf) throw new Error(`documento ${documentoId} senza PDF in archivio`);
+    /* `path_originale` è il file com'è stato caricato; sui documenti di
+       prima del 01/09/2026 non c'è, ed erano tutti PDF. */
+    const originale = documento.path_originale ?? documento.path_pdf;
+    if (!originale) throw new Error(`documento ${documentoId} senza file in archivio`);
+    const formato: FormatoDocumento = documento.formato ?? 'pdf';
+    /* Il PDF da mostrare sta accanto all'originale, con la sua estensione:
+       per un PDF sono lo stesso file. */
+    const pathPdf = documento.path_pdf ?? originale.replace(/\.[^.]+$/, '.pdf');
 
     await db.query(
       `update velia.documenti set stato = 'in-elaborazione', errore_elaborazione = null where id = $1`,
@@ -131,47 +143,85 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
     await emettiEvento(db, job.id, 'ingestion-inizio', { documentoId });
 
     try {
-      const pdf = await dipendenze.archivio.scarica(documento.path_pdf);
+      const byte = await dipendenze.archivio.scarica(originale);
       let totale: number;
-      try {
-        totale = await contaPagine(pdf);
-      } catch (errore) {
-        throw new ErroreIngestion(
-          `PDF non leggibile: ${errore instanceof Error ? errore.message : String(errore)}`,
-          'Il file non è un PDF leggibile: potrebbe essere danneggiato o protetto. Caricane una copia apribile.',
-        );
+      let pagine: string[];
+
+      if (eTestuale(formato)) {
+        /* Word, Excel, testo, Markdown, CSV: il testo c'è già, ed è più
+           fedele di qualunque trascrizione. Si estrae, si impagina in un
+           PDF — quello che il visualizzatore aprirà e che le citazioni
+           conteranno a pagine — e si finisce lì: nessuna chiamata al
+           modello, nessun testimone da interrogare. */
+        await emettiEvento(db, job.id, 'ingestion-avanzamento', {
+          documentoId,
+          fase: 'estrazione',
+          fatte: 0,
+          di: 1,
+        });
+        const markdown = await markdownDaOriginale(formato, byte);
+        if (!contieneTesto(markdown)) {
+          throw new ErroreIngestion('estrazione senza testo riconoscibile', MESSAGGIO_SENZA_TESTO);
+        }
+        const impaginato = await impagina(documento.titolo, markdown);
+        await dipendenze.archivio.carica(pathPdf, impaginato.pdf, 'application/pdf');
+        pagine = impaginato.pagine;
+        totale = pagine.length;
+        await emettiEvento(db, job.id, 'ingestion-avanzamento', {
+          documentoId,
+          fase: 'estrazione',
+          fatte: 1,
+          di: 1,
+        });
+      } else {
+        /* PDF e immagini: qui il testo può non esserci affatto, e l'unico
+           modo di saperlo è guardare la pagina. Un'immagine diventa prima
+           un PDF di una pagina, poi è la stessa strada. */
+        const pdf = formato === 'immagine' ? await pdfDaImmagine(byte) : byte;
+        if (formato === 'immagine') {
+          await dipendenze.archivio.carica(pathPdf, pdf, 'application/pdf');
+        }
+        try {
+          totale = await contaPagine(pdf);
+        } catch (errore) {
+          throw new ErroreIngestion(
+            `PDF non leggibile: ${errore instanceof Error ? errore.message : String(errore)}`,
+            'Il file non è un PDF leggibile: potrebbe essere danneggiato o protetto. Caricane una copia apribile.',
+          );
+        }
+        /* La lettura visiva (`lettura-visiva.ts`): il modello guarda ogni
+           pagina a blocchi di dieci, i due testimoni meccanici dicono dove
+           trascrizione e pagina non coincidono, il secondo sguardo torna solo
+           su quelle. È il motore della skill `/ingest-visivo`. */
+        const lettura = await leggiDocumento(pdf, totale, {
+          convertitore: (rapido ? dipendenze.convertitoreRapido : undefined) ?? dipendenze.convertitore,
+          ...(!rapido && dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
+          senzaTestimoni: rapido,
+          pagineNelBlocco: rapido ? pagineNelBloccoRapido : pagineNelBlocco,
+          avanzamento: async (a) => {
+            await emettiEvento(db, job.id, 'ingestion-avanzamento', {
+              documentoId,
+              fase: a.fase,
+              fatte: a.fatte,
+              di: a.totali,
+            });
+          },
+        });
+        pagine = lettura.pagine;
+
+        /* Il verdetto dei testimoni resta nel job: è l'unico posto dove si
+           legge, dopo, perché una pagina è stata guardata due volte. */
+        const dubbie = lettura.giudizi.filter((g) => g.esito !== 'ok');
+        await emettiEvento(db, job.id, 'ingestion-verifica', {
+          documentoId,
+          pagine: totale,
+          senzaOcr: lettura.senzaOcr,
+          daGuardare: dubbie.map((g) => `pag. ${g.pagina} (${g.esito}): ${g.note.join('; ')}`),
+          correzioni: lettura.correzioni,
+        });
       }
-      /* La lettura visiva (`lettura-visiva.ts`): il modello guarda ogni
-         pagina a blocchi di dieci, i due testimoni meccanici dicono dove
-         trascrizione e pagina non coincidono, il secondo sguardo torna solo
-         su quelle. È il motore della skill `/ingest-visivo`. */
-      const lettura = await leggiDocumento(pdf, totale, {
-        convertitore: (rapido ? dipendenze.convertitoreRapido : undefined) ?? dipendenze.convertitore,
-        ...(!rapido && dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
-        senzaTestimoni: rapido,
-        pagineNelBlocco: rapido ? pagineNelBloccoRapido : pagineNelBlocco,
-        avanzamento: async (a) => {
-          await emettiEvento(db, job.id, 'ingestion-avanzamento', {
-            documentoId,
-            fase: a.fase,
-            fatte: a.fatte,
-            di: a.totali,
-          });
-        },
-      });
 
-      /* Il verdetto dei testimoni resta nel job: è l'unico posto dove si
-         legge, dopo, perché una pagina è stata guardata due volte. */
-      const dubbie = lettura.giudizi.filter((g) => g.esito !== 'ok');
-      await emettiEvento(db, job.id, 'ingestion-verifica', {
-        documentoId,
-        pagine: totale,
-        senzaOcr: lettura.senzaOcr,
-        daGuardare: dubbie.map((g) => `pag. ${g.pagina} (${g.esito}): ${g.note.join('; ')}`),
-        correzioni: lettura.correzioni,
-      });
-
-      const corpo = lettura.pagine
+      const corpo = pagine
         .map((testo, i) => `[pag. ${i + 1}]\n\n${testo}`.trimEnd())
         .join('\n\n');
       /* RF-B-06, prima release: un documento da cui non esce una riga di
@@ -184,8 +234,7 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
       const dataIt = documento.edizione_valida_dal
         ? documento.edizione_valida_dal.split('-').reverse().join('/')
         : 'n.d.';
-      const nomePdf =
-        documento.nome_file ?? documento.path_pdf.split('/').pop() ?? documento.path_pdf;
+      const nomePdf = documento.nome_file ?? originale.split('/').pop() ?? originale;
       const markdown =
         headerDocumento({
           titolo: documento.titolo,
@@ -201,7 +250,7 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         '\n' +
         corpo;
 
-      const pathMd = documento.path_md ?? documento.path_pdf.replace(/\.pdf$/i, '.md');
+      const pathMd = documento.path_md ?? pathPdf.replace(/\.pdf$/i, '.md');
       await dipendenze.archivio.carica(pathMd, Buffer.from(markdown, 'utf8'), 'text/markdown');
 
       /* Passo 3 (RF-B-03): la proposta del modello, solo se l'utente non ha
@@ -214,12 +263,14 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
       }
 
+      /* `path_pdf` si scrive anche qui: per chi non è arrivato in PDF è
+         adesso che esiste il documento da aprire. */
       await db.query(
         `update velia.documenti
-         set stato = 'pronto', numero_pagine = $2, path_md = $3,
+         set stato = 'pronto', numero_pagine = $2, path_md = $3, path_pdf = $5,
              dimensione_md_byte = $4, errore_elaborazione = null
          where id = $1`,
-        [documentoId, totale, pathMd, Buffer.byteLength(markdown, 'utf8')],
+        [documentoId, totale, pathMd, Buffer.byteLength(markdown, 'utf8'), pathPdf],
       );
       await emettiEvento(db, job.id, 'ingestion-fine', { documentoId, pagine: totale, pathMd });
     } catch (errore) {

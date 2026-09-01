@@ -34,12 +34,14 @@ import { fontiDaCitazioni, identitaDelTenant } from '../../generazione/catalogo.
 import { componiEmailRisposta } from '../../generazione/email.js';
 import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
 import {
-  ePdf,
   nuovoIdPrivato,
+  percorsoOriginale,
   percorsoPdf,
   spazioDelTenant,
   type FileRicevuto,
 } from '../archivio-privato/rotte.js';
+import { estensionePerFormato, riconosciFormato } from '../archivio-privato/formati.js';
+import { ELENCO_FORMATI } from '../../contratto/documenti-privati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -104,8 +106,15 @@ const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const nuovoIdAllegato = (): string => `all-${randomBytes(6).toString('hex')}`;
 /* Dove sta un allegato che resta attaccato alla conversazione: fuori dagli
    archivi, e se ne va con lei. */
-export const percorsoAllegato = (tenantId: string, id: string): string =>
-  `tenant/${tenantId}/allegati/${id}.pdf`;
+export const percorsoAllegato = (
+  tenantId: string,
+  id: string,
+  estensione = '.pdf',
+  originale = false,
+): string =>
+  originale
+    ? `tenant/${tenantId}/allegati/originali/${id}${estensione}`
+    : `tenant/${tenantId}/allegati/${id}${estensione}`;
 
 export function registraRotteConversazioni(app: FastifyInstance, opzioni: OpzioniConversazioni = {}): void {
   let archivioStorage: ArchivioFile | undefined;
@@ -203,8 +212,13 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
           `«${file.nome}» supera il limite di ${Math.round(spazio.limiteFileByte / 1024 / 1024)} MB per file.`,
         );
       }
-      if (!ePdf(file)) {
-        throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', `«${file.nome}» non è un PDF: per ora si allegano solo PDF.`);
+      const formato = riconosciFormato(file);
+      if (!formato) {
+        throw new ErroreApi(
+          415,
+          'FORMATO_NON_SUPPORTATO',
+          `«${file.nome}» non è di un formato che sappiamo leggere: si allegano ${ELENCO_FORMATI}.`,
+        );
       }
       /* Lo spazio del piano lo consuma ciò che nell'archivio ci resta: un
          allegato di passaggio se ne va con la conversazione. */
@@ -214,25 +228,35 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
 
       const inArchivio = modo === 'archivio';
       const id = inArchivio ? nuovoIdPrivato() : nuovoIdAllegato();
-      const percorso = inArchivio ? percorsoPdf(tenantId, id) : percorsoAllegato(tenantId, id);
-      await archivio().carica(percorso, file.contenuto, 'application/pdf');
+      const estensione = estensionePerFormato(formato, file.nome);
+      /* Si conserva l'originale com'è arrivato; se non è un PDF, quello da
+         mostrare e da citare lo compone l'ingestion, e sta dove dice
+         `path_pdf`. */
+      const percorso = inArchivio
+        ? percorsoOriginale(tenantId, id, estensione)
+        : percorsoAllegato(tenantId, id, estensione, formato !== 'pdf');
+      const percorsoDaMostrare = inArchivio ? percorsoPdf(tenantId, id) : percorsoAllegato(tenantId, id);
+      await archivio().carica(percorso, file.contenuto, file.mimetype || 'application/octet-stream');
       const titolo = file.nome.replace(/\.[^.]+$/, '') || file.nome;
       try {
         await conIdentita(poolDb(), richiesta.identita, (client) =>
           client.query(
             `insert into velia.documenti
-               (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
-                caricato_da, caricato_il, dimensione_byte, classificazione_da_confermare)
-             values ($1, $8, $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, $9)`,
+               (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
+                path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
+                classificazione_da_confermare)
+             values ($1, $9, $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $10, $11)`,
             [
               id,
               tenantId,
               titolo,
+              formato,
               percorso,
+              percorsoDaMostrare,
               file.nome,
               utenteId,
-              file.contenuto.length,
               inArchivio ? 'privato' : 'conversazione',
+              file.contenuto.length,
               inArchivio,
             ],
           ),

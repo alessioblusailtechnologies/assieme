@@ -48,6 +48,19 @@ export interface Ramo {
  */
 export type StatoElaborazione = 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
 
+/**
+ * Cosa si può caricare (01/09/2026) - specchio di
+ * `be-node/src/contratto/documenti-privati.ts`.
+ *
+ * Vale per l'Archivio Privato, per gli allegati in chat e per i documenti di
+ * riferimento delle Istruzioni: sono la stessa pipeline. Ciò che non arriva
+ * già in PDF viene impaginato in uno, ed è quello che si apre e si cita.
+ */
+export const ESTENSIONI_DOCUMENTO = '.pdf,.docx,.xlsx,.md,.markdown,.txt,.csv,.png,.jpg,.jpeg';
+
+/** Come si raccontano quei formati a chi carica. */
+export const FORMATI_DOCUMENTO = 'PDF, Word, Excel, Markdown, testo, CSV, immagini';
+
 interface DocumentoBase {
   id: Id;
   titolo: string;
