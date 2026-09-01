@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import type pg from 'pg';
 
 import {
@@ -25,6 +25,7 @@ import {
   type RispostaPrompt,
   type RispostaTrascrizione,
   type StatoAllegato,
+  type StatoDocumento,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { configurazione } from '../../config.js';
@@ -511,12 +512,64 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       { tenantId, utenteId },
     );
 
-    await trasmettiStream(richiesta, risposta, {
+    await trasmettiStream(risposta, {
       jobId,
       inizio: { tipo: 'inizio', messaggioId: messaggioAssistenteId, messaggioUtenteId },
       ponte: ponte(),
       battitoMs: opzioni.battitoMs ?? 15_000,
     });
+  });
+
+  /**
+   * Riagganciarsi alla risposta già in volo (01/09/2026).
+   *
+   * Chi ricarica la pagina, cambia sezione o torna dal telefono non ha perso
+   * niente: il worker sta ancora lavorando e ogni evento è scritto in
+   * `velia.eventi_job`. Il ponte riconsegna prima il pregresso e poi il
+   * vivo, quindi qui basta ritrovare il job e trasmettere come se lo stream
+   * fosse appena cominciato: il FE ricostruisce la risposta dal primo delta.
+   *
+   * Nessun job in volo: 204, e il FE si limita a rileggere i messaggi.
+   */
+  app.get<{ Params: { id: string } }>('/api/conversazioni/:id/eventi', async (richiesta, risposta) => {
+    await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+    });
+    const job = await jobDellaRisposta(richiesta.params.id);
+    if (!job) {
+      await risposta.code(204).send();
+      return;
+    }
+    await trasmettiStream(risposta, {
+      jobId: job.id,
+      inizio: { tipo: 'inizio', messaggioId: job.messaggioId, messaggioUtenteId: job.messaggioUtenteId },
+      ponte: ponte(),
+      battitoMs: opzioni.battitoMs ?? 15_000,
+    });
+  });
+
+  /**
+   * «Ferma la risposta», detto esplicitamente (01/09/2026).
+   *
+   * Prima bastava chiudere lo stream, ma allora anche un refresh fermava il
+   * motore. Ora il gesto ha una sua rotta: il job va in `annullato` e il
+   * worker si ferma al primo passo utile. Solo chi ha aperto la
+   * conversazione può fermarla, come per scriverci.
+   */
+  app.post<{ Params: { id: string } }>('/api/conversazioni/:id/ferma', async (richiesta, risposta) => {
+    await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+      if (esistente.autore_id !== richiesta.identita.utenteId) {
+        throw ErroreApi.permessoNegato('Solo chi ha aperto la conversazione può fermarne la risposta.');
+      }
+    });
+    await poolDb().query(
+      `update velia.jobs set stato = 'annullato'
+       where tipo = 'interrogazione' and stato in ('in-coda', 'in-esecuzione')
+         and payload->>'conversazioneId' = $1`,
+      [richiesta.params.id],
+    );
+    await risposta.code(204).send();
   });
 
   /**
@@ -636,7 +689,6 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
 
 /** Lo stream vero e proprio: header, `inizio`, inoltro degli eventi, chiusura. */
 async function trasmettiStream(
-  richiesta: FastifyRequest,
   risposta: FastifyReply,
   o: { jobId: string; inizio: EventoStream; ponte: PonteEventi; battitoMs: number },
 ): Promise<void> {
@@ -685,19 +737,15 @@ async function trasmettiStream(
   // Il replay del pregresso può aver già chiuso: allora la disiscrizione va fatta ora.
   if (concluso) iscrizione.disiscrivi();
 
-  /* Il client ha chiuso prima della fine: «ferma la risposta». Il job si
-     segna annullato e il worker si ferma al primo passo utile. Una caduta di
-     rete che arriva come chiusura pulita fa lo stesso: non siamo in grado di
-     distinguerla, ed è meglio un job fermato di uno che paga per nessuno. */
+  /* Il client ha chiuso prima della fine: fino al 01/09/2026 qui si
+     annullava il job, e un semplice refresh buttava via la risposta a metà.
+     Ora no: la risposta è un lavoro del server, non della finestra che
+     l'ha chiesta. Si smonta solo l'ascolto; il worker prosegue, gli eventi
+     restano in `velia.eventi_job`, e chi torna si riaggancia da
+     `GET /:id/eventi`. Fermare davvero resta possibile, ma va detto:
+     `POST /:id/ferma`. */
   raw.on('close', () => {
-    if (concluso) return;
     chiudi();
-    void poolDb()
-      .query(
-        `update velia.jobs set stato = 'annullato' where id = $1 and stato in ('in-coda', 'in-esecuzione')`,
-        [o.jobId],
-      )
-      .catch((errore: unknown) => richiesta.log.warn({ err: errore, jobId: o.jobId }, 'annullamento non registrato'));
   });
 
   // Il job è già in stato terminale? Allora non arriverà più nulla: si chiude con un errore leggibile.
@@ -776,12 +824,17 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
   const ids = [...new Set(righe.flatMap((r) => r.documenti_in_contesto))];
   const titoli = new Map<string, RiferimentoDocumento>();
   if (ids.length) {
-    const docs = await client.query<{ id: string; titolo: string; archivio: RiferimentoDocumento['archivio'] }>(
-      `select id, titolo, archivio from velia.documenti where id = any($1)`,
-      [ids],
-    );
-    for (const d of docs.rows) titoli.set(d.id, { id: d.id, titolo: d.titolo, archivio: d.archivio });
+    const docs = await client.query<{
+      id: string;
+      titolo: string;
+      archivio: RiferimentoDocumento['archivio'];
+      stato: StatoDocumento;
+    }>(`select id, titolo, archivio, stato from velia.documenti where id = any($1)`, [ids]);
+    for (const d of docs.rows) {
+      titoli.set(d.id, { id: d.id, titolo: d.titolo, archivio: d.archivio, stato: d.stato });
+    }
   }
+  const inCorso = await conversazioniInRisposta(righe.map((r) => r.id));
   return righe.map((r) => ({
     id: r.id,
     titolo: r.titolo,
@@ -792,7 +845,58 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
       .filter((d): d is RiferimentoDocumento => Boolean(d)),
     condivisa: r.condivisa,
     autoreId: r.autore_id,
+    ...(inCorso.has(r.id) && { rispostaInCorso: true }),
   }));
+}
+
+/**
+ * Fra l'ultimo evento del job e il suo passaggio a «completato» c'è una
+ * frazione di secondo in cui il job risulta ancora in esecuzione benché la
+ * risposta sia finita. Chi ricarica proprio lì vedrebbe un indicatore acceso
+ * per sempre: il congedo — `fine` o `errore` già scritto — è il segno che
+ * non c'è più niente da aspettare.
+ */
+const SENZA_CONGEDO = `select 1 from velia.eventi_job e
+       where e.job_id = j.id and e.tipo in ('fine', 'errore')`;
+
+/**
+ * Quali di queste conversazioni hanno una risposta in volo (01/09/2026).
+ *
+ * La coda non è un'API del client — RLS attiva e nessuna policy — quindi si
+ * legge dalla connessione di sistema; il filtro è la lista di id che il
+ * chiamante ha già potuto leggere, non c'è nulla da rivelare.
+ */
+async function conversazioniInRisposta(ids: string[]): Promise<Set<string>> {
+  if (!ids.length) return new Set();
+  const r = await poolDb().query<{ id: string }>(
+    `select distinct payload->>'conversazioneId' as id from velia.jobs j
+     where j.tipo = 'interrogazione' and j.stato in ('in-coda', 'in-esecuzione')
+       and j.payload->>'conversazioneId' = any($1)
+       and not exists (${SENZA_CONGEDO})`,
+    [ids],
+  );
+  return new Set(r.rows.map((x) => x.id));
+}
+
+/** Il job che sta rispondendo in questa conversazione, se c'è. */
+async function jobDellaRisposta(
+  conversazioneId: string,
+): Promise<{ id: string; messaggioId: string; messaggioUtenteId: string } | undefined> {
+  const r = await poolDb().query<{ id: string; payload: Record<string, string | undefined> }>(
+    `select id, payload from velia.jobs j
+     where j.tipo = 'interrogazione' and j.stato in ('in-coda', 'in-esecuzione')
+       and j.payload->>'conversazioneId' = $1
+       and not exists (${SENZA_CONGEDO})
+     order by j.created_at desc limit 1`,
+    [conversazioneId],
+  );
+  const riga = r.rows[0];
+  if (!riga) return undefined;
+  return {
+    id: riga.id,
+    messaggioId: riga.payload['messaggioAssistenteId'] ?? '',
+    messaggioUtenteId: riga.payload['messaggioUtenteId'] ?? '',
+  };
 }
 
 function versoMessaggio(r: RigaMessaggio): Messaggio {

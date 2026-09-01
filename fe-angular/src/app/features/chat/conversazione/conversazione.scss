@@ -283,6 +283,36 @@
   overflow-wrap: break-word;
 }
 
+/* Lo stato della lettura, accanto al titolo: minuscolo, non è un allarme. */
+.contesto__lettura {
+  flex: none;
+  color: var(--c-text-mute);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  animation: lettura-respiro 1.8s ease-in-out infinite;
+}
+
+.contesto__lettura.is-errore {
+  color: var(--c-neg);
+  animation: none;
+}
+
+@keyframes lettura-respiro {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contesto__lettura {
+    animation: none;
+  }
+}
+
 .contesto__togli {
   flex: none;
   display: inline-flex;

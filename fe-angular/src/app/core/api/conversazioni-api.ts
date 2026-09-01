@@ -1,6 +1,8 @@
 import {
   HttpClient,
+  HttpContext,
   HttpDownloadProgressEvent,
+  HttpEvent,
   HttpEventType,
 } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -21,6 +23,7 @@ import {
   RispostaTrascrizione,
   TemplateOutput,
 } from '@core/models';
+import { SENZA_AVVISO } from '@core/interceptors/errore.interceptor';
 import { SceltaEsporta } from '@shared/esportazione/scelte-esportazione';
 import { leggiBlocchiSse } from './sse';
 
@@ -131,13 +134,57 @@ export class ConversazioniApi {
   /**
    * Invia un messaggio e restituisce il flusso di eventi della risposta.
    *
-   * Il testo SSE arriva cumulativo negli eventi di progresso: `indice`
-   * ricorda fin dove si è già letto, e ogni pacchetto consegna solo i blocchi
-   * completi che contiene. Annullare la sottoscrizione interrompe la
-   * richiesta HTTP: è così che il pulsante «ferma la risposta» ferma davvero
-   * il server, non solo la propria interfaccia.
+   * Annullare la sottoscrizione chiude la richiesta HTTP ma **non** ferma
+   * più il motore: dal 01/09/2026 la risposta è un lavoro del server, e
+   * sopravvive a un refresh o a un cambio di pagina. Per fermarla davvero
+   * c'è `ferma()`.
    */
   invia(conversazioneId: Id, nuovo: NuovoMessaggio): Observable<EventoStream> {
+    return this.flusso(() =>
+      this.http.post(this.urlMessaggi(conversazioneId), nuovo, {
+        observe: 'events',
+        responseType: 'text',
+        reportProgress: true,
+      }),
+    );
+  }
+
+  /**
+   * Si riaggancia alla risposta già in volo di una conversazione.
+   *
+   * Il server riconsegna prima gli eventi già emessi e poi prosegue in
+   * diretta: chi torna sulla chat ritrova la risposta dal principio, non un
+   * troncone. Se non c'è nulla in volo la risposta è 204 e il flusso finisce
+   * senza aver emesso niente.
+   */
+  eventi(conversazioneId: Id): Observable<EventoStream> {
+    return this.flusso(() =>
+      this.http.get(`${this.base}/${conversazioneId}/eventi`, {
+        observe: 'events',
+        responseType: 'text',
+        reportProgress: true,
+        /* Parte da sola a ogni apertura: se non c'è niente da riprendere, o
+           l'API non risponde, non si avvisa nessuno. */
+        context: new HttpContext().set(SENZA_AVVISO, true),
+      }),
+    );
+  }
+
+  /** «Ferma la risposta»: il gesto esplicito che annulla il lavoro sul server. */
+  ferma(conversazioneId: Id): Observable<void> {
+    return this.http.post<void>(`${this.base}/${conversazioneId}/ferma`, {});
+  }
+
+  /**
+   * Il flusso SSE di una richiesta, letto come download progressivo.
+   *
+   * Il testo arriva cumulativo negli eventi di progresso: `indice` ricorda
+   * fin dove si è già letto, e ogni pacchetto consegna solo i blocchi
+   * completi che contiene. Passare da `HttpClient` e non da `fetch` nudo
+   * tiene lo streaming dentro gli stessi interceptor di tutte le altre
+   * chiamate.
+   */
+  private flusso(richiesta: () => Observable<HttpEvent<string>>): Observable<EventoStream> {
     return new Observable<EventoStream>((osservatore) => {
       let indice = 0;
 
@@ -150,23 +197,17 @@ export class ConversazioniApi {
         }
       };
 
-      const sottoscrizione = this.http
-        .post(this.urlMessaggi(conversazioneId), nuovo, {
-          observe: 'events',
-          responseType: 'text',
-          reportProgress: true,
-        })
-        .subscribe({
-          next: (evento) => {
-            if (evento.type === HttpEventType.DownloadProgress) {
-              consegna((evento as HttpDownloadProgressEvent).partialText ?? '', false);
-            } else if (evento.type === HttpEventType.Response) {
-              consegna((evento.body as string | null) ?? '', true);
-              osservatore.complete();
-            }
-          },
-          error: (errore: unknown) => osservatore.error(errore),
-        });
+      const sottoscrizione = richiesta().subscribe({
+        next: (evento) => {
+          if (evento.type === HttpEventType.DownloadProgress) {
+            consegna((evento as HttpDownloadProgressEvent).partialText ?? '', false);
+          } else if (evento.type === HttpEventType.Response) {
+            consegna((evento.body as string | null) ?? '', true);
+            osservatore.complete();
+          }
+        },
+        error: (errore: unknown) => osservatore.error(errore),
+      });
 
       return () => sottoscrizione.unsubscribe();
     });

@@ -297,10 +297,12 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     expect(oltre.json<PaginaDocumentiPrivati>()).toMatchObject({ elementi: [], totale: 2, pagina: 9 });
   });
 
-  it('finché non è pronto: file 409 NON_PRONTO, promozione 409 NON_PRONTO', async () => {
+  it('finché non è pronto: il file si apre lo stesso, la promozione no (409 NON_PRONTO)', async () => {
+    /* Il PDF c'è dal caricamento: guardarlo mentre Velia lo legge è lecito.
+       Promuoverlo a riferimento no, quello chiede una lettura conclusa. */
     const file = await richiedi('GET', `/api/documenti-privati/${creati[0]}/file`, tokenAdmin);
-    expect(file.statusCode).toBe(409);
-    expect(file.json<CorpoErroreApi>().codice).toBe('NON_PRONTO');
+    expect(file.statusCode).toBe(200);
+    expect(file.headers['content-type']).toBe('application/pdf');
 
     const promuovi = await richiedi('PUT', `/api/documenti-privati/${creati[0]}/riferimento`, tokenAdmin, {});
     expect(promuovi.statusCode).toBe(409);

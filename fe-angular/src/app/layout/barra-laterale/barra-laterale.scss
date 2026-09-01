@@ -298,6 +298,41 @@
   font-weight: 500;
 }
 
+/*
+ * Sta rispondendo (01/09/2026).
+ *
+ * Un punto che respira davanti al titolo: la risposta è un lavoro del
+ * server e prosegue anche se si cambia pagina, quindi va riconosciuta
+ * dall'elenco, non solo dentro la chat aperta. Un punto e non una barra
+ * perché la riga è stretta e il titolo è ciò che conta.
+ */
+.conversazioni__battito {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  vertical-align: 1px;
+  animation: battito-risposta 1.6s ease-in-out infinite;
+}
+
+@keyframes battito-risposta {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversazioni__battito {
+    animation: none;
+  }
+}
+
 .conversazioni__stato {
   padding: var(--sp-2) var(--sp-2);
   color: var(--c-text-mute);

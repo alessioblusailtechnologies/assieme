@@ -3,6 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { HttpDownloadProgressEvent, HttpEventType, provideHttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
+import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
+
 import { ChatStore } from './chat-store';
 import { Conversazione, DocumentoGenerato, EventoStream } from '@core/models';
 
@@ -373,5 +375,85 @@ describe('ChatStore', () => {
 
     delete url.createObjectURL;
     delete url.revokeObjectURL;
+  });
+
+  /* --- La risposta che sopravvive al refresh (01/09/2026) ---------------- */
+
+  it('si riaggancia alla risposta in volo e la ricostruisce dal principio', async () => {
+    /* Il refresh: la finestra è nuova, lo stream l'ha aperto qualcun altro
+       (o questa stessa scheda, prima). L'elenco lo dice, e la chat va a
+       riprendersi gli eventi già emessi. */
+    await avvia([{ ...conversazione('cnv-1'), rispostaInCorso: true }]);
+    const storico = TestBed.inject(StoricoConversazioni);
+    expect(storico.inRisposta().has('cnv-1')).toBe(true);
+
+    store.apri('cnv-1');
+    await microtask();
+    http.expectOne('/api/conversazioni/cnv-1/messaggi').flush([]);
+    const eventi = http.expectOne((r) => r.method === 'GET' && r.url === '/api/conversazioni/cnv-1/eventi');
+
+    eventi.flush(
+      [
+        blocco({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' }),
+        blocco({ tipo: 'testo', delta: 'Risposta ritrovata.' }),
+        blocco({ tipo: 'fine' }),
+      ].join(''),
+    );
+    await attendiDattilografia();
+
+    /* La domanda non si duplica: arriva dai messaggi caricati, non dallo
+       stream, che di suo non ne ha una copia. */
+    const messaggi = store.messaggi();
+    expect(messaggi.map((m) => m.autore)).toEqual(['assistente']);
+    expect(messaggi[0].testo).toBe('Risposta ritrovata.');
+    expect(messaggi[0].inCorso).toBe(false);
+    expect(store.inRisposta()).toBe(false);
+  });
+
+  it('senza niente in volo (204) non inventa nessuno stream', async () => {
+    await avvia([conversazione('cnv-1')]);
+    store.apri('cnv-1');
+    await microtask();
+    http.expectOne('/api/conversazioni/cnv-1/messaggi').flush([]);
+    http
+      .expectOne((r) => r.method === 'GET' && r.url === '/api/conversazioni/cnv-1/eventi')
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await microtask();
+
+    expect(store.inRisposta()).toBe(false);
+    expect(store.messaggi()).toEqual([]);
+  });
+
+  it('«ferma la risposta» lo chiede al server, non basta chiudere lo stream', async () => {
+    await avvia();
+    await invia('Domanda lunga');
+    const storico = TestBed.inject(StoricoConversazioni);
+    expect(storico.inRisposta().has('cnv-1')).toBe(true);
+
+    store.ferma();
+    await microtask();
+    expect(http.expectOne('/api/conversazioni/cnv-1/ferma').request.method).toBe('POST');
+    expect(store.inRisposta()).toBe(false);
+    expect(storico.inRisposta().has('cnv-1')).toBe(false);
+  });
+
+  it('riprende a seguire un documento del contesto ancora in lettura', async () => {
+    /* Il caricamento è del server e non si è fermato col refresh: il chip
+       deve tornare a girare da solo, senza che l'utente ricarichi il file. */
+    await avvia([
+      {
+        ...conversazione('cnv-1'),
+        documentiInContesto: [
+          { id: 'doc-priv-1', titolo: 'polizza-rossi', archivio: 'privato', stato: 'in-elaborazione' },
+          { id: 'doc-pub-1', titolo: 'DIP', archivio: 'pubblico', stato: 'pronto' },
+        ],
+      },
+    ]);
+    store.apri('cnv-1');
+    await microtask();
+    http.expectOne('/api/conversazioni/cnv-1/messaggi').flush([]);
+
+    expect(store.elaborazioni().get('doc-priv-1')).toEqual({ stato: 'lavorazione' });
+    expect(store.elaborazioni().has('doc-pub-1')).toBe(false);
   });
 });

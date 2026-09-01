@@ -220,6 +220,9 @@ const trovaConversazione = (id) => CONVERSAZIONI.find((c) => c.id === id);
 function componi(conversazione, trovaDocumento) {
   return {
     ...conversazione,
+    /* La risposta è un lavoro del server: se è in volo lo si dice a
+       chiunque chieda l'elenco, non solo a chi l'ha avviata. */
+    ...(IN_VOLO.has(conversazione.id) ? { rispostaInCorso: true } : {}),
     documentiInContesto: conversazione.documentiInContesto
       .map((id) => {
         const allegato = trovaAllegato(id);
@@ -288,6 +291,45 @@ function aggiungiAlContesto(conversazione, documentoId, { inviaJson, trovaDocume
 // Streaming
 // ---------------------------------------------------------------------------
 
+/**
+ * Le risposte in volo, per conversazione (01/09/2026).
+ *
+ * Come il backend vero: la risposta è un lavoro del server e non muore con
+ * la finestra che l'ha chiesta. Qui la memoria di ciò che è già stato
+ * emesso — chi si riaggancia lo rilegge dal principio — e le connessioni
+ * che stanno ascoltando, che possono essere zero, una o tre.
+ */
+const IN_VOLO = new Map();
+
+/** Scrive un evento a chi sta ascoltando, e lo ricorda per chi arriverà dopo. */
+function emetti(volo, evento) {
+  volo.eventi.push(evento);
+  for (const ascoltatore of volo.ascoltatori) {
+    if (!ascoltatore.writableEnded) ascoltatore.write(`data: ${JSON.stringify(evento)}\n\n`);
+  }
+}
+
+/** Gli header dello stream, uguali per chi invia e per chi si riaggancia. */
+function apriStream(res) {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive',
+    /* Senza questo, un eventuale reverse proxy bufferizza e lo streaming
+       arriva tutto insieme: il difetto più insidioso da diagnosticare. */
+    'X-Accel-Buffering': 'no',
+    'Access-Control-Allow-Origin': '*',
+  });
+}
+
+/** Chi si riaggancia riceve il pregresso e poi resta in ascolto del resto. */
+function riaggancia(res, volo) {
+  apriStream(res);
+  for (const evento of volo.eventi) res.write(`data: ${JSON.stringify(evento)}\n\n`);
+  volo.ascoltatori.add(res);
+  res.on('close', () => volo.ascoltatori.delete(res));
+}
+
 async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   const adesso = new Date().toISOString();
 
@@ -307,23 +349,22 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     conversazione.titolo = titoloDaMessaggio(nuovoMessaggio.testo);
   }
 
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    /* Senza questo, un eventuale reverse proxy bufferizza e lo streaming
-       arriva tutto insieme: il difetto più insidioso da diagnosticare. */
-    'X-Accel-Buffering': 'no',
-    'Access-Control-Allow-Origin': '*',
-  });
+  apriStream(res);
+
+  /* Chi ha inviato è solo il primo ascoltatore: se chiude la finestra la
+     risposta continua, e la ritroverà da `GET /:id/eventi`. Si ferma solo
+     se qualcuno lo chiede davvero (`POST /:id/ferma`). */
+  const volo = { eventi: [], ascoltatori: new Set([res]), annullata: false };
+  IN_VOLO.set(conversazione.id, volo);
+  res.on('close', () => volo.ascoltatori.delete(res));
 
   /** Un evento del contratto `EventoStream` (core/models/conversazione.ts). */
-  const invia = (evento) => res.write(`data: ${JSON.stringify(evento)}\n\n`);
-
-  let interrotto = false;
-  req.on('close', () => {
-    interrotto = true;
-  });
+  const invia = (evento) => emetti(volo, evento);
+  /** Fine della corsa: chi ascolta chiude, e non c'è più niente da riprendere. */
+  const chiudi = () => {
+    IN_VOLO.delete(conversazione.id);
+    for (const ascoltatore of volo.ascoltatori) ascoltatore.end();
+  };
 
   const scenario = scegliScenario(nuovoMessaggio.testo, conversazione.documentiInContesto);
   const messaggioId = `msg-${prossimoMessaggio++}`;
@@ -342,10 +383,10 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   const blocchi = scenario.testo.match(/\S+\s*/g) ?? [];
   let emessi = 0;
   for (const blocco of blocchi) {
-    if (interrotto) return;
+    if (volo.annullata) return chiudi();
     if (erroreAMeta && emessi === 20) {
       invia({ tipo: 'errore', messaggio: 'Il servizio si è interrotto durante la risposta.' });
-      res.end();
+      chiudi();
       return;
     }
     invia({ tipo: 'testo', delta: blocco });
@@ -362,12 +403,12 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
      l'interfaccia deve reggere entrambi i casi: è il motivo per cui sono
      eventi separati e non campi di un unico oggetto finale. */
   for (const c of scenario.citazioni) {
-    if (interrotto) return;
+    if (volo.annullata) return chiudi();
     invia({ tipo: 'citazione', citazione: c });
     await attendi(120);
   }
   for (const p of scenario.provenienze) {
-    if (interrotto) return;
+    if (volo.annullata) return chiudi();
     invia({ tipo: 'provenienza', provenienza: p });
     await attendi(120);
   }
@@ -375,17 +416,18 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   /* RF-G-01: la memoria impara in linea, prima del `fine`: il passo si
      vede, l'esito arriva solo se qualcosa è stato imparato. */
   if (scenario.ricordiAppresi?.length) {
-    if (interrotto) return;
+    if (volo.annullata) return chiudi();
     invia({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
     await attendi(900);
-    if (interrotto) return;
+    if (volo.annullata) return chiudi();
     invia({ tipo: 'memoria', ricordi: scenario.ricordiAppresi });
     await attendi(120);
   }
 
-  /* Il messaggio si persiste solo a risposta completa: uno stream interrotto
+  /* Il messaggio si persiste solo a risposta completa: una risposta fermata
      non lascia mezzi messaggi nello storico, e ricaricando si ritrova la
-     conversazione com'era prima dell'invio. */
+     conversazione com'era prima dell'invio. Chiudere la finestra non ferma
+     niente: quella risposta si ritroverà finita. */
   const fine = new Date().toISOString();
   MESSAGGI.push({
     id: messaggioId,
@@ -401,7 +443,7 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   conversazione.aggiornataIl = fine;
 
   invia({ tipo: 'fine' });
-  res.end();
+  chiudi();
 }
 
 // ---------------------------------------------------------------------------
@@ -598,7 +640,7 @@ export async function gestisci(req, res, url, deps) {
   }
 
   const rotta = percorso.match(
-    /^\/api\/conversazioni\/([^/]+)(?:\/(messaggi|contesto)(?:\/([^/]+))?)?$/,
+    /^\/api\/conversazioni\/([^/]+)(?:\/(messaggi|contesto|eventi|ferma)(?:\/([^/]+))?)?$/,
   );
   if (!rotta) return false;
 
@@ -636,6 +678,31 @@ export async function gestisci(req, res, url, deps) {
       return true;
     }
     return false;
+  }
+
+  /* /api/conversazioni/:id/eventi — il riaggancio (01/09/2026).
+
+     Un refresh, un cambio di sezione, un'altra scheda: la risposta è del
+     server e continua. Chi torna riceve prima ciò che è già stato emesso,
+     poi il resto in diretta. Niente in volo: 204, e la chat si limita a
+     rileggere i messaggi. */
+  if (rotta[2] === 'eventi' && !rotta[3] && req.method === 'GET') {
+    const volo = IN_VOLO.get(conversazione.id);
+    if (!volo) {
+      res.writeHead(204, { 'Access-Control-Allow-Origin': '*' }).end();
+      return true;
+    }
+    riaggancia(res, volo);
+    return true;
+  }
+
+  /* /api/conversazioni/:id/ferma — «ferma la risposta», detto sul serio.
+     Chiudere lo stream non basta più: quello è solo smettere di ascoltare. */
+  if (rotta[2] === 'ferma' && !rotta[3] && req.method === 'POST') {
+    const volo = IN_VOLO.get(conversazione.id);
+    if (volo) volo.annullata = true;
+    res.writeHead(204, { 'Access-Control-Allow-Origin': '*' }).end();
+    return true;
   }
 
   // /api/conversazioni/:id/messaggi

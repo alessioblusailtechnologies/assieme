@@ -29,9 +29,12 @@ export type ArchivioRiferimento = 'pubblico' | 'privato' | 'conversazione';
  */
 export type ModoAllegato = 'archivio' | 'rapido';
 
+/** Lo stato dell'ingestion di un documento, per il chip del composer. */
+export type StatoDocumento = 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+
 /** Lo stato dell'ingestion di un allegato, per il chip del composer. */
 export interface StatoAllegato {
-  stato: 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+  stato: StatoDocumento;
   erroreElaborazione?: string;
 }
 
@@ -39,6 +42,14 @@ export interface RiferimentoDocumento {
   id: string;
   titolo: string;
   archivio: ArchivioRiferimento;
+  /**
+   * Dov'è arrivata la lettura del documento (01/09/2026). Viaggia col
+   * contesto della conversazione perché il chip sappia dire «in lavorazione»
+   * anche a chi ricarica la pagina: il caricamento continua sul server, e
+   * l'interfaccia deve poterlo ritrovare invece di ripartire da zero.
+   * Assente sui riferimenti scritti prima.
+   */
+  stato?: StatoDocumento;
 }
 
 export interface Conversazione {
@@ -49,6 +60,12 @@ export interface Conversazione {
   documentiInContesto: RiferimentoDocumento[];
   condivisa: boolean;
   autoreId: string;
+  /**
+   * C'è una risposta in volo per questa conversazione (01/09/2026): il job
+   * è in coda o in esecuzione. Lo storico ci accende il suo indicatore e la
+   * chat sa di doversi riagganciare al flusso invece di mostrare il silenzio.
+   */
+  rispostaInCorso?: boolean;
 }
 
 export interface PaginaConversazioni {

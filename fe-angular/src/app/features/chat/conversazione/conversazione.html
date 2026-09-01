@@ -216,6 +216,26 @@
                 [size]="14"
               />
               <span class="contesto__titolo">{{ doc.titolo }}</span>
+              <!--
+                Il documento è ancora in lettura (o non si è lasciato
+                leggere): la lettura visiva dura minuti, prosegue sul server
+                e si ritrova qui anche dopo un refresh. Senza, la chat
+                risponderebbe «non ne ho il contenuto» e nessuno saprebbe
+                perché.
+              -->
+              @if (store.elaborazioni().get(doc.id); as lettura) {
+                <span
+                  class="contesto__lettura"
+                  [class.is-errore]="lettura.stato === 'errore'"
+                  [title]="
+                    lettura.stato === 'errore'
+                      ? 'Lettura non riuscita' + (lettura.messaggio ? ': ' + lettura.messaggio : '')
+                      : 'Velia lo sta leggendo'
+                  "
+                >
+                  {{ lettura.stato === 'errore' ? 'non letto' : 'in lettura' }}
+                </span>
+              }
               <button
                 type="button"
                 class="contesto__togli"

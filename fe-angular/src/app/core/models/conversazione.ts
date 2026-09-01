@@ -25,9 +25,12 @@ import { Id, IsoDateTime, Provenienza } from './comune';
  */
 export type ModoAllegato = 'archivio' | 'rapido';
 
+/** Dov'è arrivata la lettura di un documento. */
+export type StatoDocumento = 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+
 /** Lo stato della lettura di un allegato di conversazione. */
 export interface StatoAllegato {
-  stato: 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+  stato: StatoDocumento;
   erroreElaborazione?: string;
 }
 
@@ -35,6 +38,12 @@ export interface RiferimentoDocumento {
   id: Id;
   titolo: string;
   archivio: Archivio | 'conversazione';
+  /**
+   * Dov'è arrivata la lettura, così com'era quando il contesto è stato
+   * idratato. Serve a chi ricarica la pagina mentre un allegato è ancora in
+   * lavorazione: il chip riprende a girare invece di fingere che sia pronto.
+   */
+  stato?: StatoDocumento;
 }
 
 export interface Conversazione {
@@ -52,6 +61,12 @@ export interface Conversazione {
   /** RF-C-15: condivisa in sola lettura con gli altri utenti del tenant. */
   condivisa: boolean;
   autoreId: Id;
+  /**
+   * C'è una risposta in volo per questa conversazione: il motore sta ancora
+   * lavorando, anche se questa finestra non era in ascolto. Lo storico
+   * accende il suo indicatore e la chat si riaggancia al flusso.
+   */
+  rispostaInCorso?: boolean;
 }
 
 export type AutoreMessaggio = 'utente' | 'assistente';

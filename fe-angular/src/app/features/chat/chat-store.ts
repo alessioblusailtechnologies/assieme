@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
@@ -85,7 +85,12 @@ export interface OutputConversazione extends DocumentoGenerato {
 /** La coppia domanda/risposta che sta attraversando lo stream. */
 interface StreamAttivo {
   conversazioneId: Id;
-  utente: Messaggio;
+  /**
+   * Manca quando ci si riaggancia a una risposta partita altrove: la
+   * domanda è già persistita e arriva coi messaggi caricati, non c'è una
+   * copia ottimistica da riconciliare.
+   */
+  utente?: Messaggio;
   assistente?: MessaggioInStream;
   /**
    * I documenti referenziati col messaggio in volo: il server li ha già
@@ -125,10 +130,33 @@ export class ChatStore {
   /** I battiti che seguono l'ingestion degli allegati, per documento. */
   private readonly battitiIngestion = new Map<Id, ReturnType<typeof setInterval>>();
 
+  /** I documenti già seguiti fino in fondo: l'elenco può restare indietro. */
+  private readonly letture = new Set<Id>();
+
   constructor() {
+    /* Un documento del contesto ancora in lettura (allegato da un'altra
+       finestra, o da questa prima di un refresh): il chip riprende a girare
+       da solo. Lo stato viaggia col contesto, quindi basta guardarlo ogni
+       volta che l'elenco si aggiorna. */
+    effect(() => {
+      for (const riferimento of this.attiva()?.documentiInContesto ?? []) {
+        if (!riferimento.stato || riferimento.stato === 'pronto') continue;
+        if (this.letture.has(riferimento.id) || this.battitiIngestion.has(riferimento.id)) continue;
+        if (riferimento.stato === 'errore') {
+          this.segna(riferimento.id, { stato: 'errore', messaggio: 'elaborazione fallita' });
+          this.letture.add(riferimento.id);
+        } else {
+          this.segui(riferimento);
+        }
+      }
+    });
+
     inject(DestroyRef).onDestroy(() => {
       for (const battito of this.battitiIngestion.values()) clearInterval(battito);
       this.battitiIngestion.clear();
+      /* Si esce dalla sezione: si smette di ascoltare, non di rispondere.
+         Il motore prosegue e al ritorno ci si riaggancia. */
+      this.sottoscrizioneStream?.unsubscribe();
     });
   }
 
@@ -253,7 +281,47 @@ export class ChatStore {
     this.idAttiva.set(id);
     this.messaggiCaricati.set(undefined);
     this.erroreMessaggi.set(undefined);
-    if (id) this.caricaMessaggi(id);
+    if (id) {
+      this.caricaMessaggi(id);
+      this.riaggancia(id);
+    }
+  }
+
+  /**
+   * Si riattacca alla risposta che questa conversazione sta già producendo.
+   *
+   * Un refresh, un cambio di sezione, il telefono ripreso in mano: il lavoro
+   * è del server e non si è fermato. Il ponte riconsegna prima gli eventi
+   * già emessi e poi prosegue in diretta, così la risposta si riforma dal
+   * principio invece di apparire dal nulla a cose fatte. Senza niente in
+   * volo il server risponde 204 e qui non succede nulla.
+   *
+   * Se uno stream è già aperto non si tocca: sta scorrendo, e magari è di
+   * un'altra conversazione — attraversare la navigazione è il suo mestiere.
+   */
+  private riaggancia(id: Id): void {
+    if (this.streamAttivo()) return;
+    const iscrizione = new Subscription();
+    this.sottoscrizioneStream = iscrizione;
+    iscrizione.add(
+      this.api.eventi(id).subscribe({
+        next: (evento) => {
+          if (evento.tipo === 'inizio' && !this.streamAttivo()) {
+            this.streamAttivo.set({ conversazioneId: id, riferimenti: [] });
+            this.storico.segnalaRisposta(id, true);
+          }
+          this.applica(evento);
+        },
+        /* La rete è caduta o il server ha chiuso: quel che c'era resta
+           scritto, e la conversazione si rilegge dal database. */
+        error: () => {
+          if (this.streamAttivo()?.conversazioneId !== id) return;
+          this.streamAttivo.set(undefined);
+          this.storico.segnalaRisposta(id, false);
+          this.ricaricaMessaggi();
+        },
+      }),
+    );
   }
 
   ricaricaMessaggi(): void {
@@ -306,10 +374,10 @@ export class ChatStore {
     const stream = this.streamAttivo();
     if (!stream || stream.conversazioneId !== this.idAttiva()) return caricati;
 
-    const inStream = new Set([stream.utente.id, stream.assistente?.id]);
+    const inStream = new Set([stream.utente?.id, stream.assistente?.id]);
     return [
       ...caricati.filter((m) => !inStream.has(m.id)),
-      stream.utente,
+      ...(stream.utente ? [stream.utente] : []),
       ...(stream.assistente ? [stream.assistente] : []),
     ];
   });
@@ -500,6 +568,7 @@ export class ChatStore {
               stato: 'errore',
               messaggio: documento.erroreElaborazione ?? 'elaborazione fallita',
             });
+            this.letture.add(id);
             this.fermaBattito(id);
             return;
           }
@@ -524,6 +593,7 @@ export class ChatStore {
   }
 
   private smettiDiSeguire(id: Id): void {
+    this.letture.add(id);
     this.fermaBattito(id);
     this.elaborazioni.update((m) => {
       const senza = new Map(m);
@@ -597,6 +667,7 @@ export class ChatStore {
       riferimenti,
     };
     this.streamAttivo.set(stream);
+    this.storico.segnalaRisposta(id, true);
 
     this.sottoscrizioneStream = this.api
       .invia(id, {
@@ -611,6 +682,7 @@ export class ChatStore {
              messaggio non è mai arrivato al server. La bozza torna al
              composer; ad avvisare ci ha già pensato l'interceptor. */
           this.streamAttivo.set(undefined);
+          this.storico.segnalaRisposta(id, false);
           this.ripristinaBozza(testo, riferimenti);
         },
       });
@@ -629,7 +701,7 @@ export class ChatStore {
       case 'inizio':
         this.streamAttivo.set({
           ...stream,
-          utente: { ...stream.utente, id: evento.messaggioUtenteId },
+          ...(stream.utente && { utente: { ...stream.utente, id: evento.messaggioUtenteId } }),
           assistente: {
             id: evento.messaggioId,
             conversazioneId: stream.conversazioneId,
@@ -760,7 +832,7 @@ export class ChatStore {
 
     if (stream.conversazioneId === this.idAttiva()) {
       const consolidati = [
-        stream.utente,
+        ...(stream.utente ? [stream.utente] : []),
         ...(stream.assistente ? [{ ...stream.assistente, inCorso: false }] : []),
       ];
       this.messaggiCaricati.update((caricati) => {
@@ -769,13 +841,19 @@ export class ChatStore {
       });
     }
     this.streamAttivo.set(undefined);
+    this.storico.segnalaRisposta(stream.conversazioneId, false);
     this.storico.ricarica();
   }
 
   /**
-   * Ferma la generazione (annullare la sottoscrizione interrompe la
-   * richiesta). Quel che è già arrivato resta visibile, marcato come
-   * interrotto: il server non lo ha registrato, e ricaricando sparirà.
+   * Ferma la generazione, e lo dice al server.
+   *
+   * Fino al 01/09/2026 bastava chiudere lo stream: era comodo, ma voleva
+   * dire che anche un refresh fermava il motore. Ora chiudere è solo
+   * smettere di ascoltare, e fermare è un gesto con la sua rotta — il job va
+   * in annullato e il worker si arresta al primo passo utile. Quel che è già
+   * arrivato resta visibile, marcato come interrotto: il server non lo ha
+   * registrato, e ricaricando sparirà.
    */
   ferma(): void {
     this.sottoscrizioneStream?.unsubscribe();
@@ -783,10 +861,12 @@ export class ChatStore {
     const stream = this.streamAttivo();
     if (!stream) return;
 
+    this.api.ferma(stream.conversazioneId).subscribe();
+    this.storico.segnalaRisposta(stream.conversazioneId, false);
     if (stream.assistente && stream.conversazioneId === this.idAttiva()) {
       this.messaggiCaricati.update((caricati) => [
         ...(caricati ?? []),
-        stream.utente,
+        ...(stream.utente ? [stream.utente] : []),
         { ...stream.assistente!, inCorso: false, interrotto: true },
       ]);
     }

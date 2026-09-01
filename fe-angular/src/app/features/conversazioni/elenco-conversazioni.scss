@@ -119,6 +119,43 @@ ui-stato-vuoto {
   vertical-align: middle;
 }
 
+.titolo + .in-risposta {
+  margin-left: var(--sp-2);
+}
+
+.in-risposta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--c-accent);
+  font-size: var(--t-xs);
+  vertical-align: middle;
+}
+
+.in-risposta__punto {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentcolor;
+  animation: battito-risposta 1.6s ease-in-out infinite;
+}
+
+@keyframes battito-risposta {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .in-risposta__punto {
+    animation: none;
+  }
+}
+
 .cella-numerica {
   text-align: right;
   font-variant-numeric: tabular-nums;

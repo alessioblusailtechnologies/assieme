@@ -1,4 +1,4 @@
-import { Injectable, computed, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
@@ -26,6 +26,33 @@ export class StoricoConversazioni {
   );
   readonly inCaricamento = this.risorsa.isLoading;
   readonly errore = this.risorsa.error;
+
+  /* --- Chi sta rispondendo (01/09/2026) ---------------------------------
+     Le risposte sono lavori del server: sopravvivono a un refresh, a un
+     cambio di pagina, a un'altra finestra. Chi le sta producendo si sa da
+     due parti, e servono entrambe: il server lo dice sull'elenco — è l'unico
+     a sapere dei lavori partiti prima — e questa sessione lo sa di ciò che
+     ha appena avviato, senza aspettare il prossimo ricaricamento. */
+
+  private readonly qui = signal<ReadonlySet<Id>>(new Set());
+
+  /** Gli id delle conversazioni con una risposta in volo. */
+  readonly inRisposta = computed<ReadonlySet<Id>>(() => {
+    const ids = new Set(this.qui());
+    for (const c of this.conversazioni()) if (c.rispostaInCorso) ids.add(c.id);
+    return ids;
+  });
+
+  /** Lo store della chat annuncia qui ciò che avvia e ciò che conclude. */
+  segnalaRisposta(id: Id, inCorso: boolean): void {
+    this.qui.update((precedenti) => {
+      if (precedenti.has(id) === inCorso) return precedenti;
+      const aggiornati = new Set(precedenti);
+      if (inCorso) aggiornati.add(id);
+      else aggiornati.delete(id);
+      return aggiornati;
+    });
+  }
 
   ricarica(): void {
     this.risorsa.reload();

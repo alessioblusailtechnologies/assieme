@@ -406,9 +406,12 @@ export function registraRotteArchivioPrivato(
       return r.rows[0];
     });
     if (!riga) throw ErroreApi.nonTrovato('Documento inesistente.');
-    if (riga.stato !== 'pronto') {
-      throw ErroreApi.conflitto('NON_PRONTO', "L'anteprima è disponibile solo a elaborazione conclusa.");
-    }
+    /* Il PDF si apre da subito, anche mentre lo si sta ancora leggendo
+       (01/09/2026): il file è in archivio dal momento del caricamento, e la
+       lettura visiva dura minuti. Rifiutarlo voleva dire un documento
+       appena allegato in chat che per minuti non si poteva nemmeno
+       guardare. Quel che manca finché l'elaborazione non finisce è la
+       trascrizione — quindi le citazioni, non la pagina. */
     if (!riga.path_pdf) {
       throw new ErroreApi(404, 'FILE_MANCANTE', 'Il file di questo documento non è più in archivio.');
     }

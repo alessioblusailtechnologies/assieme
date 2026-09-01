@@ -90,6 +90,13 @@
             <tr>
               <td class="col-titolo">
                 <a class="titolo" [routerLink]="['/chat', c.id]">{{ c.titolo }}</a>
+                <!-- La risposta continua sul server anche a pagina chiusa: qui si vede da chi. -->
+                @if (storico.inRisposta().has(c.id)) {
+                  <span class="in-risposta">
+                    <span class="in-risposta__punto" aria-hidden="true"></span>
+                    sta rispondendo
+                  </span>
+                }
                 @if (c.condivisa) {
                   <ui-tag>condivisa</ui-tag>
                 }

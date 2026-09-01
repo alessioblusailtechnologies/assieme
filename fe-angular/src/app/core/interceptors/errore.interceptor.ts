@@ -1,4 +1,4 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
@@ -61,12 +61,22 @@ function messaggioPerUtente(err: HttpErrorResponse): { titolo: string; dettaglio
  * l'interceptor di sessione a gestirlo, con rinnovo del token e redirezione
  * al login. Segnalarlo qui come errore generico sarebbe rumore.
  */
+/**
+ * Le richieste che l'utente non ha chiesto.
+ *
+ * Il riaggancio alla risposta in volo parte da solo a ogni apertura di una
+ * conversazione: se fallisce non è una notizia da dare a chi sta leggendo,
+ * è un servizio che non c'è. Con questo contesto l'errore resta al
+ * chiamante, che decide se e come dirlo.
+ */
+export const SENZA_AVVISO = new HttpContextToken(() => false);
+
 export const erroreInterceptor: HttpInterceptorFn = (req, next) => {
   const notifiche = inject(NotificheStore);
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status !== 401) {
+      if (err.status !== 401 && !req.context.get(SENZA_AVVISO)) {
         const { titolo, dettaglio } = messaggioPerUtente(err);
         notifiche.aggiungi({ gravita: 'errore', titolo, dettaglio });
       }

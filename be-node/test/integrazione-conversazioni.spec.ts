@@ -20,6 +20,7 @@ import type { CorpoErroreApi } from '../src/contratto/errori.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
 import { chiudiPool, creaClientDedicato, poolDb } from '../src/db/pool.js';
 import { lavoraUno } from '../src/worker/ciclo.js';
+import { emettiEvento } from '../src/worker/eventi.js';
 import { gestori } from '../src/worker/gestori.js';
 import type { ArchivioFile } from '../src/worker/ingestion/archivio-file.js';
 import { creaGestoreInterrogazione } from '../src/worker/motore/gestore.js';
@@ -140,6 +141,8 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
   let docPubblicoTitolo: string;
   let pathMdPubblico: string;
   let convId: string;
+  /** L'allegato caricato in chat: un documento privato, che va anche ripulito. */
+  let allegatoId: string | undefined;
 
   const richiedi = (metodo: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE', url: string, token: string, payload?: Record<string, unknown>) =>
     app.inject({ method: metodo, url, headers: { authorization: `Bearer ${token}` }, ...(payload && { payload }) });
@@ -212,6 +215,10 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
 
     await pool().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.documenti where archivio = 'conversazione' and tenant_id = $1`, [TENANT_COLLAUDO]);
+    /* Dal 01/09/2026 l'allegato è un documento dell'Archivio Privato: se ne
+       va con la conversazione solo qui, o resterebbe a sporcare il tenant di
+       collaudo a ogni giro della suite. */
+    if (allegatoId) await pool().query(`delete from velia.documenti where id = $1`, [allegatoId]);
     await pool().query(`delete from velia.istruzioni where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.ricordi where tenant_id = $1`, [TENANT_COLLAUDO]);
   });
@@ -265,6 +272,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     const r = await app.inject({ method: 'POST', url: '/api/conversazioni/allegati', headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType }, payload: corpo });
     expect(r.statusCode).toBe(201);
     const rif = r.json<RiferimentoDocumento>();
+    allegatoId = rif.id;
     expect(rif.id).toMatch(/^doc-priv-/);
     expect(rif).toMatchObject({ titolo: 'polizza-rossi', archivio: 'privato' });
 
@@ -292,9 +300,12 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       const contenuto = await readFile(join(ws.directory, ...pathMdPubblico.split('/')), 'utf8');
       expect(contenuto).toContain('[pag. 1]');
       /* Il tenant demo può contenere documenti veri caricati a mano, che lo
-         Storage finto non conosce: qui conta solo che l'allegato in coda
-         sia dichiarato col suo motivo. */
-      expect(ws.mancanti.some((m) => m.motivo === 'elaborazione non ancora conclusa')).toBe(true);
+         Storage finto non conosce: qui conta solo che l'allegato appena
+         caricato sia dichiarato mancante, col suo perché. Quale dei due
+         motivi tocchi a lui dipende da chi ha lavorato l'ingestion: su
+         questo database il worker di sviluppo pesca dalla stessa coda. */
+      const allegato = ws.mancanti.find((m) => m.id === allegatoId);
+      expect(allegato?.motivo).toMatch(/elaborazione (non ancora conclusa|fallita)/);
       const indice = await readFile(join(ws.directory, 'tenant', 'documenti', 'INDICE.md'), 'utf8');
       expect(indice).toContain('Archivio privato');
       expect(await readFile(join(ws.directory, 'INDICE.md'), 'utf8')).toContain('archivio-pubblico/');
@@ -478,6 +489,83 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(eventiAnnullato.some((e) => e.tipo === 'fine')).toBe(false);
     const dopo = (await richiedi('GET', `/api/conversazioni/${convId}/messaggi`, tokenAdmin)).json<Messaggio[]>();
     expect(dopo.length).toBe(prima + 1);
+  });
+
+  /**
+   * Il riaggancio, con un job scritto a mano e mai messo in coda.
+   *
+   * Non passa dalla coda di proposito: su questo database il worker di
+   * sviluppo pesca dagli stessi lavori, e un job vero se lo prenderebbe lui
+   * (con l'Agent SDK, e a pagamento). Qui conta il ponte — chi torna ritrova
+   * ciò che è già stato emesso e resta in ascolto del resto — e il ponte non
+   * ha bisogno di sapere chi sta lavorando.
+   */
+  async function jobFinto(payload: Record<string, unknown>): Promise<string> {
+    const r = await pool().query<{ id: string }>(
+      `insert into velia.jobs (tenant_id, tipo, stato, payload)
+       values ($1, 'interrogazione', 'in-esecuzione', $2) returning id`,
+      [TENANT_COLLAUDO, JSON.stringify(payload)],
+    );
+    return r.rows[0]!.id;
+  }
+
+  it('la risposta sopravvive al refresh: l’elenco la segnala e /eventi la riconsegna da capo', async () => {
+    const jobId = await jobFinto({
+      conversazioneId: convId,
+      messaggioUtenteId: 'msg-utente-finto',
+      messaggioAssistenteId: 'msg-assistente-finto',
+      testo: 'Domanda che sopravvive',
+    });
+    await emettiEvento(pool(), jobId, 'attivita', { tipo: 'attivita', etichetta: 'Leggo dip.md' });
+    await emettiEvento(pool(), jobId, 'testo', { tipo: 'testo', delta: 'Risposta ' });
+    await emettiEvento(pool(), jobId, 'testo', { tipo: 'testo', delta: 'ritrovata.' });
+
+    // L'elenco lo dice a chiunque lo chieda: questa conversazione sta rispondendo.
+    const elenco = (await richiedi('GET', '/api/conversazioni', tokenAdmin)).json<PaginaConversazioni>();
+    expect(elenco.elementi.find((c) => c.id === convId)?.rispostaInCorso).toBe(true);
+
+    // Il refresh: una finestra che non ha mai inviato niente si riaggancia.
+    const riaggancio = richiedi('GET', `/api/conversazioni/${convId}/eventi`, tokenAdmin);
+    await new Promise((r) => setTimeout(r, 500));
+    await emettiEvento(pool(), jobId, 'fine', { tipo: 'fine' });
+
+    const risposta = await riaggancio;
+    expect(risposta.statusCode).toBe(200);
+    expect(risposta.headers['content-type']).toContain('text/event-stream');
+    const ripresi = eventiDa(risposta.body);
+    /* Dal principio, non dal punto in cui è arrivata: il testo già emesso
+       torna tutto, e in ordine. */
+    expect(ripresi[0]).toEqual({ tipo: 'inizio', messaggioId: 'msg-assistente-finto', messaggioUtenteId: 'msg-utente-finto' });
+    expect(
+      ripresi
+        .filter((e) => e.tipo === 'testo')
+        .map((e) => e.delta)
+        .join(''),
+    ).toBe('Risposta ritrovata.');
+    expect(ripresi.at(-1)?.tipo).toBe('fine');
+
+    /* Il congedo è scritto: il job risulta ancora «in esecuzione» per una
+       frazione di secondo, ma non c'è più niente da aspettare. */
+    expect((await richiedi('GET', `/api/conversazioni/${convId}/eventi`, tokenAdmin)).statusCode).toBe(204);
+    const dopo = (await richiedi('GET', '/api/conversazioni', tokenAdmin)).json<PaginaConversazioni>();
+    expect(dopo.elementi.find((c) => c.id === convId)?.rispostaInCorso).toBeUndefined();
+    await pool().query(`delete from velia.jobs where id = $1`, [jobId]);
+  });
+
+  it('«ferma la risposta» è un gesto esplicito, e solo di chi ha aperto la conversazione', async () => {
+    const jobId = await jobFinto({ conversazioneId: convId, messaggioUtenteId: 'u', messaggioAssistenteId: 'a', testo: 'Domanda da fermare' });
+
+    // Un collega non ferma il lavoro di un altro.
+    expect((await richiedi('POST', `/api/conversazioni/${convId}/ferma`, tokenOperatore)).statusCode).toBe(403);
+    const ancora = await pool().query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [jobId]);
+    expect(ancora.rows[0]?.stato).toBe('in-esecuzione');
+
+    expect((await richiedi('POST', `/api/conversazioni/${convId}/ferma`, tokenAdmin)).statusCode).toBe(204);
+    const fermato = await pool().query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [jobId]);
+    expect(fermato.rows[0]?.stato).toBe('annullato');
+    /* Fermata la risposta, non c'è più niente a cui riagganciarsi. */
+    expect((await richiedi('GET', `/api/conversazioni/${convId}/eventi`, tokenAdmin)).statusCode).toBe(204);
+    await pool().query(`delete from velia.jobs where id = $1`, [jobId]);
   });
 
   it('DELETE: 204, messaggi in cascata, il documento allegato resta nell’Archivio Privato', async () => {

@@ -116,8 +116,16 @@
                           class="conversazioni__voce"
                           [routerLink]="['/chat', c.id]"
                           routerLinkActive="is-attiva"
-                          [title]="c.titolo"
+                          [title]="
+                            storico.inRisposta().has(c.id) ? c.titolo + ' (sta rispondendo)' : c.titolo
+                          "
                         >
+                          <!-- Sta rispondendo: il lavoro è del server e continua
+                               anche se qui si cambia pagina, quindi va visto da
+                               fuori, non solo dentro la chat aperta. -->
+                          @if (storico.inRisposta().has(c.id)) {
+                            <span class="conversazioni__battito" aria-hidden="true"></span>
+                          }
                           {{ c.titolo }}
                         </a>
                         <!-- Le azioni vivono qui, al passaggio: la testata della chat è lettura. -->
