@@ -14,12 +14,16 @@ import type { Convertitore } from './convertitore.js';
 import { blocchi, contaPagine, estraiPagine } from './pdf.js';
 
 /**
- * Quante pagine per chiamata di conversione. Il limite duro dell'API è 100
- * (Haiku, contesto 200K); 20 tiene l'output di ogni blocco largamente
- * dentro max_tokens e rende il progresso visibile all'utente. Da tarare
- * coi primi documenti veri contro il campione dell'esperimento.
+ * Quante pagine per chiamata di conversione.
+ *
+ * Dieci, non venti: è la misura della skill `/ingest-visivo`, e la ragione
+ * è quella scritta lì — chi trascrive a lungo comincia a riassumere senza
+ * accorgersene. Ogni blocco è una chiamata a sé, quindi un contesto fresco:
+ * il modello arriva alla decima pagina con la stessa attenzione della prima.
+ * Costa qualche chiamata in più e tiene l'output largamente dentro
+ * `max_tokens`.
  */
-const PAGINE_PER_BLOCCO = 20;
+const PAGINE_PER_BLOCCO = 10;
 
 export interface DipendenzeIngestion {
   convertitore: Convertitore;
