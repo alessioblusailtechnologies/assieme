@@ -2,11 +2,17 @@ import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from
 import { registerLocaleData } from '@angular/common';
 import localeIt from '@angular/common/locales/it';
 import { HttpInterceptorFn, provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
+import {
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+  withPreloading,
+} from '@angular/router';
 
 import { environment } from '@env';
 import { autenticazioneInterceptor } from '@core/interceptors/autenticazione.interceptor';
 import { erroreInterceptor } from '@core/interceptors/errore.interceptor';
+import { PrecaricaARiposo } from '@core/rotte/precarica-a-riposo';
 import { routes } from './app.routes';
 import { sviluppoInterceptor } from '@core/interceptors/sviluppo.interceptor';
 
@@ -49,6 +55,9 @@ export const appConfig: ApplicationConfig = {
          niente `ActivatedRoute` iniettato per leggere un `:id`. */
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
+      /* Le sezioni si scaricano da sole a browser fermo: al primo clic il
+         codice è già lì, e la navigazione non aspetta la rete. */
+      withPreloading(PrecaricaARiposo),
     ),
 
     /* `withFetch`: il trasporto su cui si appoggia anche lo streaming della
