@@ -438,10 +438,36 @@ export async function gestisci(req, res, url, deps) {
       inviaJson(res, 400, { codice: 'FILE_MANCANTE', messaggio: 'Nessun file nel caricamento.' });
       return true;
     }
-    /* Dal 01/09/2026 l'allegato entra nell'Archivio Privato: stesso stato,
-       stessa macchina, stesso posto dove ritrovarlo dopo. */
+    /* Due modi (RF-C-02): «archivio» entra nell'Archivio Privato e ci resta,
+       «rapido» vive con la conversazione e se ne va con lei. */
+    if (url.searchParams.get('modo') === 'rapido') {
+      const allegato = {
+        id: `all-${Date.now().toString(36)}`,
+        titolo: file[0].nome.replace(/\.[^.]+$/, '') || file[0].nome,
+        numeroPagine: 4,
+        stato: 'in-coda',
+      };
+      ALLEGATI.push(allegato);
+      /* La lettura rapida è rapida: pronta in un paio di secondi. */
+      setTimeout(() => (allegato.stato = 'pronto'), 2000);
+      inviaJson(res, 201, { id: allegato.id, titolo: allegato.titolo, archivio: 'conversazione' });
+      return true;
+    }
     const documento = accogliAllegato(file[0].nome, file[0].dimensione);
     inviaJson(res, 201, { id: documento.id, titolo: documento.titolo, archivio: 'privato' });
+    return true;
+  }
+
+  /* Lo stato della lettura di un allegato rapido: il chip del composer lo
+     interroga finché non è pronto. */
+  const rottaStatoAllegato = percorso.match(/^\/api\/conversazioni\/allegati\/([^/]+)\/stato$/);
+  if (rottaStatoAllegato && req.method === 'GET') {
+    const allegato = trovaAllegato(rottaStatoAllegato[1]);
+    if (!allegato) {
+      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Allegato inesistente.' });
+      return true;
+    }
+    inviaJson(res, 200, { stato: allegato.stato ?? 'pronto' });
     return true;
   }
 

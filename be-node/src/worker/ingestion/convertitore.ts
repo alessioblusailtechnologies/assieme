@@ -49,13 +49,13 @@ export class ConvertitoreModello implements Convertitore {
   private readonly client: Anthropic;
   private readonly modello: string;
 
-  constructor() {
+  constructor(modello?: string) {
     const chiave = configurazione().ANTHROPIC_API_KEY;
     if (!chiave) {
       throw new Error('ANTHROPIC_API_KEY mancante in .env: la conversione documenti la richiede.');
     }
     this.client = new Anthropic({ apiKey: chiave });
-    this.modello = configurazione().MODELLO_INGESTION;
+    this.modello = modello ?? configurazione().MODELLO_INGESTION;
   }
 
   async convertiBlocco(

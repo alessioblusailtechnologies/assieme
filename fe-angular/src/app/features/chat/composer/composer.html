@@ -50,9 +50,10 @@
       <button
         type="button"
         class="campo__allega"
-        (click)="file.click()"
-        aria-label="Allega un file alla conversazione"
-        title="Allega un file - resta in questa conversazione, non entra negli archivi"
+        (click)="menuAllega.apri($event)"
+        aria-haspopup="menu"
+        aria-label="Allega un file"
+        title="Allega un file: nell'archivio dell'agenzia, o solo per questa chat"
       >
         <ui-icon name="allega" [size]="17" />
       </button>
@@ -142,4 +143,7 @@
       }
     </div>
   </div>
+
+  <!-- La scelta del modo di caricamento: dove finisce il documento, e quanto bene viene letto. -->
+  <ui-menu-azioni #menuAllega [voci]="vociAllega" />
 </div>

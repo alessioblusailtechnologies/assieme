@@ -19,6 +19,18 @@ import { Id, IsoDateTime, Provenienza } from './comune';
  * archivi — selettori, tabelle, fonti degli agenti — un allegato non
  * comparirà mai.
  */
+/**
+ * Come si carica un allegato dal composer: nell'archivio con la lettura
+ * completa, o rapido e legato alla conversazione (RF-C-02).
+ */
+export type ModoAllegato = 'archivio' | 'rapido';
+
+/** Lo stato della lettura di un allegato di conversazione. */
+export interface StatoAllegato {
+  stato: 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+  erroreElaborazione?: string;
+}
+
 export interface RiferimentoDocumento {
   id: Id;
   titolo: string;

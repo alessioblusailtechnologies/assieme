@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type pg from 'pg';
@@ -18,11 +18,13 @@ import {
   type EsitoEmailRisposta,
   type EventoStream,
   type Messaggio,
+  type ModoAllegato,
   type PaginaConversazioni,
   type Provenienza,
   type RiferimentoDocumento,
   type RispostaPrompt,
   type RispostaTrascrizione,
+  type StatoAllegato,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { configurazione } from '../../config.js';
@@ -97,8 +99,10 @@ interface RigaMessaggio {
 
 /** Gli id dei documenti generati sono uuid: un id malformato è un 404, non un errore SQL. */
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-/* Gli allegati vecchi (fino al 31/08/2026) stanno ancora qui: la rotta che
-   li serve li cerca in questa cartella, ma di nuovi non se ne creano. */
+/** L'id di un allegato di conversazione: si distingue a occhio da un privato. */
+const nuovoIdAllegato = (): string => `all-${randomBytes(6).toString('hex')}`;
+/* Dove sta un allegato che resta attaccato alla conversazione: fuori dagli
+   archivi, e se ne va con lei. */
 export const percorsoAllegato = (tenantId: string, id: string): string =>
   `tenant/${tenantId}/allegati/${id}.pdf`;
 
@@ -148,79 +152,125 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   });
 
   /**
-   * RF-C-02: il PDF allegato al volo dal composer.
+   * RF-C-02: il PDF allegato al volo dal composer, nei due modi che sceglie
+   * chi carica (`?modo=archivio|rapido`, 01/09/2026).
    *
-   * Dal 01/09/2026 **entra nell'Archivio Privato** invece di vivere in un
-   * limbo suo (`archivio: 'conversazione'`, cartella `allegati/`): è un
-   * documento dell'agenzia come gli altri, e trattarlo diversamente
-   * significava non poterlo ritrovare, non classificarlo e non contarlo
-   * nello spazio del piano. Stesse regole del caricamento d'archivio -
-   * limite per file, spazio del piano, firma PDF sui byte - e stessa
-   * pipeline di ingestion, con la proposta di classificazione compresa.
+   * **archivio** (predefinito): il documento entra nell'Archivio Privato
+   * come qualsiasi altro — stesse regole di limite, spazio e firma PDF,
+   * stessa lettura visiva pagina per pagina, classificazione compresa.
+   * Resta all'agenzia anche quando la conversazione se ne va.
    *
-   * Le righe vecchie con `archivio: 'conversazione'` restano dov'erano e
-   * continuano a funzionare: nessuno le migra, semplicemente non se ne
-   * creano più.
+   * **rapido**: resta attaccato alla conversazione (`archivio:
+   * 'conversazione'`, cartella `allegati/`), si legge in una passata sola
+   * con un modello economico e sparisce con lei. È per la domanda al volo su
+   * un file di passaggio: un preventivo appena arrivato via mail che non si
+   * vuole conservare.
+   *
+   * La scelta la fa l'utente perché è l'unico che sa quale dei due è: dal
+   * server, un PDF è un PDF.
    *
    * Registrata prima di `/:id`: «allegati» non è un id.
    */
-  app.post('/api/conversazioni/allegati', async (richiesta, risposta) => {
-    if (!richiesta.isMultipart()) throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
-    let file: FileRicevuto | undefined;
-    for await (const parte of richiesta.parts()) {
-      if (parte.type !== 'file') continue;
-      const contenuto = await parte.toBuffer();
-      if (!parte.filename || file) continue;
-      file = {
-        nome: parte.filename,
-        mimetype: parte.mimetype,
-        contenuto,
-        troncato: parte.file.truncated,
+  app.post<{ Querystring: { modo?: string } }>(
+    '/api/conversazioni/allegati',
+    async (richiesta, risposta) => {
+      if (!richiesta.isMultipart()) throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
+      const modo: ModoAllegato = richiesta.query.modo === 'rapido' ? 'rapido' : 'archivio';
+
+      let file: FileRicevuto | undefined;
+      for await (const parte of richiesta.parts()) {
+        if (parte.type !== 'file') continue;
+        const contenuto = await parte.toBuffer();
+        if (!parte.filename || file) continue;
+        file = {
+          nome: parte.filename,
+          mimetype: parte.mimetype,
+          contenuto,
+          troncato: parte.file.truncated,
+        };
+      }
+      if (!file) throw new ErroreApi(400, 'FILE_MANCANTE', 'Nessun file nel caricamento.');
+
+      const { tenantId, utenteId } = richiesta.identita;
+      const spazio = await conIdentita(poolDb(), richiesta.identita, (client) =>
+        spazioDelTenant(client, tenantId),
+      );
+      if (file.troncato || file.contenuto.length > spazio.limiteFileByte) {
+        throw new ErroreApi(
+          413,
+          'FILE_TROPPO_GRANDE',
+          `«${file.nome}» supera il limite di ${Math.round(spazio.limiteFileByte / 1024 / 1024)} MB per file.`,
+        );
+      }
+      if (!ePdf(file)) {
+        throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', `«${file.nome}» non è un PDF: per ora si allegano solo PDF.`);
+      }
+      /* Lo spazio del piano lo consuma ciò che nell'archivio ci resta: un
+         allegato di passaggio se ne va con la conversazione. */
+      if (modo === 'archivio' && spazio.usatoByte + file.contenuto.length > spazio.limiteByte) {
+        throw new ErroreApi(507, 'SPAZIO_ESAURITO', 'Lo spazio del piano non basta per questo documento.');
+      }
+
+      const inArchivio = modo === 'archivio';
+      const id = inArchivio ? nuovoIdPrivato() : nuovoIdAllegato();
+      const percorso = inArchivio ? percorsoPdf(tenantId, id) : percorsoAllegato(tenantId, id);
+      await archivio().carica(percorso, file.contenuto, 'application/pdf');
+      const titolo = file.nome.replace(/\.[^.]+$/, '') || file.nome;
+      try {
+        await conIdentita(poolDb(), richiesta.identita, (client) =>
+          client.query(
+            `insert into velia.documenti
+               (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
+                caricato_da, caricato_il, dimensione_byte, classificazione_da_confermare)
+             values ($1, $8, $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, $9)`,
+            [
+              id,
+              tenantId,
+              titolo,
+              percorso,
+              file.nome,
+              utenteId,
+              file.contenuto.length,
+              inArchivio ? 'privato' : 'conversazione',
+              inArchivio,
+            ],
+          ),
+        );
+      } catch (errore) {
+        await archivio().elimina([percorso]).catch(() => undefined);
+        throw errore;
+      }
+      await accoda(poolDb(), 'ingestion', { documentoId: id, modo }, { tenantId, utenteId });
+
+      void risposta.code(201);
+      const riferimento: RiferimentoDocumento = {
+        id,
+        titolo,
+        archivio: inArchivio ? 'privato' : 'conversazione',
       };
-    }
-    if (!file) throw new ErroreApi(400, 'FILE_MANCANTE', 'Nessun file nel caricamento.');
+      return riferimento;
+    },
+  );
 
-    const { tenantId, utenteId } = richiesta.identita;
-    const spazio = await conIdentita(poolDb(), richiesta.identita, (client) =>
-      spazioDelTenant(client, tenantId),
-    );
-    if (file.troncato || file.contenuto.length > spazio.limiteFileByte) {
-      throw new ErroreApi(
-        413,
-        'FILE_TROPPO_GRANDE',
-        `«${file.nome}» supera il limite di ${Math.round(spazio.limiteFileByte / 1024 / 1024)} MB per file.`,
+  /**
+   * Lo stato della lettura di un allegato di conversazione, per il chip del
+   * composer. I documenti privati hanno già la loro scheda; questi no, e
+   * senza non si potrebbe dire quando sono pronti.
+   */
+  app.get<{ Params: { id: string } }>('/api/conversazioni/allegati/:id/stato', async (richiesta) => {
+    return conIdentita(poolDb(), richiesta.identita, async (client): Promise<StatoAllegato> => {
+      const r = await client.query<{ stato: StatoAllegato['stato']; errore_elaborazione: string | null }>(
+        `select stato, errore_elaborazione from velia.documenti
+         where archivio = 'conversazione' and tenant_id = $2 and id = $1`,
+        [richiesta.params.id, richiesta.identita.tenantId],
       );
-    }
-    if (!ePdf(file)) {
-      throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', `«${file.nome}» non è un PDF: per ora si allegano solo PDF.`);
-    }
-    if (spazio.usatoByte + file.contenuto.length > spazio.limiteByte) {
-      throw new ErroreApi(507, 'SPAZIO_ESAURITO', 'Lo spazio del piano non basta per questo documento.');
-    }
-
-    const id = nuovoIdPrivato();
-    const percorso = percorsoPdf(tenantId, id);
-    await archivio().carica(percorso, file.contenuto, 'application/pdf');
-    const titolo = file.nome.replace(/\.[^.]+$/, '') || file.nome;
-    try {
-      await conIdentita(poolDb(), richiesta.identita, (client) =>
-        client.query(
-          `insert into velia.documenti
-             (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
-              caricato_da, caricato_il, dimensione_byte, classificazione_da_confermare)
-           values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, true)`,
-          [id, tenantId, titolo, percorso, file.nome, utenteId, file.contenuto.length],
-        ),
-      );
-    } catch (errore) {
-      await archivio().elimina([percorso]).catch(() => undefined);
-      throw errore;
-    }
-    await accoda(poolDb(), 'ingestion', { documentoId: id }, { tenantId, utenteId });
-
-    void risposta.code(201);
-    const riferimento: RiferimentoDocumento = { id, titolo, archivio: 'privato' };
-    return riferimento;
+      const riga = r.rows[0];
+      if (!riga) throw ErroreApi.nonTrovato('Allegato inesistente.');
+      return {
+        stato: riga.stato,
+        ...(riga.errore_elaborazione && { erroreElaborazione: riga.errore_elaborazione }),
+      };
+    });
   });
 
   /**

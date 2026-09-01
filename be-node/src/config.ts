@@ -46,6 +46,13 @@ const schemaAmbiente = z.object({
    */
   MODELLO_INGESTION: z.string().default('claude-opus-5'),
   /**
+   * Il modello della **lettura rapida**: l'allegato di passaggio che l'utente
+   * non vuole conservare (RF-C-02, modo `rapido`). Una passata sola, blocchi
+   * doppi, nessun testimone: qui il dimensionamento economico ha senso,
+   * perché il documento non entra in archivio e nessuno lo citerà domani.
+   */
+  MODELLO_INGESTION_RAPIDA: z.string().default('claude-haiku-4-5'),
+  /**
    * Il modello OCR del secondo testimone (`worker/ingestion/testimoni.ts`).
    * Non scrive mai il testo dell'archivio: dice soltanto dove guardare.
    */

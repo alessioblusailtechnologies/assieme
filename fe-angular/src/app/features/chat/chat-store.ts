@@ -6,15 +6,16 @@ import { Subscription } from 'rxjs';
 import {
   DestinatarioEmail,
   DocumentoGenerato,
-  DocumentoPrivato,
   ErroreApi,
   EsportazioneElaborata,
   EventoStream,
   Id,
   IsoDateTime,
   Messaggio,
+  ModoAllegato,
   RicordoAppreso,
   RiferimentoDocumento,
+  StatoAllegato,
   TemplateOutput,
 } from '@core/models';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
@@ -27,13 +28,7 @@ import {
   nomeFileEsportazione,
 } from '@shared/esportazione/scelte-esportazione';
 
-/**
- * Un file allegato dal composer, nel tratto di strada fra la scelta e il
- * contesto: mentre sale è un chip in attesa, appena il server risponde
- * **sparisce da qui** perché è diventato un riferimento del contesto come
- * gli altri. Resta solo se qualcosa va storto.
- */
-/** Come sta l'ingestion di un documento appena allegato. */
+/** Come sta la lettura di un documento appena allegato. */
 export interface StatoElaborazioneAllegato {
   stato: 'lavorazione' | 'errore';
   messaggio?: string;
@@ -48,6 +43,12 @@ const MS_ATTESA_INGESTION = 2000;
  */
 const TETTO_ATTESA_MS = 10 * 60_000;
 
+/**
+ * Un file allegato dal composer, nel tratto di strada fra la scelta e il
+ * contesto: mentre sale è un chip in attesa, appena il server risponde
+ * **sparisce da qui** perché è diventato un riferimento del contesto come
+ * gli altri. Resta solo se qualcosa va storto.
+ */
 export interface AllegatoInCorso {
   chiave: number;
   nome: string;
@@ -438,16 +439,16 @@ export class ChatStore {
    */
   readonly elaborazioni = signal<Map<Id, StatoElaborazioneAllegato>>(new Map());
 
-  allega(file: File[]): void {
+  allega(file: File[], modo: ModoAllegato): void {
     for (const f of file) {
       const chiave = ++this.progressivoAllegato;
       this.allegati.update((a) => [...a, { chiave, nome: f.name, stato: 'caricamento' }]);
 
-      this.api.caricaAllegato(f).subscribe({
+      this.api.caricaAllegato(f, modo).subscribe({
         next: (riferimento) => {
           this.rimuoviAllegato(chiave);
           this.aggiungiAlContesto(riferimento);
-          this.segui(riferimento.id);
+          this.segui(riferimento);
         },
         error: (err: HttpErrorResponse) => {
           const messaggio =
@@ -476,12 +477,19 @@ export class ChatStore {
    * dice) o dopo `TETTO_ATTESA_MS`, che su un documento lunghissimo evita di
    * interrogare il server per sempre.
    */
-  private segui(id: Id): void {
+  private segui(riferimento: RiferimentoDocumento): void {
+    const id = riferimento.id;
+    /* Due schede diverse per lo stesso stato: il documento privato ha la sua,
+       l'allegato di conversazione ha la rotta dedicata. */
+    const url =
+      riferimento.archivio === 'privato'
+        ? this.apiPrivati.urlDettaglio(id)
+        : this.api.urlStatoAllegato(id);
     this.segna(id, { stato: 'lavorazione' });
     const scadenza = Date.now() + TETTO_ATTESA_MS;
 
     const battito = setInterval(() => {
-      this.http.get<DocumentoPrivato>(this.apiPrivati.urlDettaglio(id)).subscribe({
+      this.http.get<StatoAllegato>(url).subscribe({
         next: (documento) => {
           if (documento.stato === 'pronto') {
             this.smettiDiSeguire(id);

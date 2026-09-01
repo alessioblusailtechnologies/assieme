@@ -27,6 +27,12 @@ import type { SecondoSguardo } from './secondo-sguardo.js';
  */
 const PAGINE_PER_BLOCCO = 10;
 
+/**
+ * La lettura rapida lavora a blocchi doppi: meno chiamate, meno attesa, e la
+ * precisione che si perde è dichiarata a chi ha scelto questo modo.
+ */
+const PAGINE_PER_BLOCCO_RAPIDO = 20;
+
 export interface DipendenzeIngestion {
   convertitore: Convertitore;
   archivio: ArchivioFile;
@@ -34,7 +40,14 @@ export interface DipendenzeIngestion {
   classificatore?: Classificatore;
   /** Il secondo sguardo (§4b): opzionale — senza, si trascrive e non si ricontrolla. */
   secondoSguardo?: SecondoSguardo;
+  /**
+   * Il convertitore della lettura rapida: un modello economico per gli
+   * allegati di passaggio. Senza, la rapida usa lo stesso dell'altra e resta
+   * rapida solo per i blocchi più grossi e i controlli spenti.
+   */
+  convertitoreRapido?: Convertitore;
   pagineNelBlocco?: number;
+  pagineNelBloccoRapido?: number;
 }
 
 /**
@@ -85,6 +98,7 @@ interface RigaDaConvertire {
  */
 export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
   const pagineNelBlocco = dipendenze.pagineNelBlocco ?? PAGINE_PER_BLOCCO;
+  const pagineNelBloccoRapido = dipendenze.pagineNelBloccoRapido ?? PAGINE_PER_BLOCCO_RAPIDO;
 
   return async function gestisciIngestion(job: Job, strumenti: { db: pg.Pool }): Promise<void> {
     const { db } = strumenti;
@@ -92,6 +106,10 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
     if (typeof documentoId !== 'string' || !documentoId) {
       throw new Error('payload senza documentoId');
     }
+    /* Il modo lo decide chi carica (RF-C-02): «rapido» è una passata sola con
+       un modello economico, senza testimoni né secondo sguardo. I job vecchi
+       non ce l'hanno e valgono come letture complete. */
+    const rapido = job.payload['modo'] === 'rapido';
 
     const righe = await db.query<RigaDaConvertire>(
       `select d.id, d.archivio, d.titolo, d.tipologia, d.prodotto, d.nome_file,
@@ -128,9 +146,10 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
          trascrizione e pagina non coincidono, il secondo sguardo torna solo
          su quelle. È il motore della skill `/ingest-visivo`. */
       const lettura = await leggiDocumento(pdf, totale, {
-        convertitore: dipendenze.convertitore,
-        ...(dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
-        pagineNelBlocco,
+        convertitore: (rapido ? dipendenze.convertitoreRapido : undefined) ?? dipendenze.convertitore,
+        ...(!rapido && dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
+        senzaTestimoni: rapido,
+        pagineNelBlocco: rapido ? pagineNelBloccoRapido : pagineNelBlocco,
         avanzamento: async (a) => {
           await emettiEvento(db, job.id, 'ingestion-avanzamento', {
             documentoId,

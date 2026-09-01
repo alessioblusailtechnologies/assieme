@@ -13,8 +13,9 @@ import {
 
 import { ChatStore, type AllegatoInCorso, type StatoElaborazioneAllegato } from '../chat-store';
 import { Icona } from '@shared/ui/icona/icona';
+import { MenuAzioni, type VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
-import { Id, RiferimentoDocumento } from '@core/models';
+import { Id, ModoAllegato, RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { ErroreMicrofono, Registratore } from './registratore';
 import {
@@ -54,7 +55,7 @@ import { menzioneAlCursore } from './menzione';
  */
 @Component({
   selector: 'app-composer',
-  imports: [Icona, SelettoreDocumenti],
+  imports: [Icona, MenuAzioni, SelettoreDocumenti],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './composer.html',
   styleUrl: './composer.scss',
@@ -66,6 +67,7 @@ export class Composer {
   readonly giaInContesto = input<string[]>([]);
 
   private readonly area = viewChild.required<ElementRef<HTMLDivElement>>('area');
+  private readonly campoFile = viewChild.required<ElementRef<HTMLInputElement>>('file');
   private readonly selettore = viewChild(SelettoreDocumenti);
 
   /*
@@ -201,9 +203,39 @@ export class Composer {
    * RF-C-02: un file allegato dal disco. Non entra negli archivi — vive con
    * la conversazione; appena caricato compare come riferimento del contesto.
    */
+  /**
+   * Il modo scelto nel menù, che vale per il file che sta per arrivare.
+   *
+   * Sta qui e non nello store perché è una scelta del gesto, non della
+   * conversazione: il prossimo allegato può volere l'altro modo.
+   */
+  private modoScelto: ModoAllegato = 'archivio';
+
+  /**
+   * Le due strade dell'allegato (RF-C-02). La differenza non è tecnica ed è
+   * scritta com'è: dove finisce il documento e quanto bene viene letto.
+   */
+  protected readonly vociAllega: VoceMenu[] = [
+    {
+      etichetta: 'Aggiungi all’Archivio privato',
+      dettaglio: 'lettura accurata, resta all’agenzia',
+      azione: () => this.scegliFile('archivio'),
+    },
+    {
+      etichetta: 'Solo per questa chat',
+      dettaglio: 'lettura rapida, meno precisa',
+      azione: () => this.scegliFile('rapido'),
+    },
+  ];
+
+  private scegliFile(modo: ModoAllegato): void {
+    this.modoScelto = modo;
+    this.campoFile().nativeElement.click();
+  }
+
   protected allegaFile(evento: Event): void {
     const ingresso = evento.target as HTMLInputElement;
-    this.store.allega([...(ingresso.files ?? [])]);
+    this.store.allega([...(ingresso.files ?? [])], this.modoScelto);
     /* Lo stesso file deve poter essere riallegato: l'input si azzera. */
     ingresso.value = '';
     this.editor.focus();

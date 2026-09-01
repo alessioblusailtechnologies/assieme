@@ -15,6 +15,7 @@ import {
   Id,
   Messaggio,
   NuovoMessaggio,
+  ModoAllegato,
   RiferimentoDocumento,
   RispostaPrompt,
   RispostaTrascrizione,
@@ -97,16 +98,22 @@ export class ConversazioniApi {
   }
 
   /**
-   * RF-C-02: un file allegato dal composer. Non entra negli archivi — vive
-   * con la conversazione: il server risponde con il riferimento
-   * (`archivio: 'conversazione'`) pronto per il contesto. Chi vuole invece
-   * un documento del tenant lo carica nell'Archivio Privato, dov'è sempre
-   * stato.
+   * RF-C-02: un file allegato dal composer, nel modo che sceglie chi carica.
+   *
+   * `archivio` — entra nell'Archivio Privato e si legge pagina per pagina,
+   * col controllo dei testimoni: resta all'agenzia e le citazioni sono
+   * verificate. `rapido` — vive con la conversazione, se ne va con lei, e la
+   * lettura è una passata sola con un modello economico.
    */
-  caricaAllegato(file: File): Observable<RiferimentoDocumento> {
+  caricaAllegato(file: File, modo: ModoAllegato): Observable<RiferimentoDocumento> {
     const corpo = new FormData();
     corpo.append('file', file, file.name);
-    return this.http.post<RiferimentoDocumento>(`${this.base}/allegati`, corpo);
+    return this.http.post<RiferimentoDocumento>(`${this.base}/allegati?modo=${modo}`, corpo);
+  }
+
+  /** Lo stato della lettura di un allegato di conversazione, per il chip. */
+  urlStatoAllegato(id: Id): string {
+    return `${this.base}/allegati/${id}/stato`;
   }
 
   /** Il file di un allegato, per il visualizzatore. */

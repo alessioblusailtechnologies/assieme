@@ -471,6 +471,8 @@ deterministica come fonte.
 - Test: `test/lettura-visiva.spec.ts` (10: spezzatura, ancore, e i verdetti
   dei testimoni — cornice, scansioni, tolleranza sulle parole).
 
+- **Due modi per gli allegati di chat** (RF-C-02, `?modo=archivio|rapido`): chi carica sceglie. `archivio` entra nell'Archivio Privato con la lettura completa; `rapido` resta attaccato alla conversazione (`archivio: 'conversazione'`), se ne va con lei, e si legge in una passata sola con `MODELLO_INGESTION_RAPIDA` (default Haiku 4.5), blocchi da venti pagine, nessun testimone. Il chip del composer segue la lettura in entrambi i casi: la scheda del privato per uno, `GET /api/conversazioni/allegati/:id/stato` per l'altro.
+
 **Il costo per documento sale**, ed è il prezzo della decisione: da ~0,30 $ a
 ~2 $ per un privato di 40 pagine, da ~1,10 $ a ~7,50 $ per un set pubblico di
 150. Una volta sola per documento, contro una citazione sbagliata che si

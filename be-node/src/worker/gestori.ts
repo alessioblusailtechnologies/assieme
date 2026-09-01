@@ -114,6 +114,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
     ingestionVera ??= creaGestoreIngestion({
       convertitore: new ConvertitoreModello(),
+      convertitoreRapido: new ConvertitoreModello(configurazione().MODELLO_INGESTION_RAPIDA),
       classificatore: new ClassificatoreModello(),
       secondoSguardo: new SecondoSguardoModello(),
       archivio: new ArchivioStorage(),

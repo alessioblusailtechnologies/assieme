@@ -13,6 +13,28 @@ import { z } from 'zod';
 
 export type ArchivioRiferimento = 'pubblico' | 'privato' | 'conversazione';
 
+/**
+ * Come si carica un allegato dal composer (RF-C-02, scelta del 01/09/2026).
+ *
+ * `archivio` — il documento entra nell'Archivio Privato e lo si legge con la
+ * lettura visiva: pagina per pagina, coi testimoni e il secondo sguardo.
+ * Lento e caro, ma il documento resta e le citazioni sono verificate.
+ *
+ * `rapido` — resta attaccato alla conversazione, se ne va con lei, e la
+ * lettura è una passata sola con un modello economico. Serve a chi ha una
+ * domanda al volo su un file che non gli interessa conservare.
+ *
+ * Chi carica sceglie: è l'unico che sa se quel PDF è materiale d'agenzia o
+ * un allegato di passaggio.
+ */
+export type ModoAllegato = 'archivio' | 'rapido';
+
+/** Lo stato dell'ingestion di un allegato, per il chip del composer. */
+export interface StatoAllegato {
+  stato: 'in-coda' | 'in-elaborazione' | 'pronto' | 'errore';
+  erroreElaborazione?: string;
+}
+
 export interface RiferimentoDocumento {
   id: string;
   titolo: string;

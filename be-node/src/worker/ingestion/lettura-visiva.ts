@@ -61,6 +61,12 @@ export interface DipendenzeLettura {
   /** Assente nei test che non vogliono il controllo: si trascrive e basta. */
   secondoSguardo?: SecondoSguardo;
   pagineNelBlocco: number;
+  /**
+   * La lettura rapida non chiama i testimoni: è una passata sola, e chi l'ha
+   * scelta sa che è meno precisa. Senza controllo non ha senso nemmeno il
+   * secondo sguardo, che dai testimoni prende le pagine.
+   */
+  senzaTestimoni?: boolean;
   /** Per il log del job e la barra di avanzamento. */
   avanzamento?: (a: AvanzamentoLettura) => Promise<void>;
 }
@@ -86,6 +92,11 @@ export async function leggiDocumento(
   dipendenze: DipendenzeLettura,
 ): Promise<EsitoLettura> {
   const { pagine, rifiutate } = await trascriviTutto(pdf, totale, dipendenze);
+
+  if (dipendenze.senzaTestimoni) {
+    for (let n = 1; n <= totale; n++) pagine[n - 1] ??= '';
+    return { pagine, giudizi: [], correzioni: [], senzaOcr: true };
+  }
 
   await dipendenze.avanzamento?.({ fase: 'testimoni', fatte: 0, totali: totale });
   const pdfjs = await leggiConPdfjs(pdf);
