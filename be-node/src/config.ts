@@ -30,8 +30,21 @@ const schemaAmbiente = z.object({
    * messaggio chiaro se manca (poolDb).
    */
   DATABASE_URL: z.string().min(1).optional(),
-  /** Conversione documenti (Haiku) e motore agentico (Agent SDK). */
+  /** Conversione documenti e motore agentico (Agent SDK). */
   ANTHROPIC_API_KEY: z.string().optional(),
+  /**
+   * Il modello che legge i documenti in ingestion: conversione in Markdown e
+   * proposta di classificazione (01/09/2026, decisione del committente).
+   *
+   * Era Haiku cablato nel codice, per la ragione scritta in
+   * `VELIA-motore-agentico.md` §4 — la conversione è un costo fisso per
+   * documento, si paga una volta. La qualità della lettura però è il
+   * pavimento di tutto il resto: una cifra sbagliata qui la citano poi la
+   * chat, le tabelle e gli agenti, ognuno convinto della propria fonte.
+   * Quindi Opus di default, e la scelta si cambia da qui senza toccare il
+   * codice — come per il motore, la memoria e i suggerimenti.
+   */
+  MODELLO_INGESTION: z.string().default('claude-opus-5'),
   /**
    * Il motore agentico (Fase 3). Modello e budget per job sono le decisioni
    * aperte 1 e 4 del doc motore: si misurano qui, non si cablano.

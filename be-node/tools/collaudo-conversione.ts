@@ -2,7 +2,7 @@
  * Collaudo della conversione automatica, fuori dalla pipeline.
  *
  * Prende un PDF locale, un range di pagine, e lo converte con il
- * ConvertitoreHaiku VERO — le stesse regole, la stessa spezzatura in
+ * ConvertitoreModello VERO — le stesse regole, la stessa spezzatura in
  * blocchi del gestore — scrivendo il Markdown su file. Niente database,
  * niente Storage, niente coda: solo la conversione, per poterla giudicare
  * contro il campione manuale (`esperimento-motore/workspace/`).
@@ -16,7 +16,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 
-import { ConvertitoreHaiku } from '../src/worker/ingestion/convertitore.js';
+import { ConvertitoreModello } from '../src/worker/ingestion/convertitore.js';
 import { contaPagine, estraiPagine } from '../src/worker/ingestion/pdf.js';
 
 const PAGINE_PER_BLOCCO = 20;
@@ -43,7 +43,7 @@ const uscita = resolve(
 
 console.log(`${basename(percorsoPdf)}: ${pagineTotali} pagine, converto ${da}–${a} a blocchi di ${PAGINE_PER_BLOCCO}.`);
 
-const convertitore = new ConvertitoreHaiku();
+const convertitore = new ConvertitoreModello();
 const parti: string[] = [];
 for (let inizio = da; inizio <= a; inizio += PAGINE_PER_BLOCCO) {
   const fine = Math.min(inizio + PAGINE_PER_BLOCCO - 1, a);

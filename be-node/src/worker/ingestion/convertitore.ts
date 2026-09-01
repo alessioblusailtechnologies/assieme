@@ -7,7 +7,8 @@ import { promptBlocco, REGOLE_CONVERSIONE } from './convenzioni.js';
  * La conversione di un blocco di pagine PDF in Markdown con ancore.
  *
  * È un'interfaccia perché il gestore del job non deve sapere chi converte:
- * nei test è una funzione finta (zero chiamate API), in produzione è Haiku.
+ * nei test è una funzione finta (zero chiamate API), in produzione è il
+ * modello di `MODELLO_INGESTION`.
  */
 export interface Convertitore {
   convertiBlocco(
@@ -17,18 +18,18 @@ export interface Convertitore {
 }
 
 /**
- * Il convertitore vero: Claude Haiku legge il PDF e produce Markdown fedele.
+ * Il convertitore vero: il modello legge il PDF e produce Markdown fedele.
  *
- * Haiku per scelta di architettura (VELIA-motore-agentico.md §4): la
- * conversione è il costo fisso per documento della piattaforma e si paga
- * una volta, non a ogni query — il modello economico è il dimensionamento
- * giusto. La qualità si giudica contro il campione manuale dell'esperimento.
+ * Quale modello lo dice `MODELLO_INGESTION` (default Opus): la lettura è il
+ * pavimento dell'archivio, e una cifra sbagliata qui la ereditano chat,
+ * tabelle e agenti.
  *
  * Streaming perché l'output di un blocco può essere lungo (decine di
  * migliaia di token): senza, si rischia il timeout HTTP dell'SDK.
  */
-export class ConvertitoreHaiku implements Convertitore {
+export class ConvertitoreModello implements Convertitore {
   private readonly client: Anthropic;
+  private readonly modello: string;
 
   constructor() {
     const chiave = configurazione().ANTHROPIC_API_KEY;
@@ -36,6 +37,7 @@ export class ConvertitoreHaiku implements Convertitore {
       throw new Error('ANTHROPIC_API_KEY mancante in .env: la conversione documenti la richiede.');
     }
     this.client = new Anthropic({ apiKey: chiave });
+    this.modello = configurazione().MODELLO_INGESTION;
   }
 
   async convertiBlocco(
@@ -43,7 +45,7 @@ export class ConvertitoreHaiku implements Convertitore {
     opzioni: { paginaIniziale: number; pagineTotali: number },
   ): Promise<string> {
     const flusso = this.client.messages.stream({
-      model: 'claude-haiku-4-5',
+      model: this.modello,
       max_tokens: 32000,
       system: REGOLE_CONVERSIONE,
       messages: [

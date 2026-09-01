@@ -54,13 +54,14 @@ Rispondi SOLO con un oggetto JSON, senza commenti né testo attorno, con queste 
 Non inventare id: usa solo quelli elencati. Quando il testo è ambiguo preferisci null a una scelta tirata a indovinare.`;
 
 /**
- * Il classificatore vero: Haiku, una chiamata breve sul solo estratto (il
+ * Il classificatore vero: una chiamata breve sul solo estratto (il
  * documento intero l'ha già letto il convertitore). Se il modello risponde
  * fuori contratto, la classificazione resta quella iniziale: una proposta
  * mancata non è un errore di ingestion.
  */
-export class ClassificatoreHaiku implements Classificatore {
+export class ClassificatoreModello implements Classificatore {
   private readonly client: Anthropic;
+  private readonly modello: string;
 
   constructor() {
     const chiave = configurazione().ANTHROPIC_API_KEY;
@@ -68,12 +69,13 @@ export class ClassificatoreHaiku implements Classificatore {
       throw new Error('ANTHROPIC_API_KEY mancante in .env: la classificazione la richiede.');
     }
     this.client = new Anthropic({ apiKey: chiave });
+    this.modello = configurazione().MODELLO_INGESTION;
   }
 
   async classifica(contesto: ContestoClassificazione): Promise<PropostaClassificazione> {
     const elenco = (voci: VoceTassonomia[]) => voci.map((v) => `- ${v.id}: ${v.nome}`).join('\n');
     const risposta = await this.client.messages.create({
-      model: 'claude-haiku-4-5',
+      model: this.modello,
       max_tokens: 300,
       system: ISTRUZIONI,
       messages: [

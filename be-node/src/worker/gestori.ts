@@ -8,8 +8,8 @@ import { creaGestoreAgenti } from './agenti/gestore.js';
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
-import { ClassificatoreHaiku } from './ingestion/classificatore.js';
-import { ConvertitoreHaiku } from './ingestion/convertitore.js';
+import { ClassificatoreModello } from './ingestion/classificatore.js';
+import { ConvertitoreModello } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { EstrattoreMotore } from './memoria/estrattore.js';
 import { creaGestoreMemoria } from './memoria/gestore.js';
@@ -112,8 +112,8 @@ function estrattoreMemoria(): EstrattoreMotore {
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
     ingestionVera ??= creaGestoreIngestion({
-      convertitore: new ConvertitoreHaiku(),
-      classificatore: new ClassificatoreHaiku(),
+      convertitore: new ConvertitoreModello(),
+      classificatore: new ClassificatoreModello(),
       archivio: new ArchivioStorage(),
     });
     await ingestionVera(job, strumenti);

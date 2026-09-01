@@ -4,7 +4,7 @@ import { PDFDocument } from 'pdf-lib';
  * Spezzatura del PDF in blocchi di pagine.
  *
  * Serve per due motivi, entrambi duri: l'API accetta al massimo 100 pagine
- * per richiesta sui modelli a contesto 200K (Haiku), e un set informativo
+ * per richiesta sui modelli a contesto 200K, e un set informativo
  * vero ne ha 212; e blocchi più piccoli tengono l'output di ogni chiamata
  * dentro `max_tokens` senza troncare.
  */
