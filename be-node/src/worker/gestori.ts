@@ -9,6 +9,7 @@ import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
 import { ClassificatoreModello } from './ingestion/classificatore.js';
+import { SecondoSguardoModello } from './ingestion/secondo-sguardo.js';
 import { ConvertitoreModello } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { EstrattoreMotore } from './memoria/estrattore.js';
@@ -114,6 +115,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
     ingestionVera ??= creaGestoreIngestion({
       convertitore: new ConvertitoreModello(),
       classificatore: new ClassificatoreModello(),
+      secondoSguardo: new SecondoSguardoModello(),
       archivio: new ArchivioStorage(),
     });
     await ingestionVera(job, strumenti);

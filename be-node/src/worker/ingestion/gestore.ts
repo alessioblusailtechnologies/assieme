@@ -11,7 +11,9 @@ import {
 } from './classificatore.js';
 import { headerDocumento } from './convenzioni.js';
 import type { Convertitore } from './convertitore.js';
-import { blocchi, contaPagine, estraiPagine } from './pdf.js';
+import { leggiDocumento } from './lettura-visiva.js';
+import { contaPagine } from './pdf.js';
+import type { SecondoSguardo } from './secondo-sguardo.js';
 
 /**
  * Quante pagine per chiamata di conversione.
@@ -30,6 +32,8 @@ export interface DipendenzeIngestion {
   archivio: ArchivioFile;
   /** Il passo 3 (classificazione): opzionale — senza, la proposta resta quella dell'upload. */
   classificatore?: Classificatore;
+  /** Il secondo sguardo (§4b): opzionale — senza, si trascrive e non si ricontrolla. */
+  secondoSguardo?: SecondoSguardo;
   pagineNelBlocco?: number;
 }
 
@@ -119,25 +123,38 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
           'Il file non è un PDF leggibile: potrebbe essere danneggiato o protetto. Caricane una copia apribile.',
         );
       }
-      const spezzoni = blocchi(totale, pagineNelBlocco);
+      /* La lettura visiva (`lettura-visiva.ts`): il modello guarda ogni
+         pagina a blocchi di dieci, i due testimoni meccanici dicono dove
+         trascrizione e pagina non coincidono, il secondo sguardo torna solo
+         su quelle. È il motore della skill `/ingest-visivo`. */
+      const lettura = await leggiDocumento(pdf, totale, {
+        convertitore: dipendenze.convertitore,
+        ...(dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
+        pagineNelBlocco,
+        avanzamento: async (a) => {
+          await emettiEvento(db, job.id, 'ingestion-avanzamento', {
+            documentoId,
+            fase: a.fase,
+            fatte: a.fatte,
+            di: a.totali,
+          });
+        },
+      });
 
-      const parti: string[] = [];
-      for (const [indice, [da, a]] of spezzoni.entries()) {
-        const pdfBlocco = await estraiPagine(pdf, da, a);
-        parti.push(
-          await dipendenze.convertitore.convertiBlocco(pdfBlocco, {
-            paginaIniziale: da,
-            pagineTotali: totale,
-          }),
-        );
-        await emettiEvento(db, job.id, 'ingestion-avanzamento', {
-          documentoId,
-          blocco: indice + 1,
-          di: spezzoni.length,
-        });
-      }
+      /* Il verdetto dei testimoni resta nel job: è l'unico posto dove si
+         legge, dopo, perché una pagina è stata guardata due volte. */
+      const dubbie = lettura.giudizi.filter((g) => g.esito !== 'ok');
+      await emettiEvento(db, job.id, 'ingestion-verifica', {
+        documentoId,
+        pagine: totale,
+        senzaOcr: lettura.senzaOcr,
+        daGuardare: dubbie.map((g) => `pag. ${g.pagina} (${g.esito}): ${g.note.join('; ')}`),
+        correzioni: lettura.correzioni,
+      });
 
-      const corpo = parti.join('\n\n');
+      const corpo = lettura.pagine
+        .map((testo, i) => `[pag. ${i + 1}]\n\n${testo}`.trimEnd())
+        .join('\n\n');
       /* RF-B-06, prima release: un documento da cui non esce una riga di
          testo (scansione muta, pagine di sola grafica) non è referenziabile
          e l'utente deve saperlo — non un .md vuoto che la chat non trova. */

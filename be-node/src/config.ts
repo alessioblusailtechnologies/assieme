@@ -46,6 +46,11 @@ const schemaAmbiente = z.object({
    */
   MODELLO_INGESTION: z.string().default('claude-opus-5'),
   /**
+   * Il modello OCR del secondo testimone (`worker/ingestion/testimoni.ts`).
+   * Non scrive mai il testo dell'archivio: dice soltanto dove guardare.
+   */
+  MODELLO_OCR: z.string().default('mistral-ocr-latest'),
+  /**
    * Il motore agentico (Fase 3). Modello e budget per job sono le decisioni
    * aperte 1 e 4 del doc motore: si misurano qui, non si cablano.
    */

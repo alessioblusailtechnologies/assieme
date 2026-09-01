@@ -50,12 +50,22 @@ class ArchivioFinto implements ArchivioFile {
 
 class ConvertitoreFinto implements Convertitore {
   readonly chiamate: Array<{ paginaIniziale: number; pagineTotali: number }> = [];
+  constructor(private readonly pagineDelBlocco = 2) {}
   convertiBlocco(
     _pdf: Buffer,
     opzioni: { paginaIniziale: number; pagineTotali: number },
   ): Promise<string> {
     this.chiamate.push(opzioni);
-    return Promise.resolve(`[pag. ${opzioni.paginaIniziale}]\n\nContenuto convertito.`);
+    /* Un'ancora per pagina del blocco, come pretende il prompt: la lettura
+       visiva spacchetta il Markdown su quelle, e una pagina che non compare
+       la rilancia da sola. */
+    const quante = Math.min(this.pagineDelBlocco, opzioni.pagineTotali - opzioni.paginaIniziale + 1);
+    return Promise.resolve(
+      Array.from(
+        { length: quante },
+        (_, i) => `[pag. ${opzioni.paginaIniziale + i}]\n\nContenuto convertito.`,
+      ).join('\n\n'),
+    );
   }
 }
 

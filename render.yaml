@@ -84,6 +84,10 @@ services:
         sync: false
       - key: HOSTYOURAI_API_KEY
         sync: false
+      # Il testimone OCR dell'ingestion visiva: senza, il controllo resta al
+      # solo layer di testo del PDF (che sulle scansioni è cieco).
+      - key: MISTRAL_API_KEY
+        sync: false
       # Generazione documenti da template: il runner della sandbox è il servizio
       # privato velia-sandbox qui sotto (DEPLOY.md §2b), raggiunto sulla rete
       # privata di Render col segreto condiviso.

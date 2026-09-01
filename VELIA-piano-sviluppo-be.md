@@ -429,6 +429,53 @@ Tutto il Modulo D risponde dal backend: modelli, istruzioni (regole e documenti 
 - **La pagina di una citazione la decide l'ancora, non il modello** (`worker/motore/ancoraggio.ts`): dopo `validaBlocco`, `ancoraCitazioni` cerca l'estratto nel Markdown del documento (confronto tollerante: spazi, virgolette, trattini; estratto intero poi 60 e 30 caratteri) e corregge la pagina con l'ancora `[pag. N]` reale, con avviso nell'audit; estratto introvabile = pagina non verificata, avviso, mai bocciatura. Stanato dal collaudo AUTOPIÙ: Sonnet citava pag. 89 per passaggi di pag. 88 e il validatore accettava (file e pagina esistevano). Applicato a chat, agenti e celle delle tabelle. Test `test/ancoraggio.spec.ts`.
 - **Archivio Pubblico popolato in sessione, senza API** (decisione del committente: token dell'abbonamento, ricerca e download compresi): skill `/ingest-pubblico <compagnia> <prodotto> [url-o-pdf]` + `tools/estrai-testo-pdf.mjs` (pdfjs, testo con ancore, nessun modello) + rifinitura a mano (i DIP a due colonne si riscrivono guardando la pagina) + `carica-archivio.mjs` (ora **aggiorna il manifesto per id**: prima lo riscriveva col solo albero e aveva perso le voci UnipolSai). Primo set: **Cattolica Active Veicoli AUTOPIÙ ed. 07/2025** (`cmp-cattolica`, 144 pagine, DIP 3–5 / DIP Agg. 7–10 / Condizioni 11–143; il DIP Agg. riporta «Ed. 07/2026» per refuso). Catalogo a 13 documenti; collaudo Sonnet: 3/3 citazioni, 22 s, 0,06 $.
 
+### ✅ Ingestion visiva — **fatta** (01/09/2026), fuori dalle fasi
+
+Decisione del committente: il motore della skill `/ingest-visivo` entra nel
+prodotto, uguale. Il principio è quello, e vale ora per ogni documento che
+entra in piattaforma — pubblico, privato, allegato di chat: **il modello
+legge, la macchina controlla**. Mai il contrario, nessuna estrazione
+deterministica come fonte.
+
+- **Il modello si sceglie** (`MODELLO_INGESTION`, default `claude-opus-5`):
+  era Haiku cablato, con la ragione del §4 del doc motore (costo fisso per
+  documento). Il committente ribalta: la lettura è il pavimento di tutto, e
+  una cifra sbagliata qui la ereditano chat, tabelle e agenti. Vale anche per
+  la classificazione (RF-B-03).
+- **Blocchi da dieci pagine** (`worker/ingestion/gestore.ts`), non venti: chi
+  trascrive a lungo comincia a riassumere, e ogni blocco è una chiamata a sé,
+  cioè un contesto fresco. Le regole con cui si guarda una pagina
+  (`REGOLE_TRASCRIZIONE`) sono quelle della skill, parola per parola: ordine
+  di lettura delle due colonne dei DIP, testo dentro figure e box,
+  sillabazione ricomposta, mai `#`, icone non trascritte.
+- **Due testimoni meccanici** (`worker/ingestion/testimoni.ts`, porta in casa
+  `tools/testimone-ocr.mjs`): il layer di testo pdfjs e Mistral OCR (una
+  chiamata per PDF, `MISTRAL_API_KEY` — la stessa della dettatura, ora anche
+  sul worker). Stessa tokenizzazione e stesse soglie del testimone in
+  sessione: numero visto da entrambi e assente nella trascrizione = **certo**,
+  da uno solo = **guarda**, cornice riconosciuta e scontata, pagine dove pdfjs
+  è cieco giudicate dal solo OCR. Nessuno dei due scrive mai il testo:
+  dicono dove guardare.
+- **Secondo sguardo** (`worker/ingestion/secondo-sguardo.ts`) in contesto
+  separato — mai quello che ha trascritto — sulle pagine segnalate, su quelle
+  con `[!ATTENZIONE]` e su **una ogni dieci** pescata a caso. Una domanda
+  sola: «dice tutto quello che dice la pagina, e solo quello?». Se trova
+  scarti riscrive la pagina; il giro si ripete finché non corregge più (tetto
+  di 3 giri).
+- **Filtro dei contenuti**: un blocco rifiutato (succede sulle pagine che
+  riportano per esteso gli articoli del Codice civile) si riprova a pagine
+  singole; quelle che restano mute prendono la lettura OCR e vanno **sempre**
+  al secondo sguardo. Un errore di altra natura fa fallire il job.
+- L'esito del controllo resta nel job (evento `ingestion-verifica`): pagine
+  segnalate col motivo, correzioni fatte, se l'OCR mancava.
+- Test: `test/lettura-visiva.spec.ts` (10: spezzatura, ancore, e i verdetti
+  dei testimoni — cornice, scansioni, tolleranza sulle parole).
+
+**Il costo per documento sale**, ed è il prezzo della decisione: da ~0,30 $ a
+~2 $ per un privato di 40 pagine, da ~1,10 $ a ~7,50 $ per un set pubblico di
+150. Una volta sola per documento, contro una citazione sbagliata che si
+eredita per sempre.
+
 ### ⛔ Crediti (pricing) — **rimossi** (01/09/2026); costruiti il 25/08, fuori dalle fasi
 
 Decisione del committente del 01/09/2026: **via i crediti**, tutti. Non c'è più

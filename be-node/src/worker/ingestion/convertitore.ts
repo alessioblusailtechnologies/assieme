@@ -18,6 +18,24 @@ export interface Convertitore {
 }
 
 /**
+ * Il filtro dei contenuti ha rifiutato il blocco.
+ *
+ * Non è un guasto: succede, in modo deterministico, sulle pagine che
+ * riportano per esteso gli articoli del Codice civile («Norme di legge
+ * richiamate in polizza»). La skill `/ingest-visivo` §2 dice cosa fare, e la
+ * lettura visiva lo fa: riprovare a pagine singole, e per quelle che restano
+ * mute prendere la lettura del testimone OCR, dichiarandolo. Un errore di
+ * altra natura (modello irraggiungibile, chiave scaduta) non passa di qui e
+ * fa fallire il job, com'è giusto.
+ */
+export class ErroreFiltroContenuti extends Error {
+  constructor(messaggio: string) {
+    super(messaggio);
+    this.name = 'ErroreFiltroContenuti';
+  }
+}
+
+/**
  * Il convertitore vero: il modello legge il PDF e produce Markdown fedele.
  *
  * Quale modello lo dice `MODELLO_INGESTION` (default Opus): la lettura è il
@@ -73,6 +91,11 @@ export class ConvertitoreModello implements Convertitore {
     if (messaggio.stop_reason === 'max_tokens') {
       throw new Error(
         `conversione troncata (max_tokens) sul blocco da pag. ${opzioni.paginaIniziale}: ridurre PAGINE_PER_BLOCCO`,
+      );
+    }
+    if (messaggio.stop_reason === 'refusal') {
+      throw new ErroreFiltroContenuti(
+        `blocco da pag. ${opzioni.paginaIniziale} rifiutato dal filtro dei contenuti`,
       );
     }
 
