@@ -48,7 +48,7 @@
       <!-- Il set dell'edizione è un PDF unico: ci si apre dove il documento
            comincia - il DIP al DIP, le Condizioni alle Condizioni. -->
       <ui-visualizzatore-pdf
-        [fileUrl]="doc.fileUrl"
+        [fileUrl]="urlFile(doc.id)"
         [posizione]="doc.paginaInizio ? { pagina: doc.paginaInizio } : undefined"
       />
     </div>

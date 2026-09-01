@@ -57,6 +57,16 @@ export class DettaglioDocumento {
   protected readonly etichettaTipologia = etichettaTipologia;
 
   /**
+   * L'indirizzo del PDF lo compone il client, non il server: in produzione
+   * l'app sta su un host e l'API su un altro, e un percorso relativo finirebbe
+   * sul sito statico - che risponde `index.html` a qualunque rotta, quindi con
+   * un 200 e l'anteprima che non si apre senza dire perché.
+   */
+  protected urlFile(id: string): string {
+    return this.api.urlFile(id);
+  }
+
+  /**
    * L'ultima briciola porta il titolo del documento, non un'etichetta fissa:
    * arrivando da un collegamento condiviso è la sola cosa che dice dove si è
    * finiti. Finché il documento non è caricato resta un segnaposto neutro,

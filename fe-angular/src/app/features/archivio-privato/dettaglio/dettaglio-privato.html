@@ -80,7 +80,7 @@
           </div>
         }
         @case ('pronto') {
-          <ui-visualizzatore-pdf [fileUrl]="doc.fileUrl" />
+          <ui-visualizzatore-pdf [fileUrl]="urlFile(doc.id)" />
         }
         @default {
           <div class="visualizzatore is-attesa">
