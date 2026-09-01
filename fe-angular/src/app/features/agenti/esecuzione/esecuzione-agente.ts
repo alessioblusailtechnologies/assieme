@@ -26,6 +26,8 @@ import { Icona } from '@shared/ui/icona/icona';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
+import { nomeDocumentoEsecuzione } from '../nome-documento';
+import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { htmlRisposta } from '@shared/testi/testo-risposta';
@@ -98,6 +100,25 @@ export class EsecuzioneAgentePagina {
     const stato = this.esecuzione()?.stato;
     return stato === 'in-coda' || stato === 'in-corso';
   });
+
+  /**
+   * RF-E-13: il documento generato si chiede all'API e si consegna da qui.
+   * Non è un link: la rotta vuole il Bearer, che un `<a href>` non manda.
+   */
+  protected scaricaDocumento(): void {
+    const esecuzione = this.esecuzione();
+    if (!esecuzione) return;
+    this.api.scaricaDocumento(this.id(), esecuzione.id).subscribe({
+      next: (blob) =>
+        scaricaBlob(blob, nomeDocumentoEsecuzione(this.agente()?.nome, esecuzione.id, blob)),
+      error: () =>
+        this.notifiche.aggiungi({
+          gravita: 'errore',
+          titolo: 'Il documento generato non è arrivato',
+          dettaglio: 'Riprova fra poco.',
+        }),
+    });
+  }
 
   /** L'ultimo stato visto, per notificare l'assestamento (RF-E-07). */
   private statoVisto: StatoEsecuzione | undefined;

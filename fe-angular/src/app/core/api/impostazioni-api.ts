@@ -60,4 +60,15 @@ export class ImpostazioniApi {
       headers: { 'Content-Type': file.type || 'application/octet-stream' },
     });
   }
+
+  /**
+   * Il logo per l'anteprima, come immagine.
+   *
+   * Non come indirizzo in un `<img src>`: la rotta vuole il Bearer, e un tag
+   * `<img>` non lo manda mai — l'anteprima resterebbe rotta in ogni ambiente,
+   * non solo dove app e API stanno su host diversi.
+   */
+  scaricaLogo(): Observable<Blob> {
+    return this.http.get(`${this.urlIdentitaVisiva()}/logo`, { responseType: 'blob' });
+  }
 }

@@ -44,6 +44,19 @@ export class AgentiApi {
     return `${this.base}/${id}/esecuzioni/${esecuzioneId}`;
   }
 
+  /**
+   * RF-E-13: il documento generato sul template dell'agenzia.
+   *
+   * Arriva come blob e non come indirizzo da mettere in un `<a>`: la rotta
+   * vuole il Bearer, che un tag `<a>` non manda, e in produzione l'API sta
+   * su un altro host — dove `download` non varrebbe comunque.
+   */
+  scaricaDocumento(id: Id, esecuzioneId: Id): Observable<Blob> {
+    return this.http.get(`${this.urlEsecuzione(id, esecuzioneId)}/documento`, {
+      responseType: 'blob',
+    });
+  }
+
   /** La libreria degli agenti predefiniti (RF-E-10). */
   urlPredefiniti(): string {
     return `${this.base}/predefiniti`;

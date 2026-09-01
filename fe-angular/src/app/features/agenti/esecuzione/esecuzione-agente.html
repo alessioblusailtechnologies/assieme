@@ -80,11 +80,13 @@
       }
 
       <div class="esito__azioni">
-        @if (esecuzione.documentoGeneratoUrl; as url) {
-          <a uiBottone [href]="url" download>
+        <!-- Il campo dice che il documento c'è; il file lo chiede il client,
+             perché la rotta vuole il token. -->
+        @if (esecuzione.documentoGeneratoUrl) {
+          <button uiBottone type="button" (click)="scaricaDocumento()">
             <ui-icon name="scarica" [size]="15" />
             <span>Scarica il documento generato</span>
-          </a>
+          </button>
         }
         <button uiBottone type="button" (click)="approfondisciInChat()">
           <ui-icon name="chat" [size]="15" />

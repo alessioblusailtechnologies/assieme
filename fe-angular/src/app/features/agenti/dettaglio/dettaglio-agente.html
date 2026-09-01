@@ -218,16 +218,18 @@
                   </td>
                   <td class="col-durata cella-numerica">{{ durata(esecuzione) }}</td>
                   <td class="col-documento">
-                    @if (esecuzione.documentoGeneratoUrl; as url) {
-                      <a
+                    <!-- Il campo dice che il documento c'è; il file lo chiede
+                         il client, perché la rotta vuole il token. -->
+                    @if (esecuzione.documentoGeneratoUrl) {
+                      <button
+                        type="button"
                         class="scarica"
-                        [href]="url"
-                        download
+                        (click)="scaricaDocumento(esecuzione)"
                         uiSuggerimento="Scarica il documento generato"
                         aria-label="Scarica il documento generato"
                       >
                         <ui-icon name="scarica" [size]="15" />
-                      </a>
+                      </button>
                     }
                   </td>
                   <td class="col-azione">

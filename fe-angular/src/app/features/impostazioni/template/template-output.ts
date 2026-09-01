@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
 import { linkedSignal } from '@angular/core';
 
@@ -184,9 +192,44 @@ export class TemplateOutputSezione {
   protected readonly firma = linkedSignal(() =>
     this.risorsaIdentita.hasValue() ? this.risorsaIdentita.value().firma : '',
   );
-  protected readonly logoUrl = computed(() =>
-    this.risorsaIdentita.hasValue() ? this.risorsaIdentita.value().logoUrl : undefined,
-  );
+  /**
+   * L'anteprima del logo.
+   *
+   * `IdentitaVisiva.logoUrl` dice *che* il logo c'è, non da dove prenderlo:
+   * la rotta vuole il token, e un `<img src>` non lo manda. L'immagine si
+   * chiede con `HttpClient` e si mostra da un indirizzo d'oggetto, revocato
+   * quando cambia o quando la pagina se ne va.
+   */
+  private readonly logoScaricato = signal<string | undefined>(undefined);
+  protected readonly logoUrl = this.logoScaricato.asReadonly();
+
+  constructor() {
+    /* Il logo si scarica quando l'identità dice che c'è, e l'indirizzo
+       d'oggetto si revoca appena ne arriva un altro o si lascia la pagina:
+       un blob trattenuto è memoria che nessuno libera. */
+    effect((pulizia) => {
+      const presente = this.risorsaIdentita.hasValue()
+        ? Boolean(this.risorsaIdentita.value().logoUrl)
+        : false;
+      if (!presente) {
+        this.mostraLogo(undefined);
+        return;
+      }
+      const sottoscrizione = this.apiImpostazioni.scaricaLogo().subscribe({
+        next: (blob) => this.mostraLogo(URL.createObjectURL(blob)),
+        error: () => this.mostraLogo(undefined),
+      });
+      pulizia(() => sottoscrizione.unsubscribe());
+    });
+
+    inject(DestroyRef).onDestroy(() => this.mostraLogo(undefined));
+  }
+
+  private mostraLogo(url: string | undefined): void {
+    const precedente = this.logoScaricato();
+    if (precedente) URL.revokeObjectURL(precedente);
+    this.logoScaricato.set(url);
+  }
 
   protected readonly identitaModificata = computed(() => {
     if (!this.risorsaIdentita.hasValue()) return false;

@@ -17,6 +17,7 @@ import {
   RiferimentoDocumento,
   TemplateOutput,
 } from '@core/models';
+import { AgentiApi } from '@core/api/agenti-api';
 import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
@@ -26,6 +27,9 @@ import { ComponenteStatoEsecuzione } from '../stato-esecuzione';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DettaglioAgenteStore } from './dettaglio-agente-store';
 import { Icona } from '@shared/ui/icona/icona';
+import { NotificheStore } from '@core/notifiche/notifiche-store';
+import { nomeDocumentoEsecuzione } from '../nome-documento';
+import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -68,9 +72,28 @@ import { etichettaPianificazione } from '../pianificazione';
 export class DettaglioAgente {
   protected readonly store = inject(DettaglioAgenteStore);
   private readonly apiConversazioni = inject(ConversazioniApi);
+  private readonly api = inject(AgentiApi);
+  private readonly notifiche = inject(NotificheStore);
 
   /** Dalla rotta `/agenti/:id`. */
   readonly id = input.required<string>();
+
+  /**
+   * RF-E-13: il documento generato si chiede all'API e si consegna da qui.
+   * Non è un link: la rotta vuole il Bearer, che un `<a href>` non manda.
+   */
+  protected scaricaDocumento(esecuzione: EsecuzioneRiepilogo): void {
+    this.api.scaricaDocumento(this.id(), esecuzione.id).subscribe({
+      next: (blob) =>
+        scaricaBlob(blob, nomeDocumentoEsecuzione(this.store.agente()?.nome, esecuzione.id, blob)),
+      error: () =>
+        this.notifiche.aggiungi({
+          gravita: 'errore',
+          titolo: 'Il documento generato non è arrivato',
+          dettaglio: 'Riprova fra poco.',
+        }),
+    });
+  }
 
   constructor() {
     effect(() => this.store.apri(this.id()));

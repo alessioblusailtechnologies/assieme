@@ -164,11 +164,15 @@
   text-align: center;
 }
 
+/* È un bottone e non un link: il file lo chiede il client col token. */
 .scarica {
   display: inline-flex;
   align-items: center;
   padding: var(--sp-1);
+  border: 0;
+  background: transparent;
   color: var(--c-text-3);
+  cursor: pointer;
 }
 
 .scarica:hover {
