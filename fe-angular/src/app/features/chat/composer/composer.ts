@@ -11,10 +11,10 @@ import {
   viewChild,
 } from '@angular/core';
 
-import { ChatStore, type AllegatoInCorso } from '../chat-store';
+import { ChatStore, type AllegatoInCorso, type StatoElaborazioneAllegato } from '../chat-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
-import { RiferimentoDocumento } from '@core/models';
+import { Id, RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { ErroreMicrofono, Registratore } from './registratore';
 import {
@@ -98,7 +98,10 @@ export class Composer {
       const testo = this.store.bozza();
       const riferimenti = this.store.riferimentiBozza();
       const allegati = this.store.allegati();
-      untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati));
+      /* Letto qui perché l'effect lo segua: il chip di un allegato cambia
+         faccia quando il server finisce di leggerlo, o quando fallisce. */
+      const elaborazioni = this.store.elaborazioni();
+      untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati, elaborazioni));
     });
   }
 
@@ -275,12 +278,16 @@ export class Composer {
   }
 
   private nuovoChip(documento: RiferimentoDocumento): HTMLElement {
-    return creaChipDocumento(documento, () => {
-      chipPerId(this.editor, documento.id)?.remove();
-      this.store.rimuoviRiferimento(documento.id);
-      this.aggiorna();
-      this.editor.focus();
-    });
+    return creaChipDocumento(
+      documento,
+      () => {
+        chipPerId(this.editor, documento.id)?.remove();
+        this.store.rimuoviRiferimento(documento.id);
+        this.aggiorna();
+        this.editor.focus();
+      },
+      this.store.elaborazioni().get(documento.id),
+    );
   }
 
   /**
@@ -292,6 +299,7 @@ export class Composer {
     testo: string,
     riferimenti: RiferimentoDocumento[],
     allegati: AllegatoInCorso[],
+    elaborazioni: Map<Id, StatoElaborazioneAllegato>,
   ): void {
     const editor = this.editor;
     const presenti = new Set(idChip(editor));
@@ -307,6 +315,16 @@ export class Composer {
       for (const r of riferimenti) {
         if (!presenti.has(r.id)) editor.append(document.createTextNode(' '), this.nuovoChip(r));
       }
+    }
+
+    /* Il chip di un documento che sta ancora venendo letto cambia faccia
+       quando il server finisce: si rifà quello e basta, riconoscendolo dallo
+       stato che porta scritto addosso. */
+    for (const r of riferimenti) {
+      const chip = chipPerId(editor, r.id);
+      if (!chip) continue;
+      const atteso = elaborazioni.get(r.id)?.stato ?? '';
+      if ((chip.dataset['stato'] ?? '') !== atteso) chip.replaceWith(this.nuovoChip(r));
     }
 
     // Gli allegati in corso: chip transitori, per chiave; via quando spariscono dallo store.

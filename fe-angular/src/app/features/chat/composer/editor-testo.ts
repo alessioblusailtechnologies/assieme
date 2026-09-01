@@ -22,6 +22,15 @@ export interface ChipDocumento {
   archivio: 'pubblico' | 'privato' | 'conversazione';
 }
 
+/**
+ * Lo stato dell'ingestion di un documento allegato, quando c'è: il chip lo
+ * mostra finché il server non ha finito di leggerlo.
+ */
+export interface StatoChip {
+  stato: 'lavorazione' | 'errore';
+  messaggio?: string;
+}
+
 export interface ChipAllegato {
   chiave: number;
   nome: string;
@@ -205,13 +214,40 @@ export function ripulisciSeVuoto(radice: HTMLElement): boolean {
   return false;
 }
 
-/** Il chip di un documento referenziato, con l'icona del suo archivio e la × per toglierlo. */
-export function creaChipDocumento(doc: ChipDocumento, togli: () => void): HTMLElement {
+/**
+ * Il chip di un documento referenziato, con l'icona del suo archivio e la ×
+ * per toglierlo.
+ *
+ * Se il documento è ancora in lavorazione — l'allegato appena caricato, che
+ * il server sta leggendo — il chip lo dice: l'icona gira e accanto compare lo
+ * stato. Senza, sembrerebbe pronto mentre non è ancora consultabile, ed è il
+ * modo più veloce per non capire perché la risposta dice di non averlo letto.
+ */
+export function creaChipDocumento(
+  doc: ChipDocumento,
+  togli: () => void,
+  stato?: StatoChip,
+): HTMLElement {
   const icona: NomeIcona =
     doc.archivio === 'pubblico' ? 'archivio-pubblico' : doc.archivio === 'privato' ? 'archivio-privato' : 'allega';
   const chip = scheletroChip();
   chip.setAttribute(ATTR_ID, doc.id);
-  chip.append(creaSvgIcona(icona, 12), titolo(doc.titolo), bottoneTogli(`Togli il riferimento a ${doc.titolo}`, togli));
+  chip.dataset['stato'] = stato?.stato ?? '';
+  chip.classList.toggle('is-errore', stato?.stato === 'errore');
+
+  const simbolo = creaSvgIcona(stato ? (stato.stato === 'errore' ? 'errore' : 'in-corso') : icona, 12);
+  if (stato?.stato === 'lavorazione') simbolo.classList.add('gira');
+  chip.append(simbolo, titolo(doc.titolo));
+
+  if (stato) {
+    const etichetta = document.createElement('span');
+    etichetta.className = 'mono riferimento__stato';
+    etichetta.textContent =
+      stato.stato === 'errore' ? (stato.messaggio ?? 'non letto') : 'in lavorazione…';
+    chip.append(etichetta);
+  }
+
+  chip.append(bottoneTogli(`Togli il riferimento a ${doc.titolo}`, togli));
   return chip;
 }
 

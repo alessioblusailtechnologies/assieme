@@ -1,11 +1,12 @@
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import {
   DestinatarioEmail,
   DocumentoGenerato,
+  DocumentoPrivato,
   ErroreApi,
   EsportazioneElaborata,
   EventoStream,
@@ -17,6 +18,7 @@ import {
   TemplateOutput,
 } from '@core/models';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
+import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import {
@@ -31,6 +33,21 @@ import {
  * **sparisce da qui** perché è diventato un riferimento del contesto come
  * gli altri. Resta solo se qualcosa va storto.
  */
+/** Come sta l'ingestion di un documento appena allegato. */
+export interface StatoElaborazioneAllegato {
+  stato: 'lavorazione' | 'errore';
+  messaggio?: string;
+}
+
+/** Ogni quanto si chiede al server se ha finito di leggere l'allegato. */
+const MS_ATTESA_INGESTION = 2000;
+
+/**
+ * Oltre questo si smette di chiedere: un set di duecento pagine può
+ * prendersi molto, ma un battito che non finisce mai è un battito rotto.
+ */
+const TETTO_ATTESA_MS = 10 * 60_000;
+
 export interface AllegatoInCorso {
   chiave: number;
   nome: string;
@@ -93,6 +110,8 @@ interface StreamAttivo {
 @Injectable()
 export class ChatStore {
   private readonly api = inject(ConversazioniApi);
+  private readonly apiPrivati = inject(DocumentiPrivatiApi);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly notifiche = inject(NotificheStore);
 
@@ -101,6 +120,16 @@ export class ChatStore {
   private readonly storico = inject(StoricoConversazioni);
 
   readonly conversazioni = this.storico.conversazioni;
+
+  /** I battiti che seguono l'ingestion degli allegati, per documento. */
+  private readonly battitiIngestion = new Map<Id, ReturnType<typeof setInterval>>();
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => {
+      for (const battito of this.battitiIngestion.values()) clearInterval(battito);
+      this.battitiIngestion.clear();
+    });
+  }
 
   // --- Template di output (RF-C-10) ---------------------------------------
 
@@ -398,6 +427,17 @@ export class ChatStore {
    */
   readonly allegati = signal<AllegatoInCorso[]>([]);
 
+  /**
+   * I documenti allegati che il server sta ancora leggendo.
+   *
+   * Il 201 del caricamento dice che il file è arrivato, non che è
+   * consultabile: da lì comincia l'ingestion, che con la lettura visiva dura
+   * minuti su un documento lungo. Prima quel tratto era invisibile — chip
+   * pulito, documento non ancora leggibile — e la chat rispondeva «non ne ho
+   * il contenuto» senza che nessuno capisse perché. Ora il chip lo dice.
+   */
+  readonly elaborazioni = signal<Map<Id, StatoElaborazioneAllegato>>(new Map());
+
   allega(file: File[]): void {
     for (const f of file) {
       const chiave = ++this.progressivoAllegato;
@@ -407,6 +447,7 @@ export class ChatStore {
         next: (riferimento) => {
           this.rimuoviAllegato(chiave);
           this.aggiungiAlContesto(riferimento);
+          this.segui(riferimento.id);
         },
         error: (err: HttpErrorResponse) => {
           const messaggio =
@@ -424,6 +465,63 @@ export class ChatStore {
   /** Solo per gli allegati falliti: quelli sani se ne vanno da soli. */
   rimuoviAllegato(chiave: number): void {
     this.allegati.update((a) => a.filter((allegato) => allegato.chiave !== chiave));
+  }
+
+  /**
+   * Segue l'ingestion di un documento appena allegato finché non è pronto.
+   *
+   * Interroga la scheda del documento privato ogni paio di secondi, come fa
+   * la pagina di un'esecuzione di agente. Si ferma da sola: quando il
+   * documento è pronto (il chip torna normale), quando fallisce (il chip lo
+   * dice) o dopo `TETTO_ATTESA_MS`, che su un documento lunghissimo evita di
+   * interrogare il server per sempre.
+   */
+  private segui(id: Id): void {
+    this.segna(id, { stato: 'lavorazione' });
+    const scadenza = Date.now() + TETTO_ATTESA_MS;
+
+    const battito = setInterval(() => {
+      this.http.get<DocumentoPrivato>(this.apiPrivati.urlDettaglio(id)).subscribe({
+        next: (documento) => {
+          if (documento.stato === 'pronto') {
+            this.smettiDiSeguire(id);
+            return;
+          }
+          if (documento.stato === 'errore') {
+            this.segna(id, {
+              stato: 'errore',
+              messaggio: documento.erroreElaborazione ?? 'elaborazione fallita',
+            });
+            this.fermaBattito(id);
+            return;
+          }
+          if (Date.now() > scadenza) this.fermaBattito(id);
+        },
+        /* Il documento non c'è più (eliminato altrove) o la rete è caduta:
+           si smette di chiedere, il chip resta com'è. */
+        error: () => this.fermaBattito(id),
+      });
+    }, MS_ATTESA_INGESTION);
+    this.battitiIngestion.set(id, battito);
+  }
+
+  private segna(id: Id, stato: StatoElaborazioneAllegato): void {
+    this.elaborazioni.update((m) => new Map(m).set(id, stato));
+  }
+
+  private fermaBattito(id: Id): void {
+    const battito = this.battitiIngestion.get(id);
+    if (battito !== undefined) clearInterval(battito);
+    this.battitiIngestion.delete(id);
+  }
+
+  private smettiDiSeguire(id: Id): void {
+    this.fermaBattito(id);
+    this.elaborazioni.update((m) => {
+      const senza = new Map(m);
+      senza.delete(id);
+      return senza;
+    });
   }
 
   /**
