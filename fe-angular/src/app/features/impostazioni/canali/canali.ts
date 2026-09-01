@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { Avviso } from '@shared/ui/avviso/avviso';
 import { Badge } from '@shared/ui/badge/badge';
 import { Icona } from '@shared/ui/icona/icona';
 import type { NomeIcona } from '@shared/ui/icona/registro-icone';
@@ -15,10 +14,9 @@ import type { NomeIcona } from '@shared/ui/icona/registro-icone';
  *
  * **È un'anteprima**: il collegamento vero (WhatsApp Business API da un
  * lato, la casella IMAP dall'altro) non esiste ancora, e i numeri qui sotto
- * sono d'esempio. Sta scritto anche a schermo, perché una spia «collegato»
- * che non collega niente sarebbe una bugia all'agenzia. Quando il modulo
- * esisterà, questa costante lascia il posto a `GET /api/canali` e il resto
- * della pagina resta com'è.
+ * sono d'esempio - la pagina serve a mostrare l'idea prima di costruirla.
+ * Quando il modulo esisterà, questa costante lascia il posto a
+ * `GET /api/canali` e il resto della pagina resta com'è.
  */
 interface CanaleCollegato {
   id: string;
@@ -64,7 +62,7 @@ const CANALI_ANTEPRIMA: CanaleCollegato[] = [
 
 @Component({
   selector: 'app-canali',
-  imports: [Avviso, Badge, Icona],
+  imports: [Badge, Icona],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './canali.html',
   styleUrl: './canali.scss',
