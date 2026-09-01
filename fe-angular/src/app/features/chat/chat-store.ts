@@ -389,12 +389,12 @@ export class ChatStore {
   private progressivoAllegato = 0;
 
   /**
-   * Un file allegato in chat **non entra negli archivi**: è materiale della
-   * conversazione — un preventivo appena ricevuto, una mail — e vive con
-   * lei. Il server risponde con il riferimento (`archivio: 'conversazione'`)
-   * e da lì il documento sta nel contesto come gli altri. Ciò che invece
-   * deve restare al tenant si carica nell'Archivio Privato, dov'è sempre
-   * stato.
+   * Un file allegato in chat **entra nell'Archivio Privato** (dal
+   * 01/09/2026): il server risponde col riferimento `archivio: 'privato'` e
+   * da lì il documento sta nel contesto come gli altri. Prima viveva in un
+   * limbo suo, legato alla conversazione e destinato a sparire con lei; ma
+   * un preventivo che il cliente ha mandato è materiale dell'agenzia, e
+   * doverlo ricaricare per ritrovarlo era una perdita, non una pulizia.
    */
   readonly allegati = signal<AllegatoInCorso[]>([]);
 

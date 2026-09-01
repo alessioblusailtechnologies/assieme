@@ -260,22 +260,22 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect((await richiedi('PATCH', `/api/conversazioni/${convId}`, tokenOperatore, { titolo: 'X' })).statusCode).toBe(403);
   });
 
-  it('allegato: 201 col solo riferimento, in coda di ingestion, referenziabile subito; il file si apre', async () => {
+  it('allegato: nasce nell’Archivio Privato, in coda di ingestion, referenziabile subito; il file si apre', async () => {
     const { corpo, contentType } = multipart('polizza-rossi.pdf', await pdfDiProva());
     const r = await app.inject({ method: 'POST', url: '/api/conversazioni/allegati', headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType }, payload: corpo });
     expect(r.statusCode).toBe(201);
     const rif = r.json<RiferimentoDocumento>();
-    expect(rif.id).toMatch(/^all-/);
-    expect(rif).toMatchObject({ titolo: 'polizza-rossi', archivio: 'conversazione' });
+    expect(rif.id).toMatch(/^doc-priv-/);
+    expect(rif).toMatchObject({ titolo: 'polizza-rossi', archivio: 'privato' });
 
     const job = await pool().query(`select 1 from velia.jobs where tipo = 'ingestion' and payload->>'documentoId' = $1`, [rif.id]);
     expect(job.rowCount).toBe(1);
 
     const nelContesto = await richiedi('PUT', `/api/conversazioni/${convId}/contesto/${rif.id}`, tokenAdmin, {});
     expect(nelContesto.statusCode).toBe(200);
-    expect(nelContesto.json<Conversazione>().documentiInContesto.map((d) => d.archivio)).toEqual(['pubblico', 'conversazione']);
+    expect(nelContesto.json<Conversazione>().documentiInContesto.map((d) => d.archivio)).toEqual(['pubblico', 'privato']);
 
-    const file = await richiedi('GET', `/api/conversazioni/allegati/${rif.id}/file`, tokenAdmin);
+    const file = await richiedi('GET', `/api/documenti-privati/${rif.id}/file`, tokenAdmin);
     expect(file.statusCode).toBe(200);
     expect(file.headers['content-type']).toBe('application/pdf');
 
@@ -480,16 +480,18 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(dopo.length).toBe(prima + 1);
   });
 
-  it('DELETE: 204, messaggi in cascata, l’allegato orfano sparisce anche dallo Storage', async () => {
+  it('DELETE: 204, messaggi in cascata, il documento allegato resta nell’Archivio Privato', async () => {
     const conv = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>();
-    const allegato = conv.documentiInContesto.find((d) => d.archivio === 'conversazione')!;
-    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/allegati/${allegato.id}.pdf`)).toBe(true);
+    const allegato = conv.documentiInContesto.find((d) => d.archivio === 'privato')!;
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/documenti/${allegato.id}.pdf`)).toBe(true);
 
     const r = await richiedi('DELETE', `/api/conversazioni/${convId}`, tokenAdmin);
     expect(r.statusCode).toBe(204);
     expect((await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).statusCode).toBe(404);
     expect((await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<CorpoErroreApi>().codice).toBe('NON_TROVATA');
-    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/allegati/${allegato.id}.pdf`)).toBe(false);
+    /* L'allegato è un documento dell'archivio: la conversazione se ne va, lui resta. */
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/documenti/${allegato.id}.pdf`)).toBe(true);
+    expect((await richiedi('GET', `/api/documenti-privati/${allegato.id}`, tokenAdmin)).statusCode).toBe(200);
     const messaggi = await pool().query(`select 1 from velia.messaggi where conversazione_id = $1`, [convId]);
     expect(messaggi.rowCount).toBe(0);
   });

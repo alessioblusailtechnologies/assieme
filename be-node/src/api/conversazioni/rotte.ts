@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import type pg from 'pg';
@@ -30,6 +30,13 @@ import { inviaEmail } from '../../email/invio.js';
 import { fontiDaCitazioni, identitaDelTenant } from '../../generazione/catalogo.js';
 import { componiEmailRisposta } from '../../generazione/email.js';
 import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
+import {
+  ePdf,
+  nuovoIdPrivato,
+  percorsoPdf,
+  spazioDelTenant,
+  type FileRicevuto,
+} from '../archivio-privato/rotte.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -88,9 +95,10 @@ interface RigaMessaggio {
   documenti: DocumentoGenerato[];
 }
 
-const nuovoIdAllegato = (): string => `all-${randomBytes(6).toString('hex')}`;
 /** Gli id dei documenti generati sono uuid: un id malformato è un 404, non un errore SQL. */
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/* Gli allegati vecchi (fino al 31/08/2026) stanno ancora qui: la rotta che
+   li serve li cerca in questa cartella, ma di nuovi non se ne creano. */
 export const percorsoAllegato = (tenantId: string, id: string): string =>
   `tenant/${tenantId}/allegati/${id}.pdf`;
 
@@ -140,43 +148,58 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   });
 
   /**
-   * RF-C-02: allegato di conversazione. Nasce prima della conversazione (il
-   * FE lo mette nel contesto corrente), quindi vive fuori dagli archivi in
-   * `tenant/<tid>/allegati/` e passa dalla stessa pipeline di ingestion.
+   * RF-C-02: il PDF allegato al volo dal composer.
+   *
+   * Dal 01/09/2026 **entra nell'Archivio Privato** invece di vivere in un
+   * limbo suo (`archivio: 'conversazione'`, cartella `allegati/`): è un
+   * documento dell'agenzia come gli altri, e trattarlo diversamente
+   * significava non poterlo ritrovare, non classificarlo e non contarlo
+   * nello spazio del piano. Stesse regole del caricamento d'archivio -
+   * limite per file, spazio del piano, firma PDF sui byte - e stessa
+   * pipeline di ingestion, con la proposta di classificazione compresa.
+   *
+   * Le righe vecchie con `archivio: 'conversazione'` restano dov'erano e
+   * continuano a funzionare: nessuno le migra, semplicemente non se ne
+   * creano più.
+   *
    * Registrata prima di `/:id`: «allegati» non è un id.
    */
   app.post('/api/conversazioni/allegati', async (richiesta, risposta) => {
     if (!richiesta.isMultipart()) throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
-    let file: { nome: string; contenuto: Buffer; troncato: boolean } | undefined;
+    let file: FileRicevuto | undefined;
     for await (const parte of richiesta.parts()) {
       if (parte.type !== 'file') continue;
       const contenuto = await parte.toBuffer();
       if (!parte.filename || file) continue;
-      file = { nome: parte.filename, contenuto, troncato: parte.file.truncated };
+      file = {
+        nome: parte.filename,
+        mimetype: parte.mimetype,
+        contenuto,
+        troncato: parte.file.truncated,
+      };
     }
     if (!file) throw new ErroreApi(400, 'FILE_MANCANTE', 'Nessun file nel caricamento.');
 
     const { tenantId, utenteId } = richiesta.identita;
-    const limite = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const r = await client.query<{ limite_file_byte: string }>(
-        `select limite_file_byte from velia.tenant where id = $1`,
-        [tenantId],
-      );
-      return Number(r.rows[0]?.limite_file_byte ?? 20 * 1024 * 1024);
-    });
-    if (file.troncato || file.contenuto.length > limite) {
+    const spazio = await conIdentita(poolDb(), richiesta.identita, (client) =>
+      spazioDelTenant(client, tenantId),
+    );
+    if (file.troncato || file.contenuto.length > spazio.limiteFileByte) {
       throw new ErroreApi(
         413,
         'FILE_TROPPO_GRANDE',
-        `«${file.nome}» supera il limite di ${Math.round(limite / 1024 / 1024)} MB per file.`,
+        `«${file.nome}» supera il limite di ${Math.round(spazio.limiteFileByte / 1024 / 1024)} MB per file.`,
       );
     }
-    if (!file.contenuto.subarray(0, 1024).includes(Buffer.from('%PDF-'))) {
+    if (!ePdf(file)) {
       throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', `«${file.nome}» non è un PDF: per ora si allegano solo PDF.`);
     }
+    if (spazio.usatoByte + file.contenuto.length > spazio.limiteByte) {
+      throw new ErroreApi(507, 'SPAZIO_ESAURITO', 'Lo spazio del piano non basta per questo documento.');
+    }
 
-    const id = nuovoIdAllegato();
-    const percorso = percorsoAllegato(tenantId, id);
+    const id = nuovoIdPrivato();
+    const percorso = percorsoPdf(tenantId, id);
     await archivio().carica(percorso, file.contenuto, 'application/pdf');
     const titolo = file.nome.replace(/\.[^.]+$/, '') || file.nome;
     try {
@@ -184,8 +207,8 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         client.query(
           `insert into velia.documenti
              (id, archivio, tenant_id, titolo, tipologia, stato, path_pdf, nome_file,
-              caricato_da, caricato_il, dimensione_byte)
-           values ($1, 'conversazione', $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7)`,
+              caricato_da, caricato_il, dimensione_byte, classificazione_da_confermare)
+           values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, now(), $7, true)`,
           [id, tenantId, titolo, percorso, file.nome, utenteId, file.contenuto.length],
         ),
       );
@@ -196,10 +219,16 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     await accoda(poolDb(), 'ingestion', { documentoId: id }, { tenantId, utenteId });
 
     void risposta.code(201);
-    const riferimento: RiferimentoDocumento = { id, titolo, archivio: 'conversazione' };
+    const riferimento: RiferimentoDocumento = { id, titolo, archivio: 'privato' };
     return riferimento;
   });
 
+  /**
+   * Il PDF di un allegato vecchio (`archivio: 'conversazione'`, fino al
+   * 31/08/2026). I nuovi sono documenti privati e si aprono da
+   * `/api/documenti-privati/:id/file`: questa rotta resta per le
+   * conversazioni di prima, che citano ancora quegli id.
+   */
   app.get<{ Params: { id: string } }>('/api/conversazioni/allegati/:id/file', async (richiesta, risposta) => {
     const riga = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const r = await client.query<{ path_pdf: string | null }>(
@@ -278,7 +307,13 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     });
   });
 
-  /** Elimina conversazione e messaggi; gli allegati che restano orfani spariscono con lei. */
+  /**
+   * Elimina conversazione e messaggi. Spariscono con lei i documenti generati
+   * in chat e gli **allegati vecchi** rimasti orfani (`archivio:
+   * 'conversazione'`, quelli di prima del 01/09/2026). Gli allegati nuovi no:
+   * sono documenti dell'Archivio Privato, e un documento dell'agenzia non se
+   * ne va perché si chiude la conversazione in cui è stato caricato.
+   */
   app.delete<{ Params: { id: string } }>('/api/conversazioni/:id', async (richiesta, risposta) => {
     await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
@@ -640,8 +675,16 @@ async function conversazionePerId(
 
 /**
  * Aggiunge documenti al contesto verificando che esistano e si possano
- * leggere (RLS), e che i privati siano pronti (409 NON_PRONTO); gli allegati
- * sono sempre referenziabili (nascono con la conversazione). Idempotente.
+ * leggere (RLS), e che i privati siano pronti (409 NON_PRONTO). Idempotente.
+ *
+ * L'eccezione è il documento che stai allegando adesso: dal 01/09/2026 anche
+ * l'allegato del composer è un privato, e pretenderlo `pronto` vorrebbe dire
+ * far aspettare la conversione prima di poter scrivere la domanda. Il proprio
+ * documento in lavorazione si può quindi nominare: il job di ingestion sta in
+ * coda **prima** di quello della risposta, e il worker lavora un job per
+ * volta, quindi quando il motore apre la workspace il Markdown c'è. Resta
+ * fermo ciò che è rotto (`errore`) e ciò che sta convertendo per qualcun
+ * altro, dove l'attesa non la governi tu.
  */
 async function contestoValidato(
   client: pg.ClientBase,
@@ -652,18 +695,26 @@ async function contestoValidato(
   const contesto = [...attuale];
   for (const id of daAggiungere) {
     if (contesto.includes(id)) continue;
-    const r = await client.query<{ archivio: string; stato: string; titolo: string }>(
-      `select archivio, stato, titolo from velia.documenti
+    const r = await client.query<{
+      archivio: string;
+      stato: string;
+      titolo: string;
+      caricato_da: string | null;
+    }>(
+      `select archivio, stato, titolo, caricato_da from velia.documenti
        where id = $1 and (archivio = 'pubblico' or tenant_id = $2)`,
       [id, identita.tenantId],
     );
     const doc = r.rows[0];
     if (!doc) throw ErroreApi.nonTrovato('Documento inesistente.');
     if (doc.archivio === 'privato' && doc.stato !== 'pronto') {
-      throw ErroreApi.conflitto(
-        'NON_PRONTO',
-        `«${doc.titolo}» non è ancora elaborato: non può essere referenziato finché non è pronto.`,
-      );
+      const inLavorazioneMia = doc.stato !== 'errore' && doc.caricato_da === identita.utenteId;
+      if (!inLavorazioneMia) {
+        throw ErroreApi.conflitto(
+          'NON_PRONTO',
+          `«${doc.titolo}» non è ancora elaborato: non può essere referenziato finché non è pronto.`,
+        );
+      }
     }
     contesto.push(id);
   }

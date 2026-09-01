@@ -106,7 +106,7 @@ const SQL_BASE = `
 const SQL_ORDINE = ` order by d.caricato_il desc, d.id`;
 
 /** Un file arrivato col multipart, già in memoria (max `limiteFileByte`, decine di MB). */
-interface FileRicevuto {
+export interface FileRicevuto {
   nome: string;
   mimetype: string;
   contenuto: Buffer;
@@ -116,13 +116,13 @@ interface FileRicevuto {
 /** I byte con cui comincia ogni PDF: il nome e il mimetype li dichiara il client, questo no. */
 const FIRMA_PDF = Buffer.from('%PDF-');
 
-function ePdf(f: FileRicevuto): boolean {
+export function ePdf(f: FileRicevuto): boolean {
   const dichiarato = f.mimetype === 'application/pdf' || /\.pdf$/i.test(f.nome);
   return dichiarato && f.contenuto.subarray(0, 1024).includes(FIRMA_PDF);
 }
 
 /** Id opaco e testuale come nel contratto (`doc-priv-…`), mai sequenziale. */
-const nuovoId = (): string => `doc-priv-${randomBytes(6).toString('hex')}`;
+export const nuovoIdPrivato = (): string => `doc-priv-${randomBytes(6).toString('hex')}`;
 
 /** Dove vive un privato nello Storage: sotto il tenant, per id. */
 export const percorsoPdf = (tenantId: string, id: string): string =>
@@ -252,7 +252,7 @@ export function registraRotteArchivioPrivato(
     /* Prima i byte nello Storage, poi le righe (firmate dalla RLS), infine
        i job. Se qualcosa si rompe a metà, i byte già caricati si tolgono:
        niente orfani nello Storage. */
-    const daCreare = ricevuti.map((f) => ({ ...f, id: nuovoId() }));
+    const daCreare = ricevuti.map((f) => ({ ...f, id: nuovoIdPrivato() }));
     const caricati: string[] = [];
     let creati: DocumentoPrivato[];
     try {
@@ -502,7 +502,7 @@ async function documentoPerId(
   return riga ? versoDocumento(riga) : undefined;
 }
 
-async function spazioDelTenant(client: pg.ClientBase, tenantId: string): Promise<SpazioTenant> {
+export async function spazioDelTenant(client: pg.ClientBase, tenantId: string): Promise<SpazioTenant> {
   const [limiti, uso] = await Promise.all([
     client.query<{ limite_spazio_byte: string; limite_file_byte: string }>(
       `select limite_spazio_byte, limite_file_byte from velia.tenant where id = $1`,

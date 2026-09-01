@@ -34,7 +34,7 @@ import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdf, generaPdfDaTesto } from './pdf.mjs';
-import { leggiMultipart } from './archivio-privato.mjs';
+import { accogliAllegato, leggiMultipart } from './archivio-privato.mjs';
 import { risolviTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -55,7 +55,6 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 let prossimoMessaggio = 100;
 let prossimaConversazione = 100;
 let prossimaCitazione = 100;
-let prossimoAllegato = 100;
 
 /**
  * Allegati di conversazione (RF-C-02): file allegati dal composer, che non
@@ -439,13 +438,10 @@ export async function gestisci(req, res, url, deps) {
       inviaJson(res, 400, { codice: 'FILE_MANCANTE', messaggio: 'Nessun file nel caricamento.' });
       return true;
     }
-    const allegato = {
-      id: `all-${prossimoAllegato++}`,
-      titolo: file[0].nome,
-      numeroPagine: 4,
-    };
-    ALLEGATI.push(allegato);
-    inviaJson(res, 201, { id: allegato.id, titolo: allegato.titolo, archivio: 'conversazione' });
+    /* Dal 01/09/2026 l'allegato entra nell'Archivio Privato: stesso stato,
+       stessa macchina, stesso posto dove ritrovarlo dopo. */
+    const documento = accogliAllegato(file[0].nome, file[0].dimensione);
+    inviaJson(res, 201, { id: documento.id, titolo: documento.titolo, archivio: 'privato' });
     return true;
   }
 

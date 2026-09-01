@@ -472,3 +472,28 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
 
   return false;
 }
+
+/**
+ * Registra un PDF come documento privato «in coda», con la stessa macchina a
+ * stati del caricamento d'archivio. La usa la chat per gli allegati del
+ * composer: dal 01/09/2026 un allegato è un documento dell'Archivio Privato,
+ * non più una riga in un limbo suo.
+ */
+export function accogliAllegato(nomeFile, dimensioneByte) {
+  const documento = {
+    id: `doc-priv-${String(Date.now()).slice(-6)}-a`,
+    titolo: nomeFile.replace(/\.[^.]+$/, '') || nomeFile,
+    stato: 'in-coda',
+    dimensioneByte,
+    caricatoDa: 'utn-001',
+    caricatoIl: new Date().toISOString(),
+    etichette: [],
+    documentoDiRiferimento: false,
+    visibilita: 'tenant',
+    classificazioneDaConfermare: true,
+    ...classifica(nomeFile),
+  };
+  DOCUMENTI.unshift(documento);
+  programma(documento, MS_IN_CODA);
+  return documento;
+}
