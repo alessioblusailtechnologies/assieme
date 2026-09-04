@@ -6,6 +6,16 @@ import { join, posix } from 'node:path';
 import type pg from 'pg';
 
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
+import {
+  caricaCartelle,
+  indicizza,
+  percorsoSlug,
+  type RigaCartella,
+} from '../../archivio/albero.js';
+import {
+  assicuraConvenzioneAggiornata,
+  convenzioneEffettiva,
+} from '../../archivio/convenzione.js';
 
 /**
  * La workspace di un job (piano §4.3, doc motore §3 e §5): una directory
@@ -75,6 +85,7 @@ interface RigaDocumento {
   edizione_etichetta: string | null;
   riferimento_cliente: string | null;
   etichette: string[] | null;
+  cartella_id: string | null;
   documento_di_riferimento: boolean | null;
   caricato_il: Date | null;
 }
@@ -111,7 +122,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
             d.path_pdf, d.path_md, d.stato,
             d.updated_at, d.compagnia_id, c.nome as compagnia_nome,
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
-            d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette,
+            d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette, d.cartella_id,
             d.documento_di_riferimento, d.caricato_il
      from velia.documenti d
      left join velia.compagnie c on c.id = d.compagnia_id
@@ -125,6 +136,15 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
      order by d.archivio, d.compagnia_id, d.prodotto, d.edizione_valida_dal, d.tipologia, d.caricato_il`,
     [tenantId, contestoIds],
   );
+
+  /* L'albero dell'agenzia e la convenzione che lo spiega (Fase 10): è quello
+     che trasforma un elenco di quattromila righe in un archivio navigabile.
+     Il ricalcolo qui è solo quello a costo zero — la forma, dedotta dai nomi:
+     le descrizioni delle cartelle le fa scrivere l'ingestion, perché il
+     percorso di query non deve mai fermarsi ad aspettare un modello. */
+  await assicuraConvenzioneAggiornata(db, tenantId);
+  const cartelle = indicizza(await caricaCartelle(db, tenantId));
+  const convenzione = await convenzioneEffettiva(db, tenantId);
 
   const perPath = new Map<string, DocumentoWorkspace>();
   const perId = new Map<string, string>();
@@ -140,7 +160,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
   }
 
   for (const riga of righe.rows) {
-    const relativo = percorsoNellaWorkspace(riga);
+    const relativo = percorsoNellaWorkspace(riga, cartelle);
     try {
       const origine = await cache.file(riga.path_md!, riga.updated_at.toISOString());
       await collega(origine, join(directory, ...relativo.split('/')));
@@ -197,7 +217,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
     }
   }
 
-  await scriviIndiciTenant(directory, perPath);
+  await scriviIndiciTenant(directory, perPath, cartelle, convenzione);
 
   return {
     directory,
@@ -208,19 +228,38 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
   };
 }
 
-/** Il path relativo (posix) di un documento nell'albero della workspace. */
-export function percorsoNellaWorkspace(riga: {
-  id: string;
-  archivio: 'pubblico' | 'privato' | 'conversazione';
-  titolo: string;
-  tipologia: string;
-  path_md: string | null;
-}): string {
+/**
+ * Il path relativo (posix) di un documento nell'albero della workspace.
+ *
+ * Dalla Fase 10 il privato segue **l'albero vero dell'agenzia**, non più la
+ * sola tipologia: è così che la cartella diventa un nome che l'utente può
+ * pronunciare in chat («guarda nei rinnovi di gennaio») e che il modello
+ * ritrova con Glob. Senza cartella si finisce in `da-sistemare/`, che è
+ * esattamente ciò che l'utente vede nell'interfaccia: la stessa parola nei
+ * due posti, o le domande non tornano.
+ *
+ * Il ripiego sulla tipologia resta per l'archivio di un tenant che non ha
+ * ancora nessuna cartella.
+ */
+export function percorsoNellaWorkspace(
+  riga: {
+    id: string;
+    archivio: 'pubblico' | 'privato' | 'conversazione';
+    titolo: string;
+    tipologia: string;
+    path_md: string | null;
+    cartella_id?: string | null;
+  },
+  cartelle?: Map<string, RigaCartella>,
+): string {
   if (riga.archivio === 'pubblico') return riga.path_md!.replace(/^\/+/, '');
   const nome = `${slug(riga.titolo)}--${riga.id}.md`;
-  return riga.archivio === 'privato'
-    ? `tenant/documenti/${riga.tipologia}/${nome}`
-    : `tenant/allegati/${nome}`;
+  if (riga.archivio !== 'privato') return `tenant/allegati/${nome}`;
+  if (riga.cartella_id && cartelle?.has(riga.cartella_id)) {
+    return `tenant/documenti/${percorsoSlug(riga.cartella_id, cartelle)}/${nome}`;
+  }
+  if (cartelle?.size) return `tenant/documenti/da-sistemare/${nome}`;
+  return `tenant/documenti/${riga.tipologia}/${nome}`;
 }
 
 export function slug(testo: string): string {
@@ -233,6 +272,24 @@ export function slug(testo: string): string {
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'documento'
   );
+}
+
+/**
+ * La riga di una cartella, ritrovata dal path materializzato: i path sono a
+ * slug, le cartelle pure, quindi si confronta slug con slug.
+ */
+function descrizioneDellaCartella(
+  cartella: string,
+  cartelle: Map<string, RigaCartella>,
+): string | null {
+  const cercato = cartella.replace(/^tenant\/documenti\/?/, '');
+  if (!cercato) return null;
+  for (const riga of cartelle.values()) {
+    if (percorsoSlug(riga.id, cartelle) === cercato) {
+      return riga.descrizione ? `> ${riga.descrizione}` : null;
+    }
+  }
+  return null;
 }
 
 function versoDocumento(r: RigaDocumento, paginaMassima: number | null): DocumentoWorkspace {
@@ -257,36 +314,79 @@ function versoDocumento(r: RigaDocumento, paginaMassima: number | null): Documen
 
 /**
  * Gli INDICE.md del tenant si generano qui, dai metadati: nello Storage il
- * privato è piatto per id, e tipologia/cliente/etichette cambiano nel tempo.
+ * privato è piatto per id, e cartella/cliente/etichette cambiano nel tempo.
+ *
+ * Dalla Fase 10 sono **uno per cartella** e non più uno solo con tutto
+ * dentro. La ragione è pratica: un'agenzia con quattromila documenti
+ * produceva un file da quattromila righe che il modello leggeva per intero
+ * a ogni messaggio. Ora alla radice c'è la convenzione — che cosa
+ * significano i livelli dell'albero — e dentro ogni cartella ci sono i suoi
+ * documenti. Il modello scende con Glob invece di leggere una tabella.
  */
 async function scriviIndiciTenant(
   directory: string,
   perPath: Map<string, DocumentoWorkspace>,
+  cartelle: Map<string, RigaCartella>,
+  convenzione: string,
 ): Promise<void> {
   const privati = [...perPath.entries()].filter(([, d]) => d.archivio === 'privato');
   const allegati = [...perPath.entries()].filter(([, d]) => d.archivio === 'conversazione');
 
   const rigaDoc = ([path, d]: [string, DocumentoWorkspace]): string =>
-    `| \`${path}\` | ${d.titolo} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.riferimentoCliente ?? '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
+    `| \`${posix.basename(path)}\` | ${d.titolo} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.riferimentoCliente ?? '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
   const intestazione =
     '| File | Titolo | Tipologia | Compagnia | Ramo | Cliente/pratica | Pagine | Etichette |\n|---|---|---|---|---|---|---|---|';
 
   const radice =
     '# Indice della workspace\n\n' +
     '- `archivio-pubblico/` — set informativi delle compagnie (DIP, DIP Aggiuntivo, Condizioni, glossari), per compagnia/ramo/prodotto/edizione. Ogni cartella ha il suo `INDICE.md`.\n' +
-    `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti): preventivi, polizze, note. Vedi \`tenant/documenti/INDICE.md\`.\n` +
-    `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n`;
+    `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti). Ogni cartella ha il suo \`INDICE.md\`; la mappa dei livelli è in \`tenant/documenti/INDICE.md\`.\n` +
+    `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n` +
+    (convenzione ? `\n---\n\n${convenzione}` : '');
   await writeFile(join(directory, 'INDICE.md'), radice, 'utf8');
 
+  // Un indice per cartella: si raggruppa per directory del path materializzato.
+  const perCartella = new Map<string, Array<[string, DocumentoWorkspace]>>();
+  for (const voce of privati) {
+    const cartella = posix.dirname(voce[0]);
+    const elenco = perCartella.get(cartella);
+    if (elenco) elenco.push(voce);
+    else perCartella.set(cartella, [voce]);
+  }
+
   await mkdir(join(directory, 'tenant', 'documenti'), { recursive: true });
+  const mappa = [...perCartella.entries()]
+    .filter(([c]) => c !== 'tenant/documenti')
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([c, docs]) => `- \`${c}/\` — ${docs.length} document${docs.length === 1 ? 'o' : 'i'}`)
+    .join('\n');
   await writeFile(
     join(directory, 'tenant', 'documenti', 'INDICE.md'),
     '# Archivio privato dell’agenzia\n\n' +
       (privati.length
-        ? `${intestazione}\n${privati.map(rigaDoc).join('\n')}\n\n★ = documento di riferimento dell’agenzia (contesto permanente).\n`
+        ? `${convenzione ? `${convenzione}\n\n---\n\n` : ''}` +
+          `## Cartelle che contengono documenti\n\n${mappa || '(nessuna)'}\n\n` +
+          'Ogni cartella ha il suo `INDICE.md` con i documenti che contiene: aprilo invece di elencare i file.\n' +
+          `${perCartella.has('tenant/documenti') ? `\n## Direttamente qui\n\n${intestazione}\n${perCartella.get('tenant/documenti')!.map(rigaDoc).join('\n')}\n` : ''}` +
+          '\n★ = documento di riferimento dell’agenzia (contesto permanente).\n'
         : 'Nessun documento privato.\n'),
     'utf8',
   );
+
+  for (const [cartella, documenti] of perCartella) {
+    if (cartella === 'tenant/documenti') continue;
+    await mkdir(join(directory, ...cartella.split('/')), { recursive: true });
+    /* La descrizione scritta per la cartella (osservata o dell'utente) è la
+       stessa che l'AI legge quando colloca: un artefatto, due usi. */
+    const riga = descrizioneDellaCartella(cartella, cartelle);
+    await writeFile(
+      join(directory, ...cartella.split('/'), 'INDICE.md'),
+      `# ${cartella.replace('tenant/documenti/', '')}\n\n` +
+        (riga ? `${riga}\n\n` : '') +
+        `${intestazione}\n${documenti.map(rigaDoc).join('\n')}\n`,
+      'utf8',
+    );
+  }
 
   await mkdir(join(directory, 'tenant', 'allegati'), { recursive: true });
   await writeFile(

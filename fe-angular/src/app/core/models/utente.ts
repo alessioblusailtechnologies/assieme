@@ -30,6 +30,7 @@ export type Permesso =
   | 'template.gestisci'
   | 'utenti.gestisci'
   | 'modello-ai.configura'
+  | 'archivio-privato.organizza'
   | 'mcp.credenziali'
   | 'agenti.crea';
 

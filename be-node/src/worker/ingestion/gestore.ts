@@ -16,6 +16,15 @@ import { impagina, pdfDaImmagine } from './impagina.js';
 import { leggiDocumento } from './lettura-visiva.js';
 import { contaPagine } from './pdf.js';
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
+import type { TipologiaDocumento } from '../../contratto/documenti.js';
+import { segnaDaRicalcolare } from '../../archivio/albero.js';
+import { risolviCliente, type Sceglitore } from '../../archivio/clienti.js';
+import { collocaDocumento, type Sceglicartella } from '../../archivio/collocazione.js';
+import {
+  assicuraConvenzioneAggiornata,
+  convenzioneEffettiva,
+  type Descrittore,
+} from '../../archivio/convenzione.js';
 import type { SecondoSguardo } from './secondo-sguardo.js';
 
 /**
@@ -51,6 +60,14 @@ export interface DipendenzeIngestion {
   convertitoreRapido?: Convertitore;
   pagineNelBlocco?: number;
   pagineNelBloccoRapido?: number;
+  /* Fase 10 — il passo 3b. Tutti opzionali, e ognuno che manca toglie una
+     capacità senza rompere niente: senza `sceglitore` un contraente ambiguo
+     non diventa un cliente, senza `sceglicartella` un documento senza cliente
+     non viene collocato, senza `descrittore` le cartelle libere restano senza
+     riga. In tutti i casi il documento è pronto e sta in «Da sistemare». */
+  sceglitore?: Sceglitore;
+  sceglicartella?: Sceglicartella;
+  descrittore?: Descrittore;
 }
 
 /**
@@ -87,6 +104,13 @@ interface RigaDaConvertire {
   edizione_valida_dal: string | null;
   compagnia_nome: string | null;
   classificazione_da_confermare: boolean;
+  /* Fase 10: il materiale della collocazione. `cartella_id` valorizzato
+     significa che il documento è arrivato con un percorso suo, e allora la
+     collocazione automatica non ha niente da dire. */
+  ramo_nome: string | null;
+  cartella_id: string | null;
+  cliente_id: string | null;
+  caricato_il: Date | null;
 }
 
 /**
@@ -119,9 +143,11 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
     const righe = await db.query<RigaDaConvertire>(
       `select d.id, d.archivio, d.titolo, d.tipologia, d.prodotto, d.nome_file,
               d.formato, d.path_originale, d.path_pdf, d.path_md, d.edizione_valida_dal,
-              d.classificazione_da_confermare, c.nome as compagnia_nome
+              d.classificazione_da_confermare, c.nome as compagnia_nome,
+              r.nome as ramo_nome, d.cartella_id, d.cliente_id, d.caricato_il
        from velia.documenti d
        left join velia.compagnie c on c.id = d.compagnia_id
+       left join velia.rami r on r.id = d.ramo_id
        where d.id = $1`,
       [documentoId],
     );
@@ -255,12 +281,21 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
 
       /* Passo 3 (RF-B-03): la proposta del modello, solo se l'utente non ha
          già messo mano ai metadati — la sua parola vale più della nostra. */
+      let proposta: PropostaClassificazione | undefined;
       if (
         documento.archivio === 'privato' &&
         documento.classificazione_da_confermare &&
         dipendenze.classificatore
       ) {
-        await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
+        proposta = await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
+      }
+
+      /* Passo 3b (Fase 10): dove va. Distinto dal passo 4, che è il posto
+         nello Storage. Non blocca mai: un documento che nessuno sa collocare
+         resta `pronto` e finisce in «Da sistemare», cercabile e citabile
+         come tutti gli altri. */
+      if (documento.archivio === 'privato' && job.tenant_id) {
+        await colloca(db, job, documento, job.tenant_id, proposta, dipendenze);
       }
 
       /* `path_pdf` si scrive anche qui: per chi non è arrivato in PDF è
@@ -301,7 +336,7 @@ async function proponiClassificazione(
   documento: RigaDaConvertire,
   corpo: string,
   classificatore: Classificatore,
-): Promise<void> {
+): Promise<PropostaClassificazione | undefined> {
   const [compagnie, rami] = await Promise.all([
     db.query<VoceTassonomia>('select id, nome from velia.compagnie order by nome'),
     db.query<VoceTassonomia>('select id, nome from velia.rami order by nome'),
@@ -337,9 +372,21 @@ async function proponiClassificazione(
   await db.query(
     `update velia.documenti
      set tipologia = $2, compagnia_id = $3, ramo_id = $4,
-         riferimento_cliente = coalesce(riferimento_cliente, $5)
+         riferimento_cliente = coalesce(riferimento_cliente, $5),
+         numero_polizza = coalesce(numero_polizza, $6),
+         decorrenza = coalesce(decorrenza, $7::date),
+         scadenza = coalesce(scadenza, $8::date)
      where id = $1 and classificazione_da_confermare`,
-    [documento.id, proposta.tipologia, compagniaId, ramoId, riferimentoCliente],
+    [
+      documento.id,
+      proposta.tipologia,
+      compagniaId,
+      ramoId,
+      riferimentoCliente,
+      proposta.numeroPolizza || null,
+      proposta.decorrenza || null,
+      proposta.scadenza || null,
+    ],
   );
   await emettiEvento(db, job.id, 'ingestion-classificazione', {
     documentoId: documento.id,
@@ -347,4 +394,147 @@ async function proponiClassificazione(
     compagniaId,
     ramoId,
   });
+
+  /* Il chiamante ne ha bisogno per la collocazione: la tassonomia l'ha già
+     ripulita, quindi si restituisce la proposta *corretta*, non quella
+     grezza del modello. */
+  return {
+    ...proposta,
+    compagniaId,
+    ramoId,
+    ...(compagniaId && {
+      compagniaNome: compagnie.rows.find((c) => c.id === compagniaId)?.nome,
+    }),
+  };
+}
+
+/**
+ * Il passo 3b: dove va questo documento.
+ *
+ * Tre cose in fila, e ognuna può fermarsi senza conseguenze. Prima si tiene
+ * aggiornata la convenzione (solo se l'albero è cambiato di forma), poi si
+ * risolve il contraente in un cliente vero, poi si sceglie la cartella. Se
+ * una qualsiasi non riesce, il documento resta in «Da sistemare»: è una
+ * condizione visibile che si rimedia in due secondi, mentre un documento
+ * nella cartella sbagliata si scopre fra sei mesi.
+ *
+ * Non tocca mai lo stato del documento: la collocazione non è una porta.
+ */
+async function colloca(
+  db: pg.Pool,
+  job: Job,
+  documento: RigaDaConvertire,
+  tenantId: string,
+  proposta: (PropostaClassificazione & { compagniaNome?: string }) | undefined,
+  dipendenze: DipendenzeIngestion,
+): Promise<void> {
+  /* Il documento è arrivato con un percorso suo (importazione, o upload di
+     una cartella): quella è la collocazione dell'utente e non si discute.
+     Si dice comunque, perché un passo che a volte non lascia traccia è un
+     passo che non si riesce a diagnosticare quando qualcosa non torna. */
+  if (documento.cartella_id) {
+    await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+      documentoId: documento.id,
+      motivo: 'il documento è arrivato con una cartella sua',
+    });
+    return;
+  }
+
+  try {
+    await assicuraConvenzioneAggiornata(db, tenantId, dipendenze.descrittore);
+
+    let clienteId = documento.cliente_id;
+    let clienteNome: string | null = null;
+    if (!clienteId) {
+      const risolto = await risolviCliente(
+        db,
+        tenantId,
+        {
+          /* Solo `contraente`: `riferimentoCliente` è il riferimento della
+             pratica in testo libero («Fattura n. 36 del 31.08.2026 - WISELYST
+             S.R.L.») e usarlo come nome di persona faceva nascere clienti che
+             clienti non sono — visto succedere, il 04/09. */
+          contraente: proposta?.contraente ?? null,
+          codiceFiscale: proposta?.codiceFiscale ?? null,
+          partitaIva: proposta?.partitaIva ?? null,
+          ...(proposta?.fiducia && { fiducia: proposta.fiducia }),
+        },
+        dipendenze.sceglitore,
+      );
+      if (risolto) {
+        clienteId = risolto.id;
+        clienteNome = risolto.nome;
+        await db.query(`update velia.documenti set cliente_id = $2 where id = $1`, [
+          documento.id,
+          risolto.id,
+        ]);
+        await emettiEvento(db, job.id, 'ingestion-cliente', {
+          documentoId: documento.id,
+          clienteId: risolto.id,
+          nome: risolto.nome,
+          creato: risolto.creato,
+          via: risolto.via,
+        });
+      }
+    } else {
+      const r = await db.query<{ nome: string }>(`select nome from velia.clienti where id = $1`, [
+        clienteId,
+      ]);
+      clienteNome = r.rows[0]?.nome ?? null;
+    }
+
+    const esito = await collocaDocumento(
+      db,
+      tenantId,
+      {
+        clienteId,
+        clienteNome,
+        compagniaNome: proposta?.compagniaNome ?? documento.compagnia_nome,
+        ramoNome: documento.ramo_nome,
+        prodotto: documento.prodotto,
+        tipologia: (proposta?.tipologia ?? documento.tipologia) as TipologiaDocumento,
+        decorrenza: proposta?.decorrenza ?? null,
+        caricatoIl: documento.caricato_il,
+        titolo: documento.titolo,
+      },
+      {
+        ...(dipendenze.sceglicartella && { sceglicartella: dipendenze.sceglicartella }),
+        convenzione: await convenzioneEffettiva(db, tenantId),
+      },
+    );
+
+    if (!esito) {
+      await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+        documentoId: documento.id,
+        motivo: 'nessuna cartella individuata con sicurezza',
+      });
+      return;
+    }
+
+    /* `collocazione_da_confermare` a vero: è una proposta, e resta tale
+       finché l'utente non sposta a mano. `collocazione_proposta` conserva
+       il percorso proposto — il delta con quello finale è l'unica misura
+       onesta della qualità del classificatore. */
+    await db.query(
+      `update velia.documenti
+       set cartella_id = $2, collocazione_proposta = $3, collocazione_da_confermare = true
+       where id = $1 and cartella_id is null`,
+      [documento.id, esito.cartellaId, esito.percorso],
+    );
+    // Cartelle nate adesso = albero cambiato di forma: la convenzione va rifatta.
+    if (esito.create) await segnaDaRicalcolare(db, tenantId);
+    await emettiEvento(db, job.id, 'ingestion-collocazione', {
+      documentoId: documento.id,
+      cartellaId: esito.cartellaId,
+      percorso: esito.percorso,
+      cartelleCreate: esito.create,
+    });
+  } catch (errore) {
+    /* Come per la classificazione: una collocazione mancata non è
+       un'ingestion fallita. Il documento è convertito, pronto e citabile. */
+    await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+      documentoId: documento.id,
+      motivo: errore instanceof Error ? errore.message : String(errore),
+    });
+  }
 }

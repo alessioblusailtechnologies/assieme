@@ -52,6 +52,14 @@ describe('DettaglioPrivato', () => {
 
     http.expectOne('/api/documenti-privati/prv-1').flush(doc);
 
+    /* Fase 10: la scheda chiede anche l'albero delle cartelle e l'anagrafica
+       clienti — servono alla tendina «Cartella» e a quella del cliente. Vanno
+       esaudite qui, o la fixture non si stabilizza mai. */
+    http.match('/api/cartelle').forEach((r) => r.flush({ radici: [], daSistemare: 0 }));
+    http
+      .match('/api/clienti')
+      .forEach((r) => r.flush({ elementi: [], totale: 0, pagina: 1, perPagina: 50 }));
+
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();

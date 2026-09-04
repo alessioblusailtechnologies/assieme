@@ -1,9 +1,13 @@
 import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
 import { Injectable, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
+  AlberoCartelle,
+  Cartella,
+  Cliente,
   DocumentoPrivato,
   ErroreApi,
   Etichetta,
@@ -14,6 +18,12 @@ import {
   StatoElaborazione,
   TipologiaDocumento,
 } from '@core/models';
+import {
+  CartelleApi,
+  DestinazioneDocumenti,
+  ModificheCartella,
+  NuovaCartella,
+} from '@core/api/cartelle-api';
 import { DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
 
 /** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione. */
@@ -37,6 +47,9 @@ export interface VoceCoda {
 @Injectable()
 export class ArchivioPrivatoStore {
   private readonly api = inject(DocumentiPrivatiApi);
+  private readonly apiCartelle = inject(CartelleApi);
+  private readonly rotta = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   // --- Filtri -------------------------------------------------------------
 
@@ -45,6 +58,25 @@ export class ArchivioPrivatoStore {
   readonly etichetta = signal<string | undefined>(undefined);
   readonly soloRiferimenti = signal(false);
   readonly ricerca = signal('');
+
+  /**
+   * Dove si sta guardando — una cartella col suo sottoalbero, oppure «Da
+   * sistemare», che sono due viste che si escludono perché il non collocato
+   * non sta *in* nessuna cartella — **vive nell'URL**, non in un signal.
+   *
+   * In un gestore di file la cartella aperta è un posto, e un posto deve
+   * avere un indirizzo: così il tasto Indietro del browser risale l'albero,
+   * un aggiornamento della pagina non ti riporta in cima, e le briciole
+   * possono essere collegamenti veri invece di pulsanti che simulano una
+   * navigazione. Tenerlo in un signal è esattamente ciò che rendeva le
+   * briciole inerti: puntavano alla rotta in cui eri già.
+   */
+  private readonly parametri = toSignal(this.rotta.queryParamMap, {
+    initialValue: undefined,
+  });
+
+  readonly cartella = computed<Id | undefined>(() => this.parametri()?.get('cartella') ?? undefined);
+  readonly daSistemare = computed(() => this.parametri()?.get('vista') === 'da-sistemare');
 
   private readonly ricercaAttesa = toSignal(
     toObservable(this.ricerca).pipe(debounceTime(300), distinctUntilChanged()),
@@ -58,6 +90,8 @@ export class ArchivioPrivatoStore {
       this.etichetta(),
       this.soloRiferimenti(),
       this.ricercaAttesa(),
+      this.cartella(),
+      this.daSistemare(),
     ],
     computation: () => 1,
   });
@@ -70,10 +104,16 @@ export class ArchivioPrivatoStore {
     stato: this.stato(),
     etichetta: this.etichetta(),
     soloRiferimenti: this.soloRiferimenti(),
+    cartellaId: this.daSistemare() ? undefined : this.cartella(),
+    daSistemare: this.daSistemare(),
     pagina: this.pagina(),
     perPagina: this.perPagina(),
   }));
 
+  /* La cartella non conta come «filtro attivo»: è dove sei, non un filtro
+     che hai messo. Azzerare i filtri dentro una cartella deve lasciarti
+     dentro quella cartella, altrimenti il pulsante ti sposta invece di
+     ripulire. */
   readonly filtriAttivi = computed(
     () =>
       !!this.tipologia() ||
@@ -90,6 +130,10 @@ export class ArchivioPrivatoStore {
   );
   private readonly risorsaEtichette = httpResource<Etichetta[]>(() => this.api.urlEtichette());
   private readonly risorsaSpazio = httpResource<SpazioTenant>(() => this.api.urlSpazio());
+  private readonly risorsaAlbero = httpResource<AlberoCartelle>(() => this.apiCartelle.urlAlbero());
+  private readonly risorsaClienti = httpResource<Paginato<Cliente>>(() =>
+    this.apiCartelle.urlClienti(),
+  );
 
   readonly documenti = computed(() =>
     this.risorsaElenco.hasValue() ? this.risorsaElenco.value().elementi : [],
@@ -106,6 +150,55 @@ export class ArchivioPrivatoStore {
   readonly spazio = computed(() =>
     this.risorsaSpazio.hasValue() ? this.risorsaSpazio.value() : undefined,
   );
+
+  readonly albero = computed<Cartella[]>(() =>
+    this.risorsaAlbero.hasValue() ? this.risorsaAlbero.value().radici : [],
+  );
+  readonly quantiDaSistemare = computed(() =>
+    this.risorsaAlbero.hasValue() ? this.risorsaAlbero.value().daSistemare : 0,
+  );
+  readonly clienti = computed<Cliente[]>(() =>
+    this.risorsaClienti.hasValue() ? this.risorsaClienti.value().elementi : [],
+  );
+
+  /** L'albero appiattito: serve alle tendine di spostamento e alle briciole. */
+  readonly cartelleInPiano = computed<Cartella[]>(() => {
+    const piatte: Cartella[] = [];
+    const scendi = (c: Cartella[]): void => {
+      for (const x of c) {
+        piatte.push(x);
+        scendi(x.figli);
+      }
+    };
+    scendi(this.albero());
+    return piatte;
+  });
+
+  readonly cartellaCorrente = computed<Cartella | undefined>(() => {
+    const id = this.cartella();
+    return id ? this.cartelleInPiano().find((c) => c.id === id) : undefined;
+  });
+
+  /**
+   * La catena dalla radice fino a dove si è, cartella corrente compresa.
+   *
+   * È quello che serve per **risalire**: da `Clienti/Rossi Mario/Auto` si
+   * deve poter tornare a «Rossi Mario», non solo in cima all'archivio. Sta
+   * qui e non nel componente perché è una domanda sull'albero, non su come
+   * lo si disegna.
+   */
+  readonly catenaCartelle = computed<Cartella[]>(() => {
+    const per = new Map(this.cartelleInPiano().map((c) => [c.id, c]));
+    const catena: Cartella[] = [];
+    const visti = new Set<string>();
+    let corrente = this.cartellaCorrente();
+    while (corrente && !visti.has(corrente.id)) {
+      visti.add(corrente.id);
+      catena.unshift(corrente);
+      corrente = corrente.parentId ? per.get(corrente.parentId) : undefined;
+    }
+    return catena;
+  });
 
   // --- Interrogazione periodica -------------------------------------------
 
@@ -180,11 +273,13 @@ export class ArchivioPrivatoStore {
         }
         if (evento.type === HttpEventType.Response) {
           aggiorna((v) => ({ ...v, stato: 'completato', percentuale: 100 }));
-          /* I documenti appena creati sono in coda di elaborazione: ricaricare
-             li fa comparire in cima, e l'interrogazione periodica parte da
-             sola perché ora c'è qualcosa in transito. */
-          this.risorsaElenco.reload();
-          this.risorsaSpazio.reload();
+          /* Un archivio importato porta con sé le sue cartelle: se il lotto
+             ne ha create, l'albero è cambiato e va riletto insieme al resto.
+             I file che uno zip conteneva ma non sappiamo leggere si dicono,
+             invece di sparire in silenzio. */
+          const ignorati = evento.body?.ignorati ?? [];
+          if (ignorati.length) this.vociIgnorate.set(ignorati);
+          this.ricaricaTutto();
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -201,7 +296,12 @@ export class ArchivioPrivatoStore {
   /** Toglie dalla coda ciò che si è concluso, riuscito o no. */
   svuotaCoda(): void {
     this.vociCoda.update((c) => c.filter((v) => v.stato === 'in-corso'));
+    this.vociIgnorate.set([]);
   }
+
+  /** I file di uno zip che non sappiamo leggere: si dicono, non si nascondono. */
+  private readonly vociIgnorate = signal<string[]>([]);
+  readonly ignorati = this.vociIgnorate.asReadonly();
 
   // --- Azioni -------------------------------------------------------------
 
@@ -211,6 +311,62 @@ export class ArchivioPrivatoStore {
     this.etichetta.set(undefined);
     this.ricerca.set('');
     this.soloRiferimenti.set(false);
+  }
+
+  // --- Cartelle -----------------------------------------------------------
+
+  /**
+   * Aprire una cartella; senza argomento si torna a tutto l'archivio.
+   *
+   * `replaceUrl: false`: ogni cartella aperta è una tappa nella cronologia,
+   * ed è così che il tasto Indietro risale l'albero un livello alla volta.
+   */
+  apri(id?: Id): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.rotta,
+      queryParams: { cartella: id ?? null, vista: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  apriDaSistemare(): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.rotta,
+      queryParams: { cartella: null, vista: 'da-sistemare' },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  creaCartella(
+    cartella: NuovaCartella,
+    esiti: { fatto?: () => void; errore?: (e: ErroreApi | null) => void } = {},
+  ): void {
+    this.apiCartelle.crea(cartella).subscribe({
+      next: () => {
+        this.ricaricaTutto();
+        esiti.fatto?.();
+      },
+      error: (err: HttpErrorResponse) => esiti.errore?.((err.error as ErroreApi) ?? null),
+    });
+  }
+
+  modificaCartella(id: Id, modifiche: ModificheCartella): void {
+    this.apiCartelle.modifica(id, modifiche).subscribe({ next: () => this.ricaricaTutto() });
+  }
+
+  eliminaCartella(id: Id, documenti: DestinazioneDocumenti): void {
+    this.apiCartelle.elimina(id, documenti).subscribe({
+      next: () => {
+        // Si stava guardando dentro: dopo non esiste più, si torna alla radice.
+        if (this.cartella() === id) void this.apri(undefined);
+        this.ricaricaTutto();
+      },
+    });
+  }
+
+  /** Spostare un documento a mano: da qui in poi la collocazione è definitiva. */
+  sposta(id: Id, cartellaId: Id | null): void {
+    this.modifica(id, { cartellaId });
   }
 
   riprova(): void {
@@ -236,5 +392,10 @@ export class ArchivioPrivatoStore {
     this.risorsaElenco.reload();
     this.risorsaEtichette.reload();
     this.risorsaSpazio.reload();
+    /* Anche l'albero: spostare un documento cambia i conteggi delle cartelle
+       e quello di «Da sistemare», che sono numeri che l'utente sta guardando
+       mentre lavora. */
+    this.risorsaAlbero.reload();
+    this.risorsaClienti.reload();
   }
 }

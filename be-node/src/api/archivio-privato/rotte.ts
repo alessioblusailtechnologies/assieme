@@ -18,6 +18,22 @@ import {
 } from '../../contratto/documenti-privati.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { estensionePerFormato, riconosciFormato, type FileRicevuto } from './formati.js';
+import {
+  cartelleDelPercorso,
+  eZip,
+  espandiZip,
+  normalizzaPercorso,
+  type FileConPercorso,
+} from './zip.js';
+import {
+  assicuraPercorso,
+  caricaCartelle,
+  eDiscendente,
+  indicizza,
+  percorsoDi,
+  segnaDaRicalcolare,
+  type RigaCartella,
+} from '../../archivio/albero.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -56,10 +72,22 @@ interface RigaPrivato {
   ramo_id: string | null;
   ramo_nome: string | null;
   ramo_codice: string | null;
+  cartella_id: string | null;
+  cliente_id: string | null;
+  cliente_nome: string | null;
+  collocazione_da_confermare: boolean;
+  numero_polizza: string | null;
+  decorrenza: string | null;
+  scadenza: string | null;
   totale?: string;
 }
 
-function versoDocumento(r: RigaPrivato): DocumentoPrivato {
+/**
+ * Il percorso leggibile non si calcola in SQL: l'albero è piccolo (cartelle,
+ * non documenti) e si carica una volta per richiesta. Una CTE ricorsiva per
+ * riga costerebbe di più e si leggerebbe peggio.
+ */
+function versoDocumento(r: RigaPrivato, cartelle?: Map<string, RigaCartella>): DocumentoPrivato {
   const compagnia: Compagnia | undefined = r.compagnia_id
     ? {
         id: r.compagnia_id,
@@ -89,6 +117,13 @@ function versoDocumento(r: RigaPrivato): DocumentoPrivato {
     ...(r.classificazione_da_confermare && { classificazioneDaConfermare: true }),
     documentoDiRiferimento: r.documento_di_riferimento,
     visibilita: r.visibilita,
+    ...(r.cartella_id && { cartellaId: r.cartella_id }),
+    ...(r.cartella_id && cartelle && { percorso: percorsoDi(r.cartella_id, cartelle) }),
+    ...(r.cliente_id && r.cliente_nome && { cliente: { id: r.cliente_id, nome: r.cliente_nome } }),
+    ...(r.collocazione_da_confermare && { collocazioneDaConfermare: true }),
+    ...(r.numero_polizza && { numeroPolizza: r.numero_polizza }),
+    ...(r.decorrenza && { decorrenza: r.decorrenza }),
+    ...(r.scadenza && { scadenza: r.scadenza }),
   };
 }
 
@@ -99,10 +134,15 @@ const SQL_BASE = `
          d.documento_di_riferimento, d.visibilita,
          c.id as compagnia_id, c.nome as compagnia_nome,
          c.ultimo_aggiornamento as compagnia_aggiornamento,
-         r.id as ramo_id, r.nome as ramo_nome, r.codice as ramo_codice
+         r.id as ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
+         d.cartella_id, d.cliente_id, cl.nome as cliente_nome,
+         d.collocazione_da_confermare, d.numero_polizza,
+         to_char(d.decorrenza, 'YYYY-MM-DD') as decorrenza,
+         to_char(d.scadenza, 'YYYY-MM-DD') as scadenza
   from velia.documenti d
   left join velia.compagnie c on c.id = d.compagnia_id
   left join velia.rami r on r.id = d.ramo_id
+  left join velia.clienti cl on cl.id = d.cliente_id
   where d.archivio = 'privato' and d.tenant_id = $1`;
 
 /** Il più recente in cima (lo stub ordina per `caricatoIl` decrescente). */
@@ -161,10 +201,31 @@ export function registraRotteArchivioPrivato(
       return `$${parametri.length}`;
     };
 
+    /* L'albero serve due volte: a capire quali cartelle rientrano nel filtro
+       (cliccare una cartella mostra anche il sottoalbero, è quello che ci si
+       aspetta) e a scrivere il percorso leggibile su ogni riga. Si carica
+       una volta sola, fuori dal ciclo. */
+    const cartelle = indicizza(
+      await conIdentita(poolDb(), richiesta.identita, (client) =>
+        caricaCartelle(client, richiesta.identita.tenantId),
+      ),
+    );
+
     if (filtri.tipologia) condizioni.push(`d.tipologia = ${par(filtri.tipologia)}`);
     if (filtri.stato) condizioni.push(`d.stato = ${par(filtri.stato)}`);
     if (filtri.etichetta) condizioni.push(`${par(filtri.etichetta)} = any(d.etichette)`);
     if (filtri.soloRiferimenti) condizioni.push(`d.documento_di_riferimento`);
+    if (filtri.clienteId) condizioni.push(`d.cliente_id = ${par(filtri.clienteId)}`);
+    /* «Da sistemare» è una vista a sé: il non collocato, che è una condizione
+       normale e non un errore. Non si combina con una cartella. */
+    if (filtri.daSistemare) {
+      condizioni.push(`d.cartella_id is null`);
+    } else if (filtri.cartellaId) {
+      const dentro = filtri.soloQui
+        ? [filtri.cartellaId]
+        : [...cartelle.keys()].filter((id) => eDiscendente(id, filtri.cartellaId!, cartelle));
+      condizioni.push(`d.cartella_id = any(${par(dentro)})`);
+    }
 
     /* Come lo stub: tutte le parole, in qualsiasi ordine, senza accenti —
        su titolo, riferimento cliente ed etichette (non compagnia né ramo:
@@ -196,7 +257,7 @@ export function registraRotteArchivioPrivato(
         totale = Number(conta.rows[0]?.totale ?? 0);
       }
       return {
-        elementi: righe.rows.map(versoDocumento),
+        elementi: righe.rows.map((r) => versoDocumento(r, cartelle)),
         totale,
         pagina: filtri.pagina,
         perPagina: filtri.perPagina,
@@ -216,17 +277,50 @@ export function registraRotteArchivioPrivato(
       throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
     }
 
-    const ricevuti: FileRicevuto[] = [];
+    /* Il percorso di origine viaggia in un campo `percorso` che PRECEDE il
+       file a cui appartiene: i browser mandano solo il nome base nel
+       `filename`, e `webkitRelativePath` va spedito a parte. L'ordine è il
+       contratto, ed è il modo più semplice che regge anche il caricamento
+       misto (qualche file sciolto, qualche cartella). */
+    const ricevuti: FileConPercorso[] = [];
+    let percorsoInAttesa: string | undefined;
     for await (const parte of richiesta.parts()) {
-      if (parte.type !== 'file') continue;
+      if (parte.type === 'field') {
+        if (parte.fieldname === 'percorso' && typeof parte.value === 'string') {
+          percorsoInAttesa = normalizzaPercorso(parte.value) ?? undefined;
+        }
+        continue;
+      }
       const contenuto = await parte.toBuffer();
+      const percorso = percorsoInAttesa;
+      percorsoInAttesa = undefined;
       if (!parte.filename) continue; // una parte file senza nome non è un file
-      ricevuti.push({
+      const file: FileConPercorso = {
         nome: parte.filename,
         mimetype: parte.mimetype,
         contenuto,
         troncato: parte.file.truncated,
-      });
+        ...(percorso && { percorso }),
+      };
+      /* Uno zip non è un documento: è l'archivio dell'agenzia che entra coi
+         suoi percorsi addosso. Si apre qui, e da lì in poi è un lotto come
+         gli altri. */
+      if (eZip(file)) {
+        const dentro = espandiZip(file);
+        if (!dentro.length) {
+          /* Stesso codice di un formato qualunque che non sappiamo leggere
+             (415, contratto di Fase 2): per chi carica è la stessa cosa, e il
+             FE non deve imparare un caso nuovo. Cambia solo il messaggio. */
+          throw new ErroreApi(
+            415,
+            'FORMATO_NON_SUPPORTATO',
+            `«${file.nome}» non è un archivio zip leggibile, o non contiene documenti.`,
+          );
+        }
+        ricevuti.push(...dentro);
+      } else {
+        ricevuti.push(file);
+      }
     }
     if (!ricevuti.length) {
       throw new ErroreApi(400, 'NESSUN_FILE', 'La richiesta non contiene file.');
@@ -244,9 +338,20 @@ export function registraRotteArchivioPrivato(
       }
     }
     const formati = new Map<FileRicevuto, FormatoDocumento>();
+    const ignorati: string[] = [];
+    const daLavorare: FileConPercorso[] = [];
     for (const f of ricevuti) {
       const formato = riconosciFormato(f);
       if (!formato) {
+        /* Un lotto normale è atomico: un formato illeggibile rifiuta tutto
+           (contratto di Fase 2). Dentro uno zip no — in un archivio
+           d'agenzia c'è sempre un `.doc` del 2009, e far fallire
+           l'importazione intera per quello sarebbe assurdo: si salta, si
+           dice quale, e il resto entra. */
+        if (f.daZip) {
+          ignorati.push(f.percorso ?? f.nome);
+          continue;
+        }
         throw new ErroreApi(
           415,
           'FORMATO_NON_SUPPORTATO',
@@ -254,8 +359,16 @@ export function registraRotteArchivioPrivato(
         );
       }
       formati.set(f, formato);
+      daLavorare.push(f);
     }
-    const pesoLotto = ricevuti.reduce((s, f) => s + f.contenuto.length, 0);
+    if (!daLavorare.length) {
+      throw new ErroreApi(
+        415,
+        'FORMATO_NON_SUPPORTATO',
+        `Nessuno dei file caricati è di un formato leggibile: l'archivio accetta ${ELENCO_FORMATI}.`,
+      );
+    }
+    const pesoLotto = daLavorare.reduce((s, f) => s + f.contenuto.length, 0);
     if (spazio.usatoByte + pesoLotto > spazio.limiteByte) {
       throw new ErroreApi(507, 'SPAZIO_ESAURITO', 'Lo spazio del piano non basta per questi documenti.');
     }
@@ -263,11 +376,20 @@ export function registraRotteArchivioPrivato(
     /* Prima i byte nello Storage, poi le righe (firmate dalla RLS), infine
        i job. Se qualcosa si rompe a metà, i byte già caricati si tolgono:
        niente orfani nello Storage. */
-    const daCreare = ricevuti.map((f) => {
+    const daCreare = daLavorare.map((f) => {
       const formato = formati.get(f)!;
       const id = nuovoIdPrivato();
       const estensione = estensionePerFormato(formato, f.nome);
-      return { ...f, id, formato, percorso: percorsoOriginale(tenantId, id, estensione) };
+      /* Due «percorsi» che non sono la stessa cosa: `percorsoOrigine` è da
+         dove il documento viene (e diventa albero), `percorso` è dove i suoi
+         byte finiscono nello Storage, che resta piatto per id. */
+      return {
+        ...f,
+        id,
+        formato,
+        percorsoOrigine: f.percorso,
+        percorso: percorsoOriginale(tenantId, id, estensione),
+      };
     });
     const caricati: string[] = [];
     let creati: DocumentoPrivato[];
@@ -281,7 +403,18 @@ export function registraRotteArchivioPrivato(
 
       creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const esiti: DocumentoPrivato[] = [];
+        let cartelleToccate = false;
         for (const f of daCreare) {
+          /* Il percorso di origine diventa albero: è questo il momento in
+             cui la cartellazione dell'agenzia entra in VELIA, ed è da qui
+             che l'osservazione ricaverà la convenzione. Una collocazione
+             che arriva dall'utente non è una proposta: nasce già confermata. */
+          const cartelle = cartelleDelPercorso(f.percorsoOrigine);
+          const cartellaId = cartelle.length
+            ? await assicuraPercorso(client, tenantId, cartelle)
+            : null;
+          if (cartellaId) cartelleToccate = true;
+
           /* `path_pdf` è dove il documento da mostrare *starà*: per un PDF
              è il file appena caricato, per gli altri il PDF che l'ingestion
              comporrà. Fino ad allora il documento non è pronto, e
@@ -290,8 +423,8 @@ export function registraRotteArchivioPrivato(
             `insert into velia.documenti
                (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
                 path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
-                classificazione_da_confermare)
-             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true)`,
+                classificazione_da_confermare, cartella_id, percorso_origine)
+             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true, $10, $11)`,
             [
               f.id,
               tenantId,
@@ -302,10 +435,14 @@ export function registraRotteArchivioPrivato(
               f.nome,
               utenteId,
               f.contenuto.length,
+              cartellaId,
+              f.percorsoOrigine ?? null,
             ],
           );
           esiti.push((await documentoPerId(client, tenantId, f.id))!);
         }
+        // I cambi di struttura, e solo quelli, rifanno la convenzione.
+        if (cartelleToccate) await segnaDaRicalcolare(client, tenantId);
         return esiti;
       });
     } catch (errore) {
@@ -333,7 +470,7 @@ export function registraRotteArchivioPrivato(
     }
 
     void risposta.code(201);
-    const esito: EsitoCaricamento = { creati };
+    const esito: EsitoCaricamento = { creati, ...(ignorati.length && { ignorati }) };
     return esito;
   });
 
@@ -383,6 +520,19 @@ export function registraRotteArchivioPrivato(
       }
       if (m.etichette !== undefined) {
         assegnazioni.push(`etichette = ${par([...new Set(m.etichette)])}::text[]`);
+      }
+      if (m.clienteId !== undefined) {
+        if (m.clienteId !== null) await esisteRigaDelTenant(client, 'clienti', m.clienteId, tenantId);
+        assegnazioni.push(`cliente_id = ${par(m.clienteId)}`);
+      }
+      if (m.cartellaId !== undefined) {
+        if (m.cartellaId !== null) {
+          await esisteRigaDelTenant(client, 'cartelle', m.cartellaId, tenantId);
+        }
+        /* Spostare a mano è definitivo: da qui in poi nessun ricalcolo della
+           convenzione rimette il documento in discussione. Senza questa riga
+           si costruisce il software che rimette le cose dove dice lui. */
+        assegnazioni.push(`cartella_id = ${par(m.cartellaId)}`, `collocazione_da_confermare = false`);
       }
 
       await client.query(
@@ -536,7 +686,11 @@ async function documentoPerId(
 ): Promise<DocumentoPrivato | undefined> {
   const righe = await client.query<RigaPrivato>(`${SQL_BASE} and d.id = $2`, [tenantId, id]);
   const riga = righe.rows[0];
-  return riga ? versoDocumento(riga) : undefined;
+  if (!riga) return undefined;
+  // L'albero si carica solo se serve: un documento in «Da sistemare» non ha
+  // percorso da scrivere, e la scheda è la rotta più chiamata dopo l'elenco.
+  const cartelle = riga.cartella_id ? indicizza(await caricaCartelle(client, tenantId)) : undefined;
+  return versoDocumento(riga, cartelle);
 }
 
 export async function spazioDelTenant(client: pg.ClientBase, tenantId: string): Promise<SpazioTenant> {
@@ -559,6 +713,24 @@ export async function spazioDelTenant(client: pg.ClientBase, tenantId: string): 
     limiteFileByte: Number(l.limite_file_byte),
     numeroDocumenti: uso.rows[0]?.numero ?? 0,
   };
+}
+
+/** Cartella o cliente devono esistere **e** essere di questo tenant. */
+async function esisteRigaDelTenant(
+  client: pg.ClientBase,
+  tabella: 'cartelle' | 'clienti',
+  id: string,
+  tenantId: string,
+): Promise<void> {
+  const r = await client.query(`select 1 from velia.${tabella} where id = $1 and tenant_id = $2`, [
+    id,
+    tenantId,
+  ]);
+  if (!r.rowCount) {
+    throw ErroreApi.datiNonValidi(
+      tabella === 'cartelle' ? 'Cartella inesistente.' : 'Cliente inesistente.',
+    );
+  }
 }
 
 async function verificaTassonomia(

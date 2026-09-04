@@ -13,11 +13,24 @@ export interface ModificheDocumento {
   ramoId?: Id;
   riferimentoCliente?: string;
   etichette?: string[];
+  /**
+   * Fase 10. Spostare a mano è definitivo: il server spegne
+   * `collocazioneDaConfermare` e nessun ricalcolo rimette il documento in
+   * discussione. `null` lo rimanda in «Da sistemare».
+   */
+  cartellaId?: Id | null;
+  clienteId?: Id | null;
 }
 
 /** Esito del caricamento: i documenti creati, già in coda di elaborazione. */
 export interface EsitoCaricamento {
   creati: DocumentoPrivato[];
+  /**
+   * I file di uno zip che non sappiamo leggere. Solo lì: un lotto normale
+   * resta atomico e risponde 415, ma un archivio d'agenzia contiene sempre
+   * un `.doc` del 2009, e non è un motivo per rifiutare l'importazione.
+   */
+  ignorati?: string[];
 }
 
 /**
@@ -71,7 +84,18 @@ export class DocumentiPrivatiApi {
    */
   carica(file: File[]): Observable<HttpEvent<EsitoCaricamento>> {
     const corpo = new FormData();
-    for (const f of file) corpo.append('file', f, f.name);
+    for (const f of file) {
+      /* Il percorso di origine viaggia in un campo che PRECEDE il file a cui
+         appartiene: nel `filename` i browser mettono solo il nome base, e
+         `webkitRelativePath` va spedito a parte. L'ordine è il contratto, e
+         regge anche il caricamento misto (qualche file sciolto e una cartella
+         intera). È da qui che la cartellazione dell'agenzia entra in VELIA:
+         un upload che la perde butta via l'informazione da cui dipende tutto
+         il resto della Fase 10. */
+      const relativo = (f as File & { webkitRelativePath?: string }).webkitRelativePath;
+      if (relativo) corpo.append('percorso', relativo);
+      corpo.append('file', f, f.name);
+    }
 
     return this.http.request(
       new HttpRequest('POST', this.base, corpo, { reportProgress: true }),

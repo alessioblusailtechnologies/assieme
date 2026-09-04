@@ -19,6 +19,14 @@ export interface ContestoClassificazione {
   rami: VoceTassonomia[];
 }
 
+/** Una data ISO, o niente: il modello scrive spesso «01/03/2026», e non va bene. */
+const data = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .nullable()
+  .optional();
+
 /**
  * La proposta (RF-B-03): sempre correggibile dall'utente, mai definitiva.
  * `compagniaId` e `ramoId` sono id delle tassonomie passate nel contesto,
@@ -30,6 +38,19 @@ export const schemaProposta = z.object({
   ramoId: z.string().nullable().optional(),
   /** Cliente o pratica (es. «Rossi Mario», «polizza 123456»). */
   riferimentoCliente: z.string().trim().max(200).nullable().optional(),
+  /* Fase 10 — il materiale della collocazione. `contraente` è il nome **com'è
+     scritto nel documento**, non il cliente già risolto: risolverlo è un
+     lavoro a parte (`archivio/clienti.ts`), e mescolare le due cose è il modo
+     migliore per far inventare al modello un cliente che non esiste. */
+  contraente: z.string().trim().max(200).nullable().optional(),
+  codiceFiscale: z.string().trim().max(32).nullable().optional(),
+  partitaIva: z.string().trim().max(32).nullable().optional(),
+  numeroPolizza: z.string().trim().max(64).nullable().optional(),
+  decorrenza: data,
+  scadenza: data,
+  /* Tre parole e non un numero: i modelli calibrano male le probabilità e
+     bene gli aggettivi. Da questo dipende se un cliente nuovo può nascere. */
+  fiducia: z.enum(['alta', 'media', 'bassa']).optional(),
 });
 
 export type PropostaClassificazione = z.infer<typeof schemaProposta>;
@@ -50,8 +71,14 @@ Rispondi SOLO con un oggetto JSON, senza commenti né testo attorno, con queste 
 - "compagniaId": l'id della compagnia fra quelle elencate, oppure null se il documento non riguarda una di quelle.
 - "ramoId": l'id del ramo fra quelli elencati, oppure null.
 - "riferimentoCliente": il nome del cliente o il riferimento della pratica (contraente, numero di polizza o preventivo) se il documento è di un cliente specifico, altrimenti null. Breve: massimo una riga.
+- "contraente": il nome del **cliente dell'agenzia** a cui il documento si riferisce, **così come è scritto nel documento**: senza correggerlo, senza completarlo e senza normalizzarlo. Se il documento dice «ROSSI M.», scrivi «ROSSI M.». Null se il documento non riguarda un cliente specifico.
+  Attenzione a chi è il cliente: su un preventivo o una polizza è il contraente; su una **fattura, una lettera o una comunicazione è l'intestatario o il destinatario, mai chi la emette**. Se sul documento compaiono due parti — chi scrive e a chi è indirizzato — il cliente è la seconda.
+- "codiceFiscale" e "partitaIva": del contraente, se il documento li riporta; altrimenti null.
+- "numeroPolizza": il numero di polizza o di preventivo, se c'è; altrimenti null.
+- "decorrenza" e "scadenza": le date di validità della copertura, in formato AAAA-MM-GG; null se il documento non le dichiara. Non sono la data di stampa né quella di emissione.
+- "fiducia": "alta", "media" o "bassa" — quanto sei sicuro del contraente. Usa "alta" solo se il documento lo dichiara in modo esplicito e leggibile.
 
-Non inventare id: usa solo quelli elencati. Quando il testo è ambiguo preferisci null a una scelta tirata a indovinare.`;
+Non inventare id: usa solo quelli elencati. Quando il testo è ambiguo preferisci null a una scelta tirata a indovinare: un campo vuoto si corregge in due secondi, un campo sbagliato si scopre fra sei mesi.`;
 
 /**
  * Il classificatore vero: una chiamata breve sul solo estratto (il
@@ -76,7 +103,7 @@ export class ClassificatoreModello implements Classificatore {
     const elenco = (voci: VoceTassonomia[]) => voci.map((v) => `- ${v.id}: ${v.nome}`).join('\n');
     const risposta = await this.client.messages.create({
       model: this.modello,
-      max_tokens: 300,
+      max_tokens: 600,
       system: ISTRUZIONI,
       messages: [
         {

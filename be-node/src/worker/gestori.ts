@@ -4,6 +4,11 @@ import { getSessionInfo } from '@anthropic-ai/claude-agent-sdk';
 import type pg from 'pg';
 
 import { configurazione } from '../config.js';
+import {
+  DescrittoreModello,
+  SceglicartellaModello,
+  SceglitoreModello,
+} from './archivio/modelli.js';
 import { creaGestoreAgenti } from './agenti/gestore.js';
 import type { Job } from './coda.js';
 import { emettiEvento } from './eventi.js';
@@ -118,6 +123,12 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       classificatore: new ClassificatoreModello(),
       secondoSguardo: new SecondoSguardoModello(),
       archivio: new ArchivioStorage(),
+      /* Fase 10: le tre domande brevi della collocazione. Girano sul modello
+         economico (`MODELLO_INGESTION_RAPIDA`) perché sono scelte fra
+         alternative già ristrette, non lettura di documenti. */
+      sceglitore: new SceglitoreModello(),
+      sceglicartella: new SceglicartellaModello(),
+      descrittore: new DescrittoreModello(),
     });
     await ingestionVera(job, strumenti);
   },

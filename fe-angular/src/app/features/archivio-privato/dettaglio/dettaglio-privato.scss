@@ -287,3 +287,45 @@ ui-avviso {
     min-height: 260px;
   }
 }
+
+/* ---------- Cliente e cartella (Fase 10) ---------- */
+
+/* Il cliente collegato è un fatto, non un campo: si mostra come tale, e si
+   scollega con un gesto esplicito. */
+.collegato {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface-tint);
+}
+
+.collegato__nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cliente-nuovo {
+  display: flex;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.cliente-nuovo input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* La nota che dice «questa è una proposta»: stessa funzione dell'avviso
+   sulla classificazione, e stessa sobrietà. */
+.campo__nota {
+  margin: 0 0 var(--sp-2);
+  color: var(--c-text-3);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}

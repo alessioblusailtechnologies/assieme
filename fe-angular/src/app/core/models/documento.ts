@@ -148,6 +148,25 @@ export interface DocumentoPrivato extends DocumentoBase {
   documentoDiRiferimento: boolean;
   /** RF-B-07: condiviso col tenant o riservato a chi l'ha caricato. */
   visibilita: 'tenant' | 'personale';
+  /**
+   * RF-B-04, Fase 10: dove sta. Assente significa «Da sistemare», che è una
+   * condizione normale e visibile: il documento è pronto e citabile lo
+   * stesso, e qualcuno lo colloca quando passa di lì.
+   */
+  cartellaId?: Id;
+  /** Il percorso leggibile, per la colonna dell'elenco e per la scheda. */
+  percorso?: string;
+  /** Il cliente risolto, non più una stringa scritta a mano. */
+  cliente?: { id: Id; nome: string };
+  /**
+   * La collocazione è una proposta del sistema. Si spegne appena l'utente
+   * sposta a mano, e da quel momento nessun ricalcolo la rimette in
+   * discussione: stessa regola di `classificazioneDaConfermare`.
+   */
+  collocazioneDaConfermare?: boolean;
+  numeroPolizza?: string;
+  decorrenza?: IsoDate;
+  scadenza?: IsoDate;
 }
 
 export type Documento = DocumentoPubblico | DocumentoPrivato;
@@ -230,6 +249,13 @@ export interface FiltriDocumentiPrivati {
   stato?: StatoElaborazione;
   etichetta?: string;
   soloRiferimenti?: boolean;
+  /** Una cartella e il suo sottoalbero: è quello che ci si aspetta cliccandola. */
+  cartellaId?: Id;
+  /** Solo la cartella esatta, senza scendere. */
+  soloQui?: boolean;
+  /** Il non collocato: una vista a sé, non si combina con `cartellaId`. */
+  daSistemare?: boolean;
+  clienteId?: Id;
   pagina?: number;
   perPagina?: number;
 }

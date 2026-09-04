@@ -30,6 +30,12 @@ export const IMPOSTAZIONI_ROUTES: Routes = [
         title: 'Istruzioni - Velia',
       },
       {
+        /* Fase 10: come è organizzato l'archivio, osservato e correggibile. */
+        path: 'archivio',
+        loadComponent: () => import('./archivio/archivio').then((m) => m.ImpostazioniArchivio),
+        title: 'Archivio - Velia',
+      },
+      {
         path: 'template',
         loadComponent: () =>
           import('./template/template-output').then((m) => m.TemplateOutputSezione),

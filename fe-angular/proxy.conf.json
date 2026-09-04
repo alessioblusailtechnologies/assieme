@@ -1,5 +1,5 @@
 {
-  "//": "L'ordine conta: le chiavi piu' specifiche vanno prima di /api, altrimenti le cattura tutte. Al backend vero (be-node, 3002) vanno le rotte gia' attraversate dallo switchover: sessione, documenti pubblici e privati, tassonomie, segnalazioni, etichette, spazio, conversazioni (esportazione compresa, Fase 4), suggerimenti, template e identita' visiva, tabelle (Fase 5), modelli, istruzioni, riferimenti, storico impostazioni e utenti (Fase 6), agenti (Fase 7). /api/documenti-privati DEVE precedere /api/documenti: e' un prefisso di quest'ultimo (oggi vanno entrambi al 3002, ma l'ordine resta load-bearing).",
+  "//": "L'ordine conta: le chiavi piu' specifiche vanno prima di /api, altrimenti le cattura tutte. Al backend vero (be-node, 3002) vanno le rotte gia' attraversate dallo switchover: sessione, documenti pubblici e privati, tassonomie, segnalazioni, etichette, spazio, conversazioni (esportazione compresa, Fase 4), suggerimenti, template e identita' visiva, tabelle (Fase 5), modelli, istruzioni, riferimenti, storico impostazioni e utenti (Fase 6), agenti (Fase 7), cartelle, clienti e convenzione dell archivio (Fase 10). /api/documenti-privati DEVE precedere /api/documenti: e' un prefisso di quest'ultimo (oggi vanno entrambi al 3002, ma l'ordine resta load-bearing).",
   "/api/sessione": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti-privati": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/documenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
@@ -20,6 +20,9 @@
   "/api/impostazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/agenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/ricordi": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/cartelle": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/clienti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/convenzione": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/mcp": { "target": "http://localhost:3001", "secure": false, "changeOrigin": true },
   "/api": { "target": "http://localhost:3000", "secure": false, "changeOrigin": true }
 }

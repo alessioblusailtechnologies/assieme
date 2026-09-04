@@ -121,16 +121,89 @@
           />
         </div>
 
+        <!--
+          Il cliente non è più testo libero: è una voce dell'anagrafica, ed è
+          quello che permette di ritrovare la cartella giusta al prossimo
+          documento. La riga scritta a mano resta sotto, per le pratiche che
+          un cliente non ce l'hanno (un preventivo di un prospect, una nota).
+        -->
+        <div class="campo">
+          <span class="campo__nome">Cliente</span>
+          @if (doc.cliente; as c) {
+            <div class="collegato">
+              <ui-icon name="utente" [size]="14" />
+              <span class="collegato__nome">{{ c.nome }}</span>
+              <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="collega(null)">
+                <span>Scollega</span>
+              </button>
+            </div>
+          } @else {
+            <ui-select
+              [opzioni]="clienti()"
+              campoEtichetta="nome"
+              campoValore="id"
+              placeholder="Nessun cliente collegato"
+              [azzerabile]="true"
+              ariaLabel="Collega a un cliente dell'anagrafica"
+              (valoreChange)="collega($any($event) ?? null)"
+            />
+            <div class="cliente-nuovo">
+              <input
+                uiCampo
+                type="text"
+                [(ngModel)]="nomeClienteNuovo"
+                name="nomeClienteNuovo"
+                placeholder="…oppure crea un cliente nuovo"
+                aria-label="Nome del cliente nuovo"
+              />
+              <button
+                uiBottone
+                variante="secondario"
+                dimensione="piccolo"
+                type="button"
+                [disabled]="!nomeClienteNuovo().trim() || creazioneClienteInCorso()"
+                (click)="creaCliente()"
+              >
+                <span>Crea</span>
+              </button>
+            </div>
+          }
+        </div>
+
         <label class="campo">
-          <span class="campo__nome">Cliente o pratica</span>
+          <span class="campo__nome">Riferimento della pratica</span>
           <input
             uiCampo
             type="text"
             [(ngModel)]="cliente"
             name="cliente"
-            placeholder="es. Rossi Mario"
+            placeholder="es. polizza 123456"
           />
         </label>
+
+        <!--
+          Spostare non è un campo del modulo: è un'azione, si applica subito, e
+          da quel momento la collocazione è definitiva — nessun ricalcolo la
+          rimette in discussione.
+        -->
+        <div class="campo">
+          <span class="campo__nome">Cartella</span>
+          @if (collocazioneDaConfermare()) {
+            <p class="campo__nota">
+              Proposta dal sistema. Confermala spostandola dove vuoi, o lasciala dov'è.
+            </p>
+          }
+          <ui-select
+            [opzioni]="cartelle()"
+            campoEtichetta="percorso"
+            campoValore="id"
+            [valore]="doc.cartellaId"
+            placeholder="Da sistemare"
+            [azzerabile]="true"
+            ariaLabel="Sposta in un'altra cartella"
+            (valoreChange)="sposta($any($event) ?? null)"
+          />
+        </div>
 
         <div class="campo">
           <span class="campo__nome">Etichette</span>

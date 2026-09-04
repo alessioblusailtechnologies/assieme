@@ -35,6 +35,8 @@ import FileExportIcon from '@hugeicons/core-free-icons/FileExportIcon';
 import FilterIcon from '@hugeicons/core-free-icons/FilterIcon';
 import Folder01Icon from '@hugeicons/core-free-icons/Folder01Icon';
 import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
+import FolderOpenIcon from '@hugeicons/core-free-icons/FolderOpenIcon';
+import InboxIcon from '@hugeicons/core-free-icons/InboxIcon';
 import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
 import LibraryIcon from '@hugeicons/core-free-icons/LibraryIcon';
 import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
@@ -146,6 +148,13 @@ export const REGISTRO_ICONE = {
   'comprimi-barra': SidebarLeft01Icon,
   'espandi-giu': ArrowDown01Icon,
   'espandi-destra': ArrowRight01Icon,
+
+  // --- Cartelle dell'Archivio Privato (Fase 10) ---
+  cartella: Folder01Icon,
+  'cartella-aperta': FolderOpenIcon,
+  /* «Da sistemare» non è un errore: è la posta in arrivo dell'archivio, e
+     l'icona lo dice prima delle parole. */
+  'da-sistemare': InboxIcon,
 
   // --- Tema ---
   'tema-chiaro': Sun03Icon,

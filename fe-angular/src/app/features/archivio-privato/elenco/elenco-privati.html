@@ -1,178 +1,525 @@
-<header class="testata">
-  <h1 class="visually-hidden">Archivio privato</h1>
+<!--
+  L'Archivio Privato è un gestore di file, non una tabella di dati: si entra
+  nelle cartelle, si guarda cosa contengono, si trascina dentro roba. La
+  schermata dice questo — dove sei, l'azione principale accanto, la ricerca,
+  poi le cartelle e poi i documenti.
 
-  <ui-briciole [voci]="briciole" />
-
-  <!--
-    RF-B-08: quanti documenti e quanto pesano, in una riga sola. Il limite di
-    spazio non si mostra: il giorno in cui si avvicina, è il colore della
-    cifra a dirlo.
-  -->
-  <span
-    class="testata__conteggio mono"
-    [class.is-esaurimento]="spazio()?.inEsaurimento"
-    role="status"
-    aria-live="polite"
-  >
-    @if (store.inCaricamento() && !documenti().length) {
-      ricerca in corso…
-    } @else if (!store.errore()) {
-      {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
-      @if (spazio(); as s) {
-        · {{ s.usato }}
-      }
-    }
-  </span>
-</header>
-
+  Tutta l'area di lavoro è zona di rilascio (`aspetto="trasparente"`): il
+  riquadro tratteggiato compare mentre trascini e sparisce subito dopo,
+  invece di occupare trecento pixel tutto il giorno per un gesto che si fa
+  ogni tanto.
+-->
 <ui-zona-caricamento
+  #zona
+  aspetto="trasparente"
   [formati]="estensioni"
   [descrizioneFormati]="formati"
   [limiteFileByte]="spazio()?.limiteFileByte"
   (scelti)="store.carica($event)"
-/>
+>
+  <header class="testata">
+    <ui-briciole [voci]="briciole" />
 
-<!--
-  Nessun riepilogo dei caricamenti: le righe compaiono nell'elenco appena il
-  file è arrivato, ognuna col proprio stato, e se qualcosa va storto lo dice
-  la notifica. Resta una riga sola finché i byte salgono, perché un
-  trascinamento senza risposta per qualche secondo sembra non aver funzionato.
--->
-@if (caricamento(); as c) {
-  <p class="caricamento mono" role="status" aria-live="polite">
-    caricamento in corso · {{ c.conteggio }} file · {{ c.percentuale }}%
-  </p>
-}
+    <div class="testata__riga">
+      <h1 class="titolo serif">{{ titoloVista() }}</h1>
 
-<section class="filtri" aria-label="Filtri dell'archivio">
-  <label class="ui-campo-icona filtri__ricerca">
-    <ui-icon name="cerca" [size]="16" />
-    <input
-      uiCampo
-      type="search"
-      [value]="store.ricerca()"
-      (input)="store.ricerca.set($any($event.target).value)"
-      placeholder="Cerca per titolo, cliente, etichetta…"
-      aria-label="Cerca nell'archivio privato"
-    />
-  </label>
+      <span
+        class="conteggio mono"
+        [class.is-esaurimento]="spazio()?.inEsaurimento"
+        role="status"
+        aria-live="polite"
+      >
+        {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
+        <!--
+          Il peso è quello dell'archivio intero e si scrive solo dove il
+          conteggio è quello dell'archivio intero: dentro una cartella,
+          «0 documenti · 2,8 MB» sarebbe una contraddizione.
+        -->
+        @if (allaRadice() && spazio(); as s) {
+          · {{ s.usato }}
+        }
+      </span>
 
-  <ui-select
-    class="filtri__campo"
-    [(valore)]="store.tipologia"
-    [opzioni]="tipologie"
-    campoEtichetta="etichetta"
-    campoValore="valore"
-    placeholder="Tutte le tipologie"
-    [azzerabile]="true"
-    ariaLabel="Filtra per tipologia"
-  />
+      <div class="testata__azioni">
+        <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
+          <ui-icon name="carica" [size]="15" />
+          <span>Carica</span>
+        </button>
 
-  <ui-select
-    class="filtri__campo"
-    [(valore)]="store.stato"
-    [opzioni]="stati"
-    campoEtichetta="etichetta"
-    campoValore="valore"
-    placeholder="Tutti gli stati"
-    [azzerabile]="true"
-    ariaLabel="Filtra per stato di elaborazione"
-  />
-
-  <ui-select
-    class="filtri__campo"
-    [(valore)]="store.etichetta"
-    [opzioni]="store.etichette()"
-    campoEtichetta="nome"
-    campoValore="nome"
-    placeholder="Tutte le etichette"
-    [azzerabile]="true"
-    ariaLabel="Filtra per etichetta"
-  />
-
-  <div class="filtri__interruttore">
-    <ui-checkbox [(valore)]="store.soloRiferimenti" inputId="solo-riferimenti" />
-    <label for="solo-riferimenti">Solo documenti di riferimento</label>
-  </div>
-
-  @if (store.filtriAttivi()) {
-    <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="store.azzeraFiltri()">
-      <ui-icon name="chiudi" [size]="14" />
-      <span>Azzera</span>
-    </button>
-  }
-</section>
-
-@if (store.errore()) {
-  <ui-stato-vuoto
-    icona="errore"
-    titolo="Non siamo riusciti a caricare l'archivio"
-    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
-  >
-    <button uiBottone variante="primario" type="button" (click)="store.riprova()">
-      <ui-icon name="riprova" [size]="15" />
-      <span>Riprova</span>
-    </button>
-  </ui-stato-vuoto>
-} @else if (store.inCaricamento() && !documenti().length) {
-  <div class="scheletri">
-    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
-      <ui-scheletro [numeroRighe]="1" />
-    }
-  </div>
-} @else if (!documenti().length) {
-  <ui-stato-vuoto
-    icona="archivio-privato"
-    [titolo]="store.filtriAttivi() ? 'Nessun documento con questi criteri' : 'Archivio vuoto'"
-    [descrizione]="
-      store.filtriAttivi()
-        ? 'Prova ad allargare la ricerca togliendo un filtro.'
-        : 'Trascina qui i primi documenti: preventivi, polizze, appendici. Saranno referenziabili in chat appena elaborati.'
-    "
-  >
-    @if (store.filtriAttivi()) {
-      <button uiBottone variante="primario" type="button" (click)="store.azzeraFiltri()">
-        <ui-icon name="chiudi" [size]="15" />
-        <span>Azzera i filtri</span>
-      </button>
-    }
-  </ui-stato-vuoto>
-} @else {
-  <div class="risultati">
-    <div class="ui-tabella-contenitore griglia">
-      <table class="ui-tabella">
-        <thead>
-          <tr>
-            <th class="col-documento">Documento</th>
-            <th class="col-tipologia">Tipologia</th>
-            <th class="col-stato">Stato</th>
-            <th class="col-caricato">Caricato il</th>
-            <th class="col-azione"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (doc of documenti(); track doc.id) {
-            <tr>
-              <td class="col-documento"><app-cella-documento [documento]="doc" /></td>
-              <td class="col-tipologia"><app-cella-tipologia [tipologia]="doc.tipologia" /></td>
-              <td class="col-stato"><app-cella-stato [documento]="doc" /></td>
-              <td class="col-caricato cella-numerica">{{ doc.caricatoIl | date: 'dd/MM/yyyy' }}</td>
-              <td class="col-azione">
-                <app-cella-apri base="/archivio/privato" [documento]="doc" />
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
+      </div>
     </div>
 
-    @if (store.totale() > store.perPagina()) {
-      <ui-paginazione
-        [pagina]="store.pagina()"
-        [perPagina]="store.perPagina()"
-        [totale]="store.totale()"
-        (cambiaPagina)="store.pagina.set($event)"
-      />
+    @if (store.cartellaCorrente()?.descrizione; as descrizione) {
+      <p class="descrizione">{{ descrizione }}</p>
     }
+
+  </header>
+
+  <!-- La ricerca è larga e in cima: è il gesto con cui si comincia. -->
+  <div class="cerca">
+    <label class="ui-campo-icona cerca__campo">
+      <ui-icon name="cerca" [size]="16" />
+      <input
+        uiCampo
+        type="search"
+        [value]="store.ricerca()"
+        (input)="store.ricerca.set($any($event.target).value)"
+        placeholder="Cerca per titolo, cliente, etichetta…"
+        aria-label="Cerca nell'archivio privato"
+      />
+    </label>
+
+    <button uiBottone type="button" (click)="filtriAperti.set(!filtriAperti())">
+      <ui-icon name="filtra" [size]="15" />
+      <span>Filtri</span>
+      @if (quantiFiltri()) {
+        <span class="pastiglia">{{ quantiFiltri() }}</span>
+      }
+    </button>
   </div>
-}
+
+  <!--
+    I filtri non stanno sempre aperti: nel lavoro di tutti i giorni si cerca
+    per nome, e tre tendine ferme sotto la ricerca sono spazio tolto ai
+    documenti per un gesto che si fa una volta ogni tanto.
+  -->
+  @if (filtriAperti()) {
+    <section class="filtri" aria-label="Filtri dell'archivio">
+      <ui-select
+        class="filtri__campo"
+        [(valore)]="store.tipologia"
+        [opzioni]="tipologie"
+        campoEtichetta="etichetta"
+        campoValore="valore"
+        placeholder="Tutte le tipologie"
+        [azzerabile]="true"
+        ariaLabel="Filtra per tipologia"
+      />
+
+      <ui-select
+        class="filtri__campo"
+        [(valore)]="store.stato"
+        [opzioni]="stati"
+        campoEtichetta="etichetta"
+        campoValore="valore"
+        placeholder="Tutti gli stati"
+        [azzerabile]="true"
+        ariaLabel="Filtra per stato di elaborazione"
+      />
+
+      <ui-select
+        class="filtri__campo"
+        [(valore)]="store.etichetta"
+        [opzioni]="store.etichette()"
+        campoEtichetta="nome"
+        campoValore="nome"
+        placeholder="Tutte le etichette"
+        [azzerabile]="true"
+        ariaLabel="Filtra per etichetta"
+      />
+
+      <div class="filtri__interruttore">
+        <ui-checkbox [(valore)]="store.soloRiferimenti" inputId="solo-riferimenti" />
+        <label for="solo-riferimenti">Solo documenti di riferimento</label>
+      </div>
+
+      @if (store.filtriAttivi()) {
+        <button
+          uiBottone
+          variante="testo"
+          dimensione="piccolo"
+          type="button"
+          (click)="store.azzeraFiltri()"
+        >
+          <ui-icon name="chiudi" [size]="14" />
+          <span>Azzera</span>
+        </button>
+      }
+    </section>
+  }
+
+  @if (caricamento(); as c) {
+    <p class="servizio mono" role="status" aria-live="polite">
+      caricamento in corso · {{ c.conteggio }} file · {{ c.percentuale }}%
+    </p>
+  }
+
+  @if (store.ignorati().length; as quanti) {
+    <p class="servizio servizio--avviso" role="status">
+      <ui-icon name="informazione" [size]="15" />
+      <span>
+        {{ quanti }} file dell'archivio non {{ quanti === 1 ? 'è' : 'sono' }} di un formato che
+        sappiamo leggere e {{ quanti === 1 ? 'è stato saltato' : 'sono stati saltati' }}:
+        {{ store.ignorati().slice(0, 3).join(', ') }}{{ quanti > 3 ? '…' : '' }}
+      </span>
+      <button
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
+        type="button"
+        (click)="store.svuotaCoda()"
+      >
+        <span>Ho capito</span>
+      </button>
+    </p>
+  }
+
+  <!-- ---------- Cartelle ---------- -->
+
+  <section class="sezione" aria-label="Cartelle">
+    <!--
+      La barra del percorso: dove si è dentro l'archivio e come risalire.
+      Sta qui, accanto alle cartelle, e non in cima alla pagina: lassù le
+      briciole dicono in che schermata sei, questa dice in che cartella —
+      ed è quella che si guarda mentre si naviga.
+    -->
+    <nav class="percorso" aria-label="Percorso nell'archivio">
+      @for (tappa of percorso(); track tappa.etichetta; let ultima = $last) {
+        @if (ultima) {
+          <span class="percorso__qui" aria-current="page">
+            <ui-icon [name]="store.daSistemare() ? 'da-sistemare' : 'cartella-aperta'" [size]="15" />
+            {{ tappa.etichetta }}
+          </span>
+        } @else {
+          <a class="percorso__tappa" [routerLink]="tappa.percorso" [queryParams]="tappa.parametri ?? {}">
+            {{ tappa.etichetta }}
+          </a>
+          <span class="percorso__separatore" aria-hidden="true">›</span>
+        }
+      }
+    </nav>
+
+    <div class="schede">
+      <!--
+        «Da sistemare» è una scheda come le altre e sta per prima: è dove
+        finisce quello che l'AI non ha saputo collocare, e due minuti al
+        giorno lì tengono in ordine l'archivio. In fondo non si aprirebbe mai.
+      -->
+      @if (daSistemareVisibile()) {
+        <button
+          type="button"
+          class="scheda scheda--sistemare"
+          [class.is-scelta]="store.daSistemare()"
+          (click)="store.apriDaSistemare()"
+        >
+          <span class="scheda__icona"><ui-icon name="da-sistemare" [size]="17" /></span>
+          <span class="scheda__nome">Da sistemare</span>
+          <span class="scheda__quanti">{{ store.quantiDaSistemare() }}</span>
+        </button>
+      }
+
+      @for (cartella of sottoCartelle(); track cartella.id) {
+        <div class="scheda" [title]="cartella.descrizione ?? cartella.percorso">
+          <button type="button" class="scheda__apri" (click)="store.apri(cartella.id)">
+            <span class="scheda__icona"><ui-icon name="cartella" [size]="17" /></span>
+            <span class="scheda__nome">{{ cartella.nome }}</span>
+            @if (cartella.documentiTotali) {
+              <span class="scheda__quanti">{{ cartella.documentiTotali }}</span>
+            }
+          </button>
+          <!-- Rinomina, sposta, elimina: senza doverci entrare dentro. -->
+          <button
+            type="button"
+            class="scheda__azioni"
+            [attr.aria-label]="'Azioni su ' + cartella.nome"
+            (click)="apriAzioni({ cartella, evento: $event })"
+          >
+            <ui-icon name="altre-azioni" [size]="15" />
+          </button>
+        </div>
+      }
+
+      <button type="button" class="scheda scheda--aggiungi" (click)="apriModuloCartella()">
+        <span class="scheda__icona"><ui-icon name="aggiungi" [size]="17" /></span>
+        <span class="scheda__nome">Nuova cartella</span>
+      </button>
+    </div>
+
+    <ui-menu-azioni #menuCartella [voci]="vociCartella" />
+
+    <!-- La cartella nuova: nasce dentro quella aperta. -->
+    @if (creando()) {
+      <form class="pannello" (submit)="$event.preventDefault(); creaCartella()">
+        <label class="pannello__campo">
+          <span class="pannello__nome">Nuova cartella</span>
+          <input
+            uiCampo
+            type="text"
+            [value]="nuovoNome()"
+            (input)="nuovoNome.set($any($event.target).value)"
+            [placeholder]="
+              store.cartellaCorrente() ? 'Dentro ' + store.cartellaCorrente()!.nome : 'In cima'
+            "
+            aria-label="Nome della nuova cartella"
+            #campoNuovaCartella
+          />
+        </label>
+        @if (avvisoSimile(); as avviso) {
+          <p class="pannello__avviso">
+            {{ avviso }}
+            <button
+              uiBottone
+              variante="testo"
+              dimensione="piccolo"
+              type="button"
+              (click)="creaCartella(true)"
+            >
+              <span>Crea comunque</span>
+            </button>
+          </p>
+        }
+        <div class="pannello__azioni">
+          <button uiBottone variante="primario" dimensione="piccolo" type="submit">Crea</button>
+          <button
+            uiBottone
+            variante="testo"
+            dimensione="piccolo"
+            type="button"
+            (click)="annullaModuloCartella()"
+          >
+            Annulla
+          </button>
+        </div>
+      </form>
+    }
+
+    <!--
+      Rinomina, sposta ed elimina valgono per qualunque cartella dell'albero,
+      non solo per quella in cui si è entrati. Il modulo compare qui sotto e
+      non in una finestra: si vede la cartella mentre la si cambia.
+    -->
+    @if (cartellaInAzione(); as cartella) {
+      @switch (azione()) {
+        @case ('rinomina') {
+          <form class="pannello" (submit)="$event.preventDefault(); confermaRinomina()">
+            <label class="pannello__campo">
+              <span class="pannello__nome">Rinomina «{{ cartella.nome }}»</span>
+              <input
+                uiCampo
+                type="text"
+                [value]="nomeInModifica()"
+                (input)="nomeInModifica.set($any($event.target).value)"
+                aria-label="Nuovo nome della cartella"
+              />
+            </label>
+            <div class="pannello__azioni">
+              <button uiBottone variante="primario" dimensione="piccolo" type="submit">
+                Salva
+              </button>
+              <button
+                uiBottone
+                variante="testo"
+                dimensione="piccolo"
+                type="button"
+                (click)="chiudiAzione()"
+              >
+                Annulla
+              </button>
+            </div>
+          </form>
+        }
+        @case ('sposta') {
+          <div class="pannello">
+            <!--
+              Non un <label>: `ui-select` non è un controllo nativo e
+              avvolgerlo non lo aggancerebbe comunque. Il nome accessibile
+              glielo dà `ariaLabel`, come nel resto dell'applicazione.
+            -->
+            <div class="pannello__campo">
+              <span class="pannello__nome">Sposta «{{ cartella.nome }}» in</span>
+              <ui-select
+                [(valore)]="destinazione"
+                [opzioni]="destinazioni()"
+                campoEtichetta="percorso"
+                campoValore="id"
+                placeholder="Scegli la destinazione"
+                ariaLabel="Cartella di destinazione"
+              />
+            </div>
+            <p class="pannello__avviso">
+              I documenti restano dentro la cartella: si sposta il ramo, non il
+              contenuto.
+            </p>
+            <div class="pannello__azioni">
+              <button
+                uiBottone
+                variante="primario"
+                dimensione="piccolo"
+                type="button"
+                [disabled]="destinazione() === undefined"
+                (click)="confermaSpostamento()"
+              >
+                Sposta
+              </button>
+              <button
+                uiBottone
+                variante="testo"
+                dimensione="piccolo"
+                type="button"
+                (click)="chiudiAzione()"
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        }
+        @case ('elimina') {
+          <div class="pannello">
+            <span class="pannello__nome">
+              Elimina «{{ cartella.nome }}»: e i {{ cartella.documentiTotali }} documenti che
+              contiene?
+            </span>
+            <div class="pannello__azioni">
+              <button
+                uiBottone
+                variante="primario"
+                dimensione="piccolo"
+                type="button"
+                (click)="eliminaCartella('da-sistemare')"
+              >
+                Mandali in «Da sistemare»
+              </button>
+              @if (cartella.parentId) {
+                <button
+                  uiBottone
+                  variante="secondario"
+                  dimensione="piccolo"
+                  type="button"
+                  (click)="eliminaCartella('al-padre')"
+                >
+                  Spostali nella cartella sopra
+                </button>
+              }
+              <button
+                uiBottone
+                variante="testo"
+                dimensione="piccolo"
+                type="button"
+                (click)="chiudiAzione()"
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        }
+      }
+    }
+  </section>
+
+  <!-- ---------- Documenti ---------- -->
+
+  <section class="sezione sezione--documenti" aria-label="Documenti">
+    <div class="sezione__testa">
+      <h2 class="sezione__nome">Documenti</h2>
+
+      <!-- Elenco o griglia, come in un gestore di file. -->
+      <div class="vista" role="group" aria-label="Modo di visualizzazione">
+        <button
+          type="button"
+          class="vista__scelta"
+          [class.is-scelta]="modo() === 'elenco'"
+          aria-label="Vedi come elenco"
+          (click)="modo.set('elenco')"
+        >
+          <ui-icon name="elenco" [size]="15" />
+        </button>
+        <button
+          type="button"
+          class="vista__scelta"
+          [class.is-scelta]="modo() === 'griglia'"
+          aria-label="Vedi come griglia"
+          (click)="modo.set('griglia')"
+        >
+          <ui-icon name="menu" [size]="15" />
+        </button>
+      </div>
+    </div>
+
+    @if (store.errore()) {
+      <ui-stato-vuoto
+        icona="errore"
+        titolo="Non siamo riusciti a caricare l'archivio"
+        descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+      >
+        <button uiBottone variante="primario" type="button" (click)="store.riprova()">
+          <ui-icon name="riprova" [size]="15" />
+          <span>Riprova</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else if (store.inCaricamento() && !documenti().length) {
+      <div class="scheletri">
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <ui-scheletro [numeroRighe]="1" />
+        }
+      </div>
+    } @else if (!documenti().length) {
+      <ui-stato-vuoto
+        [icona]="store.daSistemare() ? 'pronto' : 'archivio-privato'"
+        [titolo]="statoVuoto().titolo"
+        [descrizione]="statoVuoto().descrizione"
+      >
+        @if (store.filtriAttivi()) {
+          <button uiBottone variante="primario" type="button" (click)="store.azzeraFiltri()">
+            <ui-icon name="chiudi" [size]="15" />
+            <span>Azzera i filtri</span>
+          </button>
+        } @else {
+          <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
+            <ui-icon name="carica" [size]="15" />
+            <span>Carica documenti</span>
+          </button>
+        }
+      </ui-stato-vuoto>
+    } @else {
+      <div class="documenti" [class.is-griglia]="modo() === 'griglia'">
+        @for (doc of documenti(); track doc.id) {
+          <a class="doc" [routerLink]="['/archivio/privato', doc.id]">
+            <span class="doc__icona">
+              <ui-icon name="documento" [size]="modo() === 'griglia' ? 24 : 17" />
+            </span>
+
+            <span class="doc__corpo">
+              <span class="doc__titolo" [title]="doc.titolo">{{ doc.titolo }}</span>
+              <span class="doc__sotto">
+                @if (doc.cliente) {
+                  <span class="doc__cliente">{{ doc.cliente.nome }}</span>
+                } @else if (doc.riferimentoCliente) {
+                  <span class="doc__cliente">{{ doc.riferimentoCliente }}</span>
+                }
+                @if (mostraPercorso() && doc.percorso) {
+                  <span class="doc__dove" [title]="doc.percorso">
+                    {{ ultimoSegmento(doc.percorso) }}
+                  </span>
+                }
+                @for (e of doc.etichette.slice(0, 2); track e) {
+                  <span class="doc__etichetta">{{ e }}</span>
+                }
+              </span>
+            </span>
+
+            <span class="doc__coda">
+              @if (doc.documentoDiRiferimento) {
+                <ui-icon
+                  name="riferimenti"
+                  [size]="13"
+                  etichetta="Usato come documento di riferimento"
+                />
+              }
+              <app-cella-stato [documento]="doc" />
+              <span class="doc__data mono">{{ doc.caricatoIl | date: 'dd/MM/yy' }}</span>
+            </span>
+          </a>
+        }
+      </div>
+
+      @if (store.totale() > store.perPagina()) {
+        <ui-paginazione
+          [pagina]="store.pagina()"
+          [perPagina]="store.perPagina()"
+          [totale]="store.totale()"
+          (cambiaPagina)="store.pagina.set($event)"
+        />
+      }
+    }
+  </section>
+</ui-zona-caricamento>

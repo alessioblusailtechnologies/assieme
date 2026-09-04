@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 
 import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
+import { registraRotteCartelle } from './cartelle/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/rotte.js';
@@ -86,6 +87,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
+  registraRotteCartelle(app);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRotteTemplate(app, opzioni.template);
   registraRotteTabelle(app, opzioni.tabelle);

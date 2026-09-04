@@ -17,6 +17,10 @@ export type Permesso =
   | 'template.gestisci'
   | 'utenti.gestisci'
   | 'modello-ai.configura'
+  /* Fase 10: correggere la convenzione dell'archivio. Leggerla è di tutti —
+     sapere come il sistema si orienta serve a chi lo usa, non solo a chi lo
+     amministra — ma cambiarla vale per l'agenzia intera. */
+  | 'archivio-privato.organizza'
   | 'mcp.credenziali'
   | 'agenti.crea';
 
@@ -79,6 +83,7 @@ const PERMESSI_AMMINISTRATORE: Permesso[] = [
   'template.gestisci',
   'utenti.gestisci',
   'modello-ai.configura',
+  'archivio-privato.organizza',
   'mcp.credenziali',
 ];
 

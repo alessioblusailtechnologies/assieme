@@ -5,6 +5,13 @@ import { RouterLink } from '@angular/router';
 export interface VoceBriciola {
   etichetta: string;
   percorso?: string;
+  /**
+   * Parametri di ricerca della tappa. Servono dove il "dove sei" non è la
+   * rotta ma uno stato dentro la rotta — l'Archivio Privato è una schermata
+   * sola e la cartella aperta vive nell'URL — e senza di questi il
+   * collegamento porterebbe alla stessa pagina senza cambiare niente.
+   */
+  parametri?: Record<string, string | null>;
 }
 
 /**
@@ -23,7 +30,9 @@ export interface VoceBriciola {
         @for (voce of voci(); track voce.etichetta; let ultima = $last) {
           <li>
             @if (voce.percorso && !ultima) {
-              <a [routerLink]="voce.percorso">{{ voce.etichetta }}</a>
+              <a [routerLink]="voce.percorso" [queryParams]="voce.parametri ?? {}">{{
+                voce.etichetta
+              }}</a>
             } @else {
               <span [attr.aria-current]="ultima ? 'page' : null">{{ voce.etichetta }}</span>
             }

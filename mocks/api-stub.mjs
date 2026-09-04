@@ -39,9 +39,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
+  documentiPrivati,
   gestisci as gestisciArchivioPrivato,
   trovaDocumento as trovaDocumentoPrivato,
 } from './archivio-privato.mjs';
+import { gestisci as gestisciCartelle } from './cartelle.mjs';
 import { gestisci as gestisciAgenti } from './agenti.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
 import { gestisci as gestisciImpostazioni } from './impostazioni.mjs';
@@ -383,6 +385,13 @@ const server = createServer(async (req, res) => {
      etichette. Sta in un modulo a sé perché è la prima parte del mock con una
      macchina a stati e un ciclo di vita. */
   if (await gestisciArchivioPrivato(req, res, url, { inviaJson, leggiCorpo, corrispondeTesto })) {
+    return;
+  }
+
+  /* Fase 10: l'albero delle cartelle, l'anagrafica clienti e la convenzione
+     osservata. Senza queste rotte la demo mostrerebbe un archivio senza
+     struttura, cioè racconterebbe un prodotto diverso da quello che è. */
+  if (await gestisciCartelle(req, res, url, { inviaJson, leggiCorpo }, documentiPrivati())) {
     return;
   }
 

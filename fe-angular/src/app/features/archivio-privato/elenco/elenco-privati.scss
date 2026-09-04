@@ -1,79 +1,132 @@
 /*
- * Colonna flessibile alta almeno quanto la finestra: testata, zona di
- * caricamento e filtri prendono lo spazio che serve loro, la griglia si
- * prende il resto.
+ * Archivio Privato: un gestore di file.
  *
- * A differenza dell'archivio pubblico, qui la griglia non scorre al proprio
- * interno: sopra ha la zona di caricamento, che è il gesto principale della
- * schermata e non si comprime, e su un portatile quello che avanzava erano
- * quattro righe con una barra di scorrimento tutta loro. Così, invece, la
- * griglia cresce con le righe e a scorrere è l'area di lavoro: si arriva in
- * fondo col gesto di sempre, e le intestazioni restano ferme perché la
- * tabella è sticky rispetto a chi scorre.
+ * La schermata è una colonna di sezioni — dove sei, la ricerca, le cartelle,
+ * i documenti — e non più una testata con una tabella sotto. Niente riquadro
+ * di caricamento fisso: tutta l'area è zona di rilascio e il tratteggio
+ * compare solo mentre si trascina.
+ *
+ * Non c'è nessuna tabella, e con lei se ne vanno i problemi che aveva: le
+ * colonne che non cedono, il pulsante che finisce fuori, le larghezze da
+ * bilanciare a ogni misura di schermo.
  */
+
 :host {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-  /* Minimo, non fisso: un elenco vuoto riempie comunque la finestra, uno
-     lungo la supera e la fa scorrere. */
+  display: block;
   min-height: 100%;
   padding: var(--sp-6);
 }
 
-/* ---------- Testata ---------- */
+ui-zona-caricamento {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  min-height: calc(100vh - var(--topbar-h) - var(--sp-6) * 2);
+}
+
+/* ---------- Dove sei ---------- */
 
 .testata {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.testata__riga {
+  display: flex;
+  align-items: baseline;
   flex-wrap: wrap;
   gap: var(--sp-3);
-  flex: none;
 }
 
-.testata__conteggio {
-  margin-left: auto;
-  text-align: right;
+.titolo {
+  margin: 0;
+  font-size: var(--t-page-title);
+  font-weight: 400;
+  letter-spacing: var(--ls-tight);
+  color: var(--c-text);
 }
 
-.testata__conteggio.is-esaurimento {
-  color: var(--c-warn);
-}
-
-/* ---------- Caricamento ---------- */
-
-ui-zona-caricamento {
-  flex: none;
-}
-
-/* Una riga di servizio, non una card: sta il tempo dell'upload e sparisce. */
-.caricamento {
-  flex: none;
-  margin-top: calc(-1 * var(--sp-2));
+.conteggio {
   color: var(--c-text-3);
 }
 
-/* ---------- Filtri ---------- */
+.conteggio.is-esaurimento {
+  color: var(--c-warn);
+}
+
+/* Le azioni vanno a destra e restano lì: l'azione primaria della schermata
+   si cerca sempre nello stesso posto. */
+.testata__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+.descrizione {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+.riga-modulo,
+.conferma {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--t-sm);
+}
+
+.conferma {
+  padding: var(--sp-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+/* ---------- Ricerca e filtri ---------- */
+
+.cerca {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.cerca__campo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cerca__campo input {
+  width: 100%;
+}
+
+/* Quanti filtri sono attivi, senza doverli aprire per scoprirlo. */
+.pastiglia {
+  min-width: 1.125rem;
+  padding: 0 var(--sp-1);
+  border-radius: var(--radius-pieno);
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
 
 .filtri {
   display: flex;
-  border-radius: var(--radius);
-  flex-wrap: wrap;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--sp-3);
   padding: var(--sp-4);
-  background: var(--c-surface);
   border: 1px solid var(--c-line);
-  flex: none;
-}
-
-.filtri__ricerca {
-  flex: 1 1 240px;
-  min-width: 200px;
-}
-
-.filtri__ricerca input {
-  width: 100%;
+  border-radius: var(--radius);
+  background: var(--c-surface);
 }
 
 .filtri__campo {
@@ -84,8 +137,8 @@ ui-zona-caricamento {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  font-size: var(--t-sm);
   color: var(--c-text-2);
+  font-size: var(--t-sm);
 }
 
 .filtri__interruttore label {
@@ -93,19 +146,516 @@ ui-zona-caricamento {
   user-select: none;
 }
 
-/* ---------- Scheletri e stati ---------- */
+/* ---------- Righe di servizio ---------- */
+
+/* Stanno il tempo che serve e spariscono: non sono pannelli. */
+.servizio {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+}
+
+.servizio--avviso {
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+}
+
+.servizio--avviso span {
+  flex: 1;
+  min-width: 12rem;
+}
+
+/* ---------- Sezioni ---------- */
+
+.sezione {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.sezione--documenti {
+  flex: 1;
+  min-height: 0;
+}
+
+.sezione__testa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.sezione__nome {
+  margin: 0;
+  color: var(--c-text-3);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  font-weight: 400;
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+}
+
+/* ---------- La barra del percorso ---------- */
+
+/*
+ * Dove si è dentro l'archivio, e come risalire. Sta accanto alle cartelle e
+ * non in cima alla pagina: lassù le briciole dicono in che schermata sei,
+ * questa dice in che cartella, ed è quella che si guarda mentre si naviga.
+ *
+ * Le tappe sono collegamenti veri con i loro parametri: il clic centrale
+ * apre in una scheda nuova e il tasto Indietro risale l'albero, perché dove
+ * si sta guardando vive nella querystring.
+ */
+.percorso {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--t-body);
+}
+
+.percorso__tappa {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  color: var(--c-text-3);
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-brand);
+}
+
+.percorso__tappa:hover {
+  background: var(--c-surface-tint);
+  color: var(--c-text);
+  text-decoration: none;
+}
+
+.percorso__separatore {
+  color: var(--c-text-ghost);
+}
+
+/* Dove si è: non è un collegamento e si vede che non lo è. */
+.percorso__qui {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+.percorso__qui ui-icon {
+  color: var(--c-text-3);
+}
+
+/* ---------- Le cartelle: schede in griglia ---------- */
+
+/*
+ * Una griglia che si riempie da sola: le cartelle di un livello sono poche,
+ * e a colonne fisse su uno schermo largo resterebbero tre schede e mezzo
+ * metro di vuoto.
+ */
+.schede {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: var(--sp-3);
+}
+
+.scheda {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: var(--c-text);
+  font: inherit;
+  font-size: var(--t-body);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-brand),
+    border-color var(--dur-fast) var(--ease-brand);
+}
+
+.scheda:hover {
+  border-color: var(--c-line-dark);
+  background: var(--c-surface-tint);
+}
+
+/* Il corpo della scheda apre la cartella; i tre puntini fanno altro. Sono
+   due gesti diversi e non devono contendersi lo stesso clic. */
+.scheda__apri {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-2) var(--sp-3) var(--sp-4);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.scheda__azioni {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  margin-right: var(--sp-2);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--c-text-ghost);
+  cursor: pointer;
+}
+
+.scheda__azioni:hover {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+/* Le schede senza azioni tengono il loro respiro a destra. */
+.scheda--sistemare,
+.scheda--aggiungi {
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.scheda__icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  color: var(--c-text-2);
+}
+
+.scheda__nome {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scheda__quanti {
+  flex: none;
+  color: var(--c-text-mute);
+  font-size: var(--t-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * «Da sistemare» è l'unica scheda che chiede qualcosa: si distingue dal
+ * colore, non da una posizione speciale. Quando è vuota non compare affatto,
+ * ed è la condizione a cui si punta.
+ */
+.scheda--sistemare .scheda__icona {
+  background: var(--c-warn-soft);
+  color: var(--c-warn);
+}
+
+.scheda--sistemare .scheda__quanti {
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  background: var(--c-warn-soft);
+  color: var(--c-warn);
+  font-weight: 600;
+}
+
+.scheda.is-scelta {
+  border-color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
+/* La scheda che aggiunge è la stessa forma col segno del provvisorio. */
+.scheda--aggiungi {
+  border-style: dashed;
+  background: none;
+  color: var(--c-text-3);
+}
+
+.scheda--aggiungi .scheda__icona {
+  background: none;
+  color: var(--c-text-3);
+}
+
+/* ---------- Il pannello delle azioni sulle cartelle ---------- */
+
+/*
+ * Rinomina, sposta ed elimina compaiono **sotto l'albero**, non in una
+ * finestra modale: così si continua a vedere la cartella che si sta
+ * cambiando e dove sta, che è metà dell'informazione quando si sposta un
+ * ramo.
+ */
+.pannello {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.pannello__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.pannello__campo input,
+.pannello__campo ui-select {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.pannello__nome {
+  color: var(--c-text);
+  font-size: var(--t-body);
+}
+
+.pannello__avviso {
+  margin: 0;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+  line-height: 1.5;
+}
+
+.pannello__azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* ---------- L'interruttore elenco/griglia ---------- */
+
+.vista {
+  display: flex;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+}
+
+.vista__scelta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.vista__scelta:hover {
+  color: var(--c-text);
+}
+
+.vista__scelta.is-scelta {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+/* ---------- I documenti ---------- */
+
+.documenti {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  overflow: hidden;
+}
+
+.doc {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--c-line-soft);
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease-brand);
+}
+
+.doc:last-child {
+  border-bottom: 0;
+}
+
+.doc:hover {
+  background: var(--c-surface-tint);
+}
+
+.doc__icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  color: var(--c-text-3);
+}
+
+.doc__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+/*
+ * Il titolo di un documento privato è spesso il nome del file, e il nome del
+ * file è quasi sempre brutto: la riga sotto — il cliente — è ciò che fa
+ * riconoscere davvero il documento. Il titolo resta primo perché è quello
+ * che si cerca, ma il cliente non è un dettaglio in grigio chiaro.
+ */
+.doc__titolo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text);
+  font-size: var(--t-body);
+}
+
+.doc__sotto {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--t-xs);
+}
+
+.doc__cliente {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--c-text-2);
+}
+
+.doc__dove {
+  flex: none;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  background: var(--c-page-alt);
+  color: var(--c-text-3);
+}
+
+.doc__etichetta {
+  flex: none;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  border: 1px solid var(--c-line);
+  color: var(--c-text-3);
+}
+
+.doc__coda {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.doc__coda > ui-icon {
+  color: var(--c-prov-riferimento);
+}
+
+.doc__data {
+  color: var(--c-text-mute);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- I documenti in griglia ---------- */
+
+/*
+ * L'altra vista del gestore di file. Utile a colpo d'occhio su una cartella
+ * di poche decine; l'elenco resta il modo predefinito perché su un archivio
+ * vero è il cliente a distinguere le righe, e in una piastrella il cliente
+ * non ci sta.
+ */
+.documenti.is-griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 0;
+  background: none;
+  overflow: visible;
+}
+
+.is-griglia .doc {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.is-griglia .doc__icona {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.is-griglia .doc__corpo {
+  width: 100%;
+}
+
+.is-griglia .doc__titolo {
+  white-space: normal;
+  /* Due righe e poi basta: le piastrelle devono restare alte uguali. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.is-griglia .doc__coda {
+  width: 100%;
+  justify-content: space-between;
+}
+
+/* ---------- Attese e vuoti ---------- */
 
 .scheletri {
   display: flex;
-  border-radius: var(--radius);
   flex-direction: column;
   gap: var(--sp-4);
   padding: var(--sp-4);
-  background: var(--c-surface);
   border: 1px solid var(--c-line);
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--c-surface);
 }
 
 ui-stato-vuoto {
@@ -114,58 +664,16 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* ---------- Griglia e paginazione ---------- */
-
-.risultati {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-/* Cresce col contenuto: nessun `min-height: 0`, altrimenti il blocco si
-   stringerebbe sotto la tabella e la lascerebbe uscire dal bordo. */
-.griglia {
-  flex: 1;
-}
-
-/* Sopra i 900px la tabella ci sta in larghezza e il contenitore può restare
-   aperto: lo scorrimento è dell'area di lavoro e le intestazioni si
-   appiccicano al suo bordo superiore. Sotto vale la regola globale, che
-   fa scorrere le colonne in orizzontale. */
-@media (min-width: 901px) {
-  .griglia {
-    overflow: visible;
-  }
-}
-
-.cella-numerica {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.col-tipologia {
-  width: 150px;
-}
-
-.col-stato {
-  width: 160px;
-}
-
-.col-caricato {
-  width: 130px;
-}
-
-.col-azione {
-  width: 110px;
-}
-
-.risultati ui-paginazione {
-  flex: none;
-}
+/* ---------- Schermi stretti ---------- */
 
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
+  }
+
+  .testata__azioni {
+    margin-left: 0;
+    width: 100%;
   }
 
   .filtri {
@@ -173,14 +681,19 @@ ui-stato-vuoto {
     align-items: stretch;
   }
 
-  /* In colonna la base flessibile diventa un'altezza: il campo di ricerca
-     torna a misurarsi sul contenuto. */
-  .filtri__ricerca {
-    flex: none;
-    min-width: 0;
-  }
-
   .filtri__campo {
     width: 100%;
+  }
+
+  /* Su schermo stretto la coda della riga scende sotto invece di stringere
+     il titolo fino a renderlo illeggibile. */
+  .doc {
+    flex-wrap: wrap;
+  }
+
+  .doc__coda {
+    width: 100%;
+    padding-left: calc(2rem + var(--sp-3));
+    justify-content: flex-start;
   }
 }

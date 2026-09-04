@@ -13,6 +13,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { clientePerId, filtraPerCartella, percorsoDelDocumento } from './cartelle.mjs';
 import { generaPdf } from './pdf.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +39,11 @@ const RAMI = JSON.parse(readFileSync(join(QUI, 'data', 'rami.json'), 'utf8'));
 
 const DOCUMENTI = JSON.parse(readFileSync(join(QUI, 'data', 'documenti-privati.json'), 'utf8'));
 
+/* Fase 10: cartelle e clienti stanno in un modulo a sé ma lavorano su queste
+   stesse righe — la cartella di un documento è un suo campo, non una
+   collezione parallela da tenere allineata a mano. */
+export const documentiPrivati = () => DOCUMENTI;
+
 /**
  * Forma con cui il documento esce dall'API.
  *
@@ -58,6 +64,10 @@ function componi(d) {
     fileUrl: `/api/documenti-privati/${d.id}/file`,
     compagnia: COMPAGNIE.find((c) => c.id === compagniaId),
     ramo: RAMI.find((r) => r.id === ramoId),
+    /* Fase 10: il percorso e il cliente escono idratati come compagnia e
+       ramo — il front-end mostra nomi, non identificativi. */
+    ...(d.cartellaId && { percorso: percorsoDelDocumento(d.cartellaId) }),
+    ...(d.clienteId && clientePerId(d.clienteId) && { cliente: clientePerId(d.clienteId) }),
   };
 }
 
@@ -218,7 +228,8 @@ function elenco(url, corrispondeTesto) {
   const p = url.searchParams;
   const vero = (n) => p.get(n) === 'true';
 
-  let risultati = DOCUMENTI.filter((d) => {
+  // Fase 10: prima dove si sta guardando, poi i filtri veri e propri.
+  let risultati = filtraPerCartella(DOCUMENTI, url).filter((d) => {
     if (p.get('tipologia') && d.tipologia !== p.get('tipologia')) return false;
     if (p.get('stato') && d.stato !== p.get('stato')) return false;
     if (p.get('etichetta') && !d.etichette.includes(p.get('etichetta'))) return false;

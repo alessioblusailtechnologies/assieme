@@ -24,6 +24,11 @@ const VOCI: VoceSezione[] = [
     spiega: 'Regole scritte e documenti di riferimento',
   },
   {
+    percorso: 'archivio',
+    etichetta: 'Archivio',
+    spiega: 'Come sono organizzate le cartelle, per come le vede VELIA',
+  },
+  {
     percorso: 'template',
     etichetta: 'Template di output',
     spiega: 'Documenti generati con l’identità dell’agenzia',

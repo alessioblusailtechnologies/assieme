@@ -13,7 +13,9 @@
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
-    "visibilita": "tenant"
+    "visibilita": "tenant",
+    "cartellaId": "car-004",
+    "clienteId": "cli-001"
   },
   {
     "id": "doc-priv-002",
@@ -29,7 +31,9 @@
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
-    "visibilita": "tenant"
+    "visibilita": "tenant",
+    "cartellaId": "car-005",
+    "clienteId": "cli-001"
   },
   {
     "id": "doc-priv-003",
@@ -43,7 +47,10 @@
     "etichette": ["convenzioni"],
     "compagniaId": "cmp-generali",
     "documentoDiRiferimento": true,
-    "visibilita": "tenant"
+    "visibilita": "tenant",
+    "cartellaId": "car-006",
+    "clienteId": "cli-002",
+    "collocazioneDaConfermare": true
   },
   {
     "id": "doc-priv-004",
@@ -57,7 +64,8 @@
     "etichette": ["prassi interna"],
     "ramoId": "ram-auto",
     "documentoDiRiferimento": true,
-    "visibilita": "tenant"
+    "visibilita": "tenant",
+    "cartellaId": "car-011"
   },
   {
     "id": "doc-priv-005",
@@ -73,7 +81,8 @@
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
-    "visibilita": "tenant"
+    "visibilita": "tenant",
+    "cartellaId": "car-010"
   },
   {
     "id": "doc-priv-006",

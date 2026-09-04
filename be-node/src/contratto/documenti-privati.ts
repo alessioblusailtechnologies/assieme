@@ -33,6 +33,17 @@ export interface DocumentoPrivato {
   classificazioneDaConfermare?: boolean;
   documentoDiRiferimento: boolean;
   visibilita: 'tenant' | 'personale';
+  /* Fase 10 — dove sta e di chi è. Assenti = «Da sistemare», che è una
+     condizione normale: il documento è pronto e referenziabile lo stesso. */
+  cartellaId?: string;
+  /** Il percorso leggibile dalla radice: quello che l'utente vede e pronuncia. */
+  percorso?: string;
+  cliente?: { id: string; nome: string };
+  /** Vero finché la collocazione è una proposta: uno spostamento a mano la fissa. */
+  collocazioneDaConfermare?: boolean;
+  numeroPolizza?: string;
+  decorrenza?: string;
+  scadenza?: string;
 }
 
 export interface PaginaDocumentiPrivati {
@@ -59,6 +70,12 @@ export interface SpazioTenant {
 /** Esito del caricamento: i documenti creati, già in coda. */
 export interface EsitoCaricamento {
   creati: DocumentoPrivato[];
+  /**
+   * I file di uno zip che non sappiamo leggere (Fase 10). Solo lì: un lotto
+   * normale resta atomico e risponde 415, ma un archivio d'agenzia contiene
+   * sempre un `.doc` del 2009, e non è un motivo per rifiutare l'importazione.
+   */
+  ignorati?: string[];
 }
 
 /**
@@ -78,6 +95,14 @@ export const schemaFiltriDocumentiPrivati = z.object({
   stato: z.enum(STATI_ELABORAZIONE).optional(),
   etichetta: z.string().optional(),
   soloRiferimenti: booleanoQuery,
+  /* Fase 10. `cartellaId` da solo mostra anche il sottoalbero (è quello che
+     ci si aspetta cliccando una cartella nell'albero); `soloQui` la
+     restringe alla cartella esatta. `daSistemare` è il non-collocato, e non
+     si combina con `cartellaId`: sono due viste diverse. */
+  cartellaId: z.string().uuid().optional(),
+  soloQui: booleanoQuery,
+  daSistemare: booleanoQuery,
+  clienteId: z.string().uuid().optional(),
   pagina: z.coerce.number().int().min(1).default(1),
   perPagina: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -105,6 +130,11 @@ export const schemaModificheDocumento = z
     ramoId: z.string().min(1).nullable().optional(),
     riferimentoCliente: z.string().trim().max(200).nullable().optional(),
     etichette: z.array(etichetta).max(30).optional(),
+    /* Fase 10. Spostare a mano è definitivo: `collocazioneDaConfermare` si
+       spegne e nessun ricalcolo rimette il documento in discussione.
+       `null` su `cartellaId` lo rimanda in «Da sistemare». */
+    cartellaId: z.string().uuid().nullable().optional(),
+    clienteId: z.string().uuid().nullable().optional(),
   })
   .strict();
 

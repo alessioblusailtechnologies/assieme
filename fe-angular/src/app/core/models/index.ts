@@ -14,6 +14,7 @@
 export * from './comune';
 export * from './utente';
 export * from './documento';
+export * from './cartella';
 export * from './segnalazione';
 export * from './citazione';
 export * from './conversazione';

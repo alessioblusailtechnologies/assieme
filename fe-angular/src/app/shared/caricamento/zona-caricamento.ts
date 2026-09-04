@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Bottone } from '@shared/ui/bottone/bottone';
 
 import { Icona } from '@shared/ui/icona/icona';
@@ -28,20 +36,39 @@ import { Icona } from '@shared/ui/icona/icona';
       hidden
     />
 
-    <div class="zona" [class.is-sopra]="trascinamentoSopra()">
-      <ui-icon name="carica" [size]="22" />
+    @if (aspetto() === 'riquadro') {
+      <div class="zona" [class.is-sopra]="trascinamentoSopra()">
+        <ui-icon name="carica" [size]="22" />
 
-      <p class="invito">
-        Trascina qui i documenti
-        <span class="oppure">oppure</span>
-      </p>
+        <p class="invito">
+          Trascina qui i documenti
+          <span class="oppure">oppure</span>
+        </p>
 
-      <button uiBottone type="button" (click)="campo.click()">
-        <span>Scegli dal computer</span>
-      </button>
+        <button uiBottone type="button" (click)="campo.click()">
+          <span>Scegli dal computer</span>
+        </button>
 
-      <p class="mono limiti">{{ descrizioneLimiti() }}</p>
-    </div>
+        <p class="mono limiti">{{ descrizioneLimiti() }}</p>
+      </div>
+    } @else {
+      <!--
+        Trasparente: non occupa niente e non si vede, ma tutto ciò che
+        contiene è area di rilascio. Il riquadro tratteggiato compare solo
+        mentre si trascina qualcosa sopra — quando serve a dire «lascia pure
+        qui», e non tutto il resto del tempo.
+      -->
+      <ng-content />
+      @if (trascinamentoSopra()) {
+        <div class="velo">
+          <div class="velo__targa">
+            <ui-icon name="carica" [size]="22" />
+            <p>Lascia qui i documenti</p>
+            <p class="mono limiti">{{ descrizioneLimiti() }}</p>
+          </div>
+        </div>
+      }
+    }
   `,
   /*
    * Il trascinamento si ascolta sull'host e non sul riquadro interno: chi
@@ -97,9 +124,47 @@ import { Icona } from '@shared/ui/icona/icona';
     .limiti {
       margin-top: var(--sp-1);
     }
+
+    /* Il velo dell'aspetto trasparente: copre ciò che si sta trascinando
+       sopra, senza spostare niente nel flusso. */
+    :host:has(> .velo) {
+      position: relative;
+    }
+
+    .velo {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed var(--c-accent);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--c-page) 88%, transparent);
+      pointer-events: none;
+    }
+
+    .velo__targa {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-2);
+      padding: var(--sp-6);
+      color: var(--c-text-2);
+      text-align: center;
+    }
   `,
 })
 export class ZonaCaricamento {
+  /**
+   * Come si presenta. `riquadro` è il rettangolo tratteggiato di sempre;
+   * `trasparente` non si vede e non occupa spazio, avvolge il contenuto e lo
+   * rende area di rilascio — per le schermate dove caricare è un'azione fra
+   * le altre e non il gesto principale, e un riquadro fisso ruberebbe lo
+   * spazio a ciò che si è venuti a fare.
+   */
+  readonly aspetto = input<'riquadro' | 'trasparente'>('riquadro');
+
   /** Estensioni ammesse, per il filtro della finestra di scelta. */
   readonly formati = input('.pdf,.docx,.doc,.png,.jpg,.jpeg');
 
@@ -112,6 +177,13 @@ export class ZonaCaricamento {
   readonly scelti = output<File[]>();
 
   protected readonly trascinamentoSopra = signal(false);
+
+  private readonly campo = viewChild<ElementRef<HTMLInputElement>>('campo');
+
+  /** Apre la finestra di scelta file: la chiama chi ha il pulsante fuori di qui. */
+  apriFinestra(): void {
+    this.campo()?.nativeElement.click();
+  }
 
   protected descrizioneLimiti(): string {
     const mb = this.limiteFileByte();
