@@ -89,6 +89,19 @@ describe('riconoscimento dei formati', () => {
     expect(riconosciFormato(file('archivio.zip', 'PK'))).toBeUndefined();
   });
 
+  it('un’immagine incollata in chat entra col nome che le dà il composer', () => {
+    /* Un PNG 1×1 valido: qui conta la firma, non il contenuto. */
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    );
+    /* Il nome ha un punto dentro (l'ora): l'estensione è l'ultima, non la prima. */
+    expect(riconosciFormato(file('Immagine incollata 9.05.png', png, 'image/png'))).toBe('immagine');
+    expect(estensionePerFormato('immagine', 'Immagine incollata 9.05.png')).toBe('.png');
+    /* Un finto PNG non entra: lo dice la firma, non il nome. */
+    expect(riconosciFormato(file('Immagine incollata 9.05.png', 'GIF89a', 'image/png'))).toBeUndefined();
+  });
+
   it('il mimetype vale quando l’estensione manca, e l’estensione decide dove si conserva', () => {
     expect(riconosciFormato(file('appunti', 'due righe', 'text/markdown'))).toBe('markdown');
     expect(estensionePerFormato('markdown', 'note.markdown')).toBe('.markdown');

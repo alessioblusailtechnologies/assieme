@@ -18,6 +18,7 @@ import { NotificheStore } from '@core/notifiche/notifiche-store';
 import { ESTENSIONI_DOCUMENTO, Id, ModoAllegato, RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { ErroreMicrofono, Registratore } from './registratore';
+import { immaginiIncollate } from './appunti';
 import {
   chipAllegatoPerChiave,
   chipPerId,
@@ -145,9 +146,29 @@ export class Composer {
     }
   }
 
-  /** Si incolla solo testo: l'editor non accetta markup da fuori. */
+  /**
+   * Si incolla solo testo: l'editor non accetta markup da fuori.
+   *
+   * Un'immagine è l'eccezione, perché non è markup ma contenuto. Va **solo
+   * in questa chat** (`rapido`), mai nell'Archivio Privato: quello che si
+   * incolla è materiale di passaggio, e nell'archivio dell'agenzia i
+   * documenti ci si mettono apposta, dal menù di fianco.
+   */
   protected incolla(evento: ClipboardEvent): void {
     evento.preventDefault();
+    const { leggibili, scartate } = immaginiIncollate(evento.clipboardData);
+    if (leggibili.length) this.store.allega(leggibili, 'rapido');
+    if (scartate) {
+      /* Come per la finestra di scelta: che un formato non si legga si dice
+         prima, non con un 415 dopo il caricamento. */
+      this.notifiche.aggiungi({
+        gravita: 'errore',
+        titolo: scartate > 1 ? 'Immagini non allegate' : 'Immagine non allegata',
+        dettaglio: 'Di immagini sappiamo leggere PNG e JPEG: salvala in uno dei due e allegala.',
+      });
+    }
+    if (leggibili.length || scartate) return;
+
     const testo = evento.clipboardData?.getData('text/plain') ?? '';
     if (testo) this.inserisciTesto(testo);
   }
