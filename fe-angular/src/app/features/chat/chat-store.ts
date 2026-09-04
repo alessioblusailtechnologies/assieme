@@ -550,6 +550,13 @@ export class ChatStore {
    * limbo suo, legato alla conversazione e destinato a sparire con lei; ma
    * un preventivo che il cliente ha mandato è materiale dell'agenzia, e
    * doverlo ricaricare per ritrovarlo era una perdita, non una pulizia.
+   * (Un'immagine incollata fa eccezione e resta della sola chat: si sceglie
+   * dal composer, non da qui.)
+   *
+   * Finito il caricamento la voce sparisce da questa lista, ma il chip
+   * **resta nel composer** come riferimento della bozza: è la prova visiva
+   * di ciò che si è allegato, e vale sia in una conversazione aperta sia
+   * prima che ne esista una.
    */
   readonly allegati = signal<AllegatoInCorso[]>([]);
 
@@ -606,6 +613,16 @@ export class ChatStore {
           void anteprima.then((dati) => {
             if (dati) this.ricordaAnteprima(riferimento.id, dati);
             this.rimuoviAllegato(chiave);
+            /* Il chip resta nel composer, come per un documento scelto con
+               «@». Prima spariva nell'istante in cui il caricamento
+               riusciva, perché il documento «era già nel contesto»: ma il
+               contesto è il pannello a destra, che si può comprimere e che
+               comunque si ricarica un attimo dopo. Il risultato era il
+               peggiore possibile — alleghi, il chip gira, e poi non c'è più
+               niente da nessuna parte — proprio mentre il documento era
+               arrivato benissimo. Quello che hai appena allegato si vede
+               dove lo hai allegato, finché non mandi il messaggio. */
+            this.aggiungiRiferimento(riferimento);
             this.aggiungiAlContesto(riferimento);
             this.segui(riferimento);
           });
