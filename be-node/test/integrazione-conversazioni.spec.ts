@@ -308,7 +308,14 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
       expect(allegato?.motivo).toMatch(/elaborazione (non ancora conclusa|fallita)/);
       const indice = await readFile(join(ws.directory, 'tenant', 'documenti', 'INDICE.md'), 'utf8');
       expect(indice).toContain('Archivio privato');
-      expect(await readFile(join(ws.directory, 'INDICE.md'), 'utf8')).toContain('archivio-pubblico/');
+      const radice = await readFile(join(ws.directory, 'INDICE.md'), 'utf8');
+      expect(radice).toContain('archivio-pubblico/');
+      /* Il glossario dei rischi viene dal codice: c'è sempre quando c'è il
+         pubblico, ed è annunciato in cima perché il modello lo apra quando
+         una ricerca non dà risultati. */
+      expect(radice).toContain('archivio-pubblico/GLOSSARIO.md');
+      const glossario = await readFile(join(ws.directory, 'archivio-pubblico', 'GLOSSARIO.md'), 'utf8');
+      expect(glossario).toContain('acqua condotta');
     } finally {
       await ws.rimuovi();
     }

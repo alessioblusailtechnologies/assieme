@@ -38,6 +38,12 @@ export const schemaProposta = z.object({
   ramoId: z.string().nullable().optional(),
   /** Cliente o pratica (es. «Rossi Mario», «polizza 123456»). */
   riferimentoCliente: z.string().trim().max(200).nullable().optional(),
+  /**
+   * Che cosa contiene il documento, in una riga: è quello che finisce
+   * negli `INDICE.md` della workspace, dove oggi c'è solo il titolo. Il
+   * motore ci decide se aprirlo, quindi vale la pena spenderci una frase.
+   */
+  descrizione: z.string().trim().max(300).nullable().optional(),
   /* Fase 10 — il materiale della collocazione. `contraente` è il nome **com'è
      scritto nel documento**, non il cliente già risolto: risolverlo è un
      lavoro a parte (`archivio/clienti.ts`), e mescolare le due cose è il modo
@@ -71,6 +77,7 @@ Rispondi SOLO con un oggetto JSON, senza commenti né testo attorno, con queste 
 - "compagniaId": l'id della compagnia fra quelle elencate, oppure null se il documento non riguarda una di quelle.
 - "ramoId": l'id del ramo fra quelli elencati, oppure null.
 - "riferimentoCliente": il nome del cliente o il riferimento della pratica (contraente, numero di polizza o preventivo) se il documento è di un cliente specifico, altrimenti null. Breve: massimo una riga.
+- "descrizione": una riga (massimo 300 caratteri) su **che cosa c'è dentro** il documento, non su che cosa è: le garanzie o l'oggetto, il bene o il veicolo assicurato, gli importi che lo identificano. La legge chi deve decidere se aprirlo cercando in archivio, quindi usa le parole con cui lo si cercherebbe: «RC Auto, furto e incendio su Fiat Panda targa AB123CD, massimale 6.450.000 €, franchigia 300 €» è utile, «documento assicurativo del cliente» non serve a niente. Niente frasi di cortesia, niente «questo documento». Null se dall'estratto non si capisce.
 - "contraente": il nome del **cliente dell'agenzia** a cui il documento si riferisce, **così come è scritto nel documento**: senza correggerlo, senza completarlo e senza normalizzarlo. Se il documento dice «ROSSI M.», scrivi «ROSSI M.». Null se il documento non riguarda un cliente specifico.
   Attenzione a chi è il cliente: su un preventivo o una polizza è il contraente; su una **fattura, una lettera o una comunicazione è l'intestatario o il destinatario, mai chi la emette**. Se sul documento compaiono due parti — chi scrive e a chi è indirizzato — il cliente è la seconda.
 - "codiceFiscale" e "partitaIva": del contraente, se il documento li riporta; altrimenti null.
@@ -103,7 +110,7 @@ export class ClassificatoreModello implements Classificatore {
     const elenco = (voci: VoceTassonomia[]) => voci.map((v) => `- ${v.id}: ${v.nome}`).join('\n');
     const risposta = await this.client.messages.create({
       model: this.modello,
-      max_tokens: 600,
+      max_tokens: 900,
       system: ISTRUZIONI,
       messages: [
         {

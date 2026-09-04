@@ -133,9 +133,9 @@ export function validaBlocco(
   for (const [indice, c] of blocco.citazioni.entries()) {
     const rimando = indice + 1;
     const path = normalizzaPath(c.file);
-    if (/(^|\/)INDICE\.md$/.test(path)) {
-      // Gli indici sono mappe, non fonti: non hanno un documento da aprire.
-      avvisi.push(`citazione a un INDICE ignorata: ${c.file}`);
+    if (eMappa(path)) {
+      // Indici e glossario sono mappe, non fonti: non hanno un documento da aprire.
+      avvisi.push(`citazione a una mappa ignorata: ${c.file}`);
       continue;
     }
     const doc = perPath.get(path);
@@ -249,6 +249,15 @@ export function avvisiEsposizione(testoVisibile: string): string[] {
   const spie = [/archivio-pubblico\//i, /\btenant\//i, /INDICE\.md/i, /\bworkspace\b/i, /[\w-]+\.md\b/i];
   const trovate = spie.filter((s) => s.test(testoVisibile)).map((s) => s.source);
   return trovate.length ? [`la risposta espone il mondo interno: ${trovate.join(', ')}`] : [];
+}
+
+/**
+ * I file della workspace che sono strumenti di navigazione e non documenti:
+ * gli `INDICE.md` e il `GLOSSARIO.md` dei rischi. Si leggono per trovare la
+ * strada, non si citano — non hanno un originale da aprire né una pagina.
+ */
+export function eMappa(path: string): boolean {
+  return /(^|\/)(INDICE|GLOSSARIO)\.md$/.test(path);
 }
 
 /** Path come li scrive il modello → chiave della workspace (posix, relativo). */

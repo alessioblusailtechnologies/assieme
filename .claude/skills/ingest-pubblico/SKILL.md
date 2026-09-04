@@ -80,14 +80,16 @@ ripetuti. **Mai toccare le ancore `[pag. N]`**, mai spostare testo fra
 pagine. Le pagine di sola grafica restano con la sola ancora.
 
 Scrivi `INDICE.md` come nelle ISTRUZIONI (§4): sinonimi del prodotto,
-tabella dei documenti, mappa delle sezioni delle Condizioni, edizione
+tabella dei documenti, mappa delle sezioni delle Condizioni, `## Garanzie e
+rischi trattati` con la pagina di ogni garanzia, edizione
 corrente/storiche. Se il prodotto ha già un'edizione in archivio
 (`be-node/dati/catalogo-archivio.json`), aggiorna anche il suo INDICE.
 
 ## 4. Controlla (ISTRUZIONI §5)
 
 Almeno 3 ancore e 2 numeri a campione per documento, aprendo il PDF con
-Read alla pagina indicata; range non sovrapposti; nessuna tabella spezzata.
+Read alla pagina indicata; range non sovrapposti; nessuna tabella spezzata;
+2 garanzie a campione dell'elenco aperte alla pagina che dichiarano.
 Se qualcosa non torna, correggi e ricontrolla.
 
 ## 5. Carica

@@ -23,6 +23,7 @@ import { percorsoNellaWorkspace, slug, type DocumentoWorkspace } from '../src/wo
 
 const doc = (parziale: Partial<DocumentoWorkspace> & { id: string; titolo: string }): DocumentoWorkspace => ({
   archivio: 'pubblico',
+  descrizione: null,
   tipologia: 'dip',
   numeroPagine: 10,
   paginaMassima: 10,
@@ -195,14 +196,16 @@ describe('validaBlocco', () => {
     expect((catturato as ErroreValidazione).dettagli[0]).toMatch(/pag\. 11 .*citabile \(10\)/);
   });
 
-  it('una citazione a un INDICE.md si ignora con un avviso: è una mappa, non una fonte', () => {
-    const esito = validaBlocco(
-      { citazioni: [{ file: 'archivio-pubblico/unipolsai/INDICE.md', pagina: 1, estratto: 'x' }], provenienze: [], nonSupportato: true },
-      perPath,
-      dnaVuoto,
-    );
-    expect(esito.citazioni).toEqual([]);
-    expect(esito.avvisi[0]).toMatch(/INDICE ignorata/);
+  it('una citazione a un INDICE.md o al GLOSSARIO.md si ignora con un avviso: sono mappe, non fonti', () => {
+    for (const file of ['archivio-pubblico/unipolsai/INDICE.md', 'archivio-pubblico/GLOSSARIO.md']) {
+      const esito = validaBlocco(
+        { citazioni: [{ file, pagina: 1, estratto: 'x' }], provenienze: [], nonSupportato: true },
+        perPath,
+        dnaVuoto,
+      );
+      expect(esito.citazioni).toEqual([]);
+      expect(esito.avvisi[0]).toMatch(/mappa ignorata/);
+    }
   });
 
   it('nessuna citazione e nessuna non-copertura è un avviso, non un errore', () => {

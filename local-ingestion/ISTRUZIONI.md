@@ -120,7 +120,33 @@ Il formato del campione (`esperimento-motore/workspace/.../ed-2022-11/INDICE.md`
   un'edizione non in archivio);
 - la **tabella dei documenti del set**: file | documento | pagine;
 - la **mappa delle sezioni** delle Condizioni di Assicurazione (le
-  macro-sezioni con i loro range di pagina): è la bussola del motore.
+  macro-sezioni con i loro range di pagina): è la bussola del motore;
+- le **garanzie e i rischi** che il set tratta, in una sezione
+  `## Garanzie e rischi trattati`: un elenco puntato con il nome della
+  garanzia **come lo scrive il documento**, la pagina dove comincia, e fra
+  parentesi i rischi concreti che nomina.
+
+  ```markdown
+  ## Garanzie e rischi trattati
+
+  - Incendio e furto [pag. 16] (incendio, esplosione, scoppio, furto totale
+    e parziale, rapina, tentato furto)
+  - Eventi naturali [pag. 18] (grandine, trombe d'aria, alluvione,
+    sovraccarico di neve, caduta di alberi)
+  - Cristalli [pag. 19] (parabrezza, lunotto, vetri laterali)
+  - Assistenza stradale [pag. 22] (traino, soccorso, auto sostitutiva)
+  ```
+
+  Serve a una domanda che oggi non ha risposta senza aprire tutto: «quali
+  prodotti in archivio coprono i cristalli?». Senza questa sezione l'indice
+  dice **che prodotto è**, non **quali rischi tratta**, e il motore deve
+  grepare l'archivio intero sperando di indovinare la parola.
+
+  Due regole: si scrivono i nomi che stanno nel documento, non i nomi
+  giusti in generale (se la compagnia la chiama «Eventi sociopolitici», si
+  scrive così); e si elencano le garanzie **trattate**, comprese quelle
+  opzionali o escluse, perché anche un «non è previsto» è una risposta.
+  L'indice non promette coperture: dice dove guardare.
 
 Se il prodotto ha più edizioni, aggiorna anche gli INDICE delle edizioni
 esistenti (quale è la corrente) e l'INDICE di radice dell'archivio.
@@ -135,7 +161,13 @@ questione — almeno:
 - **2 numeri a campione** (un massimale, una franchigia): identici;
 - i **range di pagina** negli header coincidono con l'indice del PDF e non
   si sovrappongono tra documenti;
-- nessuna tabella spezzata a metà riga.
+- nessuna tabella spezzata a metà riga;
+- **2 garanzie a campione** dell'elenco «Garanzie e rischi trattati»: la
+  pagina indicata è quella dove la garanzia comincia davvero, e cade dentro
+  il range che la mappa delle sezioni le assegna. Una pagina sbagliata qui
+  non produce una citazione sbagliata (l'indice non si cita), ma manda il
+  motore ad aprire la sezione sbagliata, e da lì la risposta è «non è
+  previsto» su una garanzia che c'era.
 
 Se un controllo fallisce, si corregge e si ricontrolla: un archivio con
 ancore sbagliate produce citazioni sbagliate, ed è peggio di nessun archivio.

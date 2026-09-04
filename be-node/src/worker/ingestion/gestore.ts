@@ -375,7 +375,8 @@ async function proponiClassificazione(
          riferimento_cliente = coalesce(riferimento_cliente, $5),
          numero_polizza = coalesce(numero_polizza, $6),
          decorrenza = coalesce(decorrenza, $7::date),
-         scadenza = coalesce(scadenza, $8::date)
+         scadenza = coalesce(scadenza, $8::date),
+         descrizione = coalesce(descrizione, $9)
      where id = $1 and classificazione_da_confermare`,
     [
       documento.id,
@@ -386,6 +387,7 @@ async function proponiClassificazione(
       proposta.numeroPolizza || null,
       proposta.decorrenza || null,
       proposta.scadenza || null,
+      proposta.descrizione || null,
     ],
   );
   await emettiEvento(db, job.id, 'ingestion-classificazione', {

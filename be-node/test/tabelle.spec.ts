@@ -31,6 +31,7 @@ const autenticato = { authorization: 'Bearer token-di-prova' };
 const DOC: DocumentoWorkspace = {
   id: 'doc-priv-x',
   titolo: 'Polizza Rossi',
+  descrizione: null,
   archivio: 'privato',
   tipologia: 'polizza',
   numeroPagine: 3,

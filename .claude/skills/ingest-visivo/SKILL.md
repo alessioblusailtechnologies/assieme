@@ -154,12 +154,19 @@ del testimone intrecciato) e 4b non ha più correzioni.
 
 Scrivi `INDICE.md` nell'edizione come nelle ISTRUZIONI §4 (sinonimi,
 tabella dei documenti, mappa delle sezioni delle Condizioni con le pagine
-assolute, edizione corrente/storiche), leggendo i `.md` assemblati. Se il
+assolute, **`## Garanzie e rischi trattati`** con la pagina di ogni
+garanzia, edizione corrente/storiche), leggendo i `.md` assemblati. Se il
 prodotto ha già un'edizione in archivio (`be-node/dati/catalogo-archivio.json`),
 aggiorna anche il suo INDICE.
 
+Le garanzie le hai già lette pagina per pagina: scrivile con le parole del
+documento, non con quelle giuste in generale. È la sezione che permette di
+rispondere a «quali prodotti coprono i cristalli» senza aprire l'archivio
+intero.
+
 Controllo finale a mano, come nelle ISTRUZIONI §5: 2 ancore a campione per
-documento aperte con Read; range negli header non sovrapposti.
+documento aperte con Read; range negli header non sovrapposti; 2 garanzie a
+campione dell'elenco aperte alla pagina che dichiarano.
 
 ## 6. Carica
 

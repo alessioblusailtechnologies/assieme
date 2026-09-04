@@ -12,6 +12,7 @@ import {
   percorsoSlug,
   type RigaCartella,
 } from '../../archivio/albero.js';
+import { GLOSSARIO_RISCHI, NOME_GLOSSARIO } from '../../archivio/glossario.js';
 import {
   assicuraConvenzioneAggiornata,
   convenzioneEffettiva,
@@ -33,6 +34,13 @@ import {
 export interface DocumentoWorkspace {
   id: string;
   titolo: string;
+  /**
+   * Che cosa contiene, in una riga: la scrive il classificatore in
+   * ingestion e finisce negli `INDICE.md`, dove il titolo da solo non basta
+   * a decidere se vale la pena aprire il documento. Null per i pubblici
+   * (hanno indici scritti a mano) e per tutto ciò che è entrato prima.
+   */
+  descrizione: string | null;
   archivio: 'pubblico' | 'privato' | 'conversazione';
   tipologia: string;
   numeroPagine: number | null;
@@ -69,6 +77,7 @@ interface RigaDocumento {
   id: string;
   archivio: 'pubblico' | 'privato' | 'conversazione';
   titolo: string;
+  descrizione: string | null;
   tipologia: string;
   numero_pagine: number | null;
   pagina_inizio: number | null;
@@ -118,7 +127,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
   await mkdir(directory, { recursive: true });
 
   const righe = await db.query<RigaDocumento>(
-    `select d.id, d.archivio, d.titolo, d.tipologia, d.numero_pagine, d.pagina_inizio,
+    `select d.id, d.archivio, d.titolo, d.descrizione, d.tipologia, d.numero_pagine, d.pagina_inizio,
             d.path_pdf, d.path_md, d.stato,
             d.updated_at, d.compagnia_id, c.nome as compagnia_nome,
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
@@ -192,6 +201,14 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
     const percorso = `${cartella}/INDICE.md`;
     const origine = await cache.fileConTtl(percorso, TTL_INDICI_MS);
     if (origine) await collega(origine, join(directory, ...percorso.split('/')));
+  }
+
+  /* Il glossario dei rischi viene dal codice, non dallo Storage: è sapere
+     sul mestiere, non sull'archivio, e non cambia quando entra una
+     compagnia nuova. Gli INDICE danno i sinonimi dei nomi commerciali;
+     questo dà quelli dei rischi, che nessun indice può conoscere. */
+  if (cartellePubbliche.size) {
+    await writeFile(join(directory, 'archivio-pubblico', NOME_GLOSSARIO), GLOSSARIO_RISCHI, 'utf8');
   }
 
   // Gli allegati del contesto che non sono (ancora) pronti: il motore deve saperlo.
@@ -296,6 +313,7 @@ function versoDocumento(r: RigaDocumento, paginaMassima: number | null): Documen
   return {
     id: r.id,
     titolo: r.titolo,
+    descrizione: r.descrizione,
     archivio: r.archivio,
     tipologia: r.tipologia,
     numeroPagine: r.numero_pagine,
@@ -331,15 +349,23 @@ async function scriviIndiciTenant(
 ): Promise<void> {
   const privati = [...perPath.entries()].filter(([, d]) => d.archivio === 'privato');
   const allegati = [...perPath.entries()].filter(([, d]) => d.archivio === 'conversazione');
+  const conPubblico = [...perPath.values()].some((d) => d.archivio === 'pubblico');
+
+  /* Testo libero dentro una tabella Markdown: le barre verticali e gli a
+     capo la spezzerebbero riga per riga. */
+  const cella = (testo: string): string => testo.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '/').trim();
 
   const rigaDoc = ([path, d]: [string, DocumentoWorkspace]): string =>
-    `| \`${posix.basename(path)}\` | ${d.titolo} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.riferimentoCliente ?? '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
+    `| \`${posix.basename(path)}\` | ${cella(d.titolo)} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.riferimentoCliente ? cella(d.riferimentoCliente) : '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} | ${d.descrizione ? cella(d.descrizione) : '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
   const intestazione =
-    '| File | Titolo | Tipologia | Compagnia | Ramo | Cliente/pratica | Pagine | Etichette |\n|---|---|---|---|---|---|---|---|';
+    '| File | Titolo | Tipologia | Compagnia | Ramo | Cliente/pratica | Pagine | Etichette | Cosa contiene |\n|---|---|---|---|---|---|---|---|---|';
 
   const radice =
     '# Indice della workspace\n\n' +
     '- `archivio-pubblico/` — set informativi delle compagnie (DIP, DIP Aggiuntivo, Condizioni, glossari), per compagnia/ramo/prodotto/edizione. Ogni cartella ha il suo `INDICE.md`.\n' +
+    (conPubblico
+      ? `- \`archivio-pubblico/${NOME_GLOSSARIO}\` — con quali parole i contratti scrivono i rischi che l'utente nomina a modo suo. Aprilo quando una ricerca non dà risultati, prima di concludere che una garanzia non c'è.\n`
+      : '') +
     `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti). Ogni cartella ha il suo \`INDICE.md\`; la mappa dei livelli è in \`tenant/documenti/INDICE.md\`.\n` +
     `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n` +
     (convenzione ? `\n---\n\n${convenzione}` : '');

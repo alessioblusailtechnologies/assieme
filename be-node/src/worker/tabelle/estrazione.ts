@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 
 import type { CellaTabella } from '../../contratto/tabelle.js';
-import { normalizzaPath } from '../motore/validazione.js';
+import { eMappa, normalizzaPath } from '../motore/validazione.js';
 import type { DocumentoWorkspace } from '../motore/workspace.js';
 
 /**
@@ -177,8 +177,8 @@ function valutaVoce(
   const citazioni = [];
   for (const c of voce.citazioni) {
     const path = normalizzaPath(c.file);
-    if (/(^|\/)INDICE\.md$/.test(path)) {
-      avvisi.push(`colonna ${voce.colonna}: citazione a un INDICE ignorata`);
+    if (eMappa(path)) {
+      avvisi.push(`colonna ${voce.colonna}: citazione a una mappa ignorata`);
       continue;
     }
     const doc = perPath.get(path);
