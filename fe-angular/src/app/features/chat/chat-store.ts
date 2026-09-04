@@ -13,6 +13,7 @@ import {
   IsoDateTime,
   Messaggio,
   ModoAllegato,
+  PropostaArchivio,
   RicordoAppreso,
   RiferimentoDocumento,
   StatoAllegato,
@@ -206,6 +207,60 @@ export class ChatStore {
       },
       error: () => this.emailInInvio.set(false),
     });
+  }
+
+  // --- Riordino dell'archivio proposto in chat ----------------------------
+
+  /** Le proposte su cui si sta decidendo: il loro messaggio mostra i pulsanti fermi. */
+  private readonly proposteInDecisione = signal<ReadonlySet<Id>>(new Set());
+
+  inDecisione(propostaId: Id): boolean {
+    return this.proposteInDecisione().has(propostaId);
+  }
+
+  /**
+   * Approva o annulla il riordino proposto. Approvare è la prima e unica
+   * scrittura sull'archivio di tutta la catena: il motore ha soltanto
+   * chiesto, e fino a questo clic non era successo niente.
+   */
+  decidiProposta(proposta: PropostaArchivio, decisione: 'approva' | 'annulla'): void {
+    const id = this.idAttiva();
+    if (!id || proposta.stato !== 'proposta' || this.inDecisione(proposta.id)) return;
+    this.proposteInDecisione.update((p) => new Set(p).add(proposta.id));
+
+    const finito = (): void =>
+      this.proposteInDecisione.update((p) => {
+        const senza = new Set(p);
+        senza.delete(proposta.id);
+        return senza;
+      });
+
+    this.api.decidiProposta(id, proposta.id, decisione).subscribe({
+      next: (esito) => {
+        finito();
+        this.segnaProposta(esito.proposta);
+        if (decisione === 'annulla') return;
+        this.notifiche.aggiungi({
+          gravita: esito.mancate.length ? 'informazione' : 'successo',
+          titolo: esito.mancate.length ? 'Riordino applicato in parte' : 'Archivio aggiornato',
+          dettaglio: esito.mancate.length
+            ? esito.mancate.join('; ')
+            : `${esito.fatte} ${esito.fatte === 1 ? 'operazione eseguita' : 'operazioni eseguite'}.`,
+        });
+      },
+      error: () => finito(),
+    });
+  }
+
+  /** Lo stato deciso si scrive dove vive il messaggio: caricato o ancora in streaming. */
+  private segnaProposta(proposta: PropostaArchivio): void {
+    this.messaggiCaricati.update((caricati) =>
+      (caricati ?? []).map((m) => (m.proposta?.id === proposta.id ? { ...m, proposta } : m)),
+    );
+    const stream = this.streamAttivo();
+    if (stream?.assistente?.proposta?.id === proposta.id) {
+      this.aggiornaAssistente((m) => ({ ...m, proposta }));
+    }
   }
 
   // --- Output della conversazione -----------------------------------------
@@ -742,6 +797,9 @@ export class ChatStore {
         break;
       case 'documento':
         this.aggiornaAssistente((m) => ({ ...m, documenti: [...(m.documenti ?? []), evento.documento] }));
+        break;
+      case 'proposta':
+        this.aggiornaAssistente((m) => ({ ...m, proposta: evento.proposta }));
         break;
       case 'errore':
         this.aggiornaAssistente((m) => ({ ...m, inCorso: false, erroreStream: evento.messaggio }));

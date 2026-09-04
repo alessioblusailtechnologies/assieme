@@ -55,6 +55,14 @@ const attendi = (ms) => new Promise((r) => setTimeout(r, ms));
 let prossimoMessaggio = 100;
 let prossimaConversazione = 100;
 let prossimaCitazione = 100;
+let prossimaProposta = 100;
+
+/**
+ * I riordini proposti in chat e mai eseguiti (04/09/2026): approvare li
+ * segna `applicata`, ma qui non c'è nessun archivio da toccare - il punto
+ * che il front-end deve poter provare è la scheda e i suoi tre stati.
+ */
+const PROPOSTE = [];
 
 /**
  * Allegati di conversazione (RF-C-02): file allegati dal composer, che non
@@ -197,8 +205,38 @@ In sintesi: la proposta Generali tutela meglio sui danni al veicolo e sulla pers
   };
 }
 
+/**
+ * Il riordino proposto (04/09/2026): l'assistente non scrive nell'archivio,
+ * chiede. Lo scenario esiste perché il front-end possa provare la scheda con
+ * Approva e Annulla senza il backend.
+ */
+function scenarioRiordino() {
+  return {
+    testo: `La fattura è intestata a **Wiselyst S.r.l.**, che è il cliente: chi la emette è Blusail Technologies, e una cartella cliente non si intesta a chi fattura.
+
+Ti propongo di sistemarla sotto il cliente giusto. Trovi la proposta qui sotto: finché non la approvi, nell'archivio non cambia niente.`,
+    citazioni: [],
+    provenienze: [],
+    proposta: {
+      operazioni: [
+        { azione: 'crea-cartella', nome: 'Wiselyst S.r.l.', dentro: 'Clienti' },
+        {
+          azione: 'sposta-documento',
+          documentoId: 'doc-priv-001',
+          titolo: 'Fattura 2026/114',
+          verso: 'Clienti/Wiselyst S.r.l.',
+        },
+      ],
+      motivo: 'La fattura è intestata al cliente, non a chi la emette.',
+    },
+  };
+}
+
 function scegliScenario(testo, documentiInContesto) {
   const t = testo.toLowerCase();
+  if (t.includes('sposta') || t.includes('riordin') || t.includes('cartella')) {
+    return scenarioRiordino();
+  }
   if (!documentiInContesto.length) return scenarioSenzaDocumenti();
   if (t.includes('grandine') || t.includes('cristalli')) return scenarioNonCoperto();
   if (t.includes('franchig') || t.includes('scopert')) return scenarioFranchigie();
@@ -413,6 +451,17 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     await attendi(120);
   }
 
+  /* Il riordino si propone, non si esegue: la scheda arriva con la risposta
+     e resta ad aspettare una decisione. */
+  let proposta;
+  if (scenario.proposta) {
+    if (volo.annullata) return chiudi();
+    proposta = { id: `prp-${prossimaProposta++}`, stato: 'proposta', ...scenario.proposta };
+    PROPOSTE.push(proposta);
+    invia({ tipo: 'proposta', proposta });
+    await attendi(120);
+  }
+
   /* RF-G-01: la memoria impara in linea, prima del `fine`: il passo si
      vede, l'esito arriva solo se qualcosa è stato imparato. */
   if (scenario.ricordiAppresi?.length) {
@@ -439,6 +488,9 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     citazioni: scenario.citazioni,
     provenienze: scenario.provenienze,
     ...(scenario.nonSupportato ? { nonSupportato: true } : {}),
+    /* La proposta viaggia col messaggio: chi ricarica ritrova la decisione
+       ancora aperta, o già presa. */
+    ...(proposta ? { proposta } : {}),
   });
   conversazione.aggiornataIl = fine;
 
@@ -728,6 +780,36 @@ export async function gestisci(req, res, url, deps) {
       return true;
     }
     return false;
+  }
+
+  /* /api/conversazioni/:id/proposte/:pid — la decisione sul riordino. È il
+     solo punto in cui una proposta smette di essere una domanda; nel backend
+     vero è anche il solo in cui l'archivio viene scritto. */
+  if (rotta[2] === 'proposte' && rotta[3] && req.method === 'PATCH') {
+    const proposta = PROPOSTE.find((p) => p.id === rotta[3]);
+    if (!proposta) {
+      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Proposta inesistente.' });
+      return true;
+    }
+    if (proposta.stato !== 'proposta') {
+      inviaJson(res, 409, {
+        codice: 'PROPOSTA_GIA_DECISA',
+        messaggio:
+          proposta.stato === 'applicata'
+            ? 'Questo riordino è già stato applicato.'
+            : 'Questo riordino era già stato annullato.',
+      });
+      return true;
+    }
+    const corpo = JSON.parse((await leggiCorpo(req)).toString('utf8') || '{}');
+    const applica = corpo.decisione === 'approva';
+    proposta.stato = applica ? 'applicata' : 'annullata';
+    inviaJson(res, 200, {
+      proposta,
+      fatte: applica ? proposta.operazioni.length : 0,
+      mancate: [],
+    });
+    return true;
   }
 
   // /api/conversazioni/:id/contesto/:documentoId — RF-C-03: rimovibile finché l'utente non decide altrimenti

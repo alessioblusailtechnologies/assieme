@@ -130,6 +130,14 @@
         </div>
       }
 
+      @if (m.proposta) {
+        <!--
+          Il riordino che l'assistente ha chiesto: finché non si approva,
+          nell'archivio non è cambiato niente.
+        -->
+        <app-proposta-riordino class="proposta" [proposta]="m.proposta" />
+      }
+
       @if (altreFonti().length) {
         <!--
           Col testo che porta i rimandi, in coda resta solo ciò che il motore

@@ -94,8 +94,56 @@ export interface Messaggio {
    * dell'utente («esporta con Proposta breve»): da scaricare sotto il testo.
    */
   documenti?: DocumentoGenerato[];
+  /**
+   * Il riordino dell'Archivio Privato che l'assistente ha proposto in questa
+   * risposta: sotto il testo compare una scheda con Approva e Annulla, e
+   * finché nessuno decide non è successo niente.
+   */
+  proposta?: PropostaArchivio;
   /** Vero mentre lo streaming è in corso: il testo cresce, i pulsanti aspettano. */
   inCorso?: boolean;
+}
+
+/**
+ * Un riordino **proposto**, mai eseguito.
+ *
+ * L'assistente legge l'archivio e non lo tocca: quando serve creare una
+ * cartella o spostarci dentro un documento, lo chiede. La scheda dice per
+ * intero che cosa succederebbe, e la scrittura parte solo dal clic
+ * dell'utente. Uno stato diverso da `proposta` è una decisione già presa:
+ * la scheda resta a raccontarla, senza più pulsanti.
+ */
+export interface PropostaArchivio {
+  id: Id;
+  operazioni: OperazioneArchivio[];
+  stato: 'proposta' | 'applicata' | 'annullata';
+  /** Perché, in una riga: quello che l'assistente dichiara di voler fare. */
+  motivo?: string;
+}
+
+export type OperazioneArchivio =
+  | {
+      azione: 'crea-cartella';
+      nome: string;
+      /** Il percorso della cartella che la conterrà; assente = in cima all'archivio. */
+      dentro?: string;
+    }
+  | {
+      azione: 'sposta-documento';
+      documentoId: Id;
+      titolo: string;
+      /** Il percorso di destinazione, anche se è una cartella di questa stessa proposta. */
+      verso: string;
+    };
+
+/**
+ * L'esito dell'approvazione. `mancate` non è un errore: elenca quello che nel
+ * frattempo non si poteva più fare (una cartella eliminata da un collega).
+ */
+export interface EsitoProposta {
+  proposta: PropostaArchivio;
+  fatte: number;
+  mancate: string[];
 }
 
 /** Un documento generato dal motore in chat: `url` è la rotta che lo serve. */
@@ -141,6 +189,8 @@ export type EventoStream =
   | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
   /** Un documento generato su template durante la risposta: si mostra subito, da scaricare. */
   | { tipo: 'documento'; documento: DocumentoGenerato }
+  /** Un riordino dell'archivio proposto durante la risposta: la scheda con Approva e Annulla. */
+  | { tipo: 'proposta'; proposta: PropostaArchivio }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
 

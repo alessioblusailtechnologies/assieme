@@ -13,6 +13,7 @@ import {
   Conversazione,
   DestinatarioEmail,
   EsitoEmailRisposta,
+  EsitoProposta,
   EventoStream,
   Id,
   Messaggio,
@@ -253,6 +254,22 @@ export class ConversazioniApi {
     return this.http.post<EsitoEmailRisposta>(
       `${this.base}/${conversazioneId}/messaggi/${messaggioId}/email`,
       { a },
+    );
+  }
+
+  /**
+   * La decisione sul riordino proposto: qui, e solo qui, la proposta diventa
+   * una scrittura sull'Archivio Privato. L'assistente ha chiesto; approva
+   * l'utente, con le sue credenziali.
+   */
+  decidiProposta(
+    conversazioneId: Id,
+    propostaId: Id,
+    decisione: 'approva' | 'annulla',
+  ): Observable<EsitoProposta> {
+    return this.http.patch<EsitoProposta>(
+      `${this.base}/${conversazioneId}/proposte/${propostaId}`,
+      { decisione },
     );
   }
 }

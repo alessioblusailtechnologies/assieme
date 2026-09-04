@@ -1,0 +1,121 @@
+/* Il riordino proposto: una scheda ferma, non un avviso. Chiede, non allarma. */
+
+:host {
+  display: block;
+}
+
+.proposta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+/* Decisa, la scheda smette di chiedere: resta come nota di ciò che è stato. */
+:host(.is-decisa) .proposta {
+  border-color: var(--c-line-soft);
+  background: var(--c-surface-soft);
+  color: var(--c-text-3);
+}
+
+.proposta__testa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text-2);
+}
+
+.proposta__titolo {
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+:host(.is-decisa) .proposta__titolo {
+  color: var(--c-text-2);
+  font-weight: 400;
+}
+
+.proposta__conta {
+  margin-left: auto;
+  font-size: var(--t-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-mute);
+}
+
+.proposta__motivo {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.operazioni {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.operazione {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.operazione__verbo {
+  color: var(--c-text-3);
+}
+
+.operazione__nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text);
+}
+
+:host(.is-decisa) .operazione__nome {
+  color: var(--c-text-2);
+}
+
+.operazione__freccia {
+  flex: none;
+  color: var(--c-text-ghost);
+}
+
+/*
+ * Il percorso è un percorso: mono, ma **non** con la classe `.mono` globale,
+ * che maiuscola tutto. Una cartella si chiama come l'utente l'ha chiamata, e
+ * «Clienti/Rossi Mario» letto «CLIENTI/ROSSI MARIO» non è più il suo nome.
+ */
+.operazione__dove {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.proposta__azioni {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.proposta__nota {
+  margin-left: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-mute);
+}

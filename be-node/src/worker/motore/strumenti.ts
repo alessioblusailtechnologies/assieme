@@ -20,6 +20,8 @@ import {
   type TemplateRisolto,
 } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
+import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
+import type { PropostaArchivio } from '../../contratto/conversazioni.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 
 /**
@@ -39,6 +41,7 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 export const NOME_SERVER = 'velia';
 export const NOME_TOOL_ESPORTA_SUBITO = `mcp__${NOME_SERVER}__esporta_subito`;
 export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`;
+export const NOME_TOOL_PROPONI_RIORDINO = `mcp__${NOME_SERVER}__proponi_riordino`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
@@ -58,6 +61,12 @@ export interface ContestoStrumenti {
   messaggioId: string;
   /** Chiamato a ogni documento generato: l'evento verso il FE parte da qui. */
   suDocumento: (documento: DocumentoGenerato) => Promise<void>;
+  /**
+   * Chiamato quando il modello propone un riordino dell'archivio: deposita
+   * la proposta e la racconta al FE. Assente = il tool non c'è, e
+   * l'assistente resta in sola lettura come è sempre stato.
+   */
+  suProposta?: (proposta: Omit<PropostaArchivio, 'id' | 'stato'>) => Promise<PropostaArchivio>;
   /**
    * L'Esportazione elaborata richiamata a parole in chat: il gestore la
    * esegue (sandbox documentale) e ritorna il messaggio finale del motore
@@ -271,13 +280,120 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  /**
+   * L'unico tool che riguarda l'archivio, e non lo tocca: **propone**.
+   *
+   * Il motore continua a non avere strumenti di scrittura e non ne guadagna
+   * uno qui. Deposita un riordino, l'utente lo vede sotto la risposta con
+   * due pulsanti, e la scrittura la fa l'API con l'identità di chi approva.
+   * Se nessuno approva, non succede niente.
+   */
+  const proponiRiordino = tool(
+    'proponi_riordino',
+    [
+      'Propone all’utente di riordinare l’Archivio Privato: creare cartelle e spostarci dentro dei documenti.',
+      'Non esegue niente: l’utente vede la proposta sotto la risposta e decide se approvarla.',
+      'Usalo quando l’utente chiede di spostare un documento, di creare una cartella o di mettere ordine.',
+      'Mai di tua iniziativa: l’archivio è suo.',
+      'I percorsi delle cartelle si scrivono come li vede l’utente («Clienti», «Clienti/Rossi Mario»), non come path della workspace.',
+      'Il documento si indica col suo file nella workspace, lo stesso che useresti per citarlo.',
+      'Se una cartella che ti serve non esiste ancora, mettila come prima operazione e poi spostaci dentro: le operazioni si applicano in ordine.',
+      'Dopo l’esito, di’ in UNA riga cosa hai proposto e che lo trova lì sotto da approvare.',
+    ].join(' '),
+    {
+      operazioni: z
+        .array(
+          z.object({
+            azione: z.enum(['crea-cartella', 'sposta-documento']),
+            nome: z.string().max(120).optional().describe('crea-cartella: il nome della cartella nuova.'),
+            dentro: z
+              .string()
+              .max(400)
+              .optional()
+              .describe('crea-cartella: la cartella che la conterrà, per percorso; assente = in cima.'),
+            documento: z
+              .string()
+              .max(400)
+              .optional()
+              .describe('sposta-documento: il file del documento nella workspace.'),
+            verso: z
+              .string()
+              .max(400)
+              .optional()
+              .describe('sposta-documento: la cartella di destinazione, per percorso.'),
+          }),
+        )
+        .min(1)
+        .max(20)
+        .describe('Le operazioni, nell’ordine in cui vanno applicate.'),
+      motivo: z.string().max(300).optional().describe('Perché, in una riga, come lo diresti all’utente.'),
+    },
+    async (args) => {
+      if (!contesto.suProposta) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Non posso proporre modifiche all’archivio in questo ambiente: dillo all’utente e fermati.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      const client = await contesto.db.connect();
+      let esito;
+      try {
+        esito = await risolviProposta(client, contesto.tenantId, args.operazioni as OperazioneChiesta[]);
+      } finally {
+        client.release();
+      }
+      /* Il motivo del rifiuto torna al modello, non all'utente: così si
+         corregge dentro la stessa risposta invece di proporre un riordino
+         che poi non si applica. */
+      if (!esito.operazioni.length) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Non ho potuto preparare il riordino: ${esito.rifiutate.join('; ')}. Chiedi all’utente come procedere.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      const proposta = await contesto.suProposta({
+        operazioni: esito.operazioni,
+        ...(args.motivo && { motivo: args.motivo }),
+      });
+      const scartate = esito.rifiutate.length
+        ? ` Non ho incluso: ${esito.rifiutate.join('; ')}.`
+        : '';
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Riordino proposto (${proposta.operazioni.length} operazioni). L’utente lo trova sotto la risposta e decide se approvarlo: finché non lo fa, l’archivio non cambia.${scartate}`,
+          },
+        ],
+      };
+    },
+  );
+
   return {
     server: createSdkMcpServer({
       name: NOME_SERVER,
       version: '1.0.0',
-      tools: [esportaSubito, ...(contesto.elaborata ? [esportazioneElaborata] : [])],
+      tools: [
+        esportaSubito,
+        ...(contesto.elaborata ? [esportazioneElaborata] : []),
+        ...(contesto.suProposta ? [proponiRiordino] : []),
+      ],
     }),
-    nomi: [NOME_TOOL_ESPORTA_SUBITO, ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : [])],
+    nomi: [
+      NOME_TOOL_ESPORTA_SUBITO,
+      ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
+      ...(contesto.suProposta ? [NOME_TOOL_PROPONI_RIORDINO] : []),
+    ],
     generati,
     percorsi,
   };

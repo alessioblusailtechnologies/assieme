@@ -6,6 +6,7 @@ import { Citazione, RiferimentoDocumento } from '@core/models';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatStore, MessaggioInStream } from '../chat-store';
+import { PropostaRiordino } from './proposta-riordino';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
 
@@ -19,7 +20,7 @@ import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@sha
  */
 @Component({
   selector: 'app-bolla-messaggio',
-  imports: [Accordion, ChipCitazione, Icona, RouterLink, Suggerimento],
+  imports: [Accordion, ChipCitazione, Icona, PropostaRiordino, RouterLink, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './bolla-messaggio.html',
   styleUrl: './bolla-messaggio.scss',

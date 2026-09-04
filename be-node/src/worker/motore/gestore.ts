@@ -5,6 +5,7 @@ import type {
   EsportazioneElaborata,
   EventoStream,
   Provenienza,
+  PropostaArchivio,
 } from '../../contratto/conversazioni.js';
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
 import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
@@ -300,6 +301,34 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         suDocumento: async (documento) => {
           await emetti({ tipo: 'documento', documento });
         },
+        /*
+         * Il riordino proposto si deposita e si racconta, non si esegue. La
+         * riga nasce `proposta`: diventerà `applicata` solo se qualcuno
+         * clicca, e allora sarà l'API a scrivere, con la sua identità.
+         */
+        suProposta: async (bozza) => {
+          const r = await db.query<{ id: string }>(
+            `insert into velia.proposte_archivio
+               (tenant_id, conversazione_id, messaggio_id, operazioni, motivo)
+             values ($1, $2, $3, $4::jsonb, $5)
+             returning id`,
+            [
+              tenantId,
+              payload.conversazioneId,
+              payload.messaggioAssistenteId,
+              JSON.stringify(bozza.operazioni),
+              bozza.motivo ?? null,
+            ],
+          );
+          const proposta: PropostaArchivio = {
+            id: r.rows[0]!.id,
+            operazioni: bozza.operazioni,
+            stato: 'proposta',
+            ...(bozza.motivo && { motivo: bozza.motivo }),
+          };
+          await emetti({ tipo: 'proposta', proposta });
+          return proposta;
+        },
         ...(elaborata && {
           elaborata: async (r) => {
             const nomeTemplate = r.template;
@@ -327,7 +356,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         directory: workspace.directory,
         titoloPer: (path: string) => workspace!.perPath.get(path)?.titolo,
         ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
-        promptSistema: promptSistema(dna, templateAgenzia.rows),
+        promptSistema: promptSistema(dna, templateAgenzia.rows, true),
         strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi },
       };
       const osservatore = {

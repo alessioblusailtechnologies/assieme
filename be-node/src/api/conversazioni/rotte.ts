@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply } from 'fastify';
 import type pg from 'pg';
 
 import {
+  schemaDecisioneProposta,
   schemaEmailRisposta,
   schemaModificheConversazione,
   schemaNuovaConversazione,
@@ -16,10 +17,13 @@ import {
   type Conversazione,
   type DocumentoGenerato,
   type EsitoEmailRisposta,
+  type EsitoProposta,
   type EventoStream,
   type Messaggio,
   type ModoAllegato,
+  type OperazioneArchivio,
   type PaginaConversazioni,
+  type PropostaArchivio,
   type Provenienza,
   type RiferimentoDocumento,
   type RispostaPrompt,
@@ -28,6 +32,7 @@ import {
   type StatoDocumento,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { applicaProposta } from '../../archivio/proposta.js';
 import { configurazione } from '../../config.js';
 import { inviaEmail } from '../../email/invio.js';
 import { fontiDaCitazioni, identitaDelTenant } from '../../generazione/catalogo.js';
@@ -98,6 +103,8 @@ interface RigaMessaggio {
   provenienze: Provenienza[];
   non_supportato: boolean;
   documenti: DocumentoGenerato[];
+  /** Il riordino proposto in questa risposta, se c'è stato (04/09/2026). */
+  proposta: PropostaArchivio | null;
 }
 
 /** Gli id dei documenti generati sono uuid: un id malformato è un 404, non un errore SQL. */
@@ -439,15 +446,81 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.get<{ Params: { id: string } }>('/api/conversazioni/:id/messaggi', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<Messaggio[]> => {
       await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+      /* La proposta di riordino viaggia col messaggio che l'ha fatta: chi
+         ricarica la pagina ritrova la scelta ancora aperta, o già presa. */
       const righe = await client.query<RigaMessaggio>(
-        `select id, conversazione_id, autore, testo, inviato_il, documenti_referenziati,
-                citazioni, provenienze, non_supportato, documenti
-         from velia.messaggi where conversazione_id = $1 order by inviato_il, id`,
+        `select m.id, m.conversazione_id, m.autore, m.testo, m.inviato_il, m.documenti_referenziati,
+                m.citazioni, m.provenienze, m.non_supportato, m.documenti, p.proposta
+         from velia.messaggi m
+         left join lateral (
+           select jsonb_strip_nulls(jsonb_build_object(
+                    'id', pa.id, 'operazioni', pa.operazioni, 'stato', pa.stato,
+                    'motivo', pa.motivo
+                  )) as proposta
+           from velia.proposte_archivio pa
+           where pa.messaggio_id = m.id
+           order by pa.created_at desc limit 1
+         ) p on true
+         where m.conversazione_id = $1 order by m.inviato_il, m.id`,
         [richiesta.params.id],
       );
       return righe.rows.map(versoMessaggio);
     });
   });
+
+  /**
+   * La decisione sul riordino proposto in chat (04/09/2026).
+   *
+   * Qui, e solo qui, la proposta diventa una scrittura sull'archivio: la fa
+   * l'API con l'identità di chi approva, sotto la sua RLS, con le stesse
+   * facoltà che ha già dalla schermata delle cartelle. Il motore ha soltanto
+   * chiesto. Approvare due volte non fa niente: la proposta ha già uno stato.
+   */
+  app.patch<{ Params: { id: string; pid: string } }>(
+    '/api/conversazioni/:id/proposte/:pid',
+    async (richiesta) => {
+      const esito = schemaDecisioneProposta.safeParse(richiesta.body ?? {});
+      if (!esito.success) throw ErroreApi.datiNonValidi('Decisione non valida.');
+      if (!E_UUID.test(richiesta.params.pid)) throw ErroreApi.nonTrovato('Proposta inesistente.');
+
+      return conIdentita(poolDb(), richiesta.identita, async (client): Promise<EsitoProposta> => {
+        await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const p = await client.query<{ id: string; operazioni: OperazioneArchivio[]; motivo: string | null; stato: PropostaArchivio['stato'] }>(
+          `select id, operazioni, motivo, stato from velia.proposte_archivio
+           where id = $1 and conversazione_id = $2`,
+          [richiesta.params.pid, richiesta.params.id],
+        );
+        const riga = p.rows[0];
+        if (!riga) throw ErroreApi.nonTrovato('Proposta inesistente.');
+        if (riga.stato !== 'proposta') {
+          throw ErroreApi.conflitto(
+            'PROPOSTA_GIA_DECISA',
+            riga.stato === 'applicata' ? 'Questo riordino è già stato applicato.' : 'Questo riordino era già stato annullato.',
+          );
+        }
+
+        const applica = esito.data.decisione === 'approva';
+        const fatto = applica
+          ? await applicaProposta(client, richiesta.identita.tenantId, riga.operazioni)
+          : { fatte: 0, mancate: [] };
+        await client.query(
+          `update velia.proposte_archivio
+           set stato = $2, deciso_da = $3, deciso_il = now()
+           where id = $1`,
+          [riga.id, applica ? 'applicata' : 'annullata', richiesta.identita.utenteId],
+        );
+        return {
+          proposta: {
+            id: riga.id,
+            operazioni: riga.operazioni,
+            stato: applica ? 'applicata' : 'annullata',
+            ...(riga.motivo && { motivo: riga.motivo }),
+          },
+          ...fatto,
+        };
+      });
+    },
+  );
 
   /** RF-C-03: il contesto, mutazioni che restituiscono la conversazione intera. */
   for (const metodo of ['put', 'delete'] as const) {
@@ -935,5 +1008,6 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
     provenienze: r.provenienze,
     ...(r.non_supportato && { nonSupportato: true }),
     ...(r.documenti?.length && { documenti: r.documenti }),
+    ...(r.proposta && { proposta: r.proposta }),
   };
 }

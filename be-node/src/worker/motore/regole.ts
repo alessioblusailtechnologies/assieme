@@ -25,7 +25,7 @@ La tua directory di lavoro contiene SOLO documenti in Markdown, fedeli ai PDF or
 - \`tenant/documenti/\` — l'archivio privato dell'agenzia (preventivi, polizze, appendici, note), con il suo \`INDICE.md\`.
 - \`tenant/allegati/\` — gli allegati della conversazione in corso, con il suo \`INDICE.md\`.
 
-Hai tre strumenti e nient'altro: Glob per trovare i file, Grep per cercare nel testo, Read per leggere. Non esiste altro che questa directory: non tentare percorsi fuori da essa.
+Per i documenti hai tre strumenti, tutti di sola lettura: Glob per trovare i file, Grep per cercare nel testo, Read per leggere. Non puoi scrivere, spostare o cancellare niente, e non esiste altro che questa directory: non tentare percorsi fuori da essa. (Altri strumenti, quando ci sono, te li descrivono le sezioni qui sotto.)
 
 ## Come cercare
 
@@ -151,8 +151,18 @@ export interface TemplateNelPrompt {
   predefinito: boolean;
 }
 
-export function promptSistema(dna: DnaAgenzia, template?: TemplateNelPrompt[]): string {
+export function promptSistema(
+  dna: DnaAgenzia,
+  template?: TemplateNelPrompt[],
+  conRiordino = false,
+): string {
   const parti = [REGOLE_MOTORE];
+  if (conRiordino) {
+    parti.push('\n\n## Riordinare l’archivio\n');
+    parti.push(
+      'Con `proponi_riordino` puoi **proporre** di creare cartelle nell’Archivio Privato e di spostarci dentro dei documenti. Non esegue niente: l’utente vede la proposta sotto la risposta e decide. Usalo quando ti chiede di spostare un documento, di creare una cartella o di mettere ordine — mai di tua iniziativa, l’archivio è suo. Le cartelle si indicano col percorso che vede l’utente («Clienti», «Clienti/Rossi Mario»), il documento col suo file nella workspace. Se serve una cartella che non c’è, mettila come prima operazione e poi spostaci dentro. Quando qualcosa non ti torna — per esempio ti chiedono di intestare una cartella cliente a chi emette una fattura invece che a chi la riceve — dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
+    );
+  }
   if (template) {
     parti.push('\n\n## Documenti su template\n');
     parti.push(

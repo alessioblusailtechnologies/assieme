@@ -1,0 +1,55 @@
+@let p = proposta();
+
+<section class="proposta" [attr.aria-label]="titolo()">
+  <header class="proposta__testa">
+    <ui-icon [name]="p.stato === 'applicata' ? 'pronto' : 'cartella'" [size]="14" />
+    <span class="proposta__titolo">{{ titolo() }}</span>
+    <span class="mono proposta__conta">{{ riepilogo() }}</span>
+  </header>
+
+  @if (p.motivo) {
+    <p class="proposta__motivo">{{ p.motivo }}</p>
+  }
+
+  <!--
+    Ogni riga per intero: che cosa si crea o si sposta, e dove finisce. È il
+    testo su cui l'utente sta decidendo, non un riassunto.
+  -->
+  <ul class="operazioni">
+    @for (op of p.operazioni; track $index) {
+      <li class="operazione">
+        <ui-icon [name]="op.azione === 'crea-cartella' ? 'cartella' : 'documento'" [size]="13" />
+        <span class="operazione__verbo">{{ op.azione === 'crea-cartella' ? 'Crea' : 'Sposta' }}</span>
+        <span class="operazione__nome">{{ nome(op) }}</span>
+        <ui-icon name="espandi-destra" [size]="12" class="operazione__freccia" />
+        <span class="operazione__dove">{{ dove(op) }}</span>
+      </li>
+    }
+  </ul>
+
+  @if (daDecidere()) {
+    <div class="proposta__azioni">
+      <button
+        type="button"
+        uiBottone
+        variante="primario"
+        dimensione="piccolo"
+        [disabled]="inCorso()"
+        (click)="decidi('approva')"
+      >
+        {{ inCorso() ? 'Applico…' : 'Approva' }}
+      </button>
+      <button
+        type="button"
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
+        [disabled]="inCorso()"
+        (click)="decidi('annulla')"
+      >
+        Annulla
+      </button>
+      <span class="proposta__nota">Finché non approvi, l'archivio non cambia.</span>
+    </div>
+  }
+</section>

@@ -324,6 +324,17 @@ describe('workspace e sessione, le parti pure', () => {
     expect(utente.indexOf('Prima domanda')).toBeLessThan(utente.indexOf('Seconda domanda'));
   });
 
+  it('il riordino si racconta solo dove il tool c’è: la chat sì, un agente pianificato no', () => {
+    const dna: DnaAgenzia = { istruzioni: [], riferimenti: [], ricordi: [] };
+    /* Un agente che gira di notte non ha nessuno a cui chiedere
+       l'approvazione: descrivergli uno strumento che non ha sarebbe
+       insegnargli a promettere qualcosa che non può fare. */
+    expect(promptSistema(dna)).not.toContain('proponi_riordino');
+    const conChat = promptSistema(dna, [], true);
+    expect(conChat).toContain('proponi_riordino');
+    expect(conChat).toContain('Riordinare l’archivio');
+  });
+
   it('il prompt di ripresa: niente storia (è già nel contesto della sessione), contesto e domanda sì', () => {
     const conDocumenti = promptRipresa({
       documenti: [{ path: 'tenant/documenti/p/a.md', titolo: 'A', archivio: 'privato' }],

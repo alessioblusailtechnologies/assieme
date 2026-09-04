@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 
 import { ChatStore } from './chat-store';
-import { Conversazione, DocumentoGenerato, EventoStream } from '@core/models';
+import { Conversazione, DocumentoGenerato, EventoStream, PropostaArchivio } from '@core/models';
 
 function conversazione(id: string): Conversazione {
   return {
@@ -435,6 +435,36 @@ describe('ChatStore', () => {
     expect(http.expectOne('/api/conversazioni/cnv-1/ferma').request.method).toBe('POST');
     expect(store.inRisposta()).toBe(false);
     expect(storico.inRisposta().has('cnv-1')).toBe(false);
+  });
+
+  it('il riordino si approva una volta sola, e la scheda passa allo stato deciso', async () => {
+    const riordino: PropostaArchivio = {
+      id: 'prp-1',
+      stato: 'proposta',
+      operazioni: [{ azione: 'crea-cartella', nome: 'Wiselyst S.r.l.', dentro: 'Clienti' }],
+    };
+    await avvia([conversazione('cnv-1')]);
+    store.apri('cnv-1');
+    http
+      .expectOne('/api/conversazioni/cnv-1/messaggi')
+      .flush([{ ...messaggio('m-1', 'assistente', '2026-09-04T09:00:00+02:00'), proposta: riordino }]);
+    await microtask();
+
+    store.decidiProposta(riordino, 'approva');
+    /* Due clic, una sola scrittura: mentre la prima è in volo la scheda è
+       ferma, o si applicherebbe due volte lo stesso riordino. */
+    store.decidiProposta(riordino, 'approva');
+    await microtask();
+    expect(store.inDecisione('prp-1')).toBe(true);
+
+    const richiesta = http.expectOne('/api/conversazioni/cnv-1/proposte/prp-1');
+    expect(richiesta.request.method).toBe('PATCH');
+    expect(richiesta.request.body).toEqual({ decisione: 'approva' });
+    richiesta.flush({ proposta: { ...riordino, stato: 'applicata' }, fatte: 1, mancate: [] });
+    await microtask();
+
+    expect(store.messaggi()[0].proposta?.stato).toBe('applicata');
+    expect(store.inDecisione('prp-1')).toBe(false);
   });
 
   it('riprende a seguire un documento del contesto ancora in lettura', async () => {

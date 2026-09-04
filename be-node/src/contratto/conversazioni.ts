@@ -119,6 +119,69 @@ export interface Messaggio {
   nonSupportato?: boolean;
   /** I documenti generati su template durante la risposta (aggiunta additiva, 25/08/2026). */
   documenti?: DocumentoGenerato[];
+  /** Il riordino dell'archivio proposto durante la risposta (04/09/2026). */
+  proposta?: PropostaArchivio;
+}
+
+/**
+ * Un riordino dell'archivio che l'assistente **propone**, e che nessuno
+ * applica finché l'utente non lo approva.
+ *
+ * È la scelta di fondo, e non cambia: il motore lavora su una copia in sola
+ * lettura e non ha strumenti per scrivere. Qui non ne guadagna uno, guadagna
+ * la possibilità di *chiedere*. La proposta viaggia col messaggio e
+ * sopravvive a un ricaricamento; la scrittura vera la fa l'API con
+ * l'identità di chi approva, sotto la sua RLS.
+ */
+export interface PropostaArchivio {
+  id: string;
+  operazioni: OperazioneArchivio[];
+  stato: 'proposta' | 'applicata' | 'annullata';
+  /** Perché, in una riga: quello che il modello dichiara di voler fare. */
+  motivo?: string;
+}
+
+export type OperazioneArchivio =
+  | {
+      azione: 'crea-cartella';
+      nome: string;
+      /** La cartella che la conterrà; assente = in cima all'archivio. */
+      dentroId?: string;
+      dentro?: string;
+    }
+  | {
+      azione: 'sposta-documento';
+      documentoId: string;
+      titolo: string;
+      /**
+       * Dove va. `versoId` assente con `verso` valorizzato significa una
+       * cartella che questa stessa proposta sta per creare: si risolve
+       * quando si applica, nell'ordine in cui le operazioni sono scritte.
+       */
+      versoId?: string;
+      verso: string;
+    };
+
+/**
+ * La decisione su una proposta di riordino: `PATCH
+ * /api/conversazioni/:id/proposte/:pid`. Non c'è un terzo stato: o si applica
+ * o si lascia perdere, e in entrambi i casi la proposta smette di chiedere.
+ */
+export const schemaDecisioneProposta = z.object({
+  decisione: z.enum(['approva', 'annulla']),
+});
+
+export type DecisioneProposta = z.infer<typeof schemaDecisioneProposta>;
+
+/**
+ * L'esito dell'approvazione. `mancate` non è un errore: è l'elenco di quello
+ * che nel frattempo non si poteva più fare (una cartella eliminata da un
+ * collega, un documento spostato altrove). Il resto è stato applicato.
+ */
+export interface EsitoProposta {
+  proposta: PropostaArchivio;
+  fatte: number;
+  mancate: string[];
 }
 
 /**
@@ -146,6 +209,8 @@ export type EventoStream =
   | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
   /** Un documento generato su template durante la risposta: il FE lo mostra da scaricare. */
   | { tipo: 'documento'; documento: DocumentoGenerato }
+  /** Un riordino proposto: il FE lo mostra sotto la risposta con Approva e Annulla. */
+  | { tipo: 'proposta'; proposta: PropostaArchivio }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
 
