@@ -24,6 +24,7 @@ import { percorsoNellaWorkspace, slug, type DocumentoWorkspace } from '../src/wo
 const doc = (parziale: Partial<DocumentoWorkspace> & { id: string; titolo: string }): DocumentoWorkspace => ({
   archivio: 'pubblico',
   descrizione: null,
+  immagine: null,
   tipologia: 'dip',
   numeroPagine: 10,
   paginaMassima: 10,
@@ -206,6 +207,25 @@ describe('validaBlocco', () => {
       expect(esito.citazioni).toEqual([]);
       expect(esito.avvisi[0]).toMatch(/mappa ignorata/);
     }
+  });
+
+  it('una citazione al file di un’immagine vale per il suo documento: è lo stesso', () => {
+    /* Il modello ha guardato l'immagine con Read e cita il file che ha
+       aperto. Il documento è quello del `.md` che le sta accanto. */
+    const conImmagine = new Map(perPath).set(
+      'tenant/allegati/sfondo--all-1.md',
+      doc({ id: 'all-1', titolo: 'sfondo_16_9', archivio: 'conversazione', numeroPagine: 1, paginaMassima: 1 }),
+    );
+    const esito = validaBlocco(
+      {
+        citazioni: [{ file: 'tenant/allegati/sfondo--all-1.jpg', pagina: 1, estratto: 'logo bianco su fondo nero' }],
+        provenienze: [],
+        nonSupportato: false,
+      },
+      conImmagine,
+      dnaVuoto,
+    );
+    expect(esito.citazioni[0]).toMatchObject({ documentoId: 'all-1', documentoTitolo: 'sfondo_16_9' });
   });
 
   it('nessuna citazione e nessuna non-copertura è un avviso, non un errore', () => {

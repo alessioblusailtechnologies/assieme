@@ -32,6 +32,7 @@ const DOC: DocumentoWorkspace = {
   id: 'doc-priv-x',
   titolo: 'Polizza Rossi',
   descrizione: null,
+  immagine: null,
   archivio: 'privato',
   tipologia: 'polizza',
   numeroPagine: 3,

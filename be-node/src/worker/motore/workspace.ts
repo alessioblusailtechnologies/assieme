@@ -59,6 +59,16 @@ export interface DocumentoWorkspace {
   riferimentoCliente: string | null;
   etichette: string[];
   documentoDiRiferimento: boolean;
+  /**
+   * Il file dell'immagine accanto al suo `.md`, quando il documento è
+   * un'immagine del contesto (04/09/2026).
+   *
+   * Di un'immagine il contenuto è l'immagine: la trascrizione dice quello
+   * che c'è scritto, e di uno sfondo o di un mockup non c'è niente scritto.
+   * L'originale sta nella workspace e il modello lo apre con Read, che le
+   * immagini le guarda davvero. Il `.md` resta la fonte da citare.
+   */
+  immagine: string | null;
 }
 
 export interface Workspace {
@@ -83,6 +93,8 @@ interface RigaDocumento {
   pagina_inizio: number | null;
   path_pdf: string | null;
   path_md: string | null;
+  formato: string | null;
+  path_originale: string | null;
   stato: string;
   updated_at: Date;
   compagnia_id: string | null;
@@ -128,7 +140,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
 
   const righe = await db.query<RigaDocumento>(
     `select d.id, d.archivio, d.titolo, d.descrizione, d.tipologia, d.numero_pagine, d.pagina_inizio,
-            d.path_pdf, d.path_md, d.stato,
+            d.path_pdf, d.path_md, d.formato, d.path_originale, d.stato,
             d.updated_at, d.compagnia_id, c.nome as compagnia_nome,
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
             d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette, d.cartella_id,
@@ -181,7 +193,30 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       });
       continue;
     }
-    const doc = versoDocumento(riga, riga.archivio === 'pubblico' && riga.path_pdf ? (ultimaPaginaPdf.get(riga.path_pdf) ?? null) : riga.numero_pagine);
+    /* L'immagine vera accanto al suo Markdown, per i documenti del contesto:
+       è il solo modo di far vedere al modello quello che l'utente gli sta
+       mostrando. Fuori dal contesto non si materializza — un archivio pieno
+       di foto costerebbe un download a ogni job per immagini che nessuno ha
+       chiesto. Se non si riesce a scaricarla, pazienza: resta il Markdown, e
+       il documento non diventa «mancante» per questo. */
+    let immagine: string | null = null;
+    if (riga.formato === 'immagine' && riga.path_originale && contestoIds.includes(riga.id)) {
+      const estensione = riga.path_originale.slice(riga.path_originale.lastIndexOf('.'));
+      const percorsoImmagine = relativo.replace(/\.md$/i, estensione);
+      try {
+        const origine = await cache.file(riga.path_originale, riga.updated_at.toISOString());
+        await collega(origine, join(directory, ...percorsoImmagine.split('/')));
+        immagine = percorsoImmagine;
+      } catch {
+        immagine = null;
+      }
+    }
+
+    const doc = versoDocumento(
+      riga,
+      riga.archivio === 'pubblico' && riga.path_pdf ? (ultimaPaginaPdf.get(riga.path_pdf) ?? null) : riga.numero_pagine,
+      immagine,
+    );
     perPath.set(relativo, doc);
     perId.set(riga.id, relativo);
     if (riga.archivio === 'pubblico') {
@@ -309,10 +344,15 @@ function descrizioneDellaCartella(
   return null;
 }
 
-function versoDocumento(r: RigaDocumento, paginaMassima: number | null): DocumentoWorkspace {
+function versoDocumento(
+  r: RigaDocumento,
+  paginaMassima: number | null,
+  immagine: string | null = null,
+): DocumentoWorkspace {
   return {
     id: r.id,
     titolo: r.titolo,
+    immagine,
     descrizione: r.descrizione,
     archivio: r.archivio,
     tipologia: r.tipologia,
@@ -419,7 +459,10 @@ async function scriviIndiciTenant(
     join(directory, 'tenant', 'allegati', 'INDICE.md'),
     '# Allegati della conversazione\n\n' +
       (allegati.length
-        ? `${intestazione}\n${allegati.map(rigaDoc).join('\n')}\n`
+        ? `${intestazione}\n${allegati.map(rigaDoc).join('\n')}\n` +
+          (allegati.some(([, d]) => d.immagine)
+            ? '\nGli allegati che sono immagini hanno il **file dell’immagine** accanto al loro `.md`, con lo stesso nome: aprilo con Read per guardarla davvero (colori, impaginazione, stile). Il `.md` resta la fonte da citare.\n'
+            : '')
         : 'Nessun allegato.\n'),
     'utf8',
   );

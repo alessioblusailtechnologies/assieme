@@ -138,7 +138,10 @@ export function validaBlocco(
       avvisi.push(`citazione a una mappa ignorata: ${c.file}`);
       continue;
     }
-    const doc = perPath.get(path);
+    /* Un'immagine del contesto sta nella workspace accanto al suo `.md`, e
+       il modello che l'ha guardata cita volentieri il file che ha aperto:
+       vale come citazione del documento, che è lo stesso. */
+    const doc = perPath.get(path) ?? perPath.get(path.replace(/\.(png|jpe?g)$/i, '.md'));
     if (!doc) {
       errori.push(`citazione verso un file inesistente nella workspace: ${c.file}`);
       continue;

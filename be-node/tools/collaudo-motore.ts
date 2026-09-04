@@ -5,6 +5,7 @@
  * secondi e dollari — i numeri delle decisioni aperte 1 e 4 del doc motore.
  *
  *   npx tsx tools/collaudo-motore.ts "Che franchigie prevede la garanzia furto?" [modello]
+ *   CONTESTO=all-xxx,doc-priv-yyy npx tsx tools/collaudo-motore.ts "Guarda l’immagine e dimmi che stile ha"
  *
  * Costa: una sessione agentica (da decine di centesimi a qualche dollaro).
  * Usa la workspace del tenant demo, tutto l'Archivio Pubblico, nessun DNA.
@@ -40,7 +41,7 @@ try {
     tenantId: TENANT_DEMO,
     radice,
     jobId: 'collaudo',
-    contestoIds: [],
+    contestoIds: (process.env.CONTESTO ?? '').split(',').map((x) => x.trim()).filter(Boolean),
   });
   console.log(`Workspace: ${ws.directory} — ${ws.perPath.size} documenti`);
   const dna = await caricaDna(db, TENANT_DEMO, utente.rows[0]?.id ?? '', { ramiIds: [], compagnieIds: [] }, ws.perPath);

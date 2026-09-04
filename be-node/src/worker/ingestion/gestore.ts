@@ -247,14 +247,24 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         });
       }
 
-      const corpo = pagine
+      let corpo = pagine
         .map((testo, i) => `[pag. ${i + 1}]\n\n${testo}`.trimEnd())
         .join('\n\n');
       /* RF-B-06, prima release: un documento da cui non esce una riga di
          testo (scansione muta, pagine di sola grafica) non è referenziabile
-         e l'utente deve saperlo — non un .md vuoto che la chat non trova. */
+         e l'utente deve saperlo — non un .md vuoto che la chat non trova.
+         *
+         * Un'IMMAGINE però fa eccezione (04/09/2026): uno sfondo, un logo,
+         * una foto non hanno testo per definizione, e chiamarlo «errore»
+         * era classificare male un caso normale. Il file originale finisce
+         * nella workspace accanto al Markdown e il motore lo apre con Read:
+         * di un'immagine il contenuto è l'immagine, non la sua
+         * trascrizione. Il .md resta, perché è lui la fonte citabile. */
       if (!contieneTesto(corpo)) {
-        throw new ErroreIngestion('conversione senza testo riconoscibile', MESSAGGIO_SENZA_TESTO);
+        if (formato !== 'immagine') {
+          throw new ErroreIngestion('conversione senza testo riconoscibile', MESSAGGIO_SENZA_TESTO);
+        }
+        corpo = `[pag. 1]\n\nImmagine senza testo. Il file originale è nella workspace accanto a questo Markdown, con lo stesso nome e l'estensione dell'immagine: aprilo con Read per guardarla.`;
       }
 
       const dataIt = documento.edizione_valida_dal
