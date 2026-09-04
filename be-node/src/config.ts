@@ -128,6 +128,19 @@ const schemaAmbiente = z.object({
    */
   MISTRAL_API_KEY: z.string().optional(),
   MODELLO_TRASCRIZIONE: z.string().default('voxtral-mini-latest'),
+  /**
+   * Il nome della coda pgmq (04/09/2026). Si tocca **solo in locale**.
+   *
+   * Il database è uno, quindi il worker dell'ambiente dev su Render pesca
+   * dalla stessa coda del portatile: vince la gara sui job nuovi e li lavora
+   * col codice dell'ultimo deploy, che può essere molto indietro. L'errore
+   * arriva in chat come se fosse del codice che hai davanti, e non c'è modo
+   * di accorgersene. Con `CODA_LAVORI=lavori_locale` in `.env` le due
+   * macchine smettono di darsi fastidio; la coda va creata una volta
+   * (`select pgmq.create('lavori_locale')`). Senza la variabile resta
+   * `lavori`, che è la coda di sempre: in produzione non cambia niente.
+   */
+  CODA_LAVORI: z.string().min(1).default('lavori'),
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),
