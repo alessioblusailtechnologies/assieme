@@ -55,6 +55,8 @@ export interface AllegatoInCorso {
   nome: string;
   stato: 'caricamento' | 'errore';
   messaggio?: string;
+  /** L'immagine incollata, come `data:` URL: il chip la mostra al posto dell'icona. */
+  anteprima?: string;
 }
 
 /**
@@ -562,16 +564,51 @@ export class ChatStore {
    */
   readonly elaborazioni = signal<Map<Id, StatoElaborazioneAllegato>>(new Map());
 
+  /**
+   * L'anteprima delle immagini incollate, per documento.
+   *
+   * Di uno screenshot il nome non dice niente («Immagine incollata 9.05»):
+   * la miniatura è l'unico modo di riconoscere quale immagine si è
+   * attaccata, quando se ne attacca più d'una. Sta qui e non sul server
+   * perché il file ce l'abbiamo già in mano: l'immagine è quella che è
+   * appena passata da questo browser.
+   */
+  private readonly anteprime = new Map<Id, string>();
+
+  /** Quante anteprime si tengono in memoria: sono `data:` URL, non miniature vere. */
+  private static readonly MASSIME_ANTEPRIME = 12;
+
+  anteprima(documentoId: Id): string | undefined {
+    return this.anteprime.get(documentoId);
+  }
+
   allega(file: File[], modo: ModoAllegato): void {
     for (const f of file) {
       const chiave = ++this.progressivoAllegato;
       this.allegati.update((a) => [...a, { chiave, nome: f.name, stato: 'caricamento' }]);
+      /* L'anteprima arriva quando arriva: il chip nasce subito con l'icona e
+         si ridisegna da solo appena il file è letto. */
+      const anteprima = leggiAnteprima(f);
+      void anteprima.then((dati) => {
+        if (!dati) return;
+        this.allegati.update((a) =>
+          a.map((allegato) => (allegato.chiave === chiave ? { ...allegato, anteprima: dati } : allegato)),
+        );
+      });
 
       this.api.caricaAllegato(f, modo).subscribe({
         next: (riferimento) => {
-          this.rimuoviAllegato(chiave);
-          this.aggiungiAlContesto(riferimento);
-          this.segui(riferimento);
+          /* Si aspetta l'anteprima prima di passare il documento al
+             contesto: il chip del riferimento si costruisce una volta sola,
+             e un'anteprima che arriva dopo non lo ridisegnerebbe. La
+             lettura del file è partita all'incolla e il caricamento dura
+             mille volte tanto: qui la promessa è già mantenuta. */
+          void anteprima.then((dati) => {
+            if (dati) this.ricordaAnteprima(riferimento.id, dati);
+            this.rimuoviAllegato(chiave);
+            this.aggiungiAlContesto(riferimento);
+            this.segui(riferimento);
+          });
         },
         error: (err: HttpErrorResponse) => {
           const messaggio =
@@ -583,6 +620,16 @@ export class ChatStore {
           );
         },
       });
+    }
+  }
+
+  /** L'anteprima più vecchia se ne va: sono immagini intere tenute in memoria. */
+  private ricordaAnteprima(documentoId: Id, dati: string): void {
+    this.anteprime.set(documentoId, dati);
+    while (this.anteprime.size > ChatStore.MASSIME_ANTEPRIME) {
+      const piuVecchia = this.anteprime.keys().next().value;
+      if (piuVecchia === undefined) break;
+      this.anteprime.delete(piuVecchia);
     }
   }
 
@@ -970,4 +1017,28 @@ function scaricaBlob(blob: Blob, nomeFile: string): void {
   collegamento.download = nomeFile;
   collegamento.click();
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Oltre questo non si tiene l'immagine in memoria per l'anteprima: un
+ * `data:` URL è l'immagine intera in una stringa, e per un chip da sedici
+ * pixel non vale il prezzo.
+ */
+const MASSIMO_ANTEPRIMA_BYTE = 5 * 1024 * 1024;
+
+/**
+ * L'immagine come `data:` URL, o niente se non è un'immagine (o è troppo
+ * grande). Non fallisce mai: un'anteprima mancata è un chip con l'icona di
+ * sempre, non un allegato perduto.
+ */
+function leggiAnteprima(file: File): Promise<string | undefined> {
+  if (!file.type.startsWith('image/') || file.size > MASSIMO_ANTEPRIMA_BYTE) {
+    return Promise.resolve(undefined);
+  }
+  return new Promise((risolvi) => {
+    const lettore = new FileReader();
+    lettore.onload = () => risolvi(typeof lettore.result === 'string' ? lettore.result : undefined);
+    lettore.onerror = () => risolvi(undefined);
+    lettore.readAsDataURL(file);
+  });
 }

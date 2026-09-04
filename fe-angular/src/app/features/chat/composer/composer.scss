@@ -42,6 +42,19 @@
   display: block;
 }
 
+/* La miniatura di un'immagine incollata: al posto dell'icona, stessa
+   altezza della riga del chip. `object-fit` ritaglia invece di deformare —
+   uno screenshot è quasi sempre molto più largo che alto. */
+.campo__testo ::ng-deep .riferimento__anteprima {
+  flex: none;
+  display: block;
+  width: 16px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 3px;
+  background: var(--c-line-soft);
+}
+
 .campo__testo ::ng-deep .riferimento__titolo {
   min-width: 0;
   overflow: hidden;

@@ -149,3 +149,39 @@ describe('editor-testo', () => {
     expect(selezione.focusOffset).toBe(1);
   });
 });
+
+describe('l’anteprima di un’immagine incollata', () => {
+  const DATI = 'data:image/png;base64,iVBORw0KGgo=';
+
+  it('prende il posto dell’icona nel chip del documento', () => {
+    const chip = creaChipDocumento(
+      { id: 'all-1', titolo: 'Immagine incollata 9.05', archivio: 'conversazione', anteprima: DATI },
+      () => undefined,
+    );
+    const img = chip.querySelector('img.riferimento__anteprima');
+    expect(img?.getAttribute('src')).toBe(DATI);
+    /* In testa al chip c'è la miniatura, non l'icona dell'archivio: sarebbero
+       due simboli per la stessa cosa. (L'unica altra svg è la × per togliere.) */
+    expect(chip.firstElementChild).toBe(img);
+    expect(chip.textContent).toContain('Immagine incollata 9.05');
+  });
+
+  it('resta anche mentre il server la sta leggendo, ma cede il posto all’errore', () => {
+    const doc = { id: 'all-1', titolo: 'Immagine', archivio: 'conversazione' as const, anteprima: DATI };
+    const inLavorazione = creaChipDocumento(doc, () => undefined, { stato: 'lavorazione' });
+    expect(inLavorazione.querySelector('img')).not.toBeNull();
+
+    const fallito = creaChipDocumento(doc, () => undefined, { stato: 'errore', messaggio: 'non letta' });
+    expect(fallito.querySelector('img')).toBeNull();
+    expect(fallito.querySelector('svg')).not.toBeNull();
+  });
+
+  it('c’è già sul chip transitorio, mentre l’immagine sale', () => {
+    const chip = creaChipAllegato(
+      { chiave: 1, nome: 'Immagine incollata 9.05.png', stato: 'caricamento', anteprima: DATI },
+      () => undefined,
+    );
+    expect(chip.querySelector('img.riferimento__anteprima')).not.toBeNull();
+    expect(chip.textContent).toContain('caricamento…');
+  });
+});

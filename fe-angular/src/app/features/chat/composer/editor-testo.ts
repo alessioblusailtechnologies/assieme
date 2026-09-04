@@ -20,6 +20,12 @@ export interface ChipDocumento {
   id: string;
   titolo: string;
   archivio: 'pubblico' | 'privato' | 'conversazione';
+  /**
+   * L'immagine incollata, come `data:` URL. Ce l'hanno solo i documenti
+   * nati da un incolla, e prende il posto dell'icona: di uno screenshot il
+   * nome non dice niente («Immagine incollata 9.05»), la miniatura sì.
+   */
+  anteprima?: string;
 }
 
 /**
@@ -36,6 +42,8 @@ export interface ChipAllegato {
   nome: string;
   stato: 'caricamento' | 'errore';
   messaggio?: string;
+  /** L'immagine incollata, come `data:` URL: prende il posto dell'icona. */
+  anteprima?: string;
 }
 
 const eChip = (n: Node): n is HTMLElement =>
@@ -235,8 +243,13 @@ export function creaChipDocumento(
   chip.dataset['stato'] = stato?.stato ?? '';
   chip.classList.toggle('is-errore', stato?.stato === 'errore');
 
-  const simbolo = creaSvgIcona(stato ? (stato.stato === 'errore' ? 'errore' : 'in-corso') : icona, 12);
-  if (stato?.stato === 'lavorazione') simbolo.classList.add('gira');
+  /* La miniatura vale più dell'icona, ma non più di un errore: se qualcosa
+     è andato storto, davanti ci va il segno che è andato storto. */
+  const simbolo =
+    doc.anteprima && stato?.stato !== 'errore'
+      ? miniatura(doc.anteprima)
+      : creaSvgIcona(stato ? (stato.stato === 'errore' ? 'errore' : 'in-corso') : icona, 12);
+  if (stato?.stato === 'lavorazione' && !doc.anteprima) simbolo.classList.add('gira');
   chip.append(simbolo, titolo(doc.titolo));
 
   if (stato) {
@@ -256,8 +269,11 @@ export function creaChipAllegato(allegato: ChipAllegato, togli: () => void): HTM
   const chip = scheletroChip();
   chip.setAttribute(ATTR_CHIAVE, String(allegato.chiave));
   chip.classList.toggle('is-errore', allegato.stato === 'errore');
-  const icona = creaSvgIcona(allegato.stato === 'errore' ? 'errore' : 'in-corso', 12);
-  if (allegato.stato === 'caricamento') icona.classList.add('gira');
+  const icona =
+    allegato.anteprima && allegato.stato !== 'errore'
+      ? miniatura(allegato.anteprima)
+      : creaSvgIcona(allegato.stato === 'errore' ? 'errore' : 'in-corso', 12);
+  if (allegato.stato === 'caricamento' && !allegato.anteprima) icona.classList.add('gira');
   const stato = document.createElement('span');
   stato.className = 'mono riferimento__stato';
   stato.textContent = allegato.stato === 'errore' ? (allegato.messaggio ?? 'errore') : 'caricamento…';
@@ -271,6 +287,22 @@ function scheletroChip(): HTMLElement {
   chip.className = CLASSE_CHIP;
   chip.setAttribute('contenteditable', 'false');
   return chip;
+}
+
+/**
+ * La miniatura di un'immagine incollata, al posto dell'icona.
+ *
+ * `alt` vuoto e `aria-hidden`: il nome del documento è già scritto nel chip
+ * accanto, e ripeterlo allo screen reader sarebbe rumore. Il ritaglio lo fa
+ * il CSS (`object-fit`), così un'immagine larga non deforma il chip.
+ */
+function miniatura(sorgente: string): HTMLElement {
+  const img = document.createElement('img');
+  img.className = 'riferimento__anteprima';
+  img.src = sorgente;
+  img.alt = '';
+  img.setAttribute('aria-hidden', 'true');
+  return img;
 }
 
 function titolo(testo: string): HTMLElement {

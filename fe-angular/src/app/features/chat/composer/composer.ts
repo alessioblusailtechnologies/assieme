@@ -335,8 +335,9 @@ export class Composer {
   }
 
   private nuovoChip(documento: RiferimentoDocumento): HTMLElement {
+    const anteprima = this.store.anteprima(documento.id);
     return creaChipDocumento(
-      documento,
+      { ...documento, ...(anteprima && { anteprima }) },
       () => {
         chipPerId(this.editor, documento.id)?.remove();
         this.store.rimuoviRiferimento(documento.id);
