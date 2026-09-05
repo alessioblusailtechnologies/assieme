@@ -31,10 +31,10 @@ export const rotte = {
  *
  * Finché una lingua non ha le sue pagine resta fuori di qui, e tutto
  * l'impianto multilingua è inerte: nessun hreflang verso pagine che non
- * esistono, nessun selettore di lingua che porta a un 404. Il francese entra
- * con la Fase 2.
+ * esistono, nessun selettore di lingua che porta a un 404. Il francese è pubblicato
+ * dal 05/09/2026.
  */
-export const LINGUE_ATTIVE = ['it'];
+export const LINGUE_ATTIVE = ['it', 'fr'];
 
 export const LINGUA_PREDEFINITA = 'it';
 
