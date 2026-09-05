@@ -162,13 +162,40 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
  * proprio ritardo, i legami si accendono quando i nodi sono quasi a posto,
  * gli anelli si stringono per ultimi.
  */
+export type TemaGrafo = 'chiaro' | 'scuro';
+
+/**
+ * I due temi sono quelli dei due posti in cui il grafo vive: avorio nel
+ * filmato, dove si assembla su pagina chiara, e inchiostro nel sito e nella
+ * presentazione, dove la sezione è scura. Cambiano fondo, legami e anelli;
+ * i nodi hanno colori che reggono su entrambi.
+ */
+const TEMI = {
+  chiaro: {
+    fondo: '#FAF9F7',
+    vicini: '78,108,158',
+    lontani: 'rgba(47,75,124,',
+    anelli: '107,122,146',
+    opacitaAnelli: 0.55,
+  },
+  scuro: {
+    fondo: '#1C1A15',
+    vicini: '159,180,214',
+    lontani: 'rgba(127,151,196,',
+    anelli: '127,151,196',
+    opacitaAnelli: 1,
+  },
+} as const;
+
 export function drawGraph(
   ctx: CanvasRenderingContext2D,
   m: GraphModel,
   t: number,
   memory: MemoryEvent | null,
   build = 1,
+  tema: TemaGrafo = 'chiaro',
 ) {
+  const T = TEMI[tema];
   const { nodes, near, far, hubs, rings, cx, cy } = m;
 
   const px = (n: Node) => n.bx + Math.sin(t * n.sp + n.ph) * n.amp;
@@ -188,23 +215,21 @@ export function drawGraph(
     };
   };
 
-  /* Tema chiaro: lo stesso avorio della pagina del sito, così il grafo
-     appartiene alla sezione che ospita il video invece di scurirla. */
-  ctx.fillStyle = '#FAF9F7';
+  ctx.fillStyle = T.fondo;
   ctx.fillRect(0, 0, GRAPH_W, GRAPH_H);
 
   const linkIn = build >= 1 ? 1 : clamp01((build - 0.8) / 0.2);
   if (linkIn > 0) {
     ctx.lineWidth = 0.6;
     for (const [i, k, o] of near) {
-      ctx.strokeStyle = `rgba(78,108,158,${(o * linkIn).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(${T.vicini},${(o * linkIn).toFixed(3)})`;
       ctx.beginPath();
       ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
       ctx.lineTo(px(nodes[k]!), py(nodes[k]!));
       ctx.stroke();
     }
 
-    ctx.strokeStyle = `rgba(47,75,124,${(0.1 * linkIn).toFixed(3)})`;
+    ctx.strokeStyle = `${T.lontani}${(0.1 * linkIn).toFixed(3)})`;
     ctx.beginPath();
     for (const [i, k] of far) {
       ctx.moveTo(px(nodes[i]!), py(nodes[i]!));
@@ -242,7 +267,7 @@ export function drawGraph(
     for (const p of rings) {
       const a = p.a + spin;
       const rr = (p.r + Math.sin(t * 0.5 + p.ph) * 1.6) * stretch;
-      ctx.fillStyle = `rgba(107,122,146,${(p.o * 0.55 * ringIn).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${T.anelli},${(p.o * T.opacitaAnelli * ringIn).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr, 1.6, 0, Math.PI * 2);
       ctx.fill();

@@ -12,6 +12,9 @@
  * i suoi alias: è una copia consapevole, e quando il sito cambia va
  * riallineata. Il legame è dichiarato qui perché non si perda.
  *
+ * Niente cifre da cruscotto: le pagine che contano mostrano il prodotto al
+ * lavoro, non un numero grande al centro della diapositiva.
+ *
  * La spaziatura tipografica francese (spazio unificatore prima di : ; ! ?)
  * la mette `spazia()` in fondo al file, come sul sito.
  */
@@ -25,14 +28,10 @@ const spazia = <T,>(v: T): T => {
   if (typeof v === 'string') return spaziaTesto(v) as T;
   if (Array.isArray(v)) return v.map(spazia) as T;
   if (v && typeof v === 'object') {
-    return Object.fromEntries(
-      Object.entries(v).map(([k, x]) => [k, spazia(x)]),
-    ) as T;
+    return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, spazia(x)])) as T;
   }
   return v;
 };
-
-export type Cella = { value: string; tono?: 'pos' | 'neg' };
 
 const contenuto = {
   copertina: {
@@ -43,16 +42,19 @@ const contenuto = {
     piede: 'Présentation produit · 2026',
   },
 
-  constat: {
-    occhiello: 'Le constat',
-    titolo: 'Le temps ne part pas dans les décisions difficiles',
+  /* La memoria apre la presentazione, come apre il sito: è il differenziale,
+     e va detto prima dell'elenco delle funzioni. */
+  memoire: {
+    occhiello: 'Mémoire vivante',
+    titolo: 'Voilà ce que veut dire ne pas oublier',
     attacco:
-      'Il part à retrouver, revérifier et recopier des informations qui existent déjà. La documentation précontractuelle d’un seul produit dommages, ce sont quatre-vingts à cent pages entre IPID, notice et conditions générales. Un cabinet en traite des dizaines.',
-    cifre: [
-      { valore: '1 à 2 h', etichetta: 'pour comparer deux contrats à la main, dossier par dossier' },
-      { valore: '54', etichetta: 'garanties dans une comparaison auto ordinaire' },
-      { valore: '2 ou 3', etichetta: 'personnes qui détiennent la façon de faire du cabinet' },
+      'Un dossier partagé conserve, et c’est tout : il ne relie rien, ne se souvient de rien, ne répond à rien. Chez Velia, chaque document lu entre dans quelque chose qui grandit, fait des règles que vous lui dictez, des choix qu’elle vous voit faire, des cas que vous avez déjà tranchés ensemble. Le lundi, elle sait ce que vous lui avez expliqué le vendredi.',
+    righe: [
+      { termine: 'Vos règles', dettaglio: 'Écrites une fois, elles valent tout de suite pour toute l’équipe' },
+      { termine: 'Ce qu’elle apprend', dettaglio: 'Usages, exceptions et préférences : expliqués une fois, jamais répétés' },
+      { termine: 'À vous, toujours', dettaglio: 'Vous consultez, corrigez, supprimez. Ce qu’elle apprend reste au cabinet' },
     ],
+    didascalia: 'Documents, règles et cas déjà tranchés, reliés entre eux',
   },
 
   differenza: {
@@ -82,132 +84,83 @@ const contenuto = {
     ],
   },
 
-  ecran: {
-    occhiello: 'Velia au travail',
-    titolo: 'Le contrat en cours et le devis, côte à côte',
+  /* --- Le funzionalità, ciascuna con la sua schermata --------------------- */
+
+  comparaison: {
+    occhiello: 'Comparaison',
+    titolo: 'Deux contrats, garantie par garantie',
     attacco:
-      'Neuf écarts qui comptent sur 54 garanties, et pour chacun l’article dont il vient. La protection du conducteur n’est pas signalée comme lacune : votre cabinet la couvre à part, et vous le lui avez expliqué une fois.',
-    colonne: ['Garantie', 'Contrat en cours', 'Devis concurrent'],
-    righe: [
-      { label: 'Plafond RC', a: { value: '6 450 000 €' }, b: { value: '25 000 000 €', tono: 'pos' } },
-      { label: 'Franchise dommages', a: { value: '500 €' }, b: { value: '750 €' } },
-      { label: 'Franchise vandalisme', a: { value: '10 %' }, b: { value: '15 %', tono: 'neg' } },
-      { label: 'Protection du conducteur', a: { value: 'Incluse' }, b: { value: 'Non prévue' } },
-      { label: 'Vol et incendie', a: { value: 'Valeur à neuf' }, b: { value: 'Valeur vénale', tono: 'neg' } },
-      { label: 'Protection juridique', a: { value: '10 000 €' }, b: { value: '15 000 €', tono: 'pos' } },
-    ] as { label: string; a: Cella; b: Cella }[],
-    fonti: ['conditions_generales.pdf · art. 12 p. 34', 'devis_concurrent.pdf · sect. 3 p. 2'],
+      'Le devis que le client rapporte d’un concurrent, mis en regard des conditions du contrat en cours. Ce qui à la main prend une heure par dossier arrive en secondes.',
   },
 
-  strumenti: {
-    occhiello: 'La plateforme',
-    titolo: 'Dix outils qui se passent le travail',
+  citation: {
+    occhiello: 'Citation de la source',
+    titolo: 'Chaque affirmation renvoie à sa page',
     attacco:
-      'Ils parlent la langue du métier, pas celle des logiciels. Les quatre premiers font le travail de tous les jours ; les six autres font qu’il ne se refait pas deux fois.',
-    voci: [
-      {
-        nome: 'Bibliothèque de marché',
-        riga: 'Le marché français est déjà dedans, rangé par branche, produit et millésime. Le premier jour, vous posez des questions.',
-      },
-      {
-        nome: 'Vos documents',
-        riga: 'Ce qui entre au cabinet trouve sa place tout seul, et répond chaque fois que vous le mettez en cause.',
-      },
-      {
-        nome: 'Comparaison',
-        riga: 'Deux produits, une question : qu’est-ce qui change vraiment. La réponse arrive en secondes.',
-      },
-      {
-        nome: 'Tableaux',
-        riga: 'Des dizaines de produits lus en parallèle, vos critères en colonne, la source dans chaque case.',
-      },
-      {
-        nome: 'Méthode',
-        riga: 'Velia apprécie selon les critères de votre cabinet, pas selon des critères décidés en usine.',
-      },
-      {
-        nome: 'Documents',
-        riga: 'Ce qui sort est déjà mis en page à vos couleurs, en PDF, DOCX, XLSX ou PPTX.',
-      },
-      {
-        nome: 'Canaux',
-        riga: 'Le devis qui arrive par WhatsApp ou par e-mail entre tout seul, et la proposition repart de là.',
-      },
-      {
-        nome: 'Agents',
-        riga: 'Le travail qui se répète, vous le décrivez une fois en français. Ensuite vous le retrouvez fait.',
-      },
-      {
-        nome: 'Écosystème',
-        riga: 'Vos documents restent accessibles depuis les outils d’IA que vous utilisez déjà.',
-      },
-      {
-        nome: 'Mémoire',
-        riga: 'Chaque semaine de travail la rend plus juste, et ce qu’elle apprend reste au cabinet.',
-      },
-    ],
+      'Pas « le contrat prévoit un recours », mais le document, l’article et la page, qui s’ouvrent en un clic. C’est ce qui fait la différence entre une réponse et une réponse vérifiable.',
   },
 
-  bibliotheque: {
-    occhiello: 'Bibliothèque de marché',
-    titolo: 'Vous ne partez jamais de zéro',
+  sauvegarde: {
+    occhiello: 'La mémoire s’écrit',
+    titolo: 'Vous le dites une fois, elle le retient',
     attacco:
-      'Les outils généralistes naissent vides : avant de vous aider, il faut les remplir, les instruire et les entretenir, cabinet par cabinet. Velia arrive pleine.',
-    righe: [
-      { termine: 'Déjà prête', dettaglio: 'Les produits des principaux assureurs français, chargés et entretenus par nous' },
-      { termine: 'Rangée', dettaglio: 'Assureurs, branches, produits et millésimes, avec la version en cours en évidence' },
-      { termine: 'Tenue à jour', dettaglio: 'Nous nous en occupons. S’il manque quelque chose, vous le signalez d’un clic' },
-      { termine: 'À vous d’ajouter le reste', dettaglio: 'Le devis apporté ce matin, le contrat à renouveler : c’est tout ce que vous déposez' },
-    ],
+      'Une règle du cabinet dictée en français au fil de la conversation devient une entrée de mémoire : lisible, corrigible, effaçable, et valable pour toute l’équipe.',
   },
 
-  methode: {
-    occhiello: 'Méthode',
-    titolo: 'Personne n’apprécie une garantie comme vous l’appréciez',
+  rappel: {
+    occhiello: 'La mémoire se rappelle',
+    titolo: 'Un autre client, la même règle, sans la répéter',
     attacco:
-      'Un comparateur signale comme lacune grave l’absence de la protection du conducteur. Mais vous, cette garantie, vous la couvrez depuis toujours par un contrat séparé : ce signalement, pour vous, c’est du bruit.',
-    righe: [
-      { termine: 'Vous l’écrivez', dettaglio: 'En français, comme vous l’expliqueriez à un nouveau collaborateur' },
-      { termine: 'Cela vaut toujours', dettaglio: 'Pour tout le cabinet, dans chaque conversation, sans avoir à le répéter' },
-      { termine: 'Cela reste honnête', dettaglio: 'Cela change l’appréciation, jamais les faits : la source est citée quand même' },
-    ],
+      'Sur un dossier qui n’a rien à voir, Velia applique la règle apprise et le déclare avec l’étiquette « Mémoire ». C’est ainsi qu’on contrôle, et qu’on la corrige si elle a changé.',
   },
 
-  memoire: {
-    occhiello: 'Mémoire vivante',
-    titolo: 'Voilà ce que veut dire ne pas oublier',
+  instructions: {
+    occhiello: 'Méthode du cabinet',
+    titolo: 'Vos critères, écrits en français',
     attacco:
-      'Un dossier partagé conserve, et c’est tout : il ne relie rien, ne se souvient de rien, ne répond à rien. Chez Velia, chaque document lu entre dans quelque chose qui grandit. Le lundi, elle sait ce que vous lui avez expliqué le vendredi.',
-    righe: [
-      { termine: 'Vos règles', dettaglio: 'Écrites une fois, elles valent tout de suite pour toute l’équipe' },
-      { termine: 'Ce qu’elle apprend', dettaglio: 'Usages, exceptions et préférences : expliqués une fois, jamais répétés' },
-      { termine: 'Les cas tranchés', dettaglio: 'Chaque comparaison corrigée par vous rend la suivante meilleure' },
-      { termine: 'À vous, toujours', dettaglio: 'Vous consultez, corrigez, supprimez. Ce qu’elle apprend reste au cabinet' },
-    ],
+      'Pas de paramétrage, pas de formulaire : quelques lignes comme vous les expliqueriez à un nouveau collaborateur. Velia apprécie avec elles, et le dit chaque fois qu’elle les applique.',
+  },
+
+  archive: {
+    occhiello: 'Documents du cabinet',
+    titolo: 'Ce qui entre trouve sa place tout seul',
+    attacco:
+      'Vos dossiers, vos conventions, vos modèles : rangés comme vous les rangez, confidentiels, et interrogeables à côté des documents des assureurs. Ce qui arrive par e-mail se classe seul.',
+  },
+
+  tableaux: {
+    occhiello: 'Tableaux d’analyse',
+    titolo: 'Des dizaines de produits, vos critères en colonne',
+    attacco:
+      'Quand les documents sont trop nombreux pour être lus un à un, ils deviennent un tableau. Là où la donnée n’est pas dans le document, la case le dit au lieu de deviner.',
+  },
+
+  agents: {
+    occhiello: 'Agents',
+    titolo: 'Le travail qui se répète, décrit une fois',
+    attacco:
+      'Vous écrivez ce qu’il faut faire et quand, en français. L’agent le fait seul, avec la méthode du cabinet et la source citée, et vous retrouvez le résultat.',
   },
 
   documents: {
     occhiello: 'Ce qui sort',
-    titolo: 'Des documents client, pas des captures d’écran',
+    titolo: 'Des documents client, à vos couleurs',
     attacco:
-      'Le tableau comparatif, la synthèse, la note de conseil : mis en page à vos couleurs et prêts à partir. Vous relisez, vous signez.',
+      'Le tableau comparatif, la synthèse, la note de conseil : mis en page depuis vos propres modèles et prêts à partir. Vous relisez, vous signez.',
     formati: ['PDF', 'DOCX', 'XLSX', 'PPTX'],
-    righe: [
-      { termine: 'À vos couleurs', dettaglio: 'Votre logo, vos polices, vos mentions : le document est le vôtre' },
-      { termine: 'Depuis vos modèles', dettaglio: 'Vous déposez le modèle du cabinet, Velia le remplit' },
-      { termine: 'Avec les sources', dettaglio: 'Chaque valeur reste rattachée au document dont elle vient' },
-    ],
   },
 
-  agents: {
-    occhiello: 'Agents et écosystème',
-    titolo: 'Elle travaille aussi quand vous ne la regardez pas',
+  /* ----------------------------------------------------------------------- */
+
+  ecosysteme: {
+    occhiello: 'Canaux et écosystème',
+    titolo: 'Elle vous rejoint là où vous êtes déjà',
     attacco:
-      'Certaines choses ne valent pas la peine d’être refaites à la main : vérifier si une nouvelle version est parue, relire chaque lundi ce qui est entré au cabinet. Vous les décrivez une fois et Velia les fait seule.',
+      'Le devis qui arrive par WhatsApp ou par e-mail entre tout seul dans le dossier. Et si l’outil d’IA que vous utilisez tous les jours est un autre, vos documents restent accessibles de là aussi.',
     righe: [
-      { termine: 'Quand vous voulez', dettaglio: 'Une tâche décrite une fois, répétée chaque jour, chaque semaine ou chaque mois' },
-      { termine: 'Là où vous êtes', dettaglio: 'Vos documents accessibles depuis les outils d’IA que vous utilisez déjà' },
-      { termine: 'Avec les mêmes règles', dettaglio: 'La méthode du cabinet et la citation de la source valent aussi ici' },
+      { termine: 'Canaux', dettaglio: 'WhatsApp et e-mail : la pièce jointe est classée et indexée à l’arrivée' },
+      { termine: 'Vos outils', dettaglio: 'Vos documents interrogeables depuis les outils d’IA déjà en place' },
+      { termine: 'Mêmes règles', dettaglio: 'La méthode du cabinet et la citation de la source valent aussi ici' },
     ],
     avvertenza:
       'Un avertissement que nous préférons donner tout de suite : hors de Velia, ce sont les règles de ce logiciel-là qui s’appliquent, pas les vôtres.',
@@ -279,15 +232,18 @@ export const testi = spazia(contenuto);
 /** L'ordine delle diapositive. Il numero di pagine si conta da qui. */
 export const diapositive = [
   'copertina',
-  'constat',
-  'differenza',
-  'ecran',
-  'strumenti',
-  'bibliotheque',
-  'methode',
   'memoire',
-  'documents',
+  'differenza',
+  'comparaison',
+  'citation',
+  'sauvegarde',
+  'rappel',
+  'instructions',
+  'archive',
+  'tableaux',
   'agents',
+  'documents',
+  'ecosysteme',
   'securite',
   'pourQui',
   'demarrer',
