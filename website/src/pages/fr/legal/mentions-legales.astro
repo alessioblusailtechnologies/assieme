@@ -1,0 +1,102 @@
+---
+import { site } from '~/config/site';
+import { percorso } from '~/i18n';
+import LegalLayout from '~/layouts/LegalLayout.astro';
+
+/**
+ * ⚠️ Da far rileggere prima della pubblicazione a chi ha redatto le note
+ * legali italiane. Il titolare è la stessa società italiana (non esiste una
+ * società francese, e inventarne una qui sarebbe grave): cambiano la lingua
+ * del testo e l'autorità di controllo nominata, non l'entità.
+ */
+---
+
+<LegalLayout
+  lingua="fr"
+  title="Mentions légales"
+  description="Éditeur du site, hébergement, propriété intellectuelle et responsabilité pour le site de Velia."
+  lead="Qui édite ce site, où il est hébergé, et à quoi engagent les textes que vous y lisez."
+  updated="2026-09-05"
+  crumb="Mentions légales"
+  href={percorso('noteLegali', 'fr')}
+>
+  <h2>Éditeur du site</h2>
+  <p>
+    Le présent site est édité par <strong>{site.legalName}</strong>, société de
+    droit italien, dont l’activité est le développement et l’exploitation de la
+    plateforme <strong>{site.name}</strong>.
+  </p>
+  <p>
+    Contact : <a href={`mailto:${site.email}`}>{site.email}</a>.
+  </p>
+  <p>
+    Velia est un logiciel destiné aux professionnels de la distribution
+    d’assurance. <strong>Velia n’est pas un intermédiaire d’assurance</strong> :
+    elle ne distribue aucun contrat, ne formule aucune recommandation
+    personnalisée à un assuré et n’est inscrite à aucun registre
+    d’intermédiaires. Le devoir de conseil, la responsabilité professionnelle
+    et la relation avec le client demeurent intégralement ceux de
+    l’intermédiaire qui utilise l’outil.
+  </p>
+
+  <h2>Langue de référence</h2>
+  <p>
+    Cette page est une traduction de courtoisie destinée aux lecteurs
+    francophones. <strong>En cas de divergence d’interprétation, la version
+    italienne des documents juridiques fait foi</strong>, et le droit italien
+    s’applique, sans préjudice des dispositions impératives protégeant les
+    consommateurs et les utilisateurs dans leur pays de résidence.
+  </p>
+
+  <h2>Contenu du site</h2>
+  <p>
+    Les informations publiées ici décrivent un produit logiciel. Elles ne
+    constituent ni un conseil en assurance, ni une offre contractuelle, ni une
+    analyse des garanties d’un contrat déterminé. Les exemples, les
+    comparaisons et les captures d’écran sont des illustrations : ils ne
+    reproduisent aucun contrat réel et ne nomment aucun assureur.
+  </p>
+  <p>
+    Les conditions d’usage de la plateforme sont définies dans le contrat
+    conclu avec chaque cabinet, et non sur cette page.
+  </p>
+
+  <h2>Propriété intellectuelle</h2>
+  <p>
+    La marque Velia, les textes, la charte graphique, les illustrations et le
+    code de ce site appartiennent à {site.legalName}, sauf mention contraire.
+    Toute reproduction ou représentation, totale ou partielle, sans
+    autorisation écrite préalable est interdite.
+  </p>
+  <p>
+    Les documents contractuels et précontractuels des compagnies d’assurance
+    restent la propriété de leurs auteurs respectifs. Velia les traite pour
+    répondre aux questions de ses utilisateurs et cite systématiquement leur
+    origine.
+  </p>
+
+  <h2>Liens</h2>
+  <p>
+    Certains liens conduisent vers des services hébergés sur d’autres domaines,
+    notamment les profils sur les réseaux sociaux. Une fois le lien suivi,
+    c’est la politique du site de destination qui s’applique, et nous n’avons
+    aucun contrôle sur son contenu.
+  </p>
+
+  <h2>Responsabilité</h2>
+  <p>
+    Nous mettons à jour ce site avec soin, sans garantir que chaque information
+    y soit exhaustive ou exempte d’erreur à tout instant. Les caractéristiques
+    du produit évoluent, et une page peut décrire une version antérieure. En
+    cas de doute sur un point qui compte pour votre décision,
+    <a href={`mailto:${site.email}`}>écrivez-nous</a> : nous répondons.
+  </p>
+
+  <h2>Signalement</h2>
+  <p>
+    Pour signaler un contenu, une erreur ou une atteinte à un droit :
+    <a href={`mailto:${site.email}`}>{site.email}</a>. Voir aussi la
+    <a href={percorso('privacy', 'fr')}>politique de confidentialité</a> et la
+    <a href={percorso('cookie', 'fr')}>politique cookies</a>.
+  </p>
+</LegalLayout>

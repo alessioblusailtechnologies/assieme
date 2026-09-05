@@ -7,24 +7,25 @@
  * dentro `npm run build`.
  */
 
+import fr from './fr';
 import it from './it';
-import { LINGUA_PREDEFINITA, type Lingua } from './lingue';
+import type { Lingua } from './lingue';
 
 export type Contenuti = typeof it;
 
 /**
- * ⚠️ Quando il francese entra, questa mappa diventa
- * `Record<Lingua, Contenuti>` e il tipo `Partial` sparisce: da lì in poi
- * dimenticare una lingua è un errore di compilazione, non un ripiego
- * silenzioso sull'italiano.
+ * Mappa completa, non parziale: dimenticare una lingua è un errore di
+ * compilazione, non un ripiego silenzioso sull'italiano. Una pagina francese
+ * non può finire per mostrare testo italiano senza che qualcuno se ne
+ * accorga.
  */
-const dizionari: Partial<Record<Lingua, Contenuti>> = { it };
+const dizionari: Record<Lingua, Contenuti> = { it, fr };
 
 export function contenuti(lingua: Lingua): Contenuti {
-  return dizionari[lingua] ?? dizionari[LINGUA_PREDEFINITA] ?? it;
+  return dizionari[lingua];
 }
 
-export { LINGUA_PREDEFINITA, lingue, lingueAttive, type Lingua } from './lingue';
+export { attiva, LINGUA_PREDEFINITA, lingue, lingueAttive, type Lingua } from './lingue';
 export {
   alternative,
   chiaveDi,

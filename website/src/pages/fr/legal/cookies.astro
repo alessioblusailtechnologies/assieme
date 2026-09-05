@@ -1,0 +1,90 @@
+---
+import { site } from '~/config/site';
+import { percorso } from '~/i18n';
+import LegalLayout from '~/layouts/LegalLayout.astro';
+
+/**
+ * ⚠️ Come l'italiana: il sito, così com'è consegnato, non installa alcun
+ * cookie e nessun bandeau è dovuto. Se in seguito verranno aggiunti strumenti
+ * di analisi o pixel pubblicitari, questa pagina va riscritta E va introdotto
+ * un meccanismo di raccolta del consenso preventivo. In Francia il quadro di
+ * riferimento è l'articolo 82 della loi Informatique et Libertés e le
+ * linee guida della CNIL, non l'art. 122 del Codice privacy italiano.
+ */
+---
+
+<LegalLayout
+  lingua="fr"
+  title="Politique cookies"
+  description="Quels cookies utilise le site de Velia, et pourquoi aucune bannière de consentement n’est requise."
+  lead="La version courte : ce site ne vous profile pas et n’installe aucun cookie tiers."
+  updated="2026-09-05"
+  crumb="Cookies"
+  href={percorso('cookie', 'fr')}
+>
+  <h2>Ce que sont les cookies</h2>
+  <p>
+    Les cookies sont de petits fichiers texte que les sites visités déposent
+    sur l’appareil de l’utilisateur, où ils sont conservés pour être renvoyés
+    à ces mêmes sites lors de la visite suivante. Les technologies analogues,
+    comme le <em>local storage</em>, relèvent des mêmes règles.
+  </p>
+
+  <h2>Cookies utilisés par ce site</h2>
+  <p>
+    Le site institutionnel de {site.name} <strong>n’installe aucun
+    cookie</strong>, ni technique ni de profilage, et n’utilise pas le local
+    storage du navigateur. Aucun consentement préalable n’est donc requis au
+    sens de l’article 82 de la loi Informatique et Libertés et des
+    recommandations de la CNIL.
+  </p>
+  <p>En particulier :</p>
+  <ul>
+    <li>
+      <strong>Aucun cookie de mesure d’audience.</strong> Nous ne mesurons pas
+      le trafic avec des outils qui identifient le visiteur.
+    </li>
+    <li>
+      <strong>Aucun cookie publicitaire.</strong> Nous n’utilisons ni pixel de
+      remarketing ni plateforme publicitaire.
+    </li>
+    <li>
+      <strong>Aucune ressource tierce.</strong> Polices de caractères, feuilles
+      de style, scripts et images sont servis depuis notre propre domaine. En
+      ouvrant cette page, votre navigateur ne contacte aucun serveur externe,
+      et votre adresse IP n’est communiquée à personne.
+    </li>
+  </ul>
+
+  <h2>Contenus externes</h2>
+  <p>
+    Certains liens conduisent vers des services hébergés sur d’autres domaines :
+    l’espace de connexion à la plateforme, la page d’état du service, les
+    profils sur les réseaux sociaux. Une fois le lien suivi, c’est la politique
+    du site de destination qui s’applique, et nous n’avons aucun contrôle
+    dessus.
+  </p>
+
+  <h2>L’application, c’est autre chose</h2>
+  <p>
+    Cette page ne concerne que le site institutionnel. L’application réservée
+    aux clients, accessible depuis « Se connecter », utilise des cookies
+    techniques indispensables au maintien de la session authentifiée : ils sont
+    décrits dans l’information présentée à la première connexion.
+  </p>
+
+  <h2>Contrôler les cookies</h2>
+  <p>
+    Indépendamment de ce site, chaque navigateur permet d’afficher, de bloquer
+    ou de supprimer les cookies déjà enregistrés. Les instructions figurent
+    dans la documentation du navigateur, à la rubrique relative à la vie privée
+    ou aux données de navigation.
+  </p>
+
+  <h2>Contact</h2>
+  <p>
+    Pour toute précision : <a href={`mailto:${site.email}`}>{site.email}</a>.
+    Voir aussi la
+    <a href={percorso('privacy', 'fr')}>politique de confidentialité</a>.
+  </p>
+</LegalLayout>

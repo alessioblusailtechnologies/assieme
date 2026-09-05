@@ -2,6 +2,8 @@
 import { SITE_URL, site } from '~/config/site';
 import {
   alternative as alternativeDiRotta,
+  attiva,
+  chiaveDi,
   contenuti,
   LINGUA_PREDEFINITA,
   lingue,
@@ -45,6 +47,15 @@ const t = contenuti(lingua).seo;
 const scheda = lingue[lingua];
 
 /*
+ * Una lingua che esiste nel codice ma non è ancora pubblicata resta fuori
+ * dall'indice. Serve a rendere sicuro lo stato intermedio: le pagine si
+ * possono guardare e rivedere, ma non entrano in Google senza hreflang né
+ * prima che qualcuno le abbia lette. Insieme all'esclusione dalla sitemap,
+ * è ciò che rende `LINGUE_ATTIVE` un interruttore vero.
+ */
+const fuoriIndice = noindex || !attiva(lingua);
+
+/*
  * `build.format: 'file'` genera /piattaforma.html, e in fase di build
  * `Astro.url.pathname` riporta proprio quel nome di file. Lasciato così, il
  * canonical punterebbe a /piattaforma.html mentre la sitemap dichiara
@@ -61,7 +72,15 @@ const pathname = cleanPath(Astro.url.pathname);
 const canonicalUrl = canonical ?? new URL(pathname, SITE_URL).href;
 const imageUrl = new URL(image, SITE_URL).href;
 
-const fullTitle = pathname === '/' ? title : `${title} | ${site.name}`;
+/*
+ * Il suffisso non si mette sulla home, che il nome ce l'ha già nel titolo.
+ * La condizione passa dalla tabella delle rotte e non dal confronto letterale
+ * del percorso con la radice:
+ * la home francese sta su /fr, e con il confronto letterale si ritrovava
+ * «Velia» due volte nello stesso titolo.
+ */
+const fullTitle =
+  chiaveDi(pathname) === 'home' ? title : `${title} | ${site.name}`;
 
 /*
  * Gli alternate arrivano dalla tabella delle rotte, o espliciti per le rotte
@@ -154,7 +173,7 @@ const jsonLd = [organizationSchema, websiteSchema, ...schema];
 }
 
 {
-  noindex ? (
+  fuoriIndice ? (
     <meta name="robots" content="noindex, nofollow" />
   ) : (
     <meta

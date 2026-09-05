@@ -1,0 +1,149 @@
+---
+import { site } from '~/config/site';
+import { percorso } from '~/i18n';
+import LegalLayout from '~/layouts/LegalLayout.astro';
+
+/**
+ * ⚠️ Testo di base, non un parere legale, esattamente come la versione
+ * italiana. Va rivisto dal responsabile della protezione dei dati e
+ * completato con i dati societari reali (P. IVA, sede, eventuale DPO, elenco
+ * aggiornato dei responsabili) prima della messa online.
+ *
+ * Rispetto all'italiano cambiano: l'autorità di controllo nominata (CNIL, e
+ * le corrispondenti per Belgio e Lussemburgo), il richiamo alla lingua che fa
+ * fede, e i riferimenti normativi nazionali. La sostanza no: il GDPR è lo
+ * stesso regolamento nei due paesi.
+ */
+---
+
+<LegalLayout
+  lingua="fr"
+  title="Politique de confidentialité"
+  description="Comment Blusail Technologies traite les données personnelles des visiteurs du site de Velia et des personnes qui demandent une démo, au sens du RGPD."
+  lead="Qui traite vos données, à quelles fins, pendant combien de temps, et comment vous pouvez intervenir."
+  updated="2026-09-05"
+  crumb="Confidentialité"
+  href={percorso('privacy', 'fr')}
+>
+  <p>
+    La présente politique est établie au titre des articles 13 et 14 du
+    Règlement (UE) 2016/679 (« RGPD ») et porte sur les données personnelles
+    traitées par l’intermédiaire de ce site. Le traitement des données
+    contenues dans les documents déposés par les clients à l’intérieur de la
+    plateforme fait l’objet d’un accord de sous-traitance distinct, conclu avec
+    chaque client.
+  </p>
+  <p>
+    Cette page est une traduction de courtoisie : <strong>en cas de divergence
+    d’interprétation, la version italienne fait foi</strong>.
+  </p>
+
+  <h2>Responsable du traitement</h2>
+  <p>
+    <strong>{site.legalName}</strong>, éditeur du produit {site.name}.<br />
+    Contact : <a href={`mailto:${site.email}`}>{site.email}</a>.
+  </p>
+  <p>
+    <em>
+      À compléter avec le siège social, le numéro de TVA, l’immatriculation au
+      registre des entreprises et les coordonnées du délégué à la protection
+      des données, s’il est désigné.
+    </em>
+  </p>
+
+  <h2>Données traitées et finalités</h2>
+
+  <h3>Navigation sur le site</h3>
+  <p>
+    Les systèmes informatiques recueillent, au cours de leur fonctionnement
+    normal, certaines données dont la transmission est inhérente à l’usage des
+    protocoles de communication : adresses IP, type de navigateur, horodatage
+    de la requête. Elles servent à assurer le fonctionnement et la sécurité du
+    site, et sont traitées sur le fondement de l’intérêt légitime du
+    responsable (art. 6.1.f RGPD).
+  </p>
+  <p>
+    Le site n’utilise ni cookie de profilage ni outil de mesure d’audience
+    transférant des données hors de l’Union européenne. Les polices de
+    caractères sont hébergées sur nos propres serveurs : aucune requête n’est
+    adressée à un fournisseur tiers pendant la navigation. Pour le détail, voir
+    la <a href={percorso('cookie', 'fr')}>politique cookies</a>.
+  </p>
+
+  <h3>Demande de démo et prise de contact</h3>
+  <p>
+    Les données que vous saisissez dans le formulaire (nom, fonction, cabinet
+    ou société, e-mail, téléphone et texte du message) sont traitées pour
+    répondre à votre demande et, le cas échéant, organiser une démonstration de
+    la plateforme. La base juridique est l’exécution de mesures
+    précontractuelles prises à votre demande (art. 6.1.b RGPD).
+  </p>
+  <p>
+    La fourniture des champs signalés comme obligatoires est nécessaire pour
+    donner suite à la demande ; sans eux, nous ne pouvons pas vous recontacter.
+  </p>
+
+  <h2>Destinataires</h2>
+  <p>
+    Les données peuvent être traitées par le personnel autorisé du responsable
+    et par des fournisseurs agissant en qualité de sous-traitants
+    (infrastructure d’hébergement, messagerie, gestion de la relation client),
+    désignés au titre de l’article 28 RGPD. L’acheminement du formulaire de
+    demande de démo est confié au service technique Web3Forms, qui remet les
+    données dans notre boîte de réception sans les conserver. La liste à jour
+    des fournisseurs est disponible sur demande.
+  </p>
+  <p>
+    Les données ne sont ni diffusées ni cédées à des tiers pour leurs propres
+    finalités commerciales.
+  </p>
+
+  <h2>Transferts hors Union européenne</h2>
+  <p>
+    Le stockage et le traitement des données ont lieu au sein de l’Union
+    européenne. Fait exception le transit technique du formulaire de demande de
+    démo par le service d’acheminement Web3Forms, qui peut s’effectuer sur des
+    infrastructures situées hors de l’Union européenne, avec les garanties
+    prévues aux articles 44 et suivants du RGPD ; le service ne conserve pas le
+    contenu des envois.
+  </p>
+
+  <h2>Durée de conservation</h2>
+  <ul>
+    <li>
+      <strong>Données de navigation :</strong> conservées le temps strictement
+      nécessaire aux finalités de sécurité, en principe pas au-delà de douze
+      mois.
+    </li>
+    <li>
+      <strong>Demandes de contact et de démo :</strong> conservées vingt-quatre
+      mois à compter du dernier échange, sauf établissement d’une relation
+      contractuelle, auquel cas s’appliquent les durées contractuelles et
+      légales.
+    </li>
+  </ul>
+
+  <h2>Vos droits</h2>
+  <p>
+    Vous pouvez exercer à tout moment les droits prévus aux articles 15 à 22 du
+    RGPD : accès aux données, rectification, effacement, limitation du
+    traitement, portabilité et opposition. Les demandes sont à adresser à
+    <a href={`mailto:${site.email}`}>{site.email}</a> et reçoivent une réponse
+    dans le mois.
+  </p>
+  <p>
+    Si vous estimez que le traitement méconnaît la réglementation, vous pouvez
+    introduire une réclamation auprès de l’autorité de contrôle de l’État
+    membre où vous résidez : en France la
+    <a href="https://www.cnil.fr" rel="noopener noreferrer" target="_blank">CNIL</a>,
+    en Belgique l’Autorité de protection des données, au Luxembourg la CNPD, en
+    Italie le Garante per la protezione dei dati personali.
+  </p>
+
+  <h2>Modifications</h2>
+  <p>
+    Cette politique peut être mise à jour. La date en tête du document indique
+    la dernière révision ; les modifications substantielles sont signalées par
+    les canaux habituels de communication avec les clients.
+  </p>
+</LegalLayout>

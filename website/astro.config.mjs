@@ -3,7 +3,12 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 import { SITE_URL } from './src/config/env.mjs';
-import { alternativeSitemap, prioritaDi } from './src/config/sitemap.mjs';
+import {
+  alternativeSitemap,
+  fuoriSitemap,
+  linguaSpenta,
+  prioritaDi,
+} from './src/config/sitemap.mjs';
 
 /** I percorsi che la build ha davvero prodotto, riempito da `filter`. */
 const costruite = new Set();
@@ -44,10 +49,13 @@ export default defineConfig({
        * esiste, che è il modo più rapido per far ignorare a Google l'intero
        * gruppo di hreflang.
        */
-      // Le pagine di sistema non devono finire nella sitemap.
+      // Le pagine noindex non devono finire nella sitemap.
       filter: (page) => {
         const path = new URL(page).pathname.replace(/\/$/, '') || '/';
+        // Una lingua non ancora pubblicata non entra nemmeno in sitemap.
+        if (linguaSpenta(path)) return false;
         costruite.add(path);
+        if (fuoriSitemap(path)) return false;
         return !/\/(404|500)$/.test(page.replace(/\/$/, ''));
       },
       changefreq: 'weekly',

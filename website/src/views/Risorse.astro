@@ -46,13 +46,19 @@ const schede = guide.map((g) => ({
     trail={[{ label: t.briciola, href: percorso('risorse', lingua) }]}
   />
 
-  <CardGrid
-    id={t.guide.id}
-    title={t.guide.title}
-    lead={t.guide.lead}
-    cards={schede}
-    columns={schede.length >= 3 ? 3 : 2}
-  />
+  {
+    /* Senza guide la sezione sparisce del tutto: una griglia vuota sotto il
+       titolo «Guide» è peggio che non avere la sezione. */
+    schede.length > 0 && (
+      <CardGrid
+        id={t.guide.id}
+        title={t.guide.title}
+        lead={t.guide.lead}
+        cards={schede}
+        columns={schede.length >= 3 ? 3 : 2}
+      />
+    )
+  }
 
   <section class="glossary" id={t.glossario.id} aria-labelledby="glossary-title">
     <div class="shell">

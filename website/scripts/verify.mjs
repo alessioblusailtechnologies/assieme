@@ -44,6 +44,8 @@ const assets = new Set(
 const titles = new Map();
 const descriptions = new Map();
 const anchorsByRoute = new Map();
+/** Le rotte che dichiarano robots noindex. */
+const fuoriIndice = new Set();
 
 const pages = htmlFiles.map((file) => {
   const html = readFileSync(file, 'utf8');
@@ -53,6 +55,8 @@ const pages = htmlFiles.map((file) => {
     [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]),
   );
   anchorsByRoute.set(route, ids);
+
+  if (/name="robots" content="noindex/.test(html)) fuoriIndice.add(route);
 
   return { route, file, html };
 });
@@ -69,7 +73,12 @@ for (const { route, html } of pages) {
   if (!title) problems.push(`${route}: manca <title>`);
   if (!desc) problems.push(`${route}: manca la meta description`);
   if (!canonical) problems.push(`${route}: manca il canonical`);
-  if (lang !== 'it') problems.push(`${route}: lang="${lang}" invece di "it"`);
+  // La lingua attesa si deduce dal prefisso della rotta: /fr/... è francese,
+  // tutto il resto è italiano, che sta alla radice senza prefisso.
+  const linguaAttesa = route === '/fr' || route.startsWith('/fr/') ? 'fr' : 'it';
+  if (lang !== linguaAttesa) {
+    problems.push(`${route}: lang="${lang}" invece di "${linguaAttesa}"`);
+  }
 
   if (h1s !== 1) problems.push(`${route}: ${h1s} elementi <h1> (atteso 1)`);
 
@@ -181,6 +190,43 @@ for (const [route, alternate] of alternateDi) {
   }
 }
 
+/* --- Tipografia francese ---
+ *
+ * In francese la punteggiatura doppia vuole uno spazio unificatore davanti.
+ * Con uno spazio normale i due punti finiscono da soli a inizio riga, ed è
+ * uno dei dettagli da cui un lettore francese riconosce un testo voltato
+ * invece che scritto. La regola si applica da sé (dizionari e prosa la
+ * ricevono in automatico): questo controllo serve a sapere quando smette
+ * di applicarsi. */
+
+const UNIFICATORE = String.fromCharCode(0xa0);
+
+for (const { route, html } of pages) {
+  if (route !== '/fr' && !route.startsWith('/fr/')) continue;
+
+  const testo = html
+    .replace(/<(script|style)[\s\S]*?<\/\1>/g, ' ')
+    .replace(/<[^>]+>/g, ' ');
+
+  const sbagliati = [];
+  for (let i = 1; i < testo.length; i++) {
+    if (!/[:;!?»]/.test(testo[i])) continue;
+    if (testo[i - 1] === ' ') {
+      sbagliati.push(testo.slice(Math.max(0, i - 40), i + 1).trim());
+    }
+  }
+
+  if (sbagliati.length > 0) {
+    problems.push(
+      `${route}: ${sbagliati.length} spazi normali dove il francese vuole l'unificatore → «…${sbagliati[0]}»`,
+    );
+  }
+
+  if (!html.includes(UNIFICATORE)) {
+    notes.push(`${route}: nessuno spazio unificatore, insolito per una pagina francese`);
+  }
+}
+
 /* --- Sitemap e robots --- */
 
 const sitemapIndex = files.find((f) => f.endsWith('sitemap-index.xml'));
@@ -194,12 +240,20 @@ const sitemapUrls = files
   .flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)])
   .map((m) => new URL(m[1]).pathname.replace(/\/$/, '') || '/');
 
-if (sitemapUrls.includes('/404')) {
-  problems.push('la 404 non deve comparire nella sitemap');
-}
-
+/*
+ * Nella sitemap ci va ciò che è indicizzabile, e solo quello. Una pagina in
+ * `noindex` che ne resta fuori non è un errore: è la regola. Vale per la 404,
+ * per le pagine di servizio e per le lingue che esistono nel codice ma non
+ * sono ancora pubblicate.
+ */
 for (const route of routes) {
-  if (route !== '/404' && !sitemapUrls.includes(route)) {
+  if (fuoriIndice.has(route)) {
+    if (sitemapUrls.includes(route)) {
+      problems.push(`${route}: è noindex e non deve comparire nella sitemap`);
+    }
+    continue;
+  }
+  if (!sitemapUrls.includes(route)) {
     problems.push(`${route}: assente dalla sitemap`);
   }
 }

@@ -1,0 +1,12 @@
+---
+import Risorse from '~/views/Risorse.astro';
+
+/*
+ * Le guide francesi non ci sono ancora: la collection `guideFr` entra con la
+ * fase dedicata. Fino ad allora la pagina esiste e vive di glossario e
+ * assistenza, e la sezione delle guide semplicemente non compare. Meglio una
+ * sezione assente che una griglia vuota, o peggio le guide italiane.
+ */
+---
+
+<Risorse lingua="fr" guide={[]} />

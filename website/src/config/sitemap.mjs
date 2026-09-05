@@ -3,9 +3,44 @@
  * fuori dalla pipeline TypeScript.
  */
 
-import { HREFLANG, LINGUE_ATTIVE, rotte } from './rotte.mjs';
+import { HREFLANG, LINGUA_PREDEFINITA, LINGUE_ATTIVE, rotte } from './rotte.mjs';
 
 const chiavi = Object.keys(rotte);
+
+/** I prefissi delle lingue non ancora pubblicate, es. `/fr`. */
+const prefissiSpenti = Object.keys(HREFLANG)
+  .filter((l) => l !== LINGUA_PREDEFINITA && !LINGUE_ATTIVE.includes(l))
+  .map((l) => `/${l}`);
+
+/**
+ * `true` se il percorso appartiene a una lingua che esiste nel codice ma non
+ * è ancora pubblicata. Quelle pagine restano fuori dalla sitemap: insieme al
+ * `noindex` che ricevono, è ciò che rende sicuro lo stato intermedio in cui
+ * la traduzione si può guardare ma non è ancora online per i motori.
+ */
+export function linguaSpenta(percorso) {
+  return prefissiSpenti.some(
+    (p) => percorso === p || percorso.startsWith(`${p}/`),
+  );
+}
+
+/**
+ * Le rotte che non vanno in sitemap perché sono `noindex`: la 404 e la
+ * pagina di ringraziamento dopo l'invio del modulo.
+ *
+ * Dichiarare a un motore un URL e contemporaneamente dirgli di non
+ * indicizzarlo è una contraddizione: la sitemap è un invito, il `noindex` è
+ * un rifiuto. Search Console lo riporta come «esclusa da tag noindex», che è
+ * rumore in un rapporto che si legge per trovare i problemi veri.
+ */
+const FUORI_SITEMAP = ['nonTrovata', 'demoGrazie'];
+
+/** `true` se il percorso appartiene a una rotta che resta fuori dalla sitemap. */
+export function fuoriSitemap(percorso) {
+  return FUORI_SITEMAP.some((chiave) =>
+    Object.values(rotte[chiave]).includes(percorso),
+  );
+}
 
 /**
  * Gli alternate di una pagina, nel formato che `@astrojs/sitemap` passa al

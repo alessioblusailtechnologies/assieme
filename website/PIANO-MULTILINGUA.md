@@ -333,34 +333,65 @@ alternate solo verso percorsi che la build ha davvero prodotto.
 il francese è completo, e `node scripts/verify.mjs` dopo la build è la prova
 che lo è.
 
-### Fase 1 - Glossario e posizionamento francese - ~mezza giornata
+### ✅ Fase 1 - Glossario e posizionamento francese - **fatta** (05/09/2026)
 
-Documento, non codice. Il glossario di §5 e le tre decisioni di §8. Da qui
-in poi non si discute più di lessico mentre si scrive.
+In `glossario-fr.md`: il glossario di dominio, le regole di registro e le
+tre decisioni di §8, chiuse sulla proposta predefinita. Si dà del «vous», lo
+studio è un «cabinet» e non un'«agence», e la biblioteca di mercato non si
+promette come già pronta.
 
-### Fase 2 - Pagine commerciali - ~2 giorni
+### ✅ Fase 2 - Pagine commerciali - **fatta** (05/09/2026)
 
-Home, piattaforma, soluzioni, clienti, sicurezza, azienda. Circa 4.500
-parole **adattate**, non tradotte: i titoli si riscrivono, non si voltano.
-La riproduzione dell'interfaccia in home va rifatta con nomi coerenti (§8).
+Dizionario francese completo in `src/i18n/fr/`, non solo le pagine
+commerciali: il tipo `Contenuti` è derivato da quello italiano, quindi o ci
+sono tutte le chiavi o non compila. Le pagine sono gusci come in italiano.
 
-### Fase 3 - Demo, ringraziamento, 404, endpoint - ~mezza giornata
+La tipografia francese (spazio unificatore prima di `:` `;` `!` `?` e dentro
+i caporali) **non si scrive a mano**: `spazia()` attraversa il dizionario e
+`spaziaHtml()` fa lo stesso sulla prosa resa dai layout. Scrivere U+00A0
+dentro duecento stringhe sarebbe stato illeggibile e alla prima modifica
+sarebbe tornato uno spazio normale.
 
-Modulo con stringhe client, campo `lingua` verso Web3Forms, `/fr/404`,
-`/fr/llms.txt`.
+### ✅ Fase 3 - Demo, ringraziamento, 404, endpoint - **fatta** (05/09/2026)
 
-### Fase 4 - Legale - ~mezza giornata, più rilettura esterna
+Modulo con le stringhe di validazione dal dizionario, campo `lingua` verso
+Web3Forms, oggetto della mail in francese, `/fr/404` e `/fr/llms.txt`.
 
-Privacy, cookie, note legali. Il GDPR vale in entrambi i paesi, quindi la
-sostanza tiene, ma cambiano l'autorità di controllo citata e la lingua
-vincolante. **Non si pubblica un'informativa tradotta senza che la rilegga
-chi l'ha scritta.** Nel testo francese va detto quale versione fa fede.
+### ✅ Fase 4 - Legale - **scritta** (05/09/2026), ⚠️ **da rileggere**
+
+Le tre pagine ci sono, come prosa per lingua. Rispetto all'italiano cambiano
+l'autorità di controllo (CNIL, APD, CNPD), il riferimento normativo sui
+cookie (art. 82 della loi Informatique et Libertés al posto dell'art. 122 del
+Codice privacy), e una dichiarazione esplicita che la versione italiana fa
+fede. Le mentions légales dicono anche, a scanso di equivoci, che Velia non è
+un intermediario d'assicurazione e non è iscritta ad alcun registro.
+
+**Non si pubblica finché non le rilegge chi ha scritto quelle italiane.**
+Tradurre un'informativa non è un lavoro di copy.
 
 ### Fase 5 - Risorse e guide - ~1,5 giorni
 
 Content collection multilingua, indice `/fr/ressources`, le due guide
 riscritte in francese (~2.450 parole editoriali dense: qui l'adattamento
 pesa più che altrove, perché gli esempi sono italiani).
+
+### ⚠️ Fase 5-bis - I media della home sono in italiano
+
+Emerso guardando la home francese negli screenshot, non previsto dal piano.
+
+Il filmato `media/memoria-viva.mp4` è la composizione Remotion della
+conversazione: mostra «Confronta 3 preventivi Unipol con la polizza auto del
+cliente Rossi», massimali, franchigie e infortuni del conducente. **In
+italiano.** È il primo blocco visivo sotto l'attacco della home francese, e
+vanifica da solo il lavoro di adattamento: un courtier vede una pagina scritta
+per lui e un prodotto che parla un'altra lingua.
+
+Stessa cosa, meno vistosa perché sfocate, per le tre schermate delle
+dimostrazioni (`demo-confronto.jpg`, `demo-tabella.jpg`, `demo-agenti.jpg`).
+
+Serve un render francese della composizione da `velia-video/`: è lavoro di
+Remotion, non di copy, e va messo in conto prima della messa online. Nel
+frattempo l'alternativa è togliere il filmato dalla sola home francese.
 
 ### Fase 6 - Rifinitura e messa online - ~mezza giornata
 
@@ -440,6 +471,26 @@ Altre due cose da decidere nella stessa seduta:
 | Doppio costo di manutenzione da qui in avanti | certo | è il prezzo del multilingua, va messo in conto adesso |
 
 ---
+
+## 9-bis. Lo stato intermedio, e perché è sicuro
+
+Fra «il francese esiste nel codice» e «il francese è online» c'è un tratto in
+cui le pagine sono costruite ma non pronte. Quel tratto è reso sicuro da un
+solo interruttore, `LINGUE_ATTIVE` in `src/config/rotte.mjs`. Finché il
+francese non è dentro quell'array:
+
+- ogni pagina francese esce con `noindex, nofollow`;
+- nessuna pagina francese entra nella sitemap;
+- non si emette un solo hreflang, in nessuna delle due lingue;
+- il selettore di lingua non compare sulle pagine italiane.
+
+Si possono quindi guardare, rivedere e correggere senza che finiscano in
+Google a metà. Le pagine francesi mostrano un ritorno all'italiano nel
+selettore, il che è utile a chi le sta rivedendo e innocuo per gli altri:
+ci si arriva solo digitando l'URL.
+
+Acceso l'interruttore, si attiva tutto insieme. La prova che si possa
+accendere è `node scripts/verify.mjs` senza errori dopo la build.
 
 ## 10. Passo successivo
 

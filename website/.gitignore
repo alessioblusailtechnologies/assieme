@@ -27,3 +27,6 @@ Thumbs.db
 # la versione compressa in public/media/.
 *.mov
 
+
+# Screenshot di collaudo
+.screenshot/

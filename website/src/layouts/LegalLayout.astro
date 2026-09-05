@@ -10,6 +10,7 @@ import {
   percorso,
   type Lingua,
 } from '~/i18n';
+import { spaziaHtml, spaziaturaFrancese } from '~/i18n/fr/tipografia';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 export interface Props {
@@ -35,6 +36,20 @@ const {
 
 const t = contenuti(lingua).legale;
 
+/*
+ * La prosa non passa dai dizionari, quindi la spaziatura tipografica
+ * francese va applicata qui: si rende lo slot a stringa e si ritocca il testo
+ * fra i tag. Sull'italiano non cambia nulla.
+ */
+/* Titolo e attacco non passano dallo slot: la stessa regola va data anche
+   a loro, altrimenti la testata resta con la tipografia sbagliata. */
+const fr = (testo: string) => (lingua === 'fr' ? spaziaturaFrancese(testo) : testo);
+
+const prosa =
+  lingua === 'fr'
+    ? spaziaHtml(await Astro.slots.render('default'))
+    : await Astro.slots.render('default');
+
 const updatedLabel = new Intl.DateTimeFormat(lingue[lingua].intl, {
   day: 'numeric',
   month: 'long',
@@ -48,7 +63,7 @@ const updatedLabel = new Intl.DateTimeFormat(lingue[lingua].intl, {
   description={description}
   announcement={false}
 >
-  <PageHero eyebrow={t.eyebrow} title={title} lead={lead} />
+  <PageHero eyebrow={t.eyebrow} title={fr(title)} lead={fr(lead)} />
 
   <Breadcrumbs
     lingua={lingua}
@@ -63,9 +78,7 @@ const updatedLabel = new Intl.DateTimeFormat(lingue[lingua].intl, {
       <p class="legal__updated">
         {t.aggiornamento} <time datetime={updated}>{updatedLabel}</time>
       </p>
-      <div class="legal__body prose">
-        <slot />
-      </div>
+      <div class="legal__body prose" set:html={prosa} />
     </div>
   </article>
 
