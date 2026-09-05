@@ -84,7 +84,7 @@ const glossario: { id: string; title: string; lead: string; voci: Riga[] } = {
     {
       term: 'Bibliothèque de marché',
       detail:
-        'La bibliothèque des documentations précontractuelles de vos assureurs, rangée par branche, produit et millésime. Nous la constituons avec vous à partir des produits que vous placez, et nous la tenons à jour.',
+        'La bibliothèque des conditions des assureurs que vous trouvez déjà dans Velia à la première connexion, rangée par branche, produit et millésime. Vous n’avez pas à la charger : elle est là, et nous la tenons à jour.',
     },
     {
       term: 'Mémoire vivante',

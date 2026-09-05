@@ -31,7 +31,7 @@ const griglia: Griglia = {
     {
       id: 'bibliotheque',
       title: 'Bibliothèque de marché',
-      body: 'Les documentations précontractuelles de vos assureurs, rangées par branche, produit et millésime. Nous la constituons avec vous, sur votre marché.',
+      body: 'Le marché français de l’assurance est déjà dedans, rangé et tenu à jour. Le premier jour, vous posez des questions, vous ne chargez rien.',
     },
     {
       id: 'vos-documents',
@@ -83,11 +83,11 @@ const griglia: Griglia = {
 
 const archivio: Blocco = {
   eyebrow: 'Bibliothèque de marché',
-  title: 'Une bibliothèque qui se construit sur votre marché',
+  title: 'Vous ne partez jamais de zéro',
   rows: [
     {
-      term: 'Constituée avec vous',
-      detail: 'Les produits que vous placez vraiment, pas un catalogue générique',
+      term: 'Déjà prête',
+      detail: 'Les produits des principaux assureurs français, chargés et entretenus par nous',
     },
     {
       term: 'Rangée',
@@ -99,11 +99,11 @@ const archivio: Blocco = {
     },
   ],
   paragrafi: [
-    'Les outils généralistes naissent vides : avant de vous aider, il faut les remplir, les instruire et les entretenir, cabinet par cabinet. Velia arrive avec un métier déjà appris, et une bibliothèque que nous montons avec vous à partir des produits que vous placez.',
+    'Les outils généralistes naissent vides : avant de vous aider, il faut les remplir, les instruire et les entretenir, cabinet par cabinet. Velia arrive pleine : elle connaît les produits du marché, leurs millésimes et leurs conditions, et les tient à jour pour vous.',
     'Vous n’ajoutez que ce qui est à vous : le devis que le client a apporté ce matin, le contrat à renouveler. Et s’il est arrivé par WhatsApp ou par e-mail, il entre tout seul.',
   ],
   azione: {
-    label: 'Demandez comment nous constituons votre bibliothèque',
+    label: 'Demandez quelles compagnies sont déjà couvertes',
     link: { rotta: 'demo' },
   },
 };

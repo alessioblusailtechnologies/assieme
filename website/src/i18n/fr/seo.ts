@@ -8,7 +8,7 @@ const seo = {
   organizzazione: {
     alternateName: ['Sono Velia', 'Velia AI'],
     description:
-      'Velia est l’assistant IA des courtiers, agents généraux et mandataires d’assurance : une bibliothèque de documentations précontractuelles constituée avec vous, les documents du cabinet à côté de ceux des assureurs, et chaque réponse accompagnée de la citation du passage dont elle vient.',
+      'Velia est l’assistant IA des courtiers, agents généraux et mandataires d’assurance : une bibliothèque de documentations précontractuelles déjà prête, les documents du cabinet à côté de ceux des assureurs, et chaque réponse accompagnée de la citation du passage dont elle vient.',
     areaServita: 'France',
   },
 };

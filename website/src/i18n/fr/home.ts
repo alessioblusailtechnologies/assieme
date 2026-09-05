@@ -44,7 +44,7 @@ export const hero: {
   logoCliente: 'Logo client {n}',
   prove: [
     'Chaque réponse cite sa source',
-    'Vos règles écrites une fois, appliquées toujours',
+    'Zéro document à déposer pour commencer',
     'Vos documents restent les vôtres',
   ],
 };
@@ -56,7 +56,8 @@ export const statement: { titolo: string; strong: string; muted: string } = {
     'Elle travaille sur les documents que vous avez déjà, raisonne selon les critères de votre cabinet, et vous laisse toujours le dernier mot.',
 };
 
-export const media: { video: string; grafo: string; ritratto: string } = {
+export const media: { filmato: string; video: string; grafo: string; ritratto: string } = {
+  filmato: 'memoria-viva-fr',
   video:
     'Velia au travail : en conversation, la comparaison entre un contrat et un devis devient un souvenir dans la mémoire du cabinet',
   grafo:
@@ -251,17 +252,17 @@ export const statsIntro: string[] = [
 ];
 
 /*
- * Rifatti per il francese. Nell'italiano tre cifre su cinque poggiavano
- * sull'archivio già popolato («zero documenti da caricare», «più di 30
- * compagnie»): sul mercato francese non sarebbero vere. Restano solo
- * affermazioni vere ovunque, e verificabili in mezz'ora di demo.
+ * Gli stessi cinque numeri dell'italiano. L'ultimo dice «les principales» e
+ * non un conteggio: dichiarare che la biblioteca francese c'è è una cosa,
+ * inventare quante compagnie contiene è un'altra. Il numero si mette quando
+ * l'ingestion l'ha prodotto.
  */
 export const stats: { label: string; value: string }[] = [
+  { label: 'Documents à déposer pour commencer', value: 'Zéro' },
   { label: 'Fois où vous expliquez une règle', value: 'Une' },
   { label: 'Réponses avec la source citée', value: '100 %' },
   { label: 'Documents dans une seule comparaison', value: 'Des dizaines' },
-  { label: 'Contrats comparés à la main', value: 'Zéro' },
-  { label: 'Vos documents servant à entraîner un modèle', value: 'Jamais' },
+  { label: 'Compagnies déjà en bibliothèque', value: 'Les principales' },
 ];
 
 export const security: {
@@ -292,12 +293,12 @@ export const meta = {
   description:
     'L’IA de la distribution d’assurance : elle apprend les règles de votre cabinet, compare contrats et devis, et cite sa source à chaque fois. Demandez une démo.',
   schemaDescription:
-    'IA pour courtiers, agents généraux et mandataires d’assurance : elle apprend les règles du cabinet et ne les oublie pas, compare contrats et devis et cite toujours la source.',
+    'IA pour courtiers, agents généraux et mandataires d’assurance : elle apprend les règles du cabinet et ne les oublie pas, les conditions des assureurs sont déjà en bibliothèque, et la source est toujours citée.',
   audience:
     'Courtiers, agents généraux, mandataires et compagnies d’assurance',
   paese: 'France',
   featureList: [
-    'Bibliothèque des documentations précontractuelles constituée avec vous : IPID, notices et conditions générales',
+    'Documentations précontractuelles des assureurs déjà en bibliothèque : IPID, notices et conditions générales',
     'Documents du cabinet, confidentiels, consultables aux côtés de ceux des assureurs',
     'Comparaison entre contrats et devis, avec la source citée pour chaque valeur',
     'Tableaux d’analyse sur des dizaines de produits, la source dans chaque case',

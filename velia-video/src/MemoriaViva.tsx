@@ -10,6 +10,7 @@ import {
   useCurrentFrame,
 } from 'remotion';
 import { GRAPH_H, GRAPH_W, buildGraph, drawGraph } from './graph';
+import { type LinguaVideo, type Tono, testiMemoria } from './testiMemoria';
 
 export const WIDTH = 1080;
 export const HEIGHT = 1080;
@@ -112,54 +113,8 @@ const CAM_X = [540, 540, 680, 680, 440, 440, 540, 540, 540, 460, 460, 680, 680, 
 const CAM_Y = [540, 540, 180, 180, 380, 380, 540, 540, 540, 560, 560, 630, 630, 750, 820, 844, 844, 540, 540, 380];
 const CAM_Z = [1, 1, 1.35, 1.35, 1.25, 1.25, 1.02, 1.02, 1.02, 1.25, 1.25, 1.35, 1.35, 1.28, 1.5, 1.5, 1.5, 1, 1, 1.45];
 
-const TESTI = {
-  user1: 'Confronta il preventivo Unipol con la polizza auto del cliente Rossi.',
-  riferimenti: ['preventivo_unipol.pdf', 'polizza_autopiu_cga.pdf'],
-  attesa: 'Sto leggendo i documenti…',
-  intro: 'Ho confrontato le 54 garanzie del fascicolo. Ecco il quadro, garanzia per garanzia:',
-  sintesi:
-    '9 differenze rilevanti su 54 garanzie. Il preventivo non copre gli infortuni del conducente, che la polizza attuale include: la segnalo come carenza?',
-  citazioni: [
-    { titolo: 'CGA Active Veicoli AUTOPIÙ', pos: 'ART. 12 · P. 34' },
-    { titolo: 'Preventivo Unipol', pos: 'SEZ. 3 · P. 2' },
-  ],
-  user2:
-    'No: gli infortuni del conducente li copriamo sempre con una polizza dedicata. Non è una carenza.',
-  velia2: 'Capito: per la tua agenzia non la segnalerò più come carenza.',
-  salva: 'Sto salvando in memoria…',
-  placeholder: 'Fai una domanda sui documenti — «@» per referenziarli',
-  /* Secondo atto: un altro cliente, la stessa regola — stavolta ricordata. */
-  user3: 'Confronta il preventivo Generali con la polizza auto del cliente Bianchi.',
-  riferimenti3: ['preventivo_generali.pdf', 'polizza_bianchi_cga.pdf'],
-  velia3:
-    'Il preventivo non copre gli infortuni del conducente. Non la segnalo come carenza: la tua agenzia li copre sempre con una polizza dedicata.',
-  citazioni3: [{ titolo: 'Preventivo Generali', pos: 'SEZ. 2 · P. 3' }],
-  provenienza3: 'Infortuni del conducente coperti a parte con polizza dedicata',
-};
-
-type Tono = 'pos' | 'neg' | undefined;
-const TABELLA: { label: string; a: string; b: string; tono?: Tono }[] = [
-  { label: 'Massimale RCA', a: '€ 6.450.000', b: '€ 25.000.000', tono: 'pos' },
-  { label: 'Franchigia kasko', a: '€ 500', b: '€ 750' },
-  { label: 'Scoperto atti vandalici', a: '10%', b: '15%', tono: 'neg' },
-  { label: 'Infortuni del conducente', a: 'Inclusa', b: 'Non prevista', tono: 'neg' },
-  { label: 'Cristalli', a: '€ 1.000', b: '€ 800', tono: 'neg' },
-  { label: 'Eventi naturali', a: 'Inclusa', b: 'Inclusa' },
-  { label: 'Furto e incendio', a: 'Valore a nuovo', b: 'Valore commerciale', tono: 'neg' },
-  { label: 'Assistenza stradale', a: 'Base', b: 'Estesa', tono: 'pos' },
-  { label: 'Tutela legale', a: '€ 10.000', b: '€ 15.000', tono: 'pos' },
-  { label: 'Rinuncia alla rivalsa', a: 'Inclusa', b: 'Non prevista', tono: 'neg' },
-  { label: 'Veicolo sostitutivo', a: 'Non previsto', b: 'Incluso', tono: 'pos' },
-  { label: 'Bonus protetto', a: 'Incluso', b: 'Incluso' },
-];
-
-/* La navigazione vera (layout/navigazione.ts). */
-const NAV: { gruppo: string; voci: { nome: string; attiva?: boolean }[] }[] = [
-  { gruppo: 'Lavoro', voci: [{ nome: 'Chat', attiva: true }, { nome: 'Tabelle di analisi' }] },
-  { gruppo: 'Archivi', voci: [{ nome: 'Archivio pubblico' }, { nome: 'Archivio privato' }] },
-  { gruppo: 'Automazione', voci: [{ nome: 'Agenti' }] },
-  { gruppo: 'Agenzia', voci: [{ nome: 'Memoria' }, { nome: 'Impostazioni' }] },
-];
+/* I testi e i dati della scena arrivano da testiMemoria.ts, una voce per
+ * lingua: la scena è la stessa, cambiano la lingua e i riferimenti. */
 
 const IconaDoc: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
@@ -200,27 +155,27 @@ const IconaNav: React.FC<{ tipo: string }> = ({ tipo }) => {
   const s = 17;
   const k = { stroke: 'currentColor', strokeWidth: 1.4, fill: 'none' } as const;
   switch (tipo) {
-    case 'Chat':
+    case 'chat':
       return (
         <svg width={s} height={s} viewBox="0 0 16 16">
           <path d="M2 3.5h12v7.5H6L3 13.5v-2.5H2z" {...k} strokeLinejoin="round" />
         </svg>
       );
-    case 'Tabelle di analisi':
+    case 'tabelle':
       return (
         <svg width={s} height={s} viewBox="0 0 16 16">
           <rect x="2" y="3" width="12" height="10" {...k} />
           <path d="M2 6.5h12M6.5 3v10" {...k} />
         </svg>
       );
-    case 'Agenti':
+    case 'agenti':
       return (
         <svg width={s} height={s} viewBox="0 0 16 16">
           <circle cx="8" cy="8" r="5.5" {...k} />
           <path d="M8 2.5V0.8M5.8 6.8h.01M10.2 6.8h.01M5.5 10a3.4 3.4 0 0 0 5 0" {...k} strokeLinecap="round" />
         </svg>
       );
-    case 'Memoria':
+    case 'memoria':
       return (
         <svg width={s} height={s} viewBox="0 0 16 16">
           <circle cx="5" cy="5" r="1.6" fill="currentColor" />
@@ -229,7 +184,7 @@ const IconaNav: React.FC<{ tipo: string }> = ({ tipo }) => {
           <path d="M6 6l4.5 1M6 6l.8 4.3M11 8l-3.4 3" {...k} strokeWidth="0.9" />
         </svg>
       );
-    case 'Impostazioni':
+    case 'impostazioni':
       return (
         <svg width={s} height={s} viewBox="0 0 16 16">
           <circle cx="8" cy="8" r="2.2" {...k} />
@@ -246,7 +201,13 @@ const IconaNav: React.FC<{ tipo: string }> = ({ tipo }) => {
   }
 };
 
-export const MemoriaViva: React.FC = () => {
+export type MemoriaVivaProps = { lingua?: LinguaVideo };
+
+export const MemoriaViva: React.FC<MemoriaVivaProps> = ({ lingua = 'it' }) => {
+  const TESTI = testiMemoria[lingua];
+  const TABELLA = TESTI.tabella;
+  const NAV = TESTI.nav;
+
   const frame = useCurrentFrame();
 
   const [fontHandle] = useState(() => delayRender('fonts'));
@@ -586,7 +547,7 @@ export const MemoriaViva: React.FC = () => {
                 {NAV.flatMap((g) => g.voci).map((v) => {
                   /* Quando il ricordo si posa, l'icona Memoria lo accoglie
                      con un battito e resta calda. */
-                  const memoria = v.nome === 'Memoria';
+                  const memoria = v.icona === 'memoria';
                   const battito = memoria
                     ? interpolate(frame, [738, 746, 758], [1, 1.4, 1], clamp)
                     : 1;
@@ -606,7 +567,7 @@ export const MemoriaViva: React.FC = () => {
                         transform: `scale(${battito})`,
                       }}
                     >
-                      <IconaNav tipo={v.nome} />
+                      <IconaNav tipo={v.icona} />
                     </div>
                   );
                 })}
@@ -631,9 +592,9 @@ export const MemoriaViva: React.FC = () => {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontFamily: F.interfaccia, fontSize: 18, color: C.text }}>Ciao, sono Velia.</span>
+                <span style={{ fontFamily: F.interfaccia, fontSize: 18, color: C.text }}>{TESTI.saluto}</span>
                 <span style={{ width: 1.5, height: 22, background: C.line }} />
-                <span style={{ fontFamily: F.lettura, fontSize: 17, color: C.text2 }}>Agenzia Ferrero</span>
+                <span style={{ fontFamily: F.lettura, fontSize: 17, color: C.text2 }}>{TESTI.agenzia}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ ...mono, fontSize: 14, letterSpacing: '0.08em', textTransform: 'none' }}>
@@ -655,8 +616,8 @@ export const MemoriaViva: React.FC = () => {
                 >
                   M
                 </span>
-                <span style={{ fontFamily: F.lettura, fontSize: 15.5, color: C.text }}>m.ferrero</span>
-                <span style={{ ...mono, fontSize: 12.5, letterSpacing: '0.12em' }}>Titolare</span>
+                <span style={{ fontFamily: F.lettura, fontSize: 15.5, color: C.text }}>{TESTI.utente}</span>
+                <span style={{ ...mono, fontSize: 12.5, letterSpacing: '0.12em' }}>{TESTI.ruolo}</span>
               </div>
             </div>
 
@@ -746,9 +707,9 @@ export const MemoriaViva: React.FC = () => {
                               borderRadius: '8px 8px 0 0',
                             }}
                           >
-                            <span style={{ ...mono, fontSize: 13 }}>Garanzia</span>
-                            <span style={{ ...mono, fontSize: 13 }}>Polizza attuale</span>
-                            <span style={{ ...mono, fontSize: 13 }}>Preventivo</span>
+                            <span style={{ ...mono, fontSize: 13 }}>{TESTI.colonne[0]}</span>
+                            <span style={{ ...mono, fontSize: 13 }}>{TESTI.colonne[1]}</span>
+                            <span style={{ ...mono, fontSize: 13 }}>{TESTI.colonne[2]}</span>
                           </div>
                           {TABELLA.map((r, i) => {
                             const at = T.tavola + i * 3.5;
@@ -804,7 +765,7 @@ export const MemoriaViva: React.FC = () => {
                             ...appear(T.fonti),
                           }}
                         >
-                          <span style={mono}>Fonti</span>
+                          <span style={mono}>{TESTI.fonti}</span>
                           {TESTI.citazioni.map((c) => (
                             <span
                               key={c.titolo}
@@ -938,7 +899,7 @@ export const MemoriaViva: React.FC = () => {
                             ...appear(T2.fonti3),
                           }}
                         >
-                          <span style={mono}>Fonti</span>
+                          <span style={mono}>{TESTI.fonti}</span>
                           {TESTI.citazioni3.map((c) => (
                             <span
                               key={c.titolo}

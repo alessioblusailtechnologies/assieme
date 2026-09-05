@@ -25,8 +25,8 @@ const t = contenuti(lingua).home;
 >
   <video
     class="demo__video"
-    src="/media/memoria-viva.mp4"
-    poster="/media/memoria-viva-poster.jpg"
+    src={`/media/${t.media.filmato}.mp4`}
+    poster={`/media/${t.media.filmato}-poster.jpg`}
     autoplay
     muted
     loop
@@ -38,7 +38,7 @@ const t = contenuti(lingua).home;
   {/* Con le animazioni ridotte resta il fotogramma della conversazione. */}
   <img
     class="demo__fermo"
-    src="/media/memoria-viva-poster.jpg"
+    src={`/media/${t.media.filmato}-poster.jpg`}
     alt=""
     loading="lazy"
   />

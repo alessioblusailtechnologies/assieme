@@ -20,7 +20,7 @@ const storia: { title: string; paragrafi: string[] } = {
   paragrafi: [
     'Velia est né dans les cabinets, en regardant comment on y travaille vraiment. La valeur d’un intermédiaire tient à son jugement et à sa relation avec le client, et pourtant les journées partent à chercher, relire et recopier des informations qui existent déjà.',
     'Et le produit est né d’une conviction : dans ce métier, l’intelligence artificielle n’est utile que si elle respecte le métier. Chaque cabinet a sa propre façon d’apprécier une garantie, construite en des années de travail ; un outil sérieux doit l’apprendre, pas la remplacer par des critères décidés en usine.',
-    'Velia met les deux ensemble. Les documents sont là et se tiennent à jour ; la façon de les apprécier, c’est vous qui l’écrivez. Le reste (décider, conseiller, signer) reste où il a toujours été.',
+    'Velia met les deux ensemble. Le marché est là dès le premier jour ; la façon de l’apprécier, c’est vous qui l’écrivez. Le reste (décider, conseiller, signer) reste où il a toujours été.',
   ],
 };
 

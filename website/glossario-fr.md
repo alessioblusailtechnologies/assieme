@@ -14,41 +14,51 @@ in avanti non si discute più mentre si scrive: si scrive.
 
 ## 1. Le tre decisioni di posizionamento
 
-### 1.1 L'Archivio pubblico non si promette
+### 1.1 L'Archivio pubblico si dichiara
 
-**Decisione: si guida con il resto.** In francese la promessa d'ingresso sono
-l'archivio del cabinet, il metodo e la memoria. La biblioteca di mercato si
-racconta come qualcosa che **si costruisce insieme al cliente, sul suo
-mercato**, non come qualcosa che c'è già.
+**Decisione del committente, 05/09/2026.** In francese la biblioteca di
+mercato si racconta come l'italiano racconta l'Archivio pubblico: **c'è, è
+ordinata e la teniamo aggiornata noi**. Il primo giorno il cabinet fa
+domande, non caricamenti.
 
-Il motivo è semplice: in archivio ci sono Zurich, Cattolica, Nobis, Allianz,
-AXA, Generali, Unipol, Focus. Sono set informativi italiani. «Le marché est
-déjà dedans» detto a un courtier di Lione è falso, e una promessa falsa in
-home la si paga alla prima demo.
+Questa decisione ribalta la proposta iniziale di questo documento, che era di
+guidare con archivio privato, metodo e memoria. Il motivo del ribaltamento è
+che l'ingestion del mercato francese si farà: la promessa non descrive lo
+stato di oggi ma il prodotto che il cabinet troverà.
 
-Conseguenze concrete, già applicate nei testi:
+Va tenuto presente cosa comporta: **la frase è vera dal giorno in cui la
+biblioteca francese esiste, non da quando la pagina va online.** Se il sito
+francese si pubblica prima dell'ingestion, per quel tratto di tempo la home
+promette qualcosa che alla prima demo non si può mostrare. La sequenza
+sicura è: ingestion del primo lotto francese, poi accensione di
+`LINGUE_ATTIVE`.
 
-| Dove | Italiano | Francese |
-|---|---|---|
-| Scheda della piattaforma | «Il mercato assicurativo italiano è già dentro» | «Nous la constituons avec vous, sur votre marché» |
-| Blocco di approfondimento | «Non parti mai da zero» | «Une bibliothèque qui se construit sur votre marché» |
-| Azione del blocco | «Chiedi quali compagnie sono già coperte» | «Demandez comment nous constituons votre bibliothèque» |
-| Numero | «Compagnie già in archivio: più di 30» | sostituito (vedi §1.2) |
-| Numero | «Documenti da caricare per iniziare: zero» | sostituito: in francese non è vero |
+Le stringhe interessate, tutte in `src/i18n/fr/`:
 
-Quando la biblioteca francese esisterà davvero, si cambiano cinque stringhe
-in `src/i18n/fr/` e la promessa torna quella italiana. Non prima.
+| Dove | Testo francese |
+|---|---|
+| Scheda della piattaforma | «Le marché français de l'assurance est déjà dedans» |
+| Blocco di approfondimento | «Vous ne partez jamais de zéro» |
+| Riga del blocco | «Les produits des principaux assureurs français, chargés et entretenus par nous» |
+| Azione del blocco | «Demandez quelles compagnies sont déjà couvertes» |
+| Glossario | «Vous n'avez pas à la charger : elle est là» |
+| Azienda | «Le marché est là dès le premier jour» |
 
 ### 1.2 I numeri della home
 
-Tre delle cinque cifre italiane poggiano sull'archivio già popolato. In
-francese restano solo affermazioni vere oggi, su qualunque mercato:
+Gli stessi cinque dell'italiano, con una sola differenza:
 
+- Documents à déposer pour commencer : **zéro**
 - Fois où vous expliquez une règle : **une**
 - Réponses avec la source citée : **100 %**
 - Documents dans une seule comparaison : **des dizaines**
-- Contrats comparés à la main : **zéro**
-- Vos documents utilisés pour entraîner un modèle : **jamais**
+- Compagnies déjà en bibliothèque : **les principales**
+
+L'ultimo dice «les principales» e non un conteggio. L'italiano dice «più di
+30» perché quelle trenta si possono contare; il numero francese si scrive
+quando l'ingestion l'ha prodotto, non prima. Dichiarare che la biblioteca
+esiste e inventare quante compagnie contiene sono due cose diverse: la prima
+è una decisione di posizionamento, la seconda un dato.
 
 ### 1.3 Nessun nome di compagnia nella tabella dimostrativa
 

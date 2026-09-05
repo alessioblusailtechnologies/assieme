@@ -59,8 +59,14 @@ export const statement: { titolo: string; strong: string; muted: string } = {
     "Lavora sui documenti che hai già in archivio, ragiona con i criteri della tua agenzia e lascia sempre a te l'ultima parola.",
 };
 
-/** Le descrizioni dei media della home, per chi non li vede. */
-export const media: { video: string; grafo: string; ritratto: string } = {
+/**
+ * I media della home: il nome del filmato e le descrizioni per chi non lo
+ * vede. Il filmato è girato per lingua, perché dentro c'è un'interfaccia
+ * piena di testo: un prodotto che parla italiano su una pagina francese
+ * disfa da solo il lavoro di adattamento.
+ */
+export const media: { filmato: string; video: string; grafo: string; ritratto: string } = {
+  filmato: 'memoria-viva',
   video:
     "Velia all'opera: il confronto fra polizza e preventivo in chat diventa un ricordo nella memoria dell'agenzia",
   grafo:

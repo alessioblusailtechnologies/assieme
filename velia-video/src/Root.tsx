@@ -36,6 +36,19 @@ export const Root: React.FC = () => (
       fps={FPS}
       width={WIDTH}
       height={HEIGHT}
+      defaultProps={{ lingua: 'it' as const }}
+    />
+    {/* La stessa scena in francese: cambiano i testi e i riferimenti di
+        mercato, non il montaggio. Un filmato di prodotto in italiano su una
+        pagina francese disfa da solo tutto il lavoro di adattamento. */}
+    <Composition
+      id="MemoriaVivaFr"
+      component={MemoriaViva}
+      durationInFrames={DURATION}
+      fps={FPS}
+      width={WIDTH}
+      height={HEIGHT}
+      defaultProps={{ lingua: 'fr' as const }}
     />
     <Still id="Tabella" component={TabellaStill} width={SHOT_W} height={SHOT_H} />
     <Still id="Agenti" component={AgentiStill} width={SHOT_W} height={SHOT_H} />

@@ -375,23 +375,36 @@ Content collection multilingua, indice `/fr/ressources`, le due guide
 riscritte in francese (~2.450 parole editoriali dense: qui l'adattamento
 pesa più che altrove, perché gli esempi sono italiani).
 
-### ⚠️ Fase 5-bis - I media della home sono in italiano
+### ✅ Fase 5-bis - Il filmato della home, in francese - **fatta** (05/09/2026)
 
-Emerso guardando la home francese negli screenshot, non previsto dal piano.
+Emersa guardando la home francese negli screenshot, non prevista dal piano.
 
-Il filmato `media/memoria-viva.mp4` è la composizione Remotion della
-conversazione: mostra «Confronta 3 preventivi Unipol con la polizza auto del
-cliente Rossi», massimali, franchigie e infortuni del conducente. **In
-italiano.** È il primo blocco visivo sotto l'attacco della home francese, e
-vanifica da solo il lavoro di adattamento: un courtier vede una pagina scritta
-per lui e un prodotto che parla un'altra lingua.
+Il filmato sotto l'attacco della home è la composizione Remotion della
+conversazione, e dentro c'è un'interfaccia piena di testo. In francese
+mostrava «Confronta 3 preventivi Unipol con la polizza auto del cliente
+Rossi»: un prodotto che parla italiano su una pagina scritta per un courtier
+disfa da solo tutto il lavoro di adattamento.
 
-Stessa cosa, meno vistosa perché sfocate, per le tre schermate delle
-dimostrazioni (`demo-confronto.jpg`, `demo-tabella.jpg`, `demo-agenti.jpg`).
+La composizione `MemoriaViva` in `velia-video/` è ora bilingue. I testi e i
+dati della scena stanno in `src/testiMemoria.ts`, una voce per lingua, e la
+composizione prende `lingua` come prop. Due accorgimenti sono serviti perché
+funzionasse: il glifo di navigazione dipendeva dall'etichetta italiana
+(`case 'Impostazioni'`) e ora dipende da una chiave stabile, e lo stesso
+valeva per il battito dell'icona Memoria.
 
-Serve un render francese della composizione da `velia-video/`: è lavoro di
-Remotion, non di copy, e va messo in conto prima della messa online. Nel
-frattempo l'alternativa è togliere il filmato dalla sola home francese.
+In francese, come nella riproduzione statica del sito, non compare nessun
+nome di compagnia: le colonne sono «contrat en cours» e «devis concurrent»,
+i clienti si chiamano Martin e Durand, e il cabinet è Ferrand.
+
+Reso con `npm run render:fr` a CRF 23 per stare sui 5,8 MB dell'italiano,
+poster al fotogramma 203 (l'ultimo prima che la pagina scorra, cioè quello
+con la tabella intera in vista). Il componente sceglie il file dalla lingua:
+il nome del filmato è una voce del dizionario, non una stringa nel markup.
+
+Restano in italiano le tre schermate sfocate delle dimostrazioni
+(`demo-confronto.jpg` e le altre due). Sono velate e scurite al punto che
+nessun testo è leggibile, quindi non contraddicono nulla: si rifanno quando
+conviene, non è un blocco.
 
 ### Fase 6 - Rifinitura e messa online - ~mezza giornata
 
@@ -422,7 +435,26 @@ Una fase è chiusa quando:
 
 ---
 
-## 8. Il nodo aperto, e va sciolto prima della Fase 2
+## 8. Il nodo, sciolto dal committente il 05/09/2026
+
+**Decisione: l'Archivio pubblico si dichiara anche in francese**, perché
+l'ingestion del mercato francese si farà. La biblioteca di mercato si
+racconta come in italiano: c'è, è ordinata, la teniamo aggiornata noi. Il
+dettaglio delle stringhe è in `glossario-fr.md` §1.1.
+
+Resta una sola conseguenza operativa, e riguarda l'ordine delle cose: **la
+frase è vera dal giorno in cui la biblioteca francese esiste, non da quando
+la pagina va online.** La sequenza sicura è ingestion del primo lotto
+francese, poi accensione di `LINGUE_ATTIVE`. Pubblicare prima significa
+promettere in home qualcosa che alla prima demo non si può mostrare.
+
+Le altre due decisioni della stessa seduta restano quelle di §1.3 e §1.4 del
+glossario: nessun nome di compagnia francese nella tabella dimostrativa, e
+titolare italiano nelle note legali.
+
+Qui sotto resta la discussione che ha portato alla decisione, per memoria.
+
+### La discussione (superata dalla decisione qui sopra)
 
 **L'Archivio pubblico oggi contiene prodotti italiani.** In archivio ci
 sono Zurich, Cattolica, Nobis, Allianz, AXA, Generali, Unipol, Focus: set

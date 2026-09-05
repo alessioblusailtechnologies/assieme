@@ -16,7 +16,7 @@ const llms: {
   etichettaEmail: string;
 } = {
   sommario:
-    'Velia est l’IA de {azienda} pour la distribution d’assurance : courtiers, agents généraux et mandataires. Elle travaille sur les documentations précontractuelles des assureurs (IPID, notices, conditions générales) et sur les documents confidentiels du cabinet, et répond en français en citant sa source à chaque passage : document, article, page. Quand la source n’existe pas, elle le dit.',
+    'Velia est l’IA de {azienda} pour la distribution d’assurance : courtiers, agents généraux et mandataires. Elle connaît déjà les documentations précontractuelles des assureurs (IPID, notices, conditions générales), travaille à côté d’elles sur les documents confidentiels du cabinet, et répond en français en citant sa source à chaque passage : document, article, page. Quand la source n’existe pas, elle le dit.',
   daSapere:
     'Ce qu’il faut savoir : chaque réponse porte la citation du passage dont elle vient ; les comparaisons entre contrats et devis sortent en tableaux avec la source dans chaque case ; les documents client sortent déjà mis en page aux couleurs du cabinet ; les règles et les cas du cabinet deviennent une mémoire persistante, consultable et effaçable ; les documents sont aussi accessibles depuis les outils d’IA que le cabinet utilise déjà.',
   titoloPagine: 'Pages principales',
@@ -24,7 +24,7 @@ const llms: {
     {
       rotta: 'piattaforma',
       label: 'Plateforme',
-      nota: 'la bibliothèque de marché constituée avec le cabinet, les documents du cabinet, les comparaisons et les tableaux d’analyse, les agents programmés',
+      nota: 'la bibliothèque de marché des documentations précontractuelles, les documents du cabinet, les comparaisons et les tableaux d’analyse, les agents programmés',
     },
     {
       rotta: 'soluzioni',

@@ -5,7 +5,8 @@
   "description": "Video di prodotto Velia renderizzati con Remotion.",
   "scripts": {
     "studio": "remotion studio src/index.ts",
-    "render": "remotion render src/index.ts MemoriaViva out/memoria-viva.mp4"
+    "render": "remotion render src/index.ts MemoriaViva out/memoria-viva.mp4",
+    "render:fr": "remotion render src/index.ts MemoriaVivaFr out/memoria-viva-fr.mp4"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.246",
