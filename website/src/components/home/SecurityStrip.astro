@@ -1,5 +1,13 @@
 ---
-import { security } from '~/data/home';
+import { contenuti, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { security } = t;
 ---
 
 <section class="sec" aria-labelledby="sec-title">
@@ -9,8 +17,8 @@ import { security } from '~/data/home';
     </h2>
     <div class="sec__copy">
       <p class="sec__body">{security.body}</p>
-      <a class="btn btn--ghost btn--sm" href="/sicurezza">
-        Approfondisci la sicurezza
+      <a class="btn btn--ghost btn--sm" href={href(security.link, lingua)}>
+        {security.cta}
       </a>
     </div>
   </div>
@@ -19,13 +27,13 @@ import { security } from '~/data/home';
     {
       security.badges.map((b) => (
         <li>
-          <a class="sec__badge" href={b.href}>
+          <a class="sec__badge" href={href(b.link, lingua)}>
             <span class="sec__mark" aria-hidden="true">
               {b.mark}
             </span>
             <span class="sec__name">{b.name}</span>
             <span class="sec__more" aria-hidden="true">
-              Dettagli →
+              {security.dettagli}
             </span>
           </a>
         </li>

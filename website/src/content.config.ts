@@ -2,12 +2,21 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 /**
- * Le guide di /risorse: un file Markdown per guida in `src/content/guide/`.
- * Sono pagine evergreen, non un blog: conta la data di aggiornamento, non
- * quella di uscita, e nessuna cadenza obbligata.
+ * Le guide di /risorse: un file Markdown per guida, in una cartella per
+ * lingua. Sono pagine evergreen, non un blog: conta la data di aggiornamento,
+ * non quella di uscita, e nessuna cadenza obbligata.
+ *
+ * ⚠️ Una collection per lingua, con la `base` che punta **dentro** la
+ * cartella della lingua. È deliberato: l'id di una voce nasce dal percorso
+ * relativo alla `base`, quindi una collection sola con pattern `** / *.md`
+ * darebbe id come `it/memoria-agenzia-assicurativa` e l'URL diventerebbe
+ * `/risorse/it/memoria-agenzia-assicurativa`. Due URL già indicizzati rotti
+ * per una cartella. Così invece gli id italiani restano quelli di sempre.
+ *
+ * Il francese entra qui come `guideFr` con base `./src/content/guide/fr`.
  */
 const guide = defineCollection({
-  loader: glob({ pattern: '*.md', base: './src/content/guide' }),
+  loader: glob({ pattern: '*.md', base: './src/content/guide/it' }),
   schema: z.object({
     title: z.string(),
     /** Riassunto per meta description, card e anteprima social. */

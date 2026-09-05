@@ -4,7 +4,10 @@ import Seo from '~/components/Seo.astro';
 import SiteFooter from '~/components/SiteFooter.astro';
 import SiteHeader from '~/components/SiteHeader.astro';
 import { site } from '~/config/site';
+import { contenuti, LINGUA_PREDEFINITA, lingue, type Alternativa, type Lingua } from '~/i18n';
 import '~/styles/global.css';
+
+const { legalName } = site;
 
 export interface Props {
   title: string;
@@ -18,19 +21,28 @@ export interface Props {
   /** Barra annunci spenta ovunque in vista del lancio; si riaccende
       passando `announcement={true}` dalla singola pagina. */
   announcement?: boolean;
+  lingua?: Lingua;
+  /** Alternate hreflang per le rotte fuori tabella, come le guide. */
+  alternative?: Alternativa[];
 }
 
-const { announcement = false, ...seo } = Astro.props;
+const {
+  announcement = false,
+  lingua = LINGUA_PREDEFINITA,
+  ...seo
+} = Astro.props;
+
+const t = contenuti(lingua).comune;
 ---
 
 <!doctype html>
-<html lang={site.lang}>
+<html lang={lingue[lingua].htmlLang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <meta name="theme-color" content="#1C1A15" />
-    <meta name="author" content={site.legalName} />
+    <meta name="author" content={legalName} />
 
     <!-- Google per il risultato di ricerca vuole una PNG o un .ico a multipli
          di 48px: l'SVG da solo non basta, e il .ico alla radice è il
@@ -60,19 +72,19 @@ const { announcement = false, ...seo } = Astro.props;
       crossorigin
     />
 
-    <Seo {...seo} />
+    <Seo {...seo} lingua={lingua} />
   </head>
 
   <body>
-    <a class="skip-link" href="#contenuto">Vai al contenuto principale</a>
+    <a class="skip-link" href="#contenuto">{t.vaiAlContenuto}</a>
 
-    {announcement && <AnnouncementBar />}
-    <SiteHeader />
+    {announcement && <AnnouncementBar lingua={lingua} />}
+    <SiteHeader lingua={lingua} />
 
     <main id="contenuto">
       <slot />
     </main>
 
-    <SiteFooter />
+    <SiteFooter lingua={lingua} />
   </body>
 </html>

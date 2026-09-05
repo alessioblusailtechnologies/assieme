@@ -1,26 +1,34 @@
 ---
-import { testimonial as t } from '~/data/home';
+import { contenuti, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const t2 = t.testimonial;
 ---
 
 {/* Non è una citazione: è la storia dell'agenzia pilota raccontata da noi,
     quindi niente blockquote né firma. */}
 <section class="quote section--alt" aria-labelledby="quote-title">
-  <h2 class="visually-hidden" id="quote-title">Dal campo</h2>
+  <h2 class="visually-hidden" id="quote-title">{t2.titolo}</h2>
 
   <div class="quote__inner shell">
     <img
       class="quote__portrait"
       src="/media/dal-campo.jpg"
-      alt="Al lavoro sui documenti, a fine giornata, nella luce dello schermo"
+      alt={t.media.ritratto}
       width="340"
       height="400"
       loading="lazy"
     />
 
     <div class="quote__figure">
-      <p class="serif quote__text">{t.quote}</p>
-      <a class="btn btn--text" href={t.href}>
-        Guarda la dimostrazione <span class="btn__arrow" aria-hidden="true">→</span>
+      <p class="serif quote__text">{t2.quote}</p>
+      <a class="btn btn--text" href={href(t2.link, lingua)}>
+        {t2.cta} <span class="btn__arrow" aria-hidden="true">→</span>
       </a>
     </div>
   </div>

@@ -1,13 +1,20 @@
 ---
 import { SITE_URL } from '~/config/site';
+import { contenuti, LINGUA_PREDEFINITA, percorso, type Lingua } from '~/i18n';
 
 export interface Props {
   /** Percorso senza la voce «Home», che viene aggiunta qui. */
   trail: { label: string; href: string }[];
+  lingua?: Lingua;
 }
 
-const { trail } = Astro.props;
-const items = [{ label: 'Home', href: '/' }, ...trail];
+const { trail, lingua = LINGUA_PREDEFINITA } = Astro.props;
+
+const t = contenuti(lingua).comune;
+const items = [
+  { label: t.briciole.home, href: percorso('home', lingua) },
+  ...trail,
+];
 
 // Il markup visibile e i dati strutturati nascono dalla stessa lista: non
 // possono divergere, ed è esattamente ciò che i controlli di Search Console
@@ -24,7 +31,7 @@ const schema = {
 };
 ---
 
-<nav class="crumbs" aria-label="Percorso di navigazione">
+<nav class="crumbs" aria-label={t.briciole.etichetta}>
   <ol>
     {
       items.map((item, i) => {

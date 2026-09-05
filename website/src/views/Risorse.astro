@@ -1,0 +1,206 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import CardGrid from '~/components/CardGrid.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { STATUS_URL, site } from '~/config/site';
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+/**
+ * Le guide arrivano dalla pagina e non da qui: la collection da leggere
+ * dipende dalla lingua, e sceglierla nel guscio di pagina evita che una
+ * lingua senza guide finisca per mostrare quelle di un'altra.
+ */
+export interface Props {
+  lingua: Lingua;
+  guide: { id: string; titolo: string; descrizione: string; filone: string }[];
+}
+
+const { lingua, guide } = Astro.props;
+const t = contenuti(lingua).risorse;
+
+const schede = guide.map((g) => ({
+  id: g.id,
+  eyebrow: g.filone,
+  title: g.titolo,
+  body: g.descrizione,
+  href: `${percorso('risorse', lingua)}/${g.id}`,
+  linkLabel: t.guide.linkLabel,
+}));
+---
+
+<BaseLayout lingua={lingua} title={t.meta.title} description={t.meta.description}>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    video={{
+      src: '/media/risorse-hero.mp4',
+      poster: '/media/risorse-hero-poster.jpg',
+    }}
+  />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('risorse', lingua) }]}
+  />
+
+  <CardGrid
+    id={t.guide.id}
+    title={t.guide.title}
+    lead={t.guide.lead}
+    cards={schede}
+    columns={schede.length >= 3 ? 3 : 2}
+  />
+
+  <section class="glossary" id={t.glossario.id} aria-labelledby="glossary-title">
+    <div class="shell">
+      <h2 class="serif glossary__title" id="glossary-title">{t.glossario.title}</h2>
+      <p class="lead glossary__lead">
+        {t.glossario.lead}
+      </p>
+      <dl class="glossary__list">
+        {
+          t.glossario.voci.map((g) => (
+            <div class="glossary__row">
+              <dt class="glossary__term">{g.term}</dt>
+              <dd class="glossary__detail">{g.detail}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="support" id={t.assistenza.id} aria-labelledby="support-title">
+    <div class="shell support__inner">
+      <div>
+        <h2 class="serif support__title" id="support-title">{t.assistenza.title}</h2>
+        <p class="support__body">
+          {t.assistenza.body}
+        </p>
+      </div>
+      <ul class="support__links">
+        <li>
+          <a class="btn btn--outline" href={`mailto:${site.email}`}>
+            {site.email}
+          </a>
+        </li>
+        {
+          STATUS_URL && (
+            <li>
+              <a
+                class="btn btn--outline"
+                href={STATUS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t.assistenza.stato}
+                <span class="visually-hidden">{contenuti(lingua).comune.nuovaScheda}</span>
+              </a>
+            </li>
+          )
+        }
+      </ul>
+    </div>
+  </section>
+
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={href(t.chiusura.link, lingua)}
+  />
+</BaseLayout>
+
+<style>
+  .glossary {
+    padding: 0 var(--gutter) var(--sp-section);
+  }
+
+  .glossary__title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+  }
+
+  .glossary__lead {
+    max-width: 42rem;
+    margin: 1rem 0 2.5rem;
+  }
+
+  .glossary__list {
+    margin: 0;
+  }
+
+  .glossary__row {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.5rem;
+    align-items: baseline;
+    padding: 1.25rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .glossary__row:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .glossary__term {
+    font-family: var(--f-serif);
+    font-size: 1.125rem;
+    color: var(--c-text);
+  }
+
+  .glossary__detail {
+    margin: 0;
+    max-width: 46rem;
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .support {
+    background: var(--c-page-alt);
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .support__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .support__title {
+    font-size: var(--t-h2);
+    margin-bottom: 1rem;
+  }
+
+  .support__body {
+    max-width: 38rem;
+    color: var(--c-text-2);
+    line-height: 1.65;
+  }
+
+  .support__links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (max-width: 900px) {
+    .support__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .support__links {
+      align-items: flex-start;
+    }
+
+    .glossary__row {
+      grid-template-columns: 1fr;
+      gap: 0.375rem;
+    }
+  }
+</style>

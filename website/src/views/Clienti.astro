@@ -1,0 +1,298 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).clienti;
+const stats = contenuti(lingua).home.stats;
+---
+
+<BaseLayout lingua={lingua} title={t.meta.title} description={t.meta.description}>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    video={{
+      src: '/media/clienti-hero.mp4',
+      poster: '/media/clienti-hero-poster.jpg',
+    }}
+  />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('clienti', lingua) }]}
+  />
+
+  <section class="numbers" aria-labelledby="numbers-title">
+    <div class="shell">
+      <h2 class="serif numbers__title" id="numbers-title">
+        {t.numeri.title}
+      </h2>
+      <p class="lead numbers__lead">
+        {t.numeri.lead}
+      </p>
+      {/* Nelle celle <dt> precede <dd> come vuole la specifica: l'ordine
+          visivo — numero sopra, etichetta sotto — lo ribalta il CSS. */}
+      <dl class="numbers__grid">
+        {
+          stats.map((s) => (
+            <div class="numbers__item">
+              <dt class="numbers__label">{s.label}</dt>
+              <dd class="serif numbers__value">{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="cases" aria-labelledby="cases-title">
+    <div class="shell">
+      <h2 class="serif cases__title" id="cases-title">{t.dimostrazioni.title}</h2>
+
+      {
+        t.dimostrazioni.voci.map((c) => (
+          <article class="case" id={c.id} aria-labelledby={`${c.id}-title`}>
+            {/* La stessa card della home: screen sfocato con velo scuro,
+                targhetta e pulsante di riproduzione. */}
+            <div
+              class="case__media"
+              style={`background-image: linear-gradient(rgb(20 18 14 / 45%), rgb(20 18 14 / 78%)), url('${c.img}');`}
+              aria-hidden="true"
+            >
+              <span class="mono case__tag">{t.dimostrazioni.targhetta}</span>
+              <span class="case__play" aria-hidden="true">▶</span>
+            </div>
+            <div class="case__copy">
+              <p class="mono case__eyebrow">{c.eyebrow}</p>
+              <h3 class="serif case__heading" id={`${c.id}-title`}>
+                {c.title}
+              </h3>
+              <p class="case__body">{c.body}</p>
+              <p class="case__note">{c.note}</p>
+              <a class="btn btn--text" href={href(t.dimostrazioni.link, lingua)}>
+                {t.dimostrazioni.azione}{' '}
+                <span class="btn__arrow" aria-hidden="true">
+                  →
+                </span>
+              </a>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="pilot" aria-labelledby="pilot-title">
+    <div class="shell pilot__inner">
+      <h2 class="serif pilot__title" id="pilot-title">
+        {t.adozione.title}
+      </h2>
+      <div class="pilot__copy">
+        {t.adozione.paragrafi.map((p) => <p>{p}</p>)}
+        <a class="btn btn--outline" href={href(t.adozione.azione.link, lingua)}>
+          {t.adozione.azione.label}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={href(t.chiusura.link, lingua)}
+  />
+</BaseLayout>
+
+<style>
+  .numbers {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .numbers__title {
+    font-size: var(--t-h2);
+  }
+
+  .numbers__lead {
+    max-width: 42rem;
+    margin: 1rem 0 2.5rem;
+  }
+
+  .numbers__grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    margin: 0;
+    background: var(--c-line);
+    border: 1px solid var(--c-line);
+  }
+
+  .numbers__item {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    gap: 0.625rem;
+    padding: 1.75rem 1.5rem;
+    background: var(--c-page);
+  }
+
+  .numbers__value {
+    margin: 0;
+    font-size: clamp(1.75rem, 1.25rem + 2vw, 2.5rem);
+    line-height: 1;
+    letter-spacing: var(--ls-tight);
+    color: var(--c-text);
+  }
+
+  .numbers__label {
+    font-size: var(--t-xs);
+    line-height: 1.5;
+    color: var(--c-text-2);
+  }
+
+  .cases {
+    padding: 0 var(--gutter) var(--sp-section);
+  }
+
+  .cases__title {
+    font-size: var(--t-h2);
+    margin-bottom: 3rem;
+  }
+
+  .case {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 3.5rem;
+    align-items: start;
+    padding: 3rem 0;
+    border-top: 1px solid var(--c-line);
+    scroll-margin-top: 2rem;
+  }
+
+  .case:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .case__media {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    aspect-ratio: 16 / 9;
+    padding: 1rem;
+    background-color: var(--c-ink-raise);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .case__tag {
+    padding: 4px 12px;
+    border: 1px solid rgb(255 255 255 / 55%);
+    border-radius: var(--radius-pieno, 999px);
+    background: rgb(20 18 14 / 72%);
+    font-size: var(--t-mono);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-text-oninverse);
+  }
+
+  .case__play {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    font-size: 0.75rem;
+    color: var(--c-text-oninverse);
+    border: 1px solid rgb(255 255 255 / 50%);
+    border-radius: 50%;
+  }
+
+  .case__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .case__eyebrow {
+    color: var(--c-accent);
+  }
+
+  .case__heading {
+    font-size: var(--t-h3);
+    line-height: 1.2;
+  }
+
+  .case__body {
+    max-width: 42rem;
+    color: var(--c-text-2);
+    line-height: 1.65;
+  }
+
+  .case__note {
+    max-width: 42rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--c-accent);
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-4);
+  }
+
+  .pilot {
+    background: var(--c-page-alt);
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .pilot__inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .pilot__title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+  }
+
+  .pilot__copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    max-width: 38rem;
+    color: var(--c-text-2);
+    line-height: 1.7;
+  }
+
+  @media (max-width: 1000px) {
+    .numbers__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .case,
+    .pilot__inner {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .case__media {
+      max-width: 420px;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .numbers__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

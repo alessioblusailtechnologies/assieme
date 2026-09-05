@@ -1,0 +1,81 @@
+---
+import CtaBanner from '~/components/CtaBanner.astro';
+import Hero from '~/components/home/Hero.astro';
+import MemoriaVideo from '~/components/home/MemoriaVideo.astro';
+import MemorySection from '~/components/home/MemorySection.astro';
+import SecurityStrip from '~/components/home/SecurityStrip.astro';
+import Statement from '~/components/home/Statement.astro';
+import Stats from '~/components/home/Stats.astro';
+import Stories from '~/components/home/Stories.astro';
+import Testimonial from '~/components/home/Testimonial.astro';
+import UseCaseTicker from '~/components/home/UseCaseTicker.astro';
+import { SITE_URL, site } from '~/config/site';
+import { contenuti, lingue, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+
+const t = contenuti(lingua).home;
+const comune = contenuti(lingua).comune;
+
+const softwareSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  '@id': `${SITE_URL}/#software`,
+  name: site.name,
+  applicationCategory: 'BusinessApplication',
+  applicationSubCategory: 'InsurTech',
+  operatingSystem: 'Web',
+  url: SITE_URL,
+  inLanguage: lingue[lingua].hreflang,
+  description: t.meta.schemaDescription,
+  publisher: { '@id': `${SITE_URL}/#organization` },
+  audience: {
+    '@type': 'Audience',
+    audienceType: t.meta.audience,
+    geographicArea: { '@type': 'Country', name: t.meta.paese },
+  },
+  featureList: t.meta.featureList,
+  /* Niente blocco `offers`: il prezzo è su misura e un'Offer senza `price`
+   * è proprio il dato strutturato che i validatori segnalano come invalido.
+   * Meglio nessuna offerta che una monca. */
+};
+---
+
+<BaseLayout
+  lingua={lingua}
+  title={t.meta.title}
+  description={t.meta.description}
+  schema={[softwareSchema]}
+>
+  <Hero lingua={lingua} />
+  <Statement lingua={lingua} />
+  <MemoriaVideo lingua={lingua} />
+  <MemorySection lingua={lingua} />
+  <UseCaseTicker lingua={lingua} />
+  <Testimonial lingua={lingua} />
+
+  {/* Da qui alla fine la pagina resta scura e prosegue senza stacchi nel
+      piè di pagina, come nel design. */}
+  <div class="closing section--ink on-ink">
+    <Stories lingua={lingua} />
+    <Stats lingua={lingua} />
+    <SecurityStrip lingua={lingua} />
+    <CtaBanner
+      title={comune.chiusuraPredefinita.title}
+      cta={comune.chiusuraPredefinita.cta}
+      href={percorso('demo', lingua)}
+    />
+  </div>
+</BaseLayout>
+
+<style>
+  .closing {
+    background: var(--c-ink);
+    color: var(--c-text-oninverse);
+  }
+</style>

@@ -139,6 +139,48 @@ for (const { route, html } of pages) {
   }
 }
 
+/* --- hreflang ---
+ *
+ * Tre errori che tolgono valore senza dare segnali: un alternate verso una
+ * pagina che non esiste, un alternate non ricambiato dalla pagina gemella,
+ * e una pagina che non nomina anche sé stessa. Google, davanti all'ultimo,
+ * scarta l'intero gruppo. */
+
+const alternateDi = new Map();
+
+for (const { route, html } of pages) {
+  const alternate = [...html.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)]
+    .filter((m) => m[1] !== 'x-default')
+    .map((m) => ({ lingua: m[1], percorso: new URL(m[2]).pathname.replace(/\/$/, '') || '/' }));
+
+  if (alternate.length === 0) continue;
+  alternateDi.set(route, alternate);
+
+  if (!alternate.some((a) => a.percorso === route)) {
+    problems.push(`${route}: hreflang senza autoriferimento (Google li scarta tutti)`);
+  }
+
+  for (const a of alternate) {
+    if (!routes.has(a.percorso)) {
+      problems.push(`${route}: hreflang ${a.lingua} verso una pagina che non esiste → ${a.percorso}`);
+    }
+  }
+}
+
+for (const [route, alternate] of alternateDi) {
+  for (const a of alternate) {
+    if (a.percorso === route) continue;
+    const gemella = alternateDi.get(a.percorso);
+    if (!gemella) {
+      problems.push(`${route}: hreflang non ricambiato da ${a.percorso}`);
+      continue;
+    }
+    if (!gemella.some((g) => g.percorso === route)) {
+      problems.push(`${route}: ${a.percorso} non rimanda indietro`);
+    }
+  }
+}
+
 /* --- Sitemap e robots --- */
 
 const sitemapIndex = files.find((f) => f.endsWith('sitemap-index.xml'));
@@ -167,6 +209,7 @@ for (const route of routes) {
 console.log(`Pagine analizzate:   ${pages.length}`);
 console.log(`Link interni:        ${checked}`);
 console.log(`URL nella sitemap:   ${sitemapUrls.length}`);
+console.log(`Pagine con hreflang: ${alternateDi.size}`);
 
 if (notes.length) {
   console.log(`\nAvvisi (${notes.length}):`);

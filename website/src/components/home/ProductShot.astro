@@ -1,5 +1,5 @@
 ---
-import { productShot as p } from '~/data/home';
+import { contenuti, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
 
 /**
  * Riproduzione statica dell'interfaccia di confronto.
@@ -9,22 +9,29 @@ import { productShot as p } from '~/data/home';
  * italiano e con nomi di garanzie veri — che cosa fa il prodotto.
  */
 
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const p = t.productShot;
+const c = t.shot;
+
 const toneClass = (tone?: string) =>
   tone === 'neg' ? 'is-neg' : tone === 'pos' ? 'is-pos' : undefined;
 ---
 
 <section class="shot" aria-labelledby="shot-title">
-  <h2 class="visually-hidden" id="shot-title">
-    Velia all'opera: il confronto fra due proposte
-  </h2>
+  <h2 class="visually-hidden" id="shot-title">{c.titolo}</h2>
 
   <figure class="shot__frame">
     <div class="shot__screen">
       <div class="shot__chrome">
         <p class="mono shot__crumb">{p.breadcrumb}</p>
         <div class="shot__tabs" aria-hidden="true">
-          <span class="shot__tab is-active">Confronto</span>
-          <span class="shot__tab">Esporta</span>
+          <span class="shot__tab is-active">{c.schede[0]}</span>
+          <span class="shot__tab">{c.schede[1]}</span>
         </div>
       </div>
 
@@ -33,10 +40,7 @@ const toneClass = (tone?: string) =>
           <p class="serif shot__title">{p.title}</p>
 
           <table class="shot__table">
-            <caption class="visually-hidden">
-              Confronto ramo auto: polizza Active Veicoli AUTOPIÙ e preventivo
-              Unipol garanzia per garanzia, con fonte citata per ogni valore.
-            </caption>
+            <caption class="visually-hidden">{c.tabellaDidascalia}</caption>
             <thead>
               <tr>
                 {
@@ -64,13 +68,13 @@ const toneClass = (tone?: string) =>
           </table>
 
           <div class="shot__prompt" aria-hidden="true">
-            <span>Chiedi a Velia…</span>
-            <span class="shot__send">Invia</span>
+            <span>{c.richiesta}</span>
+            <span class="shot__send">{c.invia}</span>
           </div>
         </div>
 
         <aside class="shot__aside">
-          <p class="mono">Sintesi</p>
+          <p class="mono">{c.sintesi}</p>
           <p class="serif shot__summary">{p.summary}</p>
           <ul class="shot__cites">
             {
@@ -84,10 +88,7 @@ const toneClass = (tone?: string) =>
     </div>
   </figure>
 
-  <figcaption class="visually-hidden">
-    Esempio di confronto generato da Velia: ogni valore rimanda all'articolo
-    e alla pagina del documento da cui è stato estratto.
-  </figcaption>
+  <figcaption class="visually-hidden">{c.didascalia}</figcaption>
 </section>
 
 <style>

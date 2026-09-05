@@ -1,5 +1,6 @@
 ---
 import { site } from '~/config/site';
+import { percorso } from '~/i18n';
 import LegalLayout from '~/layouts/LegalLayout.astro';
 
 /**
@@ -10,12 +11,13 @@ import LegalLayout from '~/layouts/LegalLayout.astro';
 ---
 
 <LegalLayout
+  lingua="it"
   title="Note legali"
   description="Dati societari di Blusail Technologies, condizioni d'uso del sito Velia, proprietà intellettuale e limitazioni di responsabilità."
   lead="Chi pubblica questo sito, a quali condizioni puoi usarlo e che valore hanno le informazioni che ci trovi."
   updated="2026-08-02"
   crumb="Note legali"
-  href="/legale/note-legali"
+  href={percorso('noteLegali', 'it')}
 >
   <h2>Dati societari</h2>
   <table>

@@ -1,0 +1,100 @@
+---
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).servizio.nonTrovata;
+const nav = contenuti(lingua).comune.nav;
+---
+
+<BaseLayout
+  lingua={lingua}
+  title={t.meta.title}
+  description={t.meta.description}
+  announcement={false}
+  noindex
+>
+  <section class="nf on-ink" aria-labelledby="nf-title">
+    <div class="nf__inner">
+      <p class="eyebrow">{t.eyebrow}</p>
+      <h1 class="serif nf__title" id="nf-title">
+        {t.title}
+      </h1>
+      <p class="nf__lead">
+        {t.lead}
+      </p>
+
+      <nav class="nf__nav" aria-label={t.navEtichetta}>
+        <ul>
+          <li><a href={percorso('home', lingua)}>{t.home}</a></li>
+          {nav.map((voce) => <li><a href={href(voce.link, lingua)}>{voce.label}</a></li>)}
+        </ul>
+      </nav>
+
+      <a class="btn btn--solid btn--lg nf__cta" href={href(t.cta.link, lingua)}>
+        {t.cta.label}
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .nf {
+    display: flex;
+    align-items: center;
+    min-height: 60vh;
+    padding: clamp(4rem, 2rem + 8vw, 7rem) var(--gutter);
+    background:
+      linear-gradient(90deg, #1c1a15 0%, rgb(28 26 21 / 88%) 100%),
+      repeating-linear-gradient(135deg, #24221c 0 10px, #2e2b24 10px 20px);
+  }
+
+  .nf__inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    max-width: var(--shell);
+    margin-inline: auto;
+    width: 100%;
+  }
+
+  .nf__title {
+    max-width: 18ch;
+    font-size: clamp(2.25rem, 1.2rem + 4.2vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: var(--ls-tight);
+    color: var(--c-text-oninverse);
+  }
+
+  .nf__lead {
+    max-width: 34rem;
+    font-size: var(--t-lead);
+    line-height: 1.6;
+    color: var(--c-text-oninverse-2);
+  }
+
+  .nf__nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.75rem;
+    padding-top: 0.5rem;
+  }
+
+  .nf__nav a {
+    font-size: var(--t-sm);
+    color: var(--c-accent-hover);
+  }
+
+  .nf__nav a:hover {
+    color: var(--c-text-oninverse);
+  }
+
+  .nf__cta {
+    margin-top: 0.75rem;
+  }
+</style>

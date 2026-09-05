@@ -1,15 +1,16 @@
 ---
+/**
+ * Niente valori predefiniti: in un sito multilingua un testo scritto nel
+ * componente è un testo che nessuna traduzione raggiunge. Li passa la pagina,
+ * dal suo dizionario.
+ */
 export interface Props {
-  title?: string;
-  cta?: string;
-  href?: string;
+  title: string;
+  cta: string;
+  href: string;
 }
 
-const {
-  title = 'Spiegale come lavori. Una volta sola.',
-  cta = 'Richiedi una demo',
-  href = '/demo',
-} = Astro.props;
+const { title, cta, href } = Astro.props;
 ---
 
 <section class="cta" aria-labelledby="cta-title">

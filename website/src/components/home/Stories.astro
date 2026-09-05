@@ -1,13 +1,21 @@
 ---
-import { stories } from '~/data/home';
+import { contenuti, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { stories, storiesIntro } = t;
 ---
 
 <section class="stories" aria-labelledby="stories-title">
   <div class="stories__head">
     <h2 class="stories__title" id="stories-title">
-      Tre dimostrazioni. Documenti veri, risposte verificabili.
+      {storiesIntro.title}
     </h2>
-    <a class="btn btn--ghost btn--sm" href="/clienti">Vedi tutte le dimostrazioni</a>
+    <a class="btn btn--ghost btn--sm" href={href(storiesIntro.link, lingua)}>{storiesIntro.cta}</a>
   </div>
 
   <ul class="stories__grid">
@@ -17,8 +25,8 @@ import { stories } from '~/data/home';
           class="stories__card"
           style={`background-image: linear-gradient(rgb(20 18 14 / 45%), rgb(20 18 14 / 78%)), url('${s.img}');`}
         >
-          <a class="stories__link" href={s.href}>
-            <span class="mono stories__tag">Dimostrazione</span>
+          <a class="stories__link" href={href(s.link, lingua)}>
+            <span class="mono stories__tag">{storiesIntro.targhetta}</span>
             <span class="serif stories__card-title">{s.title}</span>
             <span class="stories__play" aria-hidden="true">
               ▶

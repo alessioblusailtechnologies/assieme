@@ -1,5 +1,13 @@
 ---
 import { SITE_URL, site } from '~/config/site';
+import {
+  alternative as alternativeDiRotta,
+  contenuti,
+  LINGUA_PREDEFINITA,
+  lingue,
+  type Alternativa,
+  type Lingua,
+} from '~/i18n';
 import { cleanPath } from '~/utils/url';
 
 export interface Props {
@@ -15,6 +23,9 @@ export interface Props {
   noindex?: boolean;
   /** Blocchi JSON-LD aggiuntivi rispetto a quelli globali. */
   schema?: Record<string, unknown>[];
+  lingua?: Lingua;
+  /** Alternate espliciti per le rotte fuori tabella, come le guide. */
+  alternative?: Alternativa[];
 }
 
 const {
@@ -22,11 +33,16 @@ const {
   description,
   canonical,
   image = '/og/velia-default.png',
-  imageAlt = 'Velia, la piattaforma AI per la distribuzione assicurativa',
+  imageAlt,
   ogType = 'website',
   noindex = false,
   schema = [],
+  lingua = LINGUA_PREDEFINITA,
+  alternative,
 } = Astro.props;
+
+const t = contenuti(lingua).seo;
+const scheda = lingue[lingua];
 
 /*
  * `build.format: 'file'` genera /piattaforma.html, e in fase di build
@@ -36,11 +52,26 @@ const {
  * che il canonical dovrebbe risolvere. Qui si torna all'URL pulito.
  */
 const pathname = cleanPath(Astro.url.pathname);
+
+/*
+ * Il canonical di una pagina punta sempre a sé stessa, anche in francese.
+ * Canonicalizzare una traduzione sull'originale la toglie dall'indice, ed è
+ * l'errore che manda in fumo tutto il lavoro di un sito multilingua.
+ */
 const canonicalUrl = canonical ?? new URL(pathname, SITE_URL).href;
 const imageUrl = new URL(image, SITE_URL).href;
 
-const fullTitle =
-  pathname === '/' ? title : `${title} | ${site.name}`;
+const fullTitle = pathname === '/' ? title : `${title} | ${site.name}`;
+
+/*
+ * Gli alternate arrivano dalla tabella delle rotte, o espliciti per le rotte
+ * dinamiche. Includono sempre l'autoriferimento: un hreflang che non nomina
+ * anche sé stesso viene scartato in blocco, e vale come non averlo messo.
+ * Quando la pagina esiste in una lingua sola la lista è vuota e non si emette
+ * nulla: un alternate non ricambiato è peggio di nessun alternate.
+ */
+const alternate = alternative ?? alternativeDiRotta(pathname);
+const altre = alternate.filter((a) => a.lingua !== lingua);
 
 /* ---------------------------------------------------------------------------
  * Dati strutturati globali: presenti su ogni pagina, così che l'entità
@@ -54,7 +85,7 @@ const organizationSchema = {
   name: site.name,
   // I nomi con cui la gente cerca e con cui il marchio si presenta sui
   // social: aiutano a distinguere Velia dall'omonima città antica.
-  alternateName: ['Sono Velia', 'Velia AI'],
+  alternateName: t.organizzazione.alternateName,
   legalName: site.legalName,
   url: SITE_URL,
   logo: {
@@ -63,8 +94,7 @@ const organizationSchema = {
     width: 512,
     height: 512,
   },
-  description:
-    'Velia è l’assistente AI per agenzie assicurative, broker e intermediari: un archivio di set informativi già pronto, i documenti dell’agenzia accanto ai loro e ogni risposta con la citazione al passaggio di origine.',
+  description: t.organizzazione.description,
   foundingDate: String(site.foundingYear),
   email: site.email,
   // Indirizzo completo volutamente assente: meglio nessun dato che uno
@@ -74,12 +104,8 @@ const organizationSchema = {
     addressLocality: site.city,
     addressCountry: site.country,
   },
-  areaServed: { '@type': 'Country', name: 'Italia' },
-  sameAs: [
-    site.social.linkedin,
-    site.social.facebook,
-    site.social.instagram,
-  ],
+  areaServed: { '@type': 'Country', name: t.organizzazione.areaServita },
+  sameAs: [site.social.linkedin, site.social.facebook, site.social.instagram],
 };
 
 const websiteSchema = {
@@ -89,7 +115,7 @@ const websiteSchema = {
   name: site.name,
   alternateName: 'Sono Velia',
   url: SITE_URL,
-  inLanguage: 'it-IT',
+  inLanguage: scheda.hreflang,
   publisher: { '@id': `${SITE_URL}/#organization` },
 };
 
@@ -99,6 +125,33 @@ const jsonLd = [organizationSchema, websiteSchema, ...schema];
 <title>{fullTitle}</title>
 <meta name="description" content={description} />
 <link rel="canonical" href={canonicalUrl} />
+
+{
+  alternate.map((a) => (
+    <link
+      rel="alternate"
+      hreflang={lingue[a.lingua].hreflang}
+      href={new URL(a.href, SITE_URL).href}
+    />
+  ))
+}
+{
+  /* x-default va alla lingua predefinita: è la versione servita a chi non
+     rientra in nessuna delle altre. */
+  alternate.length > 0 && (
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={
+        new URL(
+          alternate.find((a) => a.lingua === LINGUA_PREDEFINITA)?.href ??
+            alternate[0]!.href,
+          SITE_URL,
+        ).href
+      }
+    />
+  )
+}
 
 {
   noindex ? (
@@ -114,12 +167,13 @@ const jsonLd = [organizationSchema, websiteSchema, ...schema];
 <!-- Open Graph -->
 <meta property="og:type" content={ogType} />
 <meta property="og:site_name" content={site.name} />
-<meta property="og:locale" content={site.locale} />
+<meta property="og:locale" content={scheda.ogLocale} />
+{altre.map((a) => <meta property="og:locale:alternate" content={lingue[a.lingua].ogLocale} />)}
 <meta property="og:title" content={fullTitle} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonicalUrl} />
 <meta property="og:image" content={imageUrl} />
-<meta property="og:image:alt" content={imageAlt} />
+<meta property="og:image:alt" content={imageAlt ?? t.immagineAlt} />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
@@ -128,7 +182,7 @@ const jsonLd = [organizationSchema, websiteSchema, ...schema];
 <meta name="twitter:title" content={fullTitle} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={imageUrl} />
-<meta name="twitter:image:alt" content={imageAlt} />
+<meta name="twitter:image:alt" content={imageAlt ?? t.immagineAlt} />
 
 <!-- Dati strutturati -->
 {

@@ -1,5 +1,6 @@
 ---
 import { site } from '~/config/site';
+import { percorso } from '~/i18n';
 import LegalLayout from '~/layouts/LegalLayout.astro';
 
 /**
@@ -11,12 +12,13 @@ import LegalLayout from '~/layouts/LegalLayout.astro';
 ---
 
 <LegalLayout
+  lingua="it"
   title="Cookie policy"
   description="Quali cookie usa il sito di Velia e perché non è richiesto alcun banner di consenso."
   lead="La versione breve: questo sito non ti profila e non installa cookie di terze parti."
   updated="2026-08-02"
   crumb="Cookie"
-  href="/legale/cookie"
+  href={percorso('cookie', 'it')}
 >
   <h2>Che cosa sono i cookie</h2>
   <p>
@@ -81,6 +83,6 @@ import LegalLayout from '~/layouts/LegalLayout.astro';
   <h2>Contatti</h2>
   <p>
     Per qualsiasi chiarimento: <a href={`mailto:${site.email}`}>{site.email}</a>.
-    Vedi anche l'<a href="/legale/privacy">informativa privacy</a>.
+    Vedi anche l'<a href={percorso('privacy', 'it')}>informativa privacy</a>.
   </p>
 </LegalLayout>

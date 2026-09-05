@@ -1,0 +1,134 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import CardGrid from '~/components/CardGrid.astro';
+import Closing from '~/components/Closing.astro';
+import FeatureBlock from '~/components/FeatureBlock.astro';
+import PageHero from '~/components/PageHero.astro';
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).piattaforma;
+---
+
+<BaseLayout lingua={lingua} title={t.meta.title} description={t.meta.description}>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    cta={t.testata.cta && {
+      label: t.testata.cta.label,
+      href: href(t.testata.cta.link, lingua),
+    }}
+    video={{
+      src: '/media/piattaforma-hero.mp4',
+      poster: '/media/piattaforma-hero-poster.jpg',
+    }}
+  />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('piattaforma', lingua) }]}
+  />
+
+  <CardGrid title={t.griglia.title} lead={t.griglia.lead} cards={t.griglia.cards} />
+
+  <FeatureBlock eyebrow={t.archivio.eyebrow} title={t.archivio.title} rows={t.archivio.rows}>
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-biblioteca.mp4"
+        poster="/media/astratto-biblioteca-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-biblioteca-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
+    {t.archivio.paragrafi.map((p) => <p>{p}</p>)}
+    {
+      t.archivio.azione && (
+        <a class="btn btn--outline" href={href(t.archivio.azione.link, lingua)} slot="actions">
+          {t.archivio.azione.label}
+        </a>
+      )
+    }
+  </FeatureBlock>
+
+  <FeatureBlock eyebrow={t.metodo.eyebrow} title={t.metodo.title} flip rows={t.metodo.rows}>
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-metodo.mp4"
+        poster="/media/astratto-metodo-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-metodo-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
+    {t.metodo.paragrafi.map((p) => <p>{p}</p>)}
+  </FeatureBlock>
+
+  <FeatureBlock eyebrow={t.ecosistema.eyebrow} title={t.ecosistema.title} rows={t.ecosistema.rows}>
+    <Fragment slot="figure">
+      <video
+        class="figura__video"
+        src="/media/astratto-agenti.mp4"
+        poster="/media/astratto-agenti-poster.jpg"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        tabindex="-1"></video>
+      <img class="figura__fermo" src="/media/astratto-agenti-poster.jpg" alt="" loading="lazy" />
+    </Fragment>
+    {t.ecosistema.paragrafi.map((p) => <p>{p}</p>)}
+  </FeatureBlock>
+
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={href(t.chiusura.link, lingua)}
+  />
+</BaseLayout>
+
+<style>
+  /*
+   * Gli astratti Remotion nelle figure dei blocchi: loop muti sui token del
+   * sito, resi sul fondo --c-page-alt così il riquadro si stacca appena
+   * dalla pagina, come i pannelli media della home.
+   */
+  .figura__video,
+  .figura__fermo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .figura__fermo {
+    display: none;
+  }
+
+  /* Con le animazioni ridotte resta il fotogramma fermo. */
+  @media (prefers-reduced-motion: reduce) {
+    .figura__video {
+      display: none;
+    }
+
+    .figura__fermo {
+      display: block;
+      height: 100%;
+    }
+  }
+</style>

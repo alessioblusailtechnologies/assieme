@@ -1,0 +1,194 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import PageHero from '~/components/PageHero.astro';
+import { SITE_URL } from '~/config/site';
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).sicurezza;
+
+const faqSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  '@id': `${SITE_URL}${percorso('sicurezza', lingua)}#faq`,
+  mainEntity: t.domande.voci.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: { '@type': 'Answer', text: item.a },
+  })),
+};
+---
+
+<BaseLayout
+  lingua={lingua}
+  title={t.meta.title}
+  description={t.meta.description}
+  schema={[faqSchema]}
+>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    video={{
+      src: '/media/sicurezza-hero.mp4',
+      poster: '/media/sicurezza-hero-poster.jpg',
+    }}
+  />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('sicurezza', lingua) }]}
+  />
+
+  <section class="promises" aria-labelledby="promises-title">
+    <div class="shell">
+      <h2 class="serif section-title" id="promises-title">
+        {t.impegni.title}
+      </h2>
+      <ul class="promises__grid">
+        {
+          t.impegni.voci.map((c) => (
+            <li class="promise" id={c.id}>
+              <span class="promise__mark" aria-hidden="true">
+                {c.mark}
+              </span>
+              <h3 class="promise__name">{c.name}</h3>
+              <p class="promise__body">{c.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-title">
+    <div class="shell">
+      <h2 class="serif section-title" id="faq-title">{t.domande.title}</h2>
+      <dl class="faq__list">
+        {
+          t.domande.voci.map((item) => (
+            <div class="faq__item">
+              <dt class="faq__q">{item.q}</dt>
+              <dd class="faq__a">{item.a}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={href(t.chiusura.link, lingua)}
+  />
+</BaseLayout>
+
+<style>
+  .section-title {
+    font-size: var(--t-h2);
+    line-height: 1.12;
+    margin-bottom: 2.5rem;
+  }
+
+  .promises {
+    padding: var(--sp-section) var(--gutter) 0;
+  }
+
+  .faq {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .promises__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--c-line);
+    border: 1px solid var(--c-line);
+  }
+
+  .promise {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.875rem;
+    padding: 2rem;
+    background: var(--c-page);
+    scroll-margin-top: 2rem;
+  }
+
+  .promise__mark {
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    padding: 0 0.5rem;
+    font-family: var(--f-mono);
+    font-size: var(--t-mono-sm);
+    line-height: 1.4;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    text-wrap: balance;
+    color: var(--c-accent);
+    border: 1px solid var(--c-line);
+    border-radius: 50%;
+  }
+
+  .promise__name {
+    font-size: 1.125rem;
+    font-weight: 500;
+  }
+
+  .promise__body {
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .faq__list {
+    margin: 0;
+  }
+
+  .faq__item {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--c-line);
+    max-width: 52rem;
+  }
+
+  .faq__item:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .faq__q {
+    font-family: var(--f-serif);
+    font-size: 1.25rem;
+    line-height: 1.35;
+    color: var(--c-text);
+  }
+
+  .faq__a {
+    margin: 0.625rem 0 0;
+    font-size: var(--t-sm);
+    line-height: 1.65;
+    color: var(--c-text-2);
+  }
+
+  @media (max-width: 1000px) {
+    .promises__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 680px) {
+    .promises__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -12,13 +12,20 @@
  * fotogramma e fermarsi, che è esattamente l'effetto "immagine ferma".
  */
 
+import { contenuti, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home.reel;
+
 const SRC = '/video/velia-piattaforma.mp4';
 ---
 
 <section class="reel" aria-labelledby="reel-title">
-  <h2 class="visually-hidden" id="reel-title">
-    Velia all'opera: dal documento al confronto
-  </h2>
+  <h2 class="visually-hidden" id="reel-title">{t.titolo}</h2>
 
   <figure class="reel__figure">
     <div class="reel__screen">
@@ -32,7 +39,7 @@ const SRC = '/video/velia-piattaforma.mp4';
         loop
         playsinline
         disablepictureinpicture
-        aria-label="Velia legge due capitolati assicurativi, ne estrae le garanzie e ne mette a confronto le condizioni."
+        aria-label={t.descrizione}
         data-reel></video>
 
       {/*
@@ -40,14 +47,11 @@ const SRC = '/video/velia-piattaforma.mp4';
         WCAG 2.2.2 impone un modo per fermarlo.
       */}
       <button class="reel__toggle" type="button" data-reel-toggle>
-        <span data-reel-label>Pausa</span>
+        <span data-reel-label>{t.pausa}</span>
       </button>
     </div>
 
-    <figcaption class="reel__caption">
-      Due capitolati a confronto: garanzie allineate, differenze in evidenza e
-      ogni valore riconducibile all'articolo di origine.
-    </figcaption>
+    <figcaption class="reel__caption">{t.didascalia}</figcaption>
   </figure>
 </section>
 

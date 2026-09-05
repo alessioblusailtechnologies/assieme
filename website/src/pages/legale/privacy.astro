@@ -1,5 +1,6 @@
 ---
 import { site } from '~/config/site';
+import { percorso } from '~/i18n';
 import LegalLayout from '~/layouts/LegalLayout.astro';
 
 /**
@@ -10,12 +11,13 @@ import LegalLayout from '~/layouts/LegalLayout.astro';
 ---
 
 <LegalLayout
+  lingua="it"
   title="Informativa privacy"
   description="Come Blusail Technologies tratta i dati personali di chi visita il sito di Velia e di chi richiede una demo, ai sensi del Regolamento UE 2016/679."
   lead="Chi tratta i tuoi dati, per quali finalità, per quanto tempo e come puoi intervenire."
   updated="2026-08-02"
   crumb="Privacy"
-  href="/legale/privacy"
+  href={percorso('privacy', 'it')}
 >
   <p>
     La presente informativa è resa ai sensi degli articoli 13 e 14 del
@@ -53,7 +55,7 @@ import LegalLayout from '~/layouts/LegalLayout.astro';
     trasferiscano dati fuori dall'Unione Europea. I caratteri tipografici sono
     ospitati sui nostri server: nessuna richiesta viene inoltrata a fornitori
     terzi durante la navigazione. Per il dettaglio, vedi la
-    <a href="/legale/cookie">cookie policy</a>.
+    <a href={percorso('cookie', 'it')}>cookie policy</a>.
   </p>
 
   <h3>Richiesta di demo e contatti</h3>

@@ -1,7 +1,29 @@
 ---
-import { footerNav, legalNav, site } from '~/config/site';
+import { site } from '~/config/site';
+import { contenuti, esterna, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
 
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+
+const t = contenuti(lingua).comune;
 const year = new Date().getFullYear();
+
+const colonne = t.footer.map((colonna) => ({
+  title: colonna.title,
+  items: colonna.items.map((voce) => ({
+    label: voce.label,
+    href: href(voce.link, lingua),
+    external: esterna(voce.link),
+  })),
+}));
+
+const legale = t.legale.map((voce) => ({
+  label: voce.label,
+  href: href(voce.link, lingua),
+}));
 ---
 
 <footer class="site-footer on-ink">
@@ -9,12 +31,12 @@ const year = new Date().getFullYear();
     <div class="site-footer__brand">
       <span class="site-footer__mark" aria-hidden="true">V</span>
       <p class="site-footer__claim">
-        {site.name}. {site.tagline}.
+        {site.name}. {t.tagline}.
       </p>
     </div>
 
     {
-      footerNav.map((column) => (
+      colonne.map((column) => (
         <nav class="site-footer__col" aria-label={column.title}>
           {/* Etichetta di colonna, non titolo di sezione: il nome del blocco
               è già esposto dall'aria-label del <nav>, e cinque h2 nel piè di
@@ -30,7 +52,7 @@ const year = new Date().getFullYear();
                 >
                   {item.label}
                   {item.external && (
-                    <span class="visually-hidden"> (si apre in una nuova scheda)</span>
+                    <span class="visually-hidden">{t.nuovaScheda}</span>
                   )}
                 </a>
               </li>
@@ -43,12 +65,12 @@ const year = new Date().getFullYear();
 
   <div class="site-footer__base">
     <p class="site-footer__legal-line">
-      © {year} {site.legalName.toUpperCase()} · Tutti i diritti riservati
+      © {year} {site.legalName.toUpperCase()} · {t.dirittiRiservati}
     </p>
 
     <ul class="site-footer__legal">
       {
-        legalNav.map((item) => (
+        legale.map((item) => (
           <li>
             <a href={item.href}>{item.label}</a>
           </li>

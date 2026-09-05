@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
+import { percorso } from '~/i18n';
 import GuidaLayout from '~/layouts/GuidaLayout.astro';
 
 export async function getStaticPaths() {
@@ -10,21 +11,24 @@ export async function getStaticPaths() {
 const { guida, tutte } = Astro.props;
 const { Content } = await render(guida);
 
+const base = percorso('risorse', 'it');
+
 const altre = tutte
   .filter((g) => g.id !== guida.id)
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 3)
-  .map((g) => ({ title: g.data.title, href: `/risorse/${g.id}`, filone: g.data.filone }));
+  .map((g) => ({ title: g.data.title, href: `${base}/${g.id}`, filone: g.data.filone }));
 ---
 
 <GuidaLayout
+  lingua="it"
   title={guida.data.title}
   description={guida.data.description}
   lead={guida.data.lead}
   filone={guida.data.filone}
   published={guida.data.published}
   updated={guida.data.updated}
-  href={`/risorse/${guida.id}`}
+  href={`${base}/${guida.id}`}
   altre={altre}
 >
   <Content />

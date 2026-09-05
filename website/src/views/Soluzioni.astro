@@ -1,0 +1,103 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import Closing from '~/components/Closing.astro';
+import FeatureBlock from '~/components/FeatureBlock.astro';
+import PageHero from '~/components/PageHero.astro';
+import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).soluzioni;
+
+/* I quattro mestieri, nell'ordine della pagina: il blocco, l'astratto che
+   lo accompagna e il verso in cui sta la figura. */
+const blocchi = [
+  { dati: t.agenzie, media: 'astratto-soluzione-agenzie', flip: false },
+  { dati: t.broker, media: 'astratto-soluzione-broker', flip: true },
+  { dati: t.intermediari, media: 'astratto-soluzione-intermediari', flip: false },
+  { dati: t.compagnie, media: 'astratto-soluzione-compagnie', flip: true },
+];
+---
+
+<BaseLayout lingua={lingua} title={t.meta.title} description={t.meta.description}>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    video={{
+      src: '/media/soluzioni-hero.mp4',
+      poster: '/media/soluzioni-hero-poster.jpg',
+    }}
+  />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('soluzioni', lingua) }]}
+  />
+
+  {
+    blocchi.map(({ dati, media, flip }) => (
+      <FeatureBlock
+        id={dati.id}
+        eyebrow={dati.eyebrow}
+        title={dati.title}
+        flip={flip}
+        rows={dati.rows}
+      >
+        <Fragment slot="figure">
+          <video
+            class="figura__video"
+            src={`/media/${media}.mp4`}
+            poster={`/media/${media}-poster.jpg`}
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            tabindex="-1"
+          />
+          <img class="figura__fermo" src={`/media/${media}-poster.jpg`} alt="" loading="lazy" />
+        </Fragment>
+        {dati.paragrafi.map((p) => (
+          <p>{p}</p>
+        ))}
+      </FeatureBlock>
+    ))
+  }
+
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={href(t.chiusura.link, lingua)}
+  />
+</BaseLayout>
+
+<style>
+  /* Gli astratti Remotion nelle figure, come nella pagina Piattaforma. */
+  .figura__video,
+  .figura__fermo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .figura__fermo {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .figura__video {
+      display: none;
+    }
+
+    .figura__fermo {
+      display: block;
+      height: 100%;
+    }
+  }
+</style>

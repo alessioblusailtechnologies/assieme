@@ -1,5 +1,13 @@
 ---
-import { hero } from '~/data/home';
+import { contenuti, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { hero } = t;
 
 // La fascia loghi si riempie man mano che arrivano i marchi autorizzati;
 // gli slot senza logo restano segnaposto tratteggiati.
@@ -26,13 +34,7 @@ const logos: { src: string; alt: string }[] = [
 
 const shownLogos = SHOW_COMPANY_LOGOS ? logos : [];
 
-/* Con i loghi spenti la fascia porta tre prove concrete del prodotto:
-   affermazioni vere oggi, senza promettere clienti che non ci sono. */
-const proofPoints = [
-  'Ogni risposta con la fonte citata',
-  'Zero documenti da caricare per iniziare',
-  'I tuoi dati restano tuoi',
-];
+const proofPoints = hero.prove;
 ---
 
 <section class="hero on-ink" aria-labelledby="hero-title">
@@ -64,8 +66,8 @@ const proofPoints = [
         }
       </h1>
       <p class="hero__lead">{hero.lead}</p>
-      <a class="btn btn--solid btn--lg hero__cta" href="/demo">
-        Richiedi una demo
+      <a class="btn btn--solid btn--lg hero__cta" href={href(hero.link, lingua)}>
+        {hero.cta}
       </a>
     </div>
   </div>
@@ -73,7 +75,7 @@ const proofPoints = [
   <div class="hero__proof">
     {
       SHOW_COMPANY_LOGOS ? (
-        <ul class="hero__logos" aria-label="Compagnie con prodotti in archivio">
+        <ul class="hero__logos" aria-label={hero.loghiEtichetta}>
           {shownLogos.map((logo) => (
             <li class="hero__logo">
               <img
@@ -87,22 +89,22 @@ const proofPoints = [
           {Array.from({ length: LOGO_SLOTS - shownLogos.length }, (_, i) => (
             <li class="hero__logo hatch">
               <span class="visually-hidden">
-                Logo cliente {shownLogos.length + i + 1}
+                {hero.logoCliente.replace('{n}', String(shownLogos.length + i + 1))}
               </span>
-              <span aria-hidden="true">logo</span>
+              <span aria-hidden="true">{hero.logoSegnaposto}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <ul class="hero__points" aria-label="Perché Velia">
+        <ul class="hero__points" aria-label={hero.proveEtichetta}>
           {proofPoints.map((point) => (
             <li class="hero__point">{point}</li>
           ))}
         </ul>
       )
     }
-    <a class="btn btn--outline btn--sm hero__proof-cta" href="/clienti">
-      Guarda Velia al lavoro
+    <a class="btn btn--outline btn--sm hero__proof-cta" href={href(hero.proveLink, lingua)}>
+      {hero.proveCta}
     </a>
   </div>
 </section>

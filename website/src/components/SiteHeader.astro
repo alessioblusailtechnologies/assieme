@@ -1,26 +1,45 @@
 ---
-import { APP_URL, primaryNav } from '~/config/site';
+import SelettoreLingua from '~/components/SelettoreLingua.astro';
+import { APP_URL } from '~/config/site';
+import { contenuti, href, LINGUA_PREDEFINITA, percorso, type Lingua } from '~/i18n';
 import { isActivePath } from '~/utils/url';
 
-const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+
+const t = contenuti(lingua).comune;
+const voci = t.nav.map((voce) => ({
+  label: voce.label,
+  href: href(voce.link, lingua),
+}));
+
+const isActive = (percorsoVoce: string) =>
+  isActivePath(Astro.url.pathname, percorsoVoce);
 ---
 
 <header class="site-header on-ink">
   <div class="site-header__bar">
-    <a class="site-header__brand" href="/" aria-label="Velia, torna alla home">
-      Ciao, sono Velia.
+    <a
+      class="site-header__brand"
+      href={percorso('home', lingua)}
+      aria-label={t.tornaAllaHome}
+    >
+      {t.saluto}
     </a>
 
-    <nav class="site-header__nav" aria-label="Navigazione principale">
+    <nav class="site-header__nav" aria-label={t.navEtichetta}>
       <ul>
         {
-          primaryNav.map((item) => (
+          voci.map((voce) => (
             <li>
               <a
-                href={item.href}
-                aria-current={isActive(item.href) ? 'page' : undefined}
+                href={voce.href}
+                aria-current={isActive(voce.href) ? 'page' : undefined}
               >
-                {item.label}
+                {voce.label}
               </a>
             </li>
           ))
@@ -29,10 +48,11 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
     </nav>
 
     <div class="site-header__actions">
+      <SelettoreLingua lingua={lingua} />
       {APP_URL && (
-        <a class="btn btn--ghost btn--sm" href={APP_URL} rel="nofollow">Accedi</a>
+        <a class="btn btn--ghost btn--sm" href={APP_URL} rel="nofollow">{t.accedi}</a>
       )}
-      <a class="btn btn--solid btn--sm" href="/demo">Richiedi una demo</a>
+      <a class="btn btn--solid btn--sm" href={percorso('demo', lingua)}>{t.demo}</a>
     </div>
 
     <button
@@ -42,22 +62,22 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
       aria-controls="menu-mobile"
       data-menu-toggle
     >
-      <span class="visually-hidden">Apri il menu</span>
+      <span class="visually-hidden">{t.apriMenu}</span>
       <span class="site-header__burger" aria-hidden="true"></span>
     </button>
   </div>
 
   <div class="site-header__panel" id="menu-mobile" hidden data-menu-panel>
-    <nav aria-label="Navigazione principale, versione compatta">
+    <nav aria-label={t.navEtichettaCompatta}>
       <ul>
         {
-          primaryNav.map((item) => (
+          voci.map((voce) => (
             <li>
               <a
-                href={item.href}
-                aria-current={isActive(item.href) ? 'page' : undefined}
+                href={voce.href}
+                aria-current={isActive(voce.href) ? 'page' : undefined}
               >
-                {item.label}
+                {voce.label}
               </a>
             </li>
           ))
@@ -65,10 +85,11 @@ const isActive = (href: string) => isActivePath(Astro.url.pathname, href);
       </ul>
     </nav>
     <div class="site-header__panel-actions">
+      <SelettoreLingua lingua={lingua} variante="compatto" />
       {APP_URL && (
-        <a class="btn btn--ghost" href={APP_URL} rel="nofollow">Accedi</a>
+        <a class="btn btn--ghost" href={APP_URL} rel="nofollow">{t.accedi}</a>
       )}
-      <a class="btn btn--solid" href="/demo">Richiedi una demo</a>
+      <a class="btn btn--solid" href={percorso('demo', lingua)}>{t.demo}</a>
     </div>
   </div>
 </header>

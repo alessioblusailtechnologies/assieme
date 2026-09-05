@@ -1,12 +1,20 @@
 ---
-import { statement } from '~/data/home';
+import { contenuti, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { statement } = t;
 ---
 
 <section class="statement" aria-labelledby="statement-title">
   {/* Il posizionamento è lungo due frasi: come h2 sarebbe un titolo di 250
       caratteri. Il titolo vero resta breve e nascosto, il testo è un
       paragrafo — struttura corretta, e nulla cambia a schermo. */}
-  <h2 class="visually-hidden" id="statement-title">Che cos'è Velia</h2>
+  <h2 class="visually-hidden" id="statement-title">{statement.titolo}</h2>
 
   <p class="statement__text">
     <span class="statement__strong">{statement.strong}</span>{' '}

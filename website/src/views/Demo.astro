@@ -1,0 +1,492 @@
+---
+import Breadcrumbs from '~/components/Breadcrumbs.astro';
+import PageHero from '~/components/PageHero.astro';
+import { FORM_ACCESS_KEY, FORM_ENDPOINT, SITE_URL, site } from '~/config/site';
+import { contenuti, href, lingue, percorso, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).demo;
+const m = t.modulo;
+
+const contactSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  '@id': `${SITE_URL}${percorso('demo', lingua)}#contactpage`,
+  name: t.schemaNome,
+  inLanguage: lingue[lingua].hreflang,
+  isPartOf: { '@id': `${SITE_URL}/#website` },
+  about: { '@id': `${SITE_URL}/#organization` },
+};
+
+const grazie = new URL(percorso('demoGrazie', lingua), SITE_URL).href;
+
+/* Le stringhe della validazione viaggiano come attributi sul modulo: lo
+   script è uno solo per tutte le lingue, e non contiene testo. */
+const messaggi = {
+  'data-msg-uno': t.validazione.unCampo,
+  'data-msg-molti': t.validazione.campiDaCorreggere,
+  'data-msg-non-configurato': t.validazione.nonConfigurato.replace('{email}', site.email),
+  'data-msg-fallito': t.validazione.invioFallito.replace('{email}', site.email),
+  'data-msg-invio': t.validazione.invioInCorso,
+  'data-grazie': percorso('demoGrazie', lingua),
+};
+---
+
+<BaseLayout
+  lingua={lingua}
+  title={t.meta.title}
+  description={t.meta.description}
+  announcement={false}
+  schema={[contactSchema]}
+>
+  <PageHero eyebrow={t.testata.eyebrow} title={t.testata.title} lead={t.testata.lead} />
+
+  <Breadcrumbs
+    lingua={lingua}
+    trail={[{ label: t.briciola, href: percorso('demo', lingua) }]}
+  />
+
+  <section class="demo" aria-labelledby="form-title">
+    <div class="shell demo__inner">
+      <div class="demo__aside">
+        <h2 class="serif demo__title" id="form-title">{t.comeFunziona.title}</h2>
+        <dl class="demo__steps">
+          {
+            t.comeFunziona.passi.map((s) => (
+              <div class="demo__step">
+                <dt class="demo__term">{s.term}</dt>
+                <dd class="demo__detail">{s.detail}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p class="demo__contact">
+          {t.comeFunziona.contatto} <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+      </div>
+
+      <div class="demo__form-wrap">
+        {
+          !FORM_ENDPOINT && (
+            <p class="demo__warning" role="note">
+              <strong>{m.avvisoTitolo}</strong> <code>FORM_ENDPOINT</code> {m.avviso}
+            </p>
+          )
+        }
+
+        <form
+          class="form"
+          method="post"
+          action={FORM_ENDPOINT || undefined}
+          novalidate
+          data-demo-form
+          {...messaggi}
+        >
+          {/* Campi di servizio Web3Forms: destinazione, oggetto della mail
+              e pagina di atterraggio dopo l'invio. Il campo `lingua` dice in
+              casella da quale versione del sito arriva la richiesta. */}
+          <input type="hidden" name="access_key" value={FORM_ACCESS_KEY} />
+          <input type="hidden" name="subject" value={m.oggetto} />
+          <input type="hidden" name="from_name" value={m.mittente} />
+          <input type="hidden" name="lingua" value={lingua} />
+          <input type="hidden" name="redirect" value={grazie} />
+          <div class="form__row">
+            <label class="form__field">
+              <span class="form__label">{m.nome} <abbr title={m.obbligatorio}>*</abbr></span>
+              <input
+                type="text"
+                name="nome"
+                autocomplete="name"
+                required
+                minlength="2"
+              />
+            </label>
+
+            <label class="form__field">
+              <span class="form__label">{m.ruolo}</span>
+              <input type="text" name="ruolo" autocomplete="organization-title" />
+            </label>
+          </div>
+
+          <div class="form__row">
+            <label class="form__field">
+              <span class="form__label">{m.organizzazione} <abbr title={m.obbligatorio}>*</abbr></span>
+              <input
+                type="text"
+                name="organizzazione"
+                autocomplete="organization"
+                required
+              />
+            </label>
+
+            <label class="form__field">
+              <span class="form__label">{m.tipo}</span>
+              <select name="tipo">
+                <option value="">{m.tipoVuoto}</option>
+                {m.tipoVoci.map((voce) => <option>{voce}</option>)}
+              </select>
+            </label>
+          </div>
+
+          <div class="form__row">
+            <label class="form__field">
+              <span class="form__label">{m.email} <abbr title={m.obbligatorio}>*</abbr></span>
+              <input type="email" name="email" autocomplete="email" required />
+            </label>
+
+            <label class="form__field">
+              <span class="form__label">{m.telefono}</span>
+              <input type="tel" name="telefono" autocomplete="tel" />
+            </label>
+          </div>
+
+          <label class="form__field">
+            <span class="form__label">{m.messaggio}</span>
+            <textarea
+              name="messaggio"
+              rows="4"
+              placeholder={m.messaggioEsempio}
+            ></textarea>
+          </label>
+
+          <label class="form__consent">
+            <input type="checkbox" name="privacy" required />
+            <span>
+              {m.consensoPrima}<a href={href(m.linkPrivacy, lingua)}>{m.consensoLink}</a>{m.consensoDopo}
+              <abbr title={m.obbligatorio}>*</abbr>
+            </span>
+          </label>
+
+          {/* Trappola per i bot di Web3Forms: invisibile e fuori dall'ordine
+              di tabulazione. Se arriva spuntata, il servizio scarta l'invio. */}
+          <div class="form__trap" aria-hidden="true">
+            <label>
+              {m.trappola}
+              <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" />
+            </label>
+          </div>
+
+          <button class="btn btn--accent btn--lg form__submit" type="submit">
+            {m.invia}
+          </button>
+
+          <p class="form__note">
+            {m.nota}
+          </p>
+
+          <p class="form__error" role="alert" hidden data-form-error></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .demo {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .demo__inner {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  .demo__title {
+    font-size: var(--t-h3);
+    line-height: 1.15;
+  }
+
+  .demo__steps {
+    margin: 2rem 0 0;
+  }
+
+  .demo__step {
+    padding: 1.125rem 0;
+    border-top: 1px solid var(--c-line);
+  }
+
+  .demo__step:last-child {
+    border-bottom: 1px solid var(--c-line);
+  }
+
+  .demo__term {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+  }
+
+  .demo__detail {
+    margin: 0.5rem 0 0;
+    font-size: var(--t-sm);
+    line-height: 1.6;
+    color: var(--c-text-2);
+  }
+
+  .demo__contact {
+    margin-top: 1.5rem;
+    font-size: var(--t-sm);
+    color: var(--c-text-2);
+  }
+
+  .demo__warning {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    color: var(--c-neg);
+    background: #f8eae6; /* il fondo negativo tenue della piattaforma */
+    border: 1px solid #e8cfc8;
+  }
+
+  .demo__warning code {
+    font-family: var(--f-mono);
+    font-size: 0.75rem;
+  }
+
+  /* --- Modulo --- */
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 2rem;
+    background: var(--c-surface);
+    border: 1px solid var(--c-line);
+  }
+
+  .form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+
+  .form__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+  }
+
+  .form__label {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-3);
+  }
+
+  .form__label abbr {
+    color: var(--c-accent);
+    text-decoration: none;
+  }
+
+  .form input[type='text'],
+  .form input[type='email'],
+  .form input[type='tel'],
+  .form select,
+  .form textarea {
+    width: 100%;
+    padding: 0.6875rem 0.75rem;
+    font-size: var(--t-sm);
+    color: var(--c-text);
+    background: var(--c-page);
+    border: 1px solid var(--c-line);
+    border-radius: 0;
+    transition: border-color var(--dur-fast) ease;
+  }
+
+  .form input:hover,
+  .form select:hover,
+  .form textarea:hover {
+    border-color: var(--c-text-3);
+  }
+
+  .form input:focus-visible,
+  .form select:focus-visible,
+  .form textarea:focus-visible {
+    border-color: var(--c-accent);
+  }
+
+  .form textarea {
+    resize: vertical;
+    min-height: 6rem;
+    font-family: inherit;
+  }
+
+  .form :is(input, select, textarea)[aria-invalid='true'] {
+    border-color: var(--c-neg);
+  }
+
+  .form__consent {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    font-size: var(--t-xs);
+    line-height: 1.55;
+    color: var(--c-text-2);
+  }
+
+  .form__consent input {
+    margin-top: 0.2rem;
+    accent-color: var(--c-accent);
+    flex-shrink: 0;
+  }
+
+  .form__consent abbr {
+    color: var(--c-accent);
+    text-decoration: none;
+  }
+
+  .form__trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  .form__submit {
+    align-self: flex-start;
+  }
+
+  .form__note {
+    font-size: var(--t-xs);
+    line-height: 1.55;
+    color: var(--c-text-4);
+  }
+
+  .form__error {
+    padding: 0.75rem 1rem;
+    font-size: var(--t-xs);
+    color: var(--c-neg);
+    border: 1px solid var(--c-neg);
+  }
+
+  .form__error[hidden] {
+    display: none;
+  }
+
+  @media (max-width: 1000px) {
+    .demo__inner {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .form {
+      padding: 1.5rem;
+    }
+
+    .form__row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Validazione lato client: il browser ha `novalidate`, così i messaggi sono
+   * coerenti con la pagina, e i campi in errore ricevono aria-invalid.
+   * La validazione vera resta comunque quella del destinatario.
+   *
+   * Nessun testo qui dentro: le stringhe arrivano dal dizionario della lingua
+   * come attributi `data-*` sul modulo. Uno script solo per tutte le lingue.
+   */
+  const form = document.querySelector<HTMLFormElement>('[data-demo-form]');
+  const errorBox = document.querySelector<HTMLElement>('[data-form-error]');
+
+  if (form && errorBox) {
+    const msg = (nome: string) => form.getAttribute(`data-msg-${nome}`) ?? '';
+
+    const fields = () =>
+      Array.from(
+        form.querySelectorAll<
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >('input, select, textarea'),
+      );
+
+    const clear = (el: Element) => el.removeAttribute('aria-invalid');
+
+    form.addEventListener('input', (event) => {
+      const el = event.target;
+      if (el instanceof HTMLElement) clear(el);
+    });
+
+    form.addEventListener('submit', (event) => {
+      const invalid = fields().filter((el) => !el.checkValidity());
+
+      fields().forEach(clear);
+      invalid.forEach((el) => el.setAttribute('aria-invalid', 'true'));
+
+      if (invalid.length > 0) {
+        event.preventDefault();
+        errorBox.textContent =
+          invalid.length === 1
+            ? msg('uno')
+            : msg('molti').replace('{n}', String(invalid.length));
+        errorBox.hidden = false;
+        invalid[0]?.focus();
+        return;
+      }
+
+      errorBox.hidden = true;
+
+      // Senza destinatario configurato il POST porterebbe a una pagina bianca:
+      // meglio fermarsi e dirlo.
+      const action = form.getAttribute('action');
+      if (!action) {
+        event.preventDefault();
+        errorBox.textContent = msg('non-configurato');
+        errorBox.hidden = false;
+        return;
+      }
+
+      /*
+       * Invio via fetch invece del POST nativo: Web3Forms ignora il campo
+       * `redirect` quando il dominio non gli torna, e l'utente atterrerebbe
+       * sulla loro pagina di conferma. Così la richiesta parte in JSON e
+       * l'atterraggio sulla pagina di ringraziamento lo governiamo noi. Il
+       * POST nativo resta come ripiego per chi naviga senza JavaScript.
+       */
+      event.preventDefault();
+
+      const submit = form.querySelector<HTMLButtonElement>('[type="submit"]');
+      const label = submit?.textContent ?? '';
+      if (submit) {
+        submit.disabled = true;
+        submit.textContent = msg('invio');
+      }
+
+      fetch(action, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: new FormData(form),
+      })
+        .then(async (res) => {
+          const data = await res.json().catch(() => null);
+          if (res.ok && data?.success) {
+            window.location.href = form.getAttribute('data-grazie') ?? '/';
+            return;
+          }
+          throw new Error(data?.message ?? `HTTP ${res.status}`);
+        })
+        .catch(() => {
+          if (submit) {
+            submit.disabled = false;
+            submit.textContent = label;
+          }
+          errorBox.textContent = msg('fallito');
+          errorBox.hidden = false;
+        });
+    });
+  }
+</script>

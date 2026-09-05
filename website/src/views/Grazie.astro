@@ -1,0 +1,56 @@
+---
+import PageHero from '~/components/PageHero.astro';
+import { site } from '~/config/site';
+import { contenuti, href, type Lingua } from '~/i18n';
+import BaseLayout from '~/layouts/BaseLayout.astro';
+
+/**
+ * Atterraggio dopo l'invio del modulo demo: Web3Forms reindirizza qui
+ * (campo hidden `redirect` nella pagina demo). Fuori dai motori di ricerca:
+ * esiste solo per chi ha appena inviato.
+ */
+export interface Props {
+  lingua: Lingua;
+}
+
+const { lingua } = Astro.props;
+const t = contenuti(lingua).servizio.grazie;
+---
+
+<BaseLayout
+  lingua={lingua}
+  title={t.meta.title}
+  description={t.meta.description}
+  announcement={false}
+  noindex
+>
+  <PageHero
+    eyebrow={t.testata.eyebrow}
+    title={t.testata.title}
+    lead={t.testata.lead}
+    cta={t.testata.cta && {
+      label: t.testata.cta.label,
+      href: href(t.testata.cta.link, lingua),
+    }}
+  />
+
+  <section class="grazie">
+    <div class="shell">
+      <p class="grazie__nota">
+        {t.notaPrima}<a href={`mailto:${site.email}`}>{site.email}</a>{t.notaDopo}
+      </p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .grazie {
+    padding: var(--sp-section) var(--gutter);
+  }
+
+  .grazie__nota {
+    max-width: 40rem;
+    color: var(--c-text-2);
+    line-height: 1.7;
+  }
+</style>

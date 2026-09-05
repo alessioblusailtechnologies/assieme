@@ -1,5 +1,5 @@
 ---
-import { useCases } from '~/data/home';
+import { contenuti, href, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
 
 /**
  * Ticker verticale dei casi d'uso.
@@ -13,12 +13,20 @@ import { useCases } from '~/data/home';
  * in grigio, quello in evidenza ritagliato sulla riga centrale.
  */
 
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { useCases, useCasesIntro, useCasesCta } = t;
+
 const track = [...useCases, ...useCases];
 ---
 
 <section class="ticker" aria-labelledby="ticker-title">
   <h2 class="ticker__intro" id="ticker-title">
-    Ogni giorno, le agenzie<br />usano Velia per
+    {useCasesIntro[0]}<br />{useCasesIntro[1]}
   </h2>
 
   <div class="ticker__viewport">
@@ -39,8 +47,8 @@ const track = [...useCases, ...useCases];
     </div>
   </div>
 
-  <a class="btn btn--outline ticker__cta" href="/piattaforma">
-    Esplora la piattaforma
+  <a class="btn btn--outline ticker__cta" href={href(useCasesCta.link, lingua)}>
+    {useCasesCta.label}
   </a>
 </section>
 

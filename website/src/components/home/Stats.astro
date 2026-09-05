@@ -1,5 +1,13 @@
 ---
-import { stats, statsIntro } from '~/data/home';
+import { contenuti, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
+const { stats, statsIntro } = t;
 ---
 
 <section class="stats" aria-labelledby="stats-title">

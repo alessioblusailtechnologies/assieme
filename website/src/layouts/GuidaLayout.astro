@@ -3,9 +3,21 @@ import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import Closing from '~/components/Closing.astro';
 import PageHero from '~/components/PageHero.astro';
 import { SITE_URL } from '~/config/site';
+import {
+  contenuti,
+  href as link,
+  LINGUA_PREDEFINITA,
+  lingue,
+  percorso,
+  type Alternativa,
+  type Lingua,
+} from '~/i18n';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 export interface Props {
+  lingua?: Lingua;
+  /** Alternate hreflang: la guida gemella nell'altra lingua, se esiste. */
+  alternative?: Alternativa[];
   title: string;
   description: string;
   lead: string;
@@ -18,9 +30,22 @@ export interface Props {
   altre: { title: string; href: string; filone: string }[];
 }
 
-const { title, description, lead, filone, published, updated, href, altre } = Astro.props;
+const {
+  lingua = LINGUA_PREDEFINITA,
+  alternative,
+  title,
+  description,
+  lead,
+  filone,
+  published,
+  updated,
+  href,
+  altre,
+} = Astro.props;
 
-const dataLunga = new Intl.DateTimeFormat('it-IT', {
+const t = contenuti(lingua).guide;
+
+const dataLunga = new Intl.DateTimeFormat(lingue[lingua].intl, {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
@@ -35,7 +60,7 @@ const articleSchema = {
   '@type': 'Article',
   headline: title,
   description,
-  inLanguage: 'it-IT',
+  inLanguage: lingue[lingua].hreflang,
   datePublished: iso(published),
   dateModified: iso(updated),
   mainEntityOfPage: new URL(href, SITE_URL).href,
@@ -47,17 +72,20 @@ const articleSchema = {
 ---
 
 <BaseLayout
+  lingua={lingua}
+  alternative={alternative}
   title={title}
   description={description}
   ogType="article"
   schema={[articleSchema]}
   announcement={false}
 >
-  <PageHero eyebrow={`Risorse · ${filone}`} title={title} lead={lead} />
+  <PageHero eyebrow={`${t.eyebrow} · ${filone}`} title={title} lead={lead} />
 
   <Breadcrumbs
+    lingua={lingua}
     trail={[
-      { label: 'Risorse', href: '/risorse' },
+      { label: t.briciola, href: percorso('risorse', lingua) },
       { label: title, href },
     ]}
   />
@@ -65,7 +93,7 @@ const articleSchema = {
   <article class="guida">
     <div class="guida__inner">
       <p class="guida__meta">
-        Aggiornato il <time datetime={iso(updated)}>{dataLunga.format(updated)}</time>
+        {t.aggiornata} <time datetime={iso(updated)}>{dataLunga.format(updated)}</time>
       </p>
       <div class="guida__body prose">
         <slot />
@@ -78,7 +106,7 @@ const articleSchema = {
       <section class="altre" aria-labelledby="altre-title">
         <div class="altre__inner">
           <h2 class="serif altre__title" id="altre-title">
-            Altre guide
+            {t.altreGuide}
           </h2>
           <ul class="altre__list">
             {altre.map((g) => (
@@ -95,7 +123,11 @@ const articleSchema = {
     )
   }
 
-  <Closing title="Vuoi vederlo sulla tua casistica?" cta="Richiedi una demo" href="/demo" />
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={link(t.chiusura.link, lingua)}
+  />
 </BaseLayout>
 
 <style>

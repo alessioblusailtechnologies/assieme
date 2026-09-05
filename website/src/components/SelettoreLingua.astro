@@ -1,0 +1,94 @@
+---
+/**
+ * Il cambio lingua.
+ *
+ * Non compare finché c'è una lingua sola pubblicata, e non porta mai a un
+ * 404: dove la pagina corrente non ha una gemella, il link va alla home
+ * dell'altra lingua.
+ *
+ * Nessun reindirizzamento automatico su `Accept-Language`: sposterebbe le
+ * persone contro la loro volontà e manderebbe i crawler sulla versione
+ * sbagliata.
+ */
+
+import { contenuti, gemella, lingue, lingueAttive, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua: Lingua;
+  /** `compatto` per il pannello del menu mobile. */
+  variante?: 'barra' | 'compatto';
+}
+
+const { lingua, variante = 'barra' } = Astro.props;
+
+const t = contenuti(lingua).comune;
+const altre = lingueAttive.filter((l) => l !== lingua);
+const percorsoCorrente = Astro.url.pathname;
+---
+
+{
+  altre.length > 0 && (
+    <nav class:list={['lingue', `lingue--${variante}`]} aria-label={t.selettoreLingua}>
+      <ul>
+        <li>
+          <span class="lingue__corrente" aria-current="true">
+            {lingue[lingua].sigla}
+          </span>
+        </li>
+        {altre.map((l) => (
+          <li>
+            <a href={gemella(percorsoCorrente, l)} hreflang={lingue[l].hreflang} lang={lingue[l].htmlLang}>
+              <span aria-hidden="true">{lingue[l].sigla}</span>
+              <span class="visually-hidden">{lingue[l].nome}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<style>
+  .lingue ul {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .lingue li + li::before {
+    content: '/';
+    margin-right: 0.5rem;
+    color: var(--c-line-onink);
+  }
+
+  .lingue li {
+    display: flex;
+    align-items: center;
+  }
+
+  .lingue :is(a, .lingue__corrente) {
+    font-family: var(--f-mono);
+    font-size: var(--t-mono);
+    letter-spacing: 0.08em;
+  }
+
+  .lingue__corrente {
+    color: var(--c-text-oninverse);
+  }
+
+  .lingue a {
+    color: #a8a49a;
+  }
+
+  .lingue a:hover {
+    color: var(--c-accent-hover);
+  }
+
+  .lingue--compatto ul {
+    gap: 0.75rem;
+  }
+
+  .lingue--compatto li + li::before {
+    margin-right: 0.75rem;
+  }
+</style>

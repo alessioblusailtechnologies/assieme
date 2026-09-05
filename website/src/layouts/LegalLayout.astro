@@ -2,9 +2,18 @@
 import Breadcrumbs from '~/components/Breadcrumbs.astro';
 import Closing from '~/components/Closing.astro';
 import PageHero from '~/components/PageHero.astro';
+import {
+  contenuti,
+  href as link,
+  LINGUA_PREDEFINITA,
+  lingue,
+  percorso,
+  type Lingua,
+} from '~/i18n';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 export interface Props {
+  lingua?: Lingua;
   title: string;
   description: string;
   lead: string;
@@ -14,21 +23,37 @@ export interface Props {
   href: string;
 }
 
-const { title, description, lead, updated, crumb, href } = Astro.props;
+const {
+  lingua = LINGUA_PREDEFINITA,
+  title,
+  description,
+  lead,
+  updated,
+  crumb,
+  href,
+} = Astro.props;
 
-const updatedLabel = new Intl.DateTimeFormat('it-IT', {
+const t = contenuti(lingua).legale;
+
+const updatedLabel = new Intl.DateTimeFormat(lingue[lingua].intl, {
   day: 'numeric',
   month: 'long',
   year: 'numeric',
 }).format(new Date(updated));
 ---
 
-<BaseLayout title={title} description={description} announcement={false}>
-  <PageHero eyebrow="Note legali" title={title} lead={lead} />
+<BaseLayout
+  lingua={lingua}
+  title={title}
+  description={description}
+  announcement={false}
+>
+  <PageHero eyebrow={t.eyebrow} title={title} lead={lead} />
 
   <Breadcrumbs
+    lingua={lingua}
     trail={[
-      { label: 'Note legali', href: '/legale/note-legali' },
+      { label: t.briciola, href: percorso('noteLegali', lingua) },
       { label: crumb, href },
     ]}
   />
@@ -36,7 +61,7 @@ const updatedLabel = new Intl.DateTimeFormat('it-IT', {
   <article class="legal">
     <div class="legal__inner">
       <p class="legal__updated">
-        Ultimo aggiornamento: <time datetime={updated}>{updatedLabel}</time>
+        {t.aggiornamento} <time datetime={updated}>{updatedLabel}</time>
       </p>
       <div class="legal__body prose">
         <slot />
@@ -44,7 +69,11 @@ const updatedLabel = new Intl.DateTimeFormat('it-IT', {
     </div>
   </article>
 
-  <Closing title="Domande su questo documento?" cta="Scrivici" href="/demo" />
+  <Closing
+    title={t.chiusura.title}
+    cta={t.chiusura.cta}
+    href={link(t.chiusura.link, lingua)}
+  />
 </BaseLayout>
 
 <style>

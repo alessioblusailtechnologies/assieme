@@ -8,11 +8,20 @@
  * `--c-page` della pagina, quindi la scena si fonde nel flusso come se
  * accadesse nella pagina stessa.
  */
+
+import { contenuti, LINGUA_PREDEFINITA, type Lingua } from '~/i18n';
+
+export interface Props {
+  lingua?: Lingua;
+}
+
+const { lingua = LINGUA_PREDEFINITA } = Astro.props;
+const t = contenuti(lingua).home;
 ---
 
 <section
   class="demo"
-  aria-label="Velia all'opera: il confronto fra polizza e preventivo in chat diventa un ricordo nella memoria dell'agenzia"
+  aria-label={t.media.video}
 >
   <video
     class="demo__video"
