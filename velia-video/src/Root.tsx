@@ -26,6 +26,9 @@ import {
 } from './AstrattiSoluzioni';
 import { IG_FONTE_DUR, IG_FPS, IG_H, IG_W, IgFonte, QUAD_H, QUAD_W } from './SocialIg';
 import { CARD_IG_H, CARD_IG_W, CARD_QUAD_H, CARD_QUAD_W, CardMemoria } from './SocialCard';
+import { SLIDE_H, SLIDE_W } from './presentazione/base';
+import { Presentazione } from './presentazione/Presentazione';
+import { diapositive } from './presentazione/testi';
 
 export const Root: React.FC = () => (
   <>
@@ -133,5 +136,19 @@ export const Root: React.FC = () => (
       width={AST_W}
       height={AST_H}
     />
+    {/* La presentazione francese: una still per diapositiva, resa in PDF
+        vettoriale da tools/presentazione.mjs e poi cucita in un file solo.
+        Registrarle una per una invece di passare la pagina da riga di
+        comando serve a poterle sfogliare nello studio. */}
+    {diapositive.map((_, i) => (
+      <Still
+        key={i}
+        id={`Presentazione${String(i + 1).padStart(2, '0')}`}
+        component={Presentazione}
+        width={SLIDE_W}
+        height={SLIDE_H}
+        defaultProps={{ pagina: i + 1 }}
+      />
+    ))}
   </>
 );

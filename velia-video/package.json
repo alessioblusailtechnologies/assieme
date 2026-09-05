@@ -6,7 +6,8 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "render": "remotion render src/index.ts MemoriaViva out/memoria-viva.mp4",
-    "render:fr": "remotion render src/index.ts MemoriaVivaFr out/memoria-viva-fr.mp4"
+    "render:fr": "remotion render src/index.ts MemoriaVivaFr out/memoria-viva-fr.mp4",
+    "presentazione": "node tools/presentazione.mjs"
   },
   "dependencies": {
     "@remotion/cli": "^4.0.246",
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
+    "pdf-lib": "^1.17.1",
     "typescript": "^5.9.3"
   }
 }
