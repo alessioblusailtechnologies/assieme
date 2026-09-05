@@ -436,16 +436,50 @@ Restano in italiano le tre schermate sfocate delle dimostrazioni
 nessun testo è leggibile, quindi non contraddicono nulla: si rifanno quando
 conviene, non è un blocco.
 
-### Fase 6 - Rifinitura e messa online - ~mezza giornata
+### ✅ Fase 6 - Accensione - **fatta** (05/09/2026)
 
-Controllo impaginazione a 390, 820 e 1440 con `tools/screenshot-mobile.mjs`
-e `tools/screenshot-desktop.mjs`: **il francese è mediamente il 15-20% più
-lungo dell'italiano**, e i punti che si rompono per primi sono le voci di
-navigazione, le etichette dei bottoni e i titoli su tre righe della home.
-Poi `astro check`, controllo dei link interni, validazione hreflang
-reciproci, immagine OG francese, sitemap ripresentata in Search Console.
+`LINGUE_ATTIVE` passa a `['it', 'fr']`. Da quel momento le pagine francesi
+escono indicizzabili, entrano in sitemap con i loro alternate, e il selettore
+di lingua compare anche sulle pagine italiane.
 
-**Totale: 7-8 giorni di lavoro.**
+Collaudo dopo l'accensione: 30 pagine, hreflang reciproci su tutte e trenta,
+26 URL in sitemap, nessun errore.
+
+**Messa in produzione.** Il sito si aggiorna con un push su `main`, ma `main`
+era indietro di 86 commit fra backend e app. Prima del merge si è verificato
+il punto delle migrazioni, che DEPLOY.md vuole applicate a mano: le 32
+migrazioni sul disco risultano tutte registrate nel ledger dell'unico
+progetto Supabase online (`node tools/applica-migrazione.mjs --elenco`),
+quindi lo schema era già quello che il codice si aspetta. Merge in avanti
+veloce e push.
+
+**Cosa è andato online insieme al francese**, per memoria: l'ingestion
+visiva, gli allegati di chat come documenti dell'Archivio Privato, l'Archivio
+Privato a cartelle, il glossario dei rischi nella ricerca, e il resto degli
+86 commit di `develop`.
+
+### Due cose vere il giorno della pubblicazione
+
+Vanno tenute a mente perché il sito ora le dichiara:
+
+1. **La biblioteca di mercato francese non è ancora popolata.** La decisione
+   di §8 era consapevole e confermata dal committente, ma da oggi la home
+   francese promette qualcosa che alla prima demo va mostrato. L'ingestion
+   del primo lotto francese è il lavoro che segue.
+2. **Le pagine legali francesi non sono state rilette** da chi ha scritto
+   quelle italiane. Sono online. Dicono che la versione italiana fa fede e
+   che Velia non è un intermediario d'assicurazione, ma restano da rivedere.
+
+### Quello che resta da fare dopo la pubblicazione
+
+- Ripresentare la sitemap in Search Console: la proprietà è di tipo Dominio,
+  quindi `/fr/` ci rientra da sé e non serve una seconda proprietà.
+- Controllare l'impaginazione francese a 390, 820 e 1440 sulle pagine che non
+  ho ancora fotografato (`scripts/screenshot.mjs`).
+- Rifare in francese le tre schermate sfocate delle dimostrazioni, quando
+  conviene: sono illeggibili, quindi non contraddicono nulla.
+
+**Tutte le fasi chiuse il 05/09/2026, e il francese è online.**
 
 ---
 
@@ -554,7 +588,7 @@ ci si arriva solo digitando l'URL.
 Acceso l'interruttore, si attiva tutto insieme. La prova che si possa
 accendere è `node scripts/verify.mjs` senza errori dopo la build.
 
-## 10. Passo successivo
+## 10. Passo successivo (superato: il francese è online dal 05/09/2026)
 
 Fase 0. Non produce nulla di visibile e vale metà del lavoro: quando i
 dizionari italiani esistono e le pagine sono gusci, aggiungere una terza
