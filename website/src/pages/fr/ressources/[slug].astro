@@ -1,10 +1,11 @@
 ---
 import { getCollection, render } from 'astro:content';
+import { spaziaturaFrancese as fr } from '~/i18n/fr/tipografia';
 import { alternativeGuida, percorsoGuida } from '~/i18n/guide';
 import GuidaLayout from '~/layouts/GuidaLayout.astro';
 
 export async function getStaticPaths() {
-  const guide = (await getCollection('guide')).filter((g) => !g.data.draft);
+  const guide = (await getCollection('guideFr')).filter((g) => !g.data.draft);
   return guide.map((g) => ({ params: { slug: g.id }, props: { guida: g, tutte: guide } }));
 }
 
@@ -16,22 +17,22 @@ const altre = tutte
   .sort((a, b) => a.data.order - b.data.order)
   .slice(0, 3)
   .map((g) => ({
-    title: g.data.title,
-    href: percorsoGuida(g.id, 'it'),
+    title: fr(g.data.title),
+    href: percorsoGuida(g.id, 'fr'),
     filone: g.data.filone,
   }));
 ---
 
 <GuidaLayout
-  lingua="it"
-  alternative={alternativeGuida(guida.id, 'it', guida.data.gemella)}
-  title={guida.data.title}
-  description={guida.data.description}
-  lead={guida.data.lead}
+  lingua="fr"
+  alternative={alternativeGuida(guida.id, 'fr', guida.data.gemella)}
+  title={fr(guida.data.title)}
+  description={fr(guida.data.description)}
+  lead={fr(guida.data.lead)}
   filone={guida.data.filone}
   published={guida.data.published}
   updated={guida.data.updated}
-  href={percorsoGuida(guida.id, 'it')}
+  href={percorsoGuida(guida.id, 'fr')}
   altre={altre}
 >
   <Content />

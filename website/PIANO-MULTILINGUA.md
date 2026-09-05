@@ -369,11 +369,41 @@ un intermediario d'assicurazione e non è iscritta ad alcun registro.
 **Non si pubblica finché non le rilegge chi ha scritto quelle italiane.**
 Tradurre un'informativa non è un lavoro di copy.
 
-### Fase 5 - Risorse e guide - ~1,5 giorni
+### ✅ Fase 5 - Risorse e guide - **fatta** (05/09/2026)
 
-Content collection multilingua, indice `/fr/ressources`, le due guide
-riscritte in francese (~2.450 parole editoriali dense: qui l'adattamento
-pesa più che altrove, perché gli esempi sono italiani).
+Le due guide riscritte in francese, non tradotte. Cambiano gli esempi (il
+cliente Rossi diventa Martin, gli infortuni del conducente diventano la
+`protection du conducteur`, lo scoperto diventa una `franchise
+proportionnelle`) e cambia il riferimento normativo: al posto di IDD e
+Regolamento IVASS 40/2018 c'è la directive DDA trasposta agli articoli
+L. 521-1 e seguenti del Code des assurances, e l'adeguatezza diventa il
+`devoir de conseil`.
+
+Sul piano tecnico: una collection per lingua (`guide` e `guideFr`), i campi
+comuni dichiarati una volta e il solo `filone` diverso, perché è un enum e in
+francese i valori sono francesi. Le due versioni si legano con una chiave
+`gemella` nel frontmatter: le guide sono rotte dinamiche e non stanno nella
+tabella delle rotte, quindi il legame va dichiarato nel contenuto. Da lì
+`alternativeGuida()` costruisce gli alternate con le stesse regole di tutto
+il resto, autoriferimento compreso, e non emette nulla se la gemella manca o
+se la sua lingua non è pubblicata.
+
+Due cose sono emerse solo provando:
+
+- **Il tetto di 170 caratteri sulla description ha bocciato entrambe le
+  guide francesi.** È il guard-rail SEO che fa il suo lavoro: il francese è
+  più lungo, e le descrizioni sono state riscritte più corte.
+- **La spaziatura tipografica non arrivava ai testi della collection.** Il
+  dizionario passa da `spazia()` e la prosa da `spaziaHtml()`, ma titolo,
+  description e lead vengono dal frontmatter e non passavano da nessuno dei
+  due. Ora la regola si applica dove i dati entrano, nei gusci di pagina
+  francesi. Il controllo in `verify.mjs` è servito a scoprirlo.
+
+**Con il francese acceso, il collaudo passa per intero**: 30 pagine, 1.464
+link interni controllati, hreflang reciproci su tutte e 30, nessun errore.
+Gli alternate delle guide restano nel `<head>` e non in sitemap, perché la
+sitemap conosce la tabella delle rotte e non la collection: per Google i due
+metodi sono equivalenti e non vanno cumulati.
 
 ### ✅ Fase 5-bis - Il filmato della home, in francese - **fatta** (05/09/2026)
 

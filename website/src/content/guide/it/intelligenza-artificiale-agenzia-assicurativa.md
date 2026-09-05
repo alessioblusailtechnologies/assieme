@@ -3,6 +3,7 @@ title: "L'intelligenza artificiale in agenzia assicurativa: cosa fa davvero, cos
 description: "Cosa può fare oggi l'AI in un'agenzia assicurativa, dove conviene usarla e dove no: una guida pratica, scritta dalla parte di chi sta al bancone."
 lead: "Non una presentazione tecnologica: un inventario onesto di quello che uno strumento di intelligenza artificiale sa fare bene in agenzia, di quello che sbaglia e di come si riconosce la differenza."
 filone: "AI in agenzia"
+gemella: "intelligence-artificielle-cabinet-assurance"
 published: 2026-08-22
 updated: 2026-08-22
 order: 10

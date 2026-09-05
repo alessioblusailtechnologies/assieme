@@ -1,12 +1,21 @@
 ---
+import { getCollection } from 'astro:content';
+import { spaziaturaFrancese } from '~/i18n/fr/tipografia';
 import Risorse from '~/views/Risorse.astro';
 
-/*
- * Le guide francesi non ci sono ancora: la collection `guideFr` entra con la
- * fase dedicata. Fino ad allora la pagina esiste e vive di glossario e
- * assistenza, e la sezione delle guide semplicemente non compare. Meglio una
- * sezione assente che una griglia vuota, o peggio le guide italiane.
- */
+/* Le guide francesi vivono in src/content/guide/fr/, una pagina ciascuna in
+   /fr/ressources/<slug>; qui si elencano soltanto. */
+const guide = (await getCollection('guideFr'))
+  .filter((g) => !g.data.draft)
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((g) => ({
+    id: g.id,
+    /* Titolo e descrizione vengono dal frontmatter, non dal dizionario:
+       la spaziatura francese va applicata qui, dove i dati entrano. */
+    titolo: spaziaturaFrancese(g.data.title),
+    descrizione: spaziaturaFrancese(g.data.description),
+    filone: g.data.filone,
+  }));
 ---
 
-<Risorse lingua="fr" guide={[]} />
+<Risorse lingua="fr" guide={guide} />

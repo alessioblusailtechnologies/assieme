@@ -52,8 +52,7 @@ const footer: ColonnaFooter[] = [
   {
     title: 'Ressources',
     items: [
-      // La voce «Guides» torna qui quando le guide francesi esisteranno:
-      // finché la sezione non c'è, il link porterebbe a un'ancora inesistente.
+      { label: 'Guides', link: { rotta: 'risorse', ancora: 'guides' } },
       { label: 'Glossaire', link: { rotta: 'risorse', ancora: 'glossaire' } },
       { label: 'Assistance', link: { rotta: 'risorse', ancora: 'assistance' } },
       ...(STATUS_URL

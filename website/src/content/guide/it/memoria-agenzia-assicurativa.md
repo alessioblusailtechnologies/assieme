@@ -3,6 +3,7 @@ title: "La memoria dell'agenzia: dove finisce quello che sapete, e come non perd
 description: "Regole, prassi e casistica dell'agenzia vivono nella testa di poche persone. Come si scrivono, come si fanno ricordare a uno strumento AI e perché cambia tutto."
 lead: "In ogni agenzia c'è qualcuno a cui tutti chiedono. Quando è in ferie, l'agenzia rallenta. Questa guida parla di quel sapere: com'è fatto, perché si perde, e come diventa un patrimonio che resta all'agenzia invece che alle persone."
 filone: "AI in agenzia"
+gemella: "memoire-cabinet-assurance"
 published: 2026-08-22
 updated: 2026-08-22
 order: 20
