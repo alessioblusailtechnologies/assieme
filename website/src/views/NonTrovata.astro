@@ -1,5 +1,5 @@
 ---
-import { contenuti, href, percorso, type Lingua } from '~/i18n';
+import { contenuti, href, lingue, LINGUA_PREDEFINITA, lingueAttive, percorso, type Lingua } from '~/i18n';
 import BaseLayout from '~/layouts/BaseLayout.astro';
 
 export interface Props {
@@ -9,6 +9,48 @@ export interface Props {
 const { lingua } = Astro.props;
 const t = contenuti(lingua).servizio.nonTrovata;
 const nav = contenuti(lingua).comune.nav;
+
+/*
+ * Cloudflare Pages serve un solo file 404 per tutto il sito.
+ *
+ * Verificato in produzione, non dedotto: `/fr/indirizzo-sbagliato` riceve la
+ * 404 della radice, non `/fr/404.html`. Pages non risale le cartelle
+ * cercando la 404 più vicina, e `_redirects` non accetta il codice 404
+ * (supporta solo 301, 302, 303, 307, 308), quindi non c'è modo di dirottarla
+ * lato server.
+ *
+ * L'unica strada su un sito statico è che la pagina si adatti da sola. Qui
+ * si porta appresso il testo delle altre lingue e lo mette a schermo quando
+ * il percorso lo richiede. È l'unica pagina del sito che lo fa: è anche
+ * l'unica che non è indicizzata, quindi nessun motore vede il contenuto
+ * cambiare sotto i piedi.
+ */
+const altre = lingueAttive
+  .filter((l) => l !== lingua)
+  .map((l) => {
+    const a = contenuti(l).servizio.nonTrovata;
+    return {
+      prefisso: percorso('home', l),
+      htmlLang: lingue[l].htmlLang,
+      titolo: `${a.meta.title} | Velia`,
+      descrizione: a.meta.description,
+      eyebrow: a.eyebrow,
+      intestazione: a.title,
+      attacco: a.lead,
+      navEtichetta: a.navEtichetta,
+      voci: [
+        { label: a.home, href: percorso('home', l) },
+        ...contenuti(l).comune.nav.map((voce) => ({
+          label: voce.label,
+          href: href(voce.link, l),
+        })),
+      ],
+      azione: { label: a.cta.label, href: href(a.cta.link, l) },
+    };
+  })
+  /* La lingua predefinita sta alla radice: il suo «prefisso» è `/`, che
+     combacia con qualunque percorso. Non è una gemella da riconoscere. */
+  .filter((a) => a.prefisso !== percorso('home', LINGUA_PREDEFINITA));
 ---
 
 <BaseLayout
@@ -20,26 +62,37 @@ const nav = contenuti(lingua).comune.nav;
 >
   <section class="nf on-ink" aria-labelledby="nf-title">
     <div class="nf__inner">
-      <p class="eyebrow">{t.eyebrow}</p>
-      <h1 class="serif nf__title" id="nf-title">
+      <p class="eyebrow" data-nf-eyebrow>{t.eyebrow}</p>
+      <h1 class="serif nf__title" id="nf-title" data-nf-titolo>
         {t.title}
       </h1>
-      <p class="nf__lead">
+      <p class="nf__lead" data-nf-attacco>
         {t.lead}
       </p>
 
-      <nav class="nf__nav" aria-label={t.navEtichetta}>
+      <nav class="nf__nav" aria-label={t.navEtichetta} data-nf-nav>
         <ul>
           <li><a href={percorso('home', lingua)}>{t.home}</a></li>
           {nav.map((voce) => <li><a href={href(voce.link, lingua)}>{voce.label}</a></li>)}
         </ul>
       </nav>
 
-      <a class="btn btn--solid btn--lg nf__cta" href={href(t.cta.link, lingua)}>
+      <a class="btn btn--solid btn--lg nf__cta" href={href(t.cta.link, lingua)} data-nf-cta>
         {t.cta.label}
       </a>
     </div>
   </section>
+
+  {
+    altre.length > 0 && (
+      <script
+        type="application/json"
+        data-nf-lingue
+        is:inline
+        set:html={JSON.stringify(altre)}
+      />
+    )
+  }
 </BaseLayout>
 
 <style>
@@ -98,3 +151,79 @@ const nav = contenuti(lingua).comune.nav;
     margin-top: 0.75rem;
   }
 </style>
+
+<script>
+  /*
+   * La 404 si mette nella lingua del percorso.
+   *
+   * Serve perché Cloudflare Pages ha un solo file 404 per tutto il sito:
+   * chi sbaglia un indirizzo sotto /fr riceve comunque questa pagina. Il
+   * testo delle altre lingue viaggia in un blocco JSON qui accanto, e non
+   * c'è una sola stringa dentro lo script.
+   *
+   * Se JavaScript è spento resta l'italiano: una 404 nella lingua sbagliata
+   * è meno grave di una pagina vuota, e chi ci arriva ha comunque i link per
+   * ripartire.
+   */
+  type Voce = { label: string; href: string };
+  type Altra = {
+    prefisso: string;
+    htmlLang: string;
+    titolo: string;
+    descrizione: string;
+    eyebrow: string;
+    intestazione: string;
+    attacco: string;
+    navEtichetta: string;
+    voci: Voce[];
+    azione: Voce;
+  };
+
+  const blocco = document.querySelector<HTMLScriptElement>('[data-nf-lingue]');
+  if (blocco?.textContent) {
+    const altre: Altra[] = JSON.parse(blocco.textContent);
+    const percorso = window.location.pathname;
+    const scelta = altre.find(
+      (a) => percorso === a.prefisso || percorso.startsWith(`${a.prefisso}/`),
+    );
+
+    if (scelta) {
+      document.documentElement.lang = scelta.htmlLang;
+      document.title = scelta.titolo;
+      document
+        .querySelector('meta[name="description"]')
+        ?.setAttribute('content', scelta.descrizione);
+
+      const scrivi = (selettore: string, testo: string) => {
+        const el = document.querySelector<HTMLElement>(selettore);
+        if (el) el.textContent = testo;
+      };
+
+      scrivi('[data-nf-eyebrow]', scelta.eyebrow);
+      scrivi('[data-nf-titolo]', scelta.intestazione);
+      scrivi('[data-nf-attacco]', scelta.attacco);
+
+      const nav = document.querySelector<HTMLElement>('[data-nf-nav]');
+      const lista = nav?.querySelector('ul');
+      if (nav && lista) {
+        nav.setAttribute('aria-label', scelta.navEtichetta);
+        lista.replaceChildren(
+          ...scelta.voci.map((voce) => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = voce.href;
+            a.textContent = voce.label;
+            li.append(a);
+            return li;
+          }),
+        );
+      }
+
+      const cta = document.querySelector<HTMLAnchorElement>('[data-nf-cta]');
+      if (cta) {
+        cta.href = scelta.azione.href;
+        cta.textContent = scelta.azione.label;
+      }
+    }
+  }
+</script>
