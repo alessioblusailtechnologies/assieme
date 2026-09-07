@@ -10,13 +10,26 @@
           <ui-scheletro [numeroRighe]="1" />
         </div>
       }
-      <p class="benvenuto__spiega">
-        Fai una domanda e referenzia con «@» i documenti dei due archivi: la risposta arriverà con
-        le citazioni ai passaggi da cui è tratta.
-      </p>
+      @if (perCliente()) {
+        <p class="benvenuto__spiega">
+          Mi può chiedere delle sue coperture: rispondo leggendo i documenti che la sua
+          agenzia mi ha affidato, e le indico sempre da dove viene ogni risposta.
+        </p>
+      } @else {
+        <p class="benvenuto__spiega">
+          Fai una domanda e referenzia con «@» i documenti dei due archivi: la risposta arriverà con
+          le citazioni ai passaggi da cui è tratta.
+        </p>
+      }
 
       <app-composer />
 
+      <!--
+        I suggerimenti sono domande costruite sul contesto dell'agenzia: al
+        cliente non servono, e gli esempi di ripiego parlano di preventivi e
+        confronti fra prodotti, che è lavoro suo di lei, non di lui.
+      -->
+      @if (!perCliente()) {
       <div class="benvenuto__suggerimenti">
         @if (suggerimenti(); as voci) {
           @for (s of voci; track s) {
@@ -33,6 +46,7 @@
           }
         }
       </div>
+      }
     </div>
   </div>
 } @else {

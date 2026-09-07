@@ -93,6 +93,18 @@ export class Conversazione {
    * per il caso in cui la sessione sia fallita.
    */
   protected readonly saluto = computed(() => {
+    /*
+     * Il cliente non ha una sessione d'agenzia da aspettare: gliel'abbiamo
+     * tolta di proposito, perché `/api/sessione` legge `velia.utenti` e le
+     * policy gliela negano. Senza questo ramo lo scheletro del saluto
+     * resterebbe grigio per sempre — né una sessione né un errore, e la
+     * riga aspetta uno dei due.
+     *
+     * E comunque il suo saluto non sarebbe lo stesso: quello dell'agenzia
+     * dà del tu e chiama la persona per nome, e qui non si sa chi abbia in
+     * mano il telefono.
+     */
+    if (this.perCliente()) return 'Come posso aiutarla?';
     const sessione = this.sessione.sessione();
     if (!sessione) return this.sessione.errore() ? salutoPer(new Date()) : undefined;
     return salutoPer(new Date(), sessione.utente.nome, sessione.saluti);
@@ -341,8 +353,13 @@ export class Conversazione {
   /** Le larghezze dello scheletro: tre pillole, come tre domande di lunghezza diversa. */
   protected readonly scheletriSuggerimenti = ['34ch', '22ch', '27ch'];
 
+  /*
+   * Al cliente non si chiedono nemmeno: la rotta gli è negata, e alla 403
+   * il ripiego sarebbero gli esempi qui sopra — scritti per l'agenzia, e
+   * uno dei tre nomina il preventivo di un altro cliente.
+   */
   private readonly risorsaSuggerimenti = httpResource<string[]>(() =>
-    this.apiConversazioni.urlSuggerimenti(),
+    this.perCliente() ? undefined : this.apiConversazioni.urlSuggerimenti(),
   );
 
   protected readonly suggerimenti = computed(() => {
