@@ -26,6 +26,13 @@ services:
         value: info
       - key: CORS_ORIGINI
         value: https://app-dev.sonovelia.it
+      # La radice dei link delle chat cliente: `<radice>/c/<token>`. Va
+      # scritta qui e non lasciata al default del codice, perché quel
+      # default punta a dev: in produzione manderebbe i clienti di
+      # un'agenzia sull'ambiente di prova, e nessuno se ne accorgerebbe
+      # finché non lo fa notare uno di loro.
+      - key: BASE_LINK_CHAT
+        value: https://app-dev.sonovelia.it
       - key: MODELLO_MOTORE
         value: claude-opus-5
       - key: SUPABASE_URL
