@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { Accordion } from '@shared/ui/accordion/accordion';
@@ -228,6 +237,44 @@ export class BollaMessaggio {
     const per: Record<string, NomeIcona> = { Grep: 'cerca', Glob: 'elenco', Read: 'documento' };
     return per[strumento];
   }
+
+  /**
+   * L'orologio del passo in corso.
+   *
+   * Un passo aperto non ha durata — gliela dà il successivo — e finché il
+   * motore ci sta dentro il numero deve salire: fermo su nulla sembrerebbe
+   * che non stia succedendo niente, che è esattamente il contrario di
+   * quello che questo pannello deve dire durante due minuti di attesa.
+   *
+   * Il battito esiste solo mentre c'è un passo aperto: un intervallo che
+   * continua a girare su una risposta finita non si vede, e sono cento
+   * bolle in una conversazione lunga.
+   */
+  private readonly adesso = signal(Date.now());
+
+  private readonly battito = effect((onCleanup) => {
+    if (!this.passoInCorso()) return;
+    const id = setInterval(() => this.adesso.set(Date.now()), 250);
+    onCleanup(() => clearInterval(id));
+  });
+
+  /** Il passo ancora aperto, se il motore sta lavorando. */
+  protected readonly passoInCorso = computed(() => {
+    if (!this.messaggio().inCorso) return undefined;
+    const ultimo = this.passi().at(-1);
+    return ultimo && ultimo.durataMs === undefined ? ultimo : undefined;
+  });
+
+  /**
+   * Da quanto dura il passo aperto. Parte da «0 s» e non da niente: il
+   * numero che compare e poi sale racconta meglio di uno spazio vuoto.
+   */
+  protected readonly durataInCorso = computed(() => {
+    const passo = this.passoInCorso();
+    if (!passo) return undefined;
+    const trascorsi = Math.max(0, this.adesso() - Date.parse(passo.istante));
+    return `${Math.floor(trascorsi / 1000)} s`;
+  });
 
   /**
    * La durata da scrivere accanto al passo, o niente.

@@ -143,6 +143,36 @@ describe('BollaMessaggio · i passi del motore', () => {
     expect(dom.querySelector('.passi__elenco')?.classList.contains('is-finestra')).toBe(true);
   });
 
+  it('il passo aperto ha la V e un cronometro che sale', async () => {
+    /* Un passo senza successore non ha durata, e fermo su nulla sembrerebbe
+       che non stia succedendo niente — il contrario di quello che il
+       pannello deve dire durante due minuti di attesa. */
+    const aperti: MessaggioInStream['passi'] = [
+      { ...PASSI![0]!, durataMs: 2500 },
+      { etichetta: 'Leggo «Nuova 4R»', strumento: 'Read', istante: new Date(Date.now() - 7_000).toISOString() },
+    ];
+    const dom = (await monta(risposta(aperti, true))).nativeElement as HTMLElement;
+
+    const righe = [...dom.querySelectorAll('.passo')];
+    expect(righe[0]!.classList.contains('is-in-corso')).toBe(false);
+    expect(righe[1]!.classList.contains('is-in-corso')).toBe(true);
+
+    /* Solo sul passo che lavora: la V al posto dell'icona, e il cronometro. */
+    expect(righe[0]!.querySelector('.passo__marchio')).toBeNull();
+    expect(righe[1]!.querySelector('.passo__marchio')).toBeTruthy();
+    expect(righe[1]!.querySelector('.passo__durata.is-corrente')?.textContent?.trim()).toBe('7 s');
+  });
+
+  it('a risposta finita nessun passo tiene il cronometro acceso', async () => {
+    /* Il battito esiste solo mentre c'è un passo aperto: un intervallo che
+       gira su una risposta finita non si vede, e sono cento bolle in una
+       conversazione lunga. */
+    const dom = (await monta(risposta(PASSI, false))).nativeElement as HTMLElement;
+    (dom.querySelector('.passi .testata') as HTMLButtonElement).click();
+    expect(dom.querySelector('.passo__marchio')).toBeNull();
+    expect(dom.querySelector('.passo__durata.is-corrente')).toBeNull();
+  });
+
   it('non mostra nulla se il motore non ha fatto passi', async () => {
     const dom = (await monta(risposta([], false))).nativeElement as HTMLElement;
     expect(dom.querySelector('.passi')).toBeNull();

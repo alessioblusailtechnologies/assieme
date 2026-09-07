@@ -33,14 +33,41 @@
         >
           <ol class="passi__elenco" [class.is-finestra]="inFinestra()">
             @for (p of passiVisibili(); track p.istante + p.etichetta) {
-              <li class="passo" [class.is-in-corso]="p.durataMs === undefined && m.inCorso">
+              <li class="passo" [class.is-in-corso]="p === passoInCorso()">
                 <span class="passo__segno" aria-hidden="true">
-                  @if (iconaPasso(p.strumento); as icona) {
+                  @if (p === passoInCorso()) {
+                    <!--
+                      Sul passo che sta lavorando il segno diventa la V che
+                      respira: la stessa dell'attesa, che qui prende il
+                      posto dell'icona dello strumento. È l'unica cosa in
+                      movimento del pannello, ed è dove sta succedendo
+                      qualcosa.
+                    -->
+                    <svg class="passo__marchio" viewBox="0 0 28 28" focusable="false">
+                      <rect width="28" height="28" fill="var(--c-accent)" />
+                      <text
+                        x="14"
+                        y="14"
+                        text-anchor="middle"
+                        dominant-baseline="central"
+                        font-family="Georgia, serif"
+                        font-size="18"
+                        fill="#ffffff"
+                      >
+                        V
+                      </text>
+                    </svg>
+                  } @else if (iconaPasso(p.strumento); as icona) {
                     <ui-icon [name]="icona" [size]="12" />
                   }
                 </span>
                 <span class="passo__etichetta">{{ p.etichetta }}</span>
-                @if (durataPasso(p.durataMs); as durata) {
+                @if (p === passoInCorso()) {
+                  <!-- Il cronometro che sale: fermo sembrerebbe piantato. -->
+                  <span class="passo__durata is-corrente" aria-live="off">
+                    {{ durataInCorso() }}
+                  </span>
+                } @else if (durataPasso(p.durataMs); as durata) {
                   <span class="passo__durata">{{ durata }}</span>
                 }
               </li>

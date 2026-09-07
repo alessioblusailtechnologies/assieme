@@ -739,24 +739,28 @@
   color: var(--c-accent);
 }
 
-.passo.is-in-corso .passo__segno:empty::before {
-  background: var(--c-accent);
-  animation: passo-respiro 1.6s var(--ease-brand) infinite;
+/* Sul passo che lavora l'icona dello strumento lascia il posto alla V
+   dell'agenzia, che respira come nell'attesa. È l'unica cosa in movimento
+   del pannello, e sta dove qualcosa sta succedendo. */
+.passo__marchio {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  animation: respiro 2s ease-in-out infinite;
 }
 
-@keyframes passo-respiro {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
+/* Il cronometro che sale, invece di un numero che non c'è. Cifre a
+   larghezza fissa: senza, la riga sussulterebbe a ogni secondo. */
+.passo__durata.is-corrente {
+  color: var(--c-accent);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Chrome headless e chi ha chiesto meno movimento: il punto resta acceso. */
+/* Chrome headless e chi ha chiesto meno movimento: la V resta ferma e
+   piena, il cronometro continua a salire — quello non è un'animazione, è
+   un'informazione. */
 @media (prefers-reduced-motion: reduce) {
-  .passo.is-in-corso .passo__segno:empty::before {
+  .passo__marchio {
     animation: none;
   }
 }
