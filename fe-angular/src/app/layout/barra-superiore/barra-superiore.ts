@@ -304,10 +304,17 @@ export class BarraSuperiore {
     void this.router.navigate(['/accesso']);
   }
 
-  /** Forma `m.ferrero`: la stessa con cui l'utente si riconosce nella posta. */
+  /**
+   * Forma `m.ferrero`: la stessa con cui l'utente si riconosce nella posta.
+   *
+   * I cognomi composti si chiudono senza spazi (`De Vincentis` diventa
+   * `devincentis`, `Lo Bianco` diventa `lobianco`): un indirizzo di posta
+   * non ne ha, e con lo spazio dentro la somiglianza si perde proprio dove
+   * dovrebbe reggere.
+   */
   protected readonly nomeBreve = computed(() => {
     const u = this.sessione.utente();
-    return u ? `${u.nome.charAt(0)}.${u.cognome}`.toLowerCase() : '';
+    return u ? `${u.nome.charAt(0)}.${u.cognome.replace(/\s+/g, '')}`.toLowerCase() : '';
   });
 
   constructor() {

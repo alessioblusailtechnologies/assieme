@@ -37,11 +37,11 @@ describe('BarraSuperiore', () => {
       .forEach((r) => r.flush(null));
   });
 
-  async function monta() {
+  async function monta(sessione: Sessione = SESSIONE) {
     const fixture = TestBed.createComponent(BarraSuperiore);
     fixture.detectChanges();
     await new Promise((r) => setTimeout(r, 0));
-    http.expectOne('/api/sessione').flush(SESSIONE);
+    http.expectOne('/api/sessione').flush(sessione);
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -60,6 +60,19 @@ describe('BarraSuperiore', () => {
 
     expect(dom.querySelector('.identita__nome')?.textContent?.trim()).toBe('m.ferrero');
     expect(dom.querySelector('.identita__ruolo')?.textContent?.trim()).toBe('amministratore');
+  });
+
+  it('chiude i cognomi composti senza spazi', async () => {
+    /* La forma breve imita l'indirizzo di posta, e un indirizzo non ha
+       spazi: `De Vincentis` deve dare `a.devincentis`, non `a.de vincentis`. */
+    const dom = (
+      await monta({
+        ...SESSIONE,
+        utente: { ...SESSIONE.utente, nome: 'Alessio', cognome: 'De Vincentis' },
+      })
+    ).nativeElement as HTMLElement;
+
+    expect(dom.querySelector('.identita__nome')?.textContent?.trim()).toBe('a.devincentis');
   });
 
   it('mostra l icona utente con il nome per esteso raggiungibile', async () => {
