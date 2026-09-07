@@ -157,14 +157,40 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     if (!esito.success) throw ErroreApi.datiNonValidi('Conversazione non valida.');
     const { titolo, documentiInContesto = [] } = esito.data;
 
+    /*
+     * La chat da cui nasce, quando chi scrive è un cliente.
+     *
+     * Non arriva dal corpo della richiesta ma dall'identità: il cliente non
+     * sceglie a quale chat appartiene la sua conversazione, ci si trova
+     * dentro. Si legge fuori dalla RLS perché `chat_clienti` all'ospite è
+     * negata — e resta negata: qui serve solo il suo id.
+     */
+    const chatCliente =
+      richiesta.identita.ruolo === 'ospite'
+        ? (
+            await poolDb().query<{ id: string }>(
+              `select id from velia.chat_clienti
+                where ospite_id = $1 and tenant_id = $2 and stato = 'attiva'
+                order by created_at desc limit 1`,
+              [richiesta.identita.utenteId, richiesta.identita.tenantId],
+            )
+          ).rows[0]?.id
+        : undefined;
+
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<Conversazione> => {
       // Il contesto si valida PRIMA che la conversazione nasca (mock).
       const contesto = await contestoValidato(client, richiesta.identita, [], documentiInContesto);
       const r = await client.query<RigaConversazione>(
-        `insert into velia.conversazioni (tenant_id, autore_id, titolo, documenti_in_contesto)
-         values ($1, $2, $3, $4)
+        `insert into velia.conversazioni (tenant_id, autore_id, titolo, documenti_in_contesto, chat_cliente_id)
+         values ($1, $2, $3, $4, $5)
          returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id`,
-        [richiesta.identita.tenantId, richiesta.identita.utenteId, titolo ?? TITOLO_NUOVA, contesto],
+        [
+          richiesta.identita.tenantId,
+          richiesta.identita.utenteId,
+          titolo ?? TITOLO_NUOVA,
+          contesto,
+          chatCliente ?? null,
+        ],
       );
       void risposta.code(201);
       return (await idrata(client, r.rows))[0]!;
@@ -594,6 +620,27 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       );
       return { messaggioUtenteId: m.rows[0]!.id, titoloProvvisorio: derivato ? titolo : undefined };
     });
+
+    /*
+     * Il tetto di una chat cliente si conta qui, sulla **domanda** e non
+     * sulla risposta: una risposta che non arriva (annullata, caduta) ha
+     * comunque fatto lavorare il motore, e un tetto che non conta i
+     * tentativi non è un tetto. `risolviOspite` legge questo numero al
+     * primo accesso successivo e chiude il link.
+     *
+     * Fuori da `conIdentita` di proposito: le policy negano all'ospite ogni
+     * scrittura su `chat_clienti` — giustamente, o potrebbe azzerarsi il
+     * contatore da solo — e da dentro la sua identità questo update non
+     * toccherebbe nessuna riga, in silenzio.
+     */
+    if (richiesta.identita.ruolo === 'ospite') {
+      await poolDb().query(
+        `update velia.chat_clienti set domande_fatte = domande_fatte + 1
+          where id = (select chat_cliente_id from velia.conversazioni where id = $1)
+            and tenant_id = $2`,
+        [richiesta.params.id, tenantId],
+      );
+    }
 
     const messaggioAssistenteId = randomUUID();
     const jobId = await accoda(

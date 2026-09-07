@@ -358,6 +358,35 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
 
   // --- La guardia per il futuro -------------------------------------------
 
+  it('ogni tabella dello schema appartiene a velia_app', async () => {
+    /*
+     * Non è pignoleria sui permessi: è la trappola in cui questa
+     * funzionalità è già caduta una volta.
+     *
+     * `tools/applica-migrazione.mjs` passa dalla Management API, che esegue
+     * come `postgres`: una tabella creata da una migrazione nasce di
+     * `postgres`, mentre tutte le altre sono di `velia_app` — il ruolo con
+     * cui l'applicazione si connette. Un proprietario non è soggetto alle
+     * proprie policy, ed è così che il worker legge l'archivio con la
+     * connessione di sistema; su una tabella altrui, invece, `velia_app` è
+     * un utente qualsiasi e le policy scritte `to authenticated` non lo
+     * riguardano. Risultato: zero righe, in silenzio.
+     *
+     * Si era manifestato come «il link del cliente non vale mai».
+     */
+    const straniere = await pool().query<{ relname: string; proprietario: string }>(
+      `select c.relname, pg_get_userbyid(c.relowner) as proprietario
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'velia' and c.relkind = 'r'
+          and pg_get_userbyid(c.relowner) <> 'velia_app'`,
+    );
+    expect(
+      straniere.rows.map((r) => `${r.relname} (${r.proprietario})`),
+      'tabelle non di velia_app: aggiungi «alter table … owner to velia_app» alla migrazione',
+    ).toEqual([]);
+  });
+
   it('ogni tabella nuova nasce negata all’ospite', async () => {
     /*
      * Questo test non prova la funzionalità: protegge la prossima persona.

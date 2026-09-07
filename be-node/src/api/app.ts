@@ -7,6 +7,7 @@ import { poolDb } from '../db/pool.js';
 import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteCartelle } from './cartelle/rotte.js';
+import { registraRotteChatClienti, type OpzioniChatClienti } from './chat-clienti/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/rotte.js';
@@ -41,6 +42,8 @@ export interface OpzioniApp {
   corsOrigini?: string;
   /** Nei test: il servizio dei saluti con un generatore finto. */
   sessione?: OpzioniSessione;
+  /** Nei test: creazione dell'utenza ospite senza Supabase Auth, e link finto. */
+  chatClienti?: OpzioniChatClienti;
 }
 
 /**
@@ -93,6 +96,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
   registraRotteCartelle(app);
+  registraRotteChatClienti(app, opzioni.chatClienti);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRotteTemplate(app, opzioni.template);
   registraRotteTabelle(app, opzioni.tabelle);
