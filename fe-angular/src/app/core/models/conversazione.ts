@@ -100,8 +100,39 @@ export interface Messaggio {
    * finché nessuno decide non è successo niente.
    */
   proposta?: PropostaArchivio;
+  /**
+   * Come ci è arrivato: i passi del motore in ordine cronologico. Restano
+   * col messaggio, quindi ci sono anche riaprendo la conversazione domani.
+   */
+  passi?: Passo[];
   /** Vero mentre lo streaming è in corso: il testo cresce, i pulsanti aspettano. */
   inCorso?: boolean;
+}
+
+/**
+ * Un passo di lavoro del motore, nell'ordine in cui è avvenuto.
+ *
+ * Le citazioni dicono da dove viene ogni frase della risposta; i passi
+ * dicono dove il motore ha guardato prima di sceglierle, comprese le strade
+ * che non hanno portato a niente. È la differenza fra credere a una
+ * risposta e poterla ricostruire.
+ */
+export interface Passo {
+  /** La frase da mostrare, già in italiano: «Leggo «Nuova 4R»». */
+  etichetta: string;
+  /**
+   * Lo strumento che l'ha prodotta (`Read`, `Grep`, `Glob`, `mcp__velia__…`):
+   * decide l'icona. Assente sui passi che il motore racconta a parole sue.
+   */
+  strumento?: string;
+  /** Quando è cominciato. */
+  istante: IsoDateTime;
+  /**
+   * Quanto è durato: lo chiude il passo successivo, o la fine della
+   * risposta. Manca sul passo ancora in corso e se la risposta si è
+   * interrotta prima.
+   */
+  durataMs?: number;
 }
 
 /**
@@ -174,9 +205,14 @@ export type EventoStream =
   /**
    * Un passo di lavoro del motore («Cerco "cristalli" in condizioni.md»,
    * «Leggo dip.md»): l'utente vede il lavoro, non uno spinner. Arriva prima
-   * del testo e può ripetersi; l'ultimo ricevuto è quello da mostrare.
+   * del testo e si ripete: l'ultimo ricevuto è quello in corso, e tutti
+   * insieme sono la cronologia che resta poi in `Messaggio.passi`.
+   *
+   * `strumento` e `istante` sono additivi (07/09/2026): portano dal vivo
+   * gli stessi valori che finiscono nel messaggio salvato, così la
+   * cronologia in streaming e quella ricaricata coincidono.
    */
-  | { tipo: 'attivita'; etichetta: string }
+  | { tipo: 'attivita'; etichetta: string; strumento?: string; istante?: IsoDateTime }
   | { tipo: 'testo'; delta: string }
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }

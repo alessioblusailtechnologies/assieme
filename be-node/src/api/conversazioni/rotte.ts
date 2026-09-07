@@ -23,6 +23,7 @@ import {
   type ModoAllegato,
   type OperazioneArchivio,
   type PaginaConversazioni,
+  type Passo,
   type PropostaArchivio,
   type Provenienza,
   type RiferimentoDocumento,
@@ -103,6 +104,8 @@ interface RigaMessaggio {
   provenienze: Provenienza[];
   non_supportato: boolean;
   documenti: DocumentoGenerato[];
+  /** I passi del motore, in ordine (07/09/2026); vuoto sui messaggi dell'utente. */
+  passi: Passo[];
   /** Il riordino proposto in questa risposta, se c'è stato (04/09/2026). */
   proposta: PropostaArchivio | null;
 }
@@ -450,7 +453,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
          ricarica la pagina ritrova la scelta ancora aperta, o già presa. */
       const righe = await client.query<RigaMessaggio>(
         `select m.id, m.conversazione_id, m.autore, m.testo, m.inviato_il, m.documenti_referenziati,
-                m.citazioni, m.provenienze, m.non_supportato, m.documenti, p.proposta
+                m.citazioni, m.provenienze, m.non_supportato, m.documenti, m.passi, p.proposta
          from velia.messaggi m
          left join lateral (
            select jsonb_strip_nulls(jsonb_build_object(
@@ -1008,6 +1011,7 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
     provenienze: r.provenienze,
     ...(r.non_supportato && { nonSupportato: true }),
     ...(r.documenti?.length && { documenti: r.documenti }),
+    ...(r.passi?.length && { passi: r.passi }),
     ...(r.proposta && { proposta: r.proposta }),
   };
 }

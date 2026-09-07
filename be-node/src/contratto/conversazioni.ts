@@ -121,6 +121,34 @@ export interface Messaggio {
   documenti?: DocumentoGenerato[];
   /** Il riordino dell'archivio proposto durante la risposta (04/09/2026). */
   proposta?: PropostaArchivio;
+  /** Come ci è arrivato: i passi del motore in ordine (07/09/2026). Vuoto sui messaggi dell'utente. */
+  passi?: Passo[];
+}
+
+/**
+ * Un passo di lavoro del motore, nell'ordine in cui è avvenuto.
+ *
+ * È lo stesso che scorre dal vivo sul flusso SSE, tenuto anche dopo: le
+ * citazioni dicono da dove viene ogni frase, i passi dicono dove il motore
+ * ha guardato prima di sceglierle — comprese le strade che non hanno
+ * portato a niente, che sono quelle che spiegano una risposta storta.
+ */
+export interface Passo {
+  /** La frase in italiano già mostrata nello stream: «Leggo «Nuova 4R»». */
+  etichetta: string;
+  /**
+   * Chi l'ha prodotta: `Read`, `Grep`, `Glob`, `mcp__velia__…`. Serve al
+   * front-end per l'icona. Assente sui passi che il motore racconta a
+   * parole sue, che non nascono da uno strumento.
+   */
+  strumento?: string;
+  /** Quando è cominciato, ISO 8601. */
+  istante: string;
+  /**
+   * Quanto è durato. Lo chiude il passo successivo, o la fine della
+   * risposta; manca solo se la risposta si è interrotta prima.
+   */
+  durataMs?: number;
 }
 
 /**
@@ -200,7 +228,13 @@ export interface DocumentoGenerato {
 /** Gli eventi del flusso SSE, uno per frame `data: <json>\n\n`. */
 export type EventoStream =
   | { tipo: 'inizio'; messaggioId: string; messaggioUtenteId: string }
-  | { tipo: 'attivita'; etichetta: string }
+  /**
+   * Un passo di lavoro del motore. `strumento` e `istante` sono additivi
+   * (07/09/2026): servono al front-end per l'icona e per il cronometro, e
+   * portano dal vivo gli stessi valori che poi restano in `Messaggio.passi`,
+   * così la cronologia in streaming e quella ricaricata coincidono.
+   */
+  | { tipo: 'attivita'; etichetta: string; strumento?: string; istante?: string }
   | { tipo: 'testo'; delta: string }
   | { tipo: 'citazione'; citazione: Citazione }
   | { tipo: 'provenienza'; provenienza: Provenienza }

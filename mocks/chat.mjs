@@ -46,6 +46,23 @@ const MESSAGGI = leggi('messaggi.json');
 /** Ritmo di emissione: abbastanza lento da vedere il testo comparire. */
 const MS_PER_BLOCCO = 45;
 
+/**
+ * I passi che il motore compie prima di scrivere, nel formato e nei tempi
+ * di quelli veri (`be-node/src/worker/motore/sessione.ts`): si consulta
+ * l'indice, si cerca, si aprono i documenti, si raccolgono le fonti.
+ *
+ * Durate diverse di proposito: sono quelle che fanno vedere se la colonna
+ * del cronometro regge o balla.
+ */
+const PASSI_FINTI = [
+  { etichetta: 'Consulto l’indice dell’archivio', strumento: 'Read', ms: 700 },
+  { etichetta: 'Cerco «grandine» negli archivi', strumento: 'Grep', ms: 1500 },
+  { etichetta: 'Leggo «Condizioni di Assicurazione - Nuova 4R»', strumento: 'Read', ms: 2400 },
+  /* Senza strumento: è il motore che racconta a parole sue, e nell'elenco
+     resta il solo punto sulla linea del tempo. */
+  { etichetta: 'Raccolgo le fonti della risposta', ms: 600 },
+];
+
 /** Titolo con cui nasce una conversazione, finché il primo messaggio non lo sostituisce. */
 const TITOLO_NUOVA = 'Nuova conversazione';
 
@@ -413,6 +430,29 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
      token, e l'interfaccia deve mostrare qualcosa in quel vuoto. */
   await attendi(700);
 
+  /*
+     I passi del motore, prima del testo.
+
+     Il motore vero ne fa parecchi e di durata diversa: consulta l'indice,
+     cerca, apre due o tre documenti, e solo alla fine scrive. Qui se ne
+     fanno quattro con ritmi diversi apposta — se fossero tutti uguali
+     l'accordion sembrerebbe giusto anche quando non lo è.
+
+     `istante` viaggia con l'evento perché il cronometro dal vivo e quello
+     che resta nel messaggio devono dire lo stesso numero. */
+  const passi = [];
+  for (const p of PASSI_FINTI) {
+    if (volo.annullata) return chiudi();
+    const istante = new Date().toISOString();
+    const ultimo = passi.at(-1);
+    if (ultimo) ultimo.durataMs = Date.parse(istante) - Date.parse(ultimo.istante);
+    passi.push({ etichetta: p.etichetta, ...(p.strumento ? { strumento: p.strumento } : {}), istante });
+    invia({ tipo: 'attivita', etichetta: p.etichetta, ...(p.strumento ? { strumento: p.strumento } : {}), istante });
+    await attendi(p.ms);
+  }
+  const ultimoPasso = passi.at(-1);
+  if (ultimoPasso) ultimoPasso.durataMs = Date.now() - Date.parse(ultimoPasso.istante);
+
   /* Il pannello di sviluppo può chiedere un errore a metà risposta: è il
      caso che l'interfaccia deve reggere meglio — testo già mostrato, stream
      morto, possibilità di riprovare. */
@@ -466,7 +506,9 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
      vede, l'esito arriva solo se qualcosa è stato imparato. */
   if (scenario.ricordiAppresi?.length) {
     if (volo.annullata) return chiudi();
-    invia({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
+    const istante = new Date().toISOString();
+    passi.push({ etichetta: 'Cerco qualcosa da ricordare', istante, durataMs: 900 });
+    invia({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare', istante });
     await attendi(900);
     if (volo.annullata) return chiudi();
     invia({ tipo: 'memoria', ricordi: scenario.ricordiAppresi });
@@ -487,6 +529,9 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     documentiReferenziati: [],
     citazioni: scenario.citazioni,
     provenienze: scenario.provenienze,
+    /* I passi restano col messaggio: ricaricando la conversazione
+       l'accordion del ragionamento è ancora lì, chiuso. */
+    passi,
     ...(scenario.nonSupportato ? { nonSupportato: true } : {}),
     /* La proposta viaggia col messaggio: chi ricarica ritrova la decisione
        ancora aperta, o già presa. */

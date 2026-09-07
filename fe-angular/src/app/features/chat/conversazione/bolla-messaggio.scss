@@ -646,3 +646,108 @@
   text-transform: uppercase;
   color: var(--c-text-3);
 }
+
+/* --- I passi del motore --------------------------------------------------
+   Sta sopra la risposta e non deve rubarle la scena: carattere piccolo,
+   colore da nota a margine, e una linea del tempo verticale che tiene
+   insieme i passi come una sequenza invece che come un elenco puntato. */
+.passi {
+  margin-bottom: var(--sp-3);
+}
+
+.passi__elenco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.passo {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: baseline;
+  gap: var(--sp-2);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+/* Il filo che unisce un passo al successivo. Va ancorato alla **riga**, non
+   al segno: il segno è alto 16px e il filo finirebbe lì, un moncone che non
+   arriva alla riga dopo. L'ultimo non ce l'ha, perché dopo non c'è nulla. */
+.passo:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  bottom: calc(-1 * var(--sp-2));
+  left: 8px;
+  width: 1px;
+  background: var(--c-line-soft);
+}
+
+.passo__segno {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--c-text-4);
+}
+
+/* Chi non ha uno strumento resta un punto: è il motore che racconta a
+   parole sue, e il punto sulla linea del tempo dice già dove sta. */
+.passo__segno:empty::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pieno);
+  background: var(--c-line);
+}
+
+.passo__etichetta {
+  min-width: 0;
+  line-height: 1.5;
+}
+
+.passo__durata {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  letter-spacing: var(--ls-mono);
+  color: var(--c-text-4);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Il passo in corso è l'unico acceso: si vede dove il motore è arrivato. */
+.passo.is-in-corso {
+  color: var(--c-text);
+}
+
+.passo.is-in-corso .passo__segno {
+  color: var(--c-accent);
+}
+
+.passo.is-in-corso .passo__segno:empty::before {
+  background: var(--c-accent);
+  animation: passo-respiro 1.6s var(--ease-brand) infinite;
+}
+
+@keyframes passo-respiro {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Chrome headless e chi ha chiesto meno movimento: il punto resta acceso. */
+@media (prefers-reduced-motion: reduce) {
+  .passo.is-in-corso .passo__segno:empty::before {
+    animation: none;
+  }
+}

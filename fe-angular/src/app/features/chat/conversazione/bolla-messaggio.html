@@ -14,6 +14,41 @@
     </div>
   } @else {
     <div class="assistente">
+      @if (passi().length) {
+        <!--
+          Come ci è arrivato, in ordine. Sta **sopra** la risposta perché è
+          quello che è successo prima: mentre il motore lavora è l'unica cosa
+          da guardare e l'accordion è aperto, a risposta arrivata si richiude
+          da solo e resta una riga che dice quanti passi e quanto tempo.
+          Le fonti dicono da dove viene ogni frase; questi dicono dove ha
+          guardato prima di sceglierle, comprese le strade che non hanno
+          portato a niente.
+        -->
+        <ui-accordion
+          class="passi"
+          etichetta="Ragionamento"
+          [riepilogo]="riepilogoPassi()"
+          [aperto]="passiAperti()"
+          (apertoChange)="scegliPassi($event)"
+        >
+          <ol class="passi__elenco">
+            @for (p of passi(); track p.istante + p.etichetta) {
+              <li class="passo" [class.is-in-corso]="p.durataMs === undefined && m.inCorso">
+                <span class="passo__segno" aria-hidden="true">
+                  @if (iconaPasso(p.strumento); as icona) {
+                    <ui-icon [name]="icona" [size]="12" />
+                  }
+                </span>
+                <span class="passo__etichetta">{{ p.etichetta }}</span>
+                @if (durataPasso(p.durataMs); as durata) {
+                  <span class="passo__durata">{{ durata }}</span>
+                }
+              </li>
+            }
+          </ol>
+        </ui-accordion>
+      }
+
       <!--
         RF-C-08: la non-copertura è dichiarata **nel testo della risposta** -
         il banner che la anticipava è stato rimosso su indicazione del

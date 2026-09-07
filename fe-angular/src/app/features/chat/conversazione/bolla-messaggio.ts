@@ -5,10 +5,26 @@ import { Accordion } from '@shared/ui/accordion/accordion';
 import { Citazione, RiferimentoDocumento } from '@core/models';
 import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
+import type { NomeIcona } from '@shared/ui/icona/registro-icone';
 import { ChatStore, MessaggioInStream } from '../chat-store';
 import { PropostaRiordino } from './proposta-riordino';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
+
+/**
+ * Una durata a colpo d'occhio: `0,4 s`, `18 s`, `1 min 47 s`.
+ *
+ * Sotto il secondo il decimale conta (dice che il passo è stato immediato);
+ * sopra no, e i decimali sarebbero solo rumore da leggere.
+ */
+function durataBreve(ms: number): string {
+  if (ms < 1000) return `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+  const secondi = Math.round(ms / 1000);
+  if (secondi < 60) return `${secondi} s`;
+  const minuti = Math.floor(secondi / 60);
+  const resto = secondi % 60;
+  return resto ? `${minuti} min ${resto} s` : `${minuti} min`;
+}
 
 /**
  * Un messaggio del filo: domanda dell'utente o risposta dell'assistente.
@@ -140,6 +156,62 @@ export class BollaMessaggio {
       .documentiReferenziati.map((id) => perId.get(id))
       .filter((d): d is RiferimentoDocumento => !!d);
   });
+
+  // --- I passi del motore ---------------------------------------------------
+
+  /** La cronologia del lavoro, in ordine. Vuota sui messaggi dell'utente. */
+  protected readonly passi = computed(() => this.messaggio().passi ?? []);
+
+  /**
+   * Aperto mentre il motore lavora, chiuso quando ha finito.
+   *
+   * Durante l'attesa i passi che scorrono sono l'unica cosa che c'è da
+   * guardare, e sono la ragione per cui l'attesa si sopporta; a risposta
+   * arrivata diventano un dettaglio, e la risposta deve avere la scena. Ma
+   * se l'utente ha deciso lui, decide lui: un pannello che si richiude in
+   * faccia a chi l'ha appena aperto è peggio che non averlo.
+   */
+  private readonly sceltaPassi = signal<boolean | undefined>(undefined);
+  protected readonly passiAperti = computed(
+    () => this.sceltaPassi() ?? Boolean(this.messaggio().inCorso),
+  );
+  protected scegliPassi(aperto: boolean): void {
+    this.sceltaPassi.set(aperto);
+  }
+
+  /** Da chiuso deve già dire quanto è costato: «14 passaggi · 1 min 47 s». */
+  protected readonly riepilogoPassi = computed(() => {
+    const passi = this.passi();
+    const quanti = passi.length === 1 ? '1 passaggio' : `${passi.length} passaggi`;
+    const totale = passi.reduce((somma, p) => somma + (p.durataMs ?? 0), 0);
+    return totale ? `${quanti} · ${durataBreve(totale)}` : quanti;
+  });
+
+  /**
+   * L'icona del passo, per tipo di lavoro. Chi non ha uno strumento è il
+   * motore che racconta a parole sue cosa sta facendo: resta il punto sulla
+   * linea del tempo, che è già un'informazione.
+   */
+  protected iconaPasso(strumento?: string): NomeIcona | undefined {
+    if (!strumento) return undefined;
+    if (strumento.startsWith('mcp__velia__')) return 'esporta';
+    const per: Record<string, NomeIcona> = { Grep: 'cerca', Glob: 'elenco', Read: 'documento' };
+    return per[strumento];
+  }
+
+  /**
+   * La durata da scrivere accanto al passo, o niente.
+   *
+   * Sotto il decimo di secondo il numero non dice nulla e «0,0 s» si legge
+   * come un errore, non come «è stato immediato». Nel totale del riepilogo
+   * quei millisecondi ci sono lo stesso: è la riga singola a tacere, non la
+   * somma a mentire.
+   */
+  protected durataPasso(ms?: number): string | undefined {
+    return ms === undefined || ms < 100 ? undefined : durataBreve(ms);
+  }
+
+  // --- Fonti, provenienze, documenti -----------------------------------------
 
   /** Da chiuso l'accordion delle fonti deve già dire quanto e da dove. */
   protected readonly riepilogoFonti = computed(() => {

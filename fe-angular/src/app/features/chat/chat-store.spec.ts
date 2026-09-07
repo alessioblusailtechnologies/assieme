@@ -183,6 +183,53 @@ describe('ChatStore', () => {
     expect(risposta.ricordiAppresi?.map((r) => r.id)).toEqual(['ric-9']);
   });
 
+  it('tiene i passi del motore in ordine invece di sovrascriverli', async () => {
+    await avvia();
+    const stream = await invia('Copre la grandine?');
+
+    let ricevuto = blocco({ tipo: 'inizio', messaggioId: 'msg-11', messaggioUtenteId: 'msg-10' });
+    ricevuto += blocco({
+      tipo: 'attivita',
+      etichetta: 'Consulto l’indice dell’archivio',
+      strumento: 'Read',
+      istante: '2026-09-07T10:00:00.000Z',
+    });
+    ricevuto += blocco({
+      tipo: 'attivita',
+      etichetta: 'Cerco «grandine» negli archivi',
+      strumento: 'Grep',
+      istante: '2026-09-07T10:00:02.500Z',
+    });
+    stream.event({
+      type: HttpEventType.DownloadProgress,
+      loaded: ricevuto.length,
+      partialText: ricevuto,
+    } as HttpDownloadProgressEvent);
+
+    /* Il primo passo non è sparito, e il secondo gli ha dato una durata:
+       quanto è durato un passo si sa solo quando comincia il successivo. */
+    const inCorso = store.messaggi()[1];
+    expect(inCorso.passi?.map((p) => p.etichetta)).toEqual([
+      'Consulto l’indice dell’archivio',
+      'Cerco «grandine» negli archivi',
+    ]);
+    expect(inCorso.passi?.[0]?.durataMs).toBe(2500);
+    expect(inCorso.passi?.[0]?.strumento).toBe('Read');
+    /* L'ultimo è ancora aperto: nessuna durata inventata. */
+    expect(inCorso.passi?.[1]?.durataMs).toBeUndefined();
+
+    ricevuto += blocco({ tipo: 'testo', delta: 'Sì, con franchigia.' });
+    ricevuto += blocco({ tipo: 'fine' });
+    stream.flush(ricevuto);
+
+    const risposta = store.messaggi()[1];
+    /* Il testo ha chiuso il passo in corso, ma non la cronologia. */
+    expect(risposta.attivita).toBeUndefined();
+    expect(risposta.passi?.length).toBe(2);
+    /* A fine risposta anche l'ultimo passo ha una durata: lo chiude la fine. */
+    expect(risposta.passi?.[1]?.durataMs).toBeGreaterThanOrEqual(0);
+  });
+
   it('segnala la risposta non fondata sui documenti (RF-C-08)', async () => {
     await avvia();
     const stream = await invia('Copre la grandine?');

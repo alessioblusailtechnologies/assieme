@@ -17,6 +17,7 @@ import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
 import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
+import { DiarioPassi } from './diario-passi.js';
 import { caricaDna, promptRipresa, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
@@ -105,12 +106,26 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     const accorpatore = new AccorpatoreTesto((delta) =>
       emettiEvento(db, job.id, 'testo', { tipo: 'testo', delta } satisfies EventoStream),
     );
+    /*
+     * Il diario dei passi si tiene qui dentro `emetti`, e non presso chi li
+     * produce: le attività arrivano da quattro posti diversi (l'attesa degli
+     * allegati, gli hook della sessione, la narrazione del modello, la
+     * sandbox), e registrarle a monte vorrebbe dire ricordarsene in ognuno.
+     * Da qui non ne sfugge nessuna, oggi né quando ne arriverà una quinta.
+     */
+    const diario = new DiarioPassi();
+
     const emetti = async (evento: EventoStream): Promise<number> => {
       if (evento.tipo === 'testo') {
         await accorpatore.aggiungi(evento.delta);
         return 0;
       }
       await accorpatore.svuota();
+      if (evento.tipo === 'attivita') {
+        /* L'istante torna indietro e viaggia sull'evento: il cronometro che
+           si vede durante l'attesa e quello che resta dopo dicono lo stesso. */
+        evento = { ...evento, istante: diario.apri(evento.etichetta, evento.strumento) };
+      }
       return emettiEvento(db, job.id, evento.tipo, evento);
     };
 
@@ -278,13 +293,15 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         const testo = e.generati.length
           ? separaBlocco(e.esito.testo).visibile.trim() || 'Il documento è pronto qui sotto.'
           : `${separaBlocco(e.esito.testo).visibile.trim()}\n\n*(Il motore documentale non ha consegnato un documento.)*`.trim();
+        diario.chiudi();
         await db.query(
           `insert into velia.messaggi
              (id, conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati,
-              citazioni, provenienze, non_supportato, job_id, documenti)
-           values ($1, $2, $3, 'assistente', $4, $5, '{}', '[]', '[]', false, $6, $7)
-           on conflict (id) do update set testo = excluded.testo, documenti = excluded.documenti`,
-          [payload.messaggioAssistenteId, payload.conversazioneId, tenantId, payload.utenteId, testo, job.id, JSON.stringify(e.generati)],
+              citazioni, provenienze, non_supportato, job_id, documenti, passi)
+           values ($1, $2, $3, 'assistente', $4, $5, '{}', '[]', '[]', false, $6, $7, $8)
+           on conflict (id) do update set testo = excluded.testo, documenti = excluded.documenti,
+             passi = excluded.passi`,
+          [payload.messaggioAssistenteId, payload.conversazioneId, tenantId, payload.utenteId, testo, job.id, JSON.stringify(e.generati), JSON.stringify(diario.elenco())],
         );
         documentiSalvati = true;
         await db.query(`update velia.conversazioni set updated_at = now() where id = $1`, [payload.conversazioneId]);
@@ -361,7 +378,14 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       };
       const osservatore = {
         passo: async (p: PassoSessione) => {
-          if (p.tipo === 'attivita') await emetti({ tipo: 'attivita', etichetta: p.etichetta });
+          if (p.tipo === 'attivita')
+            await emetti({
+              tipo: 'attivita',
+              etichetta: p.etichetta,
+              /* Lo strumento arriva fin qui dall'hook PreToolUse: è ciò che
+                 distingue una lettura da una ricerca nell'elenco dei passi. */
+              ...(p.strumento && { strumento: p.strumento }),
+            });
           else await emetti({ tipo: 'testo', delta: p.delta });
         },
         annullato,
@@ -461,14 +485,16 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
 
       /* Persistenza solo a risposta completa (piano §3.1), poi `fine`: chi
          ricarica dopo il `fine` trova il messaggio. */
+      /* L'ultimo passo si chiude qui: da adesso il motore non lavora più. */
+      diario.chiudi();
       await db.query(
         `insert into velia.messaggi
            (id, conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati,
-            citazioni, provenienze, non_supportato, job_id, documenti)
-         values ($1, $2, $3, 'assistente', $4, $5, '{}', $6, $7, $8, $9, $10)
+            citazioni, provenienze, non_supportato, job_id, documenti, passi)
+         values ($1, $2, $3, 'assistente', $4, $5, '{}', $6, $7, $8, $9, $10, $11)
          on conflict (id) do update set testo = excluded.testo, citazioni = excluded.citazioni,
            provenienze = excluded.provenienze, non_supportato = excluded.non_supportato,
-           documenti = excluded.documenti`,
+           documenti = excluded.documenti, passi = excluded.passi`,
         [
           payload.messaggioAssistenteId,
           payload.conversazioneId,
@@ -480,6 +506,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           nonSupportato,
           job.id,
           JSON.stringify(strumentiChat.generati),
+          JSON.stringify(diario.elenco()),
         ],
       );
       documentiSalvati = true;
@@ -546,6 +573,22 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           });
         }
       }
+
+      /*
+       * Il diario si richiude qui, non all'insert.
+       *
+       * Il messaggio si salva appena la risposta è completa, ma il motore
+       * lavora ancora un po' dopo: cerca cosa ricordare, genera il titolo.
+       * Quei passi scorrono davanti all'utente come tutti gli altri, e se
+       * il diario si fermasse all'insert chi ricarica ne troverebbe uno di
+       * meno di quanti ne ha visti — una differenza piccola e inspiegabile,
+       * che è il genere di cosa che fa dubitare di tutto il resto.
+       */
+      diario.chiudi();
+      await db.query(`update velia.messaggi set passi = $2 where id = $1`, [
+        payload.messaggioAssistenteId,
+        JSON.stringify(diario.elenco()),
+      ]);
 
       /* I suggerimenti della home non si scrivono più qui (29/08/2026): non
          sono «le prossime domande» di questa conversazione ma domande di

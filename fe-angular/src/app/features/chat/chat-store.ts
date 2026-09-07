@@ -13,6 +13,7 @@ import {
   IsoDateTime,
   Messaggio,
   ModoAllegato,
+  Passo,
   PropostaArchivio,
   RicordoAppreso,
   RiferimentoDocumento,
@@ -60,6 +61,24 @@ export interface AllegatoInCorso {
 }
 
 /**
+ * Chiude l'ultimo passo rimasto aperto, con l'orologio di adesso.
+ *
+ * Serve a fine risposta: l'ultimo passo non ha un successore che gli dica
+ * quando è finito, e senza questo resterebbe l'unico senza durata. Se la
+ * risposta si interrompe la durata non si scrive: meglio non dirla che
+ * dirla sbagliata.
+ */
+function chiudiUltimoPasso(passi: Passo[] | undefined): Passo[] {
+  if (!passi?.length) return passi ?? [];
+  const ultimo = passi[passi.length - 1]!;
+  if (ultimo.durataMs !== undefined) return passi;
+  return [
+    ...passi.slice(0, -1),
+    { ...ultimo, durataMs: Math.max(0, Date.now() - Date.parse(ultimo.istante)) },
+  ];
+}
+
+/**
  * Un messaggio in streaming è un messaggio con due informazioni in più che il
  * contratto non ha, perché esistono solo mentre il flusso è aperto: l'errore
  * arrivato a metà risposta e l'interruzione chiesta dall'utente.
@@ -67,7 +86,10 @@ export interface AllegatoInCorso {
 export interface MessaggioInStream extends Messaggio {
   erroreStream?: string;
   interrotto?: boolean;
-  /** L'ultimo passo di lavoro del motore, finché il testo non arriva. */
+  /**
+   * Il passo *in corso*, finché il testo non arriva: uno solo, e si azzera.
+   * La cronologia completa è in `passi` (dal contratto) e non si azzera mai.
+   */
   attivita?: string;
   /** RF-G-01: ciò che la memoria ha imparato da questo scambio (vive solo nello stream). */
   ricordiAppresi?: RicordoAppreso[];
@@ -830,12 +852,43 @@ export class ChatStore {
             documentiReferenziati: [],
             citazioni: [],
             provenienze: [],
+            passi: [],
             inCorso: true,
           },
         });
         break;
       case 'attivita':
-        this.aggiornaAssistente((m) => ({ ...m, attivita: evento.etichetta }));
+        /*
+         * Due cose diverse, e vanno tenute separate.
+         *
+         * `attivita` è il passo *in corso*: uno solo, e sparisce appena il
+         * testo comincia a uscire. `passi` è la cronologia, e non si
+         * cancella mai — è quella che finisce nell'accordion e che il
+         * server salva col messaggio.
+         *
+         * Il passo precedente si chiude qui, con l'istante di questo: la
+         * durata la si sa solo quando il successivo comincia. L'istante
+         * arriva dal server, così quello che si legge dal vivo e quello che
+         * si rilegge domani sono lo stesso numero; se manca (mock vecchi,
+         * eventi di prima d'oggi) vale l'orologio del client.
+         */
+        this.aggiornaAssistente((m) => {
+          const istante = evento.istante ?? new Date().toISOString();
+          const passi = [...(m.passi ?? [])];
+          const ultimo = passi.at(-1);
+          if (ultimo && ultimo.durataMs === undefined) {
+            passi[passi.length - 1] = {
+              ...ultimo,
+              durataMs: Math.max(0, Date.parse(istante) - Date.parse(ultimo.istante)),
+            };
+          }
+          passi.push({
+            etichetta: evento.etichetta,
+            ...(evento.strumento && { strumento: evento.strumento }),
+            istante,
+          });
+          return { ...m, attivita: evento.etichetta, passi };
+        });
         break;
       case 'testo':
         /* Il testo non si mostra com'è arrivato (chunk irregolari) ma a
@@ -955,7 +1008,9 @@ export class ChatStore {
     if (stream.conversazioneId === this.idAttiva()) {
       const consolidati = [
         ...(stream.utente ? [stream.utente] : []),
-        ...(stream.assistente ? [{ ...stream.assistente, inCorso: false }] : []),
+        ...(stream.assistente
+          ? [{ ...stream.assistente, inCorso: false, passi: chiudiUltimoPasso(stream.assistente.passi) }]
+          : []),
       ];
       this.messaggiCaricati.update((caricati) => {
         const ids = new Set(consolidati.map((m) => m.id));
