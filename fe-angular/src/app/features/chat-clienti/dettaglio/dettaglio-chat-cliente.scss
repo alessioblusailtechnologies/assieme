@@ -1,0 +1,225 @@
+:host {
+  display: block;
+  padding: var(--sp-6);
+  max-width: 52rem;
+}
+
+.testata {
+  margin-bottom: var(--sp-5);
+}
+
+.testata__indietro {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+  text-decoration: none;
+  margin-bottom: var(--sp-2);
+}
+
+.testata__indietro ui-icon {
+  transform: rotate(180deg);
+}
+
+.testata__titolo {
+  font-size: var(--t-page-title);
+}
+
+.testata__sotto {
+  margin-top: var(--sp-1);
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.link {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-accent-hairline);
+  border-radius: var(--radius);
+  background: var(--c-accent-soft);
+}
+
+.link__titolo {
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  margin-bottom: var(--sp-2);
+}
+
+.link__url {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  word-break: break-all;
+}
+
+.link__nota,
+.pericolo__nota {
+  margin-top: var(--sp-2);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.avviso {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3);
+  border-left: 2px solid var(--c-warn);
+  background: var(--c-warn-soft);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.sezione {
+  margin-bottom: var(--sp-6);
+}
+
+.sezione__titolo {
+  font-family: var(--f-serif);
+  font-size: var(--t-section);
+  margin-bottom: var(--sp-1);
+}
+
+.sezione__nota {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+  margin-bottom: var(--sp-3);
+}
+
+/* L'albero è piatto con rientri: si scorre tutto insieme, ed è quello che
+   serve quando devi essere sicuro di non aver spuntato la cartella sbagliata. */
+.albero {
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.cartella {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  cursor: pointer;
+}
+
+.cartella:hover {
+  background: var(--c-page-alt);
+}
+
+.cartella__nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cartella__cliente {
+  font-size: var(--t-xs);
+  color: var(--c-text-4);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--sp-1);
+}
+
+.albero__vuoto {
+  padding: var(--sp-3);
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.scelti {
+  list-style: none;
+  margin: 0 0 var(--sp-3);
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.scelto {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  font-size: var(--t-xs);
+  background: var(--c-surface);
+}
+
+.scelto__togli {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--c-text-3);
+  display: inline-flex;
+  padding: 0;
+}
+
+.ricerca {
+  width: 100%;
+}
+
+.risultati {
+  list-style: none;
+  margin: var(--sp-2) 0 0;
+  padding: 0;
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius);
+  max-height: 18rem;
+  overflow-y: auto;
+  background: var(--c-surface);
+}
+
+.risultato {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--t-sm);
+  cursor: pointer;
+}
+
+.risultato:hover {
+  background: var(--c-page-alt);
+}
+
+.risultato__titolo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.istruzioni {
+  width: 100%;
+  resize: vertical;
+}
+
+.tetto {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.tetto input {
+  width: 8rem;
+}
+
+.azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.assente {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}

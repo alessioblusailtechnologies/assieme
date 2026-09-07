@@ -90,6 +90,13 @@ export const routes: Routes = [
         loadChildren: () => import('@features/agenti/agenti.routes').then((m) => m.AGENTI_ROUTES),
       },
       {
+        /* Chat per i clienti dell'agenzia (07/09/2026): la creazione e il
+           cono di lettura. La chat vera del cliente sta fuori dalla shell. */
+        path: 'chat-clienti',
+        loadChildren: () =>
+          import('@features/chat-clienti/chat-clienti.routes').then((m) => m.CHAT_CLIENTI_ROUTES),
+      },
+      {
         /* Fase 7 — costruita. Pagina sola: niente file di rotte per un pannello. */
         path: 'memoria',
         loadComponent: () =>

@@ -1,0 +1,165 @@
+@if (chat(); as c) {
+  <header class="testata">
+    <a class="testata__indietro" routerLink="/chat-clienti">
+      <ui-icon name="espandi-destra" [size]="14" />
+      Chat per i clienti
+    </a>
+    <h1 class="serif testata__titolo">{{ c.titolo }}</h1>
+    <p class="testata__sotto">
+      Entra come <strong>{{ c.ospite.nome }} {{ c.ospite.cognome }}</strong> ·
+      {{ c.domandeFatte }} domande fatte
+      @if (c.tettoDomande) {<span> su {{ c.tettoDomande }}</span>}
+    </p>
+  </header>
+
+  @if (store.linkAppenaCreato(); as link) {
+    <div class="link">
+      <p class="link__titolo">Il link da mandare al cliente</p>
+      <code class="link__url">{{ link.url }}</code>
+      <p class="link__nota">Si vede solo adesso: copialo prima di cambiare pagina.</p>
+    </div>
+  }
+
+  @if (conoVuoto()) {
+    <!--
+      Non è un avviso di forma: con il cono vuoto il motore non ha niente da
+      leggere, e al cliente risponde che non sa. Meglio dirlo qui.
+    -->
+    <p class="avviso">
+      Il cono è vuoto: finché non scegli almeno una cartella o un documento, a
+      questo cliente l'assistente non sa rispondere nulla.
+    </p>
+  }
+
+  <section class="sezione">
+    <h2 class="sezione__titolo">Che cosa può leggere</h2>
+    <p class="sezione__nota">
+      Spuntare una cartella comprende <strong>tutto quello che c'è sotto</strong>.
+      Un documento che non sta in nessuna cartella non entra in nessun cono.
+    </p>
+
+    <div class="albero">
+      @for (v of voci(); track v.cartella.id) {
+        <label class="cartella" [style.padding-left.px]="12 + v.profondita * 18">
+          <input
+            type="checkbox"
+            [checked]="cartellaScelta(v.cartella.id)"
+            (change)="commutaCartella(v.cartella.id)"
+          />
+          <ui-icon name="cartella" [size]="14" />
+          <span class="cartella__nome">{{ v.cartella.nome }}</span>
+          @if (v.cartella.clienteId) {
+            <span class="cartella__cliente">cliente</span>
+          }
+        </label>
+      } @empty {
+        <p class="albero__vuoto">L'Archivio Privato non ha ancora cartelle.</p>
+      }
+    </div>
+  </section>
+
+  <section class="sezione">
+    <h2 class="sezione__titolo">Prodotti dell'Archivio Pubblico</h2>
+    <p class="sezione__nota">
+      Solo quelli che riguardano questo cliente: l'archivio intero non serve a
+      lui e allunga il lavoro dell'assistente.
+    </p>
+
+    @if (documentiScelti().size) {
+      <ul class="scelti">
+        @for (d of elencoDocumentiScelti(); track d.id) {
+          <li class="scelto">
+            <span>{{ d.titolo }}</span>
+            <button
+              type="button"
+              class="scelto__togli"
+              (click)="commutaDocumento(d)"
+              aria-label="Togli dal cono"
+            >
+              <ui-icon name="chiudi" [size]="12" />
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <input
+      uiCampo
+      class="ricerca"
+      [(ngModel)]="ricerca"
+      placeholder="Cerca un prodotto o un documento (almeno tre lettere)"
+    />
+    @if (risultati().length) {
+      <ul class="risultati">
+        @for (d of risultati(); track d.id) {
+          <li>
+            <label class="risultato">
+              <input
+                type="checkbox"
+                [checked]="documentoScelto(d.id)"
+                (change)="commutaDocumento({ id: d.id, titolo: d.titolo })"
+              />
+              <span class="risultato__titolo">{{ d.titolo }}</span>
+            </label>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <section class="sezione">
+    <h2 class="sezione__titolo">Come deve rispondergli</h2>
+    <p class="sezione__nota">
+      Le istruzioni di questa chat. Quelle generali dell'agenzia
+      <strong>non</strong> entrano: sono scritte per il lavoro interno.
+    </p>
+    <textarea
+      uiCampo
+      class="istruzioni"
+      rows="5"
+      [(ngModel)]="istruzioni"
+      placeholder="Es. È cliente dal 1998, dagli del tu. Se chiede di un sinistro in corso, rimandalo sempre allo sportello."
+    ></textarea>
+
+    <label class="tetto">
+      <span>Quante domande al massimo</span>
+      <input uiCampo type="number" min="1" [(ngModel)]="tetto" placeholder="senza limite" />
+    </label>
+    <p class="sezione__nota">
+      Ogni domanda ha un costo, e un link inoltrato resta valido: un tetto è la
+      rete sotto.
+    </p>
+  </section>
+
+  <div class="azioni">
+    <button
+      type="button"
+      uiBottone
+      variante="primario"
+      [disabled]="inSalvataggio()"
+      (click)="salva()"
+    >
+      {{ inSalvataggio() ? 'Salvo…' : salvato() ? 'Salvato' : 'Salva' }}
+    </button>
+    <button type="button" uiBottone (click)="commutaStato()">
+      {{ c.stato === 'attiva' ? 'Sospendi il link' : 'Riattiva il link' }}
+    </button>
+    <button type="button" uiBottone (click)="rigenera()">Rigenera il link</button>
+  </div>
+
+  <ui-accordion class="pericolo" etichetta="Elimina" riepilogo="La chat e la sua corrispondenza">
+    <p class="pericolo__nota">
+      Sparisce tutto: l'accesso del cliente e le conversazioni che ci sono
+      state. Per chiudere la porta senza perdere niente, sospendi il link.
+    </p>
+    @if (confermaEliminazione()) {
+      <button type="button" uiBottone variante="pericolo" (click)="elimina()">
+        Elimina davvero
+      </button>
+    } @else {
+      <button type="button" uiBottone (click)="confermaEliminazione.set(true)">Elimina</button>
+    }
+  </ui-accordion>
+} @else {
+  <p class="assente">Questa chat non esiste più.</p>
+}

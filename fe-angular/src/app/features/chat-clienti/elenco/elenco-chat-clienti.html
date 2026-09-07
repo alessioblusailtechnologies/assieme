@@ -1,0 +1,99 @@
+<header class="testata">
+  <div>
+    <h1 class="serif testata__titolo">Chat per i clienti</h1>
+    <p class="testata__sotto">
+      Una conversazione che il cliente apre da un link, su quello che decidi tu.
+    </p>
+  </div>
+  <button type="button" uiBottone variante="primario" (click)="apriCreazione()">
+    Nuova chat
+  </button>
+</header>
+
+@if (store.linkAppenaCreato(); as link) {
+  <!--
+    Il link si vede una volta sola: il server ne conserva solo l'impronta.
+    Sta in cima e resta finché non si cambia pagina, perché chi lo perde
+    deve rigenerarlo — e il vecchio muore.
+  -->
+  <div class="link">
+    <p class="link__titolo">Il link da mandare al cliente</p>
+    <code class="link__url">{{ link.url }}</code>
+    <p class="link__nota">
+      Si vede solo adesso. Copialo: non c'è modo di rileggerlo, e rigenerarlo
+      spegne quello di prima.
+    </p>
+  </div>
+}
+
+@if (inCreazione()) {
+  <div class="creazione">
+    <label class="creazione__campo">
+      <span>Come si chiama questa chat</span>
+      <input uiCampo [(ngModel)]="titolo" placeholder="Mario Rossi — polizza auto" />
+    </label>
+    <div class="creazione__coppia">
+      <label class="creazione__campo">
+        <span>Nome del cliente</span>
+        <input uiCampo [(ngModel)]="nome" placeholder="Mario" />
+      </label>
+      <label class="creazione__campo">
+        <span>Cognome</span>
+        <input uiCampo [(ngModel)]="cognome" placeholder="Rossi" />
+      </label>
+    </div>
+    <p class="creazione__nota">
+      Il cono di lettura si compone subito dopo: finché è vuoto, la chat non
+      risponde nulla.
+    </p>
+    @if (erroreCreazione(); as e) {
+      <p class="creazione__errore">{{ e }}</p>
+    }
+    <div class="creazione__azioni">
+      <button type="button" uiBottone (click)="annulla()">Annulla</button>
+      <button
+        type="button"
+        uiBottone
+        variante="primario"
+        [disabled]="!puoCreare() || salvataggioInCorso()"
+        (click)="crea()"
+      >
+        {{ salvataggioInCorso() ? 'Creo…' : 'Crea e componi il cono' }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (store.inCaricamento() && !store.conta()) {
+  <ui-scheletro [numeroRighe]="4" />
+} @else if (store.errore(); as e) {
+  <p class="errore">{{ e }}</p>
+} @else if (!store.conta()) {
+  <ui-stato-vuoto
+    icona="chat"
+    titolo="Nessuna chat per i clienti"
+    descrizione="Creane una: scegli quali cartelle e quali prodotti può leggere, e manda il link al cliente."
+  />
+} @else {
+  <ul class="elenco">
+    @for (c of store.chat(); track c.id) {
+      <li class="riga">
+        <a class="riga__principale" [routerLink]="['/chat-clienti', c.id]">
+          <span class="riga__titolo">{{ c.titolo }}</span>
+          <span class="riga__ospite">{{ c.ospite.nome }} {{ c.ospite.cognome }}</span>
+        </a>
+        <span class="riga__cono" [class.is-vuoto]="!c.cartelle.length && !c.documenti.length">
+          {{ coperturaCono(c) }}
+        </span>
+        <span class="riga__stato" [class]="'is-' + c.stato">
+          <ui-icon [name]="c.stato === 'attiva' ? 'pronto' : 'sospendi'" [size]="13" />
+          {{ etichettaStato(c) }}
+        </span>
+        <span class="riga__domande">
+          {{ c.domandeFatte }}@if (c.tettoDomande) {<span>/{{ c.tettoDomande }}</span>}
+        </span>
+        <span class="riga__costo mono">{{ costo(c) }}</span>
+      </li>
+    }
+  </ul>
+}

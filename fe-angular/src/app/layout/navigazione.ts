@@ -43,7 +43,18 @@ export const NAVIGAZIONE: GruppoNavigazione[] = [
   },
   {
     etichetta: 'Automazione',
-    voci: [{ percorso: '/agenti', etichetta: 'Agenti', icona: 'agente' }],
+    voci: [
+      { percorso: '/agenti', etichetta: 'Agenti', icona: 'agente' },
+      /* Sta in Automazione e non in Agenzia: come gli agenti, è lavoro che
+         gira senza che qualcuno lo chieda ogni volta — con la differenza
+         che qui a chiedere è il cliente. Solo amministratori. */
+      {
+        percorso: '/chat-clienti',
+        etichetta: 'Chat per i clienti',
+        icona: 'chat',
+        permesso: 'utenti.gestisci',
+      },
+    ],
   },
   {
     etichetta: 'Agenzia',

@@ -1,0 +1,178 @@
+:host {
+  display: block;
+  padding: var(--sp-6);
+  max-width: var(--content-max);
+}
+
+.testata {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.testata__titolo {
+  font-size: var(--t-page-title);
+}
+
+.testata__sotto {
+  margin-top: var(--sp-1);
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+/* Il link non è un messaggio di conferma: è l'unico momento in cui esiste. */
+.link {
+  margin-bottom: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-accent-hairline);
+  border-radius: var(--radius);
+  background: var(--c-accent-soft);
+}
+
+.link__titolo {
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  margin-bottom: var(--sp-2);
+}
+
+.link__url {
+  display: block;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  word-break: break-all;
+  color: var(--c-text);
+}
+
+.link__nota {
+  margin-top: var(--sp-2);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.creazione {
+  margin-bottom: var(--sp-5);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.creazione__coppia {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.creazione__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.creazione__nota {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.creazione__errore {
+  font-size: var(--t-sm);
+  color: var(--c-neg);
+}
+
+.creazione__azioni {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.elenco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--c-surface);
+}
+
+.riga {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto auto auto;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--c-line-soft);
+  font-size: var(--t-sm);
+}
+
+.riga:last-child {
+  border-bottom: 0;
+}
+
+.riga__principale {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.riga__titolo {
+  color: var(--c-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.riga__ospite,
+.riga__cono,
+.riga__domande {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+/* Un cono vuoto è una chat che non risponde: si vede da lontano. */
+.riga__cono.is-vuoto {
+  color: var(--c-warn);
+}
+
+.riga__stato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.riga__stato.is-attiva {
+  color: var(--c-pos);
+}
+
+.riga__costo {
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-4);
+  font-variant-numeric: tabular-nums;
+}
+
+.errore {
+  font-size: var(--t-sm);
+  color: var(--c-neg);
+}
+
+@media (max-width: 768px) {
+  .riga {
+    grid-template-columns: 1fr auto;
+    row-gap: var(--sp-1);
+  }
+
+  .creazione__coppia {
+    grid-template-columns: 1fr;
+  }
+}

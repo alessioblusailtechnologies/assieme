@@ -48,18 +48,12 @@ interface RigaChat {
   domande_fatte: number;
   istruzioni: string | null;
   created_at: Date;
-  costo_usd: string | null;
 }
 
 const SQL_CHAT = `
   select k.id, k.titolo, k.cliente_id, cl.nome as cliente_nome,
          k.ospite_id, u.nome as ospite_nome, u.cognome as ospite_cognome,
-         k.stato, k.scade_il, k.tetto_domande, k.domande_fatte, k.istruzioni, k.created_at,
-         (select coalesce(sum(c.costo_usd), 0)
-            from velia.consumi c
-            join velia.jobs j on j.id = c.job_id
-            join velia.conversazioni v on v.id = (j.payload ->> 'conversazioneId')::uuid
-           where v.chat_cliente_id = k.id) as costo_usd
+         k.stato, k.scade_il, k.tetto_domande, k.domande_fatte, k.istruzioni, k.created_at
     from velia.chat_clienti k
     join velia.utenti u on u.id = k.ospite_id
     left join velia.clienti cl on cl.id = k.cliente_id`;
@@ -88,7 +82,12 @@ async function creaUtenzaSuAuth(email: string): Promise<string> {
   return data.user.id;
 }
 
-function versoChat(riga: RigaChat, cartelle: Array<{ id: string; percorso: string }>, documenti: Array<{ id: string; titolo: string }>): ChatCliente {
+function versoChat(
+  riga: RigaChat,
+  cartelle: Array<{ id: string; percorso: string }>,
+  documenti: Array<{ id: string; titolo: string }>,
+  costoUsd: number,
+): ChatCliente {
   return {
     id: riga.id,
     titolo: riga.titolo,
@@ -103,8 +102,30 @@ function versoChat(riga: RigaChat, cartelle: Array<{ id: string; percorso: strin
     cartelle,
     documenti,
     creataIl: riga.created_at.toISOString(),
-    costoUsd: Number(riga.costo_usd ?? 0),
+    costoUsd,
   };
+}
+
+/**
+ * Quanto è costata ogni chat, con la connessione di sistema.
+ *
+ * Non si può calcolare nella query dell'elenco: quella gira sotto la RLS
+ * con l'identità dell'amministratore, e per arrivare ai consumi bisogna
+ * passare da `velia.jobs`, che a `authenticated` è negata. Il risultato
+ * non sarebbe un errore ma **zero**, cioè un costo che sembra nullo su una
+ * chat che sta spendendo: il genere di bugia che nessuno va a controllare.
+ */
+async function costiPerChat(tenantId: string): Promise<Map<string, number>> {
+  const righe = await poolDb().query<{ chat_cliente_id: string; costo: string }>(
+    `select v.chat_cliente_id, coalesce(sum(c.costo_usd), 0) as costo
+       from velia.consumi c
+       join velia.jobs j on j.id = c.job_id
+       join velia.conversazioni v on v.id = (j.payload ->> 'conversazioneId')::uuid
+      where c.tenant_id = $1 and v.chat_cliente_id is not null
+      group by v.chat_cliente_id`,
+    [tenantId],
+  );
+  return new Map(righe.rows.map((r) => [r.chat_cliente_id, Number(r.costo)]));
 }
 
 /** Il cono di una o più chat, in due query invece che in due per chat. */
@@ -215,6 +236,7 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
   /** L'elenco, con il cono di ciascuna e quanto è costata. */
   app.get('/api/chat-clienti', async (richiesta) => {
     richiediAmministratore(richiesta);
+    const costi = await costiPerChat(richiesta.identita.tenantId);
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<ChatCliente[]> => {
       const righe = await client.query<RigaChat>(
         `${SQL_CHAT} where k.tenant_id = $1 order by k.created_at desc`,
@@ -226,7 +248,12 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
         righe.rows.map((r) => r.id),
       );
       return righe.rows.map((r) =>
-        versoChat(r, coni.cartelle.get(r.id) ?? [], coni.documenti.get(r.id) ?? []),
+        versoChat(
+          r,
+          coni.cartelle.get(r.id) ?? [],
+          coni.documenti.get(r.id) ?? [],
+          costi.get(r.id) ?? 0,
+        ),
       );
     });
   });
@@ -353,7 +380,13 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
       const riga = righe.rows[0];
       if (!riga) throw ErroreApi.nonTrovato('Questa chat non esiste.');
       const coni = await coniDi(client, richiesta.identita.tenantId, [id]);
-      return versoChat(riga, coni.cartelle.get(id) ?? [], coni.documenti.get(id) ?? []);
+      const costi = await costiPerChat(richiesta.identita.tenantId);
+      return versoChat(
+        riga,
+        coni.cartelle.get(id) ?? [],
+        coni.documenti.get(id) ?? [],
+        costi.get(id) ?? 0,
+      );
     });
   });
 
