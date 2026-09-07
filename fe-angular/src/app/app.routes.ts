@@ -23,6 +23,23 @@ export const routes: Routes = [
     loadComponent: () => import('@features/accesso/accesso').then((m) => m.Accesso),
   },
   {
+    /*
+     * La chat del cliente: fuori dalla shell come l'accesso, e per la stessa
+     * ragione — è una porta, non una stanza. Chi arriva qui non ha
+     * un'applicazione da navigare, ha una domanda da fare.
+     *
+     * `scaduto` prima di `:token` o lo mangerebbe come se fosse un token.
+     */
+    path: 'c/scaduto',
+    loadComponent: () => import('@features/chat-cliente/scaduto').then((m) => m.LinkScaduto),
+    title: 'Collegamento non più valido',
+  },
+  {
+    path: 'c/:token',
+    loadComponent: () => import('@features/chat-cliente/chat-cliente').then((m) => m.ChatCliente),
+    title: 'La tua assicurazione',
+  },
+  {
     path: '',
     component: Shell,
     /* Senza sessione non si entra: la porta prima della stanza. */

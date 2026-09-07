@@ -1,5 +1,6 @@
 import { httpResource } from '@angular/common/http';
-import { Injectable, computed } from '@angular/core';
+import { TokenStore } from './token-store';
+import { Injectable, computed, inject } from '@angular/core';
 
 import { environment } from '@env';
 import { Permesso, Sessione } from '@core/models';
@@ -18,7 +19,20 @@ import { Permesso, Sessione } from '@core/models';
  */
 @Injectable({ providedIn: 'root' })
 export class SessioneStore {
-  private readonly risorsa = httpResource<Sessione>(() => `${environment.apiBase}/sessione`);
+  private readonly token = inject(TokenStore);
+
+  /*
+   * Nella chat di un cliente questa chiamata non si fa.
+   *
+   * Un ospite non ha una sessione d'agenzia: `/api/sessione` legge il
+   * profilo da `velia.utenti`, che le policy gli negano — e risponde 403,
+   * correttamente. Chiederla lo stesso vorrebbe dire un errore rosso in
+   * console a ogni apertura, cioè abituarsi a un errore che non è un
+   * errore: il modo migliore per non vedere quello vero il giorno dopo.
+   */
+  private readonly risorsa = httpResource<Sessione>(() =>
+    this.token.tokenOspite() ? undefined : `${environment.apiBase}/sessione`,
+  );
 
   /**
    * `risorsa.value()` **solleva un'eccezione** quando la risorsa è in stato

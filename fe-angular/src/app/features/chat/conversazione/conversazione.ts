@@ -8,6 +8,7 @@ import {
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -22,6 +23,7 @@ import { httpResource } from '@angular/common/http';
 import { ChatStore } from '../chat-store';
 import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
+import { TokenStore } from '@core/auth/token-store';
 import { Campo } from '@shared/ui/campo/campo';
 import { Citazione, TemplateOutput, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
@@ -72,6 +74,18 @@ export class Conversazione {
   private readonly sessione = inject(SessioneStore);
 
   /**
+   * Vero quando questa è la chat di un cliente dell'agenzia (07/09/2026).
+   *
+   * Si legge dalla credenziale, non da un parametro: chi entra col token di
+   * un link **è** un cliente, e non c'è una seconda strada. Il server lo sa
+   * già e gli nega tutto il resto; qui si tolgono di mezzo i comandi che
+   * non avrebbero effetto, perché un pulsante che risponde «non puoi» è
+   * peggio di un pulsante che non c'è.
+   */
+  private readonly token = inject(TokenStore);
+  protected readonly perCliente = computed(() => Boolean(this.token.tokenOspite()));
+
+  /**
    * Il saluto della schermata iniziale: contestuale all'ora e alla persona,
    * con le frasi arrivate con la sessione. Finché la sessione non c'è è
    * `undefined` e al suo posto sta uno scheletro: mostrare una frase neutra
@@ -87,6 +101,17 @@ export class Conversazione {
   /** Dalla rotta; assente su `/chat`, la schermata «nuova conversazione». */
   readonly id = input<string>();
 
+  /**
+   * Se c'è una conversazione da mostrare, invece che la schermata iniziale.
+   *
+   * Si guarda il **negozio**, non la rotta. Nell'applicazione dell'agenzia
+   * le due cose coincidono, perché appena la conversazione nasce si naviga
+   * al suo indirizzo. Nella chat di un cliente no: c'è un indirizzo solo,
+   * quello del suo link, e leggendo la rotta la pagina resterebbe per
+   * sempre sul «fai una domanda» — anche mentre la risposta arriva.
+   */
+  protected readonly conversazioneInCorso = computed(() => Boolean(this.store.idAttiva()));
+
   private readonly filo = viewChild<ElementRef<HTMLElement>>('filo');
 
   /**
@@ -98,7 +123,20 @@ export class Conversazione {
 
   constructor() {
     effect(() => {
-      this.store.apri(this.id());
+      const id = this.id();
+      /*
+       * `apri` legge `idAttiva` per decidere se c'è qualcosa da fare, e
+       * senza `untracked` questo effetto si iscriverebbe a quel segnale: il
+       * negozio imposta la conversazione appena creata, l'effetto riparte
+       * con l'id della rotta ancora vecchio e la richiude appena aperta.
+       *
+       * Nell'applicazione dell'agenzia non si vedeva perché subito dopo si
+       * naviga, e l'id della rotta diventa quello giusto. Nella chat di un
+       * cliente non si naviga — c'è un indirizzo solo — e la conversazione
+       * spariva un istante dopo l'invio, con la risposta che arrivava nel
+       * vuoto.
+       */
+      untracked(() => this.store.apri(id));
       this.seguiFondo = true;
     });
 

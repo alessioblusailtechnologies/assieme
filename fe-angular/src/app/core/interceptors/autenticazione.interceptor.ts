@@ -30,6 +30,29 @@ export const autenticazioneInterceptor: HttpInterceptorFn = (req, next) => {
 
   if (req.context.get(RICHIESTA_DI_ACCESSO)) return next(req);
 
+  /*
+   * Il cliente di una chat, quando la scheda ne ha il token.
+   *
+   * Schema `Ospite` e non `Bearer` perché non è un JWT: è il segreto del
+   * link, che il server risolve contro il database a ogni richiesta —
+   * ricontrollando che la chat sia ancora attiva, non scaduta e non
+   * esaurita. Per questo non c'è niente da rinnovare, e un 401 qui non è
+   * «sessione scaduta» ma «questo link non vale più»: si porta il cliente
+   * alla pagina che glielo dice, non alla porta dell'agenzia.
+   */
+  const ospite = token.tokenOspite();
+  if (ospite) {
+    return next(req.clone({ setHeaders: { Authorization: `Ospite ${ospite}` } })).pipe(
+      catchError((errore: HttpErrorResponse) => {
+        if (errore.status === 401) {
+          token.pulisciOspite();
+          void router.navigate(['/c/scaduto']);
+        }
+        return throwError(() => errore);
+      }),
+    );
+  }
+
   const conBearer = (r: HttpRequest<unknown>): HttpRequest<unknown> => {
     const t = token.tokenAccesso();
     return t ? r.clone({ setHeaders: { Authorization: `Bearer ${t}` } }) : r;

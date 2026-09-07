@@ -1,4 +1,4 @@
-@if (!id()) {
+@if (!conversazioneInCorso()) {
   <!-- Nuova conversazione: la stessa pagina, prima della prima domanda. -->
   <div class="benvenuto">
     <div class="benvenuto__centro">
@@ -44,6 +44,9 @@
   <header class="testata">
     <h1 class="serif testata__titolo">{{ store.attiva()?.titolo }}</h1>
 
+    <!-- Scaricare il filo e condividerlo con i colleghi sono gesti da
+         agenzia: il cliente non ha colleghi qui dentro. -->
+    @if (!perCliente()) {
     <span class="testata__azioni">
       <button
         type="button"
@@ -74,6 +77,7 @@
         <ui-icon name="condividi" [size]="16" />
       </button>
     </span>
+    }
   </header>
 
   <div class="corpo">
@@ -108,7 +112,7 @@
                   Solo per le risposte consolidate: una risposta interrotta o
                   caduta a metà non è un documento da consegnare a un cliente.
                 -->
-                @if (m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
+                @if (!perCliente() && m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
                   <!-- Un nodo solo alla radice dell'@if: è quello che finisce nello slot. -->
                   <span azioni-extra class="azioni-esporta">
                   <button
@@ -165,6 +169,9 @@
       messaggio. Colonna a destra, sempre in vista: l'utente deve sapere su
       quali documenti l'assistente sta ragionando - e poterli togliere.
     -->
+    <!-- Il contesto di una chat cliente è il cono, e lo decide l'agenzia:
+         mostrarglielo inviterebbe a cambiarlo, e non può. -->
+    @if (!perCliente()) {
     <aside
       class="contesto"
       [class.is-compresso]="contestoCompresso()"
@@ -294,6 +301,7 @@
         }
       }
     </aside>
+    }
   </div>
 }
 

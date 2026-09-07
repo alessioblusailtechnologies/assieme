@@ -1,0 +1,33 @@
+@if (inCorso()) {
+  <p class="stato" role="status">Apro la conversazione…</p>
+} @else if (errore(); as messaggio) {
+  <!--
+    La fine della strada, e va detta bene: chi la legge non ha fatto niente
+    di sbagliato, ha solo un link che l'agenzia non tiene più aperto.
+  -->
+  <div class="scaduto">
+    <p class="scaduto__titolo">{{ messaggio }}</p>
+    <p class="scaduto__nota">
+      Se ti serve ancora, chiedi alla tua agenzia di mandartene uno nuovo.
+    </p>
+  </div>
+} @else if (sessione(); as s) {
+  <div class="cliente">
+    <!--
+      La testata è dell'agenzia, non di Velia: chi legge sta parlando con la
+      sua agenzia, e il nome che deve vedere è quello.
+    -->
+    <header class="testata">
+      <span class="testata__agenzia">{{ s.agenzia.nome }}</span>
+      <span class="testata__chat">{{ s.chat.titolo }}</span>
+    </header>
+
+    <!-- La chat di sempre: cambia la cornice, non la conversazione. -->
+    <app-conversazione class="filo" />
+
+    <p class="piede">
+      Le risposte vengono dai documenti della tua polizza. Per una conferma o
+      per una pratica in corso, parlane direttamente con l'agenzia.
+    </p>
+  </div>
+}

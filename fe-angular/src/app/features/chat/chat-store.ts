@@ -20,6 +20,7 @@ import {
   StatoAllegato,
   TemplateOutput,
 } from '@core/models';
+import { TokenStore } from '@core/auth/token-store';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
@@ -144,6 +145,7 @@ export class ChatStore {
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly token = inject(TokenStore);
   private readonly notifiche = inject(NotificheStore);
 
   /* Lo storico sta in `core`, condiviso con la barra laterale che lo mostra
@@ -768,7 +770,15 @@ export class ChatStore {
         this.idAttiva.set(conversazione.id);
         this.messaggiCaricati.set([]);
         this.storico.ricarica();
-        void this.router.navigate(['/chat', conversazione.id]);
+        /*
+         * Nella chat di un cliente non si naviga: `/chat/:id` è una rotta
+         * dell'applicazione dell'agenzia, e portarcelo vuol dire smontargli
+         * la pagina sotto i piedi — con lo stream della risposta che muore
+         * insieme a lei. Lui ha un indirizzo solo, quello del suo link.
+         */
+        if (!this.token.tokenOspite()) {
+          void this.router.navigate(['/chat', conversazione.id]);
+        }
         this.avviaStream(conversazione.id, testo, riferimenti);
       },
       error: () => this.ripristinaBozza(testo, riferimenti),

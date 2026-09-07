@@ -1,0 +1,78 @@
+/* La pagina del cliente: nessuna shell, nessuna navigazione. Tutto lo
+   spazio è della conversazione, perché è l'unica cosa che c'è da fare. */
+:host {
+  display: block;
+  min-height: 100dvh;
+  background: var(--c-page);
+}
+
+.stato,
+.scaduto {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: var(--sp-12) var(--sp-4);
+  text-align: center;
+  color: var(--c-text-3);
+}
+
+.scaduto__titolo {
+  font-family: var(--f-serif);
+  font-size: var(--t-section);
+  color: var(--c-text);
+  margin-bottom: var(--sp-2);
+}
+
+.scaduto__nota {
+  font-size: var(--t-sm);
+}
+
+.cliente {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.testata {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--c-line-soft);
+  background: var(--c-surface);
+}
+
+.testata__agenzia {
+  font-family: var(--f-serif);
+  font-size: var(--t-lead);
+  color: var(--c-text);
+}
+
+.testata__chat {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filo {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Il confine, scritto una volta e sempre visibile: quello che si legge qui
+   non è una consulenza, e chi ha bisogno di una decisione va dall'agenzia. */
+.piede {
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+  font-size: var(--t-xs);
+  color: var(--c-text-4);
+  text-align: center;
+  border-top: 1px solid var(--c-line-soft);
+}
+
+@media (max-width: 600px) {
+  .testata {
+    flex-direction: column;
+    gap: 0;
+  }
+}

@@ -22,3 +22,4 @@ export * from './tabella';
 export * from './agente';
 export * from './memoria';
 export * from './impostazioni';
+export * from './chat-cliente';

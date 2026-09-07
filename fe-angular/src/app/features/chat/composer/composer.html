@@ -38,7 +38,11 @@
       spellcheck="true"
       aria-label="Messaggio"
       aria-multiline="true"
-      data-placeholder="Fai una domanda sui documenti - «@» per referenziarli"
+      [attr.data-placeholder]="
+        perCliente()
+          ? 'Scrivi la tua domanda'
+          : 'Fai una domanda sui documenti - «@» per referenziarli'
+      "
       (input)="aggiorna()"
       (keydown)="suTasto($event)"
       (keyup)="aggiornaCursore()"
@@ -48,6 +52,13 @@
     ></div>
 
     <div class="campo__azioni">
+      <!--
+        Allegare e referenziare sono gesti sull'archivio dell'agenzia: il
+        cliente non ne ha uno, e il suo contesto è il cono che l'agenzia
+        gli ha dato. Un caricamento anonimo nell'Archivio Privato, poi,
+        non sarebbe una funzionalità ma un vettore.
+      -->
+      @if (!perCliente()) {
       <button
         type="button"
         class="campo__allega"
@@ -67,6 +78,7 @@
       >
         <ui-icon name="referenzia" [size]="17" />
       </button>
+      }
 
       <!--
         «Scrivi il prompt»: due parole buttate giù diventano una richiesta

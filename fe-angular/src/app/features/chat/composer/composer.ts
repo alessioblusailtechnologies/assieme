@@ -11,6 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 
+import { TokenStore } from '@core/auth/token-store';
 import { ChatStore, type AllegatoInCorso, type StatoElaborazioneAllegato } from '../chat-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { MenuAzioni, type VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
@@ -63,6 +64,10 @@ import { menzioneAlCursore } from './menzione';
 })
 export class Composer {
   protected readonly store = inject(ChatStore);
+
+  /** Vero nella chat di un cliente: vedi `Conversazione.perCliente`. */
+  private readonly token = inject(TokenStore);
+  protected readonly perCliente = computed(() => Boolean(this.token.tokenOspite()));
 
   /* La finestra di scelta mostra solo ciò che sappiamo leggere: scoprirlo
      dopo il caricamento, con un 415, è il modo peggiore di apprenderlo. */
