@@ -19,6 +19,7 @@
   "/api/identita-visiva": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/impostazioni": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/agenti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
+  "/api/chat-clienti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/ricordi": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/cartelle": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
   "/api/clienti": { "target": "http://localhost:3002", "secure": false, "changeOrigin": true },
