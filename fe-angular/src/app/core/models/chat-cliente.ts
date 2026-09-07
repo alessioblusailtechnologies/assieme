@@ -28,7 +28,13 @@ export interface ChatCliente {
   cartelle: { id: Id; percorso: string }[];
   documenti: { id: Id; titolo: string }[];
   creataIl: IsoDateTime;
-  /** Quanto è costata finora: con un link in mano a qualcun altro, si guarda. */
+  /**
+   * Il link da mandare al cliente, pronto da copiare. Assente sulle chat
+   * create prima del 07/09/2026, di cui il server conservava solo
+   * l'impronta: per quelle si può soltanto rigenerarlo.
+   */
+  url?: string;
+  /** Quanto è costata finora, in USD: si guarda nella scheda, non nell'elenco. */
   costoUsd: number;
 }
 

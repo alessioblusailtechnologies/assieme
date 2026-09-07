@@ -48,12 +48,13 @@ interface RigaChat {
   domande_fatte: number;
   istruzioni: string | null;
   created_at: Date;
+  token: string | null;
 }
 
 const SQL_CHAT = `
   select k.id, k.titolo, k.cliente_id, cl.nome as cliente_nome,
          k.ospite_id, u.nome as ospite_nome, u.cognome as ospite_cognome,
-         k.stato, k.scade_il, k.tetto_domande, k.domande_fatte, k.istruzioni, k.created_at
+         k.stato, k.scade_il, k.tetto_domande, k.domande_fatte, k.istruzioni, k.created_at, k.token
     from velia.chat_clienti k
     join velia.utenti u on u.id = k.ospite_id
     left join velia.clienti cl on cl.id = k.cliente_id`;
@@ -87,6 +88,7 @@ function versoChat(
   cartelle: Array<{ id: string; percorso: string }>,
   documenti: Array<{ id: string; titolo: string }>,
   costoUsd: number,
+  baseLink: string,
 ): ChatCliente {
   return {
     id: riga.id,
@@ -102,6 +104,7 @@ function versoChat(
     cartelle,
     documenti,
     creataIl: riga.created_at.toISOString(),
+    ...(riga.token && { url: `${baseLink}/c/${riga.token}` }),
     costoUsd,
   };
 }
@@ -253,6 +256,7 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
           coni.cartelle.get(r.id) ?? [],
           coni.documenti.get(r.id) ?? [],
           costi.get(r.id) ?? 0,
+          baseLink,
         ),
       );
     });
@@ -299,9 +303,9 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
       const creata = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const chat = await client.query<{ id: string }>(
           `insert into velia.chat_clienti
-             (tenant_id, cliente_id, ospite_id, titolo, istruzioni, token_hash,
+             (tenant_id, cliente_id, ospite_id, titolo, istruzioni, token_hash, token,
               scade_il, tetto_domande, creata_da)
-           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
            returning id`,
           [
             richiesta.identita.tenantId,
@@ -310,6 +314,7 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
             dati.data.titolo,
             dati.data.istruzioni ?? null,
             impronta(token),
+            token,
             dati.data.scadeIl ?? null,
             dati.data.tettoDomande ?? null,
             richiesta.identita.utenteId,
@@ -386,6 +391,7 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
         coni.cartelle.get(id) ?? [],
         coni.documenti.get(id) ?? [],
         costi.get(id) ?? 0,
+        baseLink,
       );
     });
   });
@@ -403,8 +409,8 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
     const token = nuovoTokenOspite();
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<LinkChatCliente> => {
       const esito = await client.query(
-        `update velia.chat_clienti set token_hash = $2 where id = $1`,
-        [id, impronta(token)],
+        `update velia.chat_clienti set token_hash = $2, token = $3 where id = $1`,
+        [id, impronta(token), token],
       );
       if (!esito.rowCount) throw ErroreApi.nonTrovato('Questa chat non esiste.');
       return { chatId: id, url: `${baseLink}/c/${token}` };

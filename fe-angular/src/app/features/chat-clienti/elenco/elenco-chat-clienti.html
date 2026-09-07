@@ -92,7 +92,20 @@
         <span class="riga__domande">
           {{ c.domandeFatte }}@if (c.tettoDomande) {<span>/{{ c.tettoDomande }}</span>}
         </span>
-        <span class="riga__costo mono">{{ costo(c) }}</span>
+        @if (c.url) {
+          <button
+            type="button"
+            class="riga__copia"
+            (click)="copia(c)"
+            [attr.aria-label]="'Copia il link di ' + c.titolo"
+          >
+            <ui-icon [name]="copiato() === c.id ? 'pronto' : 'condividi'" [size]="13" />
+            {{ copiato() === c.id ? 'copiato' : 'copia il link' }}
+          </button>
+        } @else {
+          <!-- Chat anteriori al 07/09: del token restava solo l'impronta. -->
+          <span class="riga__senza-link">link da rigenerare</span>
+        }
       </li>
     }
   </ul>

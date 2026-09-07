@@ -9,14 +9,35 @@
       Entra come <strong>{{ c.ospite.nome }} {{ c.ospite.cognome }}</strong> ·
       {{ c.domandeFatte }} domande fatte
       @if (c.tettoDomande) {<span> su {{ c.tettoDomande }}</span>}
+      @if (c.costoUsd) {<span> · {{ c.costoUsd.toFixed(2) }} USD spesi</span>}
     </p>
   </header>
 
-  @if (store.linkAppenaCreato(); as link) {
+  <!--
+    Il link sta sempre in cima, non solo dopo averlo rigenerato: ridarlo a
+    un cliente che l'ha perso è il gesto più frequente su questa schermata,
+    e costringere a rigenerarlo spegnerebbe quello che ha già in mano.
+  -->
+  @if (c.url; as url) {
     <div class="link">
       <p class="link__titolo">Il link da mandare al cliente</p>
-      <code class="link__url">{{ link.url }}</code>
-      <p class="link__nota">Si vede solo adesso: copialo prima di cambiare pagina.</p>
+      <code class="link__url">{{ url }}</code>
+      <div class="link__azioni">
+        <button type="button" uiBottone dimensione="piccolo" (click)="copia(url)">
+          {{ copiato() ? 'Copiato' : 'Copia' }}
+        </button>
+        <span class="link__nota">
+          Vale finché non lo sospendi o non lo rigeneri.
+        </span>
+      </div>
+    </div>
+  } @else {
+    <div class="link">
+      <p class="link__titolo">Il link non è recuperabile</p>
+      <p class="link__nota">
+        Di questa chat era stata conservata solo l'impronta del token.
+        Rigenerandolo ne ottieni uno nuovo, e quello vecchio smette di valere.
+      </p>
     </div>
   }
 

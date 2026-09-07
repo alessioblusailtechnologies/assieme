@@ -199,6 +199,18 @@ export class DettaglioChatCliente {
     if (chat) await this.store.rigeneraLink(chat.id);
   }
 
+  protected readonly copiato = signal(false);
+
+  protected async copia(url: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(url);
+      this.copiato.set(true);
+      setTimeout(() => this.copiato.set(false), 2000);
+    } catch {
+      /* Appunti negati: il link è comunque a schermo, si seleziona a mano. */
+    }
+  }
+
   protected readonly confermaEliminazione = signal(false);
 
   protected async elimina(): Promise<void> {

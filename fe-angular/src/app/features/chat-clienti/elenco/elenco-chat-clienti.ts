@@ -104,7 +104,25 @@ export class ElencoChatClienti {
     return parti.length ? parti.join(' · ') : 'cono vuoto: non legge nulla';
   }
 
-  protected costo(c: ChatCliente): string {
-    return c.costoUsd ? `${c.costoUsd.toFixed(2)} USD` : '—';
+  /**
+   * Copia il link negli appunti.
+   *
+   * Il riscontro dura due secondi e sta sulla riga: chi copia un link deve
+   * sapere che è successo prima di incollarlo altrove, o lo copia due volte.
+   */
+  protected readonly copiato = signal<string | undefined>(undefined);
+
+  protected async copia(c: ChatCliente): Promise<void> {
+    if (!c.url) return;
+    try {
+      await navigator.clipboard.writeText(c.url);
+      this.copiato.set(c.id);
+      setTimeout(() => {
+        if (this.copiato() === c.id) this.copiato.set(undefined);
+      }, 2000);
+    } catch {
+      /* Appunti negati (contesto non sicuro, permesso rifiutato): il link
+         resta visibile nella scheda, da selezionare a mano. */
+    }
   }
 }

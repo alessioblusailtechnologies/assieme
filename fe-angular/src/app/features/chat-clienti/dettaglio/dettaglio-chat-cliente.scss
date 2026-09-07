@@ -53,6 +53,13 @@
   word-break: break-all;
 }
 
+.link__azioni {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-top: var(--sp-2);
+}
+
 .link__nota,
 .pericolo__nota {
   margin-top: var(--sp-2);

@@ -155,6 +155,27 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
     expect(chat.istruzioni).toContain('cliente dal 1998');
   });
 
+  it('il link si rilegge dall’elenco, senza rigenerarlo', async () => {
+    /*
+     * È il gesto più frequente su questa schermata: ridare a un cliente il
+     * link che ha perso. Prima si poteva solo rigenerare, e rigenerare
+     * spegne quello che il cliente ha già in mano — cioè per aiutarne uno
+     * si rompeva a un altro.
+     */
+    const elenco = await comeAgenzia('GET', '/api/chat-clienti');
+    const chat = elenco.json<ChatCliente[]>()[0]!;
+    expect(chat.url).toBeDefined();
+    expect(chat.url!.startsWith(`${BASE}/c/`)).toBe(true);
+
+    /* E il link riletto funziona davvero: non è una stringa costruita a caso. */
+    const ingresso = await app.inject({
+      method: 'POST',
+      url: '/api/sessione/ospite',
+      payload: { token: chat.url!.split('/c/')[1] },
+    });
+    expect(ingresso.statusCode).toBe(200);
+  });
+
   it('rifiuta una cartella che non è dell’agenzia', async () => {
     const elenco = await comeAgenzia('GET', '/api/chat-clienti');
     const chat = elenco.json<ChatCliente[]>()[0]!;

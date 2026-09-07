@@ -31,6 +31,14 @@ export interface ChatCliente {
   documenti: Array<{ id: string; titolo: string }>;
   creataIl: string;
   /**
+   * Il link da mandare al cliente, pronto da copiare.
+   *
+   * Assente sulle chat create prima del 07/09/2026, quando del token si
+   * conservava solo l'impronta: di quelle si può soltanto rigenerarlo, e
+   * l'interfaccia lo dice invece di far finta di averlo.
+   */
+  url?: string;
+  /**
    * Quanto è costata finora, in euro: con un link in mano a qualcun altro
    * è la prima cosa che l'agenzia vuole sapere.
    */
@@ -38,11 +46,13 @@ export interface ChatCliente {
 }
 
 /**
- * Il link si vede **una volta sola**, appena creato o rigenerato.
+ * Il link, appena creato o rigenerato.
  *
- * Del token si conserva solo lo sha256: non c'è modo di rileggerlo, e non è
- * una scomodità da aggirare — è la ragione per cui chi ha accesso al
- * database non entra nelle chat dei clienti.
+ * Si rilegge anche dall'elenco (`ChatCliente.url`). Conservarne la sola
+ * impronta proteggeva poco — il token dà accesso a un pugno di documenti
+ * che chi legge questa tabella può già leggere tutti — e costava il gesto
+ * più naturale: ridare al cliente il link che ha perso, senza rompere
+ * quello che gli era già stato mandato.
  */
 export interface LinkChatCliente {
   chatId: string;
