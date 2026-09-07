@@ -126,20 +126,61 @@ export interface OpzioniWorkspace {
   cartella?: string;
   /** Gli id del contesto della conversazione (allegati compresi). */
   contestoIds: string[];
+  /**
+   * La chat cliente da cui nasce la conversazione, se è una chat cliente.
+   *
+   * Quando c'è, la workspace **non** contiene l'archivio dell'agenzia ma il
+   * solo cono di quella chat. È il presidio che conta: il worker parla al
+   * database con la connessione di sistema e non passa dalla RLS, quindi
+   * qui non c'è una seconda rete sotto. Ciò che finisce in questa directory
+   * è esattamente ciò che il cliente può leggere, perché il motore ha
+   * Read/Grep/Glob confinati e non esiste altro che questa directory.
+   */
+  chatClienteId?: string;
 }
 
 /** Quanto a lungo ci si fida di un INDICE.md in cache (non ha una riga di catalogo). */
 const TTL_INDICI_MS = 60 * 60 * 1000;
 
-export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<Workspace> {
-  const { db, archivio, tenantId, radice, jobId, contestoIds } = opzioni;
-  const directory = join(radice, 'workspace', opzioni.cartella ?? jobId);
-  const cache = new Cache(join(radice, 'cache'), archivio);
-  await rm(directory, { recursive: true, force: true });
-  await mkdir(directory, { recursive: true });
-
-  const righe = await db.query<RigaDocumento>(
-    `select d.id, d.archivio, d.titolo, d.descrizione, d.tipologia, d.numero_pagine, d.pagina_inizio,
+/**
+ * Che cosa entra nella directory che il motore può leggere: **il confine**.
+ *
+ * Per l'agenzia è tutto l'Archivio Pubblico, tutto il proprio privato e gli
+ * allegati della conversazione. Per una **chat cliente** è il solo cono: i
+ * documenti pubblici scelti a mano e i privati che stanno nel sottoalbero
+ * delle cartelle scelte.
+ *
+ * La definizione del cono è la stessa delle funzioni SQL usate dalle policy
+ * (`velia.documenti_nel_cono`), riscritta qui di proposito: il worker parla
+ * al database con la connessione di sistema e **non passa dalla RLS**,
+ * quindi sotto questa query non c'è una seconda rete. Ciò che non torna di
+ * qui non viene scritto su disco, e ciò che non è su disco il motore non lo
+ * trova: ha Read, Grep e Glob confinati alla directory.
+ *
+ * Sta da sola, esportata, per una ragione sola: un confine si prova.
+ */
+export async function documentiPerWorkspace(
+  db: pg.Pool,
+  cono: { tenantId: string; contestoIds: string[]; chatClienteId?: string | null },
+): Promise<pg.QueryResult<RigaDocumento>> {
+  return db.query<RigaDocumento>(
+    `with recursive cono_cartelle as (
+       select cc.cartella_id as id
+       from velia.chat_clienti_cartelle cc
+       join velia.chat_clienti k on k.id = cc.chat_id
+       where $3::uuid is not null and k.id = $3::uuid and k.tenant_id = $1
+         and k.stato = 'attiva' and (k.scade_il is null or k.scade_il > now())
+       union
+       select f.id from velia.cartelle f join cono_cartelle a on f.parent_id = a.id
+     ),
+     cono_pubblici as (
+       select cd.documento_id as id
+       from velia.chat_clienti_documenti cd
+       join velia.chat_clienti k on k.id = cd.chat_id
+       where $3::uuid is not null and k.id = $3::uuid and k.tenant_id = $1
+         and k.stato = 'attiva' and (k.scade_il is null or k.scade_il > now())
+     )
+     select d.id, d.archivio, d.titolo, d.descrizione, d.tipologia, d.numero_pagine, d.pagina_inizio,
             d.path_pdf, d.path_md, d.formato, d.path_originale, d.stato,
             d.updated_at, d.compagnia_id, c.nome as compagnia_nome,
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
@@ -150,13 +191,45 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
      left join velia.rami r on r.id = d.ramo_id
      where d.path_md is not null
        and (
-         d.archivio = 'pubblico'
-         or (d.archivio = 'privato' and d.tenant_id = $1 and d.stato = 'pronto')
-         or (d.archivio = 'conversazione' and d.tenant_id = $1 and d.stato = 'pronto' and d.id = any($2))
+         case when $3::uuid is null then
+           d.archivio = 'pubblico'
+           or (d.archivio = 'privato' and d.tenant_id = $1 and d.stato = 'pronto')
+           or (d.archivio = 'conversazione' and d.tenant_id = $1 and d.stato = 'pronto' and d.id = any($2))
+         else
+           (d.archivio = 'pubblico' and d.id in (select id from cono_pubblici))
+           or (d.archivio = 'privato' and d.tenant_id = $1 and d.stato = 'pronto'
+               and d.cartella_id in (select id from cono_cartelle))
+         end
        )
      order by d.archivio, d.compagnia_id, d.prodotto, d.edizione_valida_dal, d.tipologia, d.caricato_il`,
-    [tenantId, contestoIds],
+    [cono.tenantId, cono.contestoIds, cono.chatClienteId ?? null],
   );
+}
+
+export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<Workspace> {
+  const { db, archivio, tenantId, radice, jobId, contestoIds } = opzioni;
+  const directory = join(radice, 'workspace', opzioni.cartella ?? jobId);
+  const cache = new Cache(join(radice, 'cache'), archivio);
+  await rm(directory, { recursive: true, force: true });
+  await mkdir(directory, { recursive: true });
+
+  /*
+   * Che cosa entra nella directory che il motore può leggere.
+   *
+   * Per l'agenzia: tutto il pubblico, tutto il proprio privato, gli
+   * allegati di questa conversazione.
+   *
+   * Per una chat cliente: **solo il cono**. I documenti pubblici scelti a
+   * mano, e i privati che stanno nel sottoalbero delle cartelle scelte —
+   * la stessa definizione delle funzioni SQL usate dalle policy, scritta
+   * qui una seconda volta perché qui non c'è RLS a fare da rete. Gli
+   * allegati restano fuori: in una chat cliente non si carica niente.
+   */
+  const righe = await documentiPerWorkspace(db, {
+    tenantId,
+    contestoIds,
+    chatClienteId: opzioni.chatClienteId ?? null,
+  });
 
   /* L'albero dell'agenzia e la convenzione che lo spiega (Fase 10): è quello
      che trasforma un elenco di quattromila righe in un archivio navigabile.

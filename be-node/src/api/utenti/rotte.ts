@@ -39,8 +39,13 @@ const SQL_UTENTE = `select id, nome, cognome, email, ruolo, tenant_id, stato, ul
 export function registraRotteUtenti(app: FastifyInstance): void {
   app.get('/api/utenti', async (richiesta) => {
     richiediAmministratore(richiesta);
+    /* Gli ospiti sono clienti dell'agenzia entrati dal link di una chat, non
+       personale: questa pagina serve a governare chi lavora, e mescolarli
+       ai colleghi la renderebbe illeggibile su cento clienti. Si gestiscono
+       dalla loro chat, che è dove ha senso sospenderli. */
     const righe = await poolDb().query<RigaUtente>(
-      `${SQL_UTENTE} where tenant_id = $1 order by cognome collate "it-x-icu", nome`,
+      `${SQL_UTENTE} where tenant_id = $1 and ruolo <> 'ospite'
+       order by cognome collate "it-x-icu", nome`,
       [richiesta.identita.tenantId],
     );
     return righe.rows.map(versoUtente);

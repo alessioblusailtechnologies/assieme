@@ -87,7 +87,9 @@ export function registraAuth(app: FastifyInstance, verifica?: VerificaToken): vo
     const { sub } = claims;
     const tenantId = claims.app_metadata?.tenant_id;
     const ruolo = claims.app_metadata?.ruolo;
-    if (!sub || !tenantId || (ruolo !== 'operatore' && ruolo !== 'amministratore')) {
+    /* `ospite` entra dal link di una chat cliente (07/09/2026): è un'identità
+       a tutti gli effetti, e ciò che può vedere lo decidono le policy. */
+    if (!sub || !tenantId || (ruolo !== 'operatore' && ruolo !== 'amministratore' && ruolo !== 'ospite')) {
       richiesta.log.warn({ sub }, 'token valido ma identità incompleta (tenant o ruolo assenti)');
       throw ErroreApi.permessoNegato();
     }

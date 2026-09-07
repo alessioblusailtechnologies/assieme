@@ -7,7 +7,13 @@ import type { Identita } from '../db/identita.js';
  * `GET /api/sessione` deve restituire. Ogni divergenza è una modifica di
  * contratto.
  */
-export type Ruolo = 'operatore' | 'amministratore';
+/**
+ * `ospite` (07/09/2026) è il cliente dell'agenzia che entra dal link di una
+ * chat cliente. Non compare mai nell'elenco utenti delle Impostazioni: non
+ * è personale dell'agenzia, e mescolarlo ai colleghi confonderebbe la
+ * pagina che serve a governare chi lavora.
+ */
+export type Ruolo = 'operatore' | 'amministratore' | 'ospite';
 
 export type Permesso =
   | 'archivio-privato.carica'
@@ -88,6 +94,13 @@ const PERMESSI_AMMINISTRATORE: Permesso[] = [
 ];
 
 export function permessiPerRuolo(ruolo: Identita['ruolo']): Permesso[] {
+  /*
+   * L'ospite si nomina per primo, e non per ordine alfabetico: scritta come
+   * «amministratore oppure operatore», questa funzione avrebbe dato a un
+   * cliente dell'agenzia i permessi di un operatore. Ogni ruolo nuovo passa
+   * di qui, e il default è nessun permesso.
+   */
+  if (ruolo === 'ospite') return [];
   return ruolo === 'amministratore' ? PERMESSI_AMMINISTRATORE : PERMESSI_OPERATORE;
 }
 

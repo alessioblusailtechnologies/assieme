@@ -4,7 +4,13 @@ import type pg from 'pg';
 export interface Identita {
   utenteId: string;
   tenantId: string;
-  ruolo: 'operatore' | 'amministratore';
+  /**
+   * `ospite` è il cliente dell'agenzia che entra dal link di una chat
+   * cliente (07/09/2026). Ha un `tenantId` come gli altri — e proprio per
+   * questo le policy restrittive della migrazione `chat_clienti` gli negano
+   * tutto per default, riaprendo solo il cono della sua chat.
+   */
+  ruolo: 'operatore' | 'amministratore' | 'ospite';
 }
 
 /**
