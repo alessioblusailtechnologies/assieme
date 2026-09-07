@@ -117,10 +117,12 @@ Due cose da sapere, o la tappa si inceppa:
 
 ### 2.5 La checklist dei dieci minuti prima
 
-1. **Spegnere il worker locale.** Il worker su Render dev pesca dalla stessa
-   coda di quello sulla tua macchina: se sono accesi entrambi si contendono i
-   job e la risposta della demo può finire sul processo sbagliato. Questo è
-   il modo più stupido di rovinare una demo, ed è anche il più probabile.
+1. **Spegnere lo stack locale.** Non per la coda — `be-node/.env` ha
+   `CODA_LAVORI=lavori_locale`, quindi il worker della tua macchina ha una
+   coda sua e non ruba i job a quello di dev. Si spegne per una ragione più
+   banale e più probabile: con `localhost:4200` aperto in una scheda si
+   finisce per fare la demo lì senza accorgersene, e in locale gira il
+   codice che hai sul disco, non quello che hai pushato.
 2. `curl https://api-dev.sonovelia.it/api/salute` deve rispondere 200.
 3. Aprire `app-dev.sonovelia.it`, entrare come **Marta Ferrero**
    (amministratore): serve per far vedere gli Agenti e le Impostazioni.
