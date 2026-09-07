@@ -18,7 +18,15 @@ import { apprendi } from '../memoria/gestore.js';
 import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
 import { DiarioPassi } from './diario-passi.js';
-import { caricaDna, promptRipresa, promptSistema, promptUtente, type MessaggioStoria, type TemplateNelPrompt } from './regole.js';
+import {
+  caricaDna,
+  promptRipresa,
+  promptSistema,
+  promptSistemaCliente,
+  promptUtente,
+  type MessaggioStoria,
+  type TemplateNelPrompt,
+} from './regole.js';
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreTitolo } from './titolista.js';
@@ -90,6 +98,10 @@ interface RigaConversazione {
   memoria_attiva: boolean;
   /** La sessione SDK dell'ultima risposta, da riprendere; null = mai risposto (o ripresa spenta). */
   sessione_sdk: string | null;
+  /** La chat cliente da cui nasce la conversazione, se è una chat cliente (07/09/2026). */
+  chat_cliente_id: string | null;
+  /** Le istruzioni che l'agenzia ha scritto per quella chat. */
+  chat_istruzioni: string | null;
 }
 
 const MESSAGGIO_BUDGET =
@@ -130,15 +142,18 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     };
 
     const conv = await db.query<RigaConversazione>(
-      `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, t.modello_motore, t.memoria_attiva
+      `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, t.modello_motore, t.memoria_attiva,
+              c.chat_cliente_id, k.istruzioni as chat_istruzioni
        from velia.conversazioni c
        join velia.tenant t on t.id = c.tenant_id
+       left join velia.chat_clienti k on k.id = c.chat_cliente_id
        where c.id = $1`,
       [payload.conversazioneId],
     );
     const conversazione = conv.rows[0];
     if (!conversazione) throw new ErroreNonRitentabile(`conversazione ${payload.conversazioneId} inesistente`);
     const { tenant_id: tenantId } = conversazione;
+    const origineConsumi = conversazione.chat_cliente_id ? ('chat-cliente' as const) : ('app' as const);
 
     const annullato = async (): Promise<boolean> => {
       const r = await db.query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [job.id]);
@@ -167,6 +182,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         /* La stessa directory da un messaggio all'altro: la ripresa di sessione la richiede. */
         cartella: payload.conversazioneId,
         contestoIds: conversazione.documenti_in_contesto,
+        /* Con una chat cliente qui dentro finisce il solo cono, e non
+           l'archivio dell'agenzia: è il presidio che regge da solo, perché
+           su questo percorso non c'è la RLS. */
+        ...(conversazione.chat_cliente_id && { chatClienteId: conversazione.chat_cliente_id }),
       });
 
       /* Si riprende solo se la trascrizione è ancora su questo disco (altro
@@ -191,16 +210,24 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         })
         .filter((x): x is NonNullable<typeof x> => Boolean(x));
 
-      const dna = await caricaDna(
-        db,
-        tenantId,
-        payload.utenteId,
-        {
-          ramiIds: [...new Set(contesto.map((c) => c.doc.ramoId).filter((x): x is string => Boolean(x)))],
-          compagnieIds: [...new Set(contesto.map((c) => c.doc.compagniaId).filter((x): x is string => Boolean(x)))],
-        },
-        workspace.perPath,
-      );
+      /* In una chat cliente il DNA d'Agenzia non si carica nemmeno: non
+         entra nel prompt (piano §6), e leggere istruzioni e ricordi
+         dell'agenzia per poi buttarli via sarebbe solo un modo per
+         ritrovarseli addosso alla prossima modifica distratta. */
+      const dna = conversazione.chat_cliente_id
+        ? { istruzioni: [], riferimenti: [], ricordi: [] }
+        : await caricaDna(
+            db,
+            tenantId,
+            payload.utenteId,
+            {
+              ramiIds: [...new Set(contesto.map((c) => c.doc.ramoId).filter((x): x is string => Boolean(x)))],
+              compagnieIds: [
+                ...new Set(contesto.map((c) => c.doc.compagniaId).filter((x): x is string => Boolean(x))),
+              ],
+            },
+            workspace.perPath,
+          );
 
       /* I template dell'agenzia nel prompt e il tool `genera_documento`:
          l'utente ottiene il file senza uscire dalla chat. */
@@ -240,7 +267,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 modello: conversazione.modello_motore ?? undefined,
               },
             );
-            await registraConsumi(db, tenantId, job.id, e.esito);
+            await registraConsumi(db, tenantId, job.id, e.esito, origineConsumi);
             return e;
           }
         : undefined;
@@ -369,12 +396,30 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
         domanda: payload.testo,
       };
+      /*
+       * In una chat cliente cambiano tre cose insieme, e vanno insieme:
+       *
+       * - il prompt, perché `REGOLE_MOTORE` si apre dichiarando che si
+       *   risponde «per un professionista del settore», e da lì discende
+       *   tutto il resto — il gergo dato per noto, il tu, la sintesi;
+       * - il DNA d'Agenzia, che resta fuori: istruzioni e ricordi sono
+       *   scritti per il lavoro interno e possono contenere criteri che al
+       *   cliente non vanno detti;
+       * - gli strumenti, che si riducono ai tre di lettura: un cliente non
+       *   genera documenti a nome dell'agenzia, non riordina il suo
+       *   archivio e non le manda email.
+       */
+      const perCliente = Boolean(conversazione.chat_cliente_id);
       const richiestaBase = {
         directory: workspace.directory,
         titoloPer: (path: string) => workspace!.perPath.get(path)?.titolo,
         ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
-        promptSistema: promptSistema(dna, templateAgenzia.rows, true),
-        strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi },
+        promptSistema: perCliente
+          ? promptSistemaCliente(conversazione.chat_istruzioni)
+          : promptSistema(dna, templateAgenzia.rows, true),
+        ...(perCliente
+          ? {}
+          : { strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi } }),
       };
       const osservatore = {
         passo: async (p: PassoSessione) => {
@@ -405,7 +450,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         /* Una ripresa che muore prima del primo turno (trascrizione corrotta,
            SDK che non la ritrova) non deve costare la risposta: job pieno. */
         if (esito.terminato === 'errore' && esito.turni === 0 && !esito.testo) {
-          await registraConsumi(db, tenantId, job.id, esito);
+          await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
           esito = await dip.motore.interroga(richiestaPiena(), osservatore);
         }
       } else {
@@ -422,12 +467,12 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         /* Niente persistenza, niente `fine`: il client se n'è già andato e
            il job è `annullato` (lo ha segnato l'API). Restano audit e consumi:
            i token si sono spesi comunque. */
-        await registraConsumi(db, tenantId, job.id, esito);
+        await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
         return;
       }
 
       if (esito.terminato === 'errore') {
-        await registraConsumi(db, tenantId, job.id, esito);
+        await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
         await emetti({ tipo: 'errore', messaggio: 'Il motore si è interrotto durante la risposta.' });
         throw new ErroreNonRitentabile(esito.errore ?? 'sessione terminata con errore');
       }
@@ -449,7 +494,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         const { visibile, blocco, problemi } = separaBlocco(esito.testo);
         testoFinale = visibile;
         if (!blocco) {
-          await registraConsumi(db, tenantId, job.id, esito);
+          await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
           await emetti({
             tipo: 'errore',
             messaggio: 'La risposta non ha superato la verifica delle fonti. Riprova a inviare la domanda.',
@@ -470,7 +515,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
             ...avvisiRimandi(testoFinale, citazioni),
           ];
         } catch (errore) {
-          await registraConsumi(db, tenantId, job.id, esito);
+          await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
           await emetti({
             tipo: 'errore',
             messaggio: 'La risposta citava passaggi non verificabili ed è stata scartata. Riprova a inviare la domanda.',
@@ -540,11 +585,21 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           esito.costoUsd,
         ],
       );
-      await registraConsumi(db, tenantId, job.id, esito);
+      await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
       /* RF-G-01: la memoria impara durante la conversazione — a risposta
          scritta, prima del `fine`, così l'utente vede il passo e l'esito.
-         Un apprendimento mancato non è un errore della risposta. */
-      if (conversazione.memoria_attiva && dip.estrattore && !(await annullato())) {
+         Un apprendimento mancato non è un errore della risposta.
+
+         Da una chat cliente **non si impara**: ciò che un cliente racconta
+         non deve entrare nel DNA d'Agenzia passando da una porta che
+         nessuno sorveglia, e ritrovarselo poi in una risposta a un
+         collega. Se c'è qualcosa da ricordare, lo scrive l'agenzia. */
+      if (
+        !conversazione.chat_cliente_id &&
+        conversazione.memoria_attiva &&
+        dip.estrattore &&
+        !(await annullato())
+      ) {
         await emetti({ tipo: 'attivita', etichetta: 'Cerco qualcosa da ricordare' });
         try {
           const esito = await apprendi(db, dip.estrattore, payload.conversazioneId, job.id);
@@ -644,12 +699,20 @@ async function aspettaAllegati(
   }
 }
 
-async function registraConsumi(db: pg.Pool, tenantId: string, jobId: string, esito: EsitoSessione): Promise<void> {
+async function registraConsumi(
+  db: pg.Pool,
+  tenantId: string,
+  jobId: string,
+  esito: EsitoSessione,
+  /* «Quanto mi costano i clienti» è una domanda diversa da «quanto mi costa
+     l'agenzia», e con un link in mano a qualcun altro è la più urgente. */
+  origine: 'app' | 'chat-cliente' = 'app',
+): Promise<void> {
   await db.query(
     `insert into velia.consumi
        (tenant_id, job_id, origine, modello, token_input, token_output,
         token_cache_lettura, token_cache_scrittura, costo_usd)
-     values ($1, $2, 'app', $3, $4, $5, $6, $7, $8)`,
+     values ($1, $2, $9, $3, $4, $5, $6, $7, $8)`,
     [
       tenantId,
       jobId,
@@ -659,6 +722,7 @@ async function registraConsumi(db: pg.Pool, tenantId: string, jobId: string, esi
       esito.token.cacheLettura,
       esito.token.cacheScrittura,
       esito.costoUsd,
+      origine,
     ],
   );
 }

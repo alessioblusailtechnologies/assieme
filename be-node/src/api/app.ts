@@ -2,6 +2,8 @@ import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import Fastify, { type FastifyInstance } from 'fastify';
 
+import { poolDb } from '../db/pool.js';
+
 import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteCartelle } from './cartelle/rotte.js';
@@ -13,6 +15,7 @@ import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteRicordi } from './ricordi/rotte.js';
 import { registraRotteSegnalazioni } from './segnalazioni/rotte.js';
+import { risolviOspite } from './sessione/ospite.js';
 import { registraRotteSessione, type OpzioniSessione } from './sessione/rotte.js';
 import { registraRotteTabelle, type OpzioniTabelle } from './tabelle/rotte.js';
 import { registraRotteTemplate, type OpzioniTemplate } from './template/rotte.js';
@@ -74,7 +77,9 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   }
 
   registraGestoreErrori(app);
-  registraAuth(app, opzioni.verificaToken);
+  /* Il secondo risolutore è quello del cliente: dal token del link
+     all'identità, ricontrollando ogni volta che la chat sia ancora viva. */
+  registraAuth(app, opzioni.verificaToken, (token) => risolviOspite(poolDb(), token));
 
   /** Sonda di vita per deploy e sviluppo: non è parte del contratto FE. */
   app.get('/api/salute', () => ({

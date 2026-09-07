@@ -104,6 +104,26 @@ export function permessiPerRuolo(ruolo: Identita['ruolo']): Permesso[] {
   return ruolo === 'amministratore' ? PERMESSI_AMMINISTRATORE : PERMESSI_OPERATORE;
 }
 
+/**
+ * Che cosa vede chi apre il link di una chat cliente: `POST /api/sessione/ospite`.
+ *
+ * Non è una `Sessione`: non ci sono permessi da elencare (un ospite non ne
+ * ha nessuno) e non c'è nessun token da conservare — il token del link è
+ * già la credenziale, e resta quello. Qui c'è solo ciò che serve a scrivere
+ * la testata della pagina: di chi è l'agenzia, e di che chat si tratta.
+ *
+ * Le istruzioni della chat **non** escono di qui: sono scritte dall'agenzia
+ * per il motore, non per il cliente.
+ */
+export interface SessioneOspite {
+  chat: { id: string; titolo: string };
+  ospite: { id: string; nome: string; cognome: string };
+  agenzia: { id: string; nome: string; logoUrl?: string };
+}
+
+/** Corpo di `POST /api/sessione/ospite`: il segreto che sta nel link. */
+export const schemaAccessoOspite = z.object({ token: z.string().min(20).max(200) });
+
 /** Corpo di `POST /api/sessione/accesso`. */
 export const schemaAccesso = z.object({
   email: z.string().email(),

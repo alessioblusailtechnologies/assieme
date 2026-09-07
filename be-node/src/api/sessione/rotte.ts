@@ -5,13 +5,16 @@ import { ErroreApi } from '../../contratto/errori.js';
 import {
   permessiPerRuolo,
   schemaAccesso,
+  schemaAccessoOspite,
   schemaAggiorna,
   type EsitoAccesso,
   type LottoSaluti,
   type Sessione,
+  type SessioneOspite,
 } from '../../contratto/sessione.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { risolviOspite } from './ospite.js';
 import { ServizioSaluti } from './saluti.js';
 
 export interface OpzioniSessione {
@@ -149,6 +152,53 @@ export function registraRotteSessione(app: FastifyInstance, opzioni: OpzioniSess
       tokenAggiornamento: token.refresh_token,
       scadeInSecondi: token.expires_in,
       sessione: versoSessione(profilo, lotto),
+    };
+    return esito;
+  });
+
+  /**
+   * L'ingresso del cliente: il token del link, e nient'altro.
+   *
+   * Non restituisce credenziali perché non ce ne sono da restituire — il
+   * token che il cliente ha già **è** la credenziale, e la manda a ogni
+   * richiesta con lo schema `Ospite`. Questa rotta serve a due cose: dire
+   * se il link vale ancora, e dare alla pagina il nome dell'agenzia da
+   * scrivere in testa.
+   *
+   * Non aggiorna `ultimo_accesso` e non attiva niente: un ospite non è
+   * personale dell'agenzia, e la sua utenza non ha uno stato da far
+   * evolvere. Quello che c'è da governare è la chat, non la persona.
+   */
+  app.post('/api/sessione/ospite', async (richiesta) => {
+    const dati = schemaAccessoOspite.safeParse(richiesta.body);
+    if (!dati.success) throw ErroreApi.nonAutenticato('Questo collegamento non è più valido.');
+
+    const db = poolDb();
+    const { chatId, identita } = await risolviOspite(db, dati.data.token);
+
+    /* Il logo resta fuori come in `SQL_PROFILO`, dove è `null`: non è ancora
+       servito da nessuna parte, e una sola implementazione arriverà quando
+       servirà davvero — meglio di due che divergono. */
+    const righe = await db.query<{
+      titolo: string;
+      nome: string;
+      cognome: string;
+      tenant_nome: string;
+    }>(
+      `select k.titolo, u.nome, u.cognome, t.nome as tenant_nome
+         from velia.chat_clienti k
+         join velia.utenti u on u.id = k.ospite_id
+         join velia.tenant t on t.id = k.tenant_id
+        where k.id = $1`,
+      [chatId],
+    );
+    const riga = righe.rows[0];
+    if (!riga) throw ErroreApi.nonAutenticato('Questo collegamento non è più valido.');
+
+    const esito: SessioneOspite = {
+      chat: { id: chatId, titolo: riga.titolo },
+      ospite: { id: identita.utenteId, nome: riga.nome, cognome: riga.cognome },
+      agenzia: { id: identita.tenantId, nome: riga.tenant_nome },
     };
     return esito;
   });

@@ -3,6 +3,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configurazione, type Configurazione } from '../src/config.js';
 import { conIdentita } from '../src/db/identita.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
+import { impronta, nuovoTokenOspite, risolviOspite } from '../src/api/sessione/ospite.js';
+import { MARCATORE_CITAZIONI, promptSistemaCliente } from '../src/worker/motore/regole.js';
 import { documentiPerWorkspace } from '../src/worker/motore/workspace.js';
 
 /**
@@ -282,6 +284,76 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     expect(ids).toContain(DOC_SENZA_CARTELLA);
     expect(ids).toContain(pubblicoFuori);
     expect(ids.length).toBeGreaterThan(100);
+  });
+
+  // --- L'ingresso dal link -------------------------------------------------
+
+  it('il token del link apre la chat, e non vale più quando la si sospende', async () => {
+    const token = nuovoTokenOspite();
+    await pool().query(`update velia.chat_clienti set token_hash = $2 where id = $1`, [
+      chatId,
+      impronta(token),
+    ]);
+
+    const aperta = await risolviOspite(pool(), token);
+    expect(aperta.chatId).toBe(chatId);
+    expect(aperta.identita).toEqual({ utenteId: ospiteId, tenantId: TENANT, ruolo: 'ospite' });
+
+    /* Revoca: la richiesta successiva non trova più un'identità da
+       costruire. Effetto immediato, non a scadenza — è tutto il senso di
+       non aver emesso nessun token. */
+    await pool().query(`update velia.chat_clienti set stato = 'sospesa' where id = $1`, [chatId]);
+    await expect(risolviOspite(pool(), token)).rejects.toThrow();
+    await pool().query(`update velia.chat_clienti set stato = 'attiva' where id = $1`, [chatId]);
+  });
+
+  it('un token inventato non dice se la chat esista o no', async () => {
+    /* Stesso errore per ogni ragione: chi ha in mano un link revocato non
+       deve poter distinguere «non è mai esistito» da «è scaduto ieri». */
+    await expect(risolviOspite(pool(), nuovoTokenOspite())).rejects.toThrow(
+      /non è più valido/,
+    );
+  });
+
+  it('finite le domande il link si chiude', async () => {
+    const token = nuovoTokenOspite();
+    await pool().query(
+      `update velia.chat_clienti set token_hash = $2, tetto_domande = 3, domande_fatte = 3 where id = $1`,
+      [chatId, impronta(token)],
+    );
+    try {
+      await expect(risolviOspite(pool(), token)).rejects.toThrow();
+    } finally {
+      await pool().query(
+        `update velia.chat_clienti set tetto_domande = null, domande_fatte = 0 where id = $1`,
+        [chatId],
+      );
+    }
+  });
+
+  // --- Il prompt del cliente ------------------------------------------------
+
+  it('il prompt del cliente non è quello dell’agenzia', () => {
+    const cliente = promptSistemaCliente(null);
+
+    /* Il registro: `REGOLE_MOTORE` si apre dichiarando che si risponde «per
+       un professionista del settore», ed è la riga da cui discende tutto il
+       resto. Qui dall'altra parte c'è chi la polizza la subisce. */
+    expect(cliente).not.toContain('professionista del settore');
+    expect(cliente).toContain('dando del lei');
+    expect(cliente).toContain('Non sei un consulente');
+
+    /* Il blocco che il validatore legge deve esserci, o ogni risposta
+       verrebbe scartata senza che nessuno capisca perché. */
+    expect(cliente).toContain(MARCATORE_CITAZIONI);
+  });
+
+  it('le istruzioni della chat entrano nel prompt, quelle dell’agenzia no', () => {
+    const cliente = promptSistemaCliente('Al signor Rossi diamo del tu: è cliente dal 1998.');
+    expect(cliente).toContain('cliente dal 1998');
+    /* Il DNA d'Agenzia non compare: istruzioni e ricordi sono scritti per il
+       lavoro interno e possono contenere criteri commerciali. */
+    expect(cliente).not.toContain('DNA d’Agenzia');
   });
 
   // --- La guardia per il futuro -------------------------------------------
