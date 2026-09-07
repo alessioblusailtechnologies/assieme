@@ -3,7 +3,7 @@
 | Campo | Valore |
 |---|---|
 | Destinatario | Un agente assicurativo (non un tecnico, non un investitore) |
-| Durata | 30 minuti; versione corta da 15 in fondo |
+| Durata | 35 minuti; versione corta da 15 in fondo |
 | Ambiente | `app-dev.sonovelia.it` contro `api-dev.sonovelia.it` |
 | Lingua | Italiano |
 | Data | 07/09/2026 |
@@ -50,6 +50,7 @@ si vede tutto. Cosa c'è, e cosa va tolto o rinominato:
 | Agenti | Uno solo, `Preventivo automatico`, descrizione «test» | Rinominarlo o rifarlo, e attivarne almeno un altro dalla libreria |
 | Template | Uno solo, chiamato `pi24 -chiastra & patteera - Comunicazione.pdf chiastra e pattera risposta cciaa` | Caricare un template pulito con un nome che si possa leggere ad alta voce |
 | Memoria | **Zero ricordi** | Vedi §2.2: senza questo la tappa 4 non esiste |
+| Chat per i clienti | La chat di prova `Andrea Scrimieri`, con dentro le domande delle prove | Rifarla pulita col nome di un cliente che ha una cartella vera (§2.4) |
 
 Il resto del materiale invece è buono e non va toccato: **151 documenti
 pubblici** (27 prodotti, 6 compagnie, rami auto/cyber/imprese) e **41
@@ -88,7 +89,33 @@ qualcosa da dire o da guardare. Quindi:
   la tappa 5.
 - **Un documento già generato dal template**, per la tappa 2.
 
-### 2.4 La checklist dei dieci minuti prima
+### 2.4 Preparare la chat del cliente
+
+La Tappa 7 vuole **una chat cliente già pronta**, con un cono vero. Da
+`Chat per i clienti → Nuova chat`:
+
+1. titolo e nome di un cliente plausibile (uno di quelli che hanno già una
+   cartella: sull'ambiente di prova c'è WISELYST S.R.L.);
+2. nel cono, **la sua cartella** e i **tre documenti** di un prodotto auto
+   dell'Archivio Pubblico — bastano quelli, e il confronto con «l'archivio
+   intero» si racconta meglio se il cono è visibilmente stretto;
+3. un'istruzione che si veda all'opera, per esempio: *«Se chiede di un
+   sinistro in corso, rimandalo sempre allo sportello.»*;
+4. **si copia il link e si apre una volta prima della demo**: serve a
+   scaldare la conversazione e a verificare che il cono risponda davvero.
+
+Due cose da sapere, o la tappa si inceppa:
+
+- una chat con il **cono vuoto** non risponde nulla. L'elenco lo segnala in
+  giallo, la scheda con un avviso: se li vedi, il cono non è stato salvato;
+- una domanda del cliente costa come le altre, **circa un minuto e mezzo**.
+  Nella Tappa 7 conviene farne una sola, e sceglierla corta.
+
+> Il link va bene condividerlo a schermo: è un ambiente di prova con
+> documenti pubblici e una cartella finta. Con un'agenzia vera, invece,
+> quel link è una chiave di casa — e va detto proprio così.
+
+### 2.5 La checklist dei dieci minuti prima
 
 1. **Spegnere il worker locale.** Il worker su Render dev pesca dalla stessa
    coda di quello sulla tua macchina: se sono accesi entrambi si contendono i
@@ -110,7 +137,7 @@ qualcosa da dire o da guardare. Quindi:
 
 ---
 
-## 3. La scaletta, trenta minuti
+## 3. La scaletta, trentacinque minuti
 
 ### Apertura — due minuti, a schermo spento
 
@@ -144,6 +171,19 @@ scusa del tempo. Si commenta quello che scorre a schermo.
 
 Se l'attesa si allunga, si riempie mostrando dove sta pescando: si apre
 l'Archivio Pubblico in un'altra scheda e si scorrono le compagnie.
+
+**Che cosa chiedere, per far comparire anche un ricordo.** La domanda di
+copertura da sola **non produce nessun ricordo**, ed è giusto così:
+l'estrattore scarta i fatti documentali, che stanno già nei documenti. Per
+far vedere anche la memoria bisogna dire una **regola**, e conviene
+attaccarla alla domanda invece di farne una frase a parte:
+
+> «Da noi, quando si confrontano due kasko, si guarda prima lo scoperto e
+> poi il massimale: è quello che il cliente sente in fattura. Con questo
+> criterio, sulla grandine come stanno la Nuova 4R e la Nobis Car?»
+
+Esce una risposta vera **e** un ricordo. Il dettaglio su cosa vale e cosa
+no è in §3bis.
 
 **Il momento che conta.** Quando la risposta arriva, **non la si legge**. Si
 clicca su una citazione: si apre il documento, alla pagina esatta.
@@ -271,6 +311,47 @@ clienti veri, **Compagnie**. Si entra in una cartella cliente.
 
 Chiusura naturale: si è partiti da fuori e si è arrivati dentro casa sua.
 
+### Tappa 7 — La chat che dai al tuo cliente · cinque minuti
+
+È la cosa che nessun agente si aspetta, e per questo va per ultima: dopo
+l'ha vista, e tutto il resto si ricolora di conseguenza.
+
+**Cosa si fa.** Si apre **Chat per i clienti** e si mostra una chat già
+pronta (§2.4). Poi si entra nella scheda e si fa vedere **il cono di
+lettura**: le cartelle spuntate e i prodotti scelti.
+
+> «Questa non è una chat per te. È una chat per il tuo cliente, e legge
+> soltanto quello che decidi tu: questa cartella, questi prodotti. Non ha
+> modo di arrivare a un altro cliente, perché quei documenti per lei non
+> esistono proprio.»
+
+Poi si copia il link e **lo si apre in un'altra scheda**, come farebbe il
+cliente dal telefono. Si fa una domanda semplice:
+
+> «Buongiorno, la grandine è coperta dalla mia polizza?»
+
+**Il momento che conta.** Non è la risposta: è **come** risponde.
+
+> «Guarda come le parla. Le dà del lei. E soprattutto guarda cosa fa qui:
+> dice che la sua polizza personale non ce l'ha, quindi non può confermarle
+> se la garanzia è attiva — e la manda da te. Non prova a fare il tuo
+> lavoro.»
+
+Questa è la frase che vende la funzione a un intermediario, perché risponde
+alla sua prima paura: che una macchina dica a un suo cliente qualcosa di
+sbagliato e poi la firma sia la sua.
+
+**Poi si chiude la porta, davanti a lui.** Si torna nella scheda e si preme
+**Sospendi il link**; si ricarica la pagina del cliente e non funziona più.
+
+> «Il link è tuo, non suo. Lo spegni quando vuoi, e da quel momento non
+> legge più niente.»
+
+**Cosa non dire.** Non si promette che risponde a tutto: il cono è stretto
+per scelta. E non si nasconde che al cliente arrivano risposte senza che
+nessuno le abbia riviste — se lo chiede, è una domanda giusta e la risposta
+sta in §5.
+
 ### Chiusura — tre minuti
 
 Non si riassume la demo: l'ha appena vista. Si chiede.
@@ -280,6 +361,66 @@ Non si riassume la demo: l'ha appena vista. Si chiede.
 La risposta dice cosa vendergli e cosa costruire dopo. Poi la proposta
 concreta: **un mese sui suoi documenti veri**, con il suo archivio caricato e
 i suoi template. Non una prova generica: la sua agenzia dentro.
+
+---
+
+## 3bis. Che cosa dire perché la memoria impari qualcosa
+
+Serve saperlo prima di salire sul palco, perché **la maggior parte delle
+frasi non produce nessun ricordo**, e non è un guasto.
+
+L'estrattore ha una regola sola, ed è severa: *un ricordo vale se,
+ricomparendo in una conversazione futura, cambierebbe la risposta*. Al
+massimo tre per scambio, e meglio nessuno che uno debole.
+
+### Le quattro cose che diventano un ricordo
+
+| Categoria | Che cos'è | Una frase che funziona |
+|---|---|---|
+| **prassi** | come lavora l'agenzia | «Da noi, nel confronto fra due kasko, si guarda prima lo scoperto e poi il massimale.» |
+| **cliente** | contesto stabile su un cliente, utile a servirlo | «La WISELYST ha la flotta tutta a noleggio: le proposte vanno impostate su quello.» |
+| **preferenza** | come vuole le cose chi parla | «Le risposte che poi giro al cliente le voglio sempre chiuse con una tabella di confronto.» |
+| **decisione** | una scelta presa | «Da quest'anno il nostro riferimento per l'auto è la Nuova 4R: i preventivi li confrontiamo con quella.» |
+
+L'ambito lo decide l'estrattore da solo: **dell'agenzia** se vale per tutti,
+**personale** se riguarda solo chi sta parlando. Nel pannello Memoria sono
+due filtri diversi, e in demo è una cosa che si mostra bene.
+
+### Quello che non diventa un ricordo, e perché
+
+- **la domanda di copertura** («la grandine è coperta?»): è un fatto
+  documentale, sta nei documenti e da lì si rilegge;
+- **il racconto di quello che si sta facendo** («ho bisogno di confrontare
+  due preventivi»): è un episodio, non una regola;
+- **cosa c'è o non c'è in archivio**: cambia, e si guarda nell'archivio;
+- **una valutazione su un caso singolo**, a meno che non la si dichiari
+  come regola generale. È la differenza fra «qui conviene la kasko» e «da
+  noi si propone la kasko sopra i tre anni di vita del veicolo».
+
+### La trappola da evitare davanti a un agente
+
+L'estrattore ha un **perimetro GDPR inderogabile**: rifiuta qualunque
+ricordo che contenga codice fiscale, IBAN, email, telefono, data di
+nascita, indirizzo, targa, o dati sulla salute. Se in demo si nomina un
+cliente vero con i suoi dati, non esce nessun ricordo — e sembrerà che la
+funzione non vada, mentre sta facendo esattamente il suo mestiere.
+
+Il nome di un'azienda cliente va bene. I dettagli delle persone no.
+
+### Come mostrarlo bene
+
+1. la regola si dice **dentro** la domanda, non come frase isolata: così la
+   risposta è comunque utile e la demo non si ferma;
+2. quando il testo finisce **non si passa oltre**: il ricordo arriva dopo,
+   col passo «Cerco qualcosa da ricordare», e compare l'etichetta
+   **Memorizzato** sotto la risposta;
+3. alla Tappa 4 si apre il pannello Memoria e si ritrova lì quello appena
+   detto, con il rimando alla conversazione da cui è uscito. È la prova che
+   non è un trucco.
+
+> Sul tenant della demo la memoria è **accesa** e i ricordi sono **zero**:
+> il primo che si crea è visibilmente il primo. È un vantaggio raro, e vale
+> la pena non sprecarlo con una frase che non produce niente.
 
 ---
 
@@ -330,6 +471,26 @@ si può anche dettare a voce, col microfono nella barra del messaggio.
 Il tempo di caricare i suoi documenti e i suoi template. L'archivio delle
 compagnie c'è già.
 
+**«E se dice una cosa sbagliata al mio cliente?»**
+È **la** domanda sulla chat cliente, e arriverà. Non va aggirata.
+
+Quello che si può dire con onestà: legge solo i documenti che gli hai dato
+tu; non dà consigli e non dice se una polizza conviene; ogni numero che
+scrive porta la pagina da cui viene; quello che non trova lo dichiara invece
+di indovinarlo; e su qualunque cosa riguardi un caso concreto rimanda in
+agenzia. È scritto nelle sue regole, non è una speranza — nella Tappa 7 l'ha
+appena visto succedere.
+
+Quello che **non** si può dire è che non sbaglierà mai. E se insiste, la
+risposta vera è: «lo tieni spento finché non ti fidi, e lo accendi su un
+cliente alla volta». Il link si sospende in un clic, e questo è un
+argomento migliore di qualunque rassicurazione.
+
+**«Il cliente può vedere i documenti di un altro?»**
+No, e non per una regola scritta da qualche parte: i documenti fuori dal
+cono **non vengono nemmeno messi** dove l'assistente può leggerli. Non li
+trova perché per lui non esistono.
+
 ---
 
 ## 6. Piano B
@@ -357,4 +518,15 @@ Globo della memoria.
 | 3 | Gli agenti sui cicli: scadenze e nuove edizioni |
 
 La memoria si porta a casa gratis, indicando l'etichetta **Memorizzato**
-sotto la risposta durante la seconda tappa.
+sotto la risposta durante la seconda tappa — a patto che la domanda porti
+dentro una regola, come spiega §3bis.
+
+**Lo scambio che vale la pena valutare.** Se l'agente che hai davanti è uno
+che il tempo lo misura in clienti e non in ore, i tre minuti degli agenti si
+danno alla **chat del cliente**: si apre il link, si fa una domanda, si fa
+vedere che rimanda in agenzia, e si sospende. Colpisce più forte, e apre una
+conversazione commerciale diversa — non «mi fai risparmiare tempo» ma «posso
+dare qualcosa ai miei clienti che gli altri non danno».
+
+Non si fanno entrambe in quindici minuti: sono due domande al motore, e sono
+tre minuti solo di attesa.
