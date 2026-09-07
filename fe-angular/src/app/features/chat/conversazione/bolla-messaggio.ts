@@ -12,6 +12,15 @@ import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
 
 /**
+ * Quanti passi restano a vista mentre il motore lavora.
+ *
+ * Cinque: abbastanza da vedere un movimento e capire dove sta andando,
+ * pochi da non spingere la risposta fuori dallo schermo. Una domanda vera
+ * ne produce una quindicina.
+ */
+const PASSI_A_VISTA = 5;
+
+/**
  * Una durata a colpo d'occhio: `0,4 s`, `18 s`, `1 min 47 s`.
  *
  * Sotto il secondo il decimale conta (dice che il passo è stato immediato);
@@ -161,6 +170,27 @@ export class BollaMessaggio {
 
   /** La cronologia del lavoro, in ordine. Vuota sui messaggi dell'utente. */
   protected readonly passi = computed(() => this.messaggio().passi ?? []);
+
+  /**
+   * Mentre il motore lavora l'elenco è una **finestra sugli ultimi passi**,
+   * non la cronologia intera: una risposta ne fa una quindicina, e un
+   * pannello che cresce senza fermarsi spinge fuori schermo la risposta
+   * proprio mentre la si sta aspettando. A risposta finita torna intero,
+   * perché lì serve completo — ed è chiuso comunque.
+   */
+  protected readonly passiVisibili = computed(() => {
+    const passi = this.passi();
+    return this.inFinestra() ? passi.slice(-PASSI_A_VISTA) : passi;
+  });
+
+  /**
+   * Vero solo quando qualcosa è davvero nascosto. Serve alla sfumatura in
+   * cima: se comparisse anche con tre passi in tutto, il primo sembrerebbe
+   * sbiadito per un difetto invece che per dire «sopra ce n'è altro».
+   */
+  protected readonly inFinestra = computed(
+    () => Boolean(this.messaggio().inCorso) && this.passi().length > PASSI_A_VISTA,
+  );
 
   /**
    * Aperto mentre il motore lavora, chiuso quando ha finito.

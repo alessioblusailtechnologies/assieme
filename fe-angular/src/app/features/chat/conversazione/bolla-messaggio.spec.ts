@@ -99,8 +99,70 @@ describe('BollaMessaggio · i passi del motore', () => {
     expect(dom.querySelector('.passi .contenuto')).toBeNull();
   });
 
+  /** Otto passi: più della finestra, per vedere che cosa resta fuori. */
+  const OTTO: MessaggioInStream['passi'] = Array.from({ length: 8 }, (_, i) => ({
+    etichetta: `Passo ${i + 1}`,
+    istante: new Date(Date.parse('2026-09-07T10:00:00.000Z') + i * 1000).toISOString(),
+    durataMs: 1000,
+  }));
+
+  it('mentre lavora mostra solo gli ultimi cinque passi', async () => {
+    const fixture = await monta(risposta(OTTO, true));
+    const dom = fixture.nativeElement as HTMLElement;
+
+    const voci = [...dom.querySelectorAll('.passo__etichetta')].map((e) => e.textContent?.trim());
+    expect(voci).toEqual(['Passo 4', 'Passo 5', 'Passo 6', 'Passo 7', 'Passo 8']);
+
+    /* Il riepilogo però conta tutto: la finestra nasconde, non falsa. */
+    expect(dom.querySelector('.passi .riepilogo')?.textContent?.trim()).toBe('8 passaggi · 8 s');
+  });
+
+  it('a risposta finita l’elenco torna intero', async () => {
+    const fixture = await monta(risposta(OTTO, true));
+    const dom = fixture.nativeElement as HTMLElement;
+    expect(dom.querySelectorAll('.passo').length).toBe(5);
+
+    fixture.componentRef.setInput('messaggio', { ...risposta(OTTO, false) });
+    /* Chiuso in automatico: lo si riapre per guardarci dentro. */
+    fixture.detectChanges();
+    (dom.querySelector('.passi .testata') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(dom.querySelectorAll('.passo').length).toBe(8);
+  });
+
+  it('la sfumatura compare solo quando c’è davvero qualcosa di nascosto', async () => {
+    /* Cinque passi entrano tutti: nessuna sfumatura, o il primo sembrerebbe
+       sbiadito per un difetto invece che per dire «sopra ce n'è altro». */
+    const fixture = await monta(risposta(OTTO!.slice(0, 5), true));
+    const dom = fixture.nativeElement as HTMLElement;
+    expect(dom.querySelector('.passi__elenco')?.classList.contains('is-finestra')).toBe(false);
+
+    fixture.componentRef.setInput('messaggio', risposta(OTTO, true));
+    fixture.detectChanges();
+    expect(dom.querySelector('.passi__elenco')?.classList.contains('is-finestra')).toBe(true);
+  });
+
   it('non mostra nulla se il motore non ha fatto passi', async () => {
     const dom = (await monta(risposta([], false))).nativeElement as HTMLElement;
     expect(dom.querySelector('.passi')).toBeNull();
+  });
+
+  it('non ripete il passo in corso sotto il pannello', async () => {
+    /* Prima che arrivi un passo la V che respira è l'unica cosa che dice
+       «sto lavorando», e ci deve essere. */
+    const fixture = await monta({ ...risposta([], true), attivita: 'Sto preparando la risposta…' });
+    const dom = fixture.nativeElement as HTMLElement;
+    expect(dom.querySelector('.attesa')).toBeTruthy();
+
+    /* Appena il pannello ha qualcosa dentro, il passo in corso lo mostra
+       lui: la riga sotto sparisce, o si leggerebbero due lavori per uno. */
+    fixture.componentRef.setInput('messaggio', {
+      ...risposta(PASSI, true),
+      attivita: 'Raccolgo le fonti della risposta',
+    });
+    fixture.detectChanges();
+    expect(dom.querySelector('.attesa')).toBeNull();
+    expect(dom.querySelectorAll('.passo').length).toBe(2);
   });
 });

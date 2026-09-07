@@ -664,6 +664,15 @@
   list-style: none;
 }
 
+/* Mentre il motore lavora si vede solo la coda dei passi, e i più vecchi
+   sfumano verso l'alto: dice «sopra ce n'è altro» senza scriverlo e senza
+   un pulsante da cliccare mentre si sta aspettando. La sfumatura non arriva
+   a zero, così il passo più vecchio resta leggibile invece di sparire. */
+.passi__elenco.is-finestra {
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 18%), rgb(0 0 0 / 100%) 55%);
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 18%), rgb(0 0 0 / 100%) 55%);
+}
+
 .passo {
   position: relative;
   display: grid;

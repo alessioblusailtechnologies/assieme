@@ -31,8 +31,8 @@
           [aperto]="passiAperti()"
           (apertoChange)="scegliPassi($event)"
         >
-          <ol class="passi__elenco">
-            @for (p of passi(); track p.istante + p.etichetta) {
+          <ol class="passi__elenco" [class.is-finestra]="inFinestra()">
+            @for (p of passiVisibili(); track p.istante + p.etichetta) {
               <li class="passo" [class.is-in-corso]="p.durataMs === undefined && m.inCorso">
                 <span class="passo__segno" aria-hidden="true">
                   @if (iconaPasso(p.strumento); as icona) {
@@ -56,7 +56,13 @@
         backend serve, e un trattamento futuro non richiederà una modifica
         di specifica.
       -->
-      @if (!m.testo && m.inCorso) {
+      <!--
+        La V che respira serve finché non c'è altro da guardare. Appena il
+        pannello del ragionamento ha qualcosa dentro, il passo in corso lo
+        mostra lui, acceso e in fondo all'elenco: ripeterlo qui sotto lo
+        farebbe leggere come due lavori invece che uno.
+      -->
+      @if (!m.testo && m.inCorso && !passi().length) {
         <p class="attesa" aria-live="polite">
           <!-- Il marchio che respira: la V dell'agenzia al posto dei tre puntini. -->
           <svg class="attesa__segno" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
@@ -108,7 +114,7 @@
         <div class="testo" [innerHTML]="html()" aria-live="polite"></div>
       }
 
-      @if (m.testo && m.inCorso && m.attivita) {
+      @if (m.testo && m.inCorso && m.attivita && !passi().length) {
         <!-- Il motore lavora ancora dopo il testo (raccoglie le fonti): si vede, non si tace. -->
         <p class="attesa" aria-live="polite">
           <!-- Il marchio che respira: la V dell'agenzia al posto dei tre puntini. -->
