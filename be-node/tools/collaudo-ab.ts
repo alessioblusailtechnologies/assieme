@@ -109,7 +109,8 @@ try {
       budgetUsd: c.MOTORE_BUDGET_USD,
       silenzioMs: c.MOTORE_SILENZIO_MS,
       ...(v.effort && { effort: v.effort }),
-      fornitori: { hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL } },
+      fornitori: { hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+        mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) } },
     });
     for (const domanda of DOMANDE) {
       console.log(`\n[${v.etichetta}] ${domanda}`);

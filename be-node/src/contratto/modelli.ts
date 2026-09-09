@@ -19,8 +19,30 @@ export interface ModelloAI {
   disponibile: boolean;
 }
 
-/** Chi serve davvero il modello: Anthropic diretta, o HostYourAI (API Anthropic-compatibili, datacenter UE). */
-export type Fornitore = 'anthropic' | 'hostyourai';
+/**
+ * Chi serve davvero il modello: Anthropic diretta; HostYourAI (API già
+ * Anthropic-compatibili, datacenter UE); Mistral, che parla un altro
+ * formato e passa dall'adattatore in-process del worker.
+ */
+export type Fornitore = 'anthropic' | 'hostyourai' | 'mistral';
+
+/**
+ * Il listino di un fornitore terzo, in € (≈ $) per milione di token. Letti e
+ * scritti hanno prezzi diversi e distanti — su Mistral Medium 3.5 l'output
+ * costa cinque volte l'input, su Kimi K3 cinque volte — quindi una tariffa
+ * sola direbbe il falso proprio dove serve la verità: il confronto dei costi.
+ */
+export interface Tariffa {
+  /** Token letti dal modello: prompt, cache compresa (questi gateway non la fanno pagare a parte). */
+  input: number;
+  /** Token scritti dal modello. */
+  output: number;
+  /**
+   * Input che il fornitore serve dalla sua cache, quando ce l'ha: Mistral lo
+   * fa pagare un decimo. Senza, l'input in cache vale come quello nuovo.
+   */
+  cache?: number;
+}
 
 /** La voce di catalogo con l'id del modello per l'SDK (non esce dall'API). */
 export interface VoceCatalogo extends ModelloAI {
@@ -28,11 +50,11 @@ export interface VoceCatalogo extends ModelloAI {
   sdk?: string;
   fornitore?: Fornitore;
   /**
-   * Per i fornitori terzi l'SDK non sa il prezzo: il costo in  si
-   * calcola dai token con questa tariffa (per milione, input e output
-   * insieme, come la espone il listino HostYourAI, in euro ≈ dollari).
+   * Per i fornitori terzi l'SDK non sa il prezzo: il costo si calcola dai
+   * token con il listino del fornitore (HostYourAI lo espone su
+   * `/v1/models`, in euro ≈ dollari).
    */
-  tariffaUsdPerMilione?: number;
+  tariffa?: Tariffa;
 }
 
 export const CATALOGO_MODELLI: VoceCatalogo[] = [
@@ -78,11 +100,11 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     nome: 'GLM 5.2',
     sdk: 'zai-org/GLM-5.2',
     fornitore: 'hostyourai',
-    tariffaUsdPerMilione: 1.73,
+    tariffa: { input: 1.73, output: 5.18 },
     descrizione:
       'Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
     adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa HostYourAI: circa 1,7 € per milione di token.',
+    notaCosti: 'Tariffa HostYourAI: circa 1,7 € per milione di token letti e 5,2 € per milione scritti.',
     disponibile: true,
   },
   {
@@ -91,11 +113,25 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     nome: 'Kimi K3',
     sdk: 'moonshotai/Kimi-K3',
     fornitore: 'hostyourai',
-    tariffaUsdPerMilione: 3.17,
+    tariffa: { input: 3.45, output: 17.25 },
     descrizione:
       'Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
     adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa HostYourAI: circa 3,2 € per milione di token.',
+    notaCosti: 'Tariffa HostYourAI: circa 3,5 € per milione di token letti e 17,3 € per milione scritti.',
+    disponibile: true,
+  },
+  {
+    id: 'mod-mistral-medium-3-5',
+    provider: 'HostYourAI (UE)',
+    nome: 'Mistral Medium 3.5',
+    sdk: 'mistral-medium-3.5-128b',
+    fornitore: 'hostyourai',
+    tariffa: { input: 1.73, output: 8.63 },
+    descrizione:
+      'Il modello del francese Mistral, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 128k token, il più corto del catalogo. Nel confronto sull’Archivio Pubblico risponde nel merito e cita fonti vere, ma apre meno documenti e porta un terzo delle citazioni di Claude Opus 5.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti:
+      'Tariffa HostYourAI: circa 1,7 € per milione di token letti e 8,6 € per milione scritti. Il gateway non riusa il contesto fra un passo e l’altro: sulle analisi lunghe la spesa arriva vicina a quella di Claude Opus 5.',
     disponibile: true,
   },
   {
@@ -110,13 +146,16 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
   },
   {
     id: 'mod-mistral-large-3',
-    provider: 'Mistral',
+    provider: 'Mistral (UE)',
     nome: 'Mistral Large 3',
+    sdk: 'mistral-large-2512',
+    fornitore: 'mistral',
+    tariffa: { input: 0.5, output: 1.5, cache: 0.05 },
     descrizione:
-      'Opzione europea con residenza dei dati nell’UE. In corso di validazione sui documenti assicurativi italiani.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'In valutazione, condizioni da definire.',
-    disponibile: false,
+      'Il modello di punta di Mistral, chiamato direttamente sull’API francese: dati trattati nell’UE, contesto da 262k token e listino una frazione degli altri. Nel confronto sull’Archivio Pubblico è il più veloce e il più economico di molto, ma apre pochi documenti e su due domande su sei si è fermato a chiedere invece di rispondere: va scelto da chi mette costo e residenza davanti alla completezza.',
+    adeguatezzaDocumentale: 'bassa',
+    notaCosti: 'Tariffa Mistral: 0,50 $ per milione di token letti (0,05 $ se già in cache) e 1,50 $ per milione scritti.',
+    disponibile: true,
   },
 ];
 
@@ -124,9 +163,9 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
  * Il catalogo come sta davvero: una voce HostYourAI è selezionabile solo se
  * la chiave è configurata — il catalogo dice la verità (Fase 6).
  */
-export function catalogoModelli(chiaviPresenti: { hostyourai: boolean }): VoceCatalogo[] {
+export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; mistral: boolean }): VoceCatalogo[] {
   return CATALOGO_MODELLI.map((m) =>
-    m.fornitore === 'hostyourai' && !chiaviPresenti.hostyourai ? { ...m, disponibile: false } : m,
+    m.fornitore && m.fornitore !== 'anthropic' && !chiaviPresenti[m.fornitore] ? { ...m, disponibile: false } : m,
   );
 }
 
@@ -140,7 +179,7 @@ export function versoModello(voce: VoceCatalogo): ModelloAI {
   const pubblico: VoceCatalogo = { ...voce };
   delete pubblico.sdk;
   delete pubblico.fornitore;
-  delete pubblico.tariffaUsdPerMilione;
+  delete pubblico.tariffa;
   return pubblico;
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
-import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
+import { FiltroPensieri, FlussoTesto } from '../src/worker/motore/flusso-testo.js';
 import { catalogoArchivioPubblico, MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
@@ -84,6 +84,54 @@ describe('il blocco velia-citazioni', () => {
     const conBlocco = `Risposta.\n${MARCATORE_CITAZIONI}\n{"citazioni":[]}\n\`\`\``;
     expect(limiteInoltro(conBlocco)).toBe('Risposta.'.length);
     expect(limiteInoltro(`${MARCATORE_CITAZIONI}\n{}`)).toBe(0);
+  });
+});
+
+describe('FiltroPensieri: il ragionamento dei modelli terzi non è risposta', () => {
+  const tutto = (f: FiltroPensieri, delta: string[]): string => delta.map((d) => f.filtra(d)).join('') + f.svuota();
+
+  it('toglie il pensiero e lascia la risposta, anche coi marcatori tagliati fra due delta', () => {
+    const f = new FiltroPensieri();
+    expect(tutto(f, ['[THI', 'NK]Devo leggere il documento.[/TH', 'INK]La franchigia è € 200 ', '*(DIP, pag. 3)*.'])).toBe(
+      'La franchigia è € 200 *(DIP, pag. 3)*.',
+    );
+  });
+
+  it('più pensieri in un turno, in mezzo al testo, e la forma <think>', () => {
+    const f = new FiltroPensieri();
+    expect(tutto(f, ['Prima parte. <think>ci penso</think>Seconda parte.', '[think]ancora[/think] Terza.'])).toBe(
+      'Prima parte. Seconda parte. Terza.',
+    );
+  });
+
+  it('un testo senza marcatori passa intero, delta per delta', () => {
+    const f = new FiltroPensieri();
+    expect(f.filtra('La garanzia furto ')).toBe('La garanzia furto ');
+    expect(f.filtra('prevede una franchigia.')).toBe('prevede una franchigia.');
+    expect(f.svuota()).toBe('');
+  });
+
+  it('una parentesi quadra qualsiasi si trattiene un attimo, poi esce: nulla si perde', () => {
+    const f = new FiltroPensieri();
+    expect(f.filtra('Vedi la nota [')).toBe('Vedi la nota ');
+    expect(f.filtra('3] del contratto.')).toBe('[3] del contratto.');
+  });
+
+  it('una chiusura orfana si butta: è la coda di un pensiero cominciato altrove', () => {
+    /* Visto dal vivo il 09/09/2026: Mistral apre il pensiero in un blocco
+       che non arriva come testo e la chiusura spunta in testa alla risposta. */
+    const f = new FiltroPensieri();
+    expect(tutto(f, ['[/THINK]Il massimale minimo di legge è € 6.450.000.'])).toBe(
+      'Il massimale minimo di legge è € 6.450.000.',
+    );
+  });
+
+  it('un pensiero mai chiuso non finisce nella risposta', () => {
+    const f = new FiltroPensieri();
+    expect(f.filtra('Ecco. [THINK]sto ancora ragionando')).toBe('Ecco. ');
+    expect(f.svuota()).toBe('');
+    // Il turno dopo riparte pulito.
+    expect(f.filtra('La risposta.')).toBe('La risposta.');
   });
 });
 

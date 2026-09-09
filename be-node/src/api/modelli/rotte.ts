@@ -26,7 +26,11 @@ import { registraStorico } from '../template/rotte.js';
 export function registraRotteModelli(app: FastifyInstance): void {
   /** RF-D-03: i modelli offerti dalla piattaforma, disponibili e non. */
   /** Le voci HostYourAI (RF-D-03) sono selezionabili solo con la chiave in .env: il catalogo dice la verità. */
-  const catalogo = () => catalogoModelli({ hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY) });
+  const catalogo = () =>
+    catalogoModelli({
+      hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY),
+      mistral: Boolean(configurazione().MISTRAL_API_KEY),
+    });
 
   app.get('/api/modelli', () => catalogo().map(versoModello));
 

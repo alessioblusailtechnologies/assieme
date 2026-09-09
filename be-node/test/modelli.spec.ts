@@ -47,12 +47,18 @@ describe('le rotte', () => {
       'Claude Sonnet 5',
       'Claude Haiku 4.5',
     ]);
-    /* Le voci HostYourAI seguono la chiave in .env: senza, sono schede; con, si scelgono. */
-    expect(modelli.filter((m) => !m.disponibile && m.provider !== 'HostYourAI (UE)').map((m) => m.provider)).toEqual([
-      'OpenAI',
-      'Mistral',
+    /* Le voci dei fornitori terzi seguono la chiave in .env (senza, sono
+       schede; con, si scelgono): qui si guarda che ci siano, non se la
+       macchina di chi lancia i test ha le chiavi. */
+    const terzi = ['HostYourAI (UE)', 'Mistral (UE)'];
+    expect(modelli.filter((m) => terzi.includes(m.provider)).map((m) => m.nome)).toEqual([
+      'GLM 5.2',
+      'Kimi K3',
+      'Mistral Medium 3.5',
+      'Mistral Large 3',
     ]);
-    expect(modelli.filter((m) => m.provider === 'HostYourAI (UE)').map((m) => m.nome)).toEqual(['GLM 5.2', 'Kimi K3']);
+    /* Quel che resta è scheda informativa e basta: nessuna integrazione. */
+    expect(modelli.filter((m) => !m.disponibile && !terzi.includes(m.provider)).map((m) => m.provider)).toEqual(['OpenAI']);
   });
 
   it('PUT: 403 per l’operatore, 400 senza modello, 404 sull’ignoto, 409 sul non disponibile', async () => {

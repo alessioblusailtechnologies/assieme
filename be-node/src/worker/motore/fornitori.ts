@@ -1,16 +1,24 @@
-import { vocePerSdk } from '../../contratto/modelli.js';
+import { vocePerSdk, type Tariffa } from '../../contratto/modelli.js';
+import { avviaAdattatoreMistral, type AdattatoreMistral } from './adattatore-mistral.js';
 
 /**
- * Da dove si serve un modello (RF-D-03): Anthropic diretta, oppure un
- * fornitore con API Anthropic-compatibili — oggi HostYourAI, modelli open
- * in datacenter UE. La sessione del motore è la stessa: cambiano solo
- * l'endpoint e la chiave, passati all'Agent SDK come ambiente del processo.
+ * Da dove si serve un modello (RF-D-03). Tre strade, e la sessione del
+ * motore resta sempre la stessa — cambiano endpoint e chiave, passati
+ * all'Agent SDK come ambiente del processo:
+ *  - **Anthropic**, diretta;
+ *  - **HostYourAI**, che parla già l'API di Anthropic (modelli open in
+ *    datacenter UE): basta puntarcelo;
+ *  - **Mistral**, che parla un altro formato: davanti gli si mette
+ *    l'adattatore in-process (`adattatore-mistral.ts`), che vive sul
+ *    localhost del worker e traduce.
  *
  * Un id fuori catalogo (esperimenti via .env) si tratta come Anthropic.
  */
 
 export interface ChiaviFornitori {
   hostyourai?: { chiave?: string; baseUrl: string };
+  /** `baseUrl` serve solo ai test (un finto Mistral): senza, l'API vera. */
+  mistral?: { chiave?: string; baseUrl?: string };
 }
 
 export interface AmbienteModello {
@@ -18,42 +26,84 @@ export interface AmbienteModello {
   env?: Record<string, string>;
   /** Vero per i fornitori terzi: niente `effort`, costo a tariffa. */
   terzo: boolean;
-  tariffaUsdPerMilione?: number;
+  tariffa?: Tariffa;
 }
 
-export function ambienteModello(
+export async function ambienteModello(
   modello: string,
   chiavi: ChiaviFornitori,
   ambienteProcesso: NodeJS.ProcessEnv = process.env,
-): AmbienteModello {
+): Promise<AmbienteModello> {
   const voce = vocePerSdk(modello);
-  if (voce?.fornitore !== 'hostyourai') return { terzo: false };
-
-  const chiave = chiavi.hostyourai?.chiave;
-  if (!chiave) {
-    throw new Error(`Il modello ${voce.nome} richiede HOSTYOURAI_API_KEY in .env.`);
+  if (voce?.fornitore === 'hostyourai') {
+    const chiave = chiavi.hostyourai?.chiave;
+    if (!chiave) throw new Error(`Il modello ${voce.nome} richiede HOSTYOURAI_API_KEY in .env.`);
+    return {
+      env: ambientePuntato(ambienteProcesso, chiavi.hostyourai!.baseUrl, chiave),
+      terzo: true,
+      ...(voce.tariffa !== undefined && { tariffa: voce.tariffa }),
+    };
   }
+  if (voce?.fornitore === 'mistral') {
+    const chiave = chiavi.mistral?.chiave;
+    if (!chiave) throw new Error(`Il modello ${voce.nome} richiede MISTRAL_API_KEY in .env.`);
+    const adattatore = await adattatoreCondiviso(chiave, chiavi.mistral?.baseUrl);
+    return {
+      env: ambientePuntato(ambienteProcesso, adattatore.url, adattatore.token),
+      terzo: true,
+      ...(voce.tariffa !== undefined && { tariffa: voce.tariffa }),
+    };
+  }
+  return { terzo: false };
+}
+
+/**
+ * L'ambiente del processo con l'SDK puntato altrove. La chiave va come
+ * `x-api-key`, che è ciò che Claude Code manda con `ANTHROPIC_API_KEY`: il
+ * token OAuth, se il processo ne ha uno, non deve prevalere.
+ */
+function ambientePuntato(processo: NodeJS.ProcessEnv, baseUrl: string, chiave: string): Record<string, string> {
   const env: Record<string, string> = {};
-  for (const [k, v] of Object.entries(ambienteProcesso)) if (v !== undefined) env[k] = v;
-  /* HostYourAI espone `/v1/messages` sulla radice e accetta la chiave come
-     `x-api-key`: è ciò che Claude Code manda con ANTHROPIC_API_KEY. Il token
-     OAuth, se presente nel processo, non deve prevalere. */
-  env['ANTHROPIC_BASE_URL'] = chiavi.hostyourai!.baseUrl;
+  for (const [k, v] of Object.entries(processo)) if (v !== undefined) env[k] = v;
+  env['ANTHROPIC_BASE_URL'] = baseUrl;
   env['ANTHROPIC_API_KEY'] = chiave;
   delete env['ANTHROPIC_AUTH_TOKEN'];
   delete env['CLAUDE_CODE_OAUTH_TOKEN'];
-  return {
-    env,
-    terzo: true,
-    ...(voce.tariffaUsdPerMilione !== undefined && { tariffaUsdPerMilione: voce.tariffaUsdPerMilione }),
-  };
+  return env;
 }
 
-/** Il costo di una sessione su un fornitore terzo: token letti e scritti alla tariffa del listino. */
+/**
+ * L'adattatore è uno per processo: apre una porta, e non ha senso aprirne
+ * una per sessione. Non trattiene il processo (`unref`), così gli strumenti
+ * di collaudo escono da soli.
+ */
+let adattatore: Promise<AdattatoreMistral> | undefined;
+
+function adattatoreCondiviso(chiave: string, base?: string): Promise<AdattatoreMistral> {
+  adattatore ??= avviaAdattatoreMistral({ chiave, ...(base && { base }) });
+  return adattatore;
+}
+
+/** Solo per i test: chiude l'adattatore, la prossima sessione lo riapre. */
+export async function dimenticaAdattatoreMistral(): Promise<void> {
+  const attuale = adattatore;
+  adattatore = undefined;
+  if (attuale) await (await attuale).chiudi();
+}
+
+/**
+ * Il costo di una sessione su un fornitore terzo, al listino del catalogo.
+ * L'input ripetuto che il fornitore serve dalla cache ha un prezzo suo
+ * (Mistral: un decimo); dove la cache non esiste — HostYourAI non ne fa —
+ * i contatori stanno a zero e non cambia niente.
+ */
 export function costoATariffa(
   token: { input: number; output: number; cacheLettura: number; cacheScrittura: number },
-  tariffaUsdPerMilione: number,
+  tariffa: Tariffa,
 ): number {
-  const totale = token.input + token.output + token.cacheLettura + token.cacheScrittura;
-  return Math.round((totale * tariffaUsdPerMilione) / 1_000_000 * 1e6) / 1e6;
+  const inCache = token.cacheLettura + token.cacheScrittura;
+  const usd =
+    (token.input * tariffa.input + inCache * (tariffa.cache ?? tariffa.input) + token.output * tariffa.output) /
+    1_000_000;
+  return Math.round(usd * 1e6) / 1e6;
 }

@@ -8,7 +8,8 @@ import {
   type SDKMessage,
 } from '@anthropic-ai/claude-agent-sdk';
 
-import { FlussoTesto } from './flusso-testo.js';
+import type { Tariffa } from '../../contratto/modelli.js';
+import { FiltroPensieri, FlussoTesto } from './flusso-testo.js';
 import { ambienteModello, costoATariffa, type ChiaviFornitori } from './fornitori.js';
 
 /**
@@ -117,7 +118,7 @@ export class MotoreAgentSdk implements Motore {
   async interroga(richiesta: RichiestaMotore, osservatore: OsservatoreSessione): Promise<EsitoSessione> {
     const inizio = Date.now();
     const modello = richiesta.modello ?? this.opzioni.modello;
-    const fornitore = ambienteModello(modello, this.opzioni.fornitori ?? {});
+    const fornitore = await ambienteModello(modello, this.opzioni.fornitori ?? {});
     const radice = resolve(richiesta.directory);
     const controllo = new AbortController();
     const documentiLetti: string[] = [];
@@ -126,6 +127,9 @@ export class MotoreAgentSdk implements Motore {
     /* Il testo, turno per turno: cosa vede l'utente e cosa legge il
        validatore lo decide `FlussoTesto` (pura, provata a parte). */
     const flusso = new FlussoTesto((p) => osservatore.passo(p));
+    /* Dai gateway terzi il ragionamento può arrivare dentro al testo
+       (`[THINK]…[/THINK]`): all'utente non deve arrivare. */
+    const pensieri = fornitore.terzo ? new FiltroPensieri() : undefined;
 
     const hookPreTool: HookCallback = async (input) => {
       if (input.hook_event_name !== 'PreToolUse') return {};
@@ -220,7 +224,10 @@ export class MotoreAgentSdk implements Motore {
        ricevuto fin lì: prompt, risposte precedenti, risultati dei tool.
        ~3,6 caratteri per token sull'italiano; l'addebito lo dichiara. */
     let caratteriContesto = richiesta.promptSistema.length + richiesta.promptUtente.length;
-    let inputStimato = false;
+    /* Quanti turni sono rimasti a stima: se al turno arrivano poi i numeri
+       veri (message_delta), la stima si toglie e non resta traccia. */
+    let turniStimati = 0;
+    let inputTurnoStimato = 0;
 
     let esito: EsitoSessione | undefined;
     let sessioneId: string | undefined;
@@ -241,15 +248,33 @@ export class MotoreAgentSdk implements Motore {
               contati.input += u.input_tokens ?? 0;
               contati.cacheLettura += u.cache_read_input_tokens ?? 0;
               contati.cacheScrittura += u.cache_creation_input_tokens ?? 0;
+              inputTurnoStimato = 0;
             } else {
-              contati.input += Math.round(caratteriContesto / 3.6);
-              inputStimato = true;
+              inputTurnoStimato = Math.round(caratteriContesto / 3.6);
+              contati.input += inputTurnoStimato;
+              turniStimati += 1;
             }
             outputTurno = u.output_tokens ?? 0;
             flusso.inizioTurno();
           } else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
-            await flusso.delta(evento.delta.text);
+            const testo = pensieri ? pensieri.filtra(evento.delta.text) : evento.delta.text;
+            if (testo) await flusso.delta(testo);
           } else if (evento.type === 'message_delta') {
+            const trattenuto = pensieri?.svuota();
+            if (trattenuto) await flusso.delta(trattenuto);
+            /* L'adattatore Mistral gli usi li sa solo a fine turno, perché
+               l'API di Mistral li manda in fondo: se il turno era partito a
+               stima, qui arrivano i numeri veri e la stima si toglie. Con
+               Anthropic questo non scatta — l'input l'ha già dato il
+               `message_start`, e sommarlo di nuovo lo conterebbe due volte. */
+            const vero = (evento.usage.input_tokens ?? 0) + (evento.usage.cache_read_input_tokens ?? 0);
+            if (inputTurnoStimato > 0 && vero > 0) {
+              contati.input += (evento.usage.input_tokens ?? 0) - inputTurnoStimato;
+              contati.cacheLettura += evento.usage.cache_read_input_tokens ?? 0;
+              contati.cacheScrittura += evento.usage.cache_creation_input_tokens ?? 0;
+              inputTurnoStimato = 0;
+              turniStimati -= 1;
+            }
             outputTurno = Math.max(outputTurno, evento.usage.output_tokens ?? 0);
             contati.output += outputTurno;
             outputTurno = 0;
@@ -269,9 +294,9 @@ export class MotoreAgentSdk implements Motore {
             inizio,
             annullato,
             modello,
-            fornitore.tariffaUsdPerMilione,
+            fornitore.tariffa,
             contati,
-            inputStimato,
+            turniStimati > 0,
           );
           if (richiesta.sessione?.persisti && sessioneId) esito.sessioneId = sessioneId;
         }
@@ -322,7 +347,7 @@ export class MotoreAgentSdk implements Motore {
     inizio: number,
     annullato: boolean,
     modello: string,
-    tariffa?: number,
+    tariffa?: Tariffa,
     contati?: { input: number; output: number; cacheLettura: number; cacheScrittura: number },
     inputStimato = false,
   ): EsitoSessione {
