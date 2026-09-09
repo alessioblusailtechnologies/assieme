@@ -63,6 +63,15 @@
     "disponibile": true
   },
   {
+    "id": "mod-010",
+    "provider": "Google",
+    "nome": "Gemini 3.5 Flash",
+    "descrizione": "Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa — ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.",
+    "adeguatezzaDocumentale": "media",
+    "notaCosti": "Tariffa Google: 1,50 $ per milione di token letti (0,15 $ se già in cache) e 9,00 $ per milione scritti, ragionamento compreso.",
+    "disponibile": true
+  },
+  {
     "id": "mod-004",
     "provider": "OpenAI",
     "nome": "GPT-5.2",

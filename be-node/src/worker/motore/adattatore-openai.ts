@@ -4,10 +4,17 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 /**
- * L'adattatore verso Mistral (RF-D-03): l'Agent SDK parla l'API Messages di
- * Anthropic, Mistral parla il formato a chat completion. Qui in mezzo c'è un
- * server HTTP che traduce, così il motore resta uno solo — la sessione, le
- * mura, i tool e la ripresa non sanno di chi stanno parlando.
+ * L'adattatore verso i fornitori in dialetto OpenAI (RF-D-03): l'Agent SDK
+ * parla l'API Messages di Anthropic, mentre Mistral e Gemini parlano il
+ * formato a chat completion. Qui in mezzo c'è un server HTTP che traduce,
+ * così il motore resta uno solo — la sessione, le mura, i tool e la ripresa
+ * non sanno di chi stanno parlando.
+ *
+ * Quel che cambia da un fornitore all'altro sta tutto in un profilo, non in
+ * un file per ciascuno: dove si punta, con che chiave, e le due differenze
+ * viste dal vivo — la chiave di cache di Mistral (un campo ignoto altrove
+ * può valere un 400) e `stream_options`, senza il quale Gemini non manda
+ * gli usi e, insieme ai tool, risponde addirittura 403.
  *
  * Gira **in-process sul localhost del worker**, su una porta effimera: non è
  * un servizio da distribuire, la chiave Mistral non esce dal processo e il
@@ -28,8 +35,6 @@ import type { AddressInfo } from 'node:net';
  * `x-claude-code-session-id` a ogni richiesta, che è la chiave stabile con
  * cui accendere la cache dei prompt di Mistral (input ripetuto al 10%).
  */
-
-const ENDPOINT_MISTRAL = 'https://api.mistral.ai';
 
 export interface BloccoAnthropic {
   type: string;
@@ -54,10 +59,10 @@ export interface CorpoAnthropic {
   tools?: Array<{ name: string; description?: string; input_schema?: unknown }>;
 }
 
-type ParteMistral = { type: 'text'; text: string } | { type: 'image_url'; image_url: string };
+type ParteOpenAI = { type: 'text'; text: string } | { type: 'image_url'; image_url: string };
 
 /** Quel che Mistral rimanda come contenuto: una stringa, o dei pezzi. */
-type ContenutoMistral = string | Array<{ type?: string; text?: string; [altro: string]: unknown }> | null;
+type ContenutoOpenAI = string | Array<{ type?: string; text?: string; [altro: string]: unknown }> | null;
 
 /**
  * Il testo di un contenuto di Mistral. Non è sempre una stringa: sui modelli
@@ -65,18 +70,23 @@ type ContenutoMistral = string | Array<{ type?: string; text?: string; [altro: s
  * passata così com'è finisce nella risposta come «[object Object]» — visto
  * il 09/09/2026 su Mistral Large 3.
  */
-function testoDelContenuto(contenuto: ContenutoMistral | undefined): string {
+function testoDelContenuto(contenuto: ContenutoOpenAI | undefined): string {
   if (typeof contenuto === 'string') return contenuto;
   if (!Array.isArray(contenuto)) return '';
   return contenuto.map((pezzo) => (pezzo.type === 'text' ? (pezzo.text ?? '') : '')).join('');
 }
 
 /** Un pezzo di stream di Mistral (formato a chat completion). */
-export interface PezzoMistral {
+export interface PezzoOpenAI {
   choices?: Array<{
     delta?: {
-      content?: ContenutoMistral;
-      tool_calls?: Array<{ id?: string; index?: number; function?: { name?: string; arguments?: string } }>;
+      content?: ContenutoOpenAI;
+      tool_calls?: Array<{
+        id?: string;
+        index?: number;
+        function?: { name?: string; arguments?: string };
+        extra_content?: { google?: { thought_signature?: string } };
+      }>;
     };
     finish_reason?: string | null;
   }>;
@@ -92,7 +102,11 @@ export interface PezzoMistral {
  * fuori: nel formato di Mistral non hanno un posto, e il ragionamento del
  * turno prima non deve tornare indietro.
  */
-export function richiestaVersoMistral(corpo: CorpoAnthropic, chiaveCache?: string): Record<string, unknown> {
+export function richiestaVersoOpenAI(
+  corpo: CorpoAnthropic,
+  chiaveCache?: string,
+  firme?: Firme,
+): Record<string, unknown> {
   const messaggi: Array<Record<string, unknown>> = [];
   const sistema = testoDi(corpo.system);
   if (sistema) messaggi.push({ role: 'system', content: sistema });
@@ -117,7 +131,15 @@ export function richiestaVersoMistral(corpo: CorpoAnthropic, chiaveCache?: strin
         .join('');
       const chiamate = blocchi
         .filter((b) => b.type === 'tool_use')
-        .map((b) => ({ id: b.id, type: 'function', function: { name: b.name, arguments: JSON.stringify(b.input ?? {}) } }));
+        .map((b) => {
+          const firma = firme?.di(b.id);
+          return {
+            id: b.id,
+            type: 'function',
+            function: { name: b.name, arguments: JSON.stringify(b.input ?? {}) },
+            ...(firma && { extra_content: { google: { thought_signature: firma } } }),
+          };
+        });
       if (testo || chiamate.length > 0) {
         messaggi.push({ role: 'assistant', content: testo, ...(chiamate.length > 0 && { tool_calls: chiamate }) });
       }
@@ -159,6 +181,35 @@ export function richiestaVersoMistral(corpo: CorpoAnthropic, chiaveCache?: strin
   };
 }
 
+/**
+ * Le firme di ragionamento di Gemini, per id di chiamata. Gemini le manda
+ * in `extra_content` e **pretende di riaverle indietro** al turno dopo: senza,
+ * risponde 400 «Function call is missing a thought_signature». Nel formato
+ * di Anthropic non hanno un posto, quindi si tengono qui di lato e si
+ * riattaccano quando la conversazione torna indietro. Con un tetto, perché
+ * il worker vive a lungo e questa mappa non deve crescere per sempre.
+ */
+export class Firme {
+  private readonly per = new Map<string, string>();
+
+  constructor(private readonly tetto = 2000) {}
+
+  ricorda(id: string | undefined, firma: string | undefined): void {
+    if (!id || !firma) return;
+    this.per.set(id, firma);
+    /* Mappa in ordine d'inserimento: le più vecchie escono per prime. */
+    while (this.per.size > this.tetto) {
+      const primo = this.per.keys().next();
+      if (primo.done) break;
+      this.per.delete(primo.value);
+    }
+  }
+
+  di(id: string | undefined): string | undefined {
+    return id ? this.per.get(id) : undefined;
+  }
+}
+
 /** Il testo di un campo che può essere stringa, blocchi, o niente. */
 function testoDi(x: string | BloccoAnthropic[] | undefined): string {
   if (typeof x === 'string') return x;
@@ -169,8 +220,8 @@ function testoDi(x: string | BloccoAnthropic[] | undefined): string {
     .join('\n\n');
 }
 
-function partiUtente(blocchi: BloccoAnthropic[]): ParteMistral[] {
-  const parti: ParteMistral[] = [];
+function partiUtente(blocchi: BloccoAnthropic[]): ParteOpenAI[] {
+  const parti: ParteOpenAI[] = [];
   for (const b of blocchi) {
     if (b.type === 'text' && b.text) parti.push({ type: 'text', text: b.text });
     else if (b.type === 'image' && b.source?.data) {
@@ -192,9 +243,13 @@ export class FlussoVersoAnthropic {
   private fine: string | null = null;
   private uso = { input: 0, output: 0, cache: 0 };
 
+  /** Gli id delle chiamate viste per indice: la firma può arrivare dopo. */
+  private readonly idPerIndice = new Map<number, string>();
+
   constructor(
     private readonly modello: string,
     private readonly id = `msg_${randomUUID().replace(/-/g, '')}`,
+    private readonly firme?: Firme,
   ) {}
 
   apri(): string {
@@ -215,7 +270,7 @@ export class FlussoVersoAnthropic {
     });
   }
 
-  pezzo(p: PezzoMistral): string {
+  pezzo(p: PezzoOpenAI): string {
     let fuori = '';
     if (p.usage) {
       const inCache = p.usage.prompt_tokens_details?.cached_tokens ?? 0;
@@ -245,6 +300,8 @@ export class FlussoVersoAnthropic {
     }
     for (const chiamata of delta?.tool_calls ?? []) {
       const chiave = chiamata.index ?? 0;
+      if (chiamata.id) this.idPerIndice.set(chiave, chiamata.id);
+      this.firme?.ricorda(chiamata.id ?? this.idPerIndice.get(chiave), chiamata.extra_content?.google?.thought_signature);
       let indice = this.toolAperti.get(chiave);
       if (indice === undefined) {
         fuori += this.chiudiTesto();
@@ -301,11 +358,15 @@ export class FlussoVersoAnthropic {
 }
 
 /** La risposta intera di Mistral, quando la richiesta non chiede lo stream. */
-export interface RispostaMistral {
+export interface RispostaOpenAI {
   choices?: Array<{
     message?: {
-      content?: ContenutoMistral;
-      tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }>;
+      content?: ContenutoOpenAI;
+      tool_calls?: Array<{
+      id?: string;
+      function?: { name?: string; arguments?: string };
+      extra_content?: { google?: { thought_signature?: string } };
+    }>;
     };
     finish_reason?: string | null;
   }>;
@@ -317,13 +378,14 @@ export interface RispostaMistral {
 }
 
 /** La risposta intera (senza streaming), per le chiamate che non lo chiedono. */
-export function rispostaVersoAnthropic(risposta: RispostaMistral, modello: string): Record<string, unknown> {
+export function rispostaVersoAnthropic(risposta: RispostaOpenAI, modello: string, firme?: Firme): Record<string, unknown> {
   const scelta = risposta.choices?.[0];
   const messaggio = scelta?.message;
   const contenuto: Array<Record<string, unknown>> = [];
   const testo = testoDelContenuto(messaggio?.content);
   if (testo) contenuto.push({ type: 'text', text: testo });
   for (const c of messaggio?.tool_calls ?? []) {
+    firme?.ricorda(c.id, c.extra_content?.google?.thought_signature);
     contenuto.push({ type: 'tool_use', id: c.id, name: c.function?.name, input: interpretaJson(c.function?.arguments) });
   }
   const inCache = risposta.usage?.prompt_tokens_details?.cached_tokens ?? 0;
@@ -370,7 +432,18 @@ function evento(nome: string, dati: unknown): string {
   return `event: ${nome}\ndata: ${JSON.stringify(dati)}\n\n`;
 }
 
-export interface AdattatoreMistral {
+/** Come si parla a un fornitore: le differenze stanno qui, non in un file per ciascuno. */
+export interface ProfiloFornitore {
+  /** La radice dell'API, senza `/chat/completions`. */
+  base: string;
+  chiave: string;
+  /** Manda `prompt_cache_key` (Mistral). Altrove un campo ignoto può valere un 400. */
+  chiaveCache?: boolean;
+  /** Chiede gli usi in streaming con `stream_options` (Gemini: senza, non li manda). */
+  usiInStreaming?: boolean;
+}
+
+export interface AdattatoreOpenAI {
   /** Da dare all'SDK come `ANTHROPIC_BASE_URL`. */
   url: string;
   /** Da dare all'SDK come `ANTHROPIC_API_KEY`: l'adattatore non serve nessun altro. */
@@ -378,11 +451,11 @@ export interface AdattatoreMistral {
   chiudi(): Promise<void>;
 }
 
-export async function avviaAdattatoreMistral(opzioni: { chiave: string; base?: string }): Promise<AdattatoreMistral> {
-  const base = opzioni.base ?? ENDPOINT_MISTRAL;
+export async function avviaAdattatoreOpenAI(profilo: ProfiloFornitore): Promise<AdattatoreOpenAI> {
   const token = randomUUID();
+  const firme = new Firme();
   const server = createServer((richiesta, risposta) => {
-    void servi(richiesta, risposta, { chiave: opzioni.chiave, base, token }).catch((errore: unknown) => {
+    void servi(richiesta, risposta, { ...profilo, token }, firme).catch((errore: unknown) => {
       if (!risposta.headersSent) {
         rispondi(risposta, 502, { type: 'error', error: { type: 'api_error', message: messaggio(errore) } });
       } else risposta.end();
@@ -403,7 +476,8 @@ export async function avviaAdattatoreMistral(opzioni: { chiave: string; base?: s
 async function servi(
   richiesta: IncomingMessage,
   risposta: ServerResponse,
-  opzioni: { chiave: string; base: string; token: string },
+  opzioni: ProfiloFornitore & { token: string },
+  firme: Firme,
 ): Promise<void> {
   const percorso = (richiesta.url ?? '').split('?')[0];
   /* La sonda di raggiungibilità dell'SDK, prima di ogni sessione. */
@@ -411,7 +485,7 @@ async function servi(
   if (richiesta.method !== 'POST' || percorso !== '/v1/messages') {
     return rispondi(risposta, 404, {
       type: 'error',
-      error: { type: 'not_found_error', message: `L’adattatore Mistral non serve ${richiesta.method} ${percorso}.` },
+      error: { type: 'not_found_error', message: `L’adattatore non serve ${richiesta.method} ${percorso}.` },
     });
   }
   if (richiesta.headers['x-api-key'] !== opzioni.token) {
@@ -425,7 +499,11 @@ async function servi(
   for await (const p of richiesta) pezzi.push(p as Buffer);
   const corpo = JSON.parse(Buffer.concat(pezzi).toString('utf8')) as CorpoAnthropic;
   const sessione = richiesta.headers['x-claude-code-session-id'];
-  const verso = richiestaVersoMistral(corpo, typeof sessione === 'string' ? sessione : undefined);
+  const verso = richiestaVersoOpenAI(
+    corpo,
+    opzioni.chiaveCache && typeof sessione === 'string' ? sessione : undefined,
+    firme,
+  );
 
   if (corpo.stream === false) {
     const secca = await fetch(`${opzioni.base}/v1/chat/completions`, {
@@ -433,8 +511,8 @@ async function servi(
       headers: { Authorization: `Bearer ${opzioni.chiave}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(verso),
     });
-    if (!secca.ok) return rispondi(risposta, secca.status, erroreDaMistral(await secca.text()));
-    return rispondi(risposta, 200, rispostaVersoAnthropic((await secca.json()) as RispostaMistral, corpo.model));
+    if (!secca.ok) return rispondi(risposta, secca.status, erroreDaFornitore(await secca.text()));
+    return rispondi(risposta, 200, rispostaVersoAnthropic((await secca.json()) as RispostaOpenAI, corpo.model, firme));
   }
 
   const monte = await fetch(`${opzioni.base}/v1/chat/completions`, {
@@ -444,12 +522,16 @@ async function servi(
       'Content-Type': 'application/json',
       Accept: 'text/event-stream',
     },
-    body: JSON.stringify({ ...verso, stream: true }),
+    body: JSON.stringify({
+      ...verso,
+      stream: true,
+      ...(opzioni.usiInStreaming && { stream_options: { include_usage: true } }),
+    }),
   });
-  if (!monte.ok || !monte.body) return rispondi(risposta, monte.status, erroreDaMistral(await monte.text()));
+  if (!monte.ok || !monte.body) return rispondi(risposta, monte.status, erroreDaFornitore(await monte.text()));
 
   risposta.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
-  const flusso = new FlussoVersoAnthropic(corpo.model);
+  const flusso = new FlussoVersoAnthropic(corpo.model, undefined, firme);
   risposta.write(flusso.apri());
   let resto = '';
   for await (const pezzo of monte.body) {
@@ -461,7 +543,7 @@ async function servi(
       const dato = riga.slice(5).trim();
       if (!dato || dato === '[DONE]') continue;
       try {
-        risposta.write(flusso.pezzo(JSON.parse(dato) as PezzoMistral));
+        risposta.write(flusso.pezzo(JSON.parse(dato) as PezzoOpenAI));
       } catch {
         /* un pezzo che non si legge non deve buttare giù la sessione */
       }
@@ -472,7 +554,7 @@ async function servi(
 }
 
 /** L'errore di Mistral nella forma che l'SDK sa leggere (e su cui riprova). */
-function erroreDaMistral(testo: string): Record<string, unknown> {
+function erroreDaFornitore(testo: string): Record<string, unknown> {
   return { type: 'error', error: { type: 'api_error', message: testo.slice(0, 500) } };
 }
 

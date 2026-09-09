@@ -31,6 +31,7 @@ export function registraRotteModelli(app: FastifyInstance): void {
       hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY),
       aki: Boolean(configurazione().AKI_API_KEY),
       mistral: Boolean(configurazione().MISTRAL_API_KEY),
+      gemini: Boolean(configurazione().GEMINI_API_KEY),
     });
 
   app.get('/api/modelli', () => catalogo().map(versoModello));

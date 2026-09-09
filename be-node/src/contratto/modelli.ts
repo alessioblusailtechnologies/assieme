@@ -24,7 +24,7 @@ export interface ModelloAI {
  * (API già Anthropic-compatibili, datacenter UE); Mistral, che parla un
  * altro formato e passa dall'adattatore in-process del worker.
  */
-export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'mistral';
+export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'mistral' | 'gemini';
 
 /**
  * Il listino di un fornitore terzo, in € (≈ $) per milione di token. Letti e
@@ -148,6 +148,19 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     disponibile: true,
   },
   {
+    id: 'mod-gemini-3-5-flash',
+    provider: 'Google',
+    nome: 'Gemini 3.5 Flash',
+    sdk: 'gemini-3.5-flash',
+    fornitore: 'gemini',
+    tariffa: { input: 1.5, output: 9.0, cache: 0.15 },
+    descrizione:
+      'Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa — ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti: 'Tariffa Google: 1,50 $ per milione di token letti (0,15 $ se già in cache) e 9,00 $ per milione scritti, ragionamento compreso.',
+    disponibile: true,
+  },
+  {
     id: 'mod-gpt-5-2',
     provider: 'OpenAI',
     nome: 'GPT-5.2',
@@ -176,7 +189,7 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
  * Il catalogo come sta davvero: una voce HostYourAI è selezionabile solo se
  * la chiave è configurata — il catalogo dice la verità (Fase 6).
  */
-export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; aki: boolean; mistral: boolean }): VoceCatalogo[] {
+export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; aki: boolean; mistral: boolean; gemini: boolean }): VoceCatalogo[] {
   return CATALOGO_MODELLI.map((m) =>
     m.fornitore && m.fornitore !== 'anthropic' && !chiaviPresenti[m.fornitore] ? { ...m, disponibile: false } : m,
   );

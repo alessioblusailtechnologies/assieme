@@ -4,13 +4,14 @@ import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
-  avviaAdattatoreMistral,
+  avviaAdattatoreOpenAI,
+  Firme,
   FlussoVersoAnthropic,
   motivoDiFine,
-  richiestaVersoMistral,
+  richiestaVersoOpenAI,
   rispostaVersoAnthropic,
-  type AdattatoreMistral,
-} from '../src/worker/motore/adattatore-mistral.js';
+  type AdattatoreOpenAI,
+} from '../src/worker/motore/adattatore-openai.js';
 
 /**
  * L'adattatore verso Mistral: l'Agent SDK parla Anthropic, Mistral parla
@@ -50,7 +51,7 @@ function nomiEventi(sse: string): string[] {
 
 describe('dalla richiesta Anthropic a quella Mistral', () => {
   it('il sistema a blocchi diventa un messaggio, i tool diventano funzioni, la cache ha la sua chiave', () => {
-    const verso = richiestaVersoMistral(
+    const verso = richiestaVersoOpenAI(
       {
         model: 'mistral-large-2512',
         max_tokens: 4096,
@@ -78,7 +79,7 @@ describe('dalla richiesta Anthropic a quella Mistral', () => {
   });
 
   it('un giro con i tool: la chiamata diventa `tool_calls`, il risultato un messaggio a sé, il pensiero sparisce', () => {
-    const verso = richiestaVersoMistral({
+    const verso = richiestaVersoOpenAI({
       model: 'mistral-large-2512',
       messages: [
         { role: 'user', content: [{ type: 'text', text: 'Leggi le condizioni.' }] },
@@ -117,7 +118,7 @@ describe('dalla richiesta Anthropic a quella Mistral', () => {
     /* Visto dal vivo il 09/09/2026: con un turno di sistema in coda (i
        promemoria che l'SDK infila strada facendo) Mistral smette di chiamare
        i tool e si mette a scriverli come testo dentro la risposta. */
-    const verso = richiestaVersoMistral({
+    const verso = richiestaVersoOpenAI({
       model: 'mistral-large-2512',
       system: 'Sei Velia.',
       messages: [
@@ -133,7 +134,7 @@ describe('dalla richiesta Anthropic a quella Mistral', () => {
   });
 
   it('un’immagine dell’utente diventa un data URL, e il testo le resta accanto', () => {
-    const verso = richiestaVersoMistral({
+    const verso = richiestaVersoOpenAI({
       model: 'mistral-large-2512',
       messages: [
         {
@@ -243,6 +244,54 @@ describe('dallo stream di Mistral a quello di Anthropic', () => {
     expect(eventiDi(sse).find((d) => d.type === 'message_delta')!.delta?.stop_reason).toBe('tool_use');
   });
 
+  it('la firma di ragionamento di Gemini fa avanti e indietro', () => {
+    /* Gemini manda la firma in `extra_content` e pretende di riaverla al
+       turno dopo: senza, 400 «Function call is missing a thought_signature»
+       — visto dal vivo il 09/09/2026 alla prima sessione vera. */
+    const firme = new Firme();
+    const flusso = new FlussoVersoAnthropic('gemini-3.5-flash', 'msg_prova', firme);
+    flusso.apri();
+    flusso.pezzo({
+      choices: [
+        {
+          delta: {
+            tool_calls: [
+              {
+                index: 0,
+                id: 'call_1089246',
+                function: { name: 'Glob', arguments: '{"pattern":"**/*.md"}' },
+                extra_content: { google: { thought_signature: 'EpACCo0CARFNMg' } },
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const verso = richiestaVersoOpenAI(
+      {
+        model: 'gemini-3.5-flash',
+        messages: [
+          { role: 'user', content: 'Che documenti ci sono?' },
+          { role: 'assistant', content: [{ type: 'tool_use', id: 'call_1089246', name: 'Glob', input: { pattern: '**/*.md' } }] },
+        ],
+      },
+      undefined,
+      firme,
+    );
+    const chiamate = (verso['messages'] as Array<Record<string, unknown>>)[1]!['tool_calls'] as Array<Record<string, unknown>>;
+    expect(chiamate[0]!['extra_content']).toEqual({ google: { thought_signature: 'EpACCo0CARFNMg' } });
+  });
+
+  it('senza firma nota, la chiamata torna indietro nuda', () => {
+    const verso = richiestaVersoOpenAI({
+      model: 'mistral-large-2512',
+      messages: [{ role: 'assistant', content: [{ type: 'tool_use', id: 'mai-vista', name: 'Read', input: {} }] }],
+    });
+    const chiamate = (verso['messages'] as Array<Record<string, unknown>>)[0]!['tool_calls'] as Array<Record<string, unknown>>;
+    expect(chiamate[0]).not.toHaveProperty('extra_content');
+  });
+
   it('i motivi di fine parlano anthropichese', () => {
     expect(motivoDiFine('tool_calls')).toBe('tool_use');
     expect(motivoDiFine('length')).toBe('max_tokens');
@@ -277,7 +326,7 @@ describe('dallo stream di Mistral a quello di Anthropic', () => {
 
 describe('il server dell’adattatore, contro un finto Mistral', () => {
   let finto: Server;
-  let adattatore: AdattatoreMistral;
+  let adattatore: AdattatoreOpenAI;
   let vistoDaMistral: Record<string, unknown> | undefined;
 
   beforeAll(async () => {
@@ -301,12 +350,34 @@ describe('il server dell’adattatore, contro un finto Mistral', () => {
     });
     await new Promise<void>((fatto) => finto.listen(0, '127.0.0.1', fatto));
     const porta = (finto.address() as AddressInfo).port;
-    adattatore = await avviaAdattatoreMistral({ chiave: 'chiave-finta', base: `http://127.0.0.1:${porta}` });
+    /* Il profilo di Mistral: chiave di cache sì, `stream_options` no. */
+    adattatore = await avviaAdattatoreOpenAI({ chiave: 'chiave-finta', base: `http://127.0.0.1:${porta}`, chiaveCache: true });
   });
 
   afterAll(async () => {
     await adattatore.chiudi();
     await new Promise<void>((fatto) => finto.close(() => fatto()));
+  });
+
+  it('col profilo che li chiede, gli usi in streaming si domandano (Gemini)', async () => {
+    const porta = (finto.address() as AddressInfo).port;
+    const gemini = await avviaAdattatoreOpenAI({
+      chiave: 'chiave-finta',
+      base: `http://127.0.0.1:${porta}`,
+      usiInStreaming: true,
+    });
+    try {
+      await fetch(`${gemini.url}/v1/messages`, {
+        method: 'POST',
+        headers: { 'x-api-key': gemini.token, 'content-type': 'application/json', 'x-claude-code-session-id': 'sessione-abc' },
+        body: JSON.stringify({ model: 'gemini-3.5-flash', stream: true, messages: [{ role: 'user', content: 'Ciao' }] }),
+      });
+      expect(vistoDaMistral?.['stream_options']).toEqual({ include_usage: true });
+      /* E senza chiave di cache non la manda, che altrove vale un 400. */
+      expect(vistoDaMistral?.['prompt_cache_key']).toBeUndefined();
+    } finally {
+      await gemini.chiudi();
+    }
   });
 
   it('risponde alla sonda di raggiungibilità, senza la quale l’SDK non parte', async () => {
@@ -338,6 +409,8 @@ describe('il server dell’adattatore, contro un finto Mistral', () => {
     const sse = await r.text();
     expect(vistoDaMistral?.['prompt_cache_key']).toBe('sessione-abc');
     expect(vistoDaMistral?.['stream']).toBe(true);
+    /* Questo profilo non chiede gli usi in streaming: il campo non parte. */
+    expect(vistoDaMistral?.['stream_options']).toBeUndefined();
     expect(vistoDaMistral?.['messages']).toEqual([
       { role: 'system', content: 'Sei Velia.' },
       { role: 'user', content: 'Ciao' },

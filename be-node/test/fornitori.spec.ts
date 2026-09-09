@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { catalogoModelli, versoModello } from '../src/contratto/modelli.js';
-import { ambienteModello, costoATariffa, dimenticaAdattatoreMistral } from '../src/worker/motore/fornitori.js';
+import { ambienteModello, costoATariffa, dimenticaAdattatori } from '../src/worker/motore/fornitori.js';
 
 /**
  * I fornitori oltre ad Anthropic (RF-D-03): la sessione del motore resta
@@ -15,10 +15,11 @@ const chiavi = {
   /* Un Mistral che non esiste: l'adattatore si apre lo stesso, e finché
      nessuno gli manda una sessione non chiama nessuno. */
   mistral: { chiave: 'mistral-prova', baseUrl: 'http://127.0.0.1:9' },
+  gemini: { chiave: 'gemini-prova', baseUrl: 'http://127.0.0.1:9' },
 };
 
 afterAll(async () => {
-  await dimenticaAdattatoreMistral();
+  await dimenticaAdattatori();
 });
 
 describe('l’ambiente della sessione per fornitore', () => {
@@ -89,21 +90,21 @@ describe('l’ambiente della sessione per fornitore', () => {
 
 describe('il catalogo con e senza chiave', () => {
   it('una voce di fornitore terzo è selezionabile solo con la sua chiave', () => {
-    const senza = catalogoModelli({ hostyourai: false, aki: false, mistral: false });
-    const con = catalogoModelli({ hostyourai: true, aki: true, mistral: true });
+    const senza = catalogoModelli({ hostyourai: false, aki: false, mistral: false, gemini: false });
+    const con = catalogoModelli({ hostyourai: true, aki: true, mistral: true, gemini: true });
     expect(senza.filter((m) => m.fornitore === 'hostyourai').every((m) => !m.disponibile)).toBe(true);
     expect(senza.filter((m) => m.fornitore === 'mistral').every((m) => !m.disponibile)).toBe(true);
     expect(con.filter((m) => m.fornitore === 'hostyourai').every((m) => m.disponibile)).toBe(true);
     expect(con.filter((m) => m.fornitore === 'mistral').every((m) => m.disponibile)).toBe(true);
     expect(senza.filter((m) => m.fornitore === 'anthropic').every((m) => m.disponibile)).toBe(true);
     /* Le chiavi non si fanno da spalla: quella di uno non alza l'altro. */
-    const soloMistral = catalogoModelli({ hostyourai: false, aki: false, mistral: true });
+    const soloMistral = catalogoModelli({ hostyourai: false, aki: false, mistral: true, gemini: false });
     expect(soloMistral.find((m) => m.id === 'mod-glm-5-2')?.disponibile).toBe(false);
     expect(soloMistral.find((m) => m.id === 'mod-mistral-large-3')?.disponibile).toBe(true);
   });
 
   it('la forma pubblica non espone fornitore né tariffa', () => {
-    const glm = catalogoModelli({ hostyourai: true, aki: true, mistral: true }).find((m) => m.id === 'mod-glm-5-2')!;
+    const glm = catalogoModelli({ hostyourai: true, aki: true, mistral: true, gemini: true }).find((m) => m.id === 'mod-glm-5-2')!;
     const pubblico = versoModello(glm) as unknown as Record<string, unknown>;
     expect(pubblico).not.toHaveProperty('sdk');
     expect(pubblico).not.toHaveProperty('fornitore');

@@ -123,6 +123,13 @@ const schemaAmbiente = z.object({
   AKI_API_KEY: z.string().optional(),
   AKI_BASE_URL: z.string().url().default('https://aki.io/anthropic'),
   /**
+   * Gemini (09/09/2026), dall'endpoint OpenAI-compatibile di Google via
+   * l'adattatore. Attenzione: questa è l'API globale, **senza residenza UE**
+   * — quella esiste solo su Vertex in una region europea, e si ferma alla
+   * 3.5 Flash. Va bene per misurare un modello, non per i dati dei clienti.
+   */
+  GEMINI_API_KEY: z.string().optional(),
+  /**
    * L'invio email («Invia email» sotto una risposta, 29/08/2026): Resend via
    * HTTP, nessuna dipendenza. Senza chiave, fuori produzione l'email finisce
    * nel log e l'invio si dichiara simulato (il flusso si prova lo stesso);

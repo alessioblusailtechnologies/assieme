@@ -1,5 +1,5 @@
 import { vocePerSdk, type Tariffa } from '../../contratto/modelli.js';
-import { avviaAdattatoreMistral, type AdattatoreMistral } from './adattatore-mistral.js';
+import { avviaAdattatoreOpenAI, type AdattatoreOpenAI, type ProfiloFornitore } from './adattatore-openai.js';
 
 /**
  * Da dove si serve un modello (RF-D-03). Tre strade, e la sessione del
@@ -18,8 +18,9 @@ import { avviaAdattatoreMistral, type AdattatoreMistral } from './adattatore-mis
 export interface ChiaviFornitori {
   hostyourai?: { chiave?: string; baseUrl: string };
   aki?: { chiave?: string; baseUrl: string };
-  /** `baseUrl` serve solo ai test (un finto Mistral): senza, l'API vera. */
+  /** `baseUrl` serve solo ai test (un finto fornitore): senza, l'API vera. */
   mistral?: { chiave?: string; baseUrl?: string };
+  gemini?: { chiave?: string; baseUrl?: string };
 }
 
 export interface AmbienteModello {
@@ -56,10 +57,15 @@ export async function ambienteModello(
       ...(voce.fornitore === 'aki' && { usiInclusivi: true }),
     };
   }
-  if (voce?.fornitore === 'mistral') {
-    const chiave = chiavi.mistral?.chiave;
-    if (!chiave) throw new Error(`Il modello ${voce.nome} richiede MISTRAL_API_KEY in .env.`);
-    const adattatore = await adattatoreCondiviso(chiave, chiavi.mistral?.baseUrl);
+  if (voce?.fornitore === 'mistral' || voce?.fornitore === 'gemini') {
+    const scelte = DIALETTO_OPENAI[voce.fornitore];
+    const dato = voce.fornitore === 'gemini' ? chiavi.gemini : chiavi.mistral;
+    if (!dato?.chiave) throw new Error(`Il modello ${voce.nome} richiede ${scelte.variabile} in .env.`);
+    const adattatore = await adattatoreCondiviso(voce.fornitore, {
+      ...scelte.profilo,
+      chiave: dato.chiave,
+      ...(dato.baseUrl && { base: dato.baseUrl }),
+    });
     return {
       env: ambientePuntato(ambienteProcesso, adattatore.url, adattatore.token),
       terzo: true,
@@ -85,22 +91,42 @@ function ambientePuntato(processo: NodeJS.ProcessEnv, baseUrl: string, chiave: s
 }
 
 /**
- * L'adattatore è uno per processo: apre una porta, e non ha senso aprirne
- * una per sessione. Non trattiene il processo (`unref`), così gli strumenti
- * di collaudo escono da soli.
+ * Chi parla il dialetto OpenAI, e in che cosa differisce. Sono le due
+ * differenze viste dal vivo il 09/09/2026, non un'astrazione preventiva.
  */
-let adattatore: Promise<AdattatoreMistral> | undefined;
+const DIALETTO_OPENAI = {
+  mistral: {
+    variabile: 'MISTRAL_API_KEY',
+    profilo: { base: 'https://api.mistral.ai', chiaveCache: true },
+  },
+  gemini: {
+    variabile: 'GEMINI_API_KEY',
+    /* Senza `stream_options` Gemini non manda gli usi, e con i tool in
+       streaming risponde addirittura 403. */
+    profilo: { base: 'https://generativelanguage.googleapis.com/v1beta/openai', usiInStreaming: true },
+  },
+} as const satisfies Record<string, { variabile: string; profilo: Omit<ProfiloFornitore, 'chiave'> }>;
 
-function adattatoreCondiviso(chiave: string, base?: string): Promise<AdattatoreMistral> {
-  adattatore ??= avviaAdattatoreMistral({ chiave, ...(base && { base }) });
-  return adattatore;
+/**
+ * Un adattatore per fornitore, non per sessione: apre una porta, e non ha
+ * senso aprirne una a ogni domanda. Non trattiene il processo (`unref`),
+ * così gli strumenti di collaudo escono da soli.
+ */
+const adattatori = new Map<string, Promise<AdattatoreOpenAI>>();
+
+function adattatoreCondiviso(fornitore: string, profilo: ProfiloFornitore): Promise<AdattatoreOpenAI> {
+  const gia = adattatori.get(fornitore);
+  if (gia) return gia;
+  const nuovo = avviaAdattatoreOpenAI(profilo);
+  adattatori.set(fornitore, nuovo);
+  return nuovo;
 }
 
-/** Solo per i test: chiude l'adattatore, la prossima sessione lo riapre. */
-export async function dimenticaAdattatoreMistral(): Promise<void> {
-  const attuale = adattatore;
-  adattatore = undefined;
-  if (attuale) await (await attuale).chiudi();
+/** Solo per i test: chiude gli adattatori, la prossima sessione li riapre. */
+export async function dimenticaAdattatori(): Promise<void> {
+  const aperti = [...adattatori.values()];
+  adattatori.clear();
+  for (const a of aperti) await (await a).chiudi();
 }
 
 /**

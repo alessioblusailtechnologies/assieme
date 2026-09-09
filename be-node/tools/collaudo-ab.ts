@@ -113,7 +113,8 @@ try {
       ...(v.effort && { effort: v.effort }),
       fornitori: { hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
         aki: { ...(c.AKI_API_KEY && { chiave: c.AKI_API_KEY }), baseUrl: c.AKI_BASE_URL },
-        mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) } },
+        mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) },
+        gemini: { ...(c.GEMINI_API_KEY && { chiave: c.GEMINI_API_KEY }) } },
     });
     for (const domanda of DOMANDE) {
       console.log(`\n[${v.etichetta}] ${domanda}`);
