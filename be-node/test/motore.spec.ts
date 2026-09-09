@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
-import { FiltroPensieri, FlussoTesto } from '../src/worker/motore/flusso-testo.js';
+import { FiltroPensieri, FlussoTesto, senzaTrattiniLunghi } from '../src/worker/motore/flusso-testo.js';
 import { catalogoArchivioPubblico, MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
@@ -189,6 +189,28 @@ describe('FlussoTesto: cosa vede l’utente e cosa legge il validatore', () => {
     expect(testo()).toBe('Sì.');
     expect(flusso.testoCompleto).toContain('"nonSupportato":true');
     expect(passi.map((p) => p.tipo)).toEqual(['testo', 'attivita']);
+  });
+});
+
+
+describe('il trattino lungo non esce da Velia', () => {
+  it('lungo e mezzano diventano trattino semplice, gli spazi restano dov’erano', () => {
+    expect(senzaTrattiniLunghi('è coperto — e con buon margine')).toBe('è coperto - e con buon margine');
+    expect(senzaTrattiniLunghi('tre casi—veicolo in riparazione')).toBe('tre casi-veicolo in riparazione');
+    expect(senzaTrattiniLunghi('pp. 10–12')).toBe('pp. 10-12');
+  });
+
+  /* Vale sui delta perché la sostituzione è uno a uno: il flusso taglia la
+     frase dove capita e non deve poterla spostare. */
+  it('la lunghezza non cambia, così gli indici del flusso non si spostano', () => {
+    const grezzo = 'a — b — c';
+    expect(senzaTrattiniLunghi(grezzo)).toHaveLength(grezzo.length);
+    expect(senzaTrattiniLunghi(senzaTrattiniLunghi(grezzo))).toBe(senzaTrattiniLunghi(grezzo));
+  });
+
+  it('la regola sta anche nei prompt, e i prompt non la contraddicono con l’esempio', () => {
+    expect(REGOLE_MOTORE).toContain('Niente trattini lunghi');
+    expect(REGOLE_MOTORE).not.toContain('—');
   });
 });
 
@@ -437,9 +459,9 @@ describe('workspace e sessione, le parti pure', () => {
     expect(catalogo).toContain('### Allianz');
     expect(catalogo).toContain('### Nobis');
     // Due file della stessa edizione non la contano due volte.
-    expect(catalogo).toContain('**Nuova 4R** — ed. corrente 04/2026 (+1 storica)');
+    expect(catalogo).toContain('**Nuova 4R** - ed. corrente 04/2026 (+1 storica)');
     // Edizione unica: nessuna coda «(+N storiche)».
-    expect(catalogo).toContain('**Nobis Car** — ed. corrente 05/2026 · `archivio-pubblico/nobis/auto/nobis-car/`');
+    expect(catalogo).toContain('**Nobis Car** - ed. corrente 05/2026 · `archivio-pubblico/nobis/auto/nobis-car/`');
     // Glossario e INDICE sono mappe: citati nell’intestazione, mai come prodotti.
     const prodotti = catalogo.match(/^- .*/gm) ?? [];
     expect(prodotti).toHaveLength(2);

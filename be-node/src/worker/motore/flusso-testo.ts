@@ -9,6 +9,26 @@ export type PassoTesto =
 export const SOGLIA_TESTO_FINALE = 300;
 
 /**
+ * Nei testi di Velia il trattino lungo non si usa: come separatore si scrive
+ * il trattino semplice. La regola sta anche nei prompt, ma non basta: il
+ * 09/09/2026, sulla stessa domanda, l'hanno disattesa quattro modelli su
+ * quattro (Opus, GLM, Gemini, e il prompt di sistema che li istruisce ne è
+ * pieno a sua volta). Una regola di forma che dipende dal fornitore del
+ * mese non è una regola, quindi la fa rispettare il codice.
+ *
+ * Sostituzione uno a uno, senza toccare gli spazi attorno: così vale anche
+ * sui delta dello streaming, che tagliano la frase dove capita, e non
+ * sposta gli indici di chi sta ancora affettando il buffer.
+ *
+ * Non tocca il blocco delle citazioni: lì gli `estratto` sono testo
+ * letterale dei documenti, e riscriverne la punteggiatura vorrebbe dire non
+ * ritrovarli più nel file.
+ */
+export function senzaTrattiniLunghi(testo: string): string {
+  return testo.replace(/[—–]/g, '-');
+}
+
+/**
  * Il testo dell'assistente mentre arriva, turno per turno — la parte del
  * motore che decide cosa vede l'utente e quando. Pura: riceve i delta e le
  * chiusure di turno, emette passi; così si prova senza SDK.

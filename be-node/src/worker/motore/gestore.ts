@@ -18,6 +18,7 @@ import { apprendi } from '../memoria/gestore.js';
 import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
 import { DiarioPassi } from './diario-passi.js';
+import { senzaTrattiniLunghi } from './flusso-testo.js';
 import {
   caricaDna,
   catalogoArchivioPubblico,
@@ -130,7 +131,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
 
     const emetti = async (evento: EventoStream): Promise<number> => {
       if (evento.tipo === 'testo') {
-        await accorpatore.aggiungi(evento.delta);
+        await accorpatore.aggiungi(senzaTrattiniLunghi(evento.delta));
         return 0;
       }
       await accorpatore.svuota();
@@ -319,8 +320,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           throw new ErroreNonRitentabile(e.esito.errore ?? 'sessione documentale terminata con errore');
         }
         const testo = e.generati.length
-          ? separaBlocco(e.esito.testo).visibile.trim() || 'Il documento è pronto qui sotto.'
-          : `${separaBlocco(e.esito.testo).visibile.trim()}\n\n*(Il motore documentale non ha consegnato un documento.)*`.trim();
+          ? senzaTrattiniLunghi(separaBlocco(e.esito.testo).visibile.trim()) || 'Il documento è pronto qui sotto.'
+          : `${senzaTrattiniLunghi(separaBlocco(e.esito.testo).visibile.trim())}\n\n*(Il motore documentale non ha consegnato un documento.)*`.trim();
         diario.chiudi();
         await db.query(
           `insert into velia.messaggi
@@ -387,7 +388,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
             /* I file consegnati dalla sandbox sono documenti della risposta di chat. */
             strumentiChat!.generati.push(...e.generati);
             strumentiChat!.percorsi.push(...e.percorsi);
-            return { testo: separaBlocco(e.esito.testo).visibile.trim(), documenti: e.generati };
+            return { testo: senzaTrattiniLunghi(separaBlocco(e.esito.testo).visibile.trim()), documenti: e.generati };
           },
         }),
       });
@@ -491,13 +492,13 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       if (esito.terminato === 'budget') {
         /* Mai silenziosamente (piano §4.3.6): la risposta parziale si dichiara. */
         await emetti({ tipo: 'testo', delta: MESSAGGIO_BUDGET });
-        testoFinale = separaBlocco(esito.testo).visibile + MESSAGGIO_BUDGET;
+        testoFinale = senzaTrattiniLunghi(separaBlocco(esito.testo).visibile) + MESSAGGIO_BUDGET;
         nonSupportato = true;
         avvisi = [`budget raggiunto: ${esito.errore ?? ''}`];
         await emetti({ tipo: 'non-supportato' });
       } else {
         const { visibile, blocco, problemi } = separaBlocco(esito.testo);
-        testoFinale = visibile;
+        testoFinale = senzaTrattiniLunghi(visibile);
         if (!blocco) {
           await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
           await emetti({
