@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
 import { FlussoTesto } from '../src/worker/motore/flusso-testo.js';
-import { MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
+import { catalogoArchivioPubblico, MARCATORE_CITAZIONI, promptRipresa, promptSistema, promptUtente, REGOLE_MOTORE, type DnaAgenzia } from '../src/worker/motore/regole.js';
 import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/motore/sessione.js';
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
@@ -49,6 +49,18 @@ describe('il blocco velia-citazioni', () => {
     expect(visibile).toBe('Risposta con fonte *(DIP, pag. 3)*.');
     expect(problemi).toEqual([]);
     expect(blocco?.citazioni[0]).toMatchObject({ file: 'a/dip.md', pagina: 3 });
+  });
+
+  it('una pagina degenere non fa fallire il blocco: la decide poi l’ancora', () => {
+    /* Regressione: `pagina: 0` bocciava l'INTERO blocco allo schema, quindi
+       la risposta veniva scartata e l'utente la ripagava — per un numero che
+       `ancoraggio.ts` riscrive comunque dall'ancora dell'estratto. */
+    for (const grezza of ['0', '-3', '2.4', '"pippo"', 'null']) {
+      const testo = `Testo.\n\n${MARCATORE_CITAZIONI}\n{"citazioni":[{"file":"a/dip.md","pagina":${grezza},"estratto":"x"}],"provenienze":[],"nonSupportato":false}\n\`\`\``;
+      const { blocco, problemi } = separaBlocco(testo);
+      expect(problemi, `pagina ${grezza}`).toEqual([]);
+      expect(blocco?.citazioni).toHaveLength(1);
+    }
   });
 
   it('senza blocco o con JSON rotto: visibile intero e problema dichiarato', () => {
@@ -195,6 +207,18 @@ describe('validaBlocco', () => {
     }
     expect(catturato).toBeInstanceOf(ErroreValidazione);
     expect((catturato as ErroreValidazione).dettagli[0]).toMatch(/pag\. 11 .*citabile \(10\)/);
+  });
+
+  it('una pagina sotto la prima riparte da 1, con avviso, e la citazione resta valida', () => {
+    const file = 'archivio-pubblico/unipolsai/auto/km/ed-2022-11/dip.md';
+    const esito = validaBlocco(
+      { citazioni: [{ file, pagina: 0, estratto: 'Franchigia € 200' }], provenienze: [], nonSupportato: false },
+      perPath,
+      dnaVuoto,
+    );
+    expect(esito.citazioni).toHaveLength(1);
+    expect(esito.citazioni[0]?.posizione.pagina).toBe(1);
+    expect(esito.avvisi.some((a) => a.includes('non utilizzabile'))).toBe(true);
   });
 
   it('una citazione a un INDICE.md o al GLOSSARIO.md si ignora con un avviso: sono mappe, non fonti', () => {
@@ -347,13 +371,75 @@ describe('workspace e sessione, le parti pure', () => {
     expect(utente.indexOf('Prima domanda')).toBeLessThan(utente.indexOf('Seconda domanda'));
   });
 
+  it('il catalogo raggruppa per compagnia, dà l’edizione corrente e conta le storiche', () => {
+    const pub = (path: string, p: Partial<DocumentoWorkspace>): [string, DocumentoWorkspace] => [
+      path,
+      doc({ id: path, titolo: path, archivio: 'pubblico', ...p }),
+    ];
+    /* Le edizioni arrivano dalla query in ordine crescente: l'ultima è la corrente. */
+    const perPath = new Map<string, DocumentoWorkspace>([
+      pub('archivio-pubblico/GLOSSARIO.md', {}),
+      pub('archivio-pubblico/allianz/auto/nuova-4r/INDICE.md', {}),
+      pub('archivio-pubblico/allianz/auto/nuova-4r/ed-2025-12/dip.md', { compagnia: 'Allianz', ramo: 'auto', prodotto: 'Nuova 4R', edizione: '12/2025' }),
+      pub('archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/dip.md', { compagnia: 'Allianz', ramo: 'auto', prodotto: 'Nuova 4R', edizione: '04/2026' }),
+      pub('archivio-pubblico/allianz/auto/nuova-4r/ed-2026-04/condizioni.md', { compagnia: 'Allianz', ramo: 'auto', prodotto: 'Nuova 4R', edizione: '04/2026' }),
+      pub('archivio-pubblico/nobis/auto/nobis-car/ed-2026-05/dip.md', { compagnia: 'Nobis', ramo: 'auto', prodotto: 'Nobis Car', edizione: '05/2026' }),
+    ]);
+    const catalogo = catalogoArchivioPubblico(perPath);
+    expect(catalogo).toContain('### Allianz');
+    expect(catalogo).toContain('### Nobis');
+    // Due file della stessa edizione non la contano due volte.
+    expect(catalogo).toContain('**Nuova 4R** — ed. corrente 04/2026 (+1 storica)');
+    // Edizione unica: nessuna coda «(+N storiche)».
+    expect(catalogo).toContain('**Nobis Car** — ed. corrente 05/2026 · `archivio-pubblico/nobis/auto/nobis-car/`');
+    // Glossario e INDICE sono mappe: citati nell’intestazione, mai come prodotti.
+    const prodotti = catalogo.match(/^- .*/gm) ?? [];
+    expect(prodotti).toHaveLength(2);
+    expect(prodotti.some((r) => /GLOSSARIO|INDICE/.test(r))).toBe(false);
+  });
+
+  it('senza archivio pubblico il catalogo non c’è, e il prompt non lo nomina', () => {
+    const soloPrivati = new Map<string, DocumentoWorkspace>([
+      ['tenant/documenti/a.md', doc({ id: 'a', titolo: 'A', archivio: 'privato' })],
+    ]);
+    expect(catalogoArchivioPubblico(soloPrivati)).toBe('');
+    expect(promptSistema(dnaVuoto)).not.toContain('Che cosa c’è nell’Archivio Pubblico');
+  });
+
+  it('un archivio enorme degrada a compagnie e conteggi invece di gonfiare ogni messaggio', () => {
+    const perPath = new Map<string, DocumentoWorkspace>();
+    for (let i = 0; i < 400; i++) {
+      const path = `archivio-pubblico/compagnia-${i % 20}/ramo-${i % 3}/prodotto-${i}/ed-2026-01/dip.md`;
+      perPath.set(path, doc({
+        id: path, titolo: path, archivio: 'pubblico',
+        compagnia: `Compagnia ${i % 20}`, ramo: `ramo-${i % 3}`,
+        prodotto: `Prodotto ${i} con un nome commerciale piuttosto lungo`, edizione: '01/2026',
+      }));
+    }
+    const catalogo = catalogoArchivioPubblico(perPath);
+    expect(catalogo).toContain('troppo esteso');
+    expect(catalogo).not.toContain('Prodotto 399');
+    expect(catalogo.length).toBeLessThan(12_000);
+  });
+
+  it('il catalogo entra nel prompt di sistema quando c’è', () => {
+    const perPath = new Map<string, DocumentoWorkspace>([
+      ['archivio-pubblico/axa/auto/nuova-protezione/ed-2026-06/dip.md',
+        doc({ id: 'x', titolo: 'X', archivio: 'pubblico', compagnia: 'AXA', ramo: 'auto', prodotto: 'Nuova Protezione Auto', edizione: '06/2026' })],
+    ]);
+    const sistema = promptSistema(dnaVuoto, { catalogo: catalogoArchivioPubblico(perPath) });
+    expect(sistema).toContain('Nuova Protezione Auto');
+    // Le regole restano il prefisso: è la parte che sta in cache più a lungo.
+    expect(sistema.indexOf(MARCATORE_CITAZIONI)).toBeLessThan(sistema.indexOf('Nuova Protezione Auto'));
+  });
+
   it('il riordino si racconta solo dove il tool c’è: la chat sì, un agente pianificato no', () => {
     const dna: DnaAgenzia = { istruzioni: [], riferimenti: [], ricordi: [] };
     /* Un agente che gira di notte non ha nessuno a cui chiedere
        l'approvazione: descrivergli uno strumento che non ha sarebbe
        insegnargli a promettere qualcosa che non può fare. */
     expect(promptSistema(dna)).not.toContain('proponi_riordino');
-    const conChat = promptSistema(dna, [], true);
+    const conChat = promptSistema(dna, { template: [], conRiordino: true });
     expect(conChat).toContain('proponi_riordino');
     expect(conChat).toContain('Riordinare l’archivio');
   });

@@ -74,7 +74,7 @@ try {
     {
       directory: ws.directory,
       titoloPer: (path) => ws.perPath.get(path)?.titolo,
-      promptSistema: promptSistema(dna, template.rows),
+      promptSistema: promptSistema(dna, { template: template.rows }),
       promptUtente: promptUtente({ documenti: [], mancanti: [], storia: [], domanda }),
       strumenti: { server: strumenti.server, nomi: strumenti.nomi },
     },

@@ -20,6 +20,7 @@ import { ancoraCitazioni } from './ancoraggio.js';
 import { DiarioPassi } from './diario-passi.js';
 import {
   caricaDna,
+  catalogoArchivioPubblico,
   promptRipresa,
   promptSistema,
   promptSistemaCliente,
@@ -416,7 +417,11 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
         promptSistema: perCliente
           ? promptSistemaCliente(conversazione.chat_istruzioni)
-          : promptSistema(dna, templateAgenzia.rows, true),
+          : promptSistema(dna, {
+              template: templateAgenzia.rows,
+              conRiordino: true,
+              catalogo: catalogoArchivioPubblico(workspace.perPath),
+            }),
         ...(perCliente
           ? {}
           : { strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi } }),

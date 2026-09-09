@@ -5,7 +5,7 @@ import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { ancoraCitazioni } from '../motore/ancoraggio.js';
-import { caricaDna, promptSistema } from '../motore/regole.js';
+import { caricaDna, catalogoArchivioPubblico, promptSistema } from '../motore/regole.js';
 import type { EsitoSessione, Motore } from '../motore/sessione.js';
 import { ErroreValidazione, separaBlocco, validaBlocco } from '../motore/validazione.js';
 import { materializzaWorkspace, type Workspace } from '../motore/workspace.js';
@@ -140,7 +140,7 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
           directory: workspace.directory,
           titoloPer: (p) => workspace!.perPath.get(p)?.titolo,
           ...(lavoro.modello_motore && { modello: lavoro.modello_motore }),
-          promptSistema: promptSistema(dna),
+          promptSistema: promptSistema(dna, { catalogo: catalogoArchivioPubblico(workspace.perPath) }),
           promptUtente: promptAgente({
             istruzioni: lavoro.istruzioni,
             formato: lavoro.formato_output,

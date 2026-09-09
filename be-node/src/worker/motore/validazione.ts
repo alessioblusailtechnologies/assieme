@@ -19,7 +19,20 @@ export const schemaBlocco = z.object({
     .array(
       z.object({
         file: z.string().min(1),
-        pagina: z.coerce.number().int().min(1),
+        /**
+         * La pagina dichiarata dal modello non boccia mai una risposta: la
+         * decide l'ancora sotto cui sta l'estratto (`ancoraggio.ts`, che
+         * infatti «non boccia mai» e corregge). Un `min(1)` qui faceva
+         * fallire l'INTERO blocco — quindi buttava la risposta e la faceva
+         * ripagare all'utente — per un numero che tre passi dopo veniva
+         * riscritto da solo. Si accetta qualunque cosa; il caso degenere lo
+         * normalizza `validaBlocco`, con avviso nell'audit.
+         *
+         * Resta invece un errore la pagina OLTRE la fine del documento
+         * (`paginaMassima`): quella è la direzione dell'allucinazione, e
+         * RF-D-08 dice che una citazione falsa è peggio di nessuna.
+         */
+        pagina: z.coerce.number().finite().catch(0),
         estratto: z.string().trim().min(1).max(1000),
         articolo: z.string().trim().max(120).nullable().optional(),
         sezione: z.string().trim().max(200).nullable().optional(),
@@ -146,13 +159,21 @@ export function validaBlocco(
       errori.push(`citazione verso un file inesistente nella workspace: ${c.file}`);
       continue;
     }
-    if (doc.paginaMassima !== null && c.pagina > doc.paginaMassima) {
+    /* Sotto la prima pagina non c'è niente da citare: si riparte da 1 e
+       lascia correggere l'ancora, che è chi la pagina la sa davvero. */
+    const pagina = Math.max(1, Math.round(c.pagina));
+    if (pagina !== c.pagina) {
+      avvisi.push(
+        `pagina dichiarata non utilizzabile (${c.pagina}) per «${doc.titolo}»: la decide l'ancora dell'estratto`,
+      );
+    }
+    if (doc.paginaMassima !== null && pagina > doc.paginaMassima) {
       errori.push(
-        `citazione a pag. ${c.pagina} di «${doc.titolo}», oltre l'ultima pagina citabile (${doc.paginaMassima})`,
+        `citazione a pag. ${pagina} di «${doc.titolo}», oltre l'ultima pagina citabile (${doc.paginaMassima})`,
       );
       continue;
     }
-    const chiave = `${doc.id}|${c.pagina}|${c.estratto}`;
+    const chiave = `${doc.id}|${pagina}|${c.estratto}`;
     const doppione = viste.get(chiave);
     if (doppione) {
       doppione.rimandi = [...(doppione.rimandi ?? []), rimando];
@@ -164,7 +185,7 @@ export function validaBlocco(
       documentoTitolo: doc.titolo,
       archivio: doc.archivio,
       posizione: {
-        pagina: c.pagina,
+        pagina,
         ...(c.articolo && { articolo: c.articolo }),
         ...(c.sezione && { sezione: c.sezione }),
       },

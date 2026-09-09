@@ -50,7 +50,7 @@ Per i documenti hai tre strumenti, tutti di sola lettura: Glob per trovare i fil
 
 ## Come cercare
 
-1. Parti dai documenti nel contesto della conversazione (ti vengono indicati con il loro path) e dagli \`INDICE.md\`: dicono quali documenti esistono, le edizioni e i sinonimi commerciali dei prodotti.
+1. Parti dai documenti nel contesto della conversazione (ti vengono indicati con il loro path). Che cosa esista nell'Archivio Pubblico lo trovi nel catalogo qui sotto, se c'è: in quel caso **non esplorare le cartelle per orientarti**, hai già compagnie, prodotti ed edizioni. Gli \`INDICE.md\` servono per il dettaglio di un set (sinonimi commerciali, garanzie, note d'edizione), non per sapere che cosa c'è.
 2. Cerca con Grep, poi leggi le sezioni pertinenti con il loro contesto: mai rispondere sulla sola riga del match.
 3. I documenti assicurativi usano sinonimi e rimandi: se un termine non dà risultati prova le varianti (franchigia/scoperto, massimale/somma assicurata/limite di indennizzo, esclusioni/delimitazioni/rischi esclusi) e segui i rimandi ad altri articoli o documenti del set. Quando la parola dell'utente non è quella del contratto — «se scoppia un tubo» sta per «danni da acqua condotta» — apri \`archivio-pubblico/GLOSSARIO.md\` e riprova con i termini che trovi lì: **una garanzia non è assente finché non l'hai cercata anche coi suoi altri nomi.**
 4. A parità di prodotto usa l'edizione corrente indicata nell'INDICE, salvo richiesta esplicita su un'edizione storica.
@@ -225,12 +225,111 @@ export function promptSistemaCliente(istruzioniChat?: string | null): string {
   return parti.join('\n');
 }
 
-export function promptSistema(
-  dna: DnaAgenzia,
-  template?: TemplateNelPrompt[],
-  conRiordino = false,
-): string {
+/** Un prodotto dell'Archivio Pubblico e le edizioni che ne esistono. */
+interface VoceCatalogo {
+  compagnia: string;
+  ramo: string;
+  prodotto: string;
+  /** Nell'ordine della query (`edizione_valida_dal` crescente): l'ultima è la corrente. */
+  edizioni: string[];
+}
+
+/**
+ * Quanto può occupare il catalogo prima di degradare al solo conteggio per
+ * ramo. Un archivio pubblico che cresce non deve poter gonfiare il prompt
+ * di ogni messaggio senza che nessuno se ne accorga.
+ */
+const MAX_CARATTERI_CATALOGO = 12_000;
+
+/**
+ * Il catalogo dell'Archivio Pubblico dentro il prompt, invece che da
+ * scoprire con Glob a ogni sessione.
+ *
+ * Misura dell'8/09/2026 sulle 12 sessioni del collaudo A/B: 35 passi su 185
+ * (il 19%) erano orientazione — Glob sull'archivio e letture di `INDICE.md`
+ * — prima ancora di aprire un documento, e identici ogni volta. Quel
+ * catalogo è però stabile per tenant: scoperto a runtime è output di tool
+ * pagato pieno a ogni messaggio, scritto qui è prefisso in cache a 0,1x.
+ *
+ * È di proposito a livello di **prodotto**, non di documento, e non tocca
+ * l'archivio privato: un'agenzia con quattromila documenti privati aveva
+ * già fatto esplodere l'indice unico (vedi `workspace.ts`, INDICE per
+ * cartella). Qui c'è cosa esiste; i dettagli di un set — sinonimi
+ * commerciali, garanzie, note d'edizione — restano negli `INDICE.md`.
+ */
+export function catalogoArchivioPubblico(perPath: Map<string, DocumentoWorkspace>): string {
+  const perProdotto = new Map<string, VoceCatalogo>();
+  for (const [path, d] of perPath) {
+    if (d.archivio !== 'pubblico') continue;
+    const segmenti = path.split('/');
+    /* `archivio-pubblico/<compagnia>/<ramo>/<prodotto>/<edizione>/<file>`:
+       più corto è una mappa (INDICE, GLOSSARIO), non un documento. */
+    if (segmenti.length < 6) continue;
+    const cartella = segmenti.slice(0, 4).join('/');
+    const voce = perProdotto.get(cartella) ?? {
+      compagnia: d.compagnia ?? segmenti[1]!,
+      ramo: d.ramo ?? segmenti[2]!,
+      prodotto: d.prodotto ?? d.titolo,
+      edizioni: [],
+    };
+    const edizione = d.edizione ?? segmenti[4]!;
+    if (!voce.edizioni.includes(edizione)) voce.edizioni.push(edizione);
+    perProdotto.set(cartella, voce);
+  }
+  if (perProdotto.size === 0) return '';
+
+  const perCompagnia = new Map<string, Array<[string, VoceCatalogo]>>();
+  for (const voce of perProdotto) {
+    const elenco = perCompagnia.get(voce[1].compagnia);
+    if (elenco) elenco.push(voce);
+    else perCompagnia.set(voce[1].compagnia, [voce]);
+  }
+
+  const riga = ([cartella, v]: [string, VoceCatalogo]): string => {
+    const corrente = v.edizioni[v.edizioni.length - 1];
+    const storiche = v.edizioni.length - 1;
+    return `- ${v.ramo} · **${v.prodotto}** — ed. corrente ${corrente}${storiche ? ` (+${storiche} storic${storiche === 1 ? 'a' : 'he'})` : ''} · \`${cartella}/\``;
+  };
+
+  const testa =
+    '\n\n## Che cosa c’è nell’Archivio Pubblico\n\n' +
+    'Il catalogo completo è qui sotto: **non esplorare le cartelle per sapere che cosa esiste**, lo sai già. Vai diritto al prodotto che ti serve. Gli `INDICE.md` di ogni set restano utili per il dettaglio (sinonimi commerciali del prodotto, garanzie, note d’edizione), il `GLOSSARIO.md` per le parole.\n' +
+    'Se un prodotto non è in questo elenco, non è in archivio: dillo, invece di cercarlo.\n';
+
+  const disteso = [...perCompagnia]
+    .map(([compagnia, voci]) => `\n### ${compagnia}\n${voci.map(riga).join('\n')}`)
+    .join('\n');
+  if (testa.length + disteso.length <= MAX_CARATTERI_CATALOGO) return testa + disteso;
+
+  /* Archivio troppo grande per l'elenco per prodotto: si tiene la mappa
+     grossa (chi c'è, su quali rami) e il dettaglio torna agli INDICE. */
+  const compatto = [...perCompagnia]
+    .map(([compagnia, voci]) => {
+      const perRamo = new Map<string, number>();
+      for (const [, v] of voci) perRamo.set(v.ramo, (perRamo.get(v.ramo) ?? 0) + 1);
+      const rami = [...perRamo].map(([r, n]) => `${r} (${n})`).join(', ');
+      return `- **${compagnia}** — ${rami}`;
+    })
+    .join('\n');
+  return (
+    testa +
+    '\nL’archivio è troppo esteso per l’elenco dei singoli prodotti: qui ci sono le compagnie e quanti prodotti hanno per ramo, il resto scendendo negli `INDICE.md`.\n\n' +
+    compatto
+  );
+}
+
+/** Ciò che il prompt di sistema aggiunge alle regole, oltre al DNA. */
+export interface ContestoPromptSistema {
+  template?: TemplateNelPrompt[];
+  conRiordino?: boolean;
+  /** Da `catalogoArchivioPubblico()`: stabile per tenant, quindi va in cache. */
+  catalogo?: string;
+}
+
+export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema = {}): string {
+  const { template, conRiordino = false, catalogo } = contesto;
   const parti = [REGOLE_MOTORE];
+  if (catalogo) parti.push(catalogo);
   if (conRiordino) {
     parti.push('\n\n## Riordinare l’archivio\n');
     parti.push(

@@ -76,11 +76,11 @@ describe('il tool nel motore', () => {
 
   it('il prompt elenca i template per nome e spiega quando usare lo strumento', () => {
     const vuoto = { istruzioni: [], riferimenti: [], ricordi: [] };
-    const conTemplate = promptSistema(vuoto, [{ nome: 'Proposta breve', formato: 'docx', predefinito: true }]);
+    const conTemplate = promptSistema(vuoto, { template: [{ nome: 'Proposta breve', formato: 'docx', predefinito: true }] });
     expect(conTemplate).toContain('esporta_subito');
     expect(conTemplate).toContain('esportazione_elaborata');
     expect(conTemplate).toContain('«Proposta breve» (DOCX, predefinito per il formato)');
-    expect(promptSistema(vuoto, [])).toContain('non ha template caricati');
+    expect(promptSistema(vuoto, { template: [] })).toContain('non ha template caricati');
     expect(promptSistema(vuoto)).not.toContain('esporta_subito');
   });
 });
