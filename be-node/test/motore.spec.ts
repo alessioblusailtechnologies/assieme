@@ -8,6 +8,7 @@ import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
   ErroreValidazione,
+  haRimandi,
   limiteInoltro,
   margineMarcatore,
   normalizzaPath,
@@ -69,6 +70,21 @@ describe('il blocco velia-citazioni', () => {
     expect(rotto.visibile).toBe('Testo');
     expect(rotto.blocco).toBeUndefined();
     expect(rotto.problemi[0]).toMatch(/non valido/);
+  });
+
+  /*
+   * Un blocco assente non è fatale di per sé (09/09/2026): lo diventa solo
+   * se il testo richiama fonti che nessun blocco dichiara. Un turno che
+   * consegna un documento e basta non afferma niente, e non si butta.
+   */
+  it('haRimandi separa chi afferma dai documenti da chi consegna e basta', () => {
+    expect(haRimandi('Il documento è pronto qui sotto.')).toBe(false);
+    expect(haRimandi('Nei documenti che ho non c’è.')).toBe(false);
+    expect(haRimandi('La franchigia è di 500 € [1].')).toBe(true);
+    expect(haRimandi('come da tabella [12]')).toBe(true);
+    /* Una lettera è un rimando alle provenienze, un anno non è un rimando. */
+    expect(haRimandi('la provenienza [a]')).toBe(false);
+    expect(haRimandi('l’edizione [2026]')).toBe(false);
   });
 
   it('margineMarcatore trattiene solo la coda che potrebbe essere l’inizio del marcatore', () => {

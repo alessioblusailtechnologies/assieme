@@ -32,7 +32,7 @@ import {
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreTitolo } from './titolista.js';
-import { avvisiEsposizione, avvisiRimandi, ErroreValidazione, separaBlocco, validaBlocco } from './validazione.js';
+import { avvisiEsposizione, avvisiRimandi, ErroreValidazione, haRimandi, separaBlocco, validaBlocco } from './validazione.js';
 import { materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
@@ -499,35 +499,53 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       } else {
         const { visibile, blocco, problemi } = separaBlocco(esito.testo);
         testoFinale = senzaTrattiniLunghi(visibile);
-        if (!blocco) {
+        /*
+         * Un blocco mancante non è sempre una risposta da buttare, e fino al
+         * 09/09/2026 lo era: un turno che consegna soltanto un documento
+         * («il PDF è pronto qui sotto») non cita niente perché non afferma
+         * niente, il modello chiude senza blocco, e l'utente si vedeva un
+         * errore rosso con il PDF già prodotto, già pagato e già attaccato
+         * alla risposta. Un blocco **vuoto**, nello stesso caso, valeva un
+         * avviso: la stessa cosa detta in due modi non può avere
+         * conseguenze opposte.
+         *
+         * Quel che si difende è l'invariante vero, «nessuna affermazione
+         * senza fonte»: si scarta il turno solo se il testo richiama fonti
+         * numerate che nessun blocco sostiene.
+         */
+        if (!blocco && haRimandi(testoFinale)) {
           await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
           await emetti({
             tipo: 'errore',
-            messaggio: 'La risposta non ha superato la verifica delle fonti. Riprova a inviare la domanda.',
+            messaggio: 'La risposta richiama fonti che non ha dichiarato ed è stata scartata. Riprova a inviare la domanda.',
           });
           throw new ErroreNonRitentabile(problemi.join('; '));
         }
-        try {
-          const valido = validaBlocco(blocco, workspace.perPath, dna);
-          /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
-          const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
-          citazioni = ancorate.citazioni;
-          provenienze = valido.provenienze;
-          nonSupportato = valido.nonSupportato;
-          avvisi = [
-            ...valido.avvisi,
-            ...ancorate.avvisi,
-            ...avvisiEsposizione(testoFinale),
-            ...avvisiRimandi(testoFinale, citazioni),
-          ];
-        } catch (errore) {
-          await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
-          await emetti({
-            tipo: 'errore',
-            messaggio: 'La risposta citava passaggi non verificabili ed è stata scartata. Riprova a inviare la domanda.',
-          });
-          const dettagli = errore instanceof ErroreValidazione ? errore.dettagli.join('; ') : String(errore);
-          throw new ErroreNonRitentabile(`validazione fallita: ${dettagli}`);
+        if (!blocco) {
+          avvisi = problemi;
+        } else {
+          try {
+            const valido = validaBlocco(blocco, workspace.perPath, dna);
+            /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
+            const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
+            citazioni = ancorate.citazioni;
+            provenienze = valido.provenienze;
+            nonSupportato = valido.nonSupportato;
+            avvisi = [
+              ...valido.avvisi,
+              ...ancorate.avvisi,
+              ...avvisiEsposizione(testoFinale),
+              ...avvisiRimandi(testoFinale, citazioni),
+            ];
+          } catch (errore) {
+            await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
+            await emetti({
+              tipo: 'errore',
+              messaggio: 'La risposta citava passaggi non verificabili ed è stata scartata. Riprova a inviare la domanda.',
+            });
+            const dettagli = errore instanceof ErroreValidazione ? errore.dettagli.join('; ') : String(errore);
+            throw new ErroreNonRitentabile(`validazione fallita: ${dettagli}`);
+          }
         }
         for (const c of citazioni) await emetti({ tipo: 'citazione', citazione: c });
         for (const p of provenienze) await emetti({ tipo: 'provenienza', provenienza: p });

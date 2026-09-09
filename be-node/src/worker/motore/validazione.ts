@@ -219,6 +219,19 @@ export function validaBlocco(
 }
 
 /**
+ * Il testo richiama almeno una fonte numerata.
+ *
+ * Serve a distinguere una risposta che **afferma qualcosa dai documenti**
+ * da una che non afferma niente: una riga di consegna («il documento è
+ * pronto qui sotto»), un «non l’ho trovato», una domanda di ritorno. Sulla
+ * prima il blocco delle citazioni è l’unica garanzia che abbiamo; sulla
+ * seconda non c’è nulla da verificare.
+ */
+export function haRimandi(testoVisibile: string): boolean {
+  return /\[\d{1,2}\]/.test(testoVisibile);
+}
+
+/**
  * I rimandi nel testo contro il blocco: un `[n]` senza fonte è un numero
  * morto in faccia all'utente, una fonte mai richiamata finisce fra le
  * «altre fonti», una lettera `[a]` è un rimando alle provenienze che il
