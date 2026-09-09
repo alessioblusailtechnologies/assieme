@@ -29,6 +29,7 @@ export function registraRotteModelli(app: FastifyInstance): void {
   const catalogo = () =>
     catalogoModelli({
       hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY),
+      aki: Boolean(configurazione().AKI_API_KEY),
       mistral: Boolean(configurazione().MISTRAL_API_KEY),
     });
 

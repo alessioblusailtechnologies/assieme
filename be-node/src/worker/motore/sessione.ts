@@ -186,7 +186,13 @@ export class MotoreAgentSdk implements Motore {
       disallowedTools: ['Bash', 'Write', 'Edit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Skill'],
       permissionMode: 'default',
       maxTurns: this.opzioni.maxTurni,
-      maxBudgetUsd: this.opzioni.budgetUsd,
+      /* Il tetto di spesa dell'SDK conta i token al listino di Anthropic:
+         su un fornitore terzo non è il nostro conto e scatta a caso — GLM
+         5.3, che al listino AKI stava a 0,14 $ e 0,30 $ sulle prime due
+         domande, alla terza è stato fermato a «$3» (09/09/2026). Lì il
+         tetto resta quello dei turni, e la spesa vera la calcola
+         `costoATariffa` dai token. */
+      ...(!fornitore.terzo && { maxBudgetUsd: this.opzioni.budgetUsd }),
       persistSession: richiesta.sessione?.persisti ?? false,
       ...(richiesta.sessione?.riprendi && { resume: richiesta.sessione.riprendi }),
       settingSources: [],
@@ -243,9 +249,14 @@ export class MotoreAgentSdk implements Motore {
              l'input (e la cache), `message_delta` l'output cumulato del turno. */
           if (evento.type === 'message_start') {
             const u = evento.message.usage;
-            const inputRiportato = (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+            const dallaCache = (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0);
+            const inputRiportato = (u.input_tokens ?? 0) + dallaCache;
             if (inputRiportato > 0) {
-              contati.input += u.input_tokens ?? 0;
+              /* Dove l'input dichiarato comprende già la cache (AKI), la si
+                 toglie: altrimenti la si paga due volte. */
+              contati.input += fornitore.usiInclusivi
+                ? Math.max(0, (u.input_tokens ?? 0) - dallaCache)
+                : (u.input_tokens ?? 0);
               contati.cacheLettura += u.cache_read_input_tokens ?? 0;
               contati.cacheScrittura += u.cache_creation_input_tokens ?? 0;
               inputTurnoStimato = 0;

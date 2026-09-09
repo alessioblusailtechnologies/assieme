@@ -29,7 +29,7 @@ import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
 import { caricaDna, catalogoArchivioPubblico, promptSistema, promptUtente } from '../src/worker/motore/regole.js';
 import { MotoreAgentSdk } from '../src/worker/motore/sessione.js';
-import { separaBlocco, validaBlocco } from '../src/worker/motore/validazione.js';
+import { ErroreValidazione, separaBlocco, validaBlocco } from '../src/worker/motore/validazione.js';
 import { materializzaWorkspace } from '../src/worker/motore/workspace.js';
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
@@ -84,10 +84,12 @@ interface Misura {
 const radice = await mkdtemp(join(tmpdir(), 'velia-ab-'));
 const db = poolDb();
 const c = configurazione();
-const varianti = [
-  variante(process.argv[2] ?? 'zai-org/GLM-5.2', c.MOTORE_EFFORT),
-  variante(process.argv[3] ?? 'claude-sonnet-5', c.MOTORE_EFFORT),
-];
+/* Una variante sola è legittima: quando il fondoscala dell'altro modello
+   è già stato misurato sulla stessa workspace, rifarlo è solo spesa. */
+const specifiche = process.argv.slice(2);
+const varianti = (specifiche.length > 0 ? specifiche : ['zai-org/GLM-5.2', 'claude-sonnet-5']).map((s) =>
+  variante(s, c.MOTORE_EFFORT),
+);
 try {
   const utente = await db.query<{ id: string }>(`select id from velia.utenti where tenant_id = $1 order by email limit 1`, [TENANT_DEMO]);
   const ws = await materializzaWorkspace({ db, archivio: new ArchivioStorage(), tenantId: TENANT_DEMO, radice, jobId: 'collaudo-ab', contestoIds: [] });
@@ -110,6 +112,7 @@ try {
       silenzioMs: c.MOTORE_SILENZIO_MS,
       ...(v.effort && { effort: v.effort }),
       fornitori: { hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+        aki: { ...(c.AKI_API_KEY && { chiave: c.AKI_API_KEY }), baseUrl: c.AKI_BASE_URL },
         mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) } },
     });
     for (const domanda of DOMANDE) {
@@ -127,7 +130,10 @@ try {
         try {
           const v = validaBlocco(blocco, ws.perPath, dna);
           citazioni = v.citazioni.length; nonSupportato = v.nonSupportato; validazione = v.avvisi.join('; ') || 'ok';
-        } catch (e) { validazione = `FALLITA: ${e instanceof Error ? e.message : String(e)}`; }
+        } catch (e) {
+          const dettagli = e instanceof ErroreValidazione ? e.dettagli : [];
+          validazione = `FALLITA: ${e instanceof Error ? e.message : String(e)}${dettagli.length ? ' — ' + dettagli.join('; ') : ''}`;
+        }
       }
       const m: Misura = { modello: v.etichetta, domanda, testo: visibile, secondi, usd: esito.costoUsd, turni: esito.turni, terminato: esito.terminato, token: esito.token, documenti: esito.documentiLetti, citazioni, nonSupportato, validazione };
       misure.push(m);
@@ -135,7 +141,7 @@ try {
     }
   }
 
-  const righe = ['# Test A/B ' + varianti.map((v) => v.etichetta).join(' vs '), '', '## Misure', '', '| # | Variante | Esito | Turni | s | USD | in | out | cache r | cache w | Doc letti | Cit | NS | Validazione |', '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|'];
+  const righe = [`# Collaudo ${varianti.map((v) => v.etichetta).join(' vs ')}`, '', '## Misure', '', '| # | Variante | Esito | Turni | s | USD | in | out | cache r | cache w | Doc letti | Cit | NS | Validazione |', '|---|---|---|---|---|---|---|---|---|---|---|---|---|---|'];
   DOMANDE.forEach((d, i) => {
     for (const m of misure.filter((x) => x.domanda === d)) {
       righe.push(`| ${i + 1} | ${m.modello} | ${m.terminato} | ${m.turni} | ${m.secondi.toFixed(1)} | ${m.usd.toFixed(4)} | ${m.token.input} | ${m.token.output} | ${m.token.cacheLettura} | ${m.token.cacheScrittura} | ${m.documenti.length} | ${m.citazioni} | ${m.nonSupportato ?? '-'} | ${m.validazione} |`);

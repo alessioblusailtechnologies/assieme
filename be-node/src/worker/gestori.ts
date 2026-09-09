@@ -56,6 +56,7 @@ let estrattoreVero: EstrattoreMotore | undefined;
 /** Le chiavi dei fornitori terzi (RF-D-03), lette una volta dalla configurazione. */
 const fornitori = (c: ReturnType<typeof configurazione>): ChiaviFornitori => ({
   hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+  aki: { ...(c.AKI_API_KEY && { chiave: c.AKI_API_KEY }), baseUrl: c.AKI_BASE_URL },
   mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) },
 });
 

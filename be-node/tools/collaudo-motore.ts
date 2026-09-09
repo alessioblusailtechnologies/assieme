@@ -55,6 +55,7 @@ try {
     /* RF-D-03: un modello HostYourAI (es. zai-org/GLM-5.2) passa dallo stesso motore con endpoint e chiave del fornitore. */
     fornitori: {
       hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+        aki: { ...(c.AKI_API_KEY && { chiave: c.AKI_API_KEY }), baseUrl: c.AKI_BASE_URL },
         mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) },
     },
   });

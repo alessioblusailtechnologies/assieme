@@ -54,6 +54,15 @@
     "disponibile": true
   },
   {
+    "id": "mod-009",
+    "provider": "AKI.IO (DE)",
+    "nome": "GLM 5.3",
+    "descrizione": "Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro — che su questo motore è la voce che decide il conto.",
+    "adeguatezzaDocumentale": "media",
+    "notaCosti": "Tariffa AKI.IO: 1,00 € per milione di token letti (0,25 € se già in cache) e 3,50 € per milione scritti.",
+    "disponibile": true
+  },
+  {
     "id": "mod-004",
     "provider": "OpenAI",
     "nome": "GPT-5.2",

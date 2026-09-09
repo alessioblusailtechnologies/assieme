@@ -20,11 +20,11 @@ export interface ModelloAI {
 }
 
 /**
- * Chi serve davvero il modello: Anthropic diretta; HostYourAI (API già
- * Anthropic-compatibili, datacenter UE); Mistral, che parla un altro
- * formato e passa dall'adattatore in-process del worker.
+ * Chi serve davvero il modello: Anthropic diretta; HostYourAI e AKI.IO
+ * (API già Anthropic-compatibili, datacenter UE); Mistral, che parla un
+ * altro formato e passa dall'adattatore in-process del worker.
  */
-export type Fornitore = 'anthropic' | 'hostyourai' | 'mistral';
+export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'mistral';
 
 /**
  * Il listino di un fornitore terzo, in € (≈ $) per milione di token. Letti e
@@ -135,6 +135,19 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     disponibile: true,
   },
   {
+    id: 'mod-glm-5-3',
+    provider: 'AKI.IO (DE)',
+    nome: 'GLM 5.3',
+    sdk: 'glm5.3-754b',
+    fornitore: 'aki',
+    tariffa: { input: 1.0, output: 3.5, cache: 0.25 },
+    descrizione:
+      'Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro — che su questo motore è la voce che decide il conto.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti: 'Tariffa AKI.IO: 1,00 € per milione di token letti (0,25 € se già in cache) e 3,50 € per milione scritti.',
+    disponibile: true,
+  },
+  {
     id: 'mod-gpt-5-2',
     provider: 'OpenAI',
     nome: 'GPT-5.2',
@@ -163,7 +176,7 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
  * Il catalogo come sta davvero: una voce HostYourAI è selezionabile solo se
  * la chiave è configurata — il catalogo dice la verità (Fase 6).
  */
-export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; mistral: boolean }): VoceCatalogo[] {
+export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; aki: boolean; mistral: boolean }): VoceCatalogo[] {
   return CATALOGO_MODELLI.map((m) =>
     m.fornitore && m.fornitore !== 'anthropic' && !chiaviPresenti[m.fornitore] ? { ...m, disponibile: false } : m,
   );

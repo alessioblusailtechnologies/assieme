@@ -50,11 +50,12 @@ describe('le rotte', () => {
     /* Le voci dei fornitori terzi seguono la chiave in .env (senza, sono
        schede; con, si scelgono): qui si guarda che ci siano, non se la
        macchina di chi lancia i test ha le chiavi. */
-    const terzi = ['HostYourAI (UE)', 'Mistral (UE)'];
+    const terzi = ['HostYourAI (UE)', 'Mistral (UE)', 'AKI.IO (DE)'];
     expect(modelli.filter((m) => terzi.includes(m.provider)).map((m) => m.nome)).toEqual([
       'GLM 5.2',
       'Kimi K3',
       'Mistral Medium 3.5',
+      'GLM 5.3',
       'Mistral Large 3',
     ]);
     /* Quel che resta è scheda informativa e basta: nessuna integrazione. */

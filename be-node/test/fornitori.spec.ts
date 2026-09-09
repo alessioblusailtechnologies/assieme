@@ -11,6 +11,7 @@ import { ambienteModello, costoATariffa, dimenticaAdattatoreMistral } from '../s
  */
 const chiavi = {
   hostyourai: { chiave: 'hyai-prova', baseUrl: 'https://hostyourai.com' },
+  aki: { chiave: 'aki-prova', baseUrl: 'https://aki.io/anthropic' },
   /* Un Mistral che non esiste: l'adattatore si apre lo stesso, e finché
      nessuno gli manda una sessione non chiama nessuno. */
   mistral: { chiave: 'mistral-prova', baseUrl: 'http://127.0.0.1:9' },
@@ -31,9 +32,19 @@ describe('l’ambiente della sessione per fornitore', () => {
     const a = await ambienteModello('zai-org/GLM-5.2', chiavi, processo);
     expect(a.terzo).toBe(true);
     expect(a.tariffa).toEqual({ input: 1.73, output: 5.18 });
+    expect(a.usiInclusivi).toBeUndefined();
     expect(a.env).toMatchObject({ PATH: '/bin', ANTHROPIC_BASE_URL: 'https://hostyourai.com', ANTHROPIC_API_KEY: 'hyai-prova' });
     expect(a.env).not.toHaveProperty('CLAUDE_CODE_OAUTH_TOKEN');
     expect(a.env).not.toHaveProperty('ANTHROPIC_AUTH_TOKEN');
+  });
+
+  it('un modello AKI punta l’SDK al gateway tedesco, come già fa con HostYourAI', async () => {
+    const a = await ambienteModello('glm5.3-754b', chiavi, { PATH: '/bin' });
+    expect(a.terzo).toBe(true);
+    expect(a.tariffa).toEqual({ input: 1.0, output: 3.5, cache: 0.25 });
+    expect(a.env).toMatchObject({ ANTHROPIC_BASE_URL: 'https://aki.io/anthropic', ANTHROPIC_API_KEY: 'aki-prova' });
+    /* AKI conta la cache dentro l'input: chi legge i token deve saperlo. */
+    expect(a.usiInclusivi).toBe(true);
   });
 
   it('un modello Mistral punta l’SDK all’adattatore in-process, non a Mistral', async () => {
@@ -58,6 +69,7 @@ describe('l’ambiente della sessione per fornitore', () => {
       /HOSTYOURAI_API_KEY/,
     );
     await expect(ambienteModello('mistral-large-2512', {})).rejects.toThrow(/MISTRAL_API_KEY/);
+    await expect(ambienteModello('glm5.3-754b', {})).rejects.toThrow(/AKI_API_KEY/);
   });
 
   it('il costo a tariffa: la cache al suo prezzo, dove il fornitore ce l’ha', () => {
@@ -77,21 +89,21 @@ describe('l’ambiente della sessione per fornitore', () => {
 
 describe('il catalogo con e senza chiave', () => {
   it('una voce di fornitore terzo è selezionabile solo con la sua chiave', () => {
-    const senza = catalogoModelli({ hostyourai: false, mistral: false });
-    const con = catalogoModelli({ hostyourai: true, mistral: true });
+    const senza = catalogoModelli({ hostyourai: false, aki: false, mistral: false });
+    const con = catalogoModelli({ hostyourai: true, aki: true, mistral: true });
     expect(senza.filter((m) => m.fornitore === 'hostyourai').every((m) => !m.disponibile)).toBe(true);
     expect(senza.filter((m) => m.fornitore === 'mistral').every((m) => !m.disponibile)).toBe(true);
     expect(con.filter((m) => m.fornitore === 'hostyourai').every((m) => m.disponibile)).toBe(true);
     expect(con.filter((m) => m.fornitore === 'mistral').every((m) => m.disponibile)).toBe(true);
     expect(senza.filter((m) => m.fornitore === 'anthropic').every((m) => m.disponibile)).toBe(true);
     /* Le chiavi non si fanno da spalla: quella di uno non alza l'altro. */
-    const soloMistral = catalogoModelli({ hostyourai: false, mistral: true });
+    const soloMistral = catalogoModelli({ hostyourai: false, aki: false, mistral: true });
     expect(soloMistral.find((m) => m.id === 'mod-glm-5-2')?.disponibile).toBe(false);
     expect(soloMistral.find((m) => m.id === 'mod-mistral-large-3')?.disponibile).toBe(true);
   });
 
   it('la forma pubblica non espone fornitore né tariffa', () => {
-    const glm = catalogoModelli({ hostyourai: true, mistral: true }).find((m) => m.id === 'mod-glm-5-2')!;
+    const glm = catalogoModelli({ hostyourai: true, aki: true, mistral: true }).find((m) => m.id === 'mod-glm-5-2')!;
     const pubblico = versoModello(glm) as unknown as Record<string, unknown>;
     expect(pubblico).not.toHaveProperty('sdk');
     expect(pubblico).not.toHaveProperty('fornitore');

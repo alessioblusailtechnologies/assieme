@@ -114,6 +114,15 @@ const schemaAmbiente = z.object({
   HOSTYOURAI_API_KEY: z.string().optional(),
   HOSTYOURAI_BASE_URL: z.string().url().default('https://hostyourai.com'),
   /**
+   * AKI.IO (09/09/2026): modelli open serviti da datacenter tedeschi, API
+   * già compatibili con quelle di Anthropic — come HostYourAI, ma con due
+   * cose che HostYourAI non ha: gli usi veri in streaming e **la cache dei
+   * prompt** (l'input ripetuto a un quarto). Su un motore che rimanda il
+   * contesto a ogni passo è la differenza fra costare come Opus e no.
+   */
+  AKI_API_KEY: z.string().optional(),
+  AKI_BASE_URL: z.string().url().default('https://aki.io/anthropic'),
+  /**
    * L'invio email («Invia email» sotto una risposta, 29/08/2026): Resend via
    * HTTP, nessuna dipendenza. Senza chiave, fuori produzione l'email finisce
    * nel log e l'invio si dichiara simulato (il flusso si prova lo stesso);

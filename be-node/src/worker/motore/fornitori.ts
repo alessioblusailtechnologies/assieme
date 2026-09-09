@@ -17,6 +17,7 @@ import { avviaAdattatoreMistral, type AdattatoreMistral } from './adattatore-mis
 
 export interface ChiaviFornitori {
   hostyourai?: { chiave?: string; baseUrl: string };
+  aki?: { chiave?: string; baseUrl: string };
   /** `baseUrl` serve solo ai test (un finto Mistral): senza, l'API vera. */
   mistral?: { chiave?: string; baseUrl?: string };
 }
@@ -27,6 +28,14 @@ export interface AmbienteModello {
   /** Vero per i fornitori terzi: niente `effort`, costo a tariffa. */
   terzo: boolean;
   tariffa?: Tariffa;
+  /**
+   * Vero dove `input_tokens` **comprende** già i token serviti dalla cache
+   * (convenzione OpenAI, che AKI.IO porta dentro a un'API per il resto
+   * anthropica). Anthropic invece li tiene separati: sommarli entrambi
+   * farebbe pagare la cache due volte — sul collaudo del 09/09/2026 erano
+   * 1,28 $ dichiarati contro 0,44 $ veri.
+   */
+  usiInclusivi?: boolean;
 }
 
 export async function ambienteModello(
@@ -35,13 +44,16 @@ export async function ambienteModello(
   ambienteProcesso: NodeJS.ProcessEnv = process.env,
 ): Promise<AmbienteModello> {
   const voce = vocePerSdk(modello);
-  if (voce?.fornitore === 'hostyourai') {
-    const chiave = chiavi.hostyourai?.chiave;
-    if (!chiave) throw new Error(`Il modello ${voce.nome} richiede HOSTYOURAI_API_KEY in .env.`);
+  /* I gateway che parlano già l'API di Anthropic: cambia solo dove si punta. */
+  if (voce?.fornitore === 'hostyourai' || voce?.fornitore === 'aki') {
+    const gateway = voce.fornitore === 'aki' ? chiavi.aki : chiavi.hostyourai;
+    const variabile = voce.fornitore === 'aki' ? 'AKI_API_KEY' : 'HOSTYOURAI_API_KEY';
+    if (!gateway?.chiave) throw new Error(`Il modello ${voce.nome} richiede ${variabile} in .env.`);
     return {
-      env: ambientePuntato(ambienteProcesso, chiavi.hostyourai!.baseUrl, chiave),
+      env: ambientePuntato(ambienteProcesso, gateway.baseUrl, gateway.chiave),
       terzo: true,
       ...(voce.tariffa !== undefined && { tariffa: voce.tariffa }),
+      ...(voce.fornitore === 'aki' && { usiInclusivi: true }),
     };
   }
   if (voce?.fornitore === 'mistral') {

@@ -66,6 +66,7 @@ try {
     ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
     fornitori: {
       hostyourai: { ...(c.HOSTYOURAI_API_KEY && { chiave: c.HOSTYOURAI_API_KEY }), baseUrl: c.HOSTYOURAI_BASE_URL },
+        aki: { ...(c.AKI_API_KEY && { chiave: c.AKI_API_KEY }), baseUrl: c.AKI_BASE_URL },
         mistral: { ...(c.MISTRAL_API_KEY && { chiave: c.MISTRAL_API_KEY }) },
     },
   });
