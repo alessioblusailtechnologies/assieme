@@ -56,6 +56,7 @@ describe('le rotte', () => {
       'Kimi K3',
       'Mistral Medium 3.5',
       'GLM 5.3',
+      'Deepseek V4 Flash',
       'Mistral Large 3',
     ]);
     /* Quel che resta è scheda informativa e basta: nessuna integrazione. */

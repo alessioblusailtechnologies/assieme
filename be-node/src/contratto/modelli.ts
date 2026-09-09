@@ -142,9 +142,22 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     fornitore: 'aki',
     tariffa: { input: 1.0, output: 3.5, cache: 0.25 },
     descrizione:
-      'Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro — che su questo motore è la voce che decide il conto.',
+      'Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro - che su questo motore è la voce che decide il conto.',
     adeguatezzaDocumentale: 'media',
     notaCosti: 'Tariffa AKI.IO: 1,00 € per milione di token letti (0,25 € se già in cache) e 3,50 € per milione scritti.',
+    disponibile: true,
+  },
+  {
+    id: 'mod-deepseek-v4-flash',
+    provider: 'AKI.IO (DE)',
+    nome: 'Deepseek V4 Flash',
+    sdk: 'deepseek-v4-flash-0731-284b',
+    fornitore: 'aki',
+    tariffa: { input: 0.2, output: 0.5, cache: 0.1 },
+    descrizione:
+      'Servito da AKI.IO sulle stesse GPU tedesche di GLM 5.3, con lo stesso riuso del contesto fra un passo e l’altro: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 1M di token, il più ampio del catalogo, e listino un quinto in lettura e un settimo in scrittura rispetto a GLM 5.3; da validare fonte per fonte sui set informativi italiani.',
+    adeguatezzaDocumentale: 'media',
+    notaCosti: 'Tariffa AKI.IO: 0,20 € per milione di token letti (0,10 € se già in cache) e 0,50 € per milione scritti.',
     disponibile: true,
   },
   {
@@ -155,7 +168,7 @@ export const CATALOGO_MODELLI: VoceCatalogo[] = [
     fornitore: 'gemini',
     tariffa: { input: 1.5, output: 9.0, cache: 0.15 },
     descrizione:
-      'Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa — ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.',
+      'Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa - ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.',
     adeguatezzaDocumentale: 'media',
     notaCosti: 'Tariffa Google: 1,50 $ per milione di token letti (0,15 $ se già in cache) e 9,00 $ per milione scritti, ragionamento compreso.',
     disponibile: true,
