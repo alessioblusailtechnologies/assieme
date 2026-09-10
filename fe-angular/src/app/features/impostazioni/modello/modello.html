@@ -34,19 +34,15 @@
         <div class="modello__testa">
           <h2 class="modello__nome">{{ modello.nome }}</h2>
           @if (modello.id === attivo()?.id) {
-            <ui-tag variante="accento">in uso</ui-tag>
+            <ui-tag variante="positivo">in uso</ui-tag>
           }
         </div>
 
         <p class="modello__descrizione">{{ modello.descrizione }}</p>
 
-        <div class="modello__piede">
-          <!-- La posizione nella scala, che è ciò che dicono i nomi: il più potente in verde. -->
-          <ui-badge [variante]="$last ? 'positivo' : 'neutro'">livello {{ $index + 1 }} di {{ $count }}</ui-badge>
-          @if (modello.notaCosti) {
-            <p class="modello__costi">{{ modello.notaCosti }}</p>
-          }
-        </div>
+        @if (modello.notaCosti) {
+          <p class="modello__costi">{{ modello.notaCosti }}</p>
+        }
 
         @if (puoConfigurare() && modello.disponibile && modello.id !== attivo()?.id) {
           <button

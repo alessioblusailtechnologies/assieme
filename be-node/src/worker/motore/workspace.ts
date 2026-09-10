@@ -69,6 +69,13 @@ export interface DocumentoWorkspace {
    * immagini le guarda davvero. Il `.md` resta la fonte da citare.
    */
   immagine: string | null;
+  /**
+   * Vero quando il file nella workspace È l'originale caricato, senza un
+   * Markdown: l'allegato «Solo per questa chat» (11/09/2026), un PDF o
+   * un'immagine che il motore apre con Read così com'è. Niente ancore
+   * `[pag. N]`: la pagina di una citazione è quella del PDF.
+   */
+  originale?: boolean;
 }
 
 export interface Workspace {
@@ -189,7 +196,7 @@ export async function documentiPerWorkspace(
      from velia.documenti d
      left join velia.compagnie c on c.id = d.compagnia_id
      left join velia.rami r on r.id = d.ramo_id
-     where d.path_md is not null
+     where (d.path_md is not null or (d.archivio = 'conversazione' and d.path_originale is not null))
        and (
          case when $3::uuid is null then
            d.archivio = 'pubblico'
@@ -254,9 +261,14 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
   }
 
   for (const riga of righe.rows) {
-    const relativo = percorsoNellaWorkspace(riga, cartelle);
+    /* L'allegato veloce non ha Markdown: nella workspace va il file com'è,
+       col nome che avrebbe avuto il suo .md e la sua estensione vera. */
+    const originale = !riga.path_md && riga.path_originale ? riga.path_originale : null;
+    const relativo = originale
+      ? percorsoNellaWorkspace(riga, cartelle).replace(/\.md$/i, originale.slice(originale.lastIndexOf('.')).toLowerCase())
+      : percorsoNellaWorkspace(riga, cartelle);
     try {
-      const origine = await cache.file(riga.path_md!, riga.updated_at.toISOString());
+      const origine = await cache.file(originale ?? riga.path_md!, riga.updated_at.toISOString());
       await collega(origine, join(directory, ...relativo.split('/')));
     } catch (errore) {
       mancanti.push({
@@ -273,7 +285,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
        chiesto. Se non si riesce a scaricarla, pazienza: resta il Markdown, e
        il documento non diventa «mancante» per questo. */
     let immagine: string | null = null;
-    if (riga.formato === 'immagine' && riga.path_originale && contestoIds.includes(riga.id)) {
+    if (!originale && riga.formato === 'immagine' && riga.path_originale && contestoIds.includes(riga.id)) {
       const estensione = riga.path_originale.slice(riga.path_originale.lastIndexOf('.'));
       const percorsoImmagine = relativo.replace(/\.md$/i, estensione);
       try {
@@ -290,6 +302,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       riga.archivio === 'pubblico' && riga.path_pdf ? (ultimaPaginaPdf.get(riga.path_pdf) ?? null) : riga.numero_pagine,
       immagine,
     );
+    if (originale) doc.originale = true;
     perPath.set(relativo, doc);
     perId.set(riga.id, relativo);
     if (riga.archivio === 'pubblico') {
@@ -535,6 +548,9 @@ async function scriviIndiciTenant(
         ? `${intestazione}\n${allegati.map(rigaDoc).join('\n')}\n` +
           (allegati.some(([, d]) => d.immagine)
             ? '\nGli allegati che sono immagini hanno il **file dell’immagine** accanto al loro `.md`, con lo stesso nome: aprilo con Read per guardarla davvero (colori, impaginazione, stile). Il `.md` resta la fonte da citare.\n'
+            : '') +
+          (allegati.some(([, d]) => d.originale)
+            ? '\nGli allegati che non finiscono in `.md` sono i **file originali**, PDF o immagini, senza trascrizione: aprili con Read (un PDF di più di 10 pagine a blocchi, col parametro `pages`, al massimo 20 pagine per volta). Si citano col loro nome e con il numero di pagina del PDF; un’immagine è pagina 1.\n'
             : '')
         : 'Nessun allegato.\n'),
     'utf8',

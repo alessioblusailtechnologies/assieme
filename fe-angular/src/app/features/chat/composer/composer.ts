@@ -105,6 +105,10 @@ export class Composer {
   ]);
 
   constructor() {
+    /* Il livello mostrato accanto al microfono è quello dell'agenzia di
+       adesso, non di quando si è aperta la chat la prima volta. */
+    this.store.aggiornaLivelli();
+
     // Lo store → l'editor: ricostruzione sul testo, riconciliazione sui chip.
     effect(() => {
       const testo = this.store.bozza();
@@ -243,7 +247,9 @@ export class Composer {
 
   /**
    * Le due strade dell'allegato (RF-C-02). La differenza non è tecnica ed è
-   * scritta com'è: dove finisce il documento e quanto bene viene letto.
+   * scritta com'è: dove finisce il documento, e se si aspetta la lettura.
+   * Quello «solo per questa chat» non si trascrive (11/09/2026): è pronto
+   * subito, e il motore apre il file com'è quando parte la domanda.
    */
   protected readonly vociAllega: VoceMenu[] = [
     {
@@ -253,7 +259,7 @@ export class Composer {
     },
     {
       etichetta: 'Solo per questa chat',
-      dettaglio: 'lettura rapida, meno precisa',
+      dettaglio: 'subito, non resta in archivio',
       azione: () => this.scegliFile('rapido'),
     },
   ];

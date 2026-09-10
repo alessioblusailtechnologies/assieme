@@ -4,6 +4,7 @@ import { HttpDownloadProgressEvent, HttpEventType, provideHttpClient } from '@an
 import { Router } from '@angular/router';
 
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
+import { LivelliStore } from '@core/impostazioni/livelli-store';
 
 import { ChatStore } from './chat-store';
 import { Conversazione, DocumentoGenerato, EventoStream, PropostaArchivio } from '@core/models';
@@ -83,8 +84,15 @@ describe('ChatStore', () => {
     return http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/cnv-1/messaggi');
   }
 
-  it('il livello scelto in chat viaggia col messaggio, e si azzera cambiando conversazione', async () => {
+  it('il livello della chat segue quello dell’agenzia finché non lo si cambia qui; viaggia col messaggio e si azzera cambiando conversazione', async () => {
     await avvia();
+    /* I livelli si chiedono per il tenant della sessione: senza, niente richieste. */
+    http.expectOne('/api/sessione').flush({
+      utente: { id: 'utn-001', nome: 'Marta', cognome: 'Ferrero', email: 'm@x.it', ruolo: 'amministratore', tenantId: 'tnt-001' },
+      tenant: { id: 'tnt-001', nome: 'Meridiana', piano: 'agenzia' },
+      permessi: [],
+    });
+    await microtask();
     const livello = (id: string, nome: string) => ({
       id,
       nome,
@@ -92,9 +100,16 @@ describe('ChatStore', () => {
       adeguatezzaDocumentale: 'alta' as const,
       disponibile: true,
     });
-    http.expectOne('/api/modelli').flush([livello('livello-medio', 'Medio'), livello('livello-boost', 'Boost')]);
-    http.expectOne('/api/modelli/attivo').flush(livello('livello-boost', 'Boost'));
+    const medio = livello('livello-medio', 'Medio');
+    const boost = livello('livello-boost', 'Boost');
+    http.expectOne('/api/modelli').flush([medio, boost]);
+    http.expectOne('/api/modelli/attivo').flush(medio);
     await microtask();
+    expect(store.livelloInUso()?.nome).toBe('Medio');
+
+    /* L'amministratore passa a Boost nelle Impostazioni: la chat lo segue. */
+    TestBed.inject(LivelliStore).scegli('livello-boost').subscribe();
+    http.expectOne((r) => r.method === 'PUT' && r.url === '/api/modelli/attivo').flush(boost);
     expect(store.livelloInUso()?.nome).toBe('Boost');
 
     store.scegliLivello('livello-medio');

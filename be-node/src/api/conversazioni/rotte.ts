@@ -52,7 +52,9 @@ import { ELENCO_FORMATI } from '../../contratto/documenti-privati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
+import { preparaAllegatoVeloce, type AllegatoVeloce } from '../../worker/ingestion/allegato-veloce.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
+import { ErroreIngestion } from '../../worker/ingestion/gestore.js';
 import { PonteEventi } from './ponte-eventi.js';
 import { scrittoreDallaConfigurazione, type ScrittorePrompt } from './scrittore-prompt.js';
 import { ServizioSuggerimenti } from './suggeritore.js';
@@ -208,10 +210,11 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
    * Resta all'agenzia anche quando la conversazione se ne va.
    *
    * **rapido**: resta attaccato alla conversazione (`archivio:
-   * 'conversazione'`, cartella `allegati/`), si legge in una passata sola
-   * con un modello economico e sparisce con lei. È per la domanda al volo su
-   * un file di passaggio: un preventivo appena arrivato via mail che non si
-   * vuole conservare.
+   * 'conversazione'`, cartella `allegati/`) e sparisce con lei. È per la
+   * domanda al volo su un file di passaggio: un preventivo appena arrivato
+   * via mail che non si vuole conservare. Dall'11/09/2026 non si trascrive:
+   * è pronto alla risposta di questa rotta, e il motore apre il file com'è
+   * (`allegato-veloce.ts`).
    *
    * La scelta la fa l'utente perché è l'unico che sa quale dei due è: dal
    * server, un PDF è un PDF.
@@ -273,16 +276,44 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         ? percorsoOriginale(tenantId, id, estensione)
         : percorsoAllegato(tenantId, id, estensione, formato !== 'pdf');
       const percorsoDaMostrare = inArchivio ? percorsoPdf(tenantId, id) : percorsoAllegato(tenantId, id);
-      await archivio().carica(percorso, file.contenuto, file.mimetype || 'application/octet-stream');
       const titolo = file.nome.replace(/\.[^.]+$/, '') || file.nome;
+
+      /* L'allegato veloce è pronto subito (11/09/2026): niente coda e niente
+         trascrizione, il motore apre il file com'è quando parte la domanda.
+         Qui si fa solo il lavoro meccanico (le pagine, il PDF da mostrare, il
+         testo di un Word), e un file che non si apre si dice adesso, prima di
+         salvarlo, invece che con un chip rosso un minuto dopo. */
+      let veloce: AllegatoVeloce | undefined;
+      if (!inArchivio) {
+        try {
+          veloce = await preparaAllegatoVeloce({ formato, byte: file.contenuto, titolo, nomeFile: file.nome });
+        } catch (errore) {
+          if (errore instanceof ErroreIngestion) {
+            throw new ErroreApi(422, 'ALLEGATO_NON_LEGGIBILE', errore.messaggioUtente);
+          }
+          throw errore;
+        }
+      }
+      const pathMd = veloce?.markdown ? percorsoDaMostrare.replace(/\.pdf$/i, '.md') : null;
+
+      const salvati = [percorso];
       try {
+        await archivio().carica(percorso, file.contenuto, file.mimetype || 'application/octet-stream');
+        if (veloce?.pdf) {
+          await archivio().carica(percorsoDaMostrare, veloce.pdf, 'application/pdf');
+          salvati.push(percorsoDaMostrare);
+        }
+        if (veloce?.markdown && pathMd) {
+          await archivio().carica(pathMd, Buffer.from(veloce.markdown, 'utf8'), 'text/markdown');
+          salvati.push(pathMd);
+        }
         await conIdentita(poolDb(), richiesta.identita, (client) =>
           client.query(
             `insert into velia.documenti
                (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
                 path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
-                classificazione_da_confermare)
-             values ($1, $9, $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $10, $11)`,
+                classificazione_da_confermare, numero_pagine, path_md, dimensione_md_byte)
+             values ($1, $9, $2, $3, 'altro', $12, $4, $5, $6, $7, $8, now(), $10, $11, $13, $14, $15)`,
             [
               id,
               tenantId,
@@ -295,20 +326,25 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
               inArchivio ? 'privato' : 'conversazione',
               file.contenuto.length,
               inArchivio,
+              veloce ? 'pronto' : 'in-coda',
+              veloce?.numeroPagine ?? null,
+              pathMd,
+              veloce?.markdown ? Buffer.byteLength(veloce.markdown, 'utf8') : null,
             ],
           ),
         );
       } catch (errore) {
-        await archivio().elimina([percorso]).catch(() => undefined);
+        await archivio().elimina(salvati).catch(() => undefined);
         throw errore;
       }
-      await accoda(poolDb(), 'ingestion', { documentoId: id, modo }, { tenantId, utenteId });
+      if (!veloce) await accoda(poolDb(), 'ingestion', { documentoId: id, modo }, { tenantId, utenteId });
 
       void risposta.code(201);
       const riferimento: RiferimentoDocumento = {
         id,
         titolo,
         archivio: inArchivio ? 'privato' : 'conversazione',
+        stato: veloce ? 'pronto' : 'in-coda',
       };
       return riferimento;
     },

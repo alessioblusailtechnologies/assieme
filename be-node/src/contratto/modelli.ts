@@ -118,7 +118,7 @@ export const LIVELLI: Livello[] = [
     nome: 'Avanzato',
     sdk: 'deepseek-v4-flash-0731-284b',
     descrizione:
-      'Elaborazione su GPU in datacenter tedeschi certificati, senza grandi cloud di mezzo: i documenti non lasciano l’UE, restano in memoria volatile e non vengono registrati né usati per addestrare. Risposte più asciutte, con meno citazioni per risposta rispetto a Boost.',
+      'Circa un decimo dei costi di Boost, con risposte più sintetiche e meno citazioni. Adatto alle domande puntuali, meno alle analisi lunghe.',
     adeguatezzaDocumentale: 'media',
     disponibile: true,
   },
@@ -127,7 +127,7 @@ export const LIVELLI: Livello[] = [
     nome: 'Boost',
     sdk: 'claude-opus-5',
     descrizione:
-      'Il livello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È quello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.',
+      'La qualità più alta: letture più accurate sui documenti lunghi e citazioni più complete. Il riferimento per analisi e confronti fra più documenti.',
     adeguatezzaDocumentale: 'alta',
     disponibile: true,
   },

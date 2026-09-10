@@ -35,7 +35,10 @@ export async function ancoraCitazioni(
 
   for (const c of citazioni) {
     const path = pathPerId.get(c.documentoId);
-    if (!path) {
+    /* Un allegato veloce è il file originale, senza ancore da cui rileggere
+       la pagina: vale quella del PDF, già tenuta entro l'ultima dalla
+       validazione. */
+    if (!path || !path.toLowerCase().endsWith('.md')) {
       corrette.push(c);
       continue;
     }

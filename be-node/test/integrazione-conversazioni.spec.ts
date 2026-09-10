@@ -292,6 +292,48 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(vuoto.json<CorpoErroreApi>().codice).toBe('FILE_MANCANTE');
   });
 
+  it('allegato veloce: pronto subito, niente coda; nella workspace va il file com’è', async () => {
+    const carica = (nome: string, contenuto: Buffer) => {
+      const { corpo, contentType } = multipart(nome, contenuto);
+      return app.inject({
+        method: 'POST',
+        url: '/api/conversazioni/allegati?modo=rapido',
+        headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType },
+        payload: corpo,
+      });
+    };
+
+    const r = await carica('preventivo-bianchi.pdf', await pdfDiProva());
+    expect(r.statusCode).toBe(201);
+    const rif = r.json<RiferimentoDocumento>();
+    expect(rif).toMatchObject({ titolo: 'preventivo-bianchi', archivio: 'conversazione', stato: 'pronto' });
+    const job = await pool().query(`select 1 from velia.jobs where tipo = 'ingestion' and payload->>'documentoId' = $1`, [rif.id]);
+    expect(job.rowCount).toBe(0);
+    const riga = await pool().query<{ stato: string; numero_pagine: number; path_md: string | null }>(
+      `select stato, numero_pagine, path_md from velia.documenti where id = $1`,
+      [rif.id],
+    );
+    expect(riga.rows[0]).toMatchObject({ stato: 'pronto', numero_pagine: 1, path_md: null });
+
+    const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_COLLAUDO, radice, jobId: 'prova-veloce', contestoIds: [rif.id] });
+    try {
+      const path = ws.perId.get(rif.id)!;
+      expect(path).toMatch(/^tenant\/allegati\/preventivo-bianchi--all-[0-9a-f]+\.pdf$/);
+      expect(ws.perPath.get(path)).toMatchObject({ originale: true, paginaMassima: 1 });
+      const byte = await readFile(join(ws.directory, ...path.split('/')));
+      expect(byte.subarray(0, 5).toString()).toBe('%PDF-');
+      const indice = await readFile(join(ws.directory, 'tenant', 'allegati', 'INDICE.md'), 'utf8');
+      expect(indice).toContain('file originali');
+    } finally {
+      await ws.rimuovi();
+    }
+
+    /* Un file che non si apre si dice adesso, non con un chip rosso dopo. */
+    const rotto = await carica('rotto.pdf', Buffer.from('%PDF-1.4 questo non è un pdf'));
+    expect(rotto.statusCode).toBe(422);
+    expect(rotto.json<CorpoErroreApi>().codice).toBe('ALLEGATO_NON_LEGGIBILE');
+  });
+
   it('la workspace: pubblico nell’albero dello Storage, allegato non pronto segnalato, INDICE generati', async () => {
     const contesto = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>().documentiInContesto.map((d) => d.id);
     const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_COLLAUDO, radice, jobId: 'prova-ws', contestoIds: contesto });

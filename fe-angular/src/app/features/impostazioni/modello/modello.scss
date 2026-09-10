@@ -56,8 +56,13 @@
   border-radius: var(--radius);
 }
 
+/* Il livello in uso si deve vedere da lontano: bordo doppio e fondo appena
+   tinto, nel verde del suo «in uso». L'anello è un'ombra e non un bordo più
+   spesso, così la scheda non si sposta di un pixel quando cambia la scelta. */
 .modello.is-attivo {
-  border-color: var(--c-accent);
+  border-color: var(--c-stato-pronto);
+  box-shadow: 0 0 0 1px var(--c-stato-pronto);
+  background: color-mix(in srgb, var(--c-stato-pronto) 6%, var(--c-surface));
 }
 
 .modello__testa {
@@ -78,13 +83,6 @@
   flex: 1;
   font-size: var(--t-sm);
   color: var(--c-text-2);
-}
-
-.modello__piede {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-  align-items: flex-start;
 }
 
 .modello__costi {

@@ -12,7 +12,6 @@ import {
   Id,
   IsoDateTime,
   Messaggio,
-  ModelloAI,
   ModoAllegato,
   Passo,
   PropostaArchivio,
@@ -24,7 +23,7 @@ import {
 import { TokenStore } from '@core/auth/token-store';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
-import { ImpostazioniApi } from '@core/api/impostazioni-api';
+import { LivelliStore } from '@core/impostazioni/livelli-store';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import {
@@ -203,32 +202,28 @@ export class ChatStore {
   // --- Il livello per questa chat (10/09/2026) ------------------------------
 
   /*
-   * Il livello dell'agenzia si sceglie nelle Impostazioni; qui lo si cambia
-   * per la chat che si ha davanti, senza toccare quello. La scelta non si
-   * salva da nessuna parte: viaggia con ogni messaggio e si azzera cambiando
-   * conversazione. L'ospite di una chat cliente non sceglie niente, e queste
-   * rotte non le chiede nemmeno.
+   * Il livello dell'agenzia si sceglie nelle Impostazioni e la chat lo
+   * segue (`LivelliStore`, condiviso con quella pagina); qui lo si cambia
+   * per la conversazione che si ha davanti, senza toccare quello. La scelta
+   * non si salva da nessuna parte: viaggia con ogni messaggio e si azzera
+   * cambiando conversazione. L'ospite di una chat cliente non sceglie niente.
    */
-  private readonly apiImpostazioni = inject(ImpostazioniApi);
+  private readonly livelliAgenzia = inject(LivelliStore);
 
-  private readonly risorsaLivelli = httpResource<ModelloAI[]>(() =>
-    this.token.tokenOspite() ? undefined : this.apiImpostazioni.urlModelli(),
-  );
-  private readonly risorsaLivelloAgenzia = httpResource<ModelloAI>(() =>
-    this.token.tokenOspite() ? undefined : this.apiImpostazioni.urlModelloAttivo(),
-  );
+  readonly livelli = this.livelliAgenzia.livelli;
+  readonly livelloAgenzia = this.livelliAgenzia.agenzia;
 
-  /** I livelli che si possono scegliere, nell'ordine del server. */
-  readonly livelli = computed(() =>
-    this.risorsaLivelli.hasValue() ? (this.risorsaLivelli.value() ?? []).filter((l) => l.disponibile) : [],
-  );
+  private readonly livelloDellaChat = signal<Id | undefined>(undefined);
 
-  readonly livelloAgenzia = computed(() =>
-    this.risorsaLivelloAgenzia.hasValue() ? this.risorsaLivelloAgenzia.value() : undefined,
-  );
-
-  /** Il livello scelto per questa chat; undefined = quello dell'agenzia. */
-  readonly livelloScelto = signal<Id | undefined>(undefined);
+  /**
+   * Il livello scelto per questa chat, se è diverso da quello dell'agenzia;
+   * undefined = si segue l'agenzia. Se nel frattempo l'agenzia passa proprio
+   * a quel livello, la scelta smette di essere una deviazione.
+   */
+  readonly livelloScelto = computed(() => {
+    const scelto = this.livelloDellaChat();
+    return scelto && scelto !== this.livelloAgenzia()?.id ? scelto : undefined;
+  });
 
   readonly livelloInUso = computed(() => {
     const id = this.livelloScelto() ?? this.livelloAgenzia()?.id;
@@ -237,7 +232,12 @@ export class ChatStore {
 
   /** Tornare al livello dell'agenzia è sceglierlo: non resta una scelta «uguale» in giro. */
   scegliLivello(id: Id): void {
-    this.livelloScelto.set(id === this.livelloAgenzia()?.id ? undefined : id);
+    this.livelloDellaChat.set(id === this.livelloAgenzia()?.id ? undefined : id);
+  }
+
+  /** Entrando in chat: il livello dell'agenzia può averlo cambiato qualcun altro. */
+  aggiornaLivelli(): void {
+    this.livelliAgenzia.ricarica();
   }
 
   /** Esporta una risposta nel formato scelto e avvia il download, col titolo della conversazione come nome. */
@@ -403,7 +403,7 @@ export class ChatStore {
     if (id === this.idAttiva()) return;
     this.idAttiva.set(id);
     /* Il livello scelto in chat valeva per quella chat. */
-    this.livelloScelto.set(undefined);
+    this.livelloDellaChat.set(undefined);
     this.messaggiCaricati.set(undefined);
     this.erroreMessaggi.set(undefined);
     if (id) {
@@ -692,7 +692,8 @@ export class ChatStore {
                dove lo hai allegato, finché non mandi il messaggio. */
             this.aggiungiRiferimento(riferimento);
             this.aggiungiAlContesto(riferimento);
-            this.segui(riferimento);
+            /* L'allegato veloce arriva già pronto: non c'è niente da seguire. */
+            if (riferimento.stato !== 'pronto') this.segui(riferimento);
           });
         },
         error: (err: HttpErrorResponse) => {
