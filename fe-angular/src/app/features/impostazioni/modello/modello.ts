@@ -19,6 +19,10 @@ import { Tag } from '@shared/ui/tag/tag';
  * vede quale livello è in uso e le sue caratteristiche — sapere con che
  * cosa si sta lavorando non è un privilegio.
  *
+ * Il badge dice la posizione nella scala e non l'adeguatezza documentale:
+ * l'ordine dei nomi l'ha deciso il committente, e l'adeguatezza di Avanzato
+ * (media, non validata) sotto quella di Medio (alta) lo avrebbe smentito.
+ *
  * La pagina mostra solo i livelli disponibili: uno il cui fornitore non è
  * ancora configurato resta un fatto del backend finché non si può scegliere
  * davvero. Lo storico delle modifiche (RF-D-07) resta registrato dal server;
@@ -66,13 +70,5 @@ export class Modello {
       },
       error: () => this.inSalvataggio.set(undefined),
     });
-  }
-
-  protected etichettaAdeguatezza(m: ModelloAI): string {
-    return m.adeguatezzaDocumentale === 'alta'
-      ? 'adeguatezza documentale alta'
-      : m.adeguatezzaDocumentale === 'media'
-        ? 'adeguatezza documentale media'
-        : 'adeguatezza documentale bassa';
   }
 }

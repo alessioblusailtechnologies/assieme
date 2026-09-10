@@ -41,9 +41,8 @@
         <p class="modello__descrizione">{{ modello.descrizione }}</p>
 
         <div class="modello__piede">
-          <ui-badge [variante]="modello.adeguatezzaDocumentale === 'alta' ? 'positivo' : 'neutro'">
-            {{ etichettaAdeguatezza(modello) }}
-          </ui-badge>
+          <!-- La posizione nella scala, che è ciò che dicono i nomi: il più potente in verde. -->
+          <ui-badge [variante]="$last ? 'positivo' : 'neutro'">livello {{ $index + 1 }} di {{ $count }}</ui-badge>
           @if (modello.notaCosti) {
             <p class="modello__costi">{{ modello.notaCosti }}</p>
           }
