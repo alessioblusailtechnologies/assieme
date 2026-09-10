@@ -2,18 +2,26 @@ import type pg from 'pg';
 
 import type { Citazione } from '../contratto/conversazioni.js';
 import { ErroreApi } from '../contratto/errori.js';
+import {
+  INTESTAZIONE_INIZIALE,
+  immaginiDellaFascia,
+  schemaIntestazione,
+  type Intestazione,
+} from '../contratto/intestazione.js';
 import type { FormatoGenerazione, RichiestaEsporta, TemplateOutput } from '../contratto/template.js';
 import type { ArchivioFile } from '../worker/ingestion/archivio-file.js';
-import type { IdentitaGenerazione } from './generatore.js';
+import type { FormatoDocumento } from './generatore.js';
+import { dimensioniImmagine, tipoImmagine, type FasceDocumento, type ImmagineFascia } from './intestazione.js';
 
 /**
- * Il catalogo dei template e l'identità visiva, letti dal database: le
- * funzioni che API (esporta chat/tabelle, documento degli agenti) e worker
- * (il tool `genera_documento` in chat) condividono. Niente Fastify qui.
+ * Il catalogo dei template e l'intestazione dell'agenzia, letti dal
+ * database: le funzioni che API (esporta chat/tabelle, documento degli
+ * agenti) e worker (i tool dei documenti in chat, la sandbox) condividono.
+ * Niente Fastify qui.
  *
- * Un template è un file dell'agenzia; per formato ce n'è al più un
- * predefinito; il layout di piattaforma non è in catalogo ed è ciò che vale
- * quando per il formato chiesto non c'è un template (`risolviTemplate`).
+ * Dall'11/09/2026 i template servono solo alla sandbox («Genera documento
+ * da template»); i documenti deterministici escono col layout di VELIA e
+ * l'intestazione dell'agenzia (`fasceDelTenant`).
  */
 
 export interface RigaTemplate {
@@ -24,14 +32,6 @@ export interface RigaTemplate {
   descrizione: string;
   predefinito: boolean;
   path_file: string;
-}
-
-export interface RigaIdentita {
-  colore_primario: string;
-  recapiti: string;
-  firma: string;
-  logo_path: string | null;
-  logo_tipo: string | null;
 }
 
 /**
@@ -45,14 +45,6 @@ export interface TemplateRisolto {
   personalizzato: boolean;
   path_file?: string;
 }
-
-export const IDENTITA_PREDEFINITA: RigaIdentita = {
-  colore_primario: '#2f4b7c',
-  recapiti: '',
-  firma: '',
-  logo_path: null,
-  logo_tipo: null,
-};
 
 /** Il nome del layout di piattaforma: dà il nome al file quando non c'è un template. */
 export const NOME_LAYOUT_PIATTAFORMA = 'Documento VELIA';
@@ -131,29 +123,89 @@ export function fontiDaCitazioni(citazioni: Citazione[]): string[] {
   });
 }
 
-export async function identitaDelTenant(client: pg.ClientBase, tenantId: string): Promise<RigaIdentita> {
-  const r = await client.query<RigaIdentita>(
-    `select colore_primario, recapiti, firma, logo_path, logo_tipo
-     from velia.identita_visiva where tenant_id = $1`,
+/**
+ * Il formato di un'esportazione deterministica. Un template scelto (dalle
+ * tabelle e dagli agenti, finché non passano ai formati: fase 3 del piano)
+ * vale ormai solo per il suo formato; l'impaginazione è sempre quella di
+ * VELIA con l'intestazione dell'agenzia.
+ */
+export async function formatoDaScelta(client: pg.ClientBase, scelta: RichiestaEsporta): Promise<FormatoDocumento> {
+  if (!scelta.templateId) return scelta.formato!;
+  const riga = await templatePerId(client, scelta.templateId);
+  if (!riga) throw ErroreApi.nonTrovato('Template inesistente.');
+  return versoRisolto(riga).formato;
+}
+
+// ---------------------------------------------------------------------------
+// Intestazione e piè di pagina (11/09/2026)
+// ---------------------------------------------------------------------------
+
+/** Dove sta un'immagine dell'intestazione: l'id porta già l'estensione. */
+export const percorsoImmagineIntestazione = (tenantId: string, id: string): string =>
+  `tenant/${tenantId}/intestazione/${id}`;
+
+/** Intestazione e piè salvati dal tenant; senza una riga, quelli di partenza. */
+export async function intestazioneDelTenant(
+  client: pg.ClientBase,
+  tenantId: string,
+): Promise<Intestazione & { aggiornataIl?: Date }> {
+  const r = await client.query<{ intestazione: unknown; piede: unknown; aggiornata_il: Date }>(
+    `select intestazione, piede, aggiornata_il from velia.intestazione where tenant_id = $1`,
     [tenantId],
   );
-  return r.rows[0] ?? IDENTITA_PREDEFINITA;
+  const riga = r.rows[0];
+  if (!riga) return INTESTAZIONE_INIZIALE;
+  /* Salvata da una versione dello schema che non torna più: meglio il
+     documento di partenza che un documento che non esce. */
+  const esito = schemaIntestazione.safeParse({ intestazione: riga.intestazione, piede: riga.piede });
+  return esito.success ? { ...esito.data, aggiornataIl: riga.aggiornata_il } : INTESTAZIONE_INIZIALE;
 }
 
-export function versoIdentitaGenerazione(riga: RigaIdentita): Omit<IdentitaGenerazione, 'logo'> {
-  return { colorePrimario: riga.colore_primario, recapiti: riga.recapiti, firma: riga.firma };
-}
-
-/** L'identità visiva pronta per la generazione, logo compreso (un logo sparito non ferma nulla). */
-export async function identitaPerGenerazione(
+/**
+ * Le fasce pronte per generare: il JSON, le immagini che cita (una che
+ * manca nello Storage si salta, non ferma nulla) e i campi che non
+ * dipendono dalla pagina.
+ */
+export async function fascePerGenerazione(
   archivio: ArchivioFile,
-  riga: RigaIdentita,
-): Promise<IdentitaGenerazione> {
-  const base = versoIdentitaGenerazione(riga);
-  if (!riga.logo_path || !riga.logo_tipo) return base;
-  try {
-    return { ...base, logo: { byte: await archivio.scarica(riga.logo_path), tipo: riga.logo_tipo } };
-  } catch {
-    return base;
+  tenantId: string,
+  intestazione: Intestazione,
+  campi: { titolo: string; agenzia: string },
+): Promise<FasceDocumento> {
+  const immagini = new Map<string, ImmagineFascia>();
+  const ids = new Set([...immaginiDellaFascia(intestazione.intestazione), ...immaginiDellaFascia(intestazione.piede)]);
+  for (const id of ids) {
+    try {
+      const byte = await archivio.scarica(percorsoImmagineIntestazione(tenantId, id));
+      const tipo = tipoImmagine(byte);
+      const dimensioni = dimensioniImmagine(byte);
+      if (tipo && dimensioni) immagini.set(id, { byte, tipo, ...dimensioni });
+    } catch {
+      /* sparita dallo Storage: il documento esce senza */
+    }
   }
+  return {
+    intestazione: intestazione.intestazione,
+    piede: intestazione.piede,
+    immagini,
+    campi: {
+      titolo: campi.titolo,
+      agenzia: campi.agenzia,
+      data: new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()),
+    },
+  };
+}
+
+/** Tutto in una: le fasce del tenant, col suo nome per il campo «agenzia». */
+export async function fasceDelTenant(
+  client: pg.ClientBase,
+  archivio: ArchivioFile,
+  tenantId: string,
+  titolo: string,
+): Promise<FasceDocumento> {
+  const [intestazione, tenant] = await Promise.all([
+    intestazioneDelTenant(client, tenantId),
+    client.query<{ nome: string }>(`select nome from velia.tenant where id = $1`, [tenantId]),
+  ]);
+  return fascePerGenerazione(archivio, tenantId, intestazione, { titolo, agenzia: tenant.rows[0]?.nome ?? '' });
 }

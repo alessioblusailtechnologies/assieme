@@ -1,10 +1,10 @@
 <header class="testata">
   <h1 class="serif testata__titolo">Template di output</h1>
   <p class="testata__spiega">
-    I documenti che escono da VELIA - esportazioni della chat, tabelle, output degli agenti -
-    si generano sui template dell'agenzia. Caricane quanti vuoi, anche più d'uno per formato:
-    in chat basta chiedere «esporta con <em>Proposta breve</em>». Per ogni formato uno è il
-    predefinito; senza template, il documento esce col layout di VELIA e l'identità dell'agenzia.
+    I documenti dell'agenzia su cui «Genera documento da template» costruisce: ne copia
+    impaginazione, stili e tabelle e ci mette il contenuto nuovo. In chat basta chiedere
+    «fammelo su <em>Proposta breve</em>». «Esporta come» esce invece col layout di VELIA e
+    l'intestazione dell'agenzia.
   </p>
   <p class="mono testata__formati">Formati: PDF · DOCX · XLSX - PPTX in valutazione</p>
 </header>
@@ -124,117 +124,20 @@
     <ui-stato-vuoto
       icona="documento"
       titolo="Nessun template caricato"
-      descrizione="Finché non carichi un template, i documenti escono col layout di VELIA e l'identità visiva dell'agenzia."
+      descrizione="Senza template, «Genera documento» impagina da zero, in modo sobrio."
     />
-  }
-
-  @if (formatiSenzaTemplate().length && template().length) {
-    <p class="mono formati-mancanti">
-      Senza template per {{ formatiMancantiTesto() }}: vale il layout di VELIA.
-    </p>
   }
 
   @if (puoGestire()) {
     <section class="carica" aria-label="Carica un template dell'agenzia">
       <p class="mono">Carica un template</p>
-      <p class="carica__spiega" ngNonBindable>
-        Basta un documento con la tua intestazione (logo, testata, piè di pagina) e il resto
-        bianco: il testo generato va in coda. Se vuoi decidere dove finisce cosa, nel DOCX o
-        XLSX puoi mettere i segnaposto <code>{{contenuto}}</code>, <code>{{titolo}}</code>,
-        <code>{{destinatario}}</code>, <code>{{data}}</code>, <code>{{fonti}}</code>. Un PDF fa
-        da carta intestata: la sua prima pagina è lo sfondo di ogni pagina generata. Il nome del
-        file diventa il nome del template.
+      <p class="carica__spiega">
+        Un documento dell'agenzia da prendere a modello: una lettera, un preventivo, una carta
+        intestata. Non servono segnaposto. Il nome del file diventa il nome del template.
       </p>
       <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx" />
       @if (coda().length) {
         <ui-coda-caricamento [file]="coda()" (chiudi)="svuotaCoda()" />
-      }
-    </section>
-
-    <section class="identita" aria-label="Identità visiva dell'agenzia">
-      <p class="mono">Identità visiva (RF-D-12)</p>
-      <p class="identita__spiega">
-        Applicata a tutti i documenti generati: intestazione, colori, recapiti e firma.
-      </p>
-
-      <div class="identita__campi">
-        <label class="campo campo--colore">
-          <span class="campo__nome">Colore primario</span>
-          <span class="colore">
-            <input
-              type="color"
-              [value]="colore()"
-              (input)="colore.set($any($event.target).value)"
-              aria-label="Colore primario dei documenti"
-            />
-            <input
-              uiCampo
-              type="text"
-              [value]="colore()"
-              (input)="colore.set($any($event.target).value)"
-              aria-label="Colore primario in esadecimale"
-            />
-          </span>
-        </label>
-
-        <label class="campo">
-          <span class="campo__nome">Recapiti in calce</span>
-          <textarea
-            uiCampo
-            rows="2"
-            [value]="recapiti()"
-            (input)="recapiti.set($any($event.target).value)"
-          ></textarea>
-        </label>
-
-        <label class="campo">
-          <span class="campo__nome">Firma</span>
-          <input
-            uiCampo
-            type="text"
-            [value]="firma()"
-            (input)="firma.set($any($event.target).value)"
-          />
-        </label>
-
-        <div class="campo">
-          <span class="campo__nome">Logo</span>
-          <div class="logo">
-            @if (logoUrl(); as url) {
-              <img class="logo__anteprima" [src]="url" alt="Logo dell'agenzia" />
-            } @else {
-              <span class="logo__vuoto">Nessun logo caricato</span>
-            }
-            <input
-              #campoLogo
-              type="file"
-              accept="image/png,image/jpeg"
-              hidden
-              (change)="caricaLogo($event)"
-            />
-            <button uiBottone dimensione="piccolo" type="button" (click)="campoLogo.click()">
-              <ui-icon name="carica" [size]="13" />
-              <span>{{ logoUrl() ? 'Sostituisci' : 'Carica il logo' }}</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      @if (identitaModificata()) {
-        <div class="identita__azioni">
-          <button
-            uiBottone
-            variante="primario"
-            type="button"
-            [disabled]="salvataggioIdentita()"
-            (click)="salvaIdentita()"
-          >
-            <span>{{ salvataggioIdentita() ? 'Salvataggio…' : 'Salva' }}</span>
-          </button>
-          <button uiBottone variante="testo" type="button" (click)="annullaIdentita()">
-            <span>Annulla</span>
-          </button>
-        </div>
       }
     </section>
   }

@@ -1,22 +1,12 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
-import { linkedSignal } from '@angular/core';
 
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CodaCaricamento, FileInCoda } from '@shared/caricamento/coda-caricamento';
-import { ErroreApi, Id, IdentitaVisiva, TemplateOutput } from '@core/models';
+import { ErroreApi, Id, TemplateOutput } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
-import { ImpostazioniApi } from '@core/api/impostazioni-api';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -29,13 +19,13 @@ import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
  * I template di output dell'agenzia (RF-D-10…D-13).
  *
  * Un template è un documento caricato qui — PDF, DOCX o XLSX — quanti se ne
- * vogliono, anche più d'uno per formato, ognuno col nome con cui lo si
- * richiama in chat («esporta con Proposta breve») e negli agenti. Per ogni
- * formato uno è il predefinito: è quello che vale quando si chiede solo il
- * formato. Senza template per un formato, i documenti escono col layout di
- * piattaforma. Sotto, l'identità visiva dell'agenzia (RF-D-12).
+ * vogliono, ognuno col nome con cui lo si richiama con «Genera documento da
+ * template», dove la sandbox ne copia l'impaginazione. «Esporta come» invece
+ * esce col layout di VELIA e l'intestazione dell'agenzia.
  *
- * Formati al lancio: PDF, DOCX, XLSX. PPTX è rimandato (punto aperto §6.11).
+ * L'identità visiva non c'è più (11/09/2026). Questa pagina diventa a due
+ * schede, intestazione e piè di pagina e modelli di riferimento, con le
+ * fasi 2 e 3 di `PIANO-INTESTAZIONE-MODELLI.md`.
  */
 @Component({
   selector: 'app-template-output',
@@ -57,13 +47,9 @@ import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 })
 export class TemplateOutputSezione {
   private readonly api = inject(TemplateApi);
-  private readonly apiImpostazioni = inject(ImpostazioniApi);
   private readonly sessione = inject(SessioneStore);
 
   private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() => this.api.urlElenco());
-  private readonly risorsaIdentita = httpResource<IdentitaVisiva>(() =>
-    this.apiImpostazioni.urlIdentitaVisiva(),
-  );
 
   protected readonly template = computed(() =>
     this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
@@ -72,16 +58,6 @@ export class TemplateOutputSezione {
   protected readonly errore = this.risorsaTemplate.error;
 
   protected readonly puoGestire = computed(() => this.sessione.puo('template.gestisci'));
-
-  /** I formati per cui manca un template: lì vale il layout di piattaforma. */
-  protected readonly formatiSenzaTemplate = computed(() =>
-    (['pdf', 'docx', 'xlsx'] as const).filter((f) => !this.template().some((t) => t.formato === f)),
-  );
-  protected readonly formatiMancantiTesto = computed(() =>
-    this.formatiSenzaTemplate()
-      .map((f) => f.toUpperCase())
-      .join(', '),
-  );
 
   protected riprova(): void {
     this.risorsaTemplate.reload();
@@ -177,101 +153,5 @@ export class TemplateOutputSezione {
     }
     this.confermaEliminazione.set(undefined);
     this.api.elimina(template.id).subscribe({ next: () => this.risorsaTemplate.reload() });
-  }
-
-  // --- Identità visiva (RF-D-12) ------------------------------------------
-
-  /* I campi ripartono dal server a ogni caricamento della risorsa; le
-     modifiche locali li sganciano finché non si salva. */
-  protected readonly colore = linkedSignal(() =>
-    this.risorsaIdentita.hasValue() ? this.risorsaIdentita.value().colorePrimario : '#2f4b7c',
-  );
-  protected readonly recapiti = linkedSignal(() =>
-    this.risorsaIdentita.hasValue() ? this.risorsaIdentita.value().recapiti : '',
-  );
-  protected readonly firma = linkedSignal(() =>
-    this.risorsaIdentita.hasValue() ? this.risorsaIdentita.value().firma : '',
-  );
-  /**
-   * L'anteprima del logo.
-   *
-   * `IdentitaVisiva.logoUrl` dice *che* il logo c'è, non da dove prenderlo:
-   * la rotta vuole il token, e un `<img src>` non lo manda. L'immagine si
-   * chiede con `HttpClient` e si mostra da un indirizzo d'oggetto, revocato
-   * quando cambia o quando la pagina se ne va.
-   */
-  private readonly logoScaricato = signal<string | undefined>(undefined);
-  protected readonly logoUrl = this.logoScaricato.asReadonly();
-
-  constructor() {
-    /* Il logo si scarica quando l'identità dice che c'è, e l'indirizzo
-       d'oggetto si revoca appena ne arriva un altro o si lascia la pagina:
-       un blob trattenuto è memoria che nessuno libera. */
-    effect((pulizia) => {
-      const presente = this.risorsaIdentita.hasValue()
-        ? Boolean(this.risorsaIdentita.value().logoUrl)
-        : false;
-      if (!presente) {
-        this.mostraLogo(undefined);
-        return;
-      }
-      const sottoscrizione = this.apiImpostazioni.scaricaLogo().subscribe({
-        next: (blob) => this.mostraLogo(URL.createObjectURL(blob)),
-        error: () => this.mostraLogo(undefined),
-      });
-      pulizia(() => sottoscrizione.unsubscribe());
-    });
-
-    inject(DestroyRef).onDestroy(() => this.mostraLogo(undefined));
-  }
-
-  private mostraLogo(url: string | undefined): void {
-    const precedente = this.logoScaricato();
-    if (precedente) URL.revokeObjectURL(precedente);
-    this.logoScaricato.set(url);
-  }
-
-  protected readonly identitaModificata = computed(() => {
-    if (!this.risorsaIdentita.hasValue()) return false;
-    const originale = this.risorsaIdentita.value();
-    return (
-      this.colore() !== originale.colorePrimario ||
-      this.recapiti() !== originale.recapiti ||
-      this.firma() !== originale.firma
-    );
-  });
-
-  protected readonly salvataggioIdentita = signal(false);
-
-  protected salvaIdentita(): void {
-    if (this.salvataggioIdentita()) return;
-    this.salvataggioIdentita.set(true);
-    this.apiImpostazioni
-      .salvaIdentitaVisiva({
-        colorePrimario: this.colore(),
-        recapiti: this.recapiti(),
-        firma: this.firma(),
-      })
-      .subscribe({
-        next: (identita) => {
-          this.risorsaIdentita.set(identita);
-          this.salvataggioIdentita.set(false);
-        },
-        error: () => this.salvataggioIdentita.set(false),
-      });
-  }
-
-  protected annullaIdentita(): void {
-    this.risorsaIdentita.reload();
-  }
-
-  protected caricaLogo(evento: Event): void {
-    const campo = evento.target as HTMLInputElement;
-    const file = campo.files?.[0];
-    campo.value = '';
-    if (!file) return;
-    this.apiImpostazioni.caricaLogo(file).subscribe({
-      next: () => this.risorsaIdentita.reload(),
-    });
   }
 }

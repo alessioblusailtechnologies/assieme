@@ -24,19 +24,17 @@ async function dockerConImmagine(): Promise<boolean> {
 }
 
 describe('il prompt della sandbox', () => {
-  it('racconta strumenti, ciclo di lavoro, identità e template', () => {
+  it('racconta strumenti, ciclo di lavoro e template, e dell’identità visiva non dice più niente', () => {
     const p = promptSandbox({
-      identita: { colorePrimario: '#aa3344', recapiti: 'Via Roma 1', firma: 'Agenzia X', logoPath: '/lavoro/identita/logo.png' },
       template: { nome: 'Proposta breve', formato: 'docx', path: '/lavoro/template/proposta-breve.docx' },
       formato: 'pdf',
       documenti: [{ path: '/lavoro/workspace/a.md', titolo: 'Condizioni', archivio: 'pubblico' }],
     });
-    for (const atteso of ['pdftoppm', 'Read', 'consegna', '#aa3344', 'Proposta breve', '/lavoro/workspace/a.md', 'soffice', 'chromium-headless']) {
+    for (const atteso of ['pdftoppm', 'Read', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'soffice', 'chromium-headless']) {
       expect(p).toContain(atteso);
     }
-    expect(promptSandbox({ identita: { colorePrimario: '#000000', recapiti: '', firma: '' }, formato: 'xlsx', documenti: [] })).toContain(
-      'Nessun template scelto',
-    );
+    expect(p).not.toMatch(/identit/i);
+    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).toContain('Nessun template scelto');
     const r = promptRichiesta({ formato: 'docx', titolo: 'T', istruzioni: 'fai X', contenuto: '# ciao' });
     expect(r).toContain('DOCX');
     expect(r).toContain('fai X');

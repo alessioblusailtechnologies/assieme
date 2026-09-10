@@ -42,15 +42,6 @@ const STORICO = leggi('storico-impostazioni.json');
 
 let modelloAttivoId = 'livello-boost';
 
-const IDENTITA = {
-  colorePrimario: '#2f4b7c',
-  recapiti: 'Assicurazioni Meridiana S.r.l. · Corso Vinzaglio 12, Torino · 011 561 8420 · info@assicurazionimeridiana.it',
-  firma: 'Assicurazioni Meridiana S.r.l.',
-};
-
-/** Il logo caricato (RF-D-12): byte e tipo, in memoria come tutto il resto. */
-let logo;
-
 /* I contatori partono alti per non collidere con gli id delle fixture. */
 let prossimaRegola = 100;
 let prossimoRiferimento = 100;
@@ -230,52 +221,6 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
     const voci = oggetti.length ? STORICO.filter((v) => oggetti.includes(v.oggetto)) : STORICO;
     inviaJson(res, 200, voci.slice(0, 50));
     return true;
-  }
-
-  // --- Identità visiva (RF-D-12) ------------------------------------------
-
-  if (percorso === '/api/identita-visiva') {
-    if (req.method === 'GET') {
-      inviaJson(res, 200, { ...IDENTITA, ...(logo ? { logoUrl: '/api/identita-visiva/logo' } : {}) });
-      return true;
-    }
-    if (req.method === 'PUT') {
-      if (!amministratore(req)) return vietato(res, inviaJson);
-      const corpo = await corpoJson();
-      for (const campo of ['colorePrimario', 'recapiti', 'firma']) {
-        if (typeof corpo[campo] === 'string') IDENTITA[campo] = corpo[campo];
-      }
-      registra(req, 'modifica', 'template', 'Aggiornata l’identità visiva dell’agenzia');
-      inviaJson(res, 200, { ...IDENTITA, ...(logo ? { logoUrl: '/api/identita-visiva/logo' } : {}) });
-      return true;
-    }
-    return false;
-  }
-
-  if (percorso === '/api/identita-visiva/logo') {
-    if (req.method === 'GET') {
-      if (!logo) {
-        inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Nessun logo caricato.' });
-        return true;
-      }
-      res.writeHead(200, {
-        'Content-Type': logo.tipo,
-        'Content-Length': logo.byte.length,
-        'Access-Control-Allow-Origin': '*',
-      });
-      res.end(logo.byte);
-      return true;
-    }
-    if (req.method === 'PUT') {
-      if (!amministratore(req)) return vietato(res, inviaJson);
-      /* Il logo è l'unico caso in cui i byte servono davvero: vanno riserviti. */
-      const byte = await leggiCorpo(req);
-      logo = { byte, tipo: req.headers['content-type'] ?? 'image/png' };
-      registra(req, 'modifica', 'template', 'Caricato il logo dell’agenzia');
-      inviaJson(res, 200, { logoUrl: '/api/identita-visiva/logo' });
-      return true;
-    }
-    return false;
   }
 
   // --- Regole (RF-D-04/06) ------------------------------------------------
@@ -493,22 +438,13 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
       return true;
     }
 
-    /* RF-D-11: l'anteprima mostra struttura e segnaposto. Sempre PDF: è
-       un'immagine dell'impaginazione, non il file di generazione. */
+    /* RF-D-11: l'anteprima, sempre PDF: una scheda che dice come si usa il
+       template (la sandbox ne copia l'impaginazione). */
     if (rottaTemplate[2] === '/anteprima' && req.method === 'GET') {
       const testo = [
         template.descrizione,
         '',
-        'Struttura del template:',
-        '',
-        '{{titolo}} - titolo del documento',
-        '{{destinatario}} - cliente o pratica',
-        '{{data}} - data di generazione',
-        '{{contenuto}} - il testo generato da VELIA',
-        '{{fonti}} - le citazioni, in coda',
-        '',
-        `Intestazione e piè di pagina applicano l’identità visiva dell’agenzia:`,
-        `colore ${IDENTITA.colorePrimario}, recapiti e firma configurati nelle Impostazioni.`,
+        'Si usa con «Genera documento da template»: la sandbox lo apre, ne copia impaginazione, stili e tabelle e ci mette il contenuto nuovo.',
       ].join('\n');
       const pdf = generaPdfDaTesto(`Anteprima - ${template.nome}`, testo);
       res.writeHead(200, {

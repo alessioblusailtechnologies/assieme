@@ -4,8 +4,9 @@ import { analizzaMarkdown, testoPiano, type Blocco, type Segmento } from './bloc
  * Una risposta della chat in forma di email e di testo semplice: la stessa
  * analisi dei blocchi dei compositori PDF/DOCX/XLSX, così titoli, elenchi e
  * tabelle restano quelli della bolla. L'HTML è quello che regge nei client
- * di posta - tabelle e stili in linea, niente CSS esterno - con l'identità
- * dell'agenzia (colore, firma, recapiti) in testa e in coda.
+ * di posta - tabelle e stili in linea, niente CSS esterno - col nome
+ * dell'agenzia in testa. L'identità visiva non c'è più (11/09/2026), e
+ * l'intestazione dei documenti in una mail non entra: resta il nome.
  */
 
 export interface RichiestaEmailRisposta {
@@ -16,8 +17,10 @@ export interface RichiestaEmailRisposta {
   /** Le fonti per esteso, una per riga («Titolo - p. N»). */
   fonti: string[];
   daParteDi: { nome: string; agenzia: string };
-  identita: { colorePrimario: string; firma: string; recapiti: string };
 }
+
+/** L'accento del layout di VELIA, lo stesso dei documenti. */
+const ACCENTO = '#2f4b7c';
 
 export interface EmailComposta {
   oggetto: string;
@@ -95,27 +98,21 @@ export function componiEmailRisposta(r: RichiestaEmailRisposta): EmailComposta {
     ? `<p style="${STILE_P}margin-top:20px;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#6f6a5e;">Fonti</p>` +
       `<ul style="margin:0 0 12px;padding-left:22px;">${r.fonti.map((f) => `<li style="${STILE_P}margin-bottom:2px;font-size:13px;color:#4a463d;">${scappa(f)}</li>`).join('')}</ul>`
     : '';
-  const firma = [r.identita.firma, r.identita.recapiti]
-    .filter((x) => x.trim())
-    .map((x) => `<p style="${STILE_P}margin:0;font-size:13px;color:#4a463d;white-space:pre-line;">${scappa(x)}</p>`)
-    .join('');
-
   const html =
     `<div style="max-width:640px;margin:0 auto;padding:24px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;">` +
-    `<div style="border-top:4px solid ${scappa(r.identita.colorePrimario)};padding-top:16px;margin-bottom:20px;">` +
+    `<div style="border-top:4px solid ${ACCENTO};padding-top:16px;margin-bottom:20px;">` +
     `<p style="${STILE_P}margin:0;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#6f6a5e;">${scappa(r.daParteDi.agenzia)}</p>` +
     `<h1 style="margin:6px 0 0;font-size:22px;line-height:1.25;color:#1c1a15;">${scappa(oggetto)}</h1>` +
     `</div>` +
     corpo +
     fonti +
-    `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e3e0d6;">${firma}` +
-    `<p style="${STILE_P}margin:12px 0 0;font-size:12px;color:#8a8577;">Inviata da ${scappa(r.daParteDi.nome)} con Velia, l'assistente dell'agenzia.</p>` +
+    `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e3e0d6;">` +
+    `<p style="${STILE_P}margin:0;font-size:12px;color:#8a8577;">Inviata da ${scappa(r.daParteDi.nome)} con Velia, l'assistente dell'agenzia.</p>` +
     `</div></div>`;
 
   const testo =
     `${r.daParteDi.agenzia}\n${oggetto}\n\n` +
     testoSemplice(r.testo, r.fonti) +
-    `\n${[r.identita.firma, r.identita.recapiti].filter((x) => x.trim()).join('\n')}\n` +
     `\nInviata da ${r.daParteDi.nome} con Velia, l'assistente dell'agenzia.\n`;
 
   return { oggetto, testo, html };

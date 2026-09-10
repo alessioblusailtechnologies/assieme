@@ -1,15 +1,16 @@
-import type { IdentitaGenerazione } from '../../generazione/generatore.js';
-
 /**
  * Il prompt di sistema dell'Esportazione elaborata: come Claude Code lavora
  * nella sandbox per produrre un documento di qualità, col ciclo «capisci il
  * template, produci, converti, guarda, correggi». Le skill Anthropic per
  * docx/xlsx/pptx/pdf stanno nella workspace come skill di progetto; qui si
  * dice quando usarle. Ogni ritocco si ricollauda con `tools/collaudo-elaborata.ts`.
+ *
+ * L'identità visiva non c'è più (11/09/2026): la carta intestata costruita
+ * dall'intestazione dell'agenzia arriva qui con la fase 3 di
+ * `PIANO-INTESTAZIONE-MODELLI.md`.
  */
 
 export interface ContestoIstruzioni {
-  identita: Omit<IdentitaGenerazione, 'logo'> & { logoPath?: string };
   /** Il template o documento di esempio, se c'è, col suo path nella sandbox. */
   template?: { nome: string; formato: string; path: string };
   formato: 'pdf' | 'docx' | 'xlsx';
@@ -26,7 +27,6 @@ export function promptSandbox(c: ContestoIstruzioni): string {
 Una sandbox Linux (Debian) senza rete. Tutto ciò che ti serve è sotto \`/lavoro\`:
 - \`/lavoro/workspace/\` — i documenti della conversazione e degli archivi, in Markdown con ancore \`[pag. N]\` (sola lettura di fatto: non modificarli).
 - \`/lavoro/template/\` — il template o documento di esempio dell'agenzia, se ne è stato scelto uno.
-- \`/lavoro/identita/\` — \`identita.json\` (colore primario, recapiti, firma) e, se c'è, il logo dell'agenzia.
 - \`/lavoro/output/\` — qui salvi il documento finale (e solo quello: i file di lavoro stanno altrove, es. \`/lavoro/tmp/\`).
 
 Hai gli strumenti di Claude Code: Read, Write, Edit, Bash, Glob, Grep, e le **skill di progetto** per docx, xlsx, pptx e pdf (tool \`Skill\`): consultale PRIMA di lavorare un formato, sono il modo giusto di farlo. Non hai rete: niente pacchetti da installare, niente fetch. Nella sandbox trovi:
@@ -41,14 +41,14 @@ Hai gli strumenti di Claude Code: Read, Write, Edit, Bash, Glob, Grep, e le **sk
 ## Come lavori (segui questo ciclo, sempre)
 1. **Capisci la richiesta e le fonti.** Leggi le istruzioni dell'utente e il contenuto da mettere nel documento. Se serve, consulta i documenti in \`/lavoro/workspace/\` (Grep, Read) e cita pagine e articoli come nei testi originali. Non inventare dati: ciò che non trovi, lo dici o lo lasci come campo da completare, mai un numero a caso.
 2. **Capisci il template**, se c'è. Aprilo davvero: per un DOCX usa la skill docx (scompatta, leggi stili, sezioni, intestazioni, tabelle); per un XLSX la skill xlsx (fogli, intestazioni, stili, formule); per un PDF segui la sezione «Template PDF» qui sotto: NON lo ricostruisci a occhio. Il documento finale deve conservare l'aspetto del template: font, colori, intestazione e piè di pagina, logo, struttura delle tabelle. Se il template è un documento già compilato (un esempio), COPIALO e sostituisci i contenuti: è il modo più fedele. Non lasciare mai testo dell'esempio che non c'entra col nuovo documento.
-3. **Produci** il documento con lo strumento più adatto: la skill docx (partendo dal template quando c'è), la skill xlsx (con formule vere dove ha senso), HTML+CSS stampato con Chromium per PDF impaginati da zero, LibreOffice per convertire un DOCX in PDF. Senza template, applica l'identità visiva dell'agenzia: colore primario negli accenti e nei titoli, logo in testa, recapiti e firma in calce, numero di pagina.
+3. **Produci** il documento con lo strumento più adatto: la skill docx (partendo dal template quando c'è), la skill xlsx (con formule vere dove ha senso), HTML+CSS stampato con Chromium per PDF impaginati da zero, LibreOffice per convertire un DOCX in PDF. Senza template, impagina in modo sobrio e professionale, col numero di pagina in calce.
 4. **Guarda il risultato.** Converti in PDF se non lo è già, rendilo in PNG a 60 dpi e leggi le pagine con Read (vedi le immagini). Controlla: testo che sborda, tabelle spezzate male, pagine quasi vuote, segnaposto o testo dell'esempio rimasti, titoli orfani a fondo pagina, font caduti, caratteri strani. Correggi e ripeti finché è a posto (di solito bastano due giri; non superare quattro).
 5. **Consegna** col tool \`consegna\` (server velia): il file in \`/lavoro/output/\`, con un nome parlante per l'utente. Un documento solo, salvo richiesta diversa. Senza consegna l'utente non riceve nulla.
 6. Chiudi con un messaggio breve per l'utente: cosa hai prodotto, su quale base, e cosa andrebbe verificato o completato a mano. Niente racconto dei passaggi tecnici, niente percorsi di file.`);
 
   parti.push(`
 ## Template PDF: è carta intestata, non un disegno da rifare
-Un template PDF si USA, non si imita: logo, intestazione, piè di pagina, colori e filigrane restano quelli, pixel per pixel, perché il contenuto nuovo si stampa SOPRA la pagina del template. Il template lo ha caricato l'agenzia come SUO modello: il logo, l'intestazione e il piè che ci trovi sono quelli da usare, tali e quali, anche se nominano un altro ente o non coincidono con l'identità visiva qui sotto. Non giudicare a chi appartengano, non sostituirli con segnaposto come «[Denominazione agenzia]», non «completarli» con i recapiti dell'identità: l'identità visiva serve solo dove il template non ha già l'equivalente. Procedi così:
+Un template PDF si USA, non si imita: logo, intestazione, piè di pagina, colori e filigrane restano quelli, pixel per pixel, perché il contenuto nuovo si stampa SOPRA la pagina del template. Il template lo ha caricato l'agenzia come SUO modello: il logo, l'intestazione e il piè che ci trovi sono quelli da usare, tali e quali, anche se nominano un altro ente. Non giudicare a chi appartengano, non sostituirli con segnaposto come «[Denominazione agenzia]», non «completarli» con dati inventati. Procedi così:
 1. **Guarda e misura.** \`pdftoppm -png -r 100 -f 1 -l 2 <template.pdf> /lavoro/tmp/tpl\` e leggi le immagini. Individua le fasce occupate da intestazione (logo) e piè di pagina e lo spazio libero per il corpo. A 100 dpi, 1 mm = 3,94 px; una pagina A4 è 210×297 mm. Annota colori dominanti e font (\`pdffonts <template.pdf>\`), e i testi delle diciture (\`pdftotext -layout <template.pdf> -\`).
 2. **Il contenuto, da solo.** Scrivi l'HTML del solo corpo e stampalo con Chromium con \`@page { size: A4; margin: <alto> <destro> <basso> <sinistro> }\` dove i margini alto e basso lasciano LIBERE le fasce misurate al punto 1 (più 5 mm di respiro). Nessuno sfondo pieno (né sul body né sui blocchi): il template deve vedersi attraverso. Font e colori coerenti con quelli del template.
 3. **Sovrapponi con pypdf.** Ogni pagina del contenuto va stampata sulla pagina del template: la prima sulla pagina 1 del template; le successive sulla pagina 2 se il template ne ha una (di solito è la carta intestata «seguente»), altrimenti ancora sulla 1:
@@ -75,13 +75,6 @@ Per un output DOCX da un template PDF: stesso principio, con le fasce ritagliate
 - Se l'utente chiede un formato che non sai produrre fedelmente dal template dato (es. un PDF partendo da un template XLSX), fai la scelta più sensata e spiegala nel messaggio finale.
 - Comandi Bash brevi e verificabili; per script lunghi scrivi un file con Write e poi eseguilo. Compila SEMPRE la \`description\` dei comandi Bash: è ciò che l'utente legge mentre lavori, scrivila per lui, in italiano (es. «Genero il PDF e lo rendo in immagini»).`);
 
-  parti.push(`
-## Identità visiva dell'agenzia
-- Colore primario: ${c.identita.colorePrimario}
-- Recapiti: ${c.identita.recapiti || '(non impostati)'}
-- Firma: ${c.identita.firma || '(non impostata)'}
-- Logo: ${c.identita.logoPath ? `\`${c.identita.logoPath}\`` : 'nessuno'}`);
-
   if (c.template) {
     parti.push(`
 ## Template scelto
@@ -89,7 +82,7 @@ Per un output DOCX da un template PDF: stesso principio, con le fasce ritagliate
   } else {
     parti.push(`
 ## Template
-Nessun template scelto: impagina tu, con l'identità visiva dell'agenzia, in modo sobrio e professionale.`);
+Nessun template scelto: impagina tu, in modo sobrio e professionale.`);
   }
 
   if (c.documenti.length) {

@@ -1,26 +1,27 @@
 import ExcelJS from 'exceljs';
 
 import { testoPiano, type Blocco } from './blocchi.js';
-import type { CampiTemplate } from './docx.js';
+import { fasciaXlsx, type FasceDocumento } from './intestazione.js';
 
 /**
- * Il compositore XLSX: i precaricati («Report interno») si costruiscono con
- * exceljs — testata col colore primario, testo su celle unite, tabelle su
- * colonne vere, fonti in coda; i template del tenant sono cartelle XLSX con
- * segnaposto `{{…}}` nelle celle, riempiti al loro posto (il foglio, con
- * formati e formule, resta il loro).
+ * Il compositore XLSX: il layout di VELIA con exceljs (titolo su una fascia
+ * colorata, testo su celle unite, tabelle su colonne vere, fonti in coda) e
+ * l'intestazione e il piè di pagina dell'agenzia nelle fasce di stampa di
+ * Excel (11/09/2026): solo testo, in sinistra, centro e destra, perché è
+ * tutto quello che un'intestazione di Excel sa portare in ogni programma.
  */
 
 export interface OpzioniXlsx {
   titolo: string;
   blocchi: Blocco[];
   fonti: string[];
-  identita: { colorePrimario: string; recapiti: string; firma: string };
+  fasce: FasceDocumento;
 }
 
 const COLONNE = 6;
 
-const argb = (hex: string): string => `FF${hex.replace('#', '').toUpperCase()}`;
+/** L'accento del layout di VELIA, in ARGB. */
+const ACCENTO = 'FF2F4B7C';
 
 export async function componiXlsx(opzioni: OpzioniXlsx): Promise<Buffer> {
   const cartella = new ExcelJS.Workbook();
@@ -28,7 +29,13 @@ export async function componiXlsx(opzioni: OpzioniXlsx): Promise<Buffer> {
   const foglio = cartella.addWorksheet('Analisi');
   for (let i = 1; i <= COLONNE; i++) foglio.getColumn(i).width = 26;
 
-  const tinta = argb(opzioni.identita.colorePrimario);
+  const intestazione = fasciaXlsx(opzioni.fasce.intestazione, opzioni.fasce.campi);
+  const piede = fasciaXlsx(opzioni.fasce.piede, opzioni.fasce.campi);
+  foglio.headerFooter = {
+    ...(intestazione && { oddHeader: intestazione }),
+    ...(piede && { oddFooter: piede }),
+  };
+
   const grigio = { argb: 'FF737373' };
 
   const rigaUnita = (
@@ -47,10 +54,7 @@ export async function componiXlsx(opzioni: OpzioniXlsx): Promise<Buffer> {
     return riga;
   };
 
-  rigaUnita(opzioni.titolo, { size: 14, bold: true, color: { argb: 'FFFFFFFF' } }, tinta).height = 26;
-  if (opzioni.identita.firma) {
-    rigaUnita(opzioni.identita.firma, { size: 9, color: grigio });
-  }
+  rigaUnita(opzioni.titolo, { size: 14, bold: true, color: { argb: 'FFFFFFFF' } }, ACCENTO).height = 26;
   foglio.addRow([]);
 
   for (const blocco of opzioni.blocchi) {
@@ -67,7 +71,7 @@ export async function componiXlsx(opzioni: OpzioniXlsx): Promise<Buffer> {
           };
           if (indice === 0) {
             cella.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-            cella.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: tinta } };
+            cella.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: ACCENTO } };
           }
         });
       });
@@ -84,108 +88,6 @@ export async function componiXlsx(opzioni: OpzioniXlsx): Promise<Buffer> {
     rigaUnita('Fonti', { bold: true, size: 12 });
     for (const fonte of opzioni.fonti) rigaUnita(fonte, { italic: true, size: 9, color: grigio });
   }
-  if (opzioni.identita.recapiti) {
-    foglio.addRow([]);
-    rigaUnita(opzioni.identita.recapiti, { size: 8, color: grigio });
-  }
-
-  return Buffer.from(await cartella.xlsx.writeBuffer());
-}
-
-// ---------------------------------------------------------------------------
-// Template del tenant: segnaposto {{…}} nelle celle
-// ---------------------------------------------------------------------------
-
-export async function segnapostoXlsx(byte: Buffer): Promise<string[]> {
-  const cartella = new ExcelJS.Workbook();
-  await cartella.xlsx.load(byte as unknown as ExcelJS.Buffer);
-  const trovati = new Set<string>();
-  cartella.eachSheet((foglio) => {
-    foglio.eachRow((riga) => {
-      riga.eachCell((cella) => {
-        for (const m of cella.text.matchAll(/\{\{\s*([a-zA-Z]+)\s*\}\}/g)) trovati.add(m[1]!);
-      });
-    });
-  });
-  return [...trovati];
-}
-
-/**
- * Un template senza `{{contenuto}}` è un foglio intestato: il testo generato
- * va sotto ciò che il primo foglio già contiene, con titolo e fonti se il
- * file non li colloca altrove.
- */
-function completaSegnapostoXlsx(cartella: ExcelJS.Workbook): void {
-  const presenti = new Set<string>();
-  cartella.eachSheet((foglio) => {
-    foglio.eachRow((riga) => {
-      riga.eachCell((cella) => {
-        for (const m of cella.text.matchAll(/\{\{\s*([a-zA-Z]+)\s*\}\}/g)) presenti.add(m[1]!);
-      });
-    });
-  });
-  if (presenti.has('contenuto')) return;
-  const foglio = cartella.worksheets[0] ?? cartella.addWorksheet('Documento');
-  let riga = foglio.rowCount + (foglio.rowCount ? 2 : 1);
-  if (!presenti.has('titolo')) {
-    const cella = foglio.getRow(riga).getCell(1);
-    cella.value = '{{titolo}}';
-    cella.font = { bold: true, size: 14 };
-    riga += 2;
-  }
-  foglio.getRow(riga).getCell(1).value = '{{contenuto}}';
-  if (!presenti.has('fonti')) foglio.getRow(riga + 2).getCell(1).value = '{{fonti}}';
-}
-
-/**
- * Riempie un template XLSX del tenant: i campi brevi si sostituiscono nella
- * cella; `{{contenuto}}` e `{{fonti}}` diventano la prima riga del loro
- * blocco più una riga inserita (con lo stile della cella di partenza) per
- * ogni riga successiva.
- */
-export async function riempiXlsx(byte: Buffer, campi: CampiTemplate): Promise<Buffer> {
-  const cartella = new ExcelJS.Workbook();
-  await cartella.xlsx.load(byte as unknown as ExcelJS.Buffer);
-  completaSegnapostoXlsx(cartella);
-
-  const brevi: Array<[RegExp, string]> = [
-    [/\{\{\s*titolo\s*\}\}/g, campi.titolo],
-    [/\{\{\s*data\s*\}\}/g, campi.data],
-    [/\{\{\s*destinatario\s*\}\}/g, campi.destinatario],
-  ];
-  const blocchi: Array<[RegExp, string[]]> = [
-    [/\{\{\s*contenuto\s*\}\}/, campi.contenuto.split('\n').filter(Boolean)],
-    [/\{\{\s*fonti\s*\}\}/, campi.fonti.split('\n').filter(Boolean)],
-  ];
-
-  cartella.eachSheet((foglio) => {
-    /* Prima i campi brevi e il censimento dei blocchi, poi gli inserimenti
-       dal basso verso l'alto: i numeri di riga già censiti restano validi. */
-    const daEspandere: Array<{ riga: number; colonna: number; righe: string[] }> = [];
-    foglio.eachRow((riga, numeroRiga) => {
-      riga.eachCell((cella, numeroColonna) => {
-        if (typeof cella.value !== 'string') return;
-        let testo = cella.value;
-        for (const [espressione, valore] of brevi) testo = testo.replace(espressione, valore);
-        for (const [espressione, righe] of blocchi) {
-          if (espressione.test(testo)) {
-            daEspandere.push({ riga: numeroRiga, colonna: numeroColonna, righe: righe.length ? righe : [''] });
-            testo = testo.replace(espressione, righe[0] ?? '');
-          }
-        }
-        if (testo !== cella.value) cella.value = testo;
-      });
-    });
-
-    for (const blocco of daEspandere.sort((a, b) => b.riga - a.riga)) {
-      for (let i = blocco.righe.length - 1; i >= 1; i--) {
-        const nuova = foglio.insertRow(blocco.riga + 1, [], 'i');
-        nuova.getCell(blocco.colonna).value = blocco.righe[i];
-      }
-      const cella = foglio.getRow(blocco.riga).getCell(blocco.colonna);
-      cella.alignment = { ...cella.alignment, wrapText: true };
-    }
-  });
 
   return Buffer.from(await cartella.xlsx.writeBuffer());
 }

@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { creaApp, type OpzioniApp } from '../src/api/app.js';
-import { schemaEsporta, schemaEsportaRisposta, schemaIdentitaVisiva, schemaPatchTemplate } from '../src/contratto/template.js';
+import { schemaEsporta, schemaEsportaRisposta, schemaPatchTemplate } from '../src/contratto/template.js';
 
 /**
- * Il contratto dei template senza database: gli schemi Zod e le risposte che
- * le rotte danno prima di toccare il db — la guardia da amministratore
- * (`template.gestisci`), i formati rifiutati all'ingresso, gli id malformati.
+ * Il contratto dei template e dell'intestazione senza database: gli schemi
+ * Zod e le risposte che le rotte danno prima di toccare il db — la guardia
+ * da amministratore (`template.gestisci`), i formati rifiutati all'ingresso,
+ * gli id malformati. L'identità visiva non c'è più (11/09/2026): le sue
+ * rotte rispondono 404 come ogni rotta che non esiste.
  */
 
 const verifica =
@@ -41,12 +43,6 @@ describe('schemi del contratto', () => {
     expect(schemaEsportaRisposta.safeParse({}).success).toBe(false);
     expect(schemaEsporta.safeParse({ formato: 'txt' }).success).toBe(false);
   });
-
-  it("l'identità visiva pretende un colore esadecimale", () => {
-    expect(schemaIdentitaVisiva.safeParse({ colorePrimario: '#2f4b7c' }).success).toBe(true);
-    expect(schemaIdentitaVisiva.safeParse({ colorePrimario: 'blu' }).success).toBe(false);
-    expect(schemaIdentitaVisiva.safeParse({}).success).toBe(true);
-  });
 });
 
 describe('le rotte prima del database', () => {
@@ -58,8 +54,8 @@ describe('le rotte prima del database', () => {
       { method: 'POST' as const, url: '/api/template' },
       { method: 'PATCH' as const, url: '/api/template/tpl-001' },
       { method: 'DELETE' as const, url: '/api/template/tpl-001' },
-      { method: 'PUT' as const, url: '/api/identita-visiva' },
-      { method: 'PUT' as const, url: '/api/identita-visiva/logo' },
+      { method: 'PUT' as const, url: '/api/intestazione' },
+      { method: 'POST' as const, url: '/api/intestazione/immagini' },
     ];
     for (const caso of casi) {
       const r = await daOperatore.inject({ ...caso, headers: autenticato });
@@ -87,15 +83,28 @@ describe('le rotte prima del database', () => {
     expect(patch.json()).toMatchObject({ codice: 'DATI_NON_VALIDI' });
   });
 
-  it('il logo accetta solo PNG o JPEG: altro content-type → 415', async () => {
-    const r = await daAmministratore.inject({
+  it('l’intestazione fuori schema è un 400, prima di toccare il database', async () => {
+    const tabella = await daAmministratore.inject({
       method: 'PUT',
-      url: '/api/identita-visiva/logo',
-      headers: { ...autenticato, 'content-type': 'text/plain' },
-      payload: 'non un logo',
+      url: '/api/intestazione',
+      headers: autenticato,
+      payload: { intestazione: { type: 'doc', content: [{ type: 'table', content: [] }] }, piede: { type: 'doc', content: [] } },
     });
-    expect(r.statusCode).toBe(415);
-    expect(r.json()).toMatchObject({ codice: 'FORMATO_NON_SUPPORTATO' });
+    expect(tabella.statusCode).toBe(400);
+    expect(tabella.json()).toMatchObject({ codice: 'DATI_NON_VALIDI' });
+
+    const anteprima = await daOperatore.inject({
+      method: 'POST',
+      url: '/api/intestazione/anteprima',
+      headers: autenticato,
+      payload: { intestazione: { type: 'doc' }, piede: { type: 'doc', content: [{ type: 'bulletList' }] } },
+    });
+    expect(anteprima.statusCode).toBe(400);
+  });
+
+  it('un’immagine con un id che non è dei nostri è un 404, senza cercarla', async () => {
+    const r = await daOperatore.inject({ method: 'GET', url: '/api/intestazione/immagini/..%2Flogo.png', headers: autenticato });
+    expect(r.statusCode).toBe(404);
   });
 
   it("l'esportazione: corpo senza template né formato → 400, id malformati → 404 (mai un errore SQL)", async () => {
@@ -117,10 +126,12 @@ describe('le rotte prima del database', () => {
     expect(malformati.json()).toMatchObject({ codice: 'NON_TROVATO' });
   });
 
-  it('senza token → 401 su ogni rotta del dominio', async () => {
-    for (const url of ['/api/template', '/api/identita-visiva', '/api/identita-visiva/logo']) {
+  it('senza token → 401 su ogni rotta del dominio; l’identità visiva non esiste più', async () => {
+    for (const url of ['/api/template', '/api/intestazione', '/api/intestazione/immagini/img-000000000001.png']) {
       const r = await daOperatore.inject({ method: 'GET', url });
-      expect(r.statusCode).toBe(401);
+      expect(r.statusCode, url).toBe(401);
     }
+    const sparita = await daOperatore.inject({ method: 'GET', url: '/api/identita-visiva', headers: autenticato });
+    expect(sparita.statusCode).toBe(404);
   });
 });

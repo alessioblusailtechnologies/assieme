@@ -525,6 +525,6 @@ server.listen(PORTA, () => {
   console.log(`[api-stub] in ascolto su http://localhost:${PORTA}`);
   console.log(`[api-stub] ${DOCUMENTI.length} documenti pubblici caricati`);
   console.log(
-    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/identita-visiva, /api/impostazioni/storico, /api/agenti, /api/ricordi, /api/mcp',
+    '[api-stub] gestisce: /api/documenti, /api/documenti-privati, /api/etichette, /api/spazio, /api/conversazioni, /api/template, /api/tabelle, /api/modelli, /api/istruzioni, /api/utenti, /api/impostazioni/storico, /api/agenti, /api/ricordi, /api/mcp',
   );
 });

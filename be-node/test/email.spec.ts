@@ -48,12 +48,11 @@ describe('la composizione', () => {
     testo: RISPOSTA,
     fonti: ['DIP Danni - p. 2', 'Condizioni di Assicurazione - art. 4, p. 41'],
     daParteDi: { nome: 'Marta Ferrero', agenzia: 'Assicurazioni Meridiana S.r.l.' },
-    identita: { colorePrimario: '#2f4b7c', firma: 'Marta Ferrero\nAgente', recapiti: 'Via Roma 1, Torino' },
   });
 
   it("l'oggetto è il titolo della conversazione, e senza titolo un default", () => {
     expect(email.oggetto).toBe('Confronto AUTOPIÙ e UnipolSai');
-    expect(componiEmailRisposta({ titolo: '  ', testo: 'x', fonti: [], daParteDi: { nome: 'A', agenzia: 'B' }, identita: { colorePrimario: '#000', firma: '', recapiti: '' } }).oggetto).toBe('Risposta di Velia');
+    expect(componiEmailRisposta({ titolo: '  ', testo: 'x', fonti: [], daParteDi: { nome: 'A', agenzia: 'B' } }).oggetto).toBe('Risposta di Velia');
   });
 
   it("l'HTML tiene titoli, grassetti, elenchi e tabelle, e scappa ciò che non è suo", () => {

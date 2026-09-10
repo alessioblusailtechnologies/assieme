@@ -19,15 +19,10 @@ import {
 import { schemaEsporta as schemaEsportaTemplate } from '../../contratto/template.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { fasceDelTenant, formatoDaScelta } from '../../generazione/catalogo.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
-import {
-  identitaDelTenant,
-  risolviTemplate,
-  versoIdentitaGenerazione,
-  type RigaIdentita,
-} from '../template/rotte.js';
 
 /**
  * Le tabelle di analisi (RF-C-11…C-15): le rotte che il FE chiama da
@@ -380,37 +375,35 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
   );
 
   /**
-   * RF-C-14: esportazione su template di output, XLSX in particolare — la
-   * Fase 4 al lavoro: la tabella diventa il contenuto, il template
-   * l'impaginazione. Le celle in attesa escono come «—», come nel mock.
+   * RF-C-14: l'esportazione della tabella, XLSX in particolare: la tabella
+   * diventa il contenuto, col layout di VELIA e l'intestazione dell'agenzia
+   * (in Excel, nelle fasce di stampa). Un template scelto dice ormai solo il
+   * formato. Le celle in attesa escono come «—», come nel mock.
    */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/esporta', async (richiesta, risposta) => {
     const esito = schemaEsportaTemplate.safeParse(richiesta.body ?? {});
-    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il template o il formato su cui esportare.');
+    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il formato su cui esportare.');
 
-    const { tabella, template, identita } = await conIdentita(
-      poolDb(),
-      richiesta.identita,
-      async (client) => ({
-        tabella: await tabellaCompleta(client, controllaId(richiesta.params.id)),
-        template: await risolviTemplate(client, richiesta.identita.tenantId, esito.data),
-        identita: await identitaDelTenant(client, richiesta.identita.tenantId),
-      }),
-    );
-    if (!tabella) throw nonTrovata();
+    const { tabella, formato, fasce } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const tabella = await tabellaCompleta(client, controllaId(richiesta.params.id));
+      return {
+        tabella,
+        formato: await formatoDaScelta(client, esito.data),
+        fasce: tabella ? await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, tabella.titolo) : undefined,
+      };
+    });
+    if (!tabella || !fasce) throw nonTrovata();
 
-    const fileTemplate = template.path_file ? await archivio().scarica(template.path_file) : undefined;
-    const logo = await caricaLogo(identita);
     const file = await generaDocumento({
-      template,
-      ...(fileTemplate && { fileTemplate }),
+      formato,
+      nome: tabella.titolo,
       titolo: tabella.titolo,
       testo: testoTabella(tabella),
       fonti: fontiTabella(tabella),
-      identita: { ...versoIdentitaGenerazione(identita), ...(logo && { logo }) },
+      fasce,
     });
 
-    /* Il nome del download viene dalla TABELLA, non dal template (mock). */
+    /* Il nome del download viene dalla TABELLA (mock). */
     const slug = tabella.titolo
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -418,18 +411,9 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
     return risposta
       .header('Content-Type', file.contentType)
       .header('Content-Length', file.byte.length)
-      .header('Content-Disposition', `attachment; filename="${slug}.${template.formato}"`)
+      .header('Content-Disposition', `attachment; filename="${slug}.${formato}"`)
       .send(file.byte);
   });
-
-  async function caricaLogo(riga: RigaIdentita): Promise<{ byte: Buffer; tipo: string } | undefined> {
-    if (!riga.logo_path || !riga.logo_tipo) return undefined;
-    try {
-      return { byte: await archivio().scarica(riga.logo_path), tipo: riga.logo_tipo };
-    } catch {
-      return undefined;
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------

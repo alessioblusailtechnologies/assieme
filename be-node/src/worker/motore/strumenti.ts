@@ -11,8 +11,7 @@ import {
 } from '../../contratto/conversazioni.js';
 import { FORMATI_GENERAZIONE, type FormatoGenerazione } from '../../contratto/template.js';
 import {
-  identitaDelTenant,
-  identitaPerGenerazione,
+  fasceDelTenant,
   layoutPerFormato,
   templateDelTenant,
   versoRisolto,
@@ -26,16 +25,17 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 
 /**
  * Gli strumenti che la chat dà al motore oltre alla lettura: il tool
- * `esporta_subito` (deterministico, istantaneo) ed `esportazione_elaborata`
- * (sandbox documentale), con cui l'utente ottiene un file sul template
- * dell'agenzia senza uscire dalla conversazione («esporta con Proposta
- * breve», «fammelo in Excel»).
+ * `esporta_subito` (deterministico, istantaneo: layout di VELIA e
+ * intestazione dell'agenzia) ed `esportazione_elaborata` (sandbox
+ * documentale, sul template o su un documento d'esempio), con cui l'utente
+ * ottiene un file senza uscire dalla conversazione («fammelo in Excel»,
+ * «fammelo sul template Proposta breve»).
  *
  * Il tool gira nel processo del worker (MCP in-process dell'Agent SDK): il
- * modello passa titolo e contenuto, il worker risolve il template, genera il
- * file con la stessa macchina delle esportazioni (identità visiva compresa),
- * lo mette nello Storage e lo racconta al FE come evento `documento`. Il
- * modello riceve solo un esito testuale: non vede mai path né Storage.
+ * modello passa titolo e contenuto, il worker genera il file con la stessa
+ * macchina delle esportazioni, lo mette nello Storage e lo racconta al FE
+ * come evento `documento`. Il modello riceve solo un esito testuale: non
+ * vede mai path né Storage.
  */
 
 export const NOME_SERVER = 'velia';
@@ -135,26 +135,18 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   const esportaSubito = tool(
     'esporta_subito',
     [
-      'Genera un documento (PDF, DOCX o XLSX) sul template dell’agenzia e lo allega alla risposta, pronto da scaricare.',
-      'Usalo SOLO quando l’utente chiede esplicitamente un file, un documento, un’esportazione, un allegato o un template',
-      '(«esporta», «genera un doc», «fammelo in Excel», «usa il template Proposta breve»). Mai di tua iniziativa.',
+      'Genera all’istante un documento (PDF, DOCX o XLSX) col layout di VELIA e l’intestazione dell’agenzia, e lo allega alla risposta, pronto da scaricare.',
+      'Usalo SOLO quando l’utente chiede esplicitamente un file, un documento, un’esportazione o un allegato',
+      '(«esporta», «genera un doc», «fammelo in Excel»). Mai di tua iniziativa. Se nomina un template o un documento da imitare, usa invece `esportazione_elaborata`.',
       'Passa in `contenuto` il testo completo del documento in Markdown leggero (titoli, elenchi, tabelle, grassetti):',
       'è ciò che finirà nel file — scrivilo per il cliente o il collega che lo leggerà, non per te.',
-      'Indica `template` (il nome che l’utente ha detto) oppure `formato`; con entrambi assenti esce un PDF.',
+      'Senza `formato` esce un PDF.',
       'Dopo l’esito, chiudi la risposta con UNA sola riga che dice che il documento è pronto sotto la risposta (non ripeterla, non ricopiare il contenuto).',
     ].join(' '),
     {
       titolo: z.string().min(1).max(160).describe('Il titolo del documento, es. «Proposta di rinnovo RC Auto Rossi».'),
       contenuto: z.string().min(1).describe('Il testo completo del documento, in Markdown leggero.'),
-      template: z
-        .string()
-        .optional()
-        .describe('Il nome (o id) del template dell’agenzia da usare, come lo ha detto l’utente.'),
-      formato: z
-        .enum(FORMATI_GENERAZIONE)
-        .optional()
-        .describe('Il formato del file quando non si indica un template: pdf, docx o xlsx.'),
-      destinatario: z.string().max(200).optional().describe('Cliente o pratica a cui è destinato, se detto.'),
+      formato: z.enum(FORMATI_GENERAZIONE).optional().describe('Il formato del file: pdf, docx o xlsx.'),
       fonti: z
         .array(z.string().min(1).max(300))
         .max(40)
@@ -162,55 +154,43 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         .describe('Le fonti da riportare in coda, nella forma «Titolo documento — art. X, p. N».'),
     },
     async (args) => {
+      const formato = args.formato ?? 'pdf';
       const client = await contesto.db.connect();
-      let template: RigaTemplate[];
-      let identita;
+      let fasce;
       try {
-        template = await templateDelTenant(client, contesto.tenantId);
-        identita = await identitaDelTenant(client, contesto.tenantId);
+        fasce = await fasceDelTenant(client, contesto.archivio, contesto.tenantId, args.titolo);
       } finally {
         client.release();
       }
-      const scelta = scegliTemplate(template, { template: args.template, formato: args.formato });
-      if (scelta.esito === 'non-trovato') {
-        return { content: [{ type: 'text', text: scelta.motivo }], isError: true };
-      }
 
       const file = await generaDocumento({
-        template: scelta.template,
-        ...(scelta.template.path_file && {
-          fileTemplate: await contesto.archivio.scarica(scelta.template.path_file),
-        }),
+        formato,
+        nome: args.titolo,
         titolo: args.titolo,
         testo: args.contenuto,
         fonti: args.fonti ?? [],
-        ...(args.destinatario && { destinatario: args.destinatario }),
-        identita: await identitaPerGenerazione(contesto.archivio, identita),
+        fasce,
       });
 
       const id = randomUUID();
-      const percorso = percorsoDocumentoGenerato(contesto.tenantId, id, scelta.template.formato);
-      await contesto.archivio.carica(percorso, file.byte, MIME[scelta.template.formato]);
+      const percorso = percorsoDocumentoGenerato(contesto.tenantId, id, formato);
+      await contesto.archivio.carica(percorso, file.byte, MIME[formato]);
       percorsi.push(percorso);
 
       const documento: DocumentoGenerato = {
         id,
         nome: args.titolo,
-        formato: scelta.template.formato,
-        ...(scelta.template.personalizzato && { template: scelta.template.nome }),
+        formato,
         url: urlDocumentoGenerato(contesto.conversazioneId, id),
       };
       generati.push(documento);
       await contesto.suDocumento(documento);
 
-      const su = scelta.template.personalizzato
-        ? `sul template «${scelta.template.nome}»`
-        : 'col layout di VELIA e l’identità visiva dell’agenzia';
       return {
         content: [
           {
             type: 'text',
-            text: `Documento «${args.titolo}» generato in ${scelta.template.formato.toUpperCase()} ${su}. L’utente lo trova da scaricare sotto la risposta.`,
+            text: `Documento «${args.titolo}» generato in ${formato.toUpperCase()} col layout di VELIA e l’intestazione dell’agenzia. L’utente lo trova da scaricare sotto la risposta.`,
           },
         ],
       };

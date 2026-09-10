@@ -1,6 +1,7 @@
 import { PDFDocument, PageSizes, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
 
 import { analizzaMarkdown, segmenti, type Blocco, type Segmento } from '../../generazione/blocchi.js';
+import { larghezzaTesto } from '../../generazione/misura.js';
 
 /**
  * Da Markdown a PDF impaginato, con la mappa di cosa è finito su ogni
@@ -93,11 +94,11 @@ export async function impagina(titolo: string, markdown: string): Promise<Docume
     let usato = 0;
     for (const p of parole) {
       const pezzo = (riga.length ? ' ' : '') + p.testo;
-      const misura = p.font.widthOfTextAtSize(pezzo, dimensione);
+      const misura = larghezzaTesto(p.font, pezzo, dimensione);
       if (riga.length && usato + misura > larghezza) {
         righe.push(riga);
         riga = [p];
-        usato = p.font.widthOfTextAtSize(p.testo, dimensione);
+        usato = larghezzaTesto(p.font, p.testo, dimensione);
       } else {
         riga.push(p);
         usato += misura;
@@ -117,7 +118,7 @@ export async function impagina(titolo: string, markdown: string): Promise<Docume
       const pezzo = riga[i]!;
       const testo = (i ? ' ' : '') + pezzo.testo;
       pagina.drawText(testo, { x: cursore, y, size: dimensione, font: pezzo.font, color: INCHIOSTRO });
-      cursore += pezzo.font.widthOfTextAtSize(testo, dimensione);
+      cursore += larghezzaTesto(pezzo.font, testo, dimensione);
     }
   };
 
@@ -163,7 +164,7 @@ export async function impagina(titolo: string, markdown: string): Promise<Docume
           for (let k = 0; k < rigaCella.length; k++) {
             const testo = (k ? ' ' : '') + rigaCella[k]!.testo;
             pagina.drawText(testo, { x: cursore, y: yCella, size: dimensione, font, color: INCHIOSTRO });
-            cursore += rigaCella[k]!.font.widthOfTextAtSize(testo, dimensione);
+            cursore += larghezzaTesto(rigaCella[k]!.font, testo, dimensione);
           }
         }
       });
@@ -229,7 +230,7 @@ export async function impagina(titolo: string, markdown: string): Promise<Docume
   const totale = doc.getPageCount();
   doc.getPages().forEach((p, indice) => {
     p.drawText(`${indice + 1} / ${totale}`, {
-      x: LARGHEZZA - MARGINE - normale.widthOfTextAtSize(`${indice + 1} / ${totale}`, 8),
+      x: LARGHEZZA - MARGINE - larghezzaTesto(normale, `${indice + 1} / ${totale}`, 8),
       y: 40,
       size: 8,
       font: normale,

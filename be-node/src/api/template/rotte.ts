@@ -1,50 +1,47 @@
 import { randomBytes } from 'node:crypto';
 
+import ExcelJS from 'exceljs';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { PDFDocument } from 'pdf-lib';
 import type pg from 'pg';
+import PizZip from 'pizzip';
 
 import type { Citazione } from '../../contratto/conversazioni.js';
 
 import { ErroreApi } from '../../contratto/errori.js';
 import {
   schemaEsportaRisposta,
-  schemaIdentitaVisiva,
   schemaPatchTemplate,
   type FormatoGenerazione,
-  type IdentitaVisiva,
   type TemplateOutput,
 } from '../../contratto/template.js';
 import {
   elencoTemplate,
+  fasceDelTenant,
   fontiDaCitazioni,
-  identitaDelTenant,
-  identitaPerGenerazione,
-  risolviTemplate,
+  formatoDaScelta,
   templatePerId,
-  type RigaIdentita,
 } from '../../generazione/catalogo.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { analizzaMarkdown } from '../../generazione/blocchi.js';
-import { segnapostoDocx } from '../../generazione/docx.js';
 import { testoSemplice } from '../../generazione/email.js';
-import { generaDocumento } from '../../generazione/generatore.js';
+import { generaDocumento, NOME_DOCUMENTO } from '../../generazione/generatore.js';
 import { componiPdf } from '../../generazione/pdf.js';
-import { segnapostoXlsx } from '../../generazione/xlsx.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 
 /**
- * La generazione documenti su template (Fase 4, rivista il 25/08/2026): la
- * libreria dei template dell'agenzia che chat, tabelle e agenti condividono,
- * l'identità visiva (RF-D-12) e l'esportazione della chat (RF-C-10).
+ * La libreria dei template dell'agenzia e l'esportazione della chat
+ * (RF-C-10).
  *
  * Un template è sempre un file caricato dal tenant (`tenant/<tid>/template/`),
  * quanti ne vuole, anche più d'uno per formato, ognuno col nome con cui lo
- * si richiama. Per formato c'è al più un predefinito (sulla riga). Il layout
- * di piattaforma non è in catalogo: è ciò che si usa quando per il formato
- * chiesto non c'è un template — vedi `risolviTemplate`.
+ * si richiama. Dall'11/09/2026 lo usa solo la sandbox («Genera documento da
+ * template»): «Esporta come» esce col layout di VELIA e l'intestazione
+ * dell'agenzia (`api/intestazione`), e l'identità visiva non c'è più. Nella
+ * fase 3 di `PIANO-INTESTAZIONE-MODELLI.md` i template diventano i modelli
+ * di riferimento.
  *
  * Le scritture sono dell'amministratore (`template.gestisci`): il 403 parte
  * da qui, l'isolamento fra tenant resta della RLS.
@@ -54,12 +51,9 @@ export {
   NOME_LAYOUT_PIATTAFORMA,
   elencoTemplate,
   fontiDaCitazioni,
-  identitaDelTenant,
   risolviTemplate,
   templatePerId,
-  versoIdentitaGenerazione,
   versoRisolto,
-  type RigaIdentita,
   type RigaTemplate,
   type TemplateRisolto,
 } from '../../generazione/catalogo.js';
@@ -70,8 +64,6 @@ const nuovoId = (): string => `tpl-${randomBytes(6).toString('hex')}`;
 
 export const percorsoTemplate = (tenantId: string, id: string, formato: string): string =>
   `tenant/${tenantId}/template/${id}.${formato}`;
-
-const percorsoLogo = (tenantId: string): string => `tenant/${tenantId}/identita/logo`;
 
 const FIRMA_PDF = Buffer.from('%PDF-');
 const FIRMA_ZIP = Buffer.from('PK');
@@ -87,14 +79,6 @@ export interface OpzioniTemplate {
 export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemplate = {}): void {
   let archivioStorage: ArchivioFile | undefined;
   const archivio = (): ArchivioFile => opzioni.archivio ?? (archivioStorage ??= new ArchivioStorage());
-
-  /* Il logo arriva come corpo binario col suo content-type (PUT del FE):
-     Fastify non ha un parser per image/*, glielo diamo qui. */
-  app.addContentTypeParser(
-    /^image\//,
-    { parseAs: 'buffer', bodyLimit: 2 * 1024 * 1024 },
-    (_richiesta, corpo, fine) => fine(null, corpo),
-  );
 
   // --- Libreria dei template (RF-D-10…D-13) --------------------------------
 
@@ -258,185 +242,89 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
   });
 
   /**
-   * RF-D-11: l'anteprima mostra l'impaginazione — sempre PDF, qualunque sia
-   * il formato di generazione. Un template PDF si mostra com'è; per DOCX e
-   * XLSX si impagina la scheda della struttura con l'identità visiva
-   * applicata, coi segnaposto davvero trovati nel file.
+   * RF-D-11: l'anteprima, sempre PDF. Un template PDF si mostra com'è. Word
+   * ed Excel li legge solo la sandbox, che ne copia l'impaginazione: finché
+   * non arrivano i modelli di riferimento con l'anteprima convertita (fase 3
+   * del piano) qui c'è una scheda che lo dice, sulla carta dell'agenzia.
    */
   app.get<{ Params: { id: string } }>('/api/template/:id/anteprima', async (richiesta, risposta) => {
-    const { template, identita } = await conIdentita(poolDb(), richiesta.identita, async (client) => ({
-      template: await templatePerId(client, richiesta.params.id),
-      identita: await identitaDelTenant(client, richiesta.identita.tenantId),
-    }));
-    if (!template) throw ErroreApi.nonTrovato('Template inesistente.');
-
-    const byte = await archivio().scarica(template.path_file);
-    if (template.formato === 'pdf') {
-      return inviaFile(risposta, byte, 'application/pdf', 'inline');
-    }
-
-    const segnaposto = template.formato === 'docx' ? segnapostoDocx(byte) : await segnapostoXlsx(byte);
-    const testo = [
-      template.descrizione,
-      '',
-      'Struttura del template:',
-      '',
-      '- `{{titolo}}` titolo del documento',
-      '- `{{destinatario}}` cliente o pratica',
-      '- `{{data}}` data di generazione',
-      '- `{{contenuto}}` il testo generato da VELIA',
-      '- `{{fonti}}` le citazioni, in coda',
-      '',
-      `Segnaposto presenti nel file: ${segnaposto.map((s) => `{{${s}}}`).join(', ')}`,
-      '',
-      "Intestazione e piè di pagina applicano l'identità visiva dell'agenzia:",
-      `colore ${identita.colore_primario}, recapiti e firma configurati nelle Impostazioni.`,
-    ].join('\n');
-
-    const pdf = await componiPdf({
-      titolo: `Anteprima - ${template.nome}`,
-      blocchi: analizzaMarkdown(testo),
-      fonti: [],
-      identita: await identitaPerGenerazione(archivio(), identita),
-    });
-    return inviaFile(risposta, pdf, 'application/pdf', 'inline');
-  });
-
-  // --- Identità visiva (RF-D-12) ------------------------------------------
-
-  app.get('/api/identita-visiva', async (richiesta) => {
-    const riga = await conIdentita(poolDb(), richiesta.identita, (client) =>
-      identitaDelTenant(client, richiesta.identita.tenantId),
-    );
-    return versoIdentita(riga);
-  });
-
-  app.put('/api/identita-visiva', async (richiesta) => {
-    richiediAmministratore(richiesta);
-    const esito = schemaIdentitaVisiva.safeParse(richiesta.body ?? {});
-    if (!esito.success) {
-      throw ErroreApi.datiNonValidi(esito.error.issues[0]?.message ?? 'Identità visiva non valida.');
-    }
-    const m = esito.data;
-
-    return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const attuale = await identitaDelTenant(client, richiesta.identita.tenantId);
-      const nuova: RigaIdentita = {
-        ...attuale,
-        ...(m.colorePrimario !== undefined && { colore_primario: m.colorePrimario }),
-        ...(m.recapiti !== undefined && { recapiti: m.recapiti }),
-        ...(m.firma !== undefined && { firma: m.firma }),
+    const { template, fasce } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const template = await templatePerId(client, richiesta.params.id);
+      return {
+        template,
+        fasce: template
+          ? await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, template.nome)
+          : undefined,
       };
-      await client.query(
-        `insert into velia.identita_visiva (tenant_id, colore_primario, recapiti, firma)
-         values ($1, $2, $3, $4)
-         on conflict (tenant_id) do update
-           set colore_primario = excluded.colore_primario,
-               recapiti = excluded.recapiti,
-               firma = excluded.firma`,
-        [richiesta.identita.tenantId, nuova.colore_primario, nuova.recapiti, nuova.firma],
-      );
-      await registraStorico(
-        client,
-        richiesta.identita,
-        'modifica',
-        'template',
-        'Aggiornata l’identità visiva dell’agenzia',
-      );
-      return versoIdentita(nuova);
     });
-  });
+    if (!template || !fasce) throw ErroreApi.nonTrovato('Template inesistente.');
 
-  app.get('/api/identita-visiva/logo', async (richiesta, risposta) => {
-    const riga = await conIdentita(poolDb(), richiesta.identita, (client) =>
-      identitaDelTenant(client, richiesta.identita.tenantId),
-    );
-    if (!riga.logo_path) throw ErroreApi.nonTrovato('Nessun logo caricato.');
-    const byte = await archivio().scarica(riga.logo_path);
-    return inviaFile(risposta, byte, riga.logo_tipo ?? 'image/png', 'inline');
-  });
-
-  /** Il logo in testa ai documenti generati: PNG o JPEG, che il PDF sa incorporare. */
-  app.put('/api/identita-visiva/logo', async (richiesta) => {
-    richiediAmministratore(richiesta);
-    const tipo = (richiesta.headers['content-type'] ?? '').split(';')[0]!.trim();
-    const corpo = richiesta.body;
-    if (!Buffer.isBuffer(corpo) || (tipo !== 'image/png' && tipo !== 'image/jpeg')) {
-      throw new ErroreApi(
-        415,
-        'FORMATO_NON_SUPPORTATO',
-        'Il logo dev’essere un PNG o un JPEG: sono i formati che i documenti generati incorporano.',
-      );
+    if (template.formato === 'pdf') {
+      return inviaFile(risposta, await archivio().scarica(template.path_file), 'application/pdf', 'inline');
     }
-
-    const percorso = percorsoLogo(richiesta.identita.tenantId);
-    await archivio().carica(percorso, corpo, tipo);
-    await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      await client.query(
-        `insert into velia.identita_visiva (tenant_id, logo_path, logo_tipo)
-         values ($1, $2, $3)
-         on conflict (tenant_id) do update set logo_path = excluded.logo_path, logo_tipo = excluded.logo_tipo`,
-        [richiesta.identita.tenantId, percorso, tipo],
-      );
-      await registraStorico(client, richiesta.identita, 'modifica', 'template', 'Caricato il logo dell’agenzia');
-    });
-    return { logoUrl: '/api/identita-visiva/logo' };
+    const testo = [
+      `«${template.nome}» è un file ${template.formato.toUpperCase()}.`,
+      '',
+      'Si usa con «Genera documento da template»: la sandbox lo apre, ne copia impaginazione, stili e tabelle e ci mette il contenuto nuovo.',
+    ].join('\n');
+    const pdf = await componiPdf({ titolo: template.nome, blocchi: analizzaMarkdown(testo), fonti: [], fasce });
+    return inviaFile(risposta, pdf, 'application/pdf', 'inline');
   });
 
   // --- Esportazione della chat (RF-C-10) -----------------------------------
 
   /**
-   * Il testo del messaggio e le sue fonti, impaginati sul template scelto (o
-   * sul predefinito del formato, o sul layout di piattaforma). Sincrona: un
-   * documento sta sotto qualche secondo. Il formato `txt` («Esporta come»,
-   * 29/08/2026) non passa da nessun template: è il testo piatto con le fonti.
+   * «Esporta come» (29/08/2026): il testo del messaggio e le sue fonti, col
+   * layout di VELIA e l'intestazione dell'agenzia, titolati come la
+   * conversazione. Sincrona: un documento sta sotto qualche secondo. Il
+   * formato `txt` è il testo piatto con le fonti, senza fasce.
    */
   app.post<{ Params: { id: string; mid: string } }>(
     '/api/conversazioni/:id/messaggi/:mid/esporta',
     async (richiesta, risposta) => {
       const esito = schemaEsportaRisposta.safeParse(richiesta.body ?? {});
-      if (!esito.success) throw ErroreApi.datiNonValidi('Indica il template o il formato su cui esportare.');
+      if (!esito.success) throw ErroreApi.datiNonValidi('Indica il formato su cui esportare.');
       if (!E_UUID.test(richiesta.params.id) || !E_UUID.test(richiesta.params.mid)) {
         throw ErroreApi.nonTrovato('Messaggio inesistente.');
       }
       const scelta = esito.data;
       const testoSolo = scelta.formato === 'txt' && !scelta.templateId;
 
-      const { messaggio, template, identita } = await conIdentita(
-        poolDb(),
-        richiesta.identita,
-        async (client) => {
-          const m = await client.query<{ testo: string; citazioni: Citazione[] }>(
-            `select m.testo, m.citazioni
-             from velia.messaggi m
-             where m.conversazione_id = $1 and m.id = $2 and m.tenant_id = $3`,
-            [richiesta.params.id, richiesta.params.mid, richiesta.identita.tenantId],
-          );
-          if (testoSolo) return { messaggio: m.rows[0] };
-          return {
-            messaggio: m.rows[0],
-            template: await risolviTemplate(client, richiesta.identita.tenantId, {
-              ...(scelta.templateId && { templateId: scelta.templateId }),
-              ...(scelta.formato && scelta.formato !== 'txt' && { formato: scelta.formato }),
-            }),
-            identita: await identitaDelTenant(client, richiesta.identita.tenantId),
-          };
-        },
-      );
+      const letto = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const m = await client.query<{ testo: string; citazioni: Citazione[]; titolo: string }>(
+          `select m.testo, m.citazioni, c.titolo
+           from velia.messaggi m join velia.conversazioni c on c.id = m.conversazione_id
+           where m.conversazione_id = $1 and m.id = $2 and m.tenant_id = $3`,
+          [richiesta.params.id, richiesta.params.mid, richiesta.identita.tenantId],
+        );
+        const messaggio = m.rows[0];
+        if (!messaggio || testoSolo) return { messaggio };
+        const titolo = messaggio.titolo.trim() || NOME_DOCUMENTO;
+        return {
+          messaggio,
+          formato: await formatoDaScelta(client, {
+            ...(scelta.templateId && { templateId: scelta.templateId }),
+            ...(scelta.formato && scelta.formato !== 'txt' && { formato: scelta.formato }),
+          }),
+          fasce: await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
+        };
+      });
+      const { messaggio } = letto;
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
 
-      if (!template || !identita) {
+      if (!letto.formato || !letto.fasce) {
         const testo = testoSemplice(messaggio.testo, fontiDaCitazioni(messaggio.citazioni));
         return inviaFile(risposta, Buffer.from(testo, 'utf8'), 'text/plain; charset=utf-8', 'attachment; filename="risposta.txt"');
       }
 
+      const titolo = messaggio.titolo.trim() || NOME_DOCUMENTO;
       const file = await generaDocumento({
-        template,
-        ...(template.path_file && { fileTemplate: await archivio().scarica(template.path_file) }),
-        titolo: template.nome,
+        formato: letto.formato,
+        nome: titolo,
+        titolo,
         testo: messaggio.testo,
         fonti: fontiDaCitazioni(messaggio.citazioni),
-        identita: await identitaPerGenerazione(archivio(), identita),
+        fasce: letto.fasce,
       });
 
       return inviaFile(risposta, file.byte, file.contentType, `attachment; filename="${file.nomeFile}"`);
@@ -447,15 +335,6 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
 // ---------------------------------------------------------------------------
 // Condivise
 // ---------------------------------------------------------------------------
-
-function versoIdentita(riga: RigaIdentita): IdentitaVisiva {
-  return {
-    colorePrimario: riga.colore_primario,
-    recapiti: riga.recapiti,
-    firma: riga.firma,
-    ...(riga.logo_path && { logoUrl: '/api/identita-visiva/logo' }),
-  };
-}
 
 /** La voce «chi, cosa, quando» di RF-D-07: ogni mutazione delle impostazioni la scrive. */
 export async function registraStorico(
@@ -482,8 +361,7 @@ function tipoMime(formato: FormatoGenerazione): string {
 
 /**
  * Il controllo all'ingresso (RF-D-12): formato dall'estensione, firma dei
- * byte, e per DOCX/XLSX che il file si apra. I segnaposto sono facoltativi:
- * senza, il file è una carta intestata e il testo generato va in coda.
+ * byte, e che il file si apra davvero.
  */
 async function verificaTemplate(nome: string, contenuto: Buffer, troncato: boolean): Promise<FormatoGenerazione> {
   if (troncato) {
@@ -520,11 +398,12 @@ async function verificaTemplate(nome: string, contenuto: Buffer, troncato: boole
   if (!contenuto.subarray(0, 4).includes(FIRMA_ZIP)) {
     throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${estensione.toUpperCase()} leggibile.`);
   }
-  /* I segnaposto sono facoltativi: senza `{{contenuto}}` il file è una carta
-     intestata e il testo va in coda. Qui conta solo che il file si apra. */
   try {
-    if (estensione === 'docx') segnapostoDocx(contenuto);
-    else await segnapostoXlsx(contenuto);
+    if (estensione === 'docx') {
+      if (!new PizZip(contenuto).file('word/document.xml')) throw new Error('senza word/document.xml');
+    } else {
+      await new ExcelJS.Workbook().xlsx.load(contenuto as unknown as ExcelJS.Buffer);
+    }
   } catch {
     throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${estensione.toUpperCase()} leggibile.`);
   }

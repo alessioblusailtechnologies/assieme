@@ -10,6 +10,7 @@ import { registraRotteCartelle } from './cartelle/rotte.js';
 import { registraRotteChatClienti, type OpzioniChatClienti } from './chat-clienti/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
+import { registraRotteIntestazione, type OpzioniIntestazione } from './intestazione/rotte.js';
 import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/rotte.js';
 import { registraRotteModelli } from './modelli/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
@@ -30,8 +31,10 @@ export interface OpzioniApp {
   archivioPrivato?: OpzioniArchivioPrivato;
   /** Nei test: Storage finto e ponte eventi condiviso per la chat. */
   conversazioni?: OpzioniConversazioni;
-  /** Nei test: Storage finto per template e identità visiva. */
+  /** Nei test: Storage finto per i template. */
   template?: OpzioniTemplate;
+  /** Nei test: Storage finto per le immagini dell'intestazione. */
+  intestazione?: OpzioniIntestazione;
   /** Nei test: Storage finto per l'esportazione delle tabelle. */
   tabelle?: OpzioniTabelle;
   /** Nei test: Storage finto per i documenti di riferimento. */
@@ -99,6 +102,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteChatClienti(app, opzioni.chatClienti);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRotteTemplate(app, opzioni.template);
+  registraRotteIntestazione(app, opzioni.intestazione);
   registraRotteTabelle(app, opzioni.tabelle);
   registraRotteModelli(app);
   registraRotteIstruzioni(app, opzioni.istruzioni);

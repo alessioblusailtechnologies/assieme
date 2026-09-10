@@ -33,14 +33,6 @@ export interface TemplateOutput {
   predefinito: boolean;
 }
 
-/** RF-D-12: l'identità visiva che i template applicano alla generazione. */
-export interface IdentitaVisiva {
-  logoUrl?: string;
-  colorePrimario: string;
-  recapiti: string;
-  firma: string;
-}
-
 /**
  * Corpo di `PATCH /api/template/:id`: il nome con cui si richiama e/o il
  * predefinito per il suo formato (`true` lo toglie a chi lo portava).
@@ -56,22 +48,10 @@ export const schemaPatchTemplate = z
   });
 
 /**
- * Corpo di `PUT /api/identita-visiva`. Come il mock: aggiorna i campi
- * presenti e ignora il resto (il FE manda sempre tutti e tre).
- */
-export const schemaIdentitaVisiva = z.object({
-  colorePrimario: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{6}$/, 'Il colore primario è un esadecimale, es. #2f4b7c.')
-    .optional(),
-  recapiti: z.string().max(500).optional(),
-  firma: z.string().max(200).optional(),
-});
-
-/**
- * Corpo delle esportazioni (chat RF-C-10, tabelle RF-C-14): un template
- * preciso, oppure solo il formato — allora vale il predefinito del formato,
- * e senza predefinito il layout di piattaforma.
+ * Corpo delle esportazioni (chat RF-C-10, tabelle RF-C-14): il formato, o
+ * un template da cui ricavarlo. Dall'11/09/2026 l'impaginazione è sempre il
+ * layout di VELIA con l'intestazione dell'agenzia: il template resta
+ * accettato finché tabelle e agenti non passano ai soli formati (fase 3).
  */
 export const schemaEsporta = z
   .object({

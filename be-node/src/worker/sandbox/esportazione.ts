@@ -13,7 +13,6 @@ import {
 } from '../../contratto/conversazioni.js';
 import type { FormatoGenerazione } from '../../contratto/template.js';
 import {
-  identitaDelTenant,
   layoutPerFormato,
   templateDelTenant,
   templatePerId,
@@ -29,8 +28,8 @@ import { Sandbox, type AvviatoreSandbox, type ParametriSessione } from './sandbo
 
 /**
  * L'Esportazione elaborata: Claude Code dentro la sandbox documentale. Il
- * worker prepara la sandbox (workspace, template, identità visiva), avvia
- * la sessione nel container e ne ascolta lo stream; a ogni `consegna`
+ * worker prepara la sandbox (workspace e template), avvia la sessione nel
+ * container e ne ascolta lo stream; a ogni `consegna`
  * ritira il file, lo mette nello Storage e lo racconta al FE come
  * `documento` — lo stesso canale dell'«Esporta subito». Alla fine la
  * sandbox si distrugge.
@@ -82,10 +81,9 @@ export class ErroreElaborata extends Error {}
 const FORMATI_CONSEGNA: Record<string, FormatoGenerazione> = { pdf: 'pdf', docx: 'docx', xlsx: 'xlsx' };
 
 export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: RichiestaElaborata): Promise<EsitoElaborata> {
-  /* 1. Template e identità, dal catalogo. */
+  /* 1. Il template, dal catalogo. */
   const client = await dip.db.connect();
   let template: TemplateRisolto;
-  let identita;
   try {
     if (r.templateId) {
       const riga = await templatePerId(client, r.templateId);
@@ -94,12 +92,11 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
     } else {
       template = layoutPerFormato(await templateDelTenant(client, r.tenantId), r.formato);
     }
-    identita = await identitaDelTenant(client, r.tenantId);
   } finally {
     client.release();
   }
 
-  /* 2. La sandbox, con dentro workspace, template e identità. */
+  /* 2. La sandbox, con dentro workspace e template. */
   await dip.emetti({ tipo: 'attivita', etichetta: 'Preparo l’ambiente di lavoro' });
   const sandbox = new Sandbox(await dip.avviatore.avvia(r.jobId));
   const generati: DocumentoGenerato[] = [];
@@ -114,25 +111,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
       await sandbox.scrivi(`template/${slug}.${template.formato}`, await dip.archivio.scarica(template.path_file));
     }
 
-    let logoPath: string | undefined;
-    if (identita.logo_path && identita.logo_tipo) {
-      try {
-        const byte = await dip.archivio.scarica(identita.logo_path);
-        const estensione = identita.logo_tipo === 'image/png' ? 'png' : 'jpg';
-        logoPath = `/lavoro/identita/logo.${estensione}`;
-        await sandbox.scrivi(`identita/logo.${estensione}`, byte);
-      } catch {
-        logoPath = undefined;
-      }
-    }
-    await sandbox.scrivi(
-      'identita/identita.json',
-      JSON.stringify(
-        { colorePrimario: identita.colore_primario, recapiti: identita.recapiti, firma: identita.firma, logo: logoPath ?? null },
-        null,
-        2,
-      ),
-    );
     await sandbox.esegui('mkdir -p /lavoro/output /lavoro/tmp');
 
     /* 3. La sessione di Claude Code, ascoltata evento per evento. */
@@ -143,7 +121,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
     }));
     const parametri: ParametriSessione = {
       promptSistema: promptSandbox({
-        identita: { colorePrimario: identita.colore_primario, recapiti: identita.recapiti, firma: identita.firma, ...(logoPath && { logoPath }) },
         ...(pathTemplate && { template: { nome: template.nome, formato: template.formato, path: pathTemplate } }),
         formato: r.formato,
         documenti,

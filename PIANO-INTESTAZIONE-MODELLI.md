@@ -1,0 +1,101 @@
+# Intestazione e modelli di riferimento: il piano
+
+11/09/2026. Rifà la sezione **Impostazioni > Template di output**, che oggi tiene insieme tre cose diverse (file caricati con segnaposto e predefinito per formato, identità visiva, anteprima) e per questo è piena di rumore. Diventa una pagina a due schede:
+
+1. **Intestazione e piè di pagina**: quelli dell'agenzia, composti in un editor, su ogni documento che esce da VELIA.
+2. **Modelli di riferimento**: documenti di qualsiasi formato, da richiamare in chat con «Genera da modello».
+
+Si parte da zero: nessuna migrazione di template, identità visiva o predefiniti esistenti. Il vecchio si toglie.
+
+## Decisioni del committente (11/09/2026)
+
+- **Editor**: TipTap, con uno schema vincolato a ciò che si riproduce identico in PDF e in Word.
+- **Carta intestata PDF**: non esiste più nella scheda 1. Un PDF di carta intestata si carica fra i modelli, dove la sandbox lo usa come oggi.
+- **Intestazione sui modelli**: si sceglie per modello. Di norma quella dell'agenzia; «tieni la sua» per i documenti da restituire come sono (un modulo di una compagnia).
+- **Agenti e tabelle**: per ora solo intestazione e piè sul layout di VELIA. Il modello per gli agenti, se servirà, dopo.
+
+## Scheda 1 · Intestazione e piè di pagina
+
+### Dove si applica
+
+| Documento | Cosa riceve |
+|---|---|
+| Esporta come PDF / Word (chat) | intestazione e piè |
+| Documenti degli agenti | intestazione e piè |
+| Tabelle in PDF / Word | intestazione e piè |
+| Tabelle in Excel | solo il testo, nelle fasce di stampa di Excel (sinistra, centro, destra) |
+| Genera da modello | intestazione e piè, salvo i modelli con «tieni la sua» |
+| Esporta come testo semplice, Invia email | niente |
+
+### Che cosa si può mettere (lo schema)
+
+- **Blocchi**: paragrafo (allineamento a sinistra, al centro, a destra); immagine (larghezza, allineamento); riga a colonne (2 o 3, ognuna con paragrafi e immagini).
+- **Testo**: grassetto, corsivo, sottolineato; tre dimensioni (piccolo, normale, grande); colori: quello dell'agenzia, grigio, nero.
+- **Campi automatici**: numero di pagina, pagine totali, data, titolo del documento, nome dell'agenzia. Partita IVA, iscrizione RUI e simili si scrivono come testo, una volta.
+- **Fuori schema**: tabelle libere, elenchi, link, font a scelta, sfondi. Sono ciò che fa divergere l'anteprima dal documento.
+- Niente colore dell'agenzia accanto all'editor: l'identità visiva se n'è andata del tutto (decisione dell'11/09/2026). Il corpo dei documenti ha l'accento del layout di VELIA; il marchio dell'agenzia sta solo in intestazione e piè.
+
+### Dati
+
+- Tabella `velia.intestazione`: `tenant_id` (chiave), `intestazione jsonb`, `piede jsonb`, `colore_primario`, `aggiornata_il`, `aggiornata_da`. Proprietario `velia_app` (vedi la memoria sulle migrazioni: senza, l'app la legge a zero righe in silenzio). Lettura per i membri del tenant; scrittura dall'API dopo la guardia da amministratore.
+- Immagini nello Storage, `tenant/<tid>/intestazione/<id>.<ext>`, citate per id nel JSON.
+- Il backend valida il JSON con uno schema zod dello stesso vincolo dell'editor e rifiuta ciò che ne esce (400): l'editor non lo produce, ma l'API non se ne fida.
+- Senza una riga, l'intestazione è vuota e il piè porta solo il numero di pagina.
+
+### API
+
+- `GET` / `PUT /api/intestazione`: il JSON di intestazione e piè più il colore.
+- `POST /api/intestazione/immagini`, `GET /api/intestazione/immagini/:id`.
+- `GET /api/intestazione/anteprima?formato=pdf|docx`: un documento d'esempio col vero motore di resa.
+- `/api/modelli` è già dei livelli AI: i modelli di documento restano sotto `/api/template`.
+
+### Resa (`be-node/src/generazione/intestazione.ts`)
+
+Un solo modulo che dal JSON produce:
+
+- **PDF** (pdf-lib): impagina intestazione e piè nella larghezza utile, ne misura l'altezza e da quella ricava i margini del corpo. I campi si risolvono pagina per pagina: le pagine totali si conoscono dopo aver impaginato il corpo.
+- **Word** (`docx`): `Header` e `Footer` con paragrafi, `ImageRun`, una tabella senza bordi per le colonne, campi `PAGE` e `NUMPAGES`.
+- **Excel** (exceljs, `headerFooter`): solo testo. Le colonne vanno in `&L`, `&C`, `&R`; un paragrafo senza colonne va nella sezione del suo allineamento; campi `&P`, `&N`, `&D`; le immagini non ci sono.
+- **Carta intestata per la sandbox**: `carta.pdf` (A4 con intestazione e piè e il centro vuoto, per la sovrapposizione con pypdf che `istruzioni.ts` sa già fare) e `carta.docx` (documento vuoto con header e footer impostati).
+
+### Front-end
+
+- Pagina a due schede, con lo stesso schema di Istruzioni (`role="tablist"`, `.scheda`).
+- `shared/ui/editor-intestazione`: un componente nostro sopra `@tiptap/core` e le sue estensioni open (paragraph, text, bold, italic, underline, text-align, text-style, color, image, history), più due nodi nostri: `colonne` e `campo`. Niente wrapper di terzi.
+- Barra degli strumenti con i nostri pulsanti e i token del design system.
+- Tela in proporzione A4, alla larghezza utile vera, così un a capo nell'editor è un a capo nel PDF.
+- Anteprima: il PDF di `/api/intestazione/anteprima` nel visualizzatore PDF che c'è già.
+- Da verificare prima di scrivere: `@tiptap/core` con Angular 22 senza zone.js (è headless, dovrebbe andare) e il peso nel bundle della rotta lazy.
+
+## Scheda 2 · Modelli di riferimento
+
+- **Caricamento**: Word, Excel, PowerPoint, PDF. Il nome viene dal file e si può rinominare. Una riga «quando usarlo», facoltativa ma consigliata: il motore della chat la legge per scegliere il modello giusto.
+- **Per modello**: «Intestazione: dell'agenzia / la sua» (predefinito: dell'agenzia).
+- **Anteprima**: un PDF si mostra com'è. Word, Excel e PowerPoint si convertono in PDF una volta, al caricamento, sul runner della sandbox (ha LibreOffice), con un job `anteprima-modello` in coda. Finché non c'è, la scheda mostra l'icona e «Scarica».
+- **Dati**: `velia.template` riscritta come tabella dei modelli: `id`, `tenant_id`, `nome`, `descrizione`, `formato`, `path_file`, `path_anteprima`, `intestazione_agenzia boolean`, `creato_da`, `created_at`. Se ne vanno `template_predefiniti`, le righe di piattaforma e `identita_visiva`.
+- **Chat**: «Genera documento da template» diventa **«Genera da modello»**. La finestra elenca i modelli con la loro riga, e il messaggio nel filo è «Genera da modello: «X»». Il tool `esportazione_elaborata` prende il modello per nome, e nel prompt c'è l'elenco dei modelli con la descrizione.
+- **Sandbox**: il file del modello in `/lavoro/modello/`. Con l'intestazione dell'agenzia, anche `/lavoro/intestazione/carta.pdf` e `carta.docx`, e una sezione di `istruzioni.ts` su come usarle: PDF con la sovrapposizione pypdf già scritta; Word partendo da `carta.docx`; Excel con le fasce di stampa. Con «tieni la sua» comanda il modello, come oggi.
+
+## Cosa cambia altrove
+
+- **Esporta come** (PDF, Word, testo): layout di VELIA più intestazione e piè, senza scelta di template. Il tool `esporta_subito` perde il parametro del template.
+- **Agenti**: via la scelta del template dall'editor dell'agente; il documento è layout di VELIA più intestazione.
+- **Tabelle**: export per formato; l'Excel prende l'intestazione di stampa in solo testo.
+- **Codice da togliere**: i segnaposto (`riempiDocx`, `riempiXlsx`), lo sfondo PDF di `componiPdf`, l'identità visiva, i predefiniti, i mock dei template.
+
+## Fasi
+
+1. **Intestazione, backend.** FATTA l'11/09/2026. Schema zod (`contratto/intestazione.ts`), tabella `velia.intestazione` (migrazione `20260911100000`, che cancella anche `velia.identita_visiva`), rotte `api/intestazione`, resa PDF/Word/Excel (`generazione/intestazione.ts`), anteprima; Esporta come, agenti, tabelle, strumento `esporta_subito` ed email senza identità né segnaposto; la sandbox senza la sezione dell'identità.
+   Test: il testo dell'intestazione è su ogni pagina del PDF (pdfjs) coi numeri di pagina giusti; `header` e `footer` del DOCX portano testo, immagine e campi `PAGE`/`NUMPAGES`; le fasce di stampa dell'XLSX; un JSON fuori schema risponde 400; l'integrazione salva, serve l'immagine e fa l'anteprima col motore vero.
+   Trovato strada facendo: `widthOfTextAtSize` di pdf-lib misura con la crenatura ma `drawText` disegna senza, e «P.IVA 0123» usciva «P.IVA0123». Ora si misura carattere per carattere (`generazione/misura.ts`), anche nel corpo dei documenti e nei PDF impaginati dall'ingestion.
+2. **Intestazione, front-end.** Pagina a schede, editor vincolato, immagini, anteprima.
+   Test del componente (la barra applica i segni, i campi si inseriscono, niente fuori schema); screenshot desktop e mobile.
+3. **Modelli.** Tabella nuova, caricamento di ogni formato, anteprima convertita, schede; «Genera da modello» in chat, prompt e tool, carta intestata alla sandbox.
+   Collaudo con `tools/collaudo-elaborata.ts` su un modello Word con «dell'agenzia» e su un modulo PDF con «la sua».
+
+## Aperto
+
+- **Prima pagina diversa** (intestazione piena sulla prima, compatta sulle altre): dopo, se serve.
+- **Intestazione nelle email**: no, per ora.
+- **Fedeltà di LibreOffice sui .pptx** nell'anteprima: da vedere su un file vero.
+- **Il runner della sandbox fa un job per volta**: la conversione di un'anteprima aspetta in coda come gli altri lavori.

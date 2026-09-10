@@ -1,37 +1,30 @@
-import { analizzaMarkdown, testoPiano } from './blocchi.js';
-import { componiDocx, riempiDocx, type CampiTemplate } from './docx.js';
+import { analizzaMarkdown } from './blocchi.js';
+import { componiDocx } from './docx.js';
+import type { FasceDocumento } from './intestazione.js';
 import { componiPdf } from './pdf.js';
-import { componiXlsx, riempiXlsx } from './xlsx.js';
+import { componiXlsx } from './xlsx.js';
 
 /**
- * Il motore di generazione su template (RF-D-10, RF-C-10): un ingresso solo
- * per chat, tabelle (Fase 5) e agenti (Fase 7). Sceglie il compositore dal
- * formato e la strada dalla natura del template: precaricato = layout nel
- * codice con l'identità visiva; del tenant = il suo file, riempito (DOCX e
- * XLSX sui segnaposto, PDF come carta intestata di sfondo).
+ * Il motore di generazione deterministico (RF-C-10): un ingresso solo per
+ * «Esporta come» in chat, tabelle e agenti. Dall'11/09/2026 non ci sono più
+ * template né identità visiva: ogni documento esce col layout di VELIA e
+ * con l'intestazione e il piè di pagina dell'agenzia (`intestazione.ts`).
+ * I documenti costruiti su un modello li fa la sandbox, non questo motore.
  *
- * La generazione è sincrona: per un documento sta sotto qualche secondo.
- * Quando le tabelle di analisi porteranno cartelle grandi, il passaggio in
- * coda userà lo stesso pattern di polling già noto al FE.
+ * La generazione è sincrona: un documento sta sotto qualche secondo.
  */
 
-export interface IdentitaGenerazione {
-  colorePrimario: string;
-  recapiti: string;
-  firma: string;
-  logo?: { byte: Buffer; tipo: string };
-}
+export type FormatoDocumento = 'pdf' | 'docx' | 'xlsx';
 
 export interface RichiestaGenerazione {
-  template: { nome: string; formato: 'pdf' | 'docx' | 'xlsx'; personalizzato: boolean };
-  /** Il file del template del tenant, dallo Storage (solo personalizzati). */
-  fileTemplate?: Buffer;
+  formato: FormatoDocumento;
+  /** Il nome del file scaricato, prima dello slug e dell'estensione. */
+  nome: string;
   titolo: string;
   /** Markdown leggero: il testo della risposta, com'è. */
   testo: string;
   fonti: string[];
-  destinatario?: string;
-  identita: IdentitaGenerazione;
+  fasce: FasceDocumento;
 }
 
 export interface FileGenerato {
@@ -40,62 +33,33 @@ export interface FileGenerato {
   nomeFile: string;
 }
 
-export const MIME: Record<'pdf' | 'docx' | 'xlsx', string> = {
+export const MIME: Record<FormatoDocumento, string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 };
 
-/** Il nome del download, con la regola del mock (nome del template, in slug). */
+/** Il nome del download, in slug. */
 export const nomeFileGenerato = (nome: string, formato: string): string =>
   `${nome.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${formato}`;
 
+/** Il nome dei documenti che non ne hanno uno loro. */
+export const NOME_DOCUMENTO = 'Documento VELIA';
+
 export async function generaDocumento(richiesta: RichiestaGenerazione): Promise<FileGenerato> {
-  const { template, identita } = richiesta;
   const blocchi = analizzaMarkdown(richiesta.testo);
-  const personalizzato = template.personalizzato && richiesta.fileTemplate;
+  const opzioni = { titolo: richiesta.titolo, blocchi, fonti: richiesta.fonti, fasce: richiesta.fasce };
 
-  const campi: CampiTemplate = {
-    titolo: richiesta.titolo,
-    data: new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()),
-    destinatario: richiesta.destinatario ?? '',
-    contenuto: testoPiano(blocchi).join('\n'),
-    fonti: richiesta.fonti.join('\n'),
-  };
-
-  let byte: Buffer;
-  switch (template.formato) {
-    case 'pdf':
-      byte = await componiPdf({
-        titolo: richiesta.titolo,
-        blocchi,
-        fonti: richiesta.fonti,
-        identita,
-        ...(identita.logo && { logo: identita.logo }),
-        ...(personalizzato && { sfondo: richiesta.fileTemplate }),
-      });
-      break;
-    case 'docx':
-      byte = personalizzato
-        ? riempiDocx(richiesta.fileTemplate!, campi)
-        : await componiDocx({
-            titolo: richiesta.titolo,
-            blocchi,
-            fonti: richiesta.fonti,
-            identita,
-            ...(identita.logo && { logo: identita.logo }),
-          });
-      break;
-    case 'xlsx':
-      byte = personalizzato
-        ? await riempiXlsx(richiesta.fileTemplate!, campi)
-        : await componiXlsx({ titolo: richiesta.titolo, blocchi, fonti: richiesta.fonti, identita });
-      break;
-  }
+  const byte =
+    richiesta.formato === 'pdf'
+      ? await componiPdf(opzioni)
+      : richiesta.formato === 'docx'
+        ? await componiDocx(opzioni)
+        : await componiXlsx(opzioni);
 
   return {
     byte,
-    contentType: MIME[template.formato],
-    nomeFile: nomeFileGenerato(template.nome, template.formato),
+    contentType: MIME[richiesta.formato],
+    nomeFile: nomeFileGenerato(richiesta.nome, richiesta.formato),
   };
 }

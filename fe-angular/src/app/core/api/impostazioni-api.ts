@@ -3,16 +3,13 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env';
-import {
-  Id,
-  IdentitaVisiva,
-  ModelloAI,
-  VoceStoricoImpostazioni,
-} from '@core/models';
+import { Id, ModelloAI, VoceStoricoImpostazioni } from '@core/models';
 
 /**
- * Impostazioni trasversali del Modulo D: scelta del modello AI (RF-D-02/03),
- * storico delle modifiche (RF-D-07), identità visiva (RF-D-12).
+ * Impostazioni trasversali del Modulo D: scelta del livello AI (RF-D-02/03)
+ * e storico delle modifiche (RF-D-07). L'identità visiva non c'è più
+ * (11/09/2026): al suo posto intestazione e piè di pagina (fase 2 di
+ * `PIANO-INTESTAZIONE-MODELLI.md`).
  *
  * Istruzioni, template e utenti hanno servizi propri: sono domini con un
  * ciclo di vita, non voci di configurazione.
@@ -43,32 +40,5 @@ export class ImpostazioniApi {
   urlStorico(oggetti: VoceStoricoImpostazioni['oggetto'][]): string {
     const query = oggetti.length ? `?oggetti=${oggetti.join(',')}` : '';
     return `${this.base}/impostazioni/storico${query}`;
-  }
-
-  urlIdentitaVisiva(): string {
-    return `${this.base}/identita-visiva`;
-  }
-
-  /** RF-D-12: colori, recapiti e firma che i template applicano. */
-  salvaIdentitaVisiva(identita: IdentitaVisiva): Observable<IdentitaVisiva> {
-    return this.http.put<IdentitaVisiva>(this.urlIdentitaVisiva(), identita);
-  }
-
-  /** Il logo dell'agenzia, in testa ai documenti generati (RF-D-12). */
-  caricaLogo(file: File): Observable<{ logoUrl: string }> {
-    return this.http.put<{ logoUrl: string }>(`${this.urlIdentitaVisiva()}/logo`, file, {
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    });
-  }
-
-  /**
-   * Il logo per l'anteprima, come immagine.
-   *
-   * Non come indirizzo in un `<img src>`: la rotta vuole il Bearer, e un tag
-   * `<img>` non lo manda mai — l'anteprima resterebbe rotta in ogni ambiente,
-   * non solo dove app e API stanno su host diversi.
-   */
-  scaricaLogo(): Observable<Blob> {
-    return this.http.get(`${this.urlIdentitaVisiva()}/logo`, { responseType: 'blob' });
   }
 }

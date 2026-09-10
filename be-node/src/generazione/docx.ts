@@ -1,14 +1,9 @@
-import Docxtemplater from 'docxtemplater';
 import {
-  AlignmentType,
-  BorderStyle,
   Document,
   Footer,
   Header,
   HeadingLevel,
-  ImageRun,
   Packer,
-  PageNumber,
   Paragraph,
   Table,
   TableCell,
@@ -16,45 +11,34 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
-import PizZip from 'pizzip';
 
 import type { Blocco, Segmento } from './blocchi.js';
+import { fasciaDocx, fasciaVuota, type FasceDocumento } from './intestazione.js';
 
 /**
- * Il compositore DOCX: i template precaricati si impaginano con la libreria
- * `docx` (testata con logo e firma, filo del colore primario, recapiti e
- * numero di pagina in calce); i template del tenant (RF-D-12) sono file DOCX
- * veri con segnaposto `{{…}}`, riempiti con docxtemplater — l'impaginazione
- * resta la loro, che è il punto della fedeltà.
+ * Il compositore DOCX: il layout di VELIA con la libreria `docx`, e in
+ * testa e in calce l'intestazione e il piè di pagina dell'agenzia
+ * (11/09/2026, `intestazione.ts`), come `Header` e `Footer` veri di Word:
+ * chi apre il file li ritrova dove se li aspetta, e li può ritoccare.
  */
 
 export interface OpzioniDocx {
   titolo: string;
   blocchi: Blocco[];
   fonti: string[];
-  identita: { colorePrimario: string; recapiti: string; firma: string };
-  logo?: { byte: Buffer; tipo: string };
+  fasce: FasceDocumento;
 }
 
-/** I campi dello schema dei segnaposto (RF-D-12), comuni a DOCX e XLSX. */
-export interface CampiTemplate {
-  titolo: string;
-  data: string;
-  destinatario: string;
-  contenuto: string;
-  fonti: string;
-}
-
-const colorePulito = (hex: string): string => hex.replace('#', '');
+/** L'accento del layout di VELIA: titoli e testata delle tabelle. */
+const ACCENTO = '2f4b7c';
 
 export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
-  const colore = colorePulito(opzioni.identita.colorePrimario);
   const testo = (s: Segmento[], dimensione = 22): TextRun[] =>
     s.map((x) => new TextRun({ text: x.testo, bold: x.grassetto, size: dimensione }));
 
   const figli: Array<Paragraph | Table> = [
     new Paragraph({
-      children: [new TextRun({ text: opzioni.titolo, bold: true, size: 32, color: colore })],
+      children: [new TextRun({ text: opzioni.titolo, bold: true, size: 32, color: ACCENTO })],
       spacing: { after: 240 },
     }),
   ];
@@ -69,7 +53,7 @@ export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
               new TextRun({
                 text: blocco.testo,
                 bold: true,
-                color: colore,
+                color: ACCENTO,
                 size: [28, 25, 23][blocco.livello - 1]!,
               }),
             ],
@@ -97,7 +81,7 @@ export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
                     const intestazione = indice === 0;
                     return new TableCell({
                       ...(intestazione && {
-                        shading: { fill: colore, color: 'auto' },
+                        shading: { fill: ACCENTO, color: 'auto' },
                       }),
                       margins: { top: 60, bottom: 60, left: 100, right: 100 },
                       children: [
@@ -127,7 +111,7 @@ export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
   if (opzioni.fonti.length) {
     figli.push(
       new Paragraph({
-        children: [new TextRun({ text: 'Fonti', bold: true, size: 25, color: colore })],
+        children: [new TextRun({ text: 'Fonti', bold: true, size: 25, color: ACCENTO })],
         spacing: { before: 240, after: 120 },
       }),
       ...opzioni.fonti.map(
@@ -141,116 +125,22 @@ export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
     );
   }
 
-  const logo = opzioni.logo
-    ? new ImageRun({
-        data: opzioni.logo.byte,
-        type: opzioni.logo.tipo === 'image/png' ? 'png' : 'jpg',
-        transformation: { width: 96, height: 34 },
-      })
-    : undefined;
-
+  const { intestazione, piede } = opzioni.fasce;
   const documento = new Document({
     creator: 'VELIA',
     title: opzioni.titolo,
     sections: [
       {
-        headers: {
-          default: new Header({
-            children: [
-              new Paragraph({
-                border: { bottom: { style: BorderStyle.SINGLE, size: 8, color: colore, space: 4 } },
-                children: [
-                  ...(logo ? [logo, new TextRun({ text: '   ' })] : []),
-                  new TextRun({ text: opzioni.identita.firma, bold: true, size: 20, color: colore }),
-                ],
-              }),
-            ],
-          }),
-        },
-        footers: {
-          default: new Footer({
-            children: [
-              new Paragraph({
-                border: { top: { style: BorderStyle.SINGLE, size: 4, color: 'c8c8c8', space: 4 } },
-                children: [new TextRun({ text: opzioni.identita.recapiti, size: 16, color: '737373' })],
-              }),
-              new Paragraph({
-                alignment: AlignmentType.RIGHT,
-                children: [
-                  new TextRun({ children: [PageNumber.CURRENT, ' di ', PageNumber.TOTAL_PAGES], size: 16, color: '737373' }),
-                ],
-              }),
-            ],
-          }),
-        },
+        ...(!fasciaVuota(intestazione) && {
+          headers: { default: new Header({ children: fasciaDocx(intestazione, opzioni.fasce) }) },
+        }),
+        ...(!fasciaVuota(piede) && {
+          footers: { default: new Footer({ children: fasciaDocx(piede, opzioni.fasce) }) },
+        }),
         children: figli,
       },
     ],
   });
 
   return Packer.toBuffer(documento);
-}
-
-// ---------------------------------------------------------------------------
-// Template del tenant: segnaposto {{…}}
-// ---------------------------------------------------------------------------
-
-const PARTI_TESTUALI = /^word\/(document|header\d*|footer\d*)\.xml$/;
-
-/**
- * I segnaposto presenti nel file. Word spezza il testo in run arbitrarie:
- * togliendo i tag XML le run tornano contigue e `{{contenuto}}` si legge
- * anche se Word l'ha spezzato in tre.
- */
-export function segnapostoDocx(byte: Buffer): string[] {
-  const zip = new PizZip(byte);
-  const trovati = new Set<string>();
-  for (const nome of Object.keys(zip.files)) {
-    if (!PARTI_TESTUALI.test(nome)) continue;
-    const testo = zip.files[nome]!.asText().replace(/<[^>]+>/g, '');
-    for (const m of testo.matchAll(/\{\{\s*([a-zA-Z]+)\s*\}\}/g)) trovati.add(m[1]!);
-  }
-  return [...trovati];
-}
-
-const paragrafo = (testo: string, stile?: string): string =>
-  `<w:p>${stile ? `<w:pPr><w:pStyle w:val="${stile}"/></w:pPr>` : ''}<w:r><w:t xml:space="preserve">${testo}</w:t></w:r></w:p>`;
-
-/**
- * Un template senza `{{contenuto}}` è una carta intestata (logo, testata,
- * piè di pagina, pagina bianca): il testo generato va in coda al corpo,
- * dopo ciò che il documento già contiene. Si aggiungono i segnaposto
- * mancanti e poi si riempie come sempre.
- */
-export function completaSegnapostoDocx(byte: Buffer): Buffer {
-  const presenti = new Set(segnapostoDocx(byte));
-  if (presenti.has('contenuto')) return byte;
-  const zip = new PizZip(byte);
-  const nome = 'word/document.xml';
-  const xml = zip.files[nome]?.asText();
-  if (!xml) return byte;
-  const coda = [
-    ...(presenti.has('titolo') ? [] : [paragrafo('{{titolo}}', 'Title')]),
-    paragrafo('{{contenuto}}'),
-    ...(presenti.has('fonti') ? [] : [paragrafo(''), paragrafo('{{fonti}}')]),
-  ].join('');
-  /* Prima delle proprietà di sezione finali, se ci sono; altrimenti a fine corpo. */
-  const sezione = xml.lastIndexOf('<w:sectPr');
-  const fine = xml.lastIndexOf('</w:body>');
-  const dove = sezione > -1 && sezione < fine ? sezione : fine;
-  if (dove < 0) return byte;
-  zip.file(nome, xml.slice(0, dove) + coda + xml.slice(dove));
-  return zip.generate({ type: 'nodebuffer' });
-}
-
-/** Riempie un template DOCX del tenant coi campi dello schema (RF-D-12). */
-export function riempiDocx(byte: Buffer, campi: CampiTemplate): Buffer {
-  const documento = new Docxtemplater(new PizZip(completaSegnapostoDocx(byte)), {
-    delimiters: { start: '{{', end: '}}' },
-    paragraphLoop: true,
-    linebreaks: true,
-    nullGetter: () => '',
-  });
-  documento.render(campi);
-  return documento.getZip().generate({ type: 'nodebuffer' });
 }

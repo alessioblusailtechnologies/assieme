@@ -36,7 +36,7 @@ import { ErroreApi } from '../../contratto/errori.js';
 import { applicaProposta } from '../../archivio/proposta.js';
 import { configurazione } from '../../config.js';
 import { inviaEmail } from '../../email/invio.js';
-import { fontiDaCitazioni, identitaDelTenant } from '../../generazione/catalogo.js';
+import { fontiDaCitazioni } from '../../generazione/catalogo.js';
 import { componiEmailRisposta } from '../../generazione/email.js';
 import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
 import {
@@ -842,14 +842,14 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       }
       const { tenantId, utenteId } = richiesta.identita;
 
-      const { conversazione, messaggio, identita } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const { conversazione, messaggio } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const c = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
         const m = await client.query<{ testo: string; citazioni: Citazione[] }>(
           `select testo, citazioni from velia.messaggi
            where conversazione_id = $1 and id = $2 and autore = 'assistente'`,
           [richiesta.params.id, richiesta.params.mid],
         );
-        return { conversazione: c, messaggio: m.rows[0], identita: await identitaDelTenant(client, tenantId) };
+        return { conversazione: c, messaggio: m.rows[0] };
       });
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
 
@@ -868,7 +868,6 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         testo: messaggio.testo,
         fonti: fontiDaCitazioni(messaggio.citazioni),
         daParteDi: { nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome },
-        identita: { colorePrimario: identita.colore_primario, firma: identita.firma, recapiti: identita.recapiti },
       });
       const config = configurazione();
       const { simulata } = await inviaEmail(

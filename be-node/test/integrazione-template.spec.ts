@@ -5,18 +5,21 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { creaApp } from '../src/api/app.js';
 import { configurazione, type Configurazione } from '../src/config.js';
+import type { ImmagineCaricata, IntestazioneSalvata } from '../src/contratto/intestazione.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
-import type { IdentitaVisiva, TemplateOutput } from '../src/contratto/template.js';
+import type { TemplateOutput } from '../src/contratto/template.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import type { ArchivioFile } from '../src/worker/ingestion/archivio-file.js';
+import { leggiConPdfjs } from '../src/worker/ingestion/testimoni.js';
 
 /**
- * La Fase 4 per intero, contro il progetto vero (tenant di collaudo): la
- * libreria che parte vuota, il caricamento di due template DOCX del
- * tenant coi segnaposto, il predefinito per formato e il nome che si cambia,
- * l’identità visiva col logo, l’anteprima PDF e l’esportazione
- * di un messaggio — sul layout di piattaforma e su template proprio. Lo Storage è una
- * mappa in memoria, il database è quello vero: RLS compresa.
+ * Template, intestazione ed esportazione contro il progetto vero (tenant di
+ * collaudo): la libreria che parte vuota, il caricamento dei template, il
+ * predefinito e il nome che si cambia, l'intestazione e il piè di pagina
+ * dell'agenzia (11/09/2026, al posto dell'identità visiva) con la sua
+ * immagine e l'anteprima, e l'esportazione di un messaggio col layout di
+ * VELIA e quell'intestazione. Lo Storage è una mappa in memoria, il
+ * database è quello vero: RLS compresa.
  */
 let config: Configurazione | undefined;
 try {
@@ -94,8 +97,47 @@ function multipart(file: Array<{ nome: string; contenuto: Buffer; tipo?: string 
   return { corpo: Buffer.concat(pezzi), contentType: `multipart/form-data; boundary=${confine}` };
 }
 
-const testoDocx = (byte: Buffer): string =>
-  new PizZip(byte).files['word/document.xml']!.asText().replace(/<[^>]+>/g, '');
+/** Il testo di una parte di un DOCX (corpo, intestazione, piè), senza tag. */
+const testoDocx = (byte: Buffer, parte: RegExp = /^word\/document\.xml$/): string => {
+  const zip = new PizZip(byte);
+  return Object.keys(zip.files)
+    .filter((n) => parte.test(n))
+    .map((n) => zip.files[n]!.asText().replace(/<[^>]+>/g, ''))
+    .join('\n');
+};
+
+/** Un'intestazione a due colonne col logo, e il piè col numero di pagina. */
+const intestazioneDiProva = (idLogo: string, nome = 'Agenzia di Collaudo') => ({
+  intestazione: {
+    type: 'doc',
+    content: [
+      {
+        type: 'colonne',
+        content: [
+          { type: 'colonna', content: [{ type: 'immagine', attrs: { id: idLogo, larghezza: 25, allineamento: 'left' } }] },
+          {
+            type: 'colonna',
+            content: [
+              { type: 'paragraph', attrs: { textAlign: 'right' }, content: [{ type: 'text', text: nome, marks: [{ type: 'bold' }] }] },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  piede: {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Via del Collaudo 1, Torino · pagina ' },
+          { type: 'campo', attrs: { nome: 'pagina' } },
+        ],
+      },
+    ],
+  },
+});
 
 describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
   const archivio = new ArchivioFinto();
@@ -109,7 +151,7 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
 
   const pulizia = async (): Promise<void> => {
     await poolDb().query(`delete from velia.template where tenant_id = $1`, [TENANT_COLLAUDO]);
-    await poolDb().query(`delete from velia.identita_visiva where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await poolDb().query(`delete from velia.intestazione where tenant_id = $1`, [TENANT_COLLAUDO]);
     await poolDb().query(`delete from velia.impostazioni_storico where tenant_id = $1`, [TENANT_COLLAUDO]);
     await poolDb().query(`delete from velia.conversazioni where tenant_id = $1`, [TENANT_COLLAUDO]);
   };
@@ -129,7 +171,7 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     });
 
   beforeAll(async () => {
-    app = creaApp({ logger: false, template: { archivio } });
+    app = creaApp({ logger: false, template: { archivio }, intestazione: { archivio } });
     await app.ready();
     await pulizia();
     tokenAdmin = await accedi(app, EMAIL_ADMIN);
@@ -176,7 +218,7 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(r.json<TemplateOutput[]>()).toEqual([]);
   });
 
-  it('carica un template DOCX, conforme allo schema dei segnaposto: il primo del formato è il predefinito', async () => {
+  it('carica un template DOCX: il primo del formato è il predefinito', async () => {
     const { corpo, contentType } = multipart([
       {
         nome: 'Carta intestata collaudo.docx',
@@ -283,40 +325,70 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
-  it("l'identità visiva: default finché non c'è, poi ciò che l'amministratore salva — col logo", async () => {
-    const vergine = await richiedi('GET', '/api/identita-visiva', tokenAdmin);
-    expect(vergine.json<IdentitaVisiva>().colorePrimario).toBe('#2f4b7c');
-    expect(vergine.json<IdentitaVisiva>().logoUrl).toBeUndefined();
+  it("l'intestazione: quella di partenza finché non c'è, poi ciò che l'amministratore salva, logo compreso", async () => {
+    const vergine = (await richiedi('GET', '/api/intestazione', tokenOperatore)).json<IntestazioneSalvata>();
+    expect(vergine.intestazione.content).toEqual([]);
+    expect(JSON.stringify(vergine.piede)).toContain('"nome":"pagina"');
+    expect(vergine.aggiornataIl).toBeUndefined();
 
-    const negato = await richiedi('PUT', '/api/identita-visiva', tokenOperatore, { firma: 'Io' });
+    const { corpo, contentType } = multipart([{ nome: 'logo.png', contenuto: PNG_LOGO, tipo: 'image/png' }]);
+    const negatoLogo = await app.inject({
+      method: 'POST',
+      url: '/api/intestazione/immagini',
+      headers: { authorization: `Bearer ${tokenOperatore}`, 'content-type': contentType },
+      payload: corpo,
+    });
+    expect(negatoLogo.statusCode).toBe(403);
+    const caricata = await app.inject({
+      method: 'POST',
+      url: '/api/intestazione/immagini',
+      headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType },
+      payload: corpo,
+    });
+    expect(caricata.statusCode).toBe(201);
+    const logo = caricata.json<ImmagineCaricata>();
+    expect(logo.id).toMatch(/^img-[0-9a-f]{12}\.png$/);
+    const servita = await richiedi('GET', logo.url, tokenOperatore);
+    expect(servita.headers['content-type']).toBe('image/png');
+    expect(servita.rawPayload.equals(PNG_LOGO)).toBe(true);
+
+    /* Un file che non è un'immagine si rifiuta dai byte, non dal nome. */
+    const finta = multipart([{ nome: 'logo.png', contenuto: Buffer.from('non sono un png'), tipo: 'image/png' }]);
+    const rifiutata = await app.inject({
+      method: 'POST',
+      url: '/api/intestazione/immagini',
+      headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': finta.contentType },
+      payload: finta.corpo,
+    });
+    expect(rifiutata.statusCode).toBe(415);
+
+    const negato = await richiedi('PUT', '/api/intestazione', tokenOperatore, intestazioneDiProva(logo.id));
     expect(negato.statusCode).toBe(403);
+    const senzaImmagine = await richiedi('PUT', '/api/intestazione', tokenAdmin, intestazioneDiProva('img-000000000000.png'));
+    expect(senzaImmagine.statusCode).toBe(400);
 
-    const salvata = await richiedi('PUT', '/api/identita-visiva', tokenAdmin, {
-      colorePrimario: '#aa3344',
-      recapiti: 'Via del Collaudo 1, Torino',
-      firma: 'Agenzia di Collaudo',
-    });
+    const salvata = await richiedi('PUT', '/api/intestazione', tokenAdmin, intestazioneDiProva(logo.id));
     expect(salvata.statusCode).toBe(200);
-    expect(salvata.json<IdentitaVisiva>().colorePrimario).toBe('#aa3344');
-
-    const logo = await richiedi('PUT', '/api/identita-visiva/logo', tokenAdmin, PNG_LOGO, {
-      'content-type': 'image/png',
-    });
-    expect(logo.statusCode).toBe(200);
-    expect(logo.json()).toEqual({ logoUrl: '/api/identita-visiva/logo' });
-
-    const riletta = await richiedi('GET', '/api/identita-visiva', tokenOperatore);
-    expect(riletta.json<IdentitaVisiva>()).toMatchObject({
-      colorePrimario: '#aa3344',
-      logoUrl: '/api/identita-visiva/logo',
-    });
-    const servito = await richiedi('GET', '/api/identita-visiva/logo', tokenOperatore);
-    expect(servito.statusCode).toBe(200);
-    expect(servito.headers['content-type']).toBe('image/png');
-    expect(servito.rawPayload.equals(PNG_LOGO)).toBe(true);
+    expect(salvata.json<IntestazioneSalvata>().aggiornataIl).toBeTruthy();
+    const riletta = (await richiedi('GET', '/api/intestazione', tokenOperatore)).json<IntestazioneSalvata>();
+    expect(riletta).toMatchObject(intestazioneDiProva(logo.id));
   });
 
-  it("l'esportazione per solo formato senza template: il layout di piattaforma, download vero", async () => {
+  it("l'anteprima è il motore vero sul contenuto che le si manda, anche non salvato", async () => {
+    const bozza = intestazioneDiProva('img-000000000000.png', 'Bozza non salvata');
+    const r =await richiedi('POST', '/api/intestazione/anteprima', tokenOperatore, bozza);
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toBe('application/pdf');
+    const pagine = await leggiConPdfjs(r.rawPayload);
+    expect(pagine[0]!.testo).toContain('Bozza non salvata');
+    expect(pagine[0]!.testo).toContain('Via del Collaudo 1, Torino · pagina 1');
+
+    const word = await richiedi('POST', '/api/intestazione/anteprima', tokenOperatore, { ...bozza, formato: 'docx' });
+    expect(word.headers['content-type']).toContain('wordprocessingml');
+    expect(testoDocx(word.rawPayload, /^word\/header\d*\.xml$/)).toContain('Bozza non salvata');
+  });
+
+  it("l'esportazione per formato: layout di VELIA e intestazione dell'agenzia, titolata come la conversazione", async () => {
     const r = await richiedi(
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
@@ -325,11 +397,13 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     );
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toBe('application/pdf');
-    expect(r.headers['content-disposition']).toBe('attachment; filename="documento-velia.pdf"');
-    expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(r.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.pdf"');
+    const [pagina] = await leggiConPdfjs(r.rawPayload);
+    expect(pagina!.testo).toContain('Agenzia di Collaudo');
+    expect(pagina!.testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
   });
 
-  it("l'esportazione sul template proprio (per id o come predefinito del formato): i segnaposto portano testo e fonti", async () => {
+  it("un template scelto dice solo il formato: esce un DOCX col layout di VELIA, l'intestazione e le fonti", async () => {
     for (const scelta of [{ templateId: templateProprio.id }, { formato: 'docx' }]) {
       const r = await richiedi(
         'POST',
@@ -339,25 +413,13 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
       );
       expect(r.statusCode, JSON.stringify(scelta)).toBe(200);
       expect(r.headers['content-type']).toContain('wordprocessingml');
-      expect(r.headers['content-disposition']).toBe('attachment; filename="carta-intestata.docx"');
+      expect(r.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.docx"');
       const testo = testoDocx(r.rawPayload);
       expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
-      expect(testo).toContain('Documento di prova — art. 12, p. 3');
+      expect(testo).toContain('Documento di prova - art. 12, p. 3');
       expect(testo).not.toContain('{{');
+      expect(testoDocx(r.rawPayload, /^word\/header\d*\.xml$/)).toContain('Agenzia di Collaudo');
     }
-
-    /* La carta intestata senza segnaposto: intestazione sua, testo e fonti in coda. */
-    const intestata = await richiedi(
-      'POST',
-      `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
-      tokenAdmin,
-      { templateId: templateSecondo.id },
-    );
-    expect(intestata.statusCode).toBe(200);
-    const testo = testoDocx(intestata.rawPayload);
-    expect(testo.indexOf('Agenzia di Collaudo — carta intestata')).toBeLessThan(testo.indexOf('La garanzia Furto'));
-    expect(testo).toContain('Documento di prova — art. 12, p. 3');
-    expect(testo).not.toContain('{{');
   });
 
   it("l'esportazione rifiuta ciò che non esiste o non si vede: 404, anche per l'operatore sull'altrui", async () => {
@@ -404,6 +466,6 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(azioni).toContain('creazione');
     expect(azioni).toContain('modifica');
     expect(azioni).toContain('eliminazione');
-    expect(r.rows.some((v) => v.descrizione.includes('identità visiva'))).toBe(true);
+    expect(r.rows.some((v) => v.descrizione.includes('intestazione'))).toBe(true);
   });
 });

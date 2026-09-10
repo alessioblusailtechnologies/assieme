@@ -123,21 +123,6 @@ export interface TemplateOutput {
   predefinito: boolean;
 }
 
-/**
- * RF-D-12: l'identità visiva del tenant, applicata dai template alla
- * generazione. Il logo viaggia come URL perché a caricarlo è una rotta
- * dedicata, come per i documenti.
- */
-export interface IdentitaVisiva {
-  logoUrl?: string;
-  /** Esadecimale, es. `#2f4b7c`. */
-  colorePrimario: string;
-  /** Recapiti in calce ai documenti generati: indirizzo, telefono, email. */
-  recapiti: string;
-  /** Firma in chiusura, es. `Assicurazioni Meridiana S.r.l.`. */
-  firma: string;
-}
-
 /** RF-F-02: credenziali per l'accesso via MCP, generabili e revocabili. */
 export interface CredenzialeMcp {
   id: Id;

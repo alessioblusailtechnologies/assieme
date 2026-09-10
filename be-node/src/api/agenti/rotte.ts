@@ -21,17 +21,11 @@ import { ErroreApi } from '../../contratto/errori.js';
 import { leggiDatoDiPiattaforma } from '../../dati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { fasceDelTenant } from '../../generazione/catalogo.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
-import {
-  fontiDaCitazioni,
-  identitaDelTenant,
-  templatePerId,
-  versoIdentitaGenerazione,
-  versoRisolto,
-  type RigaIdentita,
-} from '../template/rotte.js';
+import { fontiDaCitazioni, templatePerId, versoRisolto } from '../template/rotte.js';
 
 /**
  * Gli agenti (RF-E-01…E-13): le rotte che il FE chiama da
@@ -426,38 +420,39 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
     });
   });
 
-  /** Il documento sul template (RF-E-13), scaricabile dallo storico: la Fase 4 al lavoro. */
+  /**
+   * Il documento dell'esecuzione (RF-E-13), scaricabile dallo storico. Dal
+   * l'11/09/2026 il template scelto nell'agente dice solo il formato:
+   * l'impaginazione è quella di VELIA con l'intestazione dell'agenzia.
+   */
   app.get<{ Params: { id: string; eid: string } }>(
     '/api/agenti/:id/esecuzioni/:eid/documento',
     async (richiesta, risposta) => {
-      const { esecuzione, agente, template, identita } = await conIdentita(
-        poolDb(),
-        richiesta.identita,
-        async (client) => {
-          const esecuzione = await esecuzionePerId(client, richiesta.identita, richiesta.params.id, richiesta.params.eid);
-          return {
-            esecuzione,
-            agente: (await righeAgente(client, richiesta.identita.tenantId, richiesta.params.id))!,
-            template: esecuzione.template_output_id
-              ? await templatePerId(client, esecuzione.template_output_id)
-              : undefined,
-            identita: await identitaDelTenant(client, richiesta.identita.tenantId),
-          };
-        },
-      );
+      const { esecuzione, agente, template } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const esecuzione = await esecuzionePerId(client, richiesta.identita, richiesta.params.id, richiesta.params.eid);
+        return {
+          esecuzione,
+          agente: (await righeAgente(client, richiesta.identita.tenantId, richiesta.params.id))!,
+          template: esecuzione.template_output_id
+            ? await templatePerId(client, esecuzione.template_output_id)
+            : undefined,
+        };
+      });
       if (!template || !esecuzione.output || esecuzione.stato !== 'completata') {
         throw ErroreApi.nonTrovato('Questa esecuzione non ha prodotto un documento.');
       }
-      const risolto = versoRisolto(template);
-      const fileTemplate = await archivio().scarica(template.path_file);
-      const logo = await caricaLogo(identita);
+      const { formato } = versoRisolto(template);
+      const titolo = `${agente.nome} - esito`;
+      const fasce = await conIdentita(poolDb(), richiesta.identita, (client) =>
+        fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
+      );
       const file = await generaDocumento({
-        template: risolto,
-        fileTemplate,
-        titolo: `${agente.nome} - esito`,
+        formato,
+        nome: titolo,
+        titolo,
         testo: esecuzione.output,
         fonti: fontiDaCitazioni(esecuzione.citazioni),
-        identita: { ...versoIdentitaGenerazione(identita), ...(logo && { logo }) },
+        fasce,
       });
 
       const slug = agente.nome
@@ -467,19 +462,10 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       return risposta
         .header('Content-Type', file.contentType)
         .header('Content-Length', file.byte.length)
-        .header('Content-Disposition', `attachment; filename="${slug}-${esecuzione.id}.${template.formato}"`)
+        .header('Content-Disposition', `attachment; filename="${slug}-${esecuzione.id}.${formato}"`)
         .send(file.byte);
     },
   );
-
-  async function caricaLogo(riga: RigaIdentita): Promise<{ byte: Buffer; tipo: string } | undefined> {
-    if (!riga.logo_path || !riga.logo_tipo) return undefined;
-    try {
-      return { byte: await archivio().scarica(riga.logo_path), tipo: riga.logo_tipo };
-    } catch {
-      return undefined;
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
