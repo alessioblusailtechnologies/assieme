@@ -220,6 +220,35 @@
   cursor: default;
 }
 
+/* Il livello: una parola e una freccia, sottovoce come gli altri strumenti. */
+.campo__livello {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 36px;
+  padding: 0 var(--sp-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.campo__livello:hover,
+.campo__livello:focus-visible {
+  color: var(--c-text);
+  background: var(--c-page-alt);
+}
+
+/* Diverso da quello dell'agenzia, e solo per questa chat: deve vedersi. */
+.campo__livello.is-temporaneo {
+  color: var(--c-accent);
+  background: var(--c-accent-soft);
+}
+
 /* Il microfono sta a destra, attaccato a Invia: si parla e si manda. */
 .campo__strumenti {
   display: inline-flex;
@@ -258,6 +287,10 @@
   .campo__allega,
   .campo__invia {
     width: 44px;
+    height: 44px;
+  }
+
+  .campo__livello {
     height: 44px;
   }
 

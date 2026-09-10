@@ -47,6 +47,7 @@ import {
   type FileRicevuto,
 } from '../archivio-privato/rotte.js';
 import { estensionePerFormato, riconosciFormato } from '../archivio-privato/formati.js';
+import { livelliDellaPiattaforma } from '../modelli/rotte.js';
 import { ELENCO_FORMATI } from '../../contratto/documenti-privati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
@@ -591,6 +592,19 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     const { testo, documentiReferenziati, esportazione } = esito.data;
     const { tenantId, utenteId } = richiesta.identita;
 
+    /* Il livello scelto nel composer vale per questo messaggio. Si controlla
+       prima di scrivere la domanda, che altrimenti resterebbe senza risposta.
+       L'ospite di una chat cliente non sceglie: per lui vale quello
+       dell'agenzia, e un campo mandato a mano si ignora. */
+    const livello = richiesta.identita.ruolo === 'ospite' ? undefined : esito.data.livello;
+    if (livello) {
+      const scelto = livelliDellaPiattaforma().find((l) => l.id === livello);
+      if (!scelto) throw ErroreApi.datiNonValidi('Livello inesistente.');
+      if (!scelto.disponibile) {
+        throw ErroreApi.conflitto('NON_DISPONIBILE', `Il livello ${scelto.nome} non è ancora disponibile sulla piattaforma.`);
+      }
+    }
+
     const { messaggioUtenteId, titoloProvvisorio } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
       if (esistente.autore_id !== utenteId) {
@@ -655,6 +669,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
         ...(titoloProvvisorio && { titoloProvvisorio }),
         /* L'Esportazione elaborata: il job produce un documento, non una risposta. */
         ...(esportazione && { esportazione }),
+        ...(livello && { livello }),
       },
       { tenantId, utenteId },
     );

@@ -83,6 +83,34 @@ describe('ChatStore', () => {
     return http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/cnv-1/messaggi');
   }
 
+  it('il livello scelto in chat viaggia col messaggio, e si azzera cambiando conversazione', async () => {
+    await avvia();
+    const livello = (id: string, nome: string) => ({
+      id,
+      nome,
+      descrizione: '',
+      adeguatezzaDocumentale: 'alta' as const,
+      disponibile: true,
+    });
+    http.expectOne('/api/modelli').flush([livello('livello-medio', 'Medio'), livello('livello-boost', 'Boost')]);
+    http.expectOne('/api/modelli/attivo').flush(livello('livello-boost', 'Boost'));
+    await microtask();
+    expect(store.livelloInUso()?.nome).toBe('Boost');
+
+    store.scegliLivello('livello-medio');
+    expect(store.livelloInUso()?.nome).toBe('Medio');
+    const stream = await invia('Domanda sul medio');
+    expect(stream.request.body).toMatchObject({ testo: 'Domanda sul medio', livello: 'livello-medio' });
+
+    /* Scegliere quello dell'agenzia è tornarci: niente livello nel messaggio. */
+    store.scegliLivello('livello-boost');
+    expect(store.livelloScelto()).toBeUndefined();
+
+    store.scegliLivello('livello-medio');
+    store.apri('cnv-2');
+    expect(store.livelloScelto()).toBeUndefined();
+  });
+
   it('mostra subito il messaggio inviato, prima di ogni risposta', async () => {
     await avvia();
     await invia('Che franchigie prevede?');

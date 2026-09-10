@@ -12,6 +12,7 @@ import {
   Id,
   IsoDateTime,
   Messaggio,
+  ModelloAI,
   ModoAllegato,
   Passo,
   PropostaArchivio,
@@ -23,6 +24,7 @@ import {
 import { TokenStore } from '@core/auth/token-store';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
+import { ImpostazioniApi } from '@core/api/impostazioni-api';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import {
@@ -198,6 +200,46 @@ export class ChatStore {
   /** Le voci dell'«Esporta come»: Word, PDF, testo semplice. */
   readonly scelteEsportazione = SCELTE_ESPORTA_COME;
 
+  // --- Il livello per questa chat (10/09/2026) ------------------------------
+
+  /*
+   * Il livello dell'agenzia si sceglie nelle Impostazioni; qui lo si cambia
+   * per la chat che si ha davanti, senza toccare quello. La scelta non si
+   * salva da nessuna parte: viaggia con ogni messaggio e si azzera cambiando
+   * conversazione. L'ospite di una chat cliente non sceglie niente, e queste
+   * rotte non le chiede nemmeno.
+   */
+  private readonly apiImpostazioni = inject(ImpostazioniApi);
+
+  private readonly risorsaLivelli = httpResource<ModelloAI[]>(() =>
+    this.token.tokenOspite() ? undefined : this.apiImpostazioni.urlModelli(),
+  );
+  private readonly risorsaLivelloAgenzia = httpResource<ModelloAI>(() =>
+    this.token.tokenOspite() ? undefined : this.apiImpostazioni.urlModelloAttivo(),
+  );
+
+  /** I livelli che si possono scegliere, nell'ordine del server. */
+  readonly livelli = computed(() =>
+    this.risorsaLivelli.hasValue() ? (this.risorsaLivelli.value() ?? []).filter((l) => l.disponibile) : [],
+  );
+
+  readonly livelloAgenzia = computed(() =>
+    this.risorsaLivelloAgenzia.hasValue() ? this.risorsaLivelloAgenzia.value() : undefined,
+  );
+
+  /** Il livello scelto per questa chat; undefined = quello dell'agenzia. */
+  readonly livelloScelto = signal<Id | undefined>(undefined);
+
+  readonly livelloInUso = computed(() => {
+    const id = this.livelloScelto() ?? this.livelloAgenzia()?.id;
+    return this.livelli().find((l) => l.id === id) ?? this.livelloAgenzia();
+  });
+
+  /** Tornare al livello dell'agenzia è sceglierlo: non resta una scelta «uguale» in giro. */
+  scegliLivello(id: Id): void {
+    this.livelloScelto.set(id === this.livelloAgenzia()?.id ? undefined : id);
+  }
+
   /** Esporta una risposta nel formato scelto e avvia il download, col titolo della conversazione come nome. */
   esporta(messaggioId: Id, scelta: SceltaEsportazione): void {
     const id = this.idAttiva();
@@ -360,6 +402,8 @@ export class ChatStore {
   apri(id: Id | undefined): void {
     if (id === this.idAttiva()) return;
     this.idAttiva.set(id);
+    /* Il livello scelto in chat valeva per quella chat. */
+    this.livelloScelto.set(undefined);
     this.messaggiCaricati.set(undefined);
     this.erroreMessaggi.set(undefined);
     if (id) {
@@ -820,11 +864,13 @@ export class ChatStore {
     this.streamAttivo.set(stream);
     this.storico.segnalaRisposta(id, true);
 
+    const livello = this.livelloScelto();
     this.sottoscrizioneStream = this.api
       .invia(id, {
         testo,
         documentiReferenziati: riferimenti.map((r) => r.id),
         ...(esportazione && { esportazione }),
+        ...(livello && { livello }),
       })
       .subscribe({
         next: (evento) => this.applica(evento),

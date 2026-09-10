@@ -5,17 +5,17 @@ import { Id, IsoDateTime } from './comune';
  */
 
 /**
- * Modello selezionabile.
+ * Livello selezionabile (Avanzato, Boost).
  *
  * RF-D-02 impone che l'architettura astragga il provider, così da poter
  * aggiungere o sostituire modelli senza toccare i moduli funzionali — è il
- * presidio contro la dipendenza da fornitori terzi (Vincolo §5.4). Per il
- * front-end significa una cosa sola: **nessun nome di provider compare mai
- * nel codice**, arrivano tutti da qui.
+ * presidio contro la dipendenza da fornitori terzi (Vincolo §5.4). Dal
+ * 10/09/2026 l'agenzia sceglie un livello e il modello che lo serve resta
+ * una decisione del backend: al front-end non arriva né il suo nome né
+ * quello del provider.
  */
 export interface ModelloAI {
   id: Id;
-  provider: string;
   nome: string;
   /** RF-D-03: informazioni sintetiche utili alla scelta. */
   descrizione: string;

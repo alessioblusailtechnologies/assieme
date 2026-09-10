@@ -3,10 +3,12 @@ import type { FastifyInstance } from 'fastify';
 import { configurazione } from '../../config.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import {
-  catalogoModelli,
-  modelloAttivo,
+  catalogoLivelli,
+  livelloAttivo,
+  modelloDelTenant,
   schemaSceltaModello,
-  versoModello,
+  versoPubblico,
+  type Livello,
 } from '../../contratto/modelli.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
@@ -14,8 +16,8 @@ import { richiediAmministratore } from '../plugins/auth.js';
 import { registraStorico } from '../template/rotte.js';
 
 /**
- * Modello e provider (RF-D-02/03): il catalogo e il modello attivo — che È
- * quello con cui il tenant lavora davvero: la sua scelta se c'è
+ * Modello e provider (RF-D-02/03): i livelli e quello attivo, che È il
+ * livello con cui il tenant lavora davvero: la sua scelta se c'è ancora
  * (`velia.tenant.modello_motore`, letta dal worker a ogni job), altrimenti
  * il default di piattaforma (`MODELLO_MOTORE`).
  *
@@ -23,55 +25,51 @@ import { registraStorico } from '../template/rotte.js';
  * amministratore: la riga di tenant porta i limiti di piano, e una policy
  * di update la consegnerebbe a chiunque via PostgREST.
  */
-export function registraRotteModelli(app: FastifyInstance): void {
-  /** RF-D-03: i modelli offerti dalla piattaforma, disponibili e non. */
-  /** Le voci HostYourAI (RF-D-03) sono selezionabili solo con la chiave in .env: il catalogo dice la verità. */
-  const catalogo = () =>
-    catalogoModelli({
-      hostyourai: Boolean(configurazione().HOSTYOURAI_API_KEY),
-      aki: Boolean(configurazione().AKI_API_KEY),
-      mistral: Boolean(configurazione().MISTRAL_API_KEY),
-      gemini: Boolean(configurazione().GEMINI_API_KEY),
-    });
+/**
+ * RF-D-03: i livelli come stanno su questa piattaforma. Uno servito da un
+ * fornitore terzo si sceglie solo con la sua chiave in .env: vale per la
+ * scelta del tenant e per quella fatta in chat per un messaggio.
+ */
+export function livelliDellaPiattaforma(): Livello[] {
+  const c = configurazione();
+  return catalogoLivelli({
+    hostyourai: Boolean(c.HOSTYOURAI_API_KEY),
+    aki: Boolean(c.AKI_API_KEY),
+    mistral: Boolean(c.MISTRAL_API_KEY),
+    gemini: Boolean(c.GEMINI_API_KEY),
+  });
+}
 
-  app.get('/api/modelli', () => catalogo().map(versoModello));
+export function registraRotteModelli(app: FastifyInstance): void {
+  const catalogo = livelliDellaPiattaforma;
+
+  app.get('/api/modelli', () => catalogo().map(versoPubblico));
 
   app.get('/api/modelli/attivo', async (richiesta) => {
-    const scelta = await sceltaDelTenant(richiesta.identita.tenantId);
-    return versoModello(modelloAttivo(scelta ?? configurazione().MODELLO_MOTORE));
+    const scelta = modelloDelTenant(await sceltaDelTenant(richiesta.identita.tenantId));
+    return versoPubblico(livelloAttivo(scelta ?? configurazione().MODELLO_MOTORE, catalogo()));
   });
 
   /** RF-D-02: la scelta vale per tutto il tenant. Solo amministratore. */
   app.put('/api/modelli/attivo', async (richiesta) => {
     richiediAmministratore(richiesta);
     const esito = schemaSceltaModello.safeParse(richiesta.body ?? {});
-    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il modello da attivare.');
+    if (!esito.success) throw ErroreApi.datiNonValidi('Indica il livello da attivare.');
 
-    const modello = catalogo().find((m) => m.id === esito.data.modelloId);
-    if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
-    if (!modello.disponibile || !modello.sdk) {
-      throw ErroreApi.conflitto(
-        'NON_DISPONIBILE',
-        modello.fornitore === 'hostyourai'
-          ? `${modello.nome} richiede la chiave HostYourAI della piattaforma, non ancora configurata.`
-          : `${modello.nome} non è ancora disponibile sulla piattaforma.`,
-      );
+    const livello = catalogo().find((l) => l.id === esito.data.modelloId);
+    if (!livello) throw ErroreApi.nonTrovato('Livello inesistente.');
+    if (!livello.disponibile) {
+      throw ErroreApi.conflitto('NON_DISPONIBILE', `Il livello ${livello.nome} non è ancora disponibile sulla piattaforma.`);
     }
 
     await poolDb().query(`update velia.tenant set modello_motore = $2 where id = $1`, [
       richiesta.identita.tenantId,
-      modello.sdk,
+      livello.sdk,
     ]);
     await conIdentita(poolDb(), richiesta.identita, (client) =>
-      registraStorico(
-        client,
-        richiesta.identita,
-        'modifica',
-        'modello',
-        `Scelto il modello ${modello.nome} (${modello.provider})`,
-      ),
+      registraStorico(client, richiesta.identita, 'modifica', 'modello', `Scelto il livello ${livello.nome}`),
     );
-    return versoModello(modello);
+    return versoPubblico(livello);
   });
 }
 

@@ -12,7 +12,8 @@ import { avviaAdattatoreOpenAI, type AdattatoreOpenAI, type ProfiloFornitore } f
  *    l'adattatore in-process (`adattatore-mistral.ts`), che vive sul
  *    localhost del worker e traduce.
  *
- * Un id fuori catalogo (esperimenti via .env) si tratta come Anthropic.
+ * Un id fuori dal banco dei fornitori terzi (`MODELLI_SERVITI`: tutti i
+ * Claude, e gli esperimenti via .env) si tratta come Anthropic.
  */
 
 export interface ChiaviFornitori {
@@ -53,7 +54,7 @@ export async function ambienteModello(
     return {
       env: ambientePuntato(ambienteProcesso, gateway.baseUrl, gateway.chiave),
       terzo: true,
-      ...(voce.tariffa !== undefined && { tariffa: voce.tariffa }),
+      tariffa: voce.tariffa,
       ...(voce.fornitore === 'aki' && { usiInclusivi: true }),
     };
   }
@@ -69,7 +70,7 @@ export async function ambienteModello(
     return {
       env: ambientePuntato(ambienteProcesso, adattatore.url, adattatore.token),
       terzo: true,
-      ...(voce.tariffa !== undefined && { tariffa: voce.tariffa }),
+      tariffa: voce.tariffa,
     };
   }
   return { terzo: false };

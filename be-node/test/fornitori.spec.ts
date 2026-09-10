@@ -1,13 +1,13 @@
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { catalogoModelli, versoModello } from '../src/contratto/modelli.js';
+import { catalogoLivelli, LIVELLI, versoPubblico, vocePerSdk } from '../src/contratto/modelli.js';
 import { ambienteModello, costoATariffa, dimenticaAdattatori } from '../src/worker/motore/fornitori.js';
 
 /**
  * I fornitori oltre ad Anthropic (RF-D-03): la sessione del motore resta
- * una, cambiano endpoint e chiave nell'ambiente del processo; il catalogo
- * mostra una voce come selezionabile solo con la chiave del suo fornitore;
- * il costo si calcola a tariffa perché l'SDK non conosce quei listini.
+ * una, cambiano endpoint e chiave nell'ambiente del processo; un livello si
+ * sceglie solo con la chiave del fornitore che lo serve; il costo si calcola
+ * a tariffa perché l'SDK non conosce quei listini.
  */
 const chiavi = {
   hostyourai: { chiave: 'hyai-prova', baseUrl: 'https://hostyourai.com' },
@@ -88,27 +88,30 @@ describe('l’ambiente della sessione per fornitore', () => {
   });
 });
 
-describe('il catalogo con e senza chiave', () => {
-  it('una voce di fornitore terzo è selezionabile solo con la sua chiave', () => {
-    const senza = catalogoModelli({ hostyourai: false, aki: false, mistral: false, gemini: false });
-    const con = catalogoModelli({ hostyourai: true, aki: true, mistral: true, gemini: true });
-    expect(senza.filter((m) => m.fornitore === 'hostyourai').every((m) => !m.disponibile)).toBe(true);
-    expect(senza.filter((m) => m.fornitore === 'mistral').every((m) => !m.disponibile)).toBe(true);
-    expect(con.filter((m) => m.fornitore === 'hostyourai').every((m) => m.disponibile)).toBe(true);
-    expect(con.filter((m) => m.fornitore === 'mistral').every((m) => m.disponibile)).toBe(true);
-    expect(senza.filter((m) => m.fornitore === 'anthropic').every((m) => m.disponibile)).toBe(true);
+describe('i livelli con e senza chiave', () => {
+  const tutte = { hostyourai: true, aki: true, mistral: true, gemini: true };
+  const nessuna = { hostyourai: false, aki: false, mistral: false, gemini: false };
+  const disponibili = (chiavi: typeof tutte) =>
+    catalogoLivelli(chiavi)
+      .filter((l) => l.disponibile)
+      .map((l) => l.id);
+
+  it('un livello servito da un fornitore terzo è selezionabile solo con la sua chiave', () => {
+    expect(disponibili(tutte)).toEqual(['livello-medio', 'livello-avanzato', 'livello-boost']);
+    /* Medio e Boost sono serviti da Anthropic: non dipendono da nessuna chiave in più. */
+    expect(disponibili(nessuna)).toEqual(['livello-medio', 'livello-boost']);
     /* Le chiavi non si fanno da spalla: quella di uno non alza l'altro. */
-    const soloMistral = catalogoModelli({ hostyourai: false, aki: false, mistral: true, gemini: false });
-    expect(soloMistral.find((m) => m.id === 'mod-glm-5-2')?.disponibile).toBe(false);
-    expect(soloMistral.find((m) => m.id === 'mod-mistral-large-3')?.disponibile).toBe(true);
+    expect(disponibili({ ...tutte, aki: false })).toEqual(['livello-medio', 'livello-boost']);
   });
 
-  it('la forma pubblica non espone fornitore né tariffa', () => {
-    const glm = catalogoModelli({ hostyourai: true, aki: true, mistral: true, gemini: true }).find((m) => m.id === 'mod-glm-5-2')!;
-    const pubblico = versoModello(glm) as unknown as Record<string, unknown>;
-    expect(pubblico).not.toHaveProperty('sdk');
-    expect(pubblico).not.toHaveProperty('fornitore');
-    expect(pubblico).not.toHaveProperty('tariffa');
-    expect(pubblico['provider']).toBe('HostYourAI (UE)');
+  it('ogni livello di un fornitore terzo sta nel banco, altrimenti partirebbe verso Anthropic', () => {
+    for (const livello of LIVELLI.filter((l) => !l.sdk.startsWith('claude-'))) {
+      expect(vocePerSdk(livello.sdk), livello.nome).toBeDefined();
+    }
+  });
+
+  it('la forma pubblica non espone il modello', () => {
+    const pubblico = versoPubblico(catalogoLivelli(tutte)[0]!) as unknown as Record<string, unknown>;
+    expect(Object.keys(pubblico).sort()).toEqual(['adeguatezzaDocumentale', 'descrizione', 'disponibile', 'id', 'nome']);
   });
 });

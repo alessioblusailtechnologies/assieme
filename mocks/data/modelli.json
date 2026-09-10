@@ -1,92 +1,23 @@
 [
   {
-    "id": "mod-001",
-    "provider": "Anthropic",
-    "nome": "Claude Opus 5",
-    "descrizione": "Il modello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È il modello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.",
+    "id": "livello-medio",
+    "nome": "Medio",
+    "descrizione": "Circa metà dei tempi e dei costi di Boost, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.",
     "adeguatezzaDocumentale": "alta",
-    "notaCosti": "Incluso nel canone del piano Agenzia.",
     "disponibile": true
   },
   {
-    "id": "mod-002",
-    "provider": "Anthropic",
-    "nome": "Claude Sonnet 5",
-    "descrizione": "Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.",
+    "id": "livello-avanzato",
+    "nome": "Avanzato",
+    "descrizione": "Elaborazione su GPU in datacenter tedeschi certificati, senza grandi cloud di mezzo: i documenti non lasciano l’UE, restano in memoria volatile e non vengono registrati né usati per addestrare. Risposte più asciutte, con meno citazioni per risposta rispetto a Boost.",
+    "adeguatezzaDocumentale": "media",
+    "disponibile": true
+  },
+  {
+    "id": "livello-boost",
+    "nome": "Boost",
+    "descrizione": "Il livello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È quello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.",
     "adeguatezzaDocumentale": "alta",
-    "notaCosti": "Riduce il consumo del piano di circa la metà.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-003",
-    "provider": "Anthropic",
-    "nome": "Claude Haiku 4.5",
-    "descrizione": "Rapido ed economico, adatto a domande puntuali e agli agenti ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Riduce il consumo del piano di circa due terzi.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-006",
-    "provider": "HostYourAI (UE)",
-    "nome": "GLM 5.2",
-    "descrizione": "Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Tariffa HostYourAI: circa 1,7 € per milione di token letti e 5,2 € per milione scritti.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-007",
-    "provider": "HostYourAI (UE)",
-    "nome": "Kimi K3",
-    "descrizione": "Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Tariffa HostYourAI: circa 3,5 € per milione di token letti e 17,3 € per milione scritti.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-008",
-    "provider": "HostYourAI (UE)",
-    "nome": "Mistral Medium 3.5",
-    "descrizione": "Il modello del francese Mistral, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 128k token, il più corto del catalogo. Nel confronto sull’Archivio Pubblico risponde nel merito e cita fonti vere, ma apre meno documenti e porta un terzo delle citazioni di Claude Opus 5.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Tariffa HostYourAI: circa 1,7 € per milione di token letti e 8,6 € per milione scritti. Il gateway non riusa il contesto fra un passo e l’altro: sulle analisi lunghe la spesa arriva vicina a quella di Claude Opus 5.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-009",
-    "provider": "AKI.IO (DE)",
-    "nome": "GLM 5.3",
-    "descrizione": "Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro — che su questo motore è la voce che decide il conto.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Tariffa AKI.IO: 1,00 € per milione di token letti (0,25 € se già in cache) e 3,50 € per milione scritti.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-010",
-    "provider": "Google",
-    "nome": "Gemini 3.5 Flash",
-    "descrizione": "Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa — ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.",
-    "adeguatezzaDocumentale": "media",
-    "notaCosti": "Tariffa Google: 1,50 $ per milione di token letti (0,15 $ se già in cache) e 9,00 $ per milione scritti, ragionamento compreso.",
-    "disponibile": true
-  },
-  {
-    "id": "mod-004",
-    "provider": "OpenAI",
-    "nome": "GPT-5.2",
-    "descrizione": "Alternativa di pari livello per l'analisi documentale, con uno stile di risposta più sintetico. In valutazione per l'integrazione multi-provider.",
-    "adeguatezzaDocumentale": "alta",
-    "notaCosti": "In valutazione, condizioni da definire.",
-    "disponibile": false
-  },
-  {
-    "id": "mod-005",
-    "provider": "Mistral (UE)",
-    "nome": "Mistral Large 3",
-    "descrizione": "Il modello di punta di Mistral, chiamato direttamente sull’API francese: dati trattati nell’UE, contesto da 262k token e listino una frazione degli altri. Nel confronto sull’Archivio Pubblico è il più veloce e il più economico di molto, ma apre pochi documenti e su due domande su sei si è fermato a chiedere invece di rispondere: va scelto da chi mette costo e residenza davanti alla completezza.",
-    "adeguatezzaDocumentale": "bassa",
-    "notaCosti": "Tariffa Mistral: 0,50 $ per milione di token letti (0,05 $ se già in cache) e 1,50 $ per milione scritti.",
     "disponibile": true
   }
 ]

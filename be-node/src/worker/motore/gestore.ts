@@ -7,6 +7,7 @@ import type {
   Provenienza,
   PropostaArchivio,
 } from '../../contratto/conversazioni.js';
+import { modelloDelLivello, modelloDelTenant, servitoDaAnthropic } from '../../contratto/modelli.js';
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
 import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
 import type { Job } from '../coda.js';
@@ -88,6 +89,8 @@ interface PayloadInterrogazione {
   titoloProvvisorio?: string;
   /** L'Esportazione elaborata chiesta dal pulsante: il job produce un documento, non una risposta. */
   esportazione?: EsportazioneElaborata;
+  /** Il livello scelto nel composer per questo messaggio: vince su quello del tenant, solo qui. */
+  livello?: string;
 }
 
 interface RigaConversazione {
@@ -100,6 +103,8 @@ interface RigaConversazione {
   memoria_attiva: boolean;
   /** La sessione SDK dell'ultima risposta, da riprendere; null = mai risposto (o ripresa spenta). */
   sessione_sdk: string | null;
+  /** Il modello chiesto per quella sessione; null = il default di piattaforma. */
+  sessione_sdk_modello: string | null;
   /** La chat cliente da cui nasce la conversazione, se è una chat cliente (07/09/2026). */
   chat_cliente_id: string | null;
   /** Le istruzioni che l'agenzia ha scritto per quella chat. */
@@ -144,7 +149,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     };
 
     const conv = await db.query<RigaConversazione>(
-      `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, t.modello_motore, t.memoria_attiva,
+      `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, c.sessione_sdk_modello,
+              t.modello_motore, t.memoria_attiva,
               c.chat_cliente_id, k.istruzioni as chat_istruzioni
        from velia.conversazioni c
        join velia.tenant t on t.id = c.tenant_id
@@ -155,6 +161,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     const conversazione = conv.rows[0];
     if (!conversazione) throw new ErroreNonRitentabile(`conversazione ${payload.conversazioneId} inesistente`);
     const { tenant_id: tenantId } = conversazione;
+    /* Il livello scelto nel composer vince su quello del tenant, per questo
+       messaggio soltanto; undefined = il default di piattaforma. */
+    const modelloTurno = modelloDelLivello(payload.livello) ?? modelloDelTenant(conversazione.modello_motore);
     const origineConsumi = conversazione.chat_cliente_id ? ('chat-cliente' as const) : ('app' as const);
 
     const annullato = async (): Promise<boolean> => {
@@ -191,9 +200,17 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       });
 
       /* Si riprende solo se la trascrizione è ancora su questo disco (altro
-         host, disco ripulito: no): il job pieno resta il piano B, sempre. */
+         host, disco ripulito: no) e se è nata con lo stesso modello: da
+         quando il livello si cambia anche dal composer, una sessione nata su
+         un fornitore riletta da un altro si porta dietro firme di
+         ragionamento che quello non riconosce, e la cache comunque non vale.
+         Il job pieno resta il piano B, sempre. */
+      const stessoModello = (conversazione.sessione_sdk_modello ?? undefined) === modelloTurno;
       const riprendi =
-        dip.ripresaSessione && conversazione.sessione_sdk && (await dip.ripresaSessione.esiste(conversazione.sessione_sdk))
+        dip.ripresaSessione &&
+        conversazione.sessione_sdk &&
+        stessoModello &&
+        (await dip.ripresaSessione.esiste(conversazione.sessione_sdk))
           ? conversazione.sessione_sdk
           : undefined;
 
@@ -266,7 +283,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 istruzioni: r.istruzioni,
                 contenuto: r.contenuto,
                 titolo: r.titolo,
-                modello: conversazione.modello_motore ?? undefined,
+                /* La sandbox ha solo la chiave Anthropic: un livello servito
+                   da un fornitore terzo lì usa il modello suo. */
+                modello: modelloTurno && servitoDaAnthropic(modelloTurno) ? modelloTurno : undefined,
               },
             );
             await registraConsumi(db, tenantId, job.id, e.esito, origineConsumi);
@@ -415,7 +434,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       const richiestaBase = {
         directory: workspace.directory,
         titoloPer: (path: string) => workspace!.perPath.get(path)?.titolo,
-        ...(conversazione.modello_motore && { modello: conversazione.modello_motore }),
+        ...(modelloTurno && { modello: modelloTurno }),
         promptSistema: perCliente
           ? promptSistemaCliente(conversazione.chat_istruzioni)
           : promptSistema(dna, {
@@ -463,10 +482,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         esito = await dip.motore.interroga(richiestaPiena(), osservatore);
       }
       if (esito.sessioneId && esito.terminato !== 'errore') {
-        await db.query(`update velia.conversazioni set sessione_sdk = $2, sessione_sdk_al = now() where id = $1`, [
-          payload.conversazioneId,
-          esito.sessioneId,
-        ]);
+        await db.query(
+          `update velia.conversazioni set sessione_sdk = $2, sessione_sdk_modello = $3, sessione_sdk_al = now() where id = $1`,
+          [payload.conversazioneId, esito.sessioneId, modelloTurno ?? null],
+        );
       }
 
       if (esito.terminato === 'annullato') {

@@ -258,6 +258,30 @@ export class Composer {
     },
   ];
 
+  /**
+   * I livelli, con quello in uso e quello dell'agenzia segnati a destra:
+   * scegliere quello dell'agenzia è il modo di tornarci.
+   */
+  protected readonly vociLivelli = computed<VoceMenu[]>(() => {
+    const inUso = this.store.livelloInUso()?.id;
+    const agenzia = this.store.livelloAgenzia()?.id;
+    return this.store.livelli().map((l) => ({
+      etichetta: l.nome,
+      ...(l.id === inUso ? { dettaglio: 'in uso' } : l.id === agenzia ? { dettaglio: 'agenzia' } : {}),
+      azione: () => {
+        this.store.scegliLivello(l.id);
+        this.editor.focus();
+      },
+    }));
+  });
+
+  protected readonly titoloLivello = computed(() => {
+    const agenzia = this.store.livelloAgenzia()?.nome ?? '';
+    return this.store.livelloScelto()
+      ? `Livello solo per questa chat: quello dell'agenzia è ${agenzia}`
+      : `Livello dell'agenzia: puoi cambiarlo solo per questa chat`;
+  });
+
   private scegliFile(modo: ModoAllegato): void {
     this.modoScelto = modo;
     this.campoFile().nativeElement.click();

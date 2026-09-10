@@ -428,6 +428,57 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect(r.promptUtente).toContain('E l’incendio?');
   });
 
+  it('il livello scelto nel composer vale per il messaggio, e una sessione si riprende solo col modello con cui è nata', async () => {
+    const risposta = (domanda: string) =>
+      `${domanda} → ok.\n\n${MARCATORE_CITAZIONI}\n${JSON.stringify({ citazioni: [], provenienze: [], nonSupportato: true })}\n\`\`\``;
+    motore.copione = (r) => Promise.resolve({ testo: risposta(r.promptUtente.split('\n').at(-1) ?? '') });
+    const invia = async (testo: string, livello?: string) => {
+      const stream = richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, {
+        testo,
+        documentiReferenziati: [],
+        ...(livello && { livello }),
+      });
+      await aspettaJob(testo);
+      await lavoraTutto();
+      expect((await stream).statusCode).toBe(200);
+      return motore.richieste.at(-1)!;
+    };
+    /* La trascrizione della sessione precedente, nata sul default, è ancora sul disco. */
+    trascrizioni.add('sessione-finta');
+
+    /* Medio per un messaggio: il modello è il suo, e la sessione del default non si riprende. */
+    let r = await invia('Passo al medio', 'livello-medio');
+    expect(r.modello).toBe('claude-sonnet-5');
+    expect(r.sessione).toEqual({ persisti: true });
+    expect(r.promptUtente).toContain('Conversazione finora');
+
+    /* Ancora Medio: la sessione è nata col suo modello, si riprende. */
+    r = await invia('Resto sul medio', 'livello-medio');
+    expect(r.modello).toBe('claude-sonnet-5');
+    expect(r.sessione).toEqual({ persisti: true, riprendi: 'sessione-finta' });
+
+    /* Di nuovo il livello dell'agenzia: la sessione è nata su Medio, si riparte pieni. */
+    r = await invia('Torno al livello dell’agenzia');
+    expect(r.modello).toBeUndefined();
+    expect(r.sessione).toEqual({ persisti: true });
+    const sess = await pool().query<{ sessione_sdk_modello: string | null }>(
+      `select sessione_sdk_modello from velia.conversazioni where id = $1`,
+      [convId],
+    );
+    expect(sess.rows[0]?.sessione_sdk_modello).toBeNull();
+
+    /* Un livello che non c'è: 400 prima di scrivere, la domanda non resta orfana. */
+    const prima = (await richiedi('GET', `/api/conversazioni/${convId}/messaggi`, tokenAdmin)).json<Messaggio[]>().length;
+    const ignoto = await richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, {
+      testo: 'Con un livello inventato',
+      documentiReferenziati: [],
+      livello: 'livello-inventato',
+    });
+    expect(ignoto.statusCode).toBe(400);
+    expect((await richiedi('GET', `/api/conversazioni/${convId}/messaggi`, tokenAdmin)).json<Messaggio[]>()).toHaveLength(prima);
+    trascrizioni.clear();
+  });
+
   it('messaggio vuoto → 400; una risposta con citazioni inventate → evento errore, niente messaggio, job fallito', async () => {
     expect((await richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: '  ', documentiReferenziati: [] })).statusCode).toBe(400);
 

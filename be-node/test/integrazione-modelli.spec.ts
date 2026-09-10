@@ -19,10 +19,13 @@ try {
   config = undefined;
 }
 
+/* Si sceglie Avanzato, che si può scegliere solo con la chiave AKI: senza,
+   la PUT risponderebbe 409 e il test non proverebbe la scrittura. */
 const pronto = Boolean(
   config?.SUPABASE_JWT_SECRET &&
     config.DATABASE_URL &&
-    !config.DATABASE_URL.includes('PASSWORD_MANCANTE'),
+    !config.DATABASE_URL.includes('PASSWORD_MANCANTE') &&
+    config.AKI_API_KEY,
 );
 
 const PASSWORD_DEMO = 'velia-demo-2026!';
@@ -64,37 +67,36 @@ describe.skipIf(!pronto)('scelta del modello col progetto Supabase', () => {
       url: '/api/modelli/attivo',
       headers: { authorization: `Bearer ${tokenAdmin}` },
     });
-    expect(senzaScelta.json<ModelloAI>().nome).toBe('Claude Opus 5'); // il default di piattaforma
+    expect(senzaScelta.json<ModelloAI>().nome).toBe('Boost'); // il default di piattaforma
 
     const r = await app.inject({
       method: 'PUT',
       url: '/api/modelli/attivo',
       headers: { authorization: `Bearer ${tokenAdmin}` },
-      payload: { modelloId: 'mod-claude-sonnet-5' },
+      payload: { modelloId: 'livello-avanzato' },
     });
     expect(r.statusCode).toBe(200);
-    expect(r.json<ModelloAI>()).toMatchObject({ nome: 'Claude Sonnet 5', disponibile: true });
+    expect(r.json<ModelloAI>()).toMatchObject({ nome: 'Avanzato', disponibile: true });
 
     const tenant = await poolDb().query<{ modello_motore: string | null }>(
       `select modello_motore from velia.tenant where id = $1`,
       [TENANT_COLLAUDO],
     );
-    expect(tenant.rows[0]!.modello_motore).toBe('claude-sonnet-5'); // è ciò che il worker leggerà a ogni job
+    /* Sul tenant va il modello, non il livello: è ciò che il worker leggerà a ogni job. */
+    expect(tenant.rows[0]!.modello_motore).toBe('deepseek-v4-flash-0731-284b');
 
     const attivo = await app.inject({
       method: 'GET',
       url: '/api/modelli/attivo',
       headers: { authorization: `Bearer ${tokenAdmin}` },
     });
-    expect(attivo.json<ModelloAI>().nome).toBe('Claude Sonnet 5');
+    expect(attivo.json<ModelloAI>().nome).toBe('Avanzato');
 
     const voci = await poolDb().query<{ azione: string; descrizione: string }>(
       `select azione, descrizione from velia.impostazioni_storico
        where tenant_id = $1 and oggetto = 'modello'`,
       [TENANT_COLLAUDO],
     );
-    expect(voci.rows).toEqual([
-      { azione: 'modifica', descrizione: 'Scelto il modello Claude Sonnet 5 (Anthropic)' },
-    ]);
+    expect(voci.rows).toEqual([{ azione: 'modifica', descrizione: 'Scelto il livello Avanzato' }]);
   });
 });

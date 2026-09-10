@@ -40,7 +40,7 @@ const TEMPLATE = leggi('template.json');
 const UTENTI = leggi('utenti.json');
 const STORICO = leggi('storico-impostazioni.json');
 
-let modelloAttivoId = 'mod-001';
+let modelloAttivoId = 'livello-boost';
 
 const IDENTITA = {
   colorePrimario: '#2f4b7c',
@@ -188,7 +188,7 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
   const percorso = url.pathname;
   const corpoJson = async () => JSON.parse((await leggiCorpo(req)).toString('utf8') || '{}');
 
-  // --- Modello AI (RF-D-02/03) --------------------------------------------
+  // --- Modello AI (RF-D-02/03): l'agenzia sceglie un livello ----------------
 
   if (percorso === '/api/modelli' && req.method === 'GET') {
     inviaJson(res, 200, MODELLI);
@@ -205,18 +205,18 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
       const { modelloId } = await corpoJson();
       const modello = MODELLI.find((m) => m.id === modelloId);
       if (!modello) {
-        inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Modello inesistente.' });
+        inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Livello inesistente.' });
         return true;
       }
       if (!modello.disponibile) {
         inviaJson(res, 409, {
           codice: 'NON_DISPONIBILE',
-          messaggio: `${modello.nome} non è ancora disponibile sulla piattaforma.`,
+          messaggio: `Il livello ${modello.nome} non è ancora disponibile sulla piattaforma.`,
         });
         return true;
       }
       modelloAttivoId = modello.id;
-      registra(req, 'modifica', 'modello', `Scelto il modello ${modello.nome} (${modello.provider})`);
+      registra(req, 'modifica', 'modello', `Scelto il livello ${modello.nome}`);
       inviaJson(res, 200, modello);
       return true;
     }

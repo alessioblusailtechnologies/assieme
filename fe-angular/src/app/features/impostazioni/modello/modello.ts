@@ -12,16 +12,17 @@ import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Tag } from '@shared/ui/tag/tag';
 
 /**
- * Scelta del provider e del modello AI (RF-D-02/03).
+ * Scelta del livello AI (RF-D-02/03): Avanzato o Boost. Il modello che
+ * serve ciascun livello lo decide il backend, e qui non arriva.
  *
  * La scelta vale per tutto il tenant ed è dell'amministratore; l'operatore
- * vede quale modello è in uso e le sue caratteristiche — sapere con che
+ * vede quale livello è in uso e le sue caratteristiche — sapere con che
  * cosa si sta lavorando non è un privilegio.
  *
- * La pagina mostra solo i modelli disponibili: i «in arrivo» del catalogo
- * restano un fatto del backend finché non si possono scegliere davvero. Lo
- * storico delle modifiche (RF-D-07) resta registrato dal server; qui non si
- * mostra.
+ * La pagina mostra solo i livelli disponibili: uno il cui fornitore non è
+ * ancora configurato resta un fatto del backend finché non si può scegliere
+ * davvero. Lo storico delle modifiche (RF-D-07) resta registrato dal server;
+ * qui non si mostra.
  */
 @Component({
   selector: 'app-modello',

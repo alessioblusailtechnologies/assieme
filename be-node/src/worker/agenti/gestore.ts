@@ -1,6 +1,7 @@
 import type pg from 'pg';
 
 import type { NuovaFonteAgente, ParametroAgente, RigaLog } from '../../contratto/agenti.js';
+import { modelloDelTenant } from '../../contratto/modelli.js';
 import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -77,6 +78,7 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
     const lavoro = r.rows[0];
     if (!lavoro) return; // agente o esecuzione eliminati: job orfano
     if (lavoro.stato === 'completata' || lavoro.stato === 'fallita') return; // già assestata
+    const modelloTenant = modelloDelTenant(lavoro.modello_motore);
 
     const log: RigaLog[] = [...lavoro.log];
     const annota = async (livello: RigaLog['livello'], messaggio: string): Promise<void> => {
@@ -139,7 +141,7 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         {
           directory: workspace.directory,
           titoloPer: (p) => workspace!.perPath.get(p)?.titolo,
-          ...(lavoro.modello_motore && { modello: lavoro.modello_motore }),
+          ...(modelloTenant && { modello: modelloTenant }),
           promptSistema: promptSistema(dna, { catalogo: catalogoArchivioPubblico(workspace.perPath) }),
           promptUtente: promptAgente({
             istruzioni: lavoro.istruzioni,

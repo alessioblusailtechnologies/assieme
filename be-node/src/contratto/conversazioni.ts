@@ -307,6 +307,11 @@ export const schemaNuovoMessaggio = z.object({
   testo: z.string(),
   documentiReferenziati: z.array(z.string().min(1)).max(100).default([]),
   esportazione: schemaEsportazioneElaborata.optional(),
+  /**
+   * Il livello scelto nel composer (10/09/2026): vale per questo messaggio e
+   * basta, la scelta dell'agenzia resta com'è. Assente = quello dell'agenzia.
+   */
+  livello: z.string().min(1).optional(),
 });
 
 export type NuovoMessaggio = z.infer<typeof schemaNuovoMessaggio>;

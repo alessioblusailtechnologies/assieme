@@ -1,17 +1,19 @@
 import { z } from 'zod';
 
 /**
- * Modello e provider (RF-D-02/03): il catalogo dice la verità sul motore.
- * La scelta vale per tutto il tenant (`velia.tenant.modello_motore`, null =
- * default di piattaforma, oggi Claude Opus 5) e viaggia fino al job: chat e
- * tabelle la leggono a ogni sessione. I provider terzi restano schede
- * informative non disponibili finché l'integrazione multi-provider non
- * esiste davvero.
+ * Modello e provider (RF-D-02/03). Dal 10/09/2026 il tenant non sceglie un
+ * modello ma un **livello** (Medio, Avanzato, Boost): che modello ci sia
+ * dietro lo decide la piattaforma, e il suo nome non esce dall'API. La
+ * scelta vale per tutto il tenant (`velia.tenant.modello_motore`, che
+ * conserva l'id SDK del livello; null = default di piattaforma, oggi Boost)
+ * e viaggia fino al job: chat e tabelle la leggono a ogni sessione. In chat
+ * si può passare a un altro livello per un messaggio (`livello` del
+ * messaggio), senza toccare quella del tenant.
  */
 
+/** La scheda pubblica di un livello. */
 export interface ModelloAI {
   id: string;
-  provider: string;
   nome: string;
   descrizione: string;
   adeguatezzaDocumentale: 'alta' | 'media' | 'bassa';
@@ -21,8 +23,8 @@ export interface ModelloAI {
 
 /**
  * Chi serve davvero il modello: Anthropic diretta; HostYourAI e AKI.IO
- * (API già Anthropic-compatibili, datacenter UE); Mistral, che parla un
- * altro formato e passa dall'adattatore in-process del worker.
+ * (API già Anthropic-compatibili, datacenter UE); Mistral e Gemini, che
+ * parlano un altro formato e passano dall'adattatore in-process del worker.
  */
 export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'mistral' | 'gemini';
 
@@ -44,195 +46,164 @@ export interface Tariffa {
   cache?: number;
 }
 
-/** La voce di catalogo con l'id del modello per l'SDK (non esce dall'API). */
-export interface VoceCatalogo extends ModelloAI {
-  /** Assente per i provider non ancora integrati. */
-  sdk?: string;
-  fornitore?: Fornitore;
+/** Un modello di un fornitore terzo che il motore sa servire. */
+export interface ModelloServito {
+  sdk: string;
+  /** Il nome vero, per i messaggi d'errore e i collaudi: al tenant non arriva. */
+  nome: string;
+  fornitore: Exclude<Fornitore, 'anthropic'>;
   /**
-   * Per i fornitori terzi l'SDK non sa il prezzo: il costo si calcola dai
-   * token con il listino del fornitore (HostYourAI lo espone su
+   * L'SDK non sa il prezzo dei fornitori terzi: il costo si calcola dai
+   * token con il loro listino (HostYourAI e AKI lo espongono su
    * `/v1/models`, in euro ≈ dollari).
    */
-  tariffa?: Tariffa;
+  tariffa: Tariffa;
 }
 
-export const CATALOGO_MODELLI: VoceCatalogo[] = [
+/**
+ * Il banco dei fornitori terzi: dove si chiama ciascun modello e a che
+ * prezzo. Il tenant ne vede solo quelli che stanno dietro a un livello; gli
+ * altri restano per i collaudi (`tools/collaudo-ab.ts`) e gli esperimenti
+ * via .env, ed è da qui che si misura il candidato per un livello nuovo. Un
+ * id che non sta qui (tutti i Claude) si serve da Anthropic.
+ *
+ * Le misure sulle sei domande dell'Archivio Pubblico stanno nei messaggi
+ * dei commit che hanno portato ciascuna voce.
+ */
+export const MODELLI_SERVITI: ModelloServito[] = [
+  /* HostYourAI non riusa il contesto fra un passo e l'altro: un modello da
+     1,7 €/M finisce a costare quanto Claude Opus 5 sulle analisi lunghe. */
+  { sdk: 'zai-org/GLM-5.2', nome: 'GLM 5.2', fornitore: 'hostyourai', tariffa: { input: 1.73, output: 5.18 } },
+  { sdk: 'moonshotai/Kimi-K3', nome: 'Kimi K3', fornitore: 'hostyourai', tariffa: { input: 3.45, output: 17.25 } },
   {
-    id: 'mod-claude-opus-5',
-    provider: 'Anthropic',
-    nome: 'Claude Opus 5',
-    sdk: 'claude-opus-5',
-    fornitore: 'anthropic',
-    descrizione:
-      'Il modello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È il modello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.',
-    adeguatezzaDocumentale: 'alta',
-    notaCosti: 'Incluso nel canone del piano Agenzia.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-claude-sonnet-5',
-    provider: 'Anthropic',
-    nome: 'Claude Sonnet 5',
-    sdk: 'claude-sonnet-5',
-    fornitore: 'anthropic',
-    descrizione:
-      'Circa metà dei tempi e dei costi di Claude Opus 5, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.',
-    adeguatezzaDocumentale: 'alta',
-    notaCosti: 'Riduce il consumo del piano di circa la metà.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-claude-haiku-4-5',
-    provider: 'Anthropic',
-    nome: 'Claude Haiku 4.5',
-    sdk: 'claude-haiku-4-5-20251001',
-    fornitore: 'anthropic',
-    descrizione:
-      'Rapido ed economico, adatto a domande puntuali e automazioni ad alta frequenza. Sui set informativi molto lunghi perde precisione nelle citazioni.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Riduce il consumo del piano di circa due terzi.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-glm-5-2',
-    provider: 'HostYourAI (UE)',
-    nome: 'GLM 5.2',
-    sdk: 'zai-org/GLM-5.2',
-    fornitore: 'hostyourai',
-    tariffa: { input: 1.73, output: 5.18 },
-    descrizione:
-      'Modello open di Zhipu, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa HostYourAI: circa 1,7 € per milione di token letti e 5,2 € per milione scritti.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-kimi-k3',
-    provider: 'HostYourAI (UE)',
-    nome: 'Kimi K3',
-    sdk: 'moonshotai/Kimi-K3',
-    fornitore: 'hostyourai',
-    tariffa: { input: 3.45, output: 17.25 },
-    descrizione:
-      'Modello open di Moonshot, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 1M di token; da validare fonte per fonte sui set informativi italiani.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa HostYourAI: circa 3,5 € per milione di token letti e 17,3 € per milione scritti.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-mistral-medium-3-5',
-    provider: 'HostYourAI (UE)',
-    nome: 'Mistral Medium 3.5',
     sdk: 'mistral-medium-3.5-128b',
+    nome: 'Mistral Medium 3.5',
     fornitore: 'hostyourai',
     tariffa: { input: 1.73, output: 8.63 },
-    descrizione:
-      'Il modello del francese Mistral, servito da HostYourAI in datacenter europei: prompt e risposte non lasciano l’UE. Contesto da 128k token, il più corto del catalogo. Nel confronto sull’Archivio Pubblico risponde nel merito e cita fonti vere, ma apre meno documenti e porta un terzo delle citazioni di Claude Opus 5.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti:
-      'Tariffa HostYourAI: circa 1,7 € per milione di token letti e 8,6 € per milione scritti. Il gateway non riusa il contesto fra un passo e l’altro: sulle analisi lunghe la spesa arriva vicina a quella di Claude Opus 5.',
-    disponibile: true,
   },
+  /* AKI.IO: GPU in datacenter tedeschi, e la cache c'è. */
+  { sdk: 'glm5.3-754b', nome: 'GLM 5.3', fornitore: 'aki', tariffa: { input: 1.0, output: 3.5, cache: 0.25 } },
   {
-    id: 'mod-glm-5-3',
-    provider: 'AKI.IO (DE)',
-    nome: 'GLM 5.3',
-    sdk: 'glm5.3-754b',
-    fornitore: 'aki',
-    tariffa: { input: 1.0, output: 3.5, cache: 0.25 },
-    descrizione:
-      'Il modello open di Z.ai servito da AKI.IO su GPU in datacenter tedeschi certificati, senza hyperscaler: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 512k token, e a differenza degli altri gateway UE riusa il contesto fra un passo e l’altro - che su questo motore è la voce che decide il conto.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa AKI.IO: 1,00 € per milione di token letti (0,25 € se già in cache) e 3,50 € per milione scritti.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-deepseek-v4-flash',
-    provider: 'AKI.IO (DE)',
-    nome: 'Deepseek V4 Flash',
     sdk: 'deepseek-v4-flash-0731-284b',
+    nome: 'Deepseek V4 Flash',
     fornitore: 'aki',
     tariffa: { input: 0.2, output: 0.5, cache: 0.1 },
-    descrizione:
-      'Servito da AKI.IO sulle stesse GPU tedesche di GLM 5.3, con lo stesso riuso del contesto fra un passo e l’altro: prompt e risposte stanno in memoria volatile, non vengono registrati né usati per addestrare. Contesto da 1M di token, il più ampio del catalogo, e listino un quinto in lettura e un settimo in scrittura rispetto a GLM 5.3; da validare fonte per fonte sui set informativi italiani.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa AKI.IO: 0,20 € per milione di token letti (0,10 € se già in cache) e 0,50 € per milione scritti.',
-    disponibile: true,
   },
+  /* Endpoint globale: i documenti escono dall'UE. */
+  { sdk: 'gemini-3.5-flash', nome: 'Gemini 3.5 Flash', fornitore: 'gemini', tariffa: { input: 1.5, output: 9.0, cache: 0.15 } },
+  { sdk: 'mistral-large-2512', nome: 'Mistral Large 3', fornitore: 'mistral', tariffa: { input: 0.5, output: 1.5, cache: 0.05 } },
+];
+
+/** Il livello come lo conosce il backend: la scheda più il modello che la serve (non esce dall'API). */
+export interface Livello extends ModelloAI {
+  sdk: string;
+}
+
+/**
+ * I livelli nell'ordine dei loro nomi, che è quello in cui li mostrano la
+ * pagina e il composer: Boost resta in fondo, ed è il più potente.
+ */
+export const LIVELLI: Livello[] = [
   {
-    id: 'mod-gemini-3-5-flash',
-    provider: 'Google',
-    nome: 'Gemini 3.5 Flash',
-    sdk: 'gemini-3.5-flash',
-    fornitore: 'gemini',
-    tariffa: { input: 1.5, output: 9.0, cache: 0.15 },
+    id: 'livello-medio',
+    nome: 'Medio',
+    sdk: 'claude-sonnet-5',
     descrizione:
-      'Il modello di Google della fascia rapida. È il più recente dei Gemini per cui esiste la residenza dei dati in Europa - ma solo passando da Vertex in una region europea, che oggi non è collegata: questo collegamento usa l’endpoint globale, quindi i documenti escono dall’UE. Le versioni più nuove (3.6, 3.7, 3.8) sono più economiche ma esistono solo in globale.',
-    adeguatezzaDocumentale: 'media',
-    notaCosti: 'Tariffa Google: 1,50 $ per milione di token letti (0,15 $ se già in cache) e 9,00 $ per milione scritti, ragionamento compreso.',
-    disponibile: true,
-  },
-  {
-    id: 'mod-gpt-5-2',
-    provider: 'OpenAI',
-    nome: 'GPT-5.2',
-    descrizione:
-      'Alternativa di pari livello per l’analisi documentale, con uno stile di risposta più sintetico. In valutazione per l’integrazione multi-provider.',
+      'Circa metà dei tempi e dei costi di Boost, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.',
     adeguatezzaDocumentale: 'alta',
-    notaCosti: 'In valutazione, condizioni da definire.',
-    disponibile: false,
+    disponibile: true,
   },
   {
-    id: 'mod-mistral-large-3',
-    provider: 'Mistral (UE)',
-    nome: 'Mistral Large 3',
-    sdk: 'mistral-large-2512',
-    fornitore: 'mistral',
-    tariffa: { input: 0.5, output: 1.5, cache: 0.05 },
+    id: 'livello-avanzato',
+    nome: 'Avanzato',
+    sdk: 'deepseek-v4-flash-0731-284b',
     descrizione:
-      'Il modello di punta di Mistral, chiamato direttamente sull’API francese: dati trattati nell’UE, contesto da 262k token e listino una frazione degli altri. Nel confronto sull’Archivio Pubblico è il più veloce e il più economico di molto, ma apre pochi documenti e su due domande su sei si è fermato a chiedere invece di rispondere: va scelto da chi mette costo e residenza davanti alla completezza.',
-    adeguatezzaDocumentale: 'bassa',
-    notaCosti: 'Tariffa Mistral: 0,50 $ per milione di token letti (0,05 $ se già in cache) e 1,50 $ per milione scritti.',
+      'Elaborazione su GPU in datacenter tedeschi certificati, senza grandi cloud di mezzo: i documenti non lasciano l’UE, restano in memoria volatile e non vengono registrati né usati per addestrare. Risposte più asciutte, con meno citazioni per risposta rispetto a Boost.',
+    adeguatezzaDocumentale: 'media',
+    disponibile: true,
+  },
+  {
+    id: 'livello-boost',
+    nome: 'Boost',
+    sdk: 'claude-opus-5',
+    descrizione:
+      'Il livello di riferimento della piattaforma: lettura accurata dei set informativi lunghi e citazioni affidabili. È quello con cui chat e tabelle di analisi sono state collaudate, fonte per fonte.',
+    adeguatezzaDocumentale: 'alta',
     disponibile: true,
   },
 ];
 
-/**
- * Il catalogo come sta davvero: una voce HostYourAI è selezionabile solo se
- * la chiave è configurata — il catalogo dice la verità (Fase 6).
- */
-export function catalogoModelli(chiaviPresenti: { hostyourai: boolean; aki: boolean; mistral: boolean; gemini: boolean }): VoceCatalogo[] {
-  return CATALOGO_MODELLI.map((m) =>
-    m.fornitore && m.fornitore !== 'anthropic' && !chiaviPresenti[m.fornitore] ? { ...m, disponibile: false } : m,
-  );
-}
-
-/** La voce di catalogo per un id SDK (anche fuori catalogo: allora undefined). */
-export function vocePerSdk(sdk: string): VoceCatalogo | undefined {
-  return CATALOGO_MODELLI.find((m) => m.sdk === sdk);
-}
-
-/** La forma pubblica: l'id SDK, il fornitore e la tariffa restano dettagli del backend. */
-export function versoModello(voce: VoceCatalogo): ModelloAI {
-  const pubblico: VoceCatalogo = { ...voce };
-  delete pubblico.sdk;
-  delete pubblico.fornitore;
-  delete pubblico.tariffa;
-  return pubblico;
+/** Il fornitore di un modello: quello del banco, o Anthropic. */
+function fornitoreDi(sdk: string): Fornitore {
+  return vocePerSdk(sdk)?.fornitore ?? 'anthropic';
 }
 
 /**
- * Il modello attivo È quello che il motore usa (`MODELLO_MOTORE`): la
- * scheda non può mentire. Un id fuori catalogo (esperimenti via .env) si
- * presenta comunque con la voce più vicina disponibile.
+ * I livelli come stanno davvero: uno servito da un fornitore terzo è
+ * selezionabile solo se la sua chiave è configurata. Il catalogo dice la
+ * verità (Fase 6).
  */
-export function modelloAttivo(sdkConfigurato: string): VoceCatalogo {
+export function catalogoLivelli(chiaviPresenti: Record<Exclude<Fornitore, 'anthropic'>, boolean>): Livello[] {
+  return LIVELLI.map((l) => {
+    const fornitore = fornitoreDi(l.sdk);
+    return fornitore !== 'anthropic' && !chiaviPresenti[fornitore] ? { ...l, disponibile: false } : l;
+  });
+}
+
+/** La voce del banco per un id SDK (undefined per i Claude e per gli esperimenti fuori banco). */
+export function vocePerSdk(sdk: string): ModelloServito | undefined {
+  return MODELLI_SERVITI.find((m) => m.sdk === sdk);
+}
+
+/**
+ * La forma pubblica, campo per campo: l'id SDK resta un dettaglio del
+ * backend, e un campo aggiunto domani al livello non esce da solo.
+ */
+export function versoPubblico(l: Livello): ModelloAI {
+  return {
+    id: l.id,
+    nome: l.nome,
+    descrizione: l.descrizione,
+    adeguatezzaDocumentale: l.adeguatezzaDocumentale,
+    ...(l.notaCosti !== undefined && { notaCosti: l.notaCosti }),
+    disponibile: l.disponibile,
+  };
+}
+
+/**
+ * Il livello attivo È quello che il motore usa: la scheda non può mentire.
+ * Un id che nessun livello serve (esperimenti via .env) si presenta col
+ * livello più potente disponibile, che è quello di riferimento.
+ */
+export function livelloAttivo(sdkConfigurato: string, catalogo: Livello[] = LIVELLI): Livello {
   return (
-    CATALOGO_MODELLI.find((m) => m.sdk === sdkConfigurato) ??
-    CATALOGO_MODELLI.find((m) => m.disponibile) ??
-    CATALOGO_MODELLI[0]!
+    catalogo.find((l) => l.sdk === sdkConfigurato) ?? catalogo.findLast((l) => l.disponibile) ?? catalogo.at(-1)!
   );
+}
+
+/**
+ * Il modello scelto dal tenant, se c'è ancora un livello che lo serve;
+ * altrimenti undefined, e vale il default di piattaforma. Una scelta rimasta
+ * su un modello tolto dal catalogo (quando sono nati i livelli, il 10/09/2026,
+ * se ne sono andati sette) non deve continuare a girare in silenzio mentre la
+ * scheda mostra un altro livello.
+ */
+export function modelloDelTenant(scelta: string | null | undefined): string | undefined {
+  return scelta && LIVELLI.some((l) => l.sdk === scelta) ? scelta : undefined;
+}
+
+/** Il modello dietro un livello scelto in chat per un messaggio; undefined se il livello non c'è. */
+export function modelloDelLivello(livelloId: string | undefined): string | undefined {
+  return livelloId ? LIVELLI.find((l) => l.id === livelloId)?.sdk : undefined;
+}
+
+/**
+ * Vero per i modelli che si chiamano da Anthropic. La sandbox documentale
+ * gira con la sola chiave Anthropic, dietro al suo proxy: un modello di un
+ * fornitore terzo lì dentro non parte.
+ */
+export function servitoDaAnthropic(sdk: string): boolean {
+  return fornitoreDi(sdk) === 'anthropic';
 }
 
 /** Corpo di `PUT /api/modelli/attivo` (RF-D-02). */

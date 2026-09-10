@@ -16,7 +16,7 @@ const VOCI: VoceSezione[] = [
   {
     percorso: 'modello',
     etichetta: 'Modello AI',
-    spiega: 'Provider e modello con cui il sistema ragiona',
+    spiega: 'Il livello con cui il sistema ragiona',
   },
   {
     percorso: 'istruzioni',

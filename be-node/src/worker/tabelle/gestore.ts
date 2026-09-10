@@ -1,5 +1,6 @@
 import type pg from 'pg';
 
+import { modelloDelTenant } from '../../contratto/modelli.js';
 import type { CellaTabella } from '../../contratto/tabelle.js';
 import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
@@ -63,7 +64,7 @@ export function creaGestoreTabelle(dip: DipendenzeTabelle) {
     );
     const tenantId = t.rows[0]?.tenant_id;
     if (!tenantId) return; // tabella eliminata: il job è orfano, non un errore
-    const modelloTenant = t.rows[0]?.modello_motore ?? undefined;
+    const modelloTenant = modelloDelTenant(t.rows[0]?.modello_motore);
 
     const annullato = async (): Promise<boolean> => {
       const r = await db.query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [job.id]);

@@ -112,6 +112,26 @@
       <!-- A destra, attaccato a Invia, il microfono: si parla e si manda. -->
       <span class="campo__strumenti">
         <!--
+          Il livello di questa chat: quello dell'agenzia, o un altro solo
+          qui. Quando è diverso da quello dell'agenzia si vede, perché è una
+          scelta che finisce cambiando conversazione.
+        -->
+        @if (!perCliente() && store.livelli().length > 1) {
+          <button
+            type="button"
+            class="campo__livello"
+            [class.is-temporaneo]="!!store.livelloScelto()"
+            (click)="menuLivelli.apri($event)"
+            aria-haspopup="menu"
+            [attr.aria-label]="'Livello di questa chat: ' + (store.livelloInUso()?.nome ?? '')"
+            [title]="titoloLivello()"
+          >
+            <span>{{ store.livelloInUso()?.nome }}</span>
+            <ui-icon name="espandi-giu" [size]="14" />
+          </button>
+        }
+
+        <!--
           La dettatura: un clic apre il microfono (il pulsante si accende e
           pulsa), il clic dopo lo chiude e il parlato arriva nel campo come
           testo. Se il browser non sa registrare, il pulsante non c'è.
@@ -159,4 +179,5 @@
 
   <!-- La scelta del modo di caricamento: dove finisce il documento, e quanto bene viene letto. -->
   <ui-menu-azioni #menuAllega [voci]="vociAllega" />
+  <ui-menu-azioni #menuLivelli [voci]="vociLivelli()" />
 </div>

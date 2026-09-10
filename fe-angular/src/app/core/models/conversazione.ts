@@ -256,6 +256,8 @@ export interface NuovoMessaggio {
   testo: string;
   documentiReferenziati: Id[];
   esportazione?: EsportazioneElaborata;
+  /** Il livello scelto nel composer, solo per questo messaggio; assente = quello dell'agenzia. */
+  livello?: Id;
 }
 
 /**
