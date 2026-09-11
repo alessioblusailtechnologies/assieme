@@ -11,6 +11,13 @@
  *   node tools/testimone-ocr.mjs <manifesto.json>              # OCR (una volta) + confronto
  *   node tools/testimone-ocr.mjs <manifesto.json> --rifai      # richiama l'OCR anche se c'è già
  *   node tools/testimone-ocr.mjs <manifesto.json> --dettaglio  # elenca anche le parole
+ *   node tools/testimone-ocr.mjs <manifesto.json> --stretto    # tolleranza zero, anche le parole comparse
+ *
+ * Con --stretto una sola parola persa davanti a entrambi i testimoni, o
+ * comparsa e assente in entrambi, manda la pagina al secondo sguardo: è il
+ * confronto che trova i refusi dello stampato «corretti» da chi trascrive
+ * («Contrante» → «Contraente») e le frasi riscritte a senso, che la
+ * tolleranza normale lascia passare.
  *
  * Il manifesto è quello di `assembla-set.mjs`. La lettura OCR si salva in
  * `local-ingestion/lavorazione-visiva/ocr/<pdf>/pag-NNNN.md` (+ .json grezzo)
@@ -56,7 +63,9 @@ if (!manifesto) {
   process.exit(1);
 }
 const rifai = args.includes('--rifai');
-const dettaglio = args.includes('--dettaglio');
+const stretto = args.includes('--stretto');
+const dettaglio = stretto || args.includes('--dettaglio');
+const tolleranza = stretto ? 0 : PAROLE_TOLLERATE;
 
 const set = JSON.parse(readFileSync(manifesto, 'utf8'));
 const nomePdf = basename(set.pdf, '.pdf');
@@ -233,9 +242,15 @@ for (const doc of set.documenti) {
     // Si contano le parole distinte: la stessa intestazione ripetuta quattro
     // volte è un'unificazione di tabella, una frase saltata sono parole diverse.
     const paroleDistinte = new Set(parolePerse).size;
+    // Parole comparse: nella trascrizione e in nessuno dei due testimoni.
+    const paroleComparse = stretto
+      ? lettoPdfjs
+        ? intersezione(comparsiOcr.filter((t) => !haCifre(t)), comparsiPdfjs.filter((t) => !haCifre(t)))
+        : comparsiOcr.filter((t) => !haCifre(t))
+      : [];
     let esito = 'ok';
     if (numeriCerti.length) esito = 'CERTO';
-    else if (numeriDubbi.length || paroleDistinte > PAROLE_TOLLERATE) esito = 'guarda';
+    else if (numeriDubbi.length || paroleDistinte > tolleranza || paroleComparse.length) esito = 'guarda';
     if (esito !== 'ok') daGuardare.push(n);
 
     const note = [];
@@ -243,9 +258,10 @@ for (const doc of set.documenti) {
     if (p.ocr.confidenza !== undefined) note.push(`conf. OCR ${p.ocr.confidenza.toFixed(2)}`);
     if (numeriCerti.length) note.push(`numeri CERTI: ${numeriCerti.slice(0, 10).join(' ')}`);
     if (numeriDubbi.length) note.push(`numeri da un solo testimone: ${numeriDubbi.slice(0, 10).join(' ')}`);
-    if (paroleDistinte > PAROLE_TOLLERATE || (dettaglio && parolePerse.length))
+    if (paroleDistinte > tolleranza || (dettaglio && parolePerse.length))
       note.push(`${paroleDistinte} parole perse${dettaglio ? `: ${[...new Set(parolePerse)].slice(0, 15).join(' ')}` : ''}`);
-    if (dettaglio && comparsiOcr.filter((t) => !haCifre(t)).length)
+    if (paroleComparse.length) note.push(`comparse in nessun testimone: ${[...new Set(paroleComparse)].slice(0, 15).join(' ')}`);
+    else if (dettaglio && comparsiOcr.filter((t) => !haCifre(t)).length)
       note.push(`comparse vs OCR: ${comparsiOcr.filter((t) => !haCifre(t)).slice(0, 10).join(' ')}`);
     console.log(`  pag. ${String(n).padStart(4)}  ${esito.padEnd(6)} ${note.join(' | ')}`);
   }

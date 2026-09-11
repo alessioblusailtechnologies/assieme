@@ -125,6 +125,25 @@ per continuare: `/ingest-visivo local-ingestion/in-arrivo/<compagnia-slug>-<ramo
   copertina interna delle Condizioni («Modello SI/… - Ed. gg/mm/aaaa») e
   nel retro; il DIP non porta data, il DIP aggiuntivo sì. Pagine prodotto:
   `/aziende/lavoro/<prodotto>` (PMI), `/persone/…`.
+  **Censimento dell'11/09/2026** (164 set, ~12.200 pagine, tabella in
+  `local-ingestion/in-arrivo/unipol-censimento-2026-09-11.tsv`): le sezioni
+  sono `/veicoli-mobilita`, `/casa-famiglia`, `/persona`,
+  `/risparmio-previdenza`, `/aziende` (con `/aziende/pmi`,
+  `/professionisti`, `/lavoro`, `/mobilita-veicoli`, `/welfare-salute`).
+  Molte pagine (auto, moto, autocarri, contratto base, flotte, tutela
+  legale, terzo settore, risparmio) tengono i set in un dialogo a parte:
+  `elenca-link.mjs <pagina> --tutti | grep fragments/dialogs` dà
+  `/fragments/dialogs/…/set-informativi-e-altri-documenti` o
+  `…/documenti-utili`, da leggere a sua volta con `elenca-link.mjs` (curl
+  non vede i link). I link ai fascicoli non hanno testo: il nome vero lo
+  dà l'intestazione `content-disposition` (`curl -s -D - -o /dev/null
+  -r 0-0 <url>`). Lanciare più di 4-6 Chrome insieme fa perdere link
+  (pagine non caricate): nel dubbio ripassare con `--tutti`. Il sito
+  pubblica **in anticipo le edizioni future** (Unica e Contratto Base
+  01/11/2026, Unica Casa/Famiglia 01/10/2026) accanto a quelle in vigore.
+  Senza set scaricabili (si vendono in agenzia): RC professionisti,
+  property, casualty, CAR/EAR, cyber grandi rischi, trasporti, Welbee, LTC
+  individuale, UniSalute.
 - **zurich.it**: due marchi con due ragioni sociali. Agenzie: ZuriGò Auto
   / Moto / Altri Veicoli e Zurich BluDrive, prodotti di **Zurich Insurance
   Europe AG - Rappresentanza Generale per l'Italia**, pagine

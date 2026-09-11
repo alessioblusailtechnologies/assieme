@@ -10,7 +10,7 @@
  *   node tools/assembla-set.mjs <manifesto.json> --pagine <cartella> --radice <albero>
  *
  * Il manifesto è quello di `prepara-set.mjs` (compagnia, slug, ramo,
- * prodotto, modello, edizione gg/mm/aaaa, pdf, documenti[{file, titolo, da, a, modello?}]).
+ * prodotto, modello, edizione gg/mm/aaaa, pdf, documenti[{file, titolo, da, a, modello?, compagnia?}]).
  * Le pagine si cercano in `local-ingestion/lavorazione-visiva/pagine/<pdf senza .pdf>/`,
  * l'albero si scrive in `local-ingestion/lavorazione-visiva/archivio-pubblico/`.
  *
@@ -111,11 +111,13 @@ for (const f of readdirSync(cartella)) if (f.endsWith('.md') && f !== 'INDICE.md
 for (const doc of set.documenti) {
   // Un set pubblicato a pezzi ha un modello per documento (HDI: DIP A3083,
   // DIP Aggiuntivo A3084, Condizioni A3082): quello del documento vince.
+  // Lo stesso per l'emittente: gli allegati dei servizi telematici di
+  // Km&Servizi sono di UnipolTech, non della compagnia che assicura.
   const modello = doc.modello ?? set.modello;
   const righe = [
     `# ${doc.titolo} — ${nomeCorto(set)}`,
     '',
-    `> **Compagnia**: ${set.compagnia} · **Prodotto**: ${set.prodotto} · **Tipologia**: ${doc.titolo}` +
+    `> **Compagnia**: ${doc.compagnia ?? set.compagnia} · **Prodotto**: ${set.prodotto} · **Tipologia**: ${doc.titolo}` +
       `${modello ? ` · **Modello**: ${modello}` : ''} · **Edizione**: ${set.edizione}` +
       ` · **Pagine nel PDF**: ${doc.da}–${doc.a} di ${totale} (file \`${set.pdf}\`)`,
     '',
