@@ -6,6 +6,7 @@
   { "id": "cmp-allianz", "nome": "Allianz Italia", "ultimoAggiornamento": "2026-07-14" },
   { "id": "cmp-axa", "nome": "AXA Italia", "ultimoAggiornamento": "2026-06-30" },
   { "id": "cmp-zurich", "nome": "Zurich Italia", "ultimoAggiornamento": "2026-06-30" },
+  { "id": "cmp-hdi", "nome": "HDI Assicurazioni", "ultimoAggiornamento": "2026-09-11" },
   { "id": "cmp-realemutua", "nome": "Reale Mutua Assicurazioni", "ultimoAggiornamento": "2026-05-19" },
   { "id": "cmp-groupama", "nome": "Groupama Assicurazioni", "ultimoAggiornamento": "2026-05-12" },
   { "id": "cmp-vittoria", "nome": "Vittoria Assicurazioni", "ultimoAggiornamento": "2026-04-27" },

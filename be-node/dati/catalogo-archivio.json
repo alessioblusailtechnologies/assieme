@@ -1113,6 +1113,366 @@
   "pathPdf": "archivio-pubblico/generali/auto/contratto-base-motoveicoli/ed-2026-01/originale.pdf"
  },
  {
+  "id": "doc-hdi-auto-hdi-autovetture-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Autovetture",
+  "titolo": "Condizioni di Assicurazione — HDI Auto HDI Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 54,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-auto-hdi-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-autovetture-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Autovetture",
+  "titolo": "DIP Danni — HDI Auto HDI Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-auto-hdi-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-autovetture-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — HDI Auto HDI Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-auto-hdi-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-autovetture-ed-2026-06-sezione-9-telematica",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Autovetture",
+  "titolo": "Condizioni di Assicurazione - Sezione 9 Telematica HDI Insieme — HDI Auto HDI Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 5,
+  "paginaInizio": 61,
+  "edizione": {
+   "id": "edz-auto-hdi-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/sezione-9-telematica.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-ciclomotori-motoveicoli-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Ciclomotori e Motoveicoli",
+  "titolo": "Condizioni di Assicurazione — HDI Auto HDI Ciclomotori e Motoveicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 48,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-auto-hdi-ciclomotori-motoveicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-ciclomotori-motoveicoli-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Ciclomotori e Motoveicoli",
+  "titolo": "DIP Danni — HDI Auto HDI Ciclomotori e Motoveicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-auto-hdi-ciclomotori-motoveicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-ciclomotori-motoveicoli-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Ciclomotori e Motoveicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — HDI Auto HDI Ciclomotori e Motoveicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-auto-hdi-ciclomotori-motoveicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-ciclomotori-motoveicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-veicoli-diversi-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Veicoli diversi",
+  "titolo": "Condizioni di Assicurazione — HDI Auto HDI Veicoli diversi",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 56,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-auto-hdi-veicoli-diversi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-veicoli-diversi-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Veicoli diversi",
+  "titolo": "DIP Danni — HDI Auto HDI Veicoli diversi",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-auto-hdi-veicoli-diversi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-auto-hdi-veicoli-diversi-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Auto HDI Veicoli diversi",
+  "titolo": "DIP Aggiuntivo R.C. Auto — HDI Auto HDI Veicoli diversi",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-auto-hdi-veicoli-diversi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/auto-hdi-veicoli-diversi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-contratto-base-rc-auto-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base R.C. Auto",
+  "titolo": "Condizioni di Assicurazione — HDI Contratto Base R.C. Auto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 16,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-contratto-base-rc-auto-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-contratto-base-rc-auto-ed-2026-05-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base R.C. Auto",
+  "titolo": "DIP Danni — HDI Contratto Base R.C. Auto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-contratto-base-rc-auto-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-contratto-base-rc-auto-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base R.C. Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto - Autovetture — HDI Contratto Base R.C. Auto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-rc-auto-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-contratto-base-rc-auto-ed-2026-05-dip-aggiuntivo-ciclomotori-motoveicoli",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base R.C. Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto - Ciclomotori e Motoveicoli — HDI Contratto Base R.C. Auto",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-contratto-base-rc-auto-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/dip-aggiuntivo-ciclomotori-motoveicoli.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/contratto-base-rc-auto/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-e-mobility-hdi-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "E-Mobility HDI",
+  "titolo": "Condizioni di Assicurazione — HDI E-Mobility HDI",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 36,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-e-mobility-hdi-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-e-mobility-hdi-ed-2026-07-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "E-Mobility HDI",
+  "titolo": "DIP Danni — HDI E-Mobility HDI",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-e-mobility-hdi-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-e-mobility-hdi-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "E-Mobility HDI",
+  "titolo": "DIP Aggiuntivo R.C. Auto — HDI E-Mobility HDI",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-e-mobility-hdi-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-natanti-hdi-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Natanti HDI",
+  "titolo": "Condizioni di Assicurazione — HDI Natanti HDI",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 22,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-natanti-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-natanti-hdi-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Natanti HDI",
+  "titolo": "DIP Danni — HDI Natanti HDI",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-natanti-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-natanti-hdi-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-auto",
+  "prodotto": "Natanti HDI",
+  "titolo": "DIP Aggiuntivo R.C. Auto — HDI Natanti HDI",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-natanti-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-nobis-filo-diretto-car-ed-2023-10-condizioni-di-assicurazione",
   "compagniaId": "cmp-nobis",
   "ramoId": "ram-auto",
