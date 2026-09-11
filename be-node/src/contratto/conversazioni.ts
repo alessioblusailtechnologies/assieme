@@ -40,10 +40,32 @@ export interface StatoAllegato {
   erroreElaborazione?: string;
 }
 
+/**
+ * Il set informativo di cui un documento pubblico fa parte: il prodotto in
+ * una sua edizione (12/09/2026).
+ *
+ * Viaggia col riferimento perché l'interfaccia parla di **prodotti** mentre
+ * il contesto resta fatto di documenti: nel composer e nel pannello i
+ * quattro documenti di un set sono un chip solo, e dopo un ricaricamento
+ * della pagina devono tornare a esserlo senza reinterrogare l'archivio.
+ */
+export interface SetDiRiferimento {
+  /** La stessa chiave dell'elenco per set: compagnia + prodotto + edizione. */
+  chiave: string;
+  prodotto: string;
+  compagnia: string;
+  /** Es. «ed. 04/2026». */
+  edizione: string;
+  /** Falso su un'edizione superata: il chip lo dice (RF-A-04). */
+  corrente: boolean;
+}
+
 export interface RiferimentoDocumento {
   id: string;
   titolo: string;
   archivio: ArchivioRiferimento;
+  /** Il set di cui fa parte, sui documenti dell'Archivio Pubblico. */
+  set?: SetDiRiferimento;
   /**
    * Dov'è arrivata la lettura del documento (01/09/2026). Viaggia col
    * contesto della conversazione perché il chip sappia dire «in lavorazione»

@@ -34,10 +34,32 @@ export interface StatoAllegato {
   erroreElaborazione?: string;
 }
 
+/**
+ * Il set informativo di cui un documento pubblico fa parte: il prodotto in
+ * una sua edizione (12/09/2026) - specchio di
+ * `be-node/src/contratto/conversazioni.ts`.
+ *
+ * Il contesto resta fatto di documenti, ma chi lo guarda vede prodotti: i
+ * documenti che portano la stessa `chiave` sono un chip solo nel composer e
+ * una riga sola nel pannello, e si tolgono insieme.
+ */
+export interface SetDiRiferimento {
+  /** La stessa chiave dell'elenco per set: compagnia + prodotto + edizione. */
+  chiave: string;
+  prodotto: string;
+  compagnia: string;
+  /** Es. «ed. 04/2026». */
+  edizione: string;
+  /** Falso su un'edizione superata: il chip lo dice (RF-A-04). */
+  corrente: boolean;
+}
+
 export interface RiferimentoDocumento {
   id: Id;
   titolo: string;
   archivio: Archivio | 'conversazione';
+  /** Il set di cui fa parte, sui documenti dell'Archivio Pubblico. */
+  set?: SetDiRiferimento;
   /**
    * Dov'è arrivata la lettura, così com'era quando il contesto è stato
    * idratato. Serve a chi ricarica la pagina mentre un allegato è ancora in

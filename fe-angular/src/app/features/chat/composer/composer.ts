@@ -18,6 +18,11 @@ import { MenuAzioni, type VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import { ESTENSIONI_DOCUMENTO, Id, ModoAllegato, RiferimentoDocumento } from '@core/models';
 import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
+import {
+  chiaveGruppo,
+  raggruppaRiferimenti,
+  type GruppoRiferimenti,
+} from '@shared/riferimenti/gruppi';
 import { ErroreMicrofono, Registratore } from './registratore';
 import { immaginiIncollate } from './appunti';
 import {
@@ -94,6 +99,14 @@ export class Composer {
 
   protected readonly menzione = computed(() => menzioneAlCursore(this.store.bozza(), this.cursore()));
 
+  /**
+   * In chat si referenzia il **prodotto**, non il singolo documento
+   * (12/09/2026): il pannello mostra una riga per set informativo, e
+   * sceglierla porta nel contesto tutti i documenti del set sotto un chip
+   * solo. Altrove (tabelle, agenti) la riga è e resta un documento.
+   */
+  protected readonly granularita = 'prodotto' as const;
+
   protected readonly selettoreAperto = computed(() => {
     const menzione = this.menzione();
     return !!menzione && menzione.inizio !== this.soppressaDa();
@@ -130,10 +143,13 @@ export class Composer {
     const editor = this.editor;
     ripulisciSeVuoto(editor);
     this.store.bozza.set(testoEditor(editor));
+    /* I chip portano la chiave del **gruppo**: l'id del documento, o quella
+       del set. Un prodotto tolto con Backspace si porta via i suoi documenti
+       tutti insieme. */
     const presenti = new Set(idChip(editor));
-    if (this.store.riferimentiBozza().some((r) => !presenti.has(r.id))) {
+    if (this.store.riferimentiBozza().some((r) => !presenti.has(chiaveGruppo(r)))) {
       // Un chip tolto con Backspace: il riferimento se ne va con lui.
-      this.store.riferimentiBozza.update((r) => r.filter((d) => presenti.has(d.id)));
+      this.store.riferimentiBozza.update((r) => r.filter((d) => presenti.has(chiaveGruppo(d))));
     }
     this.aggiornaCursore();
   }
@@ -216,11 +232,22 @@ export class Composer {
    * finiva in mezzo ai due.
    */
   protected referenzia(documento: RiferimentoDocumento): void {
+    this.referenziaInsieme([documento]);
+  }
+
+  /**
+   * Un prodotto scelto: i documenti del suo set entrano tutti nel contesto,
+   * ma nel testo compare **un chip solo**, col nome del prodotto. Toglierlo
+   * li toglie insieme, che è il motivo per cui sono un gruppo.
+   */
+  protected referenziaInsieme(documenti: RiferimentoDocumento[]): void {
+    const gruppo = raggruppaRiferimenti(documenti)[0];
+    if (!gruppo) return;
     /* Il fuoco è nel campo di ricerca del pannello: torna qui, e ci resta
        perché il pannello sparisce insieme alla menzione. */
     this.inScelta = true;
     const menzione = this.menzione();
-    const chip = this.nuovoChip(documento);
+    const chip = this.nuovoChip(gruppo);
     const editor = this.editor;
     editor.focus();
     const da = menzione ? menzione.inizio : this.cursore();
@@ -228,7 +255,7 @@ export class Composer {
     sostituisciIntervallo(editor, da, a, chip);
     // Uno spazio dopo il chip: si continua a scrivere senza incollarsi.
     scriviDopoChip(editor, chip, ' ');
-    this.store.aggiungiRiferimento(documento);
+    for (const d of gruppo.riferimenti) this.store.aggiungiRiferimento(d);
     this.aggiorna();
     this.inScelta = false;
   }
@@ -369,17 +396,28 @@ export class Composer {
     this.aggiorna();
   }
 
-  private nuovoChip(documento: RiferimentoDocumento): HTMLElement {
-    const anteprima = this.store.anteprima(documento.id);
+  /**
+   * Il chip di un gruppo: un documento, o il prodotto coi documenti del suo
+   * set. Miniatura e stato di lettura valgono per il documento singolo - un
+   * set dell'Archivio Pubblico è sempre già letto.
+   */
+  private nuovoChip(gruppo: GruppoRiferimenti): HTMLElement {
+    const solo = gruppo.riferimenti.length === 1 ? gruppo.riferimenti[0] : undefined;
+    const anteprima = solo && this.store.anteprima(solo.id);
     return creaChipDocumento(
-      { ...documento, ...(anteprima && { anteprima }) },
+      {
+        id: gruppo.chiave,
+        titolo: gruppo.titolo,
+        archivio: gruppo.archivio,
+        ...(anteprima && { anteprima }),
+      },
       () => {
-        chipPerId(this.editor, documento.id)?.remove();
-        this.store.rimuoviRiferimento(documento.id);
+        chipPerId(this.editor, gruppo.chiave)?.remove();
+        for (const r of gruppo.riferimenti) this.store.rimuoviRiferimento(r.id);
         this.aggiorna();
         this.editor.focus();
       },
-      this.store.elaborazioni().get(documento.id),
+      solo && this.store.elaborazioni().get(solo.id),
     );
   }
 
@@ -396,28 +434,32 @@ export class Composer {
   ): void {
     const editor = this.editor;
     const presenti = new Set(idChip(editor));
-    const attesi = new Set(riferimenti.map((r) => r.id));
+    /* Si riconcilia per gruppo, non per documento: i quattro documenti di un
+       set sono un chip solo, e vanno e vengono insieme. */
+    const gruppi = raggruppaRiferimenti(riferimenti);
+    const attesi = new Set(gruppi.map((g) => g.chiave));
 
     if (testoEditor(editor) !== testo) {
       editor.replaceChildren();
-      for (const r of riferimenti) editor.append(this.nuovoChip(r), document.createTextNode(' '));
+      for (const g of gruppi) editor.append(this.nuovoChip(g), document.createTextNode(' '));
       if (testo) editor.append(document.createTextNode(testo));
       if (document.activeElement === editor) posizionaCursore(editor, testo.length);
     } else {
       for (const id of presenti) if (!attesi.has(id)) chipPerId(editor, id)?.remove();
-      for (const r of riferimenti) {
-        if (!presenti.has(r.id)) editor.append(document.createTextNode(' '), this.nuovoChip(r));
+      for (const g of gruppi) {
+        if (!presenti.has(g.chiave)) editor.append(document.createTextNode(' '), this.nuovoChip(g));
       }
     }
 
     /* Il chip di un documento che sta ancora venendo letto cambia faccia
        quando il server finisce: si rifà quello e basta, riconoscendolo dallo
        stato che porta scritto addosso. */
-    for (const r of riferimenti) {
-      const chip = chipPerId(editor, r.id);
+    for (const g of gruppi) {
+      const chip = chipPerId(editor, g.chiave);
       if (!chip) continue;
-      const atteso = elaborazioni.get(r.id)?.stato ?? '';
-      if ((chip.dataset['stato'] ?? '') !== atteso) chip.replaceWith(this.nuovoChip(r));
+      const solo = g.riferimenti.length === 1 ? g.riferimenti[0] : undefined;
+      const atteso = (solo && elaborazioni.get(solo.id)?.stato) ?? '';
+      if ((chip.dataset['stato'] ?? '') !== atteso) chip.replaceWith(this.nuovoChip(g));
     }
 
     // Gli allegati in corso: chip transitori, per chiave; via quando spariscono dallo store.

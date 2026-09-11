@@ -223,8 +223,13 @@
           </button>
         </div>
         @if (contesto().length) {
+        <!--
+          Una riga per gruppo: un documento, o il prodotto coi documenti del
+          suo set informativo (12/09/2026). Qui si referenzia un prodotto, e
+          vederlo tornare come quattro righe smentirebbe il gesto.
+        -->
         <ul class="contesto__elenco">
-          @for (doc of contesto(); track doc.id) {
+          @for (doc of contestoRaggruppato(); track doc.chiave) {
             <li class="contesto__doc">
               <ui-icon
                 [name]="
@@ -237,6 +242,14 @@
                 [size]="14"
               />
               <span class="contesto__titolo">{{ doc.titolo }}</span>
+              @if (doc.riferimenti.length > 1) {
+                <span
+                  class="mono contesto__quanti"
+                  [title]="'Il set informativo: ' + doc.riferimenti.length + ' documenti'"
+                >
+                  {{ doc.riferimenti.length }} doc.
+                </span>
+              }
               <!--
                 Il documento è ancora in lettura (o non si è lasciato
                 leggere): la lettura visiva dura minuti, prosegue sul server
@@ -244,7 +257,7 @@
                 risponderebbe «non ne ho il contenuto» e nessuno saprebbe
                 perché.
               -->
-              @if (store.elaborazioni().get(doc.id); as lettura) {
+              @if (letturaDelGruppo(doc); as lettura) {
                 <span
                   class="contesto__lettura"
                   [class.is-errore]="lettura.stato === 'errore'"
@@ -260,7 +273,7 @@
               <button
                 type="button"
                 class="contesto__togli"
-                (click)="store.rimuoviDalContesto(doc.id)"
+                (click)="store.rimuoviDalContesto(idsDelGruppo(doc))"
                 [attr.aria-label]="'Togli dal contesto ' + doc.titolo"
               >
                 <ui-icon name="chiudi" [size]="12" />

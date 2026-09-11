@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription, of, switchMap } from 'rxjs';
+import { Subscription, concat, of, switchMap } from 'rxjs';
 
 import {
   DestinatarioEmail,
@@ -1200,11 +1200,20 @@ export class ChatStore {
     });
   }
 
-  rimuoviDalContesto(documentoId: Id): void {
+  /**
+   * Toglie dal contesto un documento, o tutti quelli di un prodotto.
+   *
+   * Le cancellazioni vanno **in fila**, non insieme: il server legge il
+   * contesto e lo riscrive, e quattro richieste in volo sullo stesso record
+   * si sovrascriverebbero a vicenda lasciando dentro metà set.
+   */
+  rimuoviDalContesto(documentoId: Id | Id[]): void {
     const id = this.idAttiva();
     if (!id) return;
-    this.api.rimuoviDalContesto(id, documentoId).subscribe({
-      next: () => this.storico.ricarica(),
+    const ids = Array.isArray(documentoId) ? documentoId : [documentoId];
+    if (!ids.length) return;
+    concat(...ids.map((d) => this.api.rimuoviDalContesto(id, d))).subscribe({
+      complete: () => this.storico.ricarica(),
     });
   }
 }

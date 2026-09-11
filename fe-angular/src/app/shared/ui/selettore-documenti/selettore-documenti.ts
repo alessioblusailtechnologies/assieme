@@ -18,12 +18,15 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
+  Archivio,
   Documento,
   DocumentoPrivato,
   DocumentoPubblico,
   Id,
   Paginato,
   RiferimentoDocumento,
+  SetDiRiferimento,
+  SetInformativo,
 } from '@core/models';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -34,7 +37,15 @@ import { TestoEvidenziato } from '@shared/ui/evidenziato/testo-evidenziato';
 
 /** Una voce del selettore, già pronta per la scelta e per la resa. */
 export interface VoceSelettore {
-  riferimento: RiferimentoDocumento;
+  /** Chiave della voce: l'id del documento, o quella del set informativo. */
+  chiave: string;
+  archivio: Archivio;
+  /**
+   * Che cosa entra nel contesto scegliendo questa voce: un documento, o
+   * tutti quelli del set (12/09/2026). Il contesto resta fatto di documenti
+   * anche quando si sceglie un prodotto.
+   */
+  riferimenti: RiferimentoDocumento[];
   /** Riga secondaria: compagnia e prodotto, o tipologia ed etichette. */
   dettaglio: string;
   /** Edizione superata: referenziabile, ma va detto (RF-A-04). */
@@ -42,6 +53,19 @@ export interface VoceSelettore {
   /** Titolo e dettaglio già spezzati sui termini cercati, per la resa. */
   titoloEvidenziato: ParteEvidenziata[];
   dettaglioEvidenziato: ParteEvidenziata[];
+}
+
+/**
+ * Se la ricerca nomina un'edizione: un anno («km servizi 2025»), una data
+ * («04/2026») o la parola «ed.».
+ *
+ * A granularità di prodotto l'elenco mostra di norma la sola edizione in
+ * vigore — un prodotto con tre edizioni si mangiava metà dei risultati —
+ * ma chi lavora su una polizza vecchia deve poterla referenziare, e lo dice
+ * scrivendo l'anno.
+ */
+export function cercaUnEdizione(query: string): boolean {
+  return /(?:^|\D)(?:19|20)\d{2}(?:\D|$)|\b\d{1,2}\/\d{2,4}\b|\bed\b|\bed\./i.test(query);
 }
 
 /** Quanto è alta l'etichetta appiccicata di un gruppo, in pixel. */
@@ -112,7 +136,28 @@ export class SelettoreDocumenti {
   /** Documenti da non riproporre: già referenziati o già nel contesto. */
   readonly esclusi = input<Id[]>([]);
 
+  /**
+   * Che cosa si sceglie nell'Archivio Pubblico (12/09/2026).
+   *
+   * `documento`: una riga per documento, ed è ciò che serve dove la riga È
+   * un documento — le righe di una tabella di analisi, i documenti di
+   * riferimento di un agente.
+   *
+   * `prodotto`: una riga per set informativo, cioè il prodotto in una sua
+   * edizione. In chat è l'unica granularità sensata: cercare «zurich auto»
+   * restituiva DIP, DIP Aggiuntivo, Condizioni e Glossario dello stesso
+   * prodotto, quattro righe che dicono la stessa cosa e che occupavano
+   * tutto lo spazio dei risultati. Scegliendo il prodotto entrano nel
+   * contesto tutti i documenti del set, che è come un intermediario ragiona.
+   *
+   * L'Archivio Privato resta per documento in entrambi i casi: lì un
+   * documento è un documento, non l'edizione di un prodotto.
+   */
+  readonly granularita = input<'documento' | 'prodotto'>('documento');
+
   readonly scelto = output<RiferimentoDocumento>();
+  /** Un set informativo scelto: i suoi documenti, tutti insieme. */
+  readonly sceltiInsieme = output<RiferimentoDocumento[]>();
   readonly chiuso = output<void>();
 
   /** Ciò che si sta cercando: segue l'ingresso, e il campo interno lo riscrive. */
@@ -130,9 +175,30 @@ export class SelettoreDocumenti {
     { initialValue: '' },
   );
 
+  /*
+   * Due risorse per lo stesso archivio, una per granularità: quella non
+   * usata resta ferma (URL indefinito = nessuna chiamata), invece di
+   * interrogare l'archivio per risultati che nessuno mostrerà.
+   */
   private readonly risorsaPubblici = httpResource<Paginato<DocumentoPubblico>>(() =>
-    this.apiPubblici.urlElenco({ q: this.queryAttesa() || undefined, perPagina: RISULTATI_PER_ARCHIVIO }),
+    this.granularita() === 'prodotto'
+      ? undefined
+      : this.apiPubblici.urlElenco({
+          q: this.queryAttesa() || undefined,
+          perPagina: RISULTATI_PER_ARCHIVIO,
+        }),
   );
+  private readonly risorsaSet = httpResource<Paginato<SetInformativo>>(() => {
+    if (this.granularita() !== 'prodotto') return undefined;
+    const q = this.queryAttesa();
+    return this.apiPubblici.urlSetInformativi({
+      q: q || undefined,
+      /* Senza un'edizione nella ricerca si mostra solo quella in vigore: le
+         sorelle storiche ruberebbero il posto agli altri prodotti. */
+      ...(!cercaUnEdizione(q) && { soloCorrenti: true }),
+      perPagina: RISULTATI_PER_ARCHIVIO,
+    });
+  });
   private readonly risorsaPrivati = httpResource<Paginato<DocumentoPrivato>>(() =>
     this.apiPrivati.urlElenco({
       q: this.queryAttesa() || undefined,
@@ -142,7 +208,10 @@ export class SelettoreDocumenti {
   );
 
   protected readonly inCaricamento = computed(
-    () => this.risorsaPubblici.isLoading() || this.risorsaPrivati.isLoading(),
+    () =>
+      this.risorsaPubblici.isLoading() ||
+      this.risorsaSet.isLoading() ||
+      this.risorsaPrivati.isLoading(),
   );
 
   protected readonly gruppi = computed(() => {
@@ -152,22 +221,41 @@ export class SelettoreDocumenti {
        risposta passano duecento millisecondi, e nel mezzo si segnerebbero
        termini per cui l'elenco non è ancora stato filtrato. */
     const query = this.queryAttesa();
-    const gruppo = <T extends Documento>(etichetta: string, elenco: Paginato<T> | undefined) => ({
+    const gruppo = <T>(
+      etichetta: string,
+      elenco: Paginato<T> | undefined,
+      versoVoce: (elemento: T) => VoceSelettore,
+    ) => ({
       etichetta,
-      voci: (elenco?.elementi ?? []).filter((d) => !esclusi.has(d.id)).map((d) => voce(d, query)),
+      voci: (elenco?.elementi ?? [])
+        .map(versoVoce)
+        /* Un set sparisce solo quando è già dentro tutto: se ne manca un
+           pezzo, sceglierlo di nuovo porta dentro quello che manca. */
+        .filter((v) => v.riferimenti.some((r) => !esclusi.has(r.id))),
       /* Quanti ne ha in tutto l'archivio: senza, sei risultati su ottanta si
          leggono come «ce ne sono sei», e non si affina mai la ricerca. */
       totale: elenco?.totale ?? 0,
     });
 
+    const pubblici =
+      this.granularita() === 'prodotto'
+        ? gruppo(
+            'Archivio pubblico',
+            this.risorsaSet.hasValue() ? this.risorsaSet.value() : undefined,
+            (s) => voceSet(s, query),
+          )
+        : gruppo(
+            'Archivio pubblico',
+            this.risorsaPubblici.hasValue() ? this.risorsaPubblici.value() : undefined,
+            (d) => voce(d, query),
+          );
+
     return [
-      gruppo(
-        'Archivio pubblico',
-        this.risorsaPubblici.hasValue() ? this.risorsaPubblici.value() : undefined,
-      ),
+      pubblici,
       gruppo(
         'Archivio privato',
         this.risorsaPrivati.hasValue() ? this.risorsaPrivati.value() : undefined,
+        (d) => voce(d, query),
       ),
     ].filter((g) => g.voci.length);
   });
@@ -261,8 +349,11 @@ export class SelettoreDocumenti {
    */
   readonly idOpzioneAttiva = computed(() => {
     const voce = this.voci()[this.indiceAttivo()];
-    return voce ? `selettore-doc-${voce.riferimento.id}` : undefined;
+    return voce ? idVoce(voce) : undefined;
   });
+
+  /** L'id DOM di una voce, per `aria-activedescendant` e per lo scorrimento. */
+  protected readonly idVoce = idVoce;
 
   protected scrivi(valore: string): void {
     this.ricerca.set(valore);
@@ -322,24 +413,29 @@ export class SelettoreDocumenti {
      altro di fila non deve cancellare a mano, e chi chiude il pannello non
      se ne accorge. */
   private consegna(voce: VoceSelettore): void {
-    this.scelto.emit(voce.riferimento);
+    const [primo, ...altri] = voce.riferimenti;
+    if (!primo) return;
+    if (altri.length) this.sceltiInsieme.emit(voce.riferimenti);
+    else this.scelto.emit(primo);
     this.ricerca.set('');
   }
 }
 
-function voce(d: Documento, query: string): VoceSelettore {
-  const evidenziato = (titolo: string, dettaglio: string) => ({
-    titoloEvidenziato: evidenziaTermini(titolo, query),
-    dettaglioEvidenziato: evidenziaTermini(dettaglio, query),
-  });
+const evidenziato = (titolo: string, dettaglio: string, query: string) => ({
+  titoloEvidenziato: evidenziaTermini(titolo, query),
+  dettaglioEvidenziato: evidenziaTermini(dettaglio, query),
+});
 
+function voce(d: Documento, query: string): VoceSelettore {
   if (d.archivio === 'pubblico') {
     const dettaglio = `${d.compagnia.nome} - ${d.prodotto} · ${d.edizione.etichetta}`;
     return {
-      riferimento: { id: d.id, titolo: d.titolo, archivio: 'pubblico' },
+      chiave: d.id,
+      archivio: 'pubblico',
+      riferimenti: [{ id: d.id, titolo: d.titolo, archivio: 'pubblico' }],
       dettaglio,
       storico: !d.edizione.corrente,
-      ...evidenziato(d.titolo, dettaglio),
+      ...evidenziato(d.titolo, dettaglio, query),
     };
   }
 
@@ -347,9 +443,49 @@ function voce(d: Documento, query: string): VoceSelettore {
   if (d.riferimentoCliente) parti.push(d.riferimentoCliente);
   const dettaglio = parti.join(' - ');
   return {
-    riferimento: { id: d.id, titolo: d.titolo, archivio: 'privato' },
+    chiave: d.id,
+    archivio: 'privato',
+    riferimenti: [{ id: d.id, titolo: d.titolo, archivio: 'privato' }],
     dettaglio,
     storico: false,
-    ...evidenziato(d.titolo, dettaglio),
+    ...evidenziato(d.titolo, dettaglio, query),
   };
+}
+
+/**
+ * Un set informativo come voce: il titolo è il **prodotto**, e ciò che entra
+ * nel contesto sono tutti i suoi documenti, ognuno col set addosso — è quel
+ * che permette di mostrarli come un chip solo e di toglierli insieme.
+ */
+function voceSet(s: SetInformativo, query: string): VoceSelettore {
+  const dettaglio = `${s.compagnia.nome} - ${s.ramo.nome} · ${s.edizione.etichetta}`;
+  const set: SetDiRiferimento = {
+    chiave: s.chiave,
+    prodotto: s.prodotto,
+    compagnia: s.compagnia.nome,
+    edizione: s.edizione.etichetta,
+    corrente: s.edizione.corrente,
+  };
+  return {
+    chiave: s.chiave,
+    archivio: 'pubblico',
+    riferimenti: s.documenti.map((d) => ({
+      id: d.id,
+      titolo: d.titolo,
+      archivio: 'pubblico' as const,
+      set,
+    })),
+    dettaglio,
+    storico: !s.edizione.corrente,
+    ...evidenziato(s.prodotto, dettaglio, query),
+  };
+}
+
+/**
+ * L'id DOM della voce. La chiave di un set porta dentro il nome commerciale
+ * del prodotto («Km&Servizi»): quello che va nell'attributo `id` è una sua
+ * versione senza caratteri che romperebbero il selettore.
+ */
+function idVoce(voce: VoceSelettore): string {
+  return `selettore-doc-${voce.chiave.replace(/[^\w-]+/g, '-')}`;
 }

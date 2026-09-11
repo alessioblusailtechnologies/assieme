@@ -283,6 +283,13 @@
   overflow-wrap: break-word;
 }
 
+/* Quanti documenti porta il prodotto: un numero, non un elenco. */
+.contesto__quanti {
+  flex: none;
+  color: var(--c-text-4);
+  font-size: var(--t-mono-sm);
+}
+
 /* Lo stato della lettura, accanto al titolo: minuscolo, non è un allarme. */
 .contesto__lettura {
   flex: none;

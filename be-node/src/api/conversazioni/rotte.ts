@@ -29,6 +29,7 @@ import {
   type RiferimentoDocumento,
   type RispostaPrompt,
   type RispostaTrascrizione,
+  type SetDiRiferimento,
   type StatoAllegato,
   type StatoDocumento,
 } from '../../contratto/conversazioni.js';
@@ -1023,14 +1024,47 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
   const ids = [...new Set(righe.flatMap((r) => r.documenti_in_contesto))];
   const titoli = new Map<string, RiferimentoDocumento>();
   if (ids.length) {
+    /* Il set arriva insieme al titolo (12/09/2026): il contesto è fatto di
+       documenti, ma chi lo guarda vede prodotti, e senza queste colonne
+       ricaricando la pagina un prodotto tornerebbe a essere quattro chip. */
     const docs = await client.query<{
       id: string;
       titolo: string;
       archivio: RiferimentoDocumento['archivio'];
       stato: StatoDocumento;
-    }>(`select id, titolo, archivio, stato from velia.documenti where id = any($1)`, [ids]);
+      compagnia_id: string | null;
+      compagnia: string | null;
+      prodotto: string | null;
+      edizione_id: string | null;
+      edizione_etichetta: string | null;
+      edizione_corrente: boolean;
+    }>(
+      `select d.id, d.titolo, d.archivio, d.stato,
+              d.compagnia_id, c.nome as compagnia, d.prodotto,
+              d.edizione_id, d.edizione_etichetta, d.edizione_corrente
+         from velia.documenti d
+         left join velia.compagnie c on c.id = d.compagnia_id
+        where d.id = any($1)`,
+      [ids],
+    );
     for (const d of docs.rows) {
-      titoli.set(d.id, { id: d.id, titolo: d.titolo, archivio: d.archivio, stato: d.stato });
+      const set: SetDiRiferimento | undefined =
+        d.archivio === 'pubblico' && d.compagnia_id && d.prodotto && d.edizione_id
+          ? {
+              chiave: `${d.compagnia_id}:${d.prodotto}:${d.edizione_id}`,
+              prodotto: d.prodotto,
+              compagnia: d.compagnia ?? d.compagnia_id,
+              edizione: d.edizione_etichetta ?? '',
+              corrente: d.edizione_corrente,
+            }
+          : undefined;
+      titoli.set(d.id, {
+        id: d.id,
+        titolo: d.titolo,
+        archivio: d.archivio,
+        stato: d.stato,
+        ...(set && { set }),
+      });
     }
   }
   const inCorso = await conversazioniInRisposta(righe.map((r) => r.id));

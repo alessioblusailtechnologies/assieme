@@ -186,6 +186,14 @@
   margin-left: var(--sp-1);
 }
 
+/* Quanti documenti porta dentro un prodotto: si legge, non si annuncia. */
+.voce__quanti {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-4);
+  margin-left: var(--sp-1);
+}
+
 /* La freccia d'invio compare sulla riga evidenziata: dice che Invio prende
    questa, non un'altra. */
 .voce__invio {

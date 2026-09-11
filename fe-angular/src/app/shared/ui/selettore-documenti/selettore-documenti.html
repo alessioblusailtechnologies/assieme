@@ -86,21 +86,19 @@
             </span>
           }
         </p>
-        @for (voce of gruppo.voci; track voce.riferimento.id) {
+        @for (voce of gruppo.voci; track voce.chiave) {
           <button
             type="button"
             class="voce"
             role="option"
-            [id]="'selettore-doc-' + voce.riferimento.id"
+            [id]="idVoce(voce)"
             [class.is-attiva]="voci()[indiceAttivo()] === voce"
             [attr.aria-selected]="voci()[indiceAttivo()] === voce"
             (click)="scegli(voce)"
             (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
           >
             <ui-icon
-              [name]="
-                voce.riferimento.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'
-              "
+              [name]="voce.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
               [size]="15"
             />
             <span class="voce__testo">
@@ -109,6 +107,11 @@
               </span>
               <span class="voce__dettaglio">
                 <ui-testo-evidenziato [parti]="voce.dettaglioEvidenziato" />
+                <!-- Scegliendo un prodotto entra tutto il set: dirlo prima,
+                     non farlo scoprire dopo. -->
+                @if (voce.riferimenti.length > 1) {
+                  <span class="voce__quanti">{{ voce.riferimenti.length }} documenti</span>
+                }
                 @if (voce.storico) {
                   <span class="voce__storico">edizione superata</span>
                 }

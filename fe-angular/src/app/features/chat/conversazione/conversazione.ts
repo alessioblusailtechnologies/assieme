@@ -25,7 +25,14 @@ import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { TokenStore } from '@core/auth/token-store';
 import { Campo } from '@shared/ui/campo/campo';
-import { Citazione, DURATE_LINK, ModelloRiferimento, etichettaCitazione } from '@core/models';
+import {
+  Citazione,
+  DURATE_LINK,
+  Id,
+  ModelloRiferimento,
+  etichettaCitazione,
+} from '@core/models';
+import { raggruppaRiferimenti, type GruppoRiferimenti } from '@shared/riferimenti/gruppi';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -203,6 +210,28 @@ export class Conversazione {
     return [...noti, ...this.store.riferimentiInVolo().filter((d) => !presenti.has(d.id))];
   });
   protected readonly idContesto = computed(() => this.contesto().map((d) => d.id));
+
+  /**
+   * Il contesto come lo si legge: una riga per documento, ma i documenti di
+   * uno stesso set informativo stanno insieme sotto il nome del prodotto
+   * (12/09/2026), come il chip nel composer.
+   */
+  protected readonly contestoRaggruppato = computed(() => raggruppaRiferimenti(this.contesto()));
+
+  /** Gli id di un gruppo: si toglie il prodotto, non i suoi quattro pezzi. */
+  protected idsDelGruppo(gruppo: GruppoRiferimenti): Id[] {
+    return gruppo.riferimenti.map((r) => r.id);
+  }
+
+  /**
+   * Lo stato della lettura, per i gruppi di un documento solo: un set
+   * dell'Archivio Pubblico è sempre già letto, e ciò che sta in lettura è
+   * un allegato o un documento privato, che sta sempre da solo.
+   */
+  protected letturaDelGruppo(gruppo: GruppoRiferimenti) {
+    const solo = gruppo.riferimenti.length === 1 ? gruppo.riferimenti[0] : undefined;
+    return solo && this.store.elaborazioni().get(solo.id);
+  }
 
   // --- Citazioni (RF-C-05) ------------------------------------------------
 

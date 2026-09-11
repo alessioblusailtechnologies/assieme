@@ -244,6 +244,16 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     convId = conv.id;
     expect(conv).toMatchObject({ titolo: 'Nuova conversazione', condivisa: false, documentiInContesto: [{ id: docPubblicoId, titolo: docPubblicoTitolo, archivio: 'pubblico' }] });
 
+    /* Il set viaggia col riferimento (12/09/2026): senza, ricaricando la
+       pagina un prodotto referenziato in chat tornerebbe a essere quattro
+       chip, uno per documento. */
+    const inContesto = conv.documentiInContesto[0]!;
+    expect(inContesto.set).toMatchObject({
+      chiave: expect.stringContaining(':'),
+      prodotto: expect.any(String),
+      compagnia: expect.any(String),
+    });
+
     const ignoto = await richiedi('POST', '/api/conversazioni', tokenAdmin, { documentiInContesto: ['doc-inesistente'] });
     expect(ignoto.statusCode).toBe(404);
     expect(ignoto.json<CorpoErroreApi>().codice).toBe('NON_TROVATO');

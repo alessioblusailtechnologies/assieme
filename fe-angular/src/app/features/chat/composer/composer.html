@@ -4,7 +4,9 @@
       class="selettore"
       [query]="menzione()?.query ?? ''"
       [esclusi]="esclusi()"
+      [granularita]="granularita"
       (scelto)="referenzia($event)"
+      (sceltiInsieme)="referenziaInsieme($event)"
       (chiuso)="chiudiSelettore()"
     />
   }
