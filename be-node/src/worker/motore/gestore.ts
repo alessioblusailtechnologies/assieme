@@ -257,13 +257,16 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       /* «Genera da modello» (sandbox documentale), sia dal pulsante sia
          a parole: la stessa funzione, con la workspace già materializzata. */
       const elaborata = dip.sandbox
-        ? async (r: {
-            formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx' | undefined;
-            modelloId?: string | undefined;
-            istruzioni?: string | undefined;
-            contenuto?: string | undefined;
-            titolo?: string | undefined;
-          }) => {
+        ? async (
+            r: {
+              formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx' | undefined;
+              modelloId?: string | undefined;
+              istruzioni?: string | undefined;
+              contenuto?: string | undefined;
+              titolo?: string | undefined;
+            },
+            daChat = false,
+          ) => {
             const e = await eseguiEsportazioneElaborata(
               {
                 db,
@@ -271,7 +274,13 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 avviatore: dip.sandbox!.avviatore,
                 sessione: dip.sandbox!.sessione,
                 workspace: workspace!,
-                emetti,
+                /* Chiamata dalla chat, la sandbox lavora dentro una risposta
+                   che scrive il motore della chat: il suo testo è il
+                   resoconto per lui (gli torna come esito del tool), e nella
+                   bolla restano solo le attività. Prima finiva nello stream
+                   e l'utente vedeva due risposte incollate, la prima sparita
+                   al ricaricamento. */
+                emetti: daChat ? async (ev: EventoStream) => (ev.tipo === 'testo' ? 0 : emetti(ev)) : emetti,
                 annullato,
               },
               {
@@ -394,15 +403,22 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           await emetti({ tipo: 'proposta', proposta });
           return proposta;
         },
+        richieste: {
+          utente: [...storia.rows.filter((m) => m.autore === 'utente').map((m) => m.testo), payload.testo],
+          agenzia: [...dna.istruzioni.map((i) => `${i.titolo} ${i.testo}`), ...dna.ricordi.map((r) => r.testo)],
+        },
         ...(elaborata && {
           elaborata: async (r) => {
-            const e = await elaborata({
-              formato: r.formato,
-              modelloId: r.modelloId,
-              istruzioni: r.istruzioni,
-              contenuto: r.contenuto,
-              titolo: r.titolo,
-            });
+            const e = await elaborata(
+              {
+                formato: r.formato,
+                modelloId: r.modelloId,
+                istruzioni: r.istruzioni,
+                contenuto: r.contenuto,
+                titolo: r.titolo,
+              },
+              true,
+            );
             /* I file consegnati dalla sandbox sono documenti della risposta di chat. */
             strumentiChat!.generati.push(...e.generati);
             strumentiChat!.percorsi.push(...e.percorsi);

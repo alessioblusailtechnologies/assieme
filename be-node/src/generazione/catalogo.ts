@@ -102,6 +102,41 @@ export function scegliModello(
   };
 }
 
+/** Parole di un nome di modello che non bastano a dire che lo si è nominato. */
+const PAROLE_VUOTE = new Set([
+  'della', 'delle', 'dello', 'degli', 'nella', 'nelle', 'nello', 'sulla', 'sulle', 'alla', 'alle',
+  'dalla', 'dalle', 'documento', 'documenti', 'agenzia',
+]);
+
+const normalizza = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+/**
+ * Se un modello è stato chiesto: dall'utente in questa conversazione (lo
+ * nomina, per intero o con una parola sua, oppure chiede «il modello» senza
+ * dire quale) o dal DNA d'Agenzia (una regola o un ricordo che lo nomina).
+ *
+ * Serve al tool della chat per scartare un modello senza «quando usarlo»
+ * che il motore ha preso solo perché c'era: l'11/09/2026 una presentazione
+ * chiesta a parole è uscita con lo stile dello «Standard CI CD_v5.4», l'unico
+ * modello della tenant, che nessuno aveva nominato. Larga di proposito: un
+ * falso sì lascia decidere al prompt, com'era prima; un falso no
+ * toglierebbe all'utente il modello che ha chiesto. Pura: provata a parte.
+ */
+export function modelloChiesto(nome: string, testi: { utente: string[]; agenzia: string[] }): boolean {
+  const utente = ` ${testi.utente.map(normalizza).join(' ')} `;
+  if (/ (modell[oi]|template) /.test(utente)) return true;
+  const tutto = `${utente}${testi.agenzia.map(normalizza).join(' ')} `;
+  const parole = normalizza(nome).split(' ').filter(Boolean);
+  if (parole.length && tutto.includes(` ${parole.join(' ')} `)) return true;
+  return parole.some((p) => p.length >= 4 && /\p{L}/u.test(p) && !PAROLE_VUOTE.has(p) && tutto.includes(` ${p} `));
+}
+
 /** Le fonti nella forma del mock: «Titolo — art. X, p. N». */
 export function fontiDaCitazioni(citazioni: Citazione[]): string[] {
   return citazioni.map((c) => {

@@ -10,7 +10,7 @@ import {
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
 import { FORMATI_GENERAZIONE, FORMATI_MODELLO, type FormatoModello } from '../../contratto/template.js';
-import { fasceDelTenant, modelliDelTenant, scegliModello } from '../../generazione/catalogo.js';
+import { fasceDelTenant, modelliDelTenant, modelloChiesto, scegliModello } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
 import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
 import type { PropostaArchivio } from '../../contratto/conversazioni.js';
@@ -66,6 +66,13 @@ export interface ContestoStrumenti {
     contenuto?: string | undefined;
     titolo?: string | undefined;
   }) => Promise<{ testo: string; documenti: DocumentoGenerato[] }>;
+  /**
+   * Dove un modello può essere stato chiesto: i messaggi dell'utente in
+   * questa conversazione e il DNA d'Agenzia (`modelloChiesto`). Un modello
+   * senza «quando usarlo» che non compare qui non si usa. Assente = ci si
+   * fida della scelta del motore.
+   */
+  richieste?: { utente: string[]; agenzia: string[] };
 }
 
 export interface StrumentiMotore {
@@ -150,18 +157,24 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     'esportazione_elaborata',
     [
       'Fa preparare un documento di qualità professionale (PDF, DOCX, XLSX o PPTX) al motore documentale, che lavora in una',
-      'sandbox con Python, Node, LibreOffice e Chromium: apre il modello di riferimento dell’agenzia, lo copia e lo adatta',
-      'conservando struttura e stili, controlla il risultato pagina per pagina e lo allega alla risposta.',
+      'sandbox con Python, Node, LibreOffice e Chromium: lo impagina con cura, controlla il risultato pagina per pagina e lo',
+      'allega alla risposta. Con un `modello` apre il modello di riferimento dell’agenzia e ne conserva struttura e stili;',
+      'senza, impagina da zero con l’intestazione dell’agenzia.',
       'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
       '«da consegnare», una proposta o un report impaginato, o nomina un modello («sul modello X», «da modello»). Per un',
       'semplice «esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
-      'Scegli il modello fra quelli dell’agenzia, per nome, leggendo a cosa serve ciascuno; senza un modello adatto, omettilo.',
+      'Passa `modello` solo quando è chiaro che lo si vuole: l’utente lo nomina o chiede «il modello», una regola del DNA',
+      'd’Agenzia lo prescrive, o la sua riga «quando usarlo» descrive proprio il documento chiesto. Mai solo perché c’è:',
+      'nel dubbio omettilo.',
       'Passa in `istruzioni` tutto ciò che il motore documentale deve sapere (cosa produrre, per chi, con quali dati e',
       'da quali documenti della workspace) e in `contenuto` il testo di partenza già scritto, se c’è.',
       'Dopo l’esito, chiudi con UNA riga: il documento è pronto sotto la risposta.',
     ].join(' '),
     {
-      modello: z.string().optional().describe('Il nome del modello di riferimento da usare, fra quelli dell’agenzia.'),
+      modello: z
+        .string()
+        .optional()
+        .describe('Il nome del modello di riferimento, fra quelli dell’agenzia: solo quando è chiaro che lo si vuole.'),
       formato: z
         .enum(FORMATI_MODELLO)
         .optional()
@@ -175,10 +188,19 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         return { content: [{ type: 'text', text: 'La generazione di documenti da modello non è disponibile in questo ambiente.' }], isError: true };
       }
       let modelloId: string | undefined;
+      let scartato = '';
       if (args.modello?.trim()) {
         const scelta = await risolviNomeModello(contesto, args.modello);
         if (scelta.esito !== 'ok') return { content: [{ type: 'text', text: scelta.motivo }], isError: true };
-        modelloId = scelta.id;
+        /* Senza «quando usarlo» il motore non ha niente con cui abbinarlo al
+           documento chiesto: se nessuno l'ha chiesto, l'ha preso perché c'era. */
+        const { modello } = scelta;
+        if (modello.descrizione.trim() || !contesto.richieste || modelloChiesto(modello.nome, contesto.richieste)) {
+          modelloId = modello.id;
+        } else {
+          console.log(`[elaborata] modello «${modello.nome}» scartato: senza «quando usarlo» e non chiesto`);
+          scartato = ` Il modello «${modello.nome}» NON è stato usato: non ha la riga «quando usarlo» e nessuno l’ha chiesto, quindi il documento è impaginato dal motore documentale con l’intestazione dell’agenzia. Non dire che è sul modello.`;
+        }
       }
       let esito;
       try {
@@ -203,7 +225,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
           {
             type: 'text',
             text: consegnati
-              ? `Documento pronto: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
+              ? `Documento pronto: ${consegnati}, già sotto la risposta.${scartato} Nota del motore documentale: ${esito.testo}`
               : `Il motore documentale non ha consegnato file. Nota: ${esito.testo}`,
           },
         ],
@@ -331,15 +353,14 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   };
 }
 
-/** Il nome detto in chat → l'id del modello, o il motivo per cui non c'è (che torna al motore). */
+/** Il nome detto in chat → il modello, o il motivo per cui non c'è (che torna al motore). */
 async function risolviNomeModello(
   contesto: ContestoStrumenti,
   nome: string,
-): Promise<{ esito: 'ok'; id: string } | { esito: 'non-trovato'; motivo: string }> {
+): Promise<ReturnType<typeof scegliModello>> {
   const client = await contesto.db.connect();
   try {
-    const scelta = scegliModello(await modelliDelTenant(client, contesto.tenantId), nome);
-    return scelta.esito === 'ok' ? { esito: 'ok', id: scelta.modello.id } : scelta;
+    return scegliModello(await modelliDelTenant(client, contesto.tenantId), nome);
   } finally {
     client.release();
   }

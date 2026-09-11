@@ -345,15 +345,23 @@ export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema =
   if (modelli) {
     parti.push('\n\n## Documenti e modelli\n');
     parti.push(
-      'Hai due strumenti per i file, da usare solo quando l’utente chiede un file, un documento, un’esportazione o nomina un modello, mai di tua iniziativa. `esporta_subito` (Esporta come): produce all’istante un PDF, DOCX o XLSX col testo che gli passi, col layout di VELIA e l’intestazione dell’agenzia; per «esportamelo», «fammelo in Excel». Non usa i modelli: quando l’utente ne nomina uno, l’altro strumento. `esportazione_elaborata` (Genera da modello, se presente): un motore documentale in sandbox che parte da un modello di riferimento dell’agenzia, lo copia e lo adatta con impaginazione fedele, controlla il risultato e consegna; ci mette uno o due minuti e costa di più: per «fammelo fatto bene», «come quel documento», «sul modello X», proposte e report da consegnare. Il contenuto e le istruzioni li scrivi tu, completi e per chi leggerà, con le fonti per esteso (titolo e pagina) e senza i rimandi [n] della chat. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
+      'Hai due strumenti per i file, da usare solo quando l’utente chiede un file, un documento, un’esportazione o nomina un modello, mai di tua iniziativa. `esporta_subito` (Esporta come): produce all’istante un PDF, DOCX o XLSX col testo che gli passi, col layout di VELIA e l’intestazione dell’agenzia; per «esportamelo», «fammelo in Excel». Non usa i modelli: quando l’utente ne nomina uno, l’altro strumento. `esportazione_elaborata` (Genera da modello, se presente): un motore documentale in sandbox che impagina il documento con cura, controlla il risultato e consegna; se gli passi un modello di riferimento dell’agenzia lo copia e lo adatta con impaginazione fedele, altrimenti impagina da zero con l’intestazione dell’agenzia. Ci mette uno o due minuti e costa di più: per «fammelo fatto bene», «come quel documento», «sul modello X», proposte e report da consegnare. Il contenuto e le istruzioni li scrivi tu, completi e per chi leggerà, con le fonti per esteso (titolo e pagina) e senza i rimandi [n] della chat. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
     );
     if (modelli.length) {
+      /* Un modello decide l'aspetto del documento: l'11/09/2026 l'unico
+         modello della tenant, senza «quando usarlo», è finito su una
+         presentazione chiesta a parole, perché la regola di prima («scegli
+         quello la cui descrizione corrisponde») con una descrizione vuota
+         non escludeva niente. Il tool ha anche un controllo suo. */
       parti.push(
-        '\nI modelli di riferimento dell’agenzia: richiamali per nome, come li dice l’utente; quando non ne nomina uno, scegli quello la cui descrizione corrisponde al documento chiesto, o nessuno.',
+        '\nI modelli di riferimento dell’agenzia. Un modello decide l’aspetto del documento: passalo solo quando è chiaro che lo si vuole, cioè quando l’utente lo nomina (richiamalo per nome, come lo dice lui) o chiede «il modello» senza dire quale (se ce n’è uno solo è quello, altrimenti chiedigli quale), quando una regola del DNA d’Agenzia lo prescrive per quel documento, oppure quando la sua riga «quando usarlo» descrive proprio il documento chiesto. Mai solo perché c’è. Nel dubbio nessun modello: il documento esce impaginato dal motore documentale, con l’intestazione dell’agenzia.',
       );
-      for (const m of modelli) {
-        const quando = m.descrizione.trim() ? `: ${m.descrizione.trim()}` : '';
-        parti.push(`- «${m.nome}» (${m.formato.toUpperCase()})${quando}`);
+      const descritti = modelli.filter((m) => m.descrizione.trim());
+      const senzaRiga = modelli.filter((m) => !m.descrizione.trim());
+      for (const m of descritti) parti.push(`- «${m.nome}» (${m.formato.toUpperCase()}): ${m.descrizione.trim()}`);
+      if (senzaRiga.length) {
+        parti.push('Senza la riga «quando usarlo», da usare solo se li chiede l’utente o il DNA d’Agenzia:');
+        for (const m of senzaRiga) parti.push(`- «${m.nome}» (${m.formato.toUpperCase()})`);
       }
     } else {
       parti.push('L’agenzia non ha modelli caricati: i documenti escono col layout di VELIA, indica solo il formato.');
