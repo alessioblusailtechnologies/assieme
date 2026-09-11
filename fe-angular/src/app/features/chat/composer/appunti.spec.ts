@@ -32,11 +32,11 @@ describe('le immagini negli appunti', () => {
     expect(immaginiIncollate(appunti([jpeg]), ORA).leggibili[0].name).toBe('Immagine incollata 9.05.jpg');
   });
 
-  it('conta le immagini che non sappiamo leggere invece di allegarle', () => {
+  it('ogni immagine si allega, col suo formato nel nome: il server porta a PNG quelle che non lo sono', () => {
     const webp = new File([new Uint8Array([1])], 'x.webp', { type: 'image/webp' });
     const esito = immaginiIncollate(appunti([png(), webp]), ORA);
-    expect(esito.leggibili.length).toBe(1);
-    expect(esito.scartate).toBe(1);
+    expect(esito.leggibili.map((f) => f.name)).toEqual(['Immagine incollata 9.05.png', 'Immagine incollata 9.05 (2).webp']);
+    expect(esito.scartate).toBe(0);
   });
 
   it('non guarda i file che non sono immagini: quelli si allegano dal menù', () => {

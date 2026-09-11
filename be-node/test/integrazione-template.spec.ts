@@ -284,8 +284,13 @@ describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
 
   it('i caricamenti sbagliati si rifiutano con un motivo leggibile, senza lasciare metà lotto', async () => {
     const pptxVuoto = new PizZip().file('altro.xml', '<x/>').generate({ type: 'nodebuffer' });
+    /* Dall'11/09/2026 un modello può essere di qualsiasi formato: si
+       rifiutano solo i programmi, i file senza estensione o vuoti, e quelli
+       di Office che dicono di esserlo e non si aprono. */
     const casi: Array<{ nome: string; contenuto: Buffer; stato: number; codice: string }> = [
-      { nome: 'note.txt', contenuto: Buffer.from('testo'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
+      { nome: 'installa.exe', contenuto: Buffer.from('MZ'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
+      { nome: 'senza-estensione', contenuto: Buffer.from('testo'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
+      { nome: 'vuota.html', contenuto: Buffer.alloc(0), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
       { nome: 'finto.docx', contenuto: Buffer.from('non uno zip'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
       { nome: 'vuoto.pptx', contenuto: pptxVuoto, stato: 400, codice: 'FORMATO_NON_AMMESSO' },
     ];
@@ -314,6 +319,20 @@ describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
     expect(r.statusCode).toBe(400);
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
     expect(elenco.json<ModelloRiferimento[]>().some((m) => m.nome === 'buono')).toBe(false);
+  });
+
+  it('un modello di qualsiasi formato: una pagina HTML entra col suo formato, e se ne va', async () => {
+    const { corpo, contentType } = multipart([{ nome: 'Pagina cliente.html', contenuto: Buffer.from('<!doctype html><h1>Stile</h1>') }]);
+    const r = await app.inject({
+      method: 'POST',
+      url: '/api/template',
+      headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType },
+      payload: corpo,
+    });
+    expect(r.statusCode).toBe(201);
+    const [creato] = r.json<{ creati: ModelloRiferimento[] }>().creati;
+    expect(creato).toMatchObject({ nome: 'Pagina cliente', formato: 'html' });
+    expect((await richiedi('DELETE', `/api/template/${creato!.id}`, tokenAdmin)).statusCode).toBe(204);
   });
 
   it('nome, «quando usarlo» e intestazione si cambiano; il predefinito non esiste più', async () => {

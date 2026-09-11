@@ -5,7 +5,6 @@ import type pg from 'pg';
 
 import { type Compagnia, type Ramo, type TipologiaDocumento } from '../../contratto/documenti.js';
 import {
-  ELENCO_FORMATI,
   schemaFiltriDocumentiPrivati,
   schemaModificheDocumento,
   type DocumentoPrivato,
@@ -17,7 +16,7 @@ import {
   type StatoElaborazione,
 } from '../../contratto/documenti-privati.js';
 import { ErroreApi } from '../../contratto/errori.js';
-import { estensionePerFormato, riconosciFormato, type FileRicevuto } from './formati.js';
+import { allegatiDaEmail, estensionePerFormato, preparaFile, type FileRicevuto } from './formati.js';
 import {
   cartelleDelPercorso,
   eZip,
@@ -307,17 +306,9 @@ export function registraRotteArchivioPrivato(
          gli altri. */
       if (eZip(file)) {
         const dentro = espandiZip(file);
-        if (!dentro.length) {
-          /* Stesso codice di un formato qualunque che non sappiamo leggere
-             (415, contratto di Fase 2): per chi carica è la stessa cosa, e il
-             FE non deve imparare un caso nuovo. Cambia solo il messaggio. */
-          throw new ErroreApi(
-            415,
-            'FORMATO_NON_SUPPORTATO',
-            `«${file.nome}» non è un archivio zip leggibile, o non contiene documenti.`,
-          );
-        }
-        ricevuti.push(...dentro);
+        /* Uno zip che non si apre (o vuoto) si conserva com'è, come file
+           che non si legge: dall'11/09/2026 non si rifiuta niente. */
+        ricevuti.push(...(dentro.length ? dentro : [file]));
       } else {
         ricevuti.push(file);
       }
@@ -337,37 +328,30 @@ export function registraRotteArchivioPrivato(
         throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${f.nome}» supera il limite di ${mb} MB per file.`);
       }
     }
+    /* Dall'11/09/2026 (fase 3 di PIANO-LINK-E-FORMATI.md) non si rifiuta
+       più nessun formato: ciò che non si sa leggere entra come `altro`, con
+       la sua scheda. Le immagini che non sono PNG o JPEG entrano già PNG, e
+       gli allegati di un'email (anche dentro una PEC) diventano documenti a
+       sé, nella stessa cartella dell'email. */
     const formati = new Map<FileRicevuto, FormatoDocumento>();
-    const ignorati: string[] = [];
     const daLavorare: FileConPercorso[] = [];
-    for (const f of ricevuti) {
-      const formato = riconosciFormato(f);
-      if (!formato) {
-        /* Un lotto normale è atomico: un formato illeggibile rifiuta tutto
-           (contratto di Fase 2). Dentro uno zip no — in un archivio
-           d'agenzia c'è sempre un `.doc` del 2009, e far fallire
-           l'importazione intera per quello sarebbe assurdo: si salta, si
-           dice quale, e il resto entra. */
-        if (f.daZip) {
-          ignorati.push(f.percorso ?? f.nome);
-          continue;
-        }
-        throw new ErroreApi(
-          415,
-          'FORMATO_NON_SUPPORTATO',
-          `«${f.nome}» non è di un formato che sappiamo leggere: l'archivio accetta ${ELENCO_FORMATI}.`,
-        );
+    const aggiungi = async (originale: FileConPercorso): Promise<void> => {
+      const { file, formato } = await preparaFile(originale);
+      formati.set(file, formato);
+      daLavorare.push(file);
+      if (formato !== 'email') return;
+      const cartella = cartelleDelPercorso(file.percorso).join('/');
+      for (const allegato of await allegatiDaEmail(file.contenuto)) {
+        const preparato = await preparaFile<FileConPercorso>({
+          ...allegato,
+          ...(cartella && { percorso: `${cartella}/${allegato.nome}` }),
+          ...(file.daZip && { daZip: true }),
+        });
+        formati.set(preparato.file, preparato.formato);
+        daLavorare.push(preparato.file);
       }
-      formati.set(f, formato);
-      daLavorare.push(f);
-    }
-    if (!daLavorare.length) {
-      throw new ErroreApi(
-        415,
-        'FORMATO_NON_SUPPORTATO',
-        `Nessuno dei file caricati è di un formato leggibile: l'archivio accetta ${ELENCO_FORMATI}.`,
-      );
-    }
+    };
+    for (const f of ricevuti) await aggiungi(f);
     const pesoLotto = daLavorare.reduce((s, f) => s + f.contenuto.length, 0);
     if (spazio.usatoByte + pesoLotto > spazio.limiteByte) {
       throw new ErroreApi(507, 'SPAZIO_ESAURITO', 'Lo spazio del piano non basta per questi documenti.');
@@ -470,7 +454,9 @@ export function registraRotteArchivioPrivato(
     }
 
     void risposta.code(201);
-    const esito: EsitoCaricamento = { creati, ...(ignorati.length && { ignorati }) };
+    /* `ignorati` resta nel contratto per i client di prima: dall'11/09/2026
+       di uno zip non si salta più niente, se non i file di sistema. */
+    const esito: EsitoCaricamento = { creati };
     return esito;
   });
 

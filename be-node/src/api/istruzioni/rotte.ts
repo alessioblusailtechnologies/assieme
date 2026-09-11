@@ -20,8 +20,8 @@ import { poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 import { percorsoOriginale, percorsoPdf } from '../archivio-privato/rotte.js';
-import { estensionePerFormato, riconosciFormato } from '../archivio-privato/formati.js';
-import { ELENCO_FORMATI, type FormatoDocumento } from '../../contratto/documenti-privati.js';
+import { estensionePerFormato, preparaFile } from '../archivio-privato/formati.js';
+import { type FormatoDocumento } from '../../contratto/documenti-privati.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { registraStorico } from '../template/rotte.js';
 
@@ -234,20 +234,14 @@ export function registraRotteIstruzioni(app: FastifyInstance, opzioni: OpzioniIs
       if (parte.file.truncated) {
         throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${parte.filename}» supera il limite per file.`);
       }
-      const formato = riconosciFormato({
+      /* Qualsiasi file, dall'11/09/2026 (fase 3 di PIANO-LINK-E-FORMATI.md). */
+      const { file, formato } = await preparaFile({
         nome: parte.filename,
         mimetype: parte.mimetype,
         contenuto,
         troncato: false,
       });
-      if (!formato) {
-        throw new ErroreApi(
-          415,
-          'FORMATO_NON_SUPPORTATO',
-          `«${parte.filename}» non è di un formato che sappiamo leggere: i riferimenti accettano ${ELENCO_FORMATI}.`,
-        );
-      }
-      ricevuti.push({ nome: parte.filename, contenuto, formato });
+      ricevuti.push({ nome: file.nome, contenuto: file.contenuto, formato });
     }
     if (!ricevuti.length) {
       throw new ErroreApi(400, 'NESSUN_FILE', 'La richiesta non contiene file.');

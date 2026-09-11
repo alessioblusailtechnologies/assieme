@@ -2,6 +2,8 @@ import ExcelJS from 'exceljs';
 import mammoth from 'mammoth';
 
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
+import { leggiEmail } from './email.js';
+import { markdownDaPaginaWeb } from './html.js';
 
 /**
  * Da un file che è già testo al Markdown che l'archivio conserva
@@ -26,9 +28,20 @@ import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
  */
 export const RIGHE_MASSIME_TABELLA = 5000;
 
-/** Il formato ha un testo da estrarre, o va guardato come si guarda un PDF? */
+/**
+ * Il formato ha un testo da estrarre, o va guardato come si guarda un PDF?
+ * Dall'11/09/2026 anche le pagine web e le email: il loro testo c'è già.
+ */
 export function eTestuale(formato: FormatoDocumento): boolean {
-  return formato === 'markdown' || formato === 'testo' || formato === 'csv' || formato === 'docx' || formato === 'xlsx';
+  return (
+    formato === 'markdown' ||
+    formato === 'testo' ||
+    formato === 'csv' ||
+    formato === 'docx' ||
+    formato === 'xlsx' ||
+    formato === 'html' ||
+    formato === 'email'
+  );
 }
 
 export async function markdownDaOriginale(
@@ -46,9 +59,30 @@ export async function markdownDaOriginale(
       return daDocx(contenuto);
     case 'xlsx':
       return daXlsx(contenuto);
+    case 'html':
+      return normalizza(markdownDaPaginaWeb(contenuto.toString('utf8')));
+    case 'email':
+      return normalizza((await leggiEmail(contenuto)).markdown);
     default:
       throw new Error(`formato senza estrattore: ${formato}`);
   }
+}
+
+/**
+ * La scheda di un file che VELIA non sa leggere (11/09/2026, fase 3 di
+ * `PIANO-LINK-E-FORMATI.md`): un disegno tecnico, un archivio 7z, un formato
+ * di un gestionale. Si conserva com'è e si dice che cos'è, così il motore
+ * sa che esiste e l'utente lo ritrova, invece di vederselo rifiutare.
+ */
+export function schedaFile(nome: string, byte: number): string {
+  const punto = nome.lastIndexOf('.');
+  const estensione = punto > 0 ? nome.slice(punto + 1).toUpperCase() : '';
+  const peso = byte >= 1024 * 1024 ? `${(byte / 1024 / 1024).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(byte / 1024))} KB`;
+  return [
+    `# ${nome}`,
+    '',
+    `File ${estensione ? `${estensione} ` : 'senza estensione, '}di ${peso}. VELIA non ne legge il contenuto e lo conserva così com'è: si scarica dall'archivio. Quando il documento è nel contesto della conversazione, il motore documentale lo trova accanto a questa scheda, col suo nome e la sua estensione, e può usarlo nei documenti che genera.`,
+  ].join('\n');
 }
 
 /** Fine riga uniformi, niente BOM, niente code di righe vuote. */

@@ -405,11 +405,14 @@ describe.skipIf(!pronto)('cartelle, clienti e convenzione col progetto Supabase'
     expect(convenzione.rows[0]!.da_ricalcolare).toBe(true);
   });
 
-  it('uno zip entra coi suoi percorsi e salta ciò che non sa leggere', async () => {
+  it('uno zip entra coi suoi percorsi, tutto tranne i file di sistema', async () => {
     const pdf = await pdfDiProva('Preventivo');
     const zip = new PizZip();
     zip.file('Clienti/Esposito Rita/preventivo.pdf', pdf);
-    zip.file('Clienti/Esposito Rita/vecchio.doc', Buffer.from('roba del 2009'));
+    /* Il .doc del 2009 (OLE2): dall'11/09/2026 entra, e lo converte il worker. */
+    zip.file('Clienti/Esposito Rita/vecchio.doc', Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1, 0, 0]));
+    /* Quelli che il sistema lascia nelle cartelle no. */
+    zip.file('Clienti/Esposito Rita/Thumbs.db', Buffer.from('x'));
     zip.file('__MACOSX/._preventivo.pdf', Buffer.from('x'));
     const contenuto = zip.generate({ type: 'nodebuffer' });
 
@@ -424,9 +427,9 @@ describe.skipIf(!pronto)('cartelle, clienti e convenzione col progetto Supabase'
     });
     expect(r.statusCode).toBe(201);
     const esito = r.json<EsitoCaricamento>();
-    expect(esito.creati).toHaveLength(1);
-    expect(esito.creati[0]!.percorso).toBe('Clienti/Esposito Rita');
-    expect(esito.ignorati).toEqual(['Clienti/Esposito Rita/vecchio.doc']);
+    expect(esito.creati.map((d) => d.titolo).sort()).toEqual(['preventivo', 'vecchio']);
+    expect(esito.creati.every((d) => d.percorso === 'Clienti/Esposito Rita')).toBe(true);
+    expect(esito.ignorati).toBeUndefined();
   });
 
   it('filtra per cartella col sottoalbero, per la sola cartella, e per «Da sistemare»', async () => {

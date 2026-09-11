@@ -6,7 +6,7 @@
 2. **Pagine con link**: un documento generato si condivide col cliente come link, che si apre dal telefono.
 3. **Nessun limite sui formati in ingresso**: si carica qualsiasi file; VELIA lo rende leggibile quando può, e l'originale resta sempre disponibile.
 
-**Stato**: fasi 1 e 2 fatte e collaudate l'11/09/2026 sera (motore della chat e sandbox veri: pagina HTML interattiva generata, link creato dal motore, pagina servita isolata). Fase 3 in corso.
+**Stato**: tutte e tre le fasi fatte l'11/09/2026. Fasi 1 e 2 collaudate col motore della chat e la sandbox veri (pagina HTML interattiva generata, link creato dal motore, pagina servita isolata); fase 3 collaudata coi test (riconoscimento, buste .p7m DER/BER/doppie/base64, email con PEC annidata, immagini in PNG, job di lettura per ogni famiglia) e con la conversione vera di Word, SVG e PowerPoint nel LibreOffice della sandbox (circa 4 s ciascuno). La trascrizione di audio e video usa il Voxtral della dettatura, con dieci minuti di tempo massimo: provata su un parlato italiano sintetico (voce Elsa di Windows), trascritto giusto in 0,6 s col gergo al suo posto («RCA», «Kasko»). Un video vero non è ancora stato provato: se Voxtral non ne prende la traccia audio, il documento va in errore e il messaggio dice di caricare solo l'audio.
 
 ## Decisioni del committente (11/09/2026)
 
@@ -56,11 +56,16 @@ Si accetta qualsiasi file, in archivio, negli allegati della chat, fra i documen
 | Video | mp4, mov | l'audio estratto e trascritto |
 | Altro | qualsiasi | una scheda col nome e il tipo; l'originale resta per la sandbox |
 
-- Il vincolo sul formato a database (`20260901120000_formati_documento.sql`) si allarga; il riconoscimento (`api/archivio-privato/formati.ts`) passa da un elenco chiuso a famiglie con ripiego «altro».
-- Gli originali entrano nella workspace, così la sandbox può usarli (un'immagine da mettere in un documento, un file da convertire).
-- FE: niente più filtri `accept`, incolla qualsiasi file.
-- Modelli di riferimento di qualsiasi formato: anteprima quando si può convertire.
-- Da fare con cura: macro (conversione senza esecuzione, nella sandbox), zip bomb (tetto su voci e dimensione estratta), SVG e HTML caricati mai mostrati inline nell'app.
+Come è stata fatta:
+
+- **Riconoscimento** (`worker/ingestion/riconoscimento.ts`, spostato dall'API perché lo usano anche le letture; `api/archivio-privato/formati.ts` lo riesporta): ogni file ha sempre una famiglia, i byte confermano quella dichiarata o la correggono, e senza conferma è `altro`. Nessun 415. `preparaFile` porta a PNG le immagini (`sharp`, e `heic-convert` per le HEIC) e rinomina il file; `allegatiDaEmail` estrae gli allegati, anche quelli del messaggio originale dentro una PEC.
+- **Database**: migrazione `20260911220000_formati_qualsiasi.sql` (APPLICATA): famiglie nuove su `documenti.formato`, `template.formato` = estensione.
+- **Caricamento**: in archivio gli allegati di un'email diventano documenti a sé nella stessa cartella; da uno zip entra tutto tranne i file di sistema (Thumbs.db, desktop.ini, ~$…); uno zip che non si apre entra com'è. Allegati della chat e documenti di riferimento senza più filtri.
+- **Lettura** (`worker/ingestion/gestore.ts`, `rendiLeggibile`): .p7m sbustato (`firmati.ts`, lettore BER senza dipendenze) e riletto per quello che contiene; Office in PDF (`worker/sandbox/conversione.ts`); audio e video trascritti (Voxtral, spostato in `src/trascrizione/`); `altro` con la sua scheda. L'allegato veloce resta istantaneo per PDF, immagini, testo, pagine web, email (col testo degli allegati) e file non leggibili; per Office, audio, video e firmati passa dal worker.
+- **Workspace**: la scheda di un file `altro` nel contesto ha l'originale accanto, per la sandbox.
+- **Modelli di riferimento** di qualsiasi formato tranne gli eseguibili; PDF e Office si aprono per controllarli. **Intestazione**: loghi di qualsiasi formato immagine, portati a PNG.
+- **FE**: niente filtri `accept`, si incolla qualsiasi immagine, i formati dei modelli si mostrano con l'estensione.
+- Sicurezza: le macro non girano (LibreOffice senza interfaccia, nella sandbox); un'immagine oltre i 100 megapixel non si apre; SVG e HTML caricati non si mostrano mai nell'app (il download è sempre `attachment`).
 
 ## Fuori da questo piano
 

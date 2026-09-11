@@ -25,7 +25,8 @@ import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 import { nomeFileEsportazione } from '@shared/esportazione/scelte-esportazione';
 import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 
-const NOME_FORMATO: Record<FormatoModello, string> = {
+/** Come si chiamano i formati più comuni; gli altri si mostrano con la loro estensione. */
+const NOME_FORMATO: Partial<Record<FormatoModello, string>> = {
   pdf: 'PDF',
   docx: 'Word',
   xlsx: 'Excel',

@@ -1,8 +1,8 @@
 <!-- Tutta la scheda è area di rilascio: un modello si lascia dove capita. -->
 <ui-zona-caricamento
   aspetto="trasparente"
-  formati=".pdf,.docx,.xlsx,.pptx"
-  descrizioneFormati="PDF, Word, Excel, PowerPoint"
+  formati=""
+  descrizioneFormati="qualsiasi file: Word, PowerPoint, Excel, PDF, una pagina HTML, un'immagine di stile…"
   (scelti)="carica($event)"
 >
   <div class="scheda">
@@ -46,7 +46,7 @@
         titolo="Nessun modello di riferimento"
         [descrizione]="
           puoGestire()
-            ? 'Carica un documento dell’agenzia, o trascinalo qui: PDF, Word, Excel o PowerPoint.'
+            ? 'Carica un documento dell’agenzia, o trascinalo qui: Word, PowerPoint, Excel, PDF o qualsiasi altro file.'
             : 'L’amministratore non ne ha ancora caricati. «Esporta come» resta, col layout di VELIA e l’intestazione dell’agenzia.'
         "
       >
@@ -62,7 +62,7 @@
         @for (m of modelli(); track m.id) {
           <li class="modello">
             <div class="modello__riga">
-              <span class="mono modello__formato">{{ nomeFormato[m.formato] }}</span>
+              <span class="mono modello__formato">{{ nomeFormato[m.formato] ?? m.formato.toUpperCase() }}</span>
 
               @if (inRinomina() === m.id) {
                 <input

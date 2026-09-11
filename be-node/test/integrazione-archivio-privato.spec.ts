@@ -219,29 +219,30 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     });
   });
 
-  it('upload senza file → 400 NESSUN_FILE; un formato che non sappiamo leggere → 415', async () => {
+  it('upload senza file → 400 NESSUN_FILE; qualsiasi formato entra, e ciò che non si legge è «altro»', async () => {
     const vuoto = await carica(tokenAdmin, []);
     expect(vuoto.statusCode).toBe(400);
     expect(vuoto.json<CorpoErroreApi>().codice).toBe('NESSUN_FILE');
 
-    /* Dal 01/09/2026 il testo entra (Word, Excel, Markdown, testo, CSV,
-       immagini): resta fuori ciò che non sappiamo leggere. */
-    const zip = await carica(tokenAdmin, [
-      { nome: 'lotto.zip', contenuto: Buffer.from('PKqualcosa'), tipo: 'application/zip' },
-    ]);
-    expect(zip.statusCode).toBe(415);
-    expect(zip.json<CorpoErroreApi>().codice).toBe('FORMATO_NON_SUPPORTATO');
-
-    // Un .pdf che non è un PDF: il nome non basta.
-    const finto = await carica(tokenAdmin, [{ nome: 'finto.pdf', contenuto: Buffer.from('ciao') }]);
-    expect(finto.statusCode).toBe(415);
-
-    /* Un .txt che è un binario travestito: la firma non c'è, ma il byte
-       nullo lo tradisce. */
-    const travestito = await carica(tokenAdmin, [
+    /* Dall'11/09/2026 (fase 3 di PIANO-LINK-E-FORMATI.md) non si rifiuta
+       niente: uno zip che non si apre entra com'è, un .pdf che non è un PDF
+       entra per quello che è, un binario travestito da testo è un file che
+       non si legge. Il nome non basta mai: decidono i byte. */
+    const r = await carica(tokenAdmin, [
+      { nome: 'lotto.zip', contenuto: Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00]), tipo: 'application/zip' },
+      { nome: 'finto.pdf', contenuto: Buffer.from('ciao') },
       { nome: 'appunti.txt', contenuto: Buffer.from([0x41, 0x00, 0x42]), tipo: 'text/plain' },
     ]);
-    expect(travestito.statusCode).toBe(415);
+    expect(r.statusCode).toBe(201);
+    const creati = r.json<EsitoCaricamento>().creati;
+    expect(creati.map((d) => d.titolo)).toEqual(['lotto', 'finto', 'appunti']);
+    const formati = await pool().query<{ formato: string }>(
+      'select formato from velia.documenti where id = any($1) order by array_position($1, id)',
+      [creati.map((d) => d.id)],
+    );
+    expect(formati.rows.map((f) => f.formato)).toEqual(['altro', 'testo', 'altro']);
+    /* Via, perché i conteggi dei test dopo non li vedano. */
+    for (const d of creati) expect((await richiedi('DELETE', `/api/documenti-privati/${d.id}`, tokenAdmin)).statusCode).toBe(204);
   });
 
   it('un .md entra come documento privato, con l’originale conservato e il PDF ancora da comporre', async () => {

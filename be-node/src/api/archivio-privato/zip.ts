@@ -66,7 +66,7 @@ export function espandiZip(zip: FileRicevuto): FileConPercorso[] {
     const percorso = normalizzaPercorso(nome);
     if (!percorso) continue;
     const base = percorso.split('/').pop()!;
-    if (!base || base.startsWith('.')) continue;
+    if (!base || base.startsWith('.') || diSistema(base)) continue;
 
     const contenuto = Buffer.from(voce.asUint8Array());
     if (!contenuto.length) continue;
@@ -80,6 +80,15 @@ export function espandiZip(zip: FileRicevuto): FileConPercorso[] {
     });
   }
   return espansi;
+}
+
+/**
+ * I file che il sistema operativo o Office lasciano nelle cartelle e che
+ * nessuno ha messo lì apposta: dall'11/09/2026 uno zip entra per intero, e
+ * questi sono gli unici che si saltano.
+ */
+function diSistema(nome: string): boolean {
+  return /^(thumbs\.db|desktop\.ini|ehthumbs\.db|icon\r?)$/i.test(nome) || /^~\$/.test(nome) || /\.(tmp|lnk)$/i.test(nome);
 }
 
 /**

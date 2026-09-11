@@ -21,10 +21,16 @@ export const FORMATI_GENERAZIONE = ['pdf', 'docx', 'xlsx'] as const;
 
 export type FormatoGenerazione = (typeof FORMATI_GENERAZIONE)[number];
 
-/** I formati di un modello, e di ciò che la sandbox consegna. */
+/**
+ * I formati di un modello che si controllano aprendoli al caricamento.
+ * Dall'11/09/2026 (fase 3 di `PIANO-LINK-E-FORMATI.md`) un modello può
+ * essere di qualsiasi formato tranne un eseguibile (una pagina HTML,
+ * un'immagine di stile, un .dotx…): gli altri basta che non siano vuoti.
+ */
 export const FORMATI_MODELLO = ['pdf', 'docx', 'xlsx', 'pptx'] as const;
 
-export type FormatoModello = (typeof FORMATI_MODELLO)[number];
+/** L'estensione del file del modello. */
+export type FormatoModello = string;
 
 /** A che punto è l'anteprima in PDF di un modello. Un PDF è `pronta` da subito. */
 export type StatoAnteprima = 'assente' | 'in-corso' | 'pronta' | 'errore';

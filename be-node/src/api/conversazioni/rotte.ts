@@ -47,9 +47,8 @@ import {
   spazioDelTenant,
   type FileRicevuto,
 } from '../archivio-privato/rotte.js';
-import { estensionePerFormato, riconosciFormato } from '../archivio-privato/formati.js';
+import { estensionePerFormato, preparaFile } from '../archivio-privato/formati.js';
 import { livelliDellaPiattaforma } from '../modelli/rotte.js';
-import { ELENCO_FORMATI } from '../../contratto/documenti-privati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { creaClientDedicato, poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -253,14 +252,12 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
           `«${file.nome}» supera il limite di ${Math.round(spazio.limiteFileByte / 1024 / 1024)} MB per file.`,
         );
       }
-      const formato = riconosciFormato(file);
-      if (!formato) {
-        throw new ErroreApi(
-          415,
-          'FORMATO_NON_SUPPORTATO',
-          `«${file.nome}» non è di un formato che sappiamo leggere: si allegano ${ELENCO_FORMATI}.`,
-        );
-      }
+      /* Qualsiasi file, dall'11/09/2026 (fase 3 di PIANO-LINK-E-FORMATI.md):
+         un'immagine non PNG/JPEG entra già PNG, e ciò che non si legge entra
+         come `altro`, con la sua scheda. */
+      const preparato = await preparaFile(file);
+      file = preparato.file;
+      const formato = preparato.formato;
       /* Lo spazio del piano lo consuma ciò che nell'archivio ci resta: un
          allegato di passaggio se ne va con la conversazione. */
       if (modo === 'archivio' && spazio.usatoByte + file.contenuto.length > spazio.limiteByte) {

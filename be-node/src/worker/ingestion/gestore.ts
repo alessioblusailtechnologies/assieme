@@ -11,10 +11,14 @@ import {
 } from './classificatore.js';
 import { headerDocumento } from './convenzioni.js';
 import type { Convertitore } from './convertitore.js';
-import { eTestuale, markdownDaOriginale } from './estrattori.js';
+import { eTestuale, markdownDaOriginale, schedaFile } from './estrattori.js';
+import { sbustaP7m } from './firmati.js';
+import { inPng } from './immagini.js';
 import { impagina, pdfDaImmagine } from './impagina.js';
 import { leggiDocumento } from './lettura-visiva.js';
 import { contaPagine } from './pdf.js';
+import { ePngOJpeg, riconosciFormato } from './riconoscimento.js';
+import { mimeDi } from '../../contratto/formati.js';
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
 import type { TipologiaDocumento } from '../../contratto/documenti.js';
 import { segnaDaRicalcolare } from '../../archivio/albero.js';
@@ -68,6 +72,13 @@ export interface DipendenzeIngestion {
   sceglitore?: Sceglitore;
   sceglicartella?: Sceglicartella;
   descrittore?: Descrittore;
+  /* Fase 3 di PIANO-LINK-E-FORMATI.md (11/09/2026): i formati che si
+     leggono convertendoli. Senza, quei documenti finiscono in errore con un
+     messaggio che dice perché. */
+  /** Office e simili in PDF, col LibreOffice della sandbox. */
+  inPdfDaOffice?: (contenuto: Buffer, estensione: string, jobId: string) => Promise<Buffer>;
+  /** Audio e video in testo, con Voxtral. */
+  trascrivi?: (audio: { byte: Buffer; tipo: string; nome: string }) => Promise<string>;
 }
 
 /**
@@ -89,6 +100,108 @@ const MESSAGGIO_GENERICO =
 
 export const MESSAGGIO_SENZA_TESTO =
   'Il documento è una scansione senza testo riconoscibile: non può essere referenziato in chat finché non ne carichi una versione leggibile.';
+
+interface FileDaLeggere {
+  byte: Buffer;
+  formato: FormatoDocumento;
+  nome: string;
+}
+
+/**
+ * Un file di una famiglia che si legge solo dopo averla aperta, portato a
+ * una di quelle di sempre (11/09/2026, fase 3 di `PIANO-LINK-E-FORMATI.md`):
+ *
+ * - un `.p7m` si sbusta, e il file firmato si riconosce e si legge per
+ *   quello che è (la busta resta l'originale: è lei ad avere valore legale);
+ * - un'immagine che non è PNG o JPEG diventa PNG (di norma lo è già dal
+ *   caricamento; qui resta la rete per i documenti di prima);
+ * - un file Office diventa PDF col LibreOffice della sandbox;
+ * - audio e video diventano la loro trascrizione;
+ * - un file che non si legge diventa la sua scheda.
+ *
+ * `testo`, quando c'è, è il Markdown già pronto: si impagina e basta.
+ */
+async function rendiLeggibile(
+  f: FileDaLeggere,
+  dipendenze: Pick<DipendenzeIngestion, 'inPdfDaOffice' | 'trascrivi'>,
+  avanza: (fase: string) => Promise<void>,
+  jobId: string,
+): Promise<FileDaLeggere & { testo?: string }> {
+  let { byte, formato, nome } = f;
+  const motivo = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
+  if (formato === 'firmato') {
+    let sbustato;
+    try {
+      sbustato = sbustaP7m(byte, nome);
+    } catch (errore) {
+      throw new ErroreIngestion(
+        `p7m non leggibile: ${motivo(errore)}`,
+        'Il file firmato non si è potuto aprire: la busta è danneggiata, o è una firma staccata senza il documento dentro.',
+      );
+    }
+    byte = sbustato.contenuto;
+    nome = sbustato.nome;
+    formato = riconosciFormato({ nome, mimetype: '', contenuto: byte, troncato: false });
+    if (formato === 'firmato') formato = 'altro';
+  }
+
+  if (formato === 'immagine' && !ePngOJpeg(byte)) {
+    try {
+      byte = await inPng(byte);
+    } catch {
+      formato = 'altro';
+    }
+  }
+
+  if (formato === 'office') {
+    if (!dipendenze.inPdfDaOffice) {
+      throw new ErroreIngestion(
+        'conversione Office non configurata',
+        'Questo formato si legge convertendolo in PDF, e su questo ambiente la conversione non è disponibile.',
+      );
+    }
+    await avanza('conversione');
+    try {
+      byte = await dipendenze.inPdfDaOffice(byte, nome.slice(nome.lastIndexOf('.')), jobId);
+    } catch (errore) {
+      throw new ErroreIngestion(
+        `LibreOffice: ${motivo(errore)}`,
+        'Il file non si è potuto convertire: potrebbe essere danneggiato o protetto da password. Prova a caricarne una copia in PDF.',
+      );
+    }
+    formato = 'pdf';
+  }
+
+  if (formato === 'audio' || formato === 'video') {
+    const video = formato === 'video';
+    if (!dipendenze.trascrivi) {
+      throw new ErroreIngestion(
+        'trascrizione non configurata',
+        'Audio e video si leggono trascrivendoli, e su questo ambiente la trascrizione non è disponibile.',
+      );
+    }
+    await avanza('trascrizione');
+    let testo: string;
+    try {
+      testo = await dipendenze.trascrivi({ byte, tipo: mimeDi(nome.slice(nome.lastIndexOf('.') + 1).toLowerCase()), nome });
+    } catch (errore) {
+      throw new ErroreIngestion(
+        `trascrizione: ${motivo(errore)}`,
+        video
+          ? 'Dal video non si è potuto trascrivere l’audio: prova a caricarne solo la traccia audio.'
+          : 'La trascrizione non è riuscita: riprova, o carica una registrazione più corta.',
+      );
+    }
+    if (!/\S/.test(testo)) {
+      throw new ErroreIngestion('trascrizione vuota', video ? 'Nel video non si è riconosciuto del parlato.' : 'Nell’audio non si è riconosciuto del parlato.');
+    }
+    return { byte, formato, nome, testo: `# Trascrizione di «${nome}»\n\n${testo}` };
+  }
+
+  if (formato === 'altro') return { byte, formato, nome, testo: schedaFile(nome, byte.length) };
+  return { byte, formato, nome };
+}
 
 interface RigaDaConvertire {
   id: string;
@@ -157,7 +270,7 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
        prima del 01/09/2026 non c'è, ed erano tutti PDF. */
     const originale = documento.path_originale ?? documento.path_pdf;
     if (!originale) throw new Error(`documento ${documentoId} senza file in archivio`);
-    const formato: FormatoDocumento = documento.formato ?? 'pdf';
+    let formato: FormatoDocumento = documento.formato ?? 'pdf';
     /* Il PDF da mostrare sta accanto all'originale, con la sua estensione:
        per un PDF sono lo stesso file. */
     const pathPdf = documento.path_pdf ?? originale.replace(/\.[^.]+$/, '.pdf');
@@ -169,23 +282,44 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
     await emettiEvento(db, job.id, 'ingestion-inizio', { documentoId });
 
     try {
-      const byte = await dipendenze.archivio.scarica(originale);
+      const scaricato = await dipendenze.archivio.scarica(originale);
       let totale: number;
       let pagine: string[];
 
-      if (eTestuale(formato)) {
+      /* Fase 3 di PIANO-LINK-E-FORMATI.md: ciò che si legge solo dopo averlo
+         aperto (un .p7m), convertito (Office, un'immagine non PNG) o
+         trascritto (audio, video). Da qui in giù il documento è un PDF,
+         un'immagine o del testo, come prima. */
+      const aperto = await rendiLeggibile(
+        { byte: scaricato, formato, nome: documento.nome_file ?? originale.split('/').pop() ?? 'documento' },
+        dipendenze,
+        async (fase) => {
+          await emettiEvento(db, job.id, 'ingestion-avanzamento', { documentoId, fase, fatte: 0, di: 1 });
+        },
+        job.id,
+      );
+      const byte = aperto.byte;
+      formato = aperto.formato;
+      /* Un PDF che non è il file caricato (sbustato da un .p7m, convertito
+         da Office) va dove il visualizzatore lo cerca. */
+      if (formato === 'pdf' && byte !== scaricato) {
+        await dipendenze.archivio.carica(pathPdf, byte, 'application/pdf');
+      }
+
+      if (aperto.testo !== undefined || eTestuale(formato)) {
         /* Word, Excel, testo, Markdown, CSV: il testo c'è già, ed è più
            fedele di qualunque trascrizione. Si estrae, si impagina in un
            PDF — quello che il visualizzatore aprirà e che le citazioni
            conteranno a pagine — e si finisce lì: nessuna chiamata al
-           modello, nessun testimone da interrogare. */
+           modello, nessun testimone da interrogare. Lo stesso per il testo
+           di un audio trascritto e per la scheda di un file che non si legge. */
         await emettiEvento(db, job.id, 'ingestion-avanzamento', {
           documentoId,
           fase: 'estrazione',
           fatte: 0,
           di: 1,
         });
-        const markdown = await markdownDaOriginale(formato, byte);
+        const markdown = aperto.testo ?? (await markdownDaOriginale(formato, byte));
         if (!contieneTesto(markdown)) {
           throw new ErroreIngestion('estrazione senza testo riconoscibile', MESSAGGIO_SENZA_TESTO);
         }
@@ -295,7 +429,9 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
       if (
         documento.archivio === 'privato' &&
         documento.classificazione_da_confermare &&
-        dipendenze.classificatore
+        dipendenze.classificatore &&
+        /* La scheda di un file che non si legge non ha niente da classificare. */
+        formato !== 'altro'
       ) {
         proposta = await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
       }

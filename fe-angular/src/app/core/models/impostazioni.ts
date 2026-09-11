@@ -104,8 +104,11 @@ export type FormatoGenerazione = 'pdf' | 'docx' | 'xlsx';
 /** L'«Esporta come» di una risposta: i formati generabili più il testo semplice. */
 export type FormatoEsportaRisposta = FormatoGenerazione | 'txt';
 
-/** I formati di un modello di riferimento, e di ciò che «Genera da modello» consegna. */
-export type FormatoModello = FormatoGenerazione | 'pptx';
+/**
+ * Il formato di un modello di riferimento: la sua estensione. Dall'11/09/2026
+ * qualsiasi, tranne i programmi eseguibili.
+ */
+export type FormatoModello = string;
 
 /** A che punto è l'anteprima in PDF di un modello. Un PDF è `pronta` da subito. */
 export type StatoAnteprimaModello = 'assente' | 'in-corso' | 'pronta' | 'errore';

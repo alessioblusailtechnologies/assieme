@@ -11,8 +11,25 @@
  * restano fuori. Dove finiscono lo decide il composer.
  */
 
-/** I formati immagine che l'ingestion sa leggere (`documenti-privati.ts`). */
-const MIME_LEGGIBILI = ['image/png', 'image/jpeg'];
+/**
+ * Le immagini che si allegano incollandole: dall'11/09/2026 tutte (WEBP,
+ * GIF, HEIC…), perché al caricamento il server porta a PNG quelle che non
+ * lo sono (fase 3 di `PIANO-LINK-E-FORMATI.md`).
+ */
+const MIME_LEGGIBILI = (tipo: string): boolean => tipo.startsWith('image/');
+
+/** L'estensione vera dell'immagine incollata: il server la riconosce anche dai byte, ma il nome non deve mentire. */
+const ESTENSIONI: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
+  'image/heic': '.heic',
+  'image/heif': '.heif',
+  'image/tiff': '.tif',
+  'image/bmp': '.bmp',
+  'image/avif': '.avif',
+};
 
 export interface ImmaginiIncollate {
   /** Le immagini da allegare, già col loro nome. */
@@ -36,7 +53,7 @@ export interface ImmaginiIncollate {
 export function immaginiIncollate(dati: DataTransfer | null, ora = new Date()): ImmaginiIncollate {
   if ((dati?.getData('text/plain') ?? '').trim()) return { leggibili: [], scartate: 0 };
   const immagini = [...(dati?.files ?? [])].filter((f) => f.type.startsWith('image/'));
-  const leggibili = immagini.filter((f) => MIME_LEGGIBILI.includes(f.type));
+  const leggibili = immagini.filter((f) => MIME_LEGGIBILI(f.type));
   return {
     leggibili: leggibili.map((f, indice) => nomina(f, ora, indice)),
     scartate: immagini.length - leggibili.length,
@@ -53,7 +70,7 @@ export function immaginiIncollate(dati: DataTransfer | null, ora = new Date()): 
 function nomina(file: File, ora: Date, indice: number): File {
   const orario = `${ora.getHours()}.${`${ora.getMinutes()}`.padStart(2, '0')}`;
   const progressivo = indice > 0 ? ` (${indice + 1})` : '';
-  const estensione = file.type === 'image/jpeg' ? '.jpg' : '.png';
+  const estensione = ESTENSIONI[file.type] ?? '.png';
   return new File([file], `Immagine incollata ${orario}${progressivo}${estensione}`, {
     type: file.type,
   });

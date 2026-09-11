@@ -141,21 +141,84 @@ export const schemaModificheDocumento = z
 export type ModificheDocumento = z.infer<typeof schemaModificheDocumento>;
 
 /**
- * Come un documento è entrato in archivio (01/09/2026).
+ * Come un documento è entrato in archivio (01/09/2026), cioè come lo si
+ * legge: è la **famiglia** del file, non la sua estensione.
  *
  * Quale che sia, quello che si apre nel visualizzatore è sempre un PDF: chi
  * non arriva già così viene impaginato all'ingestion, e le citazioni
  * puntano alle pagine di quel PDF. Il formato serve a sapere *come* leggere
  * il file, non a cambiare ciò che l'utente vede dopo.
+ *
+ * Dall'11/09/2026 (fase 3 di `PIANO-LINK-E-FORMATI.md`) si carica qualsiasi
+ * file: le famiglie nuove si leggono convertendole (Office col LibreOffice
+ * della sandbox, audio e video con Voxtral, il .p7m sbustato), e ciò che
+ * non si sa leggere è `altro`: resta come originale, con una scheda che dice
+ * che cos'è. Le immagini che non sono PNG o JPEG diventano PNG al caricamento.
  */
 export const FORMATI_DOCUMENTO = [
   { formato: 'pdf', estensioni: ['.pdf'], mime: ['application/pdf'], etichetta: 'PDF' },
-  { formato: 'docx', estensioni: ['.docx'], mime: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'], etichetta: 'Word' },
-  { formato: 'xlsx', estensioni: ['.xlsx'], mime: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'], etichetta: 'Excel' },
+  {
+    formato: 'docx',
+    estensioni: ['.docx', '.docm', '.dotx', '.dotm'],
+    mime: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    etichetta: 'Word',
+  },
+  {
+    formato: 'xlsx',
+    estensioni: ['.xlsx', '.xlsm', '.xltx', '.xltm'],
+    mime: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    etichetta: 'Excel',
+  },
   { formato: 'markdown', estensioni: ['.md', '.markdown'], mime: ['text/markdown'], etichetta: 'Markdown' },
-  { formato: 'testo', estensioni: ['.txt'], mime: ['text/plain'], etichetta: 'testo' },
-  { formato: 'csv', estensioni: ['.csv'], mime: ['text/csv'], etichetta: 'CSV' },
-  { formato: 'immagine', estensioni: ['.png', '.jpg', '.jpeg'], mime: ['image/png', 'image/jpeg'], etichetta: 'immagini' },
+  {
+    formato: 'testo',
+    estensioni: ['.txt', '.log', '.json', '.xml', '.yaml', '.yml', '.ini', '.cfg', '.conf', '.sql', '.ics', '.vcf', '.srt', '.vtt', '.tex', '.rst'],
+    mime: ['text/plain', 'application/json', 'application/xml', 'text/xml', 'text/calendar', 'text/vcard'],
+    etichetta: 'testo',
+  },
+  { formato: 'csv', estensioni: ['.csv', '.tsv'], mime: ['text/csv', 'text/tab-separated-values'], etichetta: 'CSV' },
+  {
+    formato: 'immagine',
+    estensioni: ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.heic', '.heif', '.tif', '.tiff', '.bmp', '.avif'],
+    mime: ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/heic', 'image/heif', 'image/tiff', 'image/bmp', 'image/avif'],
+    etichetta: 'immagini',
+  },
+  { formato: 'html', estensioni: ['.html', '.htm', '.xhtml'], mime: ['text/html', 'application/xhtml+xml'], etichetta: 'pagine web' },
+  {
+    formato: 'office',
+    estensioni: [
+      '.pptx', '.pptm', '.potx', '.ppsx', '.ppt', '.pps', '.pot', '.doc', '.dot', '.rtf', '.odt', '.ott', '.ods', '.ots',
+      '.odp', '.otp', '.odg', '.xls', '.xlt', '.xlsb', '.pages', '.numbers', '.key', '.vsd', '.vsdx', '.pub', '.wpd', '.svg',
+    ],
+    mime: [
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'application/vnd.ms-powerpoint',
+      'application/msword',
+      'application/vnd.ms-excel',
+      'application/rtf',
+      'application/vnd.oasis.opendocument.text',
+      'application/vnd.oasis.opendocument.spreadsheet',
+      'application/vnd.oasis.opendocument.presentation',
+      'image/svg+xml',
+    ],
+    etichetta: 'PowerPoint e gli altri formati Office',
+  },
+  { formato: 'email', estensioni: ['.eml', '.msg'], mime: ['message/rfc822', 'application/vnd.ms-outlook'], etichetta: 'email' },
+  {
+    formato: 'audio',
+    estensioni: ['.mp3', '.m4a', '.wav', '.ogg', '.oga', '.opus', '.aac', '.flac', '.amr', '.weba', '.aiff', '.aif', '.wma'],
+    mime: ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/x-wav', 'audio/ogg', 'audio/opus', 'audio/aac', 'audio/flac', 'audio/amr', 'audio/webm'],
+    etichetta: 'audio',
+  },
+  {
+    formato: 'video',
+    estensioni: ['.mp4', '.mov', '.m4v', '.webm', '.avi', '.mkv', '.3gp', '.mpeg', '.mpg'],
+    mime: ['video/mp4', 'video/quicktime', 'video/webm', 'video/x-msvideo', 'video/x-matroska', 'video/3gpp', 'video/mpeg'],
+    etichetta: 'video',
+  },
+  { formato: 'firmato', estensioni: ['.p7m'], mime: ['application/pkcs7-mime'], etichetta: 'firmati digitalmente (.p7m)' },
+  /* Tutto il resto: si conserva, non si legge. Nessuna estensione sua. */
+  { formato: 'altro', estensioni: [], mime: [], etichetta: 'qualsiasi altro file' },
 ] as const;
 
 export type FormatoDocumento = (typeof FORMATI_DOCUMENTO)[number]['formato'];

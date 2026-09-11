@@ -55,11 +55,15 @@ export type StatoElaborazione = 'in-coda' | 'in-elaborazione' | 'pronto' | 'erro
  * Vale per l'Archivio Privato, per gli allegati in chat e per i documenti di
  * riferimento delle Istruzioni: sono la stessa pipeline. Ciò che non arriva
  * già in PDF viene impaginato in uno, ed è quello che si apre e si cita.
+ *
+ * Dall'11/09/2026 (fase 3 di `PIANO-LINK-E-FORMATI.md`) qualsiasi file: la
+ * finestra di scelta non filtra niente, e ciò che VELIA non sa leggere
+ * entra lo stesso, con una scheda che dice che cos'è.
  */
-export const ESTENSIONI_DOCUMENTO = '.pdf,.docx,.xlsx,.md,.markdown,.txt,.csv,.png,.jpg,.jpeg';
+export const ESTENSIONI_DOCUMENTO = '';
 
 /** Come si raccontano quei formati a chi carica. */
-export const FORMATI_DOCUMENTO = 'PDF, Word, Excel, Markdown, testo, CSV, immagini';
+export const FORMATI_DOCUMENTO = 'qualsiasi file: PDF, Office, email, immagini, audio, video, firmati .p7m…';
 
 interface DocumentoBase {
   id: Id;

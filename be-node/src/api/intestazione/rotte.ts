@@ -17,6 +17,7 @@ import { fascePerGenerazione, intestazioneDelTenant, percorsoImmagineIntestazion
 import { generaDocumento } from '../../generazione/generatore.js';
 import { dimensioniImmagine, tipoImmagine } from '../../generazione/intestazione.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
+import { inPng } from '../../worker/ingestion/immagini.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { registraStorico } from '../template/rotte.js';
 
@@ -122,7 +123,11 @@ export function registraRotteIntestazione(app: FastifyInstance, opzioni: Opzioni
     return { ...esito.data, aggiornataIl: aggiornataIl.toISOString() };
   });
 
-  /** Un logo o un marchio: PNG o JPEG, riconosciuti dai byte e non dal nome. */
+  /**
+   * Un logo o un marchio, riconosciuto dai byte e non dal nome. PNG e JPEG
+   * entrano come sono; le altre immagini (WEBP, GIF, HEIC, TIFF…) diventano
+   * PNG, perché PDF e Word le vogliono così (11/09/2026).
+   */
   app.post('/api/intestazione/immagini', async (richiesta, risposta): Promise<ImmagineCaricata> => {
     richiediAmministratore(richiesta);
     if (!richiesta.isMultipart()) throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
@@ -136,9 +141,16 @@ export function registraRotteIntestazione(app: FastifyInstance, opzioni: Opzioni
     if (byte.length > LIMITE_IMMAGINE) {
       throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', 'L’immagine supera i 2 MB: per un logo basta molto meno.');
     }
+    if (!tipoImmagine(byte)) {
+      try {
+        byte = await inPng(byte);
+      } catch {
+        throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', 'Il file non è un’immagine che si riesca ad aprire.');
+      }
+    }
     const tipo = tipoImmagine(byte);
     if (!tipo || !dimensioniImmagine(byte)) {
-      throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', 'L’immagine dev’essere un PNG o un JPEG.');
+      throw new ErroreApi(415, 'FORMATO_NON_SUPPORTATO', 'Il file non è un’immagine che si riesca ad aprire.');
     }
     const id = nuovoIdImmagine(tipo);
     await archivio().carica(

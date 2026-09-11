@@ -81,12 +81,13 @@ describe('riconoscimento dei formati', () => {
     expect(riconosciFormato(file('polizza.docx', await docxDiProva()))).toBe('docx');
     expect(riconosciFormato(file('listino.xlsx', await xlsxDiProva()))).toBe('xlsx');
 
-    /* Il nome dice PDF, i byte dicono altro: si rifiuta all'ingresso, non
-       dieci minuti dopo con un errore di ingestion incomprensibile. */
-    expect(riconosciFormato(file('finto.pdf', 'non sono un pdf'))).toBeUndefined();
+    /* Il nome dice PDF, i byte dicono altro: non entra come PDF (per
+       fallire dieci minuti dopo), entra per quello che è. Dall'11/09/2026
+       non si rifiuta niente: ciò che non si riconosce è `altro`. */
+    expect(riconosciFormato(file('finto.pdf', 'non sono un pdf'))).toBe('testo');
     /* Un binario travestito da testo: il byte nullo lo smaschera. */
-    expect(riconosciFormato(file('finto.txt', Buffer.from([0x41, 0x00, 0x42])))).toBeUndefined();
-    expect(riconosciFormato(file('archivio.zip', 'PK'))).toBeUndefined();
+    expect(riconosciFormato(file('finto.txt', Buffer.from([0x41, 0x00, 0x42])))).toBe('altro');
+    expect(riconosciFormato(file('archivio.zip', Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00])))).toBe('altro');
   });
 
   it('un’immagine incollata in chat entra col nome che le dà il composer', () => {
@@ -98,8 +99,8 @@ describe('riconoscimento dei formati', () => {
     /* Il nome ha un punto dentro (l'ora): l'estensione è l'ultima, non la prima. */
     expect(riconosciFormato(file('Immagine incollata 9.05.png', png, 'image/png'))).toBe('immagine');
     expect(estensionePerFormato('immagine', 'Immagine incollata 9.05.png')).toBe('.png');
-    /* Un finto PNG non entra: lo dice la firma, non il nome. */
-    expect(riconosciFormato(file('Immagine incollata 9.05.png', 'GIF89a', 'image/png'))).toBeUndefined();
+    /* Una GIF col nome da PNG è comunque un'immagine: lo dice la firma, e al caricamento diventa PNG. */
+    expect(riconosciFormato(file('Immagine incollata 9.05.png', 'GIF89a', 'image/png'))).toBe('immagine');
   });
 
   it('il mimetype vale quando l’estensione manca, e l’estensione decide dove si conserva', () => {

@@ -4,6 +4,7 @@ import { getSessionInfo } from '@anthropic-ai/claude-agent-sdk';
 import type pg from 'pg';
 
 import { configurazione } from '../config.js';
+import { trascrittoreDallaConfigurazione } from '../trascrizione/voxtral.js';
 import {
   DescrittoreModello,
   SceglicartellaModello,
@@ -23,6 +24,7 @@ import { creaGestoreInterrogazione } from './motore/gestore.js';
 import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import { creaGestoreAnteprimaModello } from './sandbox/anteprima.js';
+import { inPdfConLibreOffice } from './sandbox/conversione.js';
 import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly, AvviatoreRemoto, type AvviatoreSandbox } from './sandbox/sandbox.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
@@ -123,19 +125,35 @@ function estrattoreMemoria(): EstrattoreMotore {
 
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
-    ingestionVera ??= creaGestoreIngestion({
-      convertitore: new ConvertitoreModello(),
-      convertitoreRapido: new ConvertitoreModello(configurazione().MODELLO_INGESTION_RAPIDA),
-      classificatore: new ClassificatoreModello(),
-      secondoSguardo: new SecondoSguardoModello(),
-      archivio: new ArchivioStorage(),
-      /* Fase 10: le tre domande brevi della collocazione. Girano sul modello
-         economico (`MODELLO_INGESTION_RAPIDA`) perché sono scelte fra
-         alternative già ristrette, non lettura di documenti. */
-      sceglitore: new SceglitoreModello(),
-      sceglicartella: new SceglicartellaModello(),
-      descrittore: new DescrittoreModello(),
-    });
+    if (!ingestionVera) {
+      const c = configurazione();
+      /* Fase 3 di PIANO-LINK-E-FORMATI.md: Office col LibreOffice della
+         sandbox, audio e video con Voxtral. Senza sandbox o senza chiave
+         Mistral quei documenti finiscono in errore, e il messaggio lo dice. */
+      const avviatore = sandboxDocumentale(c)?.avviatore;
+      const trascrittore = trascrittoreDallaConfigurazione();
+      ingestionVera = creaGestoreIngestion({
+        convertitore: new ConvertitoreModello(),
+        convertitoreRapido: new ConvertitoreModello(c.MODELLO_INGESTION_RAPIDA),
+        classificatore: new ClassificatoreModello(),
+        secondoSguardo: new SecondoSguardoModello(),
+        archivio: new ArchivioStorage(),
+        /* Fase 10: le tre domande brevi della collocazione. Girano sul modello
+           economico (`MODELLO_INGESTION_RAPIDA`) perché sono scelte fra
+           alternative già ristrette, non lettura di documenti. */
+        sceglitore: new SceglitoreModello(),
+        sceglicartella: new SceglicartellaModello(),
+        descrittore: new DescrittoreModello(),
+        ...(avviatore && {
+          inPdfDaOffice: (contenuto: Buffer, estensione: string, jobId: string) =>
+            inPdfConLibreOffice(avviatore, jobId, contenuto, estensione),
+        }),
+        ...(trascrittore && {
+          trascrivi: (audio: { byte: Buffer; tipo: string; nome: string }) =>
+            trascrittore.trascrivi(audio, { tempoMassimoMs: 10 * 60_000 }),
+        }),
+      });
+    }
     await ingestionVera(job, strumenti);
   },
 

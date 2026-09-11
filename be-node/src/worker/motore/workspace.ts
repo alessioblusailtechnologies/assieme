@@ -297,6 +297,23 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       }
     }
 
+    /* La scheda di un file che VELIA non legge (11/09/2026, fase 3 di
+       PIANO-LINK-E-FORMATI.md): per i documenti del contesto l'originale
+       sta accanto, col suo nome e la sua estensione, così il motore
+       documentale lo trova e lo usa nei file che genera. Il motore della
+       chat non lo apre: gli basta la scheda, che dice che cos'è. */
+    if (!originale && riga.formato === 'altro' && riga.path_originale && contestoIds.includes(riga.id)) {
+      const estensione = riga.path_originale.slice(riga.path_originale.lastIndexOf('.'));
+      if (estensione.toLowerCase() !== '.md') {
+        try {
+          const origine = await cache.file(riga.path_originale, riga.updated_at.toISOString());
+          await collega(origine, join(directory, ...relativo.replace(/\.md$/i, estensione).split('/')));
+        } catch {
+          /* senza l'originale resta la scheda */
+        }
+      }
+    }
+
     const doc = versoDocumento(
       riga,
       riga.archivio === 'pubblico' && riga.path_pdf ? (ultimaPaginaPdf.get(riga.path_pdf) ?? null) : riga.numero_pagine,

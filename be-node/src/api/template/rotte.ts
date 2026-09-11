@@ -9,7 +9,9 @@ import PizZip from 'pizzip';
 import type { Citazione } from '../../contratto/conversazioni.js';
 
 import { ErroreApi } from '../../contratto/errori.js';
+import { consegnabile, estensioneDi, mimeDi } from '../../contratto/formati.js';
 import {
+  FORMATI_MODELLO,
   schemaEsportaRisposta,
   schemaPatchModello,
   type FormatoModello,
@@ -26,7 +28,7 @@ import {
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { testoSemplice } from '../../generazione/email.js';
-import { generaDocumento, MIME, NOME_DOCUMENTO, nomeFileGenerato } from '../../generazione/generatore.js';
+import { generaDocumento, NOME_DOCUMENTO, nomeFileGenerato } from '../../generazione/generatore.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
@@ -60,7 +62,7 @@ const FIRMA_ZIP = Buffer.from('PK');
 /** Id di conversazioni e messaggi: uuid. Un id malformato è un 404, non un errore SQL. */
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const NOME_FORMATO: Record<FormatoModello, string> = { pdf: 'PDF', docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint' };
+const NOME_FORMATO: Record<string, string> = { pdf: 'PDF', docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint' };
 
 export interface OpzioniTemplate {
   /** Nei test: un archivio finto al posto dello Storage. */
@@ -85,10 +87,12 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
   });
 
   /**
-   * Il caricamento: uno o più file, qualsiasi dei quattro formati. Il nome è
-   * quello del file, senza estensione; si cambia col PATCH. Il lotto è
-   * atomico: si valida tutto, poi si crea tutto. Per Word, Excel e
-   * PowerPoint parte la conversione dell'anteprima.
+   * Il caricamento: uno o più file, di qualsiasi formato tranne gli
+   * eseguibili (dall'11/09/2026). Il nome è quello del file, senza
+   * estensione; si cambia col PATCH. Il lotto è atomico: si valida tutto,
+   * poi si crea tutto. Per tutto ciò che non è un PDF parte la conversione
+   * dell'anteprima col LibreOffice della sandbox; se non riesce, il modello
+   * si scarica.
    */
   app.post('/api/template', async (richiesta, risposta) => {
     richiediAmministratore(richiesta);
@@ -114,7 +118,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
     try {
       for (const f of daCreare) {
         const percorso = percorsoModello(tenantId, f.id, f.formato);
-        await archivio().carica(percorso, f.contenuto, MIME[f.formato]);
+        await archivio().carica(percorso, f.contenuto, mimeDi(f.formato));
         caricati.push(percorso);
       }
       creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
@@ -223,7 +227,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
     return inviaFile(
       risposta,
       await archivio().scarica(modello.path_file),
-      MIME[modello.formato],
+      mimeDi(modello.formato),
       `attachment; filename="${nomeFileGenerato(modello.nome, modello.formato)}"`,
     );
   });
@@ -300,19 +304,28 @@ export async function registraStorico(
   );
 }
 
-/** Il controllo all'ingresso: formato dall'estensione, firma dei byte, e che il file si apra davvero. */
+/**
+ * Il controllo all'ingresso: formato dall'estensione, firma dei byte, e che
+ * il file si apra davvero. Dall'11/09/2026 qualsiasi formato tranne gli
+ * eseguibili; PDF, Word, Excel e PowerPoint si aprono per controllarli, gli
+ * altri basta che non siano vuoti.
+ */
 async function verificaModello(nome: string, contenuto: Buffer, troncato: boolean): Promise<FormatoModello> {
   if (troncato) {
     throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${nome}» supera il limite per i modelli.`);
   }
-  const estensione = /\.(pdf|docx|xlsx|pptx)$/i.exec(nome)?.[1]?.toLowerCase() as FormatoModello | undefined;
-  if (!estensione) {
+  const estensione = estensioneDi(nome);
+  if (!estensione || !consegnabile(estensione)) {
     throw new ErroreApi(
       400,
       'FORMATO_NON_AMMESSO',
-      `«${nome}»: i modelli possono essere PDF, Word (.docx), Excel (.xlsx) o PowerPoint (.pptx).`,
+      estensione
+        ? `«${nome}»: un programma eseguibile non può essere un modello.`
+        : `«${nome}» non ha un'estensione: aggiungine una che dica il formato (.docx, .pdf, .html…).`,
     );
   }
+  if (!contenuto.length) throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» è vuoto.`);
+  if (!(FORMATI_MODELLO as readonly string[]).includes(estensione)) return estensione;
   const illeggibile = (): ErroreApi =>
     new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${NOME_FORMATO[estensione]} leggibile.`);
 

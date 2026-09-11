@@ -1105,8 +1105,10 @@ export class EditorIntestazione {
     campo.value = '';
     if (!file) return;
     this.erroreImmagine.set(undefined);
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      this.erroreImmagine.set('Serve un PNG o un JPEG.');
+    /* Qualsiasi immagine (11/09/2026): quelle che non sono PNG o JPEG il
+       server le porta a PNG. Una HEIC Windows la passa senza tipo. */
+    if (!file.type.startsWith('image/') && !/\.(heic|heif|tiff?|bmp|webp|gif|avif)$/i.test(file.name)) {
+      this.erroreImmagine.set('Serve un’immagine.');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -1116,7 +1118,11 @@ export class EditorIntestazione {
     this.caricamentoImmagine.set(true);
     try {
       const { id } = await firstValueFrom(this.api.caricaImmagine(file));
-      const url = URL.createObjectURL(file);
+      /* Un PNG o un JPEG si mostra dal file scelto; gli altri (una HEIC che
+         il browser non sa aprire) dal PNG che il server ne ha fatto. */
+      const url = ['image/png', 'image/jpeg'].includes(file.type)
+        ? URL.createObjectURL(file)
+        : URL.createObjectURL(await firstValueFrom(this.api.scaricaImmagine(id)));
       this.richieste.add(id);
       this.urlImmagini.update((u) => ({ ...u, [id]: url }));
       const rapporto = await proporzioni(url);
