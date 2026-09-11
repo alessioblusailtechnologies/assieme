@@ -208,6 +208,38 @@ describe('EditorIntestazione', () => {
     });
   });
 
+  it('«Testo accanto» mette il logo nella prima di due colonne e il cursore nella seconda', async () => {
+    const logo = {
+      type: 'immagine' as const,
+      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'left' as const },
+    };
+    const dom = await monta({
+      intestazione: { type: 'doc', content: [logo] },
+      piede: { type: 'doc', content: [] },
+    });
+    editore('intestazione').commands.setNodeSelection(0);
+    fixture.detectChanges();
+    clic(dom, 'Testo accanto');
+    editore('intestazione').commands.insertContent('Agenzia Rossi');
+
+    expect(ultima().intestazione.content).toEqual([
+      {
+        type: 'colonne',
+        content: [
+          { type: 'colonna', content: [logo] },
+          {
+            type: 'colonna',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Agenzia Rossi' }] }],
+          },
+        ],
+      },
+    ]);
+    /* Già in colonna, il pulsante non serve: il posto accanto c'è. */
+    editore('intestazione').commands.setNodeSelection(2);
+    fixture.detectChanges();
+    expect(dom.textContent).not.toContain('Testo accanto');
+  });
+
   it('un nuovo valore ricarica le fasce senza entrare nella cronologia', async () => {
     const dom = await monta();
     fixture.componentRef.setInput('valore', {

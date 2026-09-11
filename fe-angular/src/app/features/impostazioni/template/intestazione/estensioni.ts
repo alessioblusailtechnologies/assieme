@@ -1,4 +1,5 @@
 import { Extension, Node, mergeAttributes } from '@tiptap/core';
+import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 
 import {
   Allineamento,
@@ -36,6 +37,7 @@ declare module '@tiptap/core' {
     colonne: {
       inserisciColonne: (quante: 2 | 3) => ReturnType;
       togliColonne: () => ReturnType;
+      testoAccanto: () => ReturnType;
     };
     dimensione: {
       impostaDimensione: (dimensione: Dimensione) => ReturnType;
@@ -250,6 +252,35 @@ export const Colonne = Node.create({
             return true;
           }
           return false;
+        },
+
+      /*
+       * Il testo accanto a un logo: l'immagine è un blocco e occupa la sua
+       * riga, così resta identica in PDF e in Word. Per scriverle a fianco
+       * diventa la prima di due colonne, e il cursore va nella seconda.
+       */
+      testoAccanto:
+        () =>
+        ({ state, tr, dispatch }) => {
+          const { selection, schema } = state;
+          if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'immagine')
+            return false;
+          for (let profondita = selection.$from.depth; profondita > 0; profondita--) {
+            if (selection.$from.node(profondita).type.name === 'colonne') return false;
+          }
+          const tipi = schema.nodes;
+          const prima = tipi['colonna']!.create(null, selection.node);
+          const riga = tipi['colonne']!.create(null, [
+            prima,
+            tipi['colonna']!.create(null, tipi['paragraph']!.create()),
+          ]);
+          if (dispatch) {
+            tr.replaceWith(selection.from, selection.to, riga);
+            /* Dentro la riga, oltre la prima colonna, dentro la seconda e il suo paragrafo. */
+            const cursore = selection.from + 1 + prima.nodeSize + 2;
+            tr.setSelection(TextSelection.create(tr.doc, cursore)).scrollIntoView();
+          }
+          return true;
         },
     };
   },

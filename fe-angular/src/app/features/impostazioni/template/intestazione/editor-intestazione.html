@@ -52,6 +52,18 @@
           />
           <span class="mono">mm</span>
         </label>
+        @if (!stato().inColonne) {
+          <button
+            type="button"
+            class="strumento strumento--testo"
+            title="Il logo a sinistra, il testo a destra: diventano due colonne"
+            (mousedown)="$event.preventDefault()"
+            (click)="testoAccanto()"
+          >
+            <ui-icon name="due-colonne" [size]="14" />
+            <span>Testo accanto</span>
+          </button>
+        }
         <button
           type="button"
           class="strumento strumento--testo"

@@ -339,6 +339,10 @@ export class EditorIntestazione {
     this.comando((c) => c.deleteSelection());
   }
 
+  protected testoAccanto(): void {
+    this.comando((c) => c.testoAccanto());
+  }
+
   protected colonne(quante: 2 | 3): void {
     this.comando((c) => c.inserisciColonne(quante));
   }
