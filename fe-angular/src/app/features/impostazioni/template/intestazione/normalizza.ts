@@ -110,9 +110,18 @@ function immagine(n: JSONContent): Immagine | undefined {
   const id = n.attrs?.['id'];
   if (typeof id !== 'string' || !ID_IMMAGINE.test(id)) return undefined;
   const larghezza = Math.round(Math.min(180, Math.max(5, Number(n.attrs?.['larghezza']) || 30)));
+  const allinea = allineamento(n.attrs?.['allineamento']) ?? 'left';
+  /* Il testo accanto si scrive solo quando c'è: al centro non esiste, e «sotto» è il comportamento di sempre. */
+  const accanto = n.attrs?.['testo'] === 'accanto' && allinea !== 'center';
+  const distanza = Math.round(Math.min(30, Math.max(0, Number(n.attrs?.['distanza'] ?? 3) || 0)));
   return {
     type: 'immagine',
-    attrs: { id, larghezza, allineamento: allineamento(n.attrs?.['allineamento']) ?? 'left' },
+    attrs: {
+      id,
+      larghezza,
+      allineamento: allinea,
+      ...(accanto && { testo: 'accanto' as const, distanza }),
+    },
   };
 }
 

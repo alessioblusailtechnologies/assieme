@@ -88,6 +88,34 @@ describe('normalizza', () => {
     ]);
   });
 
+  it('il testo accanto resta solo dove ha un lato, con la distanza nei limiti', () => {
+    const img = (attrs: Record<string, unknown>) =>
+      fasciaDaEditor({
+        type: 'doc',
+        content: [
+          { type: 'immagine', attrs: { id: 'img-0123456789ab.png', larghezza: 30, ...attrs } },
+        ],
+      }).content[0];
+    expect(img({ allineamento: 'right', testo: 'accanto', distanza: 50 })).toEqual({
+      type: 'immagine',
+      attrs: {
+        id: 'img-0123456789ab.png',
+        larghezza: 30,
+        allineamento: 'right',
+        testo: 'accanto',
+        distanza: 30,
+      },
+    });
+    expect(img({ allineamento: 'center', testo: 'accanto', distanza: 5 })).toEqual({
+      type: 'immagine',
+      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'center' },
+    });
+    expect(img({ allineamento: 'left', testo: 'sotto', distanza: 3 })).toEqual({
+      type: 'immagine',
+      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'left' },
+    });
+  });
+
   it('un testo più lungo di 500 caratteri si spezza, con gli stessi segni', () => {
     const fascia = fasciaDaEditor({
       type: 'doc',

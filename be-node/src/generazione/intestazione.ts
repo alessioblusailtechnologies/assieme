@@ -1,5 +1,7 @@
 import {
   AlignmentType,
+  HorizontalPositionAlign,
+  HorizontalPositionRelativeFrom,
   ImageRun,
   PageNumber,
   Paragraph,
@@ -8,6 +10,9 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  TextWrappingSide,
+  TextWrappingType,
+  VerticalPositionRelativeFrom,
   WidthType,
 } from 'docx';
 import { rgb, type PDFDocument, type PDFFont, type PDFImage, type PDFPage, type RGB } from 'pdf-lib';
@@ -16,6 +21,7 @@ import type {
   Allineamento,
   Blocco,
   BloccoColonna,
+  Colonne,
   Dimensione,
   Fascia,
   Immagine,
@@ -175,6 +181,21 @@ interface RigaPdf {
   larghezza: number;
   altezza: number;
   dimensione: number;
+  /** Lo spazio della riga: stretto accanto a un'immagine col testo accanto, pieno dopo. */
+  spazio: SpazioRiga;
+}
+
+/** Quanto è larga una riga e da dove parte, rispetto al bordo sinistro del blocco. */
+interface SpazioRiga {
+  larghezza: number;
+  scostamento: number;
+}
+
+/** Un'immagine col testo accanto: fino a che altezza toglie spazio, quanto, e da che lato. */
+interface Affiancata {
+  basso: number;
+  ingombro: number;
+  lato: 'left' | 'right';
 }
 
 /** Ciò che un blocco impaginato sa fare: dire quanto è alto e disegnarsi. */
@@ -263,14 +284,21 @@ export async function preparaFascePdf(
   const larghezzaParola = (p: Parola): number => larghezzaTesto(p.font, p.testo, p.dimensione);
   const larghezzaSpazio = (p: Parola): number => larghezzaTesto(p.font, ' ', p.dimensione);
 
-  /** Va a capo solo davanti a una parola preceduta da uno spazio: le altre restano attaccate. */
-  const righe = (elementi: Array<Parola | 'a-capo'>, disponibile: number): RigaPdf[] => {
+  /**
+   * Va a capo solo davanti a una parola preceduta da uno spazio: le altre
+   * restano attaccate. Ogni riga chiede il suo spazio dall'altezza a cui
+   * comincia: accanto a un'immagine col testo accanto è più stretta.
+   */
+  const righe = (elementi: Array<Parola | 'a-capo'>, spazioA: (yCima: number) => SpazioRiga): RigaPdf[] => {
     const fuori: RigaPdf[] = [];
-    let corrente: RigaPdf = { parole: [], larghezza: 0, altezza: 0, dimensione: 0 };
+    let yCima = 0;
+    const nuova = (): RigaPdf => ({ parole: [], larghezza: 0, altezza: 0, dimensione: 0, spazio: spazioA(yCima) });
+    let corrente = nuova();
     const chiudi = (): void => {
       const dimensione = corrente.dimensione || PUNTI.normale;
       fuori.push({ ...corrente, dimensione, altezza: dimensione * 1.3 });
-      corrente = { parole: [], larghezza: 0, altezza: 0, dimensione: 0 };
+      yCima += dimensione * 1.3;
+      corrente = nuova();
     };
     /* I gruppi: una parola con lo spazio davanti e quelle attaccate dopo. */
     const gruppi: Array<Parola[] | 'a-capo'> = [];
@@ -287,7 +315,7 @@ export async function preparaFascePdf(
       }
       const spazio = corrente.parole.length && g[0]!.spazioPrima ? larghezzaSpazio(g[0]!) : 0;
       const misura = g.reduce((s, p) => s + larghezzaParola(p), 0);
-      if (corrente.parole.length && corrente.larghezza + spazio + misura > disponibile) {
+      if (corrente.parole.length && corrente.larghezza + spazio + misura > corrente.spazio.larghezza) {
         chiudi();
         g[0] = { ...g[0]!, spazioPrima: false };
         corrente.parole.push(...g);
@@ -303,16 +331,20 @@ export async function preparaFascePdf(
     return fuori;
   };
 
-  const impaginaParagrafo = (p: Paragrafo, disponibile: number, contesto: ContestoPagina): Impaginato => {
+  const impaginaParagrafo = (
+    p: Paragrafo,
+    spazioA: (yCima: number) => SpazioRiga,
+    contesto: ContestoPagina,
+  ): Impaginato => {
     const allineamento = p.attrs?.textAlign ?? 'left';
-    const linee = righe(parole(p, contesto), disponibile);
+    const linee = righe(parole(p, contesto), spazioA);
     return {
       altezza: linee.reduce((s, r) => s + r.altezza, 0),
       disegna(pagina, x, yCima) {
         let y = yCima;
         for (const riga of linee) {
           const base = y - riga.dimensione;
-          let cursore = xAllineato(allineamento, x, disponibile, riga.larghezza);
+          let cursore = xAllineato(allineamento, x + riga.spazio.scostamento, riga.spazio.larghezza, riga.larghezza);
           for (const parola of riga.parole) {
             if (parola.spazioPrima) cursore += larghezzaSpazio(parola);
             const misura = larghezzaParola(parola);
@@ -333,13 +365,14 @@ export async function preparaFascePdf(
     };
   };
 
-  const impaginaImmagine = (b: Immagine, disponibile: number): Impaginato => {
+  const impaginaImmagine = (b: Immagine, disponibile: number): Impaginato & { larghezza: number } => {
     const immagine = incorporate.get(b.attrs.id);
-    if (!immagine) return { altezza: 0, disegna: () => undefined };
+    if (!immagine) return { altezza: 0, larghezza: 0, disegna: () => undefined };
     const larghezzaImmagine = Math.min(b.attrs.larghezza * MM, disponibile);
     const altezza = (larghezzaImmagine * immagine.height) / immagine.width;
     return {
       altezza,
+      larghezza: larghezzaImmagine,
       disegna(pagina, x, yCima) {
         pagina.drawImage(immagine, {
           x: xAllineato(b.attrs.allineamento, x, disponibile, larghezzaImmagine),
@@ -351,29 +384,85 @@ export async function preparaFascePdf(
     };
   };
 
-  const impaginaBlocchi = (blocchi: Array<Blocco | BloccoColonna>, disponibile: number, contesto: ContestoPagina): Impaginato => {
-    const pezzi = blocchi.map((b): Impaginato => {
-      if (b.type === 'paragraph') return impaginaParagrafo(b, disponibile, contesto);
-      if (b.type === 'immagine') return impaginaImmagine(b, disponibile);
-      const n = b.content.length;
-      const larghezzaColonna = (disponibile - SPAZIO_FRA_COLONNE * (n - 1)) / n;
-      const colonne = b.content.map((c) => impaginaBlocchi(c.content, larghezzaColonna, contesto));
-      return {
-        altezza: Math.max(...colonne.map((c) => c.altezza)),
-        disegna(pagina, x, yCima) {
-          colonne.forEach((c, i) => c.disegna(pagina, x + i * (larghezzaColonna + SPAZIO_FRA_COLONNE), yCima));
-        },
-      };
-    });
-    const spazi = Math.max(0, pezzi.length - 1) * SPAZIO_FRA_BLOCCHI;
+  const impaginaColonne = (b: Colonne, disponibile: number, contesto: ContestoPagina): Impaginato => {
+    const n = b.content.length;
+    const larghezzaColonna = (disponibile - SPAZIO_FRA_COLONNE * (n - 1)) / n;
+    const colonne = b.content.map((c) => impaginaBlocchi(c.content, larghezzaColonna, contesto));
     return {
-      altezza: pezzi.reduce((s, p) => s + p.altezza, 0) + spazi,
+      altezza: Math.max(...colonne.map((c) => c.altezza)),
       disegna(pagina, x, yCima) {
-        let y = yCima;
-        for (const p of pezzi) {
-          p.disegna(pagina, x, y);
-          y -= p.altezza + SPAZIO_FRA_BLOCCHI;
+        colonne.forEach((c, i) => c.disegna(pagina, x + i * (larghezzaColonna + SPAZIO_FRA_COLONNE), yCima));
+      },
+    };
+  };
+
+  /**
+   * I blocchi uno sotto l'altro, e un'immagine col testo accanto che si
+   * mette di lato: i paragrafi che la seguono cominciano alla sua altezza e
+   * le scorrono a fianco, riga per riga, finché non la superano. Un'altra
+   * immagine o una riga a colonne ricomincia sotto di lei. È il «testo
+   * intorno» di Word, e il `float` dell'editor.
+   */
+  const impaginaBlocchi = (blocchi: Array<Blocco | BloccoColonna>, disponibile: number, contesto: ContestoPagina): Impaginato => {
+    const posati: Array<{ dy: number; pezzo: Impaginato }> = [];
+    let y = 0;
+    let primo = true;
+    let accanto: Affiancata | undefined;
+    /** Vero subito dopo un'immagine col testo accanto: il blocco che segue comincia alla sua altezza. */
+    let allaSuaAltezza = false;
+
+    const spaziatura = (): void => {
+      if (!primo && !allaSuaAltezza) y += SPAZIO_FRA_BLOCCHI;
+      primo = false;
+      allaSuaAltezza = false;
+    };
+    const sottoLImmagine = (): void => {
+      if (accanto) y = Math.max(y, accanto.basso);
+      accanto = undefined;
+      allaSuaAltezza = false;
+    };
+
+    for (const b of blocchi) {
+      if (b.type === 'paragraph') {
+        spaziatura();
+        const inizio = y;
+        const lato = accanto;
+        const spazioA = (yRiga: number): SpazioRiga =>
+          lato && inizio + yRiga < lato.basso
+            ? { larghezza: Math.max(0, disponibile - lato.ingombro), scostamento: lato.lato === 'left' ? lato.ingombro : 0 }
+            : { larghezza: disponibile, scostamento: 0 };
+        const pezzo = impaginaParagrafo(b, spazioA, contesto);
+        posati.push({ dy: inizio, pezzo });
+        y = inizio + pezzo.altezza;
+        continue;
+      }
+
+      sottoLImmagine();
+      spaziatura();
+      if (b.type === 'immagine') {
+        const pezzo = impaginaImmagine(b, disponibile);
+        posati.push({ dy: y, pezzo });
+        if (b.attrs.testo === 'accanto' && b.attrs.allineamento !== 'center' && pezzo.altezza) {
+          accanto = {
+            basso: y + pezzo.altezza,
+            ingombro: pezzo.larghezza + b.attrs.distanza * MM,
+            lato: b.attrs.allineamento,
+          };
+          allaSuaAltezza = true;
+        } else {
+          y += pezzo.altezza;
         }
+        continue;
+      }
+      const pezzo = impaginaColonne(b, disponibile, contesto);
+      posati.push({ dy: y, pezzo });
+      y += pezzo.altezza;
+    }
+
+    return {
+      altezza: Math.max(y, accanto?.basso ?? 0),
+      disegna(pagina, x, yCima) {
+        for (const { dy, pezzo } of posati) pezzo.disegna(pagina, x, yCima - dy);
       },
     };
   };
@@ -433,8 +522,8 @@ function runDocx(testo: string | undefined, stile: Stile, pagina?: 'CURRENT' | '
   });
 }
 
-function paragrafoDocx(p: Paragrafo, fasce: FasceDocumento): Paragraph {
-  const figli: TextRun[] = [];
+function paragrafoDocx(p: Paragrafo, fasce: FasceDocumento, ancorata?: ImageRun): Paragraph {
+  const figli: Array<TextRun | ImageRun> = ancorata ? [ancorata] : [];
   for (const nodo of p.content ?? []) {
     if (nodo.type === 'hardBreak') figli.push(new TextRun({ break: 1 }));
     else if (nodo.type === 'text') figli.push(runDocx(nodo.text, stileDi(nodo.marks)));
@@ -449,25 +538,59 @@ function paragrafoDocx(p: Paragrafo, fasce: FasceDocumento): Paragraph {
   });
 }
 
-function immagineDocx(b: Immagine, fasce: FasceDocumento): Paragraph | undefined {
+/** Un millimetro in EMU, l'unità delle distanze di un disegno in Word. */
+const EMU_PER_MM = 36_000;
+
+const affiancata = (b: Immagine): boolean => b.attrs.testo === 'accanto' && b.attrs.allineamento !== 'center';
+
+function immagineDocx(b: Immagine, fasce: FasceDocumento): ImageRun | undefined {
   const immagine = fasce.immagini.get(b.attrs.id);
   if (!immagine) return undefined;
   const larghezza = Math.round(b.attrs.larghezza * PX_PER_MM);
   const altezza = Math.round((larghezza * immagine.altezzaPx) / Math.max(1, immagine.larghezzaPx));
-  return new Paragraph({
-    alignment: ALLINEAMENTO_DOCX[b.attrs.allineamento],
-    children: [new ImageRun({ type: immagine.tipo, data: immagine.byte, transformation: { width: larghezza, height: altezza } })],
+  const dimensioni = { type: immagine.tipo, data: immagine.byte, transformation: { width: larghezza, height: altezza } };
+  if (!affiancata(b)) return new ImageRun(dimensioni);
+  /* Il «testo intorno» di Word: l'immagine sta al margine della colonna e il testo le scorre accanto. */
+  const lato = b.attrs.allineamento === 'right' ? 'right' : 'left';
+  const distanza = Math.round(b.attrs.distanza * EMU_PER_MM);
+  return new ImageRun({
+    ...dimensioni,
+    floating: {
+      horizontalPosition: {
+        relative: HorizontalPositionRelativeFrom.COLUMN,
+        align: lato === 'left' ? HorizontalPositionAlign.LEFT : HorizontalPositionAlign.RIGHT,
+      },
+      verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
+      wrap: { type: TextWrappingType.SQUARE, side: lato === 'left' ? TextWrappingSide.RIGHT : TextWrappingSide.LEFT },
+      margins: lato === 'left' ? { right: distanza } : { left: distanza },
+      layoutInCell: true,
+    },
   });
 }
 
+/**
+ * I blocchi in Word. Un'immagine col testo accanto non ha un paragrafo suo
+ * (sarebbe una riga vuota prima del testo): si ancora al paragrafo che la
+ * segue, così il testo comincia alla sua altezza come nel PDF.
+ */
 function blocchiDocx(blocchi: Array<Blocco | BloccoColonna>, fasce: FasceDocumento): Array<Paragraph | Table> {
   const fuori: Array<Paragraph | Table> = [];
+  let inAttesa: ImageRun | undefined;
+  const scarica = (): void => {
+    if (inAttesa) fuori.push(new Paragraph({ children: [inAttesa] }));
+    inAttesa = undefined;
+  };
   for (const b of blocchi) {
-    if (b.type === 'paragraph') fuori.push(paragrafoDocx(b, fasce));
-    else if (b.type === 'immagine') {
-      const p = immagineDocx(b, fasce);
-      if (p) fuori.push(p);
+    if (b.type === 'paragraph') {
+      fuori.push(paragrafoDocx(b, fasce, inAttesa));
+      inAttesa = undefined;
+    } else if (b.type === 'immagine') {
+      scarica();
+      const run = immagineDocx(b, fasce);
+      if (run && affiancata(b)) inAttesa = run;
+      else if (run) fuori.push(new Paragraph({ alignment: ALLINEAMENTO_DOCX[b.attrs.allineamento], children: [run] }));
     } else {
+      scarica();
       const quota = Math.floor(100 / b.content.length);
       fuori.push(
         new Table({
@@ -489,6 +612,7 @@ function blocchiDocx(blocchi: Array<Blocco | BloccoColonna>, fasce: FasceDocumen
       );
     }
   }
+  scarica();
   return fuori;
 }
 

@@ -32,10 +32,23 @@ export interface Paragrafo {
   content?: Inline[];
 }
 
+/**
+ * Il testo che segue un'immagine: sotto, o accanto come il «testo intorno»
+ * di Word (l'immagine a sinistra o a destra, i paragrafi dopo le scorrono a
+ * fianco a `distanza` millimetri). Un'immagine al centro ha il testo sotto.
+ */
+export type DisposizioneTesto = 'sotto' | 'accanto';
+
 export interface Immagine {
   type: 'immagine';
-  /** `larghezza` in millimetri, sulla carta. */
-  attrs: { id: string; larghezza: number; allineamento: Allineamento };
+  /** `larghezza` e `distanza` in millimetri, sulla carta. Assenti = testo sotto. */
+  attrs: {
+    id: string;
+    larghezza: number;
+    allineamento: Allineamento;
+    testo?: DisposizioneTesto;
+    distanza?: number;
+  };
 }
 
 export interface Colonne {

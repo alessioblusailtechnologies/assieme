@@ -1,9 +1,9 @@
 import { Extension, Node, mergeAttributes } from '@tiptap/core';
-import { NodeSelection, TextSelection } from '@tiptap/pm/state';
 
 import {
   Allineamento,
   Dimensione,
+  DisposizioneTesto,
   ETICHETTE_CAMPO,
   NomeCampo,
   PUNTI_DIMENSIONE,
@@ -31,13 +31,17 @@ declare module '@tiptap/core' {
         allineamento: Allineamento;
       }) => ReturnType;
       impostaImmagine: (
-        attrs: Partial<{ larghezza: number; allineamento: Allineamento }>,
+        attrs: Partial<{
+          larghezza: number;
+          allineamento: Allineamento;
+          testo: DisposizioneTesto;
+          distanza: number;
+        }>,
       ) => ReturnType;
     };
     colonne: {
       inserisciColonne: (quante: 2 | 3) => ReturnType;
       togliColonne: () => ReturnType;
-      testoAccanto: () => ReturnType;
     };
     dimensione: {
       impostaDimensione: (dimensione: Dimensione) => ReturnType;
@@ -124,6 +128,17 @@ export const Immagine = Node.create<OpzioniImmagine>({
         parseHTML: (el) => el.getAttribute('data-allineamento') ?? 'left',
         renderHTML: (attrs) => ({ 'data-allineamento': attrs['allineamento'] }),
       },
+      /* Il testo dopo l'immagine: sotto, o accanto come il «testo intorno» di Word. */
+      testo: {
+        default: 'sotto',
+        parseHTML: (el) => el.getAttribute('data-testo') ?? 'sotto',
+        renderHTML: (attrs) => ({ 'data-testo': attrs['testo'] }),
+      },
+      distanza: {
+        default: 3,
+        parseHTML: (el) => Number(el.getAttribute('data-distanza') ?? 3),
+        renderHTML: (attrs) => ({ 'data-distanza': attrs['distanza'] }),
+      },
     };
   },
 
@@ -146,7 +161,19 @@ export const Immagine = Node.create<OpzioniImmagine>({
       dom.append(img);
       let idCorrente = '';
       const applica = (n: typeof node): void => {
-        dom.style.textAlign = n.attrs['allineamento'] as string;
+        const allineamento = n.attrs['allineamento'] as Allineamento;
+        dom.style.textAlign = allineamento;
+        /*
+         * Col testo accanto l'immagine galleggia al suo lato e i paragrafi
+         * dopo le scorrono a fianco: il `float` è la stessa regola che il
+         * motore segue nel PDF e Word nel «testo intorno».
+         */
+        const accanto = n.attrs['testo'] === 'accanto' && allineamento !== 'center';
+        const distanza = `calc(${n.attrs['distanza'] as number} * var(--mm, 1mm))`;
+        dom.classList.toggle('is-accanto', accanto);
+        dom.style.float = accanto ? allineamento : '';
+        dom.style.marginRight = accanto && allineamento === 'left' ? distanza : '';
+        dom.style.marginLeft = accanto && allineamento === 'right' ? distanza : '';
         /* `--mm` è un millimetro alla scala del foglio (`editor-intestazione.scss`). */
         img.style.width = `calc(${n.attrs['larghezza'] as number} * var(--mm, 1mm))`;
         const id = n.attrs['id'] as string;
@@ -252,35 +279,6 @@ export const Colonne = Node.create({
             return true;
           }
           return false;
-        },
-
-      /*
-       * Il testo accanto a un logo: l'immagine è un blocco e occupa la sua
-       * riga, così resta identica in PDF e in Word. Per scriverle a fianco
-       * diventa la prima di due colonne, e il cursore va nella seconda.
-       */
-      testoAccanto:
-        () =>
-        ({ state, tr, dispatch }) => {
-          const { selection, schema } = state;
-          if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'immagine')
-            return false;
-          for (let profondita = selection.$from.depth; profondita > 0; profondita--) {
-            if (selection.$from.node(profondita).type.name === 'colonne') return false;
-          }
-          const tipi = schema.nodes;
-          const prima = tipi['colonna']!.create(null, selection.node);
-          const riga = tipi['colonne']!.create(null, [
-            prima,
-            tipi['colonna']!.create(null, tipi['paragraph']!.create()),
-          ]);
-          if (dispatch) {
-            tr.replaceWith(selection.from, selection.to, riga);
-            /* Dentro la riga, oltre la prima colonna, dentro la seconda e il suo paragrafo. */
-            const cursore = selection.from + 1 + prima.nodeSize + 2;
-            tr.setSelection(TextSelection.create(tr.doc, cursore)).scrollIntoView();
-          }
-          return true;
         },
     };
   },

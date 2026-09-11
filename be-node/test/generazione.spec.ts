@@ -45,7 +45,7 @@ const INTESTAZIONE: Fascia = {
         {
           type: 'colonna',
           content: [
-            { type: 'immagine', attrs: { id: 'img-000000000001.png', larghezza: 30, allineamento: 'left' } },
+            { type: 'immagine', attrs: { id: 'img-000000000001.png', larghezza: 30, allineamento: 'left', testo: 'sotto', distanza: 3 } },
             { type: 'paragraph', content: [{ type: 'text', text: 'Assicurazioni Meridiana S.r.l.', marks: [{ type: 'bold' }] }] },
           ],
         },
@@ -407,5 +407,73 @@ describe('la carta dell’agenzia su un documento consegnato (timbra)', () => {
     const piene = await misureFasce(FASCE);
     expect(piene.altoMm).toBeGreaterThan(vuote.altoMm);
     expect(piene.bassoMm).toBeGreaterThan(15);
+  });
+});
+
+describe('l’immagine col testo accanto', () => {
+  const conLogo = (testo: 'sotto' | 'accanto', allineamento: 'left' | 'right' = 'left'): FasceDocumento => ({
+    ...FASCE,
+    intestazione: {
+      type: 'doc',
+      content: [
+        { type: 'immagine', attrs: { id: 'img-000000000001.png', larghezza: 30, allineamento, testo, distanza: 4 } },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Assicurazioni Meridiana S.r.l.' }] },
+        { type: 'paragraph', content: [{ type: 'text', text: 'Corso Vinzaglio 12, Torino' }] },
+      ],
+    },
+  });
+
+  /** Dove pdfjs vede ogni parola della prima pagina. */
+  async function posizioni(pdf: Buffer): Promise<Array<{ testo: string; x: number; y: number }>> {
+    const pdfjs = (await import('pdfjs-dist/legacy/build/pdf.mjs')) as unknown as {
+      getDocument(o: { data: Uint8Array; useSystemFonts: boolean }): {
+        promise: Promise<{
+          getPage(n: number): Promise<{ getTextContent(): Promise<{ items: Array<{ str?: string; transform: number[] }> }> }>;
+        }>;
+      };
+    };
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(pdf), useSystemFonts: true }).promise;
+    const contenuto = await (await doc.getPage(1)).getTextContent();
+    return contenuto.items
+      .filter((i) => i.str?.trim())
+      .map((i) => ({ testo: i.str!, x: i.transform[4]!, y: i.transform[5]! }));
+  }
+
+  const MM = 72 / 25.4;
+
+  it('PDF: il testo comincia accanto all’immagine e alla sua altezza, a sinistra o a destra', async () => {
+    const pdfDi = (f: FasceDocumento) => componiPdf({ titolo: 'T', blocchi: analizzaMarkdown('Corpo.'), fonti: [], fasce: f });
+    const accanto = await posizioni(await pdfDi(conLogo('accanto')));
+    const sotto = await posizioni(await pdfDi(conLogo('sotto')));
+    const destra = await posizioni(await pdfDi(conLogo('accanto', 'right')));
+    const primaParola = (p: typeof accanto) => p.find((v) => v.testo.startsWith('Assicurazioni'))!;
+
+    /* Margine di 56 pt, poi 30 mm di logo e 4 mm di distanza. */
+    expect(primaParola(accanto).x).toBeCloseTo(56 + 34 * MM, 0);
+    expect(primaParola(sotto).x).toBeCloseTo(56, 0);
+    expect(primaParola(destra).x).toBeCloseTo(56, 0);
+    /* Accanto, il testo sta alla quota del logo; sotto, un logo intero più in giù. */
+    expect(primaParola(accanto).y - primaParola(sotto).y).toBeGreaterThan(30 * MM);
+  });
+
+  it('la fascia è alta quanto il più alto fra immagine e testo, non quanto la somma', async () => {
+    const accanto = await misureFasce(conLogo('accanto'));
+    const sotto = await misureFasce(conLogo('sotto'));
+    expect(sotto.altoMm - accanto.altoMm).toBeGreaterThan(8);
+  });
+
+  it('Word: l’immagine è ancorata al paragrafo che segue, col testo intorno e la distanza chiesta', async () => {
+    const docx = await componiDocx({ titolo: 'T', blocchi: [], fonti: [], fasce: conLogo('accanto') });
+    const header = testoParte(docx, /^word\/header\d*\.xml$/);
+    const paragrafi = header.match(/<w:p\b[\s\S]*?<\/w:p>/g)!;
+    const conAncora = paragrafi.filter((p) => p.includes('<wp:anchor'));
+    expect(conAncora).toHaveLength(1);
+    expect(conAncora[0]).toContain('Assicurazioni Meridiana S.r.l.');
+    expect(conAncora[0]).toContain('<wp:wrapSquare wrapText="right"');
+    expect(conAncora[0]).toMatch(/distR="144000"/);
+
+    const sotto = testoParte(await componiDocx({ titolo: 'T', blocchi: [], fonti: [], fasce: conLogo('sotto') }), /^word\/header\d*\.xml$/);
+    expect(sotto).not.toContain('<wp:anchor');
+    expect(sotto).toContain('<wp:inline');
   });
 });

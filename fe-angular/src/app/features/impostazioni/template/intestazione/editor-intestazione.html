@@ -52,17 +52,31 @@
           />
           <span class="mono">mm</span>
         </label>
-        @if (!stato().inColonne) {
-          <button
-            type="button"
-            class="strumento strumento--testo"
-            title="Il logo a sinistra, il testo a destra: diventano due colonne"
-            (mousedown)="$event.preventDefault()"
-            (click)="testoAccanto()"
-          >
-            <ui-icon name="due-colonne" [size]="14" />
-            <span>Testo accanto</span>
-          </button>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Il testo che segue scorre a fianco dell’immagine, poi continua sotto"
+          [class.is-attivo]="immagine.accanto"
+          [attr.aria-pressed]="immagine.accanto"
+          (mousedown)="$event.preventDefault()"
+          (click)="testoAccanto()"
+        >
+          <ui-icon name="allinea-sinistra" [size]="14" />
+          <span>Testo accanto</span>
+        </button>
+        @if (immagine.accanto) {
+          <label class="larghezza">
+            <span>Distanza</span>
+            <input
+              type="number"
+              min="0"
+              max="30"
+              step="1"
+              [value]="immagine.distanza"
+              (input)="distanzaImmagine($any($event.target).value)"
+            />
+            <span class="mono">mm</span>
+          </label>
         }
         <button
           type="button"

@@ -29,7 +29,8 @@ Si parte da zero: nessuna migrazione di template, identità visiva o predefiniti
 
 ### Che cosa si può mettere (lo schema)
 
-- **Blocchi**: paragrafo (allineamento a sinistra, al centro, a destra); immagine (larghezza, allineamento); riga a colonne (2 o 3, ognuna con paragrafi e immagini).
+- **Blocchi**: paragrafo (allineamento a sinistra, al centro, a destra); immagine (larghezza, allineamento, e il testo sotto o **accanto**); riga a colonne (2 o 3, ognuna con paragrafi e immagini).
+- **Testo accanto** (11/09/2026, chiesto dal committente dopo la prima prova: le colonne lasciavano troppo spazio fra logo e scritte): come il «testo intorno» di Word, l'immagine sta a sinistra o a destra e i paragrafi che la seguono le scorrono a fianco a `distanza` mm, poi continuano sotto; un'altra immagine o una riga a colonne ricomincia sotto di lei. Nell'editor è un `float`, nel PDF il motore restringe le righe finché non superano l'immagine, in Word è un'immagine ancorata al paragrafo che segue con `wrapSquare`. Al centro il testo resta sotto.
 - **Testo**: grassetto, corsivo, sottolineato; tre dimensioni (piccolo, normale, grande); colori: quello dell'agenzia, grigio, nero.
 - **Campi automatici**: numero di pagina, pagine totali, data, titolo del documento, nome dell'agenzia. Partita IVA, iscrizione RUI e simili si scrivono come testo, una volta.
 - **Fuori schema**: tabelle libere, elenchi, link, font a scelta, sfondi. Sono ciò che fa divergere l'anteprima dal documento.

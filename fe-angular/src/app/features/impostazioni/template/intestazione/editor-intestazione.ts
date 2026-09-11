@@ -53,7 +53,7 @@ interface StatoBarra {
   colore: string | undefined;
   allineamento: Allineamento;
   /** L'immagine selezionata, se la selezione è un'immagine. */
-  immagine: { larghezza: number } | undefined;
+  immagine: { larghezza: number; accanto: boolean; distanza: number } | undefined;
   inColonne: boolean;
   puoAnnullare: boolean;
   puoRipetere: boolean;
@@ -325,8 +325,15 @@ export class EditorIntestazione {
   }
 
   protected allinea(allineamento: Allineamento): void {
-    if (this.stato().immagine) this.comando((c) => c.impostaImmagine({ allineamento }));
-    else this.comando((c) => c.setTextAlign(allineamento));
+    /* Al centro il testo accanto non ha un lato dove stare: torna sotto. */
+    if (this.stato().immagine) {
+      this.comando((c) =>
+        c.impostaImmagine({
+          allineamento,
+          ...(allineamento === 'center' && { testo: 'sotto' as const }),
+        }),
+      );
+    } else this.comando((c) => c.setTextAlign(allineamento));
   }
 
   protected larghezzaImmagine(valore: string): void {
@@ -339,8 +346,24 @@ export class EditorIntestazione {
     this.comando((c) => c.deleteSelection());
   }
 
+  /** Il testo accanto all'immagine, o di nuovo sotto. Dal centro si va a sinistra. */
   protected testoAccanto(): void {
-    this.comando((c) => c.testoAccanto());
+    const immagine = this.stato().immagine;
+    if (!immagine) return;
+    if (immagine.accanto) {
+      this.comando((c) => c.impostaImmagine({ testo: 'sotto' }));
+      return;
+    }
+    const centrata = this.stato().allineamento === 'center';
+    this.comando((c) =>
+      c.impostaImmagine({ testo: 'accanto', ...(centrata && { allineamento: 'left' as const }) }),
+    );
+  }
+
+  protected distanzaImmagine(valore: string): void {
+    const mm = Math.round(Number(valore));
+    if (!Number.isFinite(mm) || mm < 0 || mm > 30) return;
+    this.comando((c) => c.impostaImmagine({ distanza: mm }));
   }
 
   protected colonne(quante: 2 | 3): void {
@@ -422,7 +445,14 @@ function statoDi(editor: Editor): StatoBarra {
     allineamento: immagine
       ? (immagine.attrs['allineamento'] as Allineamento)
       : ((editor.getAttributes('paragraph')['textAlign'] as Allineamento | null) ?? 'left'),
-    immagine: immagine ? { larghezza: immagine.attrs['larghezza'] as number } : undefined,
+    immagine: immagine
+      ? {
+          larghezza: immagine.attrs['larghezza'] as number,
+          accanto:
+            immagine.attrs['testo'] === 'accanto' && immagine.attrs['allineamento'] !== 'center',
+          distanza: immagine.attrs['distanza'] as number,
+        }
+      : undefined,
     inColonne,
     puoAnnullare: editor.can().undo(),
     puoRipetere: editor.can().redo(),

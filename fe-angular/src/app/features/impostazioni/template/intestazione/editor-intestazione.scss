@@ -257,6 +257,8 @@
 /* ---------- Il contenuto di TipTap ---------- */
 
 .fascia__editor ::ng-deep .ProseMirror {
+  /* Contiene le immagini col testo accanto: la fascia è alta quanto la più alta fra testo e immagine. */
+  display: flow-root;
   min-height: calc(9 * 1.3 * var(--pt));
   outline: none;
   white-space: pre-wrap;
@@ -270,6 +272,21 @@
 .fascia__editor ::ng-deep .ProseMirror > * + *,
 .fascia__editor ::ng-deep .colonna-fascia > * + * {
   margin-top: calc(3 * var(--pt));
+}
+
+/* Il blocco subito dopo un'immagine col testo accanto comincia alla sua altezza, come nel PDF. */
+.fascia__editor ::ng-deep .immagine-fascia.is-accanto + * {
+  margin-top: 0;
+}
+
+/* Un'altra immagine o una riga a colonne ricomincia sotto l'immagine col testo accanto. */
+.fascia__editor ::ng-deep .immagine-fascia,
+.fascia__editor ::ng-deep .colonne-fascia {
+  clear: both;
+}
+
+.fascia__editor ::ng-deep .colonna-fascia {
+  display: flow-root;
 }
 
 .fascia__editor ::ng-deep .colonne-fascia {

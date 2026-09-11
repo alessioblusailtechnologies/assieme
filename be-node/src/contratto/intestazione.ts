@@ -66,6 +66,16 @@ const schemaParagrafo = z.object({
   content: z.array(schemaInline).max(60).optional(),
 });
 
+/**
+ * Dove va il testo che segue un'immagine: sotto (l'immagine ha la sua
+ * riga) o accanto, come il «testo intorno» di Word: l'immagine sta a
+ * sinistra o a destra e i paragrafi dopo le scorrono a fianco, a
+ * `distanza` millimetri, finché non la superano in altezza. Un'immagine
+ * al centro ha sempre il testo sotto.
+ */
+export const DISPOSIZIONI_TESTO = ['sotto', 'accanto'] as const;
+export type DisposizioneTesto = (typeof DISPOSIZIONI_TESTO)[number];
+
 const schemaImmagine = z.object({
   type: z.literal('immagine'),
   attrs: z.object({
@@ -73,6 +83,9 @@ const schemaImmagine = z.object({
     /** In millimetri, sulla carta. */
     larghezza: z.number().min(5).max(180),
     allineamento: z.enum(ALLINEAMENTI).default('left'),
+    testo: z.enum(DISPOSIZIONI_TESTO).default('sotto'),
+    /** In millimetri, fra l'immagine e il testo accanto. */
+    distanza: z.number().min(0).max(30).default(3),
   }),
 });
 

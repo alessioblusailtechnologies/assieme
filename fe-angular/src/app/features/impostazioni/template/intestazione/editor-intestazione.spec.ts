@@ -208,36 +208,55 @@ describe('EditorIntestazione', () => {
     });
   });
 
-  it('«Testo accanto» mette il logo nella prima di due colonne e il cursore nella seconda', async () => {
-    const logo = {
-      type: 'immagine' as const,
-      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'left' as const },
-    };
+  it('«Testo accanto» fa scorrere il testo a fianco del logo, alla distanza scelta; al centro torna sotto', async () => {
     const dom = await monta({
-      intestazione: { type: 'doc', content: [logo] },
+      intestazione: {
+        type: 'doc',
+        content: [
+          {
+            type: 'immagine',
+            attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'left' },
+          },
+          { type: 'paragraph', content: [{ type: 'text', text: 'Agenzia Rossi' }] },
+        ],
+      },
       piede: { type: 'doc', content: [] },
     });
     editore('intestazione').commands.setNodeSelection(0);
     fixture.detectChanges();
     clic(dom, 'Testo accanto');
-    editore('intestazione').commands.insertContent('Agenzia Rossi');
 
-    expect(ultima().intestazione.content).toEqual([
-      {
-        type: 'colonne',
-        content: [
-          { type: 'colonna', content: [logo] },
-          {
-            type: 'colonna',
-            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Agenzia Rossi' }] }],
-          },
-        ],
+    expect(ultima().intestazione.content[0]).toEqual({
+      type: 'immagine',
+      attrs: {
+        id: 'img-0123456789ab.png',
+        larghezza: 30,
+        allineamento: 'left',
+        testo: 'accanto',
+        distanza: 3,
       },
-    ]);
-    /* Già in colonna, il pulsante non serve: il posto accanto c'è. */
-    editore('intestazione').commands.setNodeSelection(2);
-    fixture.detectChanges();
-    expect(dom.textContent).not.toContain('Testo accanto');
+    });
+    /* Nell'editor l'immagine galleggia: il paragrafo dopo le scorre accanto. */
+    const figura = dom.querySelector<HTMLElement>('.immagine-fascia')!;
+    expect(figura.classList).toContain('is-accanto');
+    expect(figura.style.float).toBe('left');
+    expect(dom.querySelector('[aria-pressed="true"]')?.textContent).toContain('Testo accanto');
+
+    const distanza = [...dom.querySelectorAll<HTMLLabelElement>('.larghezza')]
+      .find((l) => l.textContent?.includes('Distanza'))!
+      .querySelector('input')!;
+    distanza.value = '6';
+    distanza.dispatchEvent(new Event('input'));
+    expect(ultima().intestazione.content[0]).toMatchObject({
+      attrs: { testo: 'accanto', distanza: 6 },
+    });
+
+    clic(dom, 'Allinea al centro');
+    expect(ultima().intestazione.content[0]).toEqual({
+      type: 'immagine',
+      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'center' },
+    });
+    expect(figura.style.float).toBe('');
   });
 
   it('un nuovo valore ricarica le fasce senza entrare nella cronologia', async () => {
