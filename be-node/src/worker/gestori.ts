@@ -22,6 +22,7 @@ import { creaGestoreMemoria } from './memoria/gestore.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
+import { creaGestoreAnteprimaModello } from './sandbox/anteprima.js';
 import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly, AvviatoreRemoto, type AvviatoreSandbox } from './sandbox/sandbox.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
@@ -51,6 +52,7 @@ let interrogazioneVera: GestoreJob | undefined;
 let tabellaVera: GestoreJob | undefined;
 let agenteVero: GestoreJob | undefined;
 let memoriaVera: GestoreJob | undefined;
+let anteprimaVera: GestoreJob | undefined;
 let estrattoreVero: EstrattoreMotore | undefined;
 
 /** Le chiavi dei fornitori terzi (RF-D-03), lette una volta dalla configurazione. */
@@ -198,6 +200,15 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
       });
     }
     await tabellaVera(job, strumenti);
+  },
+
+  /** L'anteprima in PDF di un modello di riferimento, col LibreOffice della sandbox (11/09/2026). */
+  'anteprima-modello': async (job, strumenti) => {
+    anteprimaVera ??= creaGestoreAnteprimaModello({
+      archivio: new ArchivioStorage(),
+      avviatore: sandboxDocumentale(configurazione())?.avviatore,
+    });
+    await anteprimaVera(job, strumenti);
   },
 
   /** Fase 8: il job di memoria a sé (rilavorare una conversazione a mano); la chat impara in linea. */

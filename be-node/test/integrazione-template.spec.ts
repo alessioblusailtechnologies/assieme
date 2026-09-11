@@ -7,18 +7,22 @@ import { creaApp } from '../src/api/app.js';
 import { configurazione, type Configurazione } from '../src/config.js';
 import type { ImmagineCaricata, IntestazioneSalvata } from '../src/contratto/intestazione.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
-import type { TemplateOutput } from '../src/contratto/template.js';
+import { PDFDocument } from 'pdf-lib';
+import type { ModelloRiferimento } from '../src/contratto/template.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import type { ArchivioFile } from '../src/worker/ingestion/archivio-file.js';
+import type { Job } from '../src/worker/coda.js';
+import { creaGestoreAnteprimaModello } from '../src/worker/sandbox/anteprima.js';
 import { leggiConPdfjs } from '../src/worker/ingestion/testimoni.js';
 
 /**
- * Template, intestazione ed esportazione contro il progetto vero (tenant di
- * collaudo): la libreria che parte vuota, il caricamento dei template, il
- * predefinito e il nome che si cambia, l'intestazione e il piè di pagina
- * dell'agenzia (11/09/2026, al posto dell'identità visiva) con la sua
- * immagine e l'anteprima, e l'esportazione di un messaggio col layout di
- * VELIA e quell'intestazione. Lo Storage è una mappa in memoria, il
+ * Modelli di riferimento, intestazione ed esportazione contro il progetto
+ * vero (tenant di collaudo): la libreria che parte vuota, il caricamento di
+ * ogni formato con l'anteprima accodata per Word, Excel e PowerPoint, nome,
+ * «quando usarlo» e intestazione che si cambiano, l'intestazione e il piè
+ * di pagina dell'agenzia (11/09/2026, al posto dell'identità visiva) con la
+ * sua immagine e l'anteprima, e l'esportazione di un messaggio col layout
+ * di VELIA e quell'intestazione. Lo Storage è una mappa in memoria, il
  * database è quello vero: RLS compresa.
  */
 let config: Configurazione | undefined;
@@ -69,6 +73,9 @@ async function accedi(app: FastifyInstance, email: string): Promise<string> {
   });
   return r.json<EsitoAccesso>().tokenAccesso;
 }
+
+/** Un PowerPoint minimo: basta che si apra come pacchetto con la presentazione dentro. */
+const PPTX_PROVA = new PizZip().file('ppt/presentation.xml', '<p:presentation/>').generate({ type: 'nodebuffer' });
 
 async function docxDiProva(paragrafi: string[]): Promise<Buffer> {
   const documento = new Document({
@@ -139,15 +146,17 @@ const intestazioneDiProva = (idLogo: string, nome = 'Agenzia di Collaudo') => ({
   },
 });
 
-describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
+describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
   const archivio = new ArchivioFinto();
   let app: FastifyInstance;
   let tokenAdmin: string;
   let tokenOperatore: string;
   let conversazioneId: string;
   let messaggioId: string;
-  let templateProprio: TemplateOutput;
-  let templateSecondo: TemplateOutput;
+  let modelloWord: ModelloRiferimento;
+  let modelloPdf: ModelloRiferimento;
+  let modelloSlide: ModelloRiferimento;
+  const accodate: string[] = [];
 
   const pulizia = async (): Promise<void> => {
     await poolDb().query(`delete from velia.template where tenant_id = $1`, [TENANT_COLLAUDO]);
@@ -171,7 +180,11 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     });
 
   beforeAll(async () => {
-    app = creaApp({ logger: false, template: { archivio }, intestazione: { archivio } });
+    app = creaApp({
+      logger: false,
+      template: { archivio, accodaAnteprima: (id) => Promise.resolve(accodate.push(id)) },
+      intestazione: { archivio },
+    });
     await app.ready();
     await pulizia();
     tokenAdmin = await accedi(app, EMAIL_ADMIN);
@@ -212,18 +225,19 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     await chiudiPool();
   });
 
-  it('la libreria parte vuota: i template sono solo quelli che l’agenzia carica', async () => {
+  it('la libreria parte vuota: i modelli sono solo quelli che l’agenzia carica', async () => {
     const r = await richiedi('GET', '/api/template', tokenOperatore);
     expect(r.statusCode).toBe(200);
-    expect(r.json<TemplateOutput[]>()).toEqual([]);
+    expect(r.json<ModelloRiferimento[]>()).toEqual([]);
   });
 
-  it('carica un template DOCX: il primo del formato è il predefinito', async () => {
+  it('carica modelli di ogni formato: il PDF ha già l’anteprima, gli altri la mettono in coda', async () => {
+    const pdfVuoto = await PDFDocument.create();
+    pdfVuoto.addPage();
     const { corpo, contentType } = multipart([
-      {
-        nome: 'Carta intestata collaudo.docx',
-        contenuto: await docxDiProva(['{{titolo}} — {{data}}', '{{contenuto}}', 'Fonti: {{fonti}}']),
-      },
+      { nome: 'Proposta breve.docx', contenuto: await docxDiProva(['Agenzia di Collaudo', 'Gentile cliente, …']) },
+      { nome: 'Modulo compagnia.pdf', contenuto: Buffer.from(await pdfVuoto.save()) },
+      { nome: 'Presentazione clienti.pptx', contenuto: PPTX_PROVA },
     ]);
     const r = await app.inject({
       method: 'POST',
@@ -232,39 +246,30 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
       payload: corpo,
     });
     expect(r.statusCode).toBe(201);
-    const { creati } = r.json<{ creati: TemplateOutput[] }>();
-    templateProprio = creati[0]!;
-    expect(templateProprio).toMatchObject({
-      nome: 'Carta intestata collaudo',
+    const { creati } = r.json<{ creati: ModelloRiferimento[] }>();
+    [modelloWord, modelloPdf, modelloSlide] = creati as [ModelloRiferimento, ModelloRiferimento, ModelloRiferimento];
+    expect(modelloWord).toMatchObject({
+      nome: 'Proposta breve',
       formato: 'docx',
-      predefinito: true,
+      descrizione: '',
+      intestazioneAgenzia: true,
+      anteprima: 'in-corso',
     });
-    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${templateProprio.id}.docx`)).toBe(true);
-
-    /* Un secondo DOCX: stesso formato, quanti se ne vogliono — ma non è il
-       predefinito. Ed è una carta intestata senza segnaposto: il testo va in coda. */
-    const secondo = multipart([
-      { nome: 'Proposta breve.docx', contenuto: await docxDiProva(['Agenzia di Collaudo — carta intestata']) },
-    ]);
-    const r2 = await app.inject({
-      method: 'POST',
-      url: '/api/template',
-      headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': secondo.contentType },
-      payload: secondo.corpo,
-    });
-    expect(r2.statusCode).toBe(201);
-    templateSecondo = r2.json<{ creati: TemplateOutput[] }>().creati[0]!;
-    expect(templateSecondo).toMatchObject({ nome: 'Proposta breve', formato: 'docx', predefinito: false });
+    expect(modelloPdf).toMatchObject({ formato: 'pdf', anteprima: 'pronta' });
+    expect(modelloSlide).toMatchObject({ nome: 'Presentazione clienti', formato: 'pptx', anteprima: 'in-corso' });
+    expect(accodate.sort()).toEqual([modelloWord.id, modelloSlide.id].sort());
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${modelloWord.id}.docx`)).toBe(true);
 
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
-    expect(elenco.json<TemplateOutput[]>().map((t) => t.id)).toEqual([templateProprio.id, templateSecondo.id]);
+    expect(elenco.json<ModelloRiferimento[]>().map((m) => m.id)).toEqual([modelloWord.id, modelloPdf.id, modelloSlide.id]);
   });
 
   it('i caricamenti sbagliati si rifiutano con un motivo leggibile, senza lasciare metà lotto', async () => {
+    const pptxVuoto = new PizZip().file('altro.xml', '<x/>').generate({ type: 'nodebuffer' });
     const casi: Array<{ nome: string; contenuto: Buffer; stato: number; codice: string }> = [
       { nome: 'note.txt', contenuto: Buffer.from('testo'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
-      { nome: 'slide.pptx', contenuto: Buffer.from('PK'), stato: 415, codice: 'FORMATO_NON_SUPPORTATO' },
       { nome: 'finto.docx', contenuto: Buffer.from('non uno zip'), stato: 400, codice: 'FORMATO_NON_AMMESSO' },
+      { nome: 'vuoto.pptx', contenuto: pptxVuoto, stato: 400, codice: 'FORMATO_NON_AMMESSO' },
     ];
     for (const caso of casi) {
       const { corpo, contentType } = multipart([caso]);
@@ -279,8 +284,8 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     }
 
     const { corpo, contentType } = multipart([
-      { nome: 'buono.docx', contenuto: await docxDiProva(['{{contenuto}}']) },
-      { nome: 'cattivo.pptx', contenuto: Buffer.from('PK') },
+      { nome: 'buono.docx', contenuto: await docxDiProva(['ok']) },
+      { nome: 'cattivo.docx', contenuto: Buffer.from('PK') },
     ]);
     const r = await app.inject({
       method: 'POST',
@@ -288,41 +293,72 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
       headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType },
       payload: corpo,
     });
-    expect(r.statusCode).toBe(415);
+    expect(r.statusCode).toBe(400);
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
-    expect(elenco.json<TemplateOutput[]>().some((t) => t.nome === 'buono')).toBe(false);
+    expect(elenco.json<ModelloRiferimento[]>().some((m) => m.nome === 'buono')).toBe(false);
   });
 
-  it('il predefinito per formato: assegnarlo lo toglie a chi lo portava; il nome si cambia', async () => {
-    const r = await richiedi('PATCH', `/api/template/${templateSecondo.id}`, tokenAdmin, { predefinito: true });
+  it('nome, «quando usarlo» e intestazione si cambiano; il predefinito non esiste più', async () => {
+    const r = await richiedi('PATCH', `/api/template/${modelloPdf.id}`, tokenAdmin, {
+      nome: 'Modulo di adesione',
+      descrizione: 'Il modulo della compagnia, da restituire compilato',
+      intestazioneAgenzia: false,
+    });
     expect(r.statusCode).toBe(200);
-    const elenco = r.json<TemplateOutput[]>();
-    expect(elenco.find((t) => t.id === templateSecondo.id)?.predefinito).toBe(true);
-    expect(elenco.find((t) => t.id === templateProprio.id)?.predefinito).toBe(false);
-
-    const tolto = await richiedi('PATCH', `/api/template/${templateSecondo.id}`, tokenAdmin, { predefinito: false });
-    expect(tolto.json<TemplateOutput[]>().every((t) => !t.predefinito)).toBe(true);
-
-    const rinominato = await richiedi('PATCH', `/api/template/${templateProprio.id}`, tokenAdmin, {
-      nome: 'Carta intestata',
-      predefinito: true,
-    });
-    expect(rinominato.json<TemplateOutput[]>().find((t) => t.id === templateProprio.id)).toMatchObject({
-      nome: 'Carta intestata',
-      predefinito: true,
+    expect(r.json<ModelloRiferimento[]>().find((m) => m.id === modelloPdf.id)).toMatchObject({
+      nome: 'Modulo di adesione',
+      descrizione: 'Il modulo della compagnia, da restituire compilato',
+      intestazioneAgenzia: false,
     });
 
-    const estraneo = await richiedi('PATCH', `/api/template/${templateProprio.id}`, tokenAdmin, {
-      tipologiaPredefinita: 'confronto',
-    });
-    expect(estraneo.statusCode).toBe(400);
+    const predefinito = await richiedi('PATCH', `/api/template/${modelloWord.id}`, tokenAdmin, { predefinito: true });
+    expect(predefinito.statusCode).toBe(400);
+    const negato = await richiedi('PATCH', `/api/template/${modelloWord.id}`, tokenOperatore, { nome: 'x' });
+    expect(negato.statusCode).toBe(403);
   });
 
-  it("l'anteprima è sempre un PDF, anche per un template DOCX", async () => {
-    const r = await richiedi('GET', `/api/template/${templateProprio.id}/anteprima`, tokenOperatore);
-    expect(r.statusCode).toBe(200);
-    expect(r.headers['content-type']).toBe('application/pdf');
-    expect(r.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+  it("l'anteprima: un PDF com'è; per Word, finché la conversione non c'è, si scarica il file", async () => {
+    const pdf = await richiedi('GET', `/api/template/${modelloPdf.id}/anteprima`, tokenOperatore);
+    expect(pdf.statusCode).toBe(200);
+    expect(pdf.headers['content-type']).toBe('application/pdf');
+
+    const inCorso = await richiedi('GET', `/api/template/${modelloWord.id}/anteprima`, tokenOperatore);
+    expect(inCorso.statusCode).toBe(404);
+    expect(inCorso.json()).toMatchObject({ codice: 'ANTEPRIMA_NON_PRONTA' });
+
+    const file = await richiedi('GET', `/api/template/${modelloWord.id}/file`, tokenOperatore);
+    expect(file.statusCode).toBe(200);
+    expect(file.headers['content-type']).toContain('wordprocessingml');
+    expect(file.headers['content-disposition']).toBe('attachment; filename="proposta-breve.docx"');
+    expect(testoDocx(file.rawPayload)).toContain('Gentile cliente');
+  });
+
+  it('il job dell’anteprima senza sandbox la lascia assente, e un modello sparito non lo ferma', async () => {
+    const gestore = creaGestoreAnteprimaModello({ archivio });
+    const job = (modelloId: string): Job => ({
+      id: '00000000-0000-4000-8000-0000000000aa',
+      tenant_id: TENANT_COLLAUDO,
+      tipo: 'anteprima-modello',
+      payload: { modelloId },
+      stato: 'in-esecuzione',
+      tentativi: 1,
+      errore: null,
+    });
+    await gestore(job(modelloSlide.id), { db: poolDb() });
+    const elenco = (await richiedi('GET', '/api/template', tokenAdmin)).json<ModelloRiferimento[]>();
+    expect(elenco.find((m) => m.id === modelloSlide.id)?.anteprima).toBe('assente');
+    await expect(gestore(job('tpl-sparito'), { db: poolDb() })).resolves.toBeUndefined();
+
+    /* Quando la conversione c'è, l'anteprima è quel PDF. */
+    const percorso = `tenant/${TENANT_COLLAUDO}/template/${modelloWord.id}-anteprima.pdf`;
+    archivio.file.set(percorso, Buffer.from('%PDF-1.7 finto'));
+    await poolDb().query(`update velia.template set anteprima = 'pronta', path_anteprima = $2 where id = $1`, [
+      modelloWord.id,
+      percorso,
+    ]);
+    const pronta = await richiedi('GET', `/api/template/${modelloWord.id}/anteprima`, tokenOperatore);
+    expect(pronta.statusCode).toBe(200);
+    expect(pronta.rawPayload.toString()).toBe('%PDF-1.7 finto');
   });
 
   it("l'intestazione: quella di partenza finché non c'è, poi ciò che l'amministratore salva, logo compreso", async () => {
@@ -403,35 +439,31 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(pagina!.testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
   });
 
-  it("un template scelto dice solo il formato: esce un DOCX col layout di VELIA, l'intestazione e le fonti", async () => {
-    for (const scelta of [{ templateId: templateProprio.id }, { formato: 'docx' }]) {
-      const r = await richiedi(
-        'POST',
-        `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
-        tokenAdmin,
-        scelta,
-      );
-      expect(r.statusCode, JSON.stringify(scelta)).toBe(200);
-      expect(r.headers['content-type']).toContain('wordprocessingml');
-      expect(r.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.docx"');
-      const testo = testoDocx(r.rawPayload);
-      expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
-      expect(testo).toContain('Documento di prova - art. 12, p. 3');
-      expect(testo).not.toContain('{{');
-      expect(testoDocx(r.rawPayload, /^word\/header\d*\.xml$/)).toContain('Agenzia di Collaudo');
-    }
-  });
-
-  it("l'esportazione rifiuta ciò che non esiste o non si vede: 404, anche per l'operatore sull'altrui", async () => {
-    const template = await richiedi(
+  it("il DOCX esce col layout di VELIA, l'intestazione e le fonti; il template non si sceglie più", async () => {
+    const r = await richiedi(
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
       tokenAdmin,
-      { templateId: 'tpl-mai-visto' },
+      { formato: 'docx' },
     );
-    expect(template.statusCode).toBe(404);
-    expect(template.json()).toMatchObject({ messaggio: 'Template inesistente.' });
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-type']).toContain('wordprocessingml');
+    expect(r.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.docx"');
+    const testo = testoDocx(r.rawPayload);
+    expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
+    expect(testo).toContain('Documento di prova - art. 12, p. 3');
+    expect(testoDocx(r.rawPayload, /^word\/header\d*\.xml$/)).toContain('Agenzia di Collaudo');
 
+    const conTemplate = await richiedi(
+      'POST',
+      `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
+      tokenAdmin,
+      { templateId: modelloWord.id },
+    );
+    expect(conTemplate.statusCode).toBe(400);
+  });
+
+  it("l'esportazione di un messaggio che non si vede è un 404, anche per l'operatore sull'altrui", async () => {
     const altrui = await richiedi(
       'POST',
       `/api/conversazioni/${conversazioneId}/messaggi/${messaggioId}/esporta`,
@@ -442,17 +474,18 @@ describe.skipIf(!pronto)('template e generazione col progetto Supabase', () => {
     expect(altrui.json()).toMatchObject({ messaggio: 'Messaggio inesistente.' });
   });
 
-  it('DELETE: il template sparisce da catalogo e Storage; un id ignoto è 404', async () => {
+  it('DELETE: il modello sparisce da catalogo e Storage, anteprima compresa; un id ignoto è 404', async () => {
     const ignoto = await richiedi('DELETE', '/api/template/tpl-001', tokenAdmin);
     expect(ignoto.statusCode).toBe(404);
 
-    for (const t of [templateProprio, templateSecondo]) {
-      const r = await richiedi('DELETE', `/api/template/${t.id}`, tokenAdmin);
+    for (const m of [modelloWord, modelloPdf, modelloSlide]) {
+      const r = await richiedi('DELETE', `/api/template/${m.id}`, tokenAdmin);
       expect(r.statusCode).toBe(204);
-      expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${t.id}.docx`)).toBe(false);
+      expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${m.id}.${m.formato}`)).toBe(false);
     }
+    expect(archivio.file.has(`tenant/${TENANT_COLLAUDO}/template/${modelloWord.id}-anteprima.pdf`)).toBe(false);
     const elenco = await richiedi('GET', '/api/template', tokenAdmin);
-    expect(elenco.json<TemplateOutput[]>()).toEqual([]);
+    expect(elenco.json<ModelloRiferimento[]>()).toEqual([]);
   });
 
 

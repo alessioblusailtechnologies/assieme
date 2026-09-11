@@ -1,30 +1,50 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
 
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CodaCaricamento, FileInCoda } from '@shared/caricamento/coda-caricamento';
-import { ErroreApi, Id, TemplateOutput } from '@core/models';
+import { ErroreApi, FormatoModello, Id, ModelloRiferimento } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
+import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
+import { ModelliRiferimentoApi, ModificaModello } from '@core/api/modelli-riferimento-api';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
-import { Tag } from '@shared/ui/tag/tag';
-import { TemplateApi } from '@core/api/template-api';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
+import { nomeFileEsportazione } from '@shared/esportazione/scelte-esportazione';
+import { scaricaBlob } from '@shared/esportazione/scarica-blob';
+
+const NOME_FORMATO: Record<FormatoModello, string> = {
+  pdf: 'PDF',
+  docx: 'Word',
+  xlsx: 'Excel',
+  pptx: 'PowerPoint',
+};
+
+/** Mentre un'anteprima si converte, l'elenco si richiede ogni tanto: la conversione dura secondi. */
+const MS_ATTESA_ANTEPRIMA = 4000;
 
 /**
- * I template di output dell'agenzia (RF-D-10…D-13).
+ * Seconda scheda di Impostazioni > Template di output (11/09/2026, fase 3
+ * di `PIANO-INTESTAZIONE-MODELLI.md`): i modelli di riferimento.
  *
- * Un template è un documento caricato qui — PDF, DOCX o XLSX — quanti se ne
- * vogliono, ognuno col nome con cui lo si richiama con «Genera documento da
- * template», dove la sandbox ne copia l'impaginazione. «Esporta come» invece
- * esce col layout di VELIA e l'intestazione dell'agenzia.
- *
- * Seconda scheda della pagina (11/09/2026): diventa quella dei modelli di
- * riferimento con la fase 3 di `PIANO-INTESTAZIONE-MODELLI.md`.
+ * Un modello è un documento dell'agenzia di qualsiasi formato che si
+ * richiama in chat con «Genera da modello». Per ognuno: il nome con cui lo
+ * si chiama, la riga «quando usarlo» che il motore legge per scegliere, e
+ * l'intestazione, quella dell'agenzia (di norma) o la sua. L'anteprima è
+ * un PDF: il file stesso, o la conversione che il server prepara al
+ * caricamento; finché non c'è, il file si scarica.
  */
 @Component({
   selector: 'app-scheda-modelli',
@@ -34,9 +54,9 @@ import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
     Cassetto,
     CodaCaricamento,
     Icona,
+    MenuAzioni,
     Scheletro,
     StatoVuoto,
-    Tag,
     VisualizzatorePdf,
     ZonaCaricamento,
   ],
@@ -45,68 +65,133 @@ import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
   styleUrl: './scheda-modelli.scss',
 })
 export class SchedaModelli {
-  private readonly api = inject(TemplateApi);
+  private readonly api = inject(ModelliRiferimentoApi);
   private readonly sessione = inject(SessioneStore);
 
-  private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() => this.api.urlElenco());
+  private readonly risorsa = httpResource<ModelloRiferimento[]>(() => this.api.urlElenco());
 
-  protected readonly template = computed(() =>
-    this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
+  protected readonly modelli = computed(() =>
+    this.risorsa.hasValue() ? this.risorsa.value() : [],
   );
-  protected readonly inCaricamento = this.risorsaTemplate.isLoading;
-  protected readonly errore = this.risorsaTemplate.error;
-
+  protected readonly inCaricamento = this.risorsa.isLoading;
+  protected readonly errore = this.risorsa.error;
   protected readonly puoGestire = computed(() => this.sessione.puo('template.gestisci'));
 
-  protected riprova(): void {
-    this.risorsaTemplate.reload();
-  }
+  protected readonly nomeFormato = NOME_FORMATO;
 
-  // --- Anteprima (RF-D-11) ------------------------------------------------
+  private readonly zona = viewChild(ZonaCaricamento);
 
-  protected readonly anteprima = signal<TemplateOutput | undefined>(undefined);
-
-  protected urlAnteprima(template: TemplateOutput): string {
-    return this.api.urlAnteprima(template.id);
-  }
-
-  // --- Predefinito per formato (RF-D-13) e nome ---------------------------
-
-  protected impostaPredefinito(template: TemplateOutput, predefinito: boolean): void {
-    this.api.impostaPredefinito(template.id, predefinito).subscribe({
-      next: (elenco) => this.risorsaTemplate.set(elenco),
+  constructor() {
+    /* Un'anteprima in conversione: si torna a chiedere finché non è pronta (o non riesce). */
+    effect((pulizia) => {
+      if (!this.modelli().some((m) => m.anteprima === 'in-corso')) return;
+      const timer = setTimeout(() => this.risorsa.reload(), MS_ATTESA_ANTEPRIMA);
+      pulizia(() => clearTimeout(timer));
     });
   }
 
-  /** Il template in rinomina, finché non si conferma o si esce. */
+  protected riprova(): void {
+    this.risorsa.reload();
+  }
+
+  private modifica(modello: ModelloRiferimento, modifica: ModificaModello): void {
+    this.api
+      .modifica(modello.id, modifica)
+      .subscribe({ next: (elenco) => this.risorsa.set(elenco) });
+  }
+
+  // --- Nome ------------------------------------------------------------------
+
   protected readonly inRinomina = signal<Id | undefined>(undefined);
   protected readonly nuovoNome = signal('');
 
-  protected iniziaRinomina(template: TemplateOutput): void {
-    this.inRinomina.set(template.id);
-    this.nuovoNome.set(template.nome);
+  protected iniziaRinomina(modello: ModelloRiferimento): void {
+    this.inRinomina.set(modello.id);
+    this.nuovoNome.set(modello.nome);
   }
 
-  protected confermaRinomina(template: TemplateOutput): void {
+  protected confermaRinomina(modello: ModelloRiferimento): void {
+    if (this.inRinomina() !== modello.id) return;
     const nome = this.nuovoNome().trim();
     this.inRinomina.set(undefined);
-    if (!nome || nome === template.nome) return;
-    this.api.rinomina(template.id, nome).subscribe({
-      next: (elenco) => this.risorsaTemplate.set(elenco),
-    });
+    if (nome && nome !== modello.nome) this.modifica(modello, { nome });
   }
 
   protected annullaRinomina(): void {
     this.inRinomina.set(undefined);
   }
 
-  // --- Caricamento (RF-D-12) ----------------------------------------------
+  // --- «Quando usarlo» e intestazione ----------------------------------------
+
+  /** Si salva all'uscita dal campo, e solo se è cambiata. */
+  protected salvaDescrizione(modello: ModelloRiferimento, valore: string): void {
+    const descrizione = valore.trim();
+    if (descrizione !== modello.descrizione) this.modifica(modello, { descrizione });
+  }
+
+  protected impostaIntestazione(modello: ModelloRiferimento, intestazioneAgenzia: boolean): void {
+    if (intestazioneAgenzia !== modello.intestazioneAgenzia)
+      this.modifica(modello, { intestazioneAgenzia });
+  }
+
+  // --- Anteprima e file ------------------------------------------------------
+
+  protected readonly anteprima = signal<ModelloRiferimento | undefined>(undefined);
+
+  protected urlAnteprima(modello: ModelloRiferimento): string {
+    return this.api.urlAnteprima(modello.id);
+  }
+
+  protected readonly inScaricamento = signal<Id | undefined>(undefined);
+
+  protected scarica(modello: ModelloRiferimento): void {
+    if (this.inScaricamento()) return;
+    this.inScaricamento.set(modello.id);
+    this.api.scarica(modello.id).subscribe({
+      next: (blob) => {
+        this.inScaricamento.set(undefined);
+        scaricaBlob(blob, nomeFileEsportazione(modello.nome, modello.formato));
+      },
+      error: () => this.inScaricamento.set(undefined),
+    });
+  }
+
+  // --- Le altre azioni -------------------------------------------------------
+
+  private readonly menu = viewChild<MenuAzioni>('menuModello');
+  protected readonly vociMenu = signal<VoceMenu[]>([]);
+
+  protected apriMenu(evento: Event, modello: ModelloRiferimento): void {
+    this.vociMenu.set([
+      { etichetta: 'Rinomina', azione: () => this.iniziaRinomina(modello) },
+      {
+        etichetta: 'Scarica il file',
+        dettaglio: modello.formato,
+        azione: () => this.scarica(modello),
+      },
+      { etichetta: 'Elimina', azione: () => this.confermaEliminazione.set(modello.id) },
+    ]);
+    this.menu()?.apri(evento);
+  }
+
+  protected readonly confermaEliminazione = signal<Id | undefined>(undefined);
+
+  protected elimina(modello: ModelloRiferimento): void {
+    this.confermaEliminazione.set(undefined);
+    this.api.elimina(modello.id).subscribe({ next: () => this.risorsa.reload() });
+  }
+
+  // --- Caricamento -----------------------------------------------------------
 
   private readonly vociCoda = signal<FileInCoda[]>([]);
   protected readonly coda = this.vociCoda.asReadonly();
 
+  protected scegliFile(): void {
+    this.zona()?.apriFinestra();
+  }
+
   protected carica(file: File[]): void {
-    if (!file.length) return;
+    if (!file.length || !this.puoGestire()) return;
     const nuove: FileInCoda[] = file.map((f) => ({
       nome: f.name,
       dimensione: f.size,
@@ -121,14 +206,12 @@ export class SchedaModelli {
     this.api.carica(file).subscribe({
       next: (evento) => {
         if (evento.type === HttpEventType.UploadProgress && evento.total) {
-          aggiorna((v) => ({
-            ...v,
-            percentuale: Math.round((evento.loaded / evento.total!) * 100),
-          }));
+          const totale = evento.total;
+          aggiorna((v) => ({ ...v, percentuale: Math.round((evento.loaded / totale) * 100) }));
         }
         if (evento.type === HttpEventType.Response) {
           aggiorna((v) => ({ ...v, stato: 'completato', percentuale: 100 }));
-          this.risorsaTemplate.reload();
+          this.risorsa.reload();
         }
       },
       error: (err: HttpErrorResponse) => {
@@ -144,16 +227,5 @@ export class SchedaModelli {
 
   protected svuotaCoda(): void {
     this.vociCoda.update((c) => c.filter((v) => v.stato === 'in-corso'));
-  }
-
-  protected readonly confermaEliminazione = signal<Id | undefined>(undefined);
-
-  protected elimina(template: TemplateOutput): void {
-    if (this.confermaEliminazione() !== template.id) {
-      this.confermaEliminazione.set(template.id);
-      return;
-    }
-    this.confermaEliminazione.set(undefined);
-    this.api.elimina(template.id).subscribe({ next: () => this.risorsaTemplate.reload() });
   }
 }

@@ -1,84 +1,68 @@
 import { z } from 'zod';
 
 /**
- * I template di output e l'identità visiva (RF-D-10…D-13, RF-C-10) — lo
- * specchio di `fe-angular/core/models/impostazioni.ts`.
+ * I modelli di riferimento e le esportazioni (11/09/2026, fase 3 di
+ * `PIANO-INTESTAZIONE-MODELLI.md`) - lo specchio di
+ * `fe-angular/core/models/impostazioni.ts`.
  *
- * Revisione del 25/08/2026: un template è sempre un file caricato
- * dall'agenzia, quanti ne vuole e anche più d'uno per formato; ognuno ha un
- * nome con cui si richiama (in chat, negli agenti). Per ogni formato ce n'è
- * al più uno predefinito. Quando per un formato non c'è nessun template,
- * l'output si impagina col layout di piattaforma e l'identità visiva.
+ * Un modello è un documento dell'agenzia, di qualsiasi formato, che si
+ * richiama in chat con «Genera da modello»: la sandbox lo apre, ne copia
+ * struttura e stile e ci mette il contenuto nuovo. Ha un nome, una riga
+ * «quando usarlo» che il motore della chat legge per scegliere, e la
+ * scelta dell'intestazione: quella dell'agenzia (di norma) o la sua.
+ *
+ * Le esportazioni deterministiche («Esporta come», tabelle, agenti) non
+ * usano i modelli: layout di VELIA con l'intestazione dell'agenzia, e si
+ * sceglie solo il formato.
  */
 
-/** I formati che il motore sa generare. */
+/** I formati che il motore deterministico sa generare. */
 export const FORMATI_GENERAZIONE = ['pdf', 'docx', 'xlsx'] as const;
 
 export type FormatoGenerazione = (typeof FORMATI_GENERAZIONE)[number];
 
-/**
- * Il contratto ammette anche `pptx` (il tipo FE lo elenca), ma la
- * generazione PPTX è rimandata (punto aperto §6.11): il caricamento di un
- * template PPTX si rifiuta con un motivo leggibile.
- */
-export type FormatoTemplate = FormatoGenerazione | 'pptx';
+/** I formati di un modello, e di ciò che la sandbox consegna. */
+export const FORMATI_MODELLO = ['pdf', 'docx', 'xlsx', 'pptx'] as const;
 
-export interface TemplateOutput {
+export type FormatoModello = (typeof FORMATI_MODELLO)[number];
+
+/** A che punto è l'anteprima in PDF di un modello. Un PDF è `pronta` da subito. */
+export type StatoAnteprima = 'assente' | 'in-corso' | 'pronta' | 'errore';
+
+export interface ModelloRiferimento {
   id: string;
   nome: string;
-  formato: FormatoTemplate;
+  formato: FormatoModello;
+  /** «Quando usarlo»: facoltativa, ma è ciò che il motore legge per scegliere. */
   descrizione: string;
-  anteprimaUrl?: string;
-  /** RF-D-13: il predefinito per il suo formato (al più uno per formato). */
-  predefinito: boolean;
+  /** Vero: l'intestazione dell'agenzia al posto di quella del modello. */
+  intestazioneAgenzia: boolean;
+  anteprima: StatoAnteprima;
+  caricatoIl: string;
 }
 
-/**
- * Corpo di `PATCH /api/template/:id`: il nome con cui si richiama e/o il
- * predefinito per il suo formato (`true` lo toglie a chi lo portava).
- */
-export const schemaPatchTemplate = z
+/** Corpo di `PATCH /api/template/:id`. */
+export const schemaPatchModello = z
   .object({
     nome: z.string().trim().min(1).max(120).optional(),
-    predefinito: z.boolean().optional(),
+    descrizione: z.string().trim().max(300).optional(),
+    intestazioneAgenzia: z.boolean().optional(),
   })
   .strict()
-  .refine((m) => m.nome !== undefined || m.predefinito !== undefined, {
-    message: 'Indica il nome o il predefinito.',
+  .refine((m) => m.nome !== undefined || m.descrizione !== undefined || m.intestazioneAgenzia !== undefined, {
+    message: 'Indica che cosa cambiare.',
   });
 
-/**
- * Corpo delle esportazioni (chat RF-C-10, tabelle RF-C-14): il formato, o
- * un template da cui ricavarlo. Dall'11/09/2026 l'impaginazione è sempre il
- * layout di VELIA con l'intestazione dell'agenzia: il template resta
- * accettato finché tabelle e agenti non passano ai soli formati (fase 3).
- */
-export const schemaEsporta = z
-  .object({
-    templateId: z.string().min(1).optional(),
-    formato: z.enum(FORMATI_GENERAZIONE).optional(),
-  })
-  .refine((e) => e.templateId !== undefined || e.formato !== undefined, {
-    message: 'Indica il template o il formato.',
-  });
+/** Corpo delle esportazioni delle tabelle (RF-C-14): il formato. */
+export const schemaEsporta = z.object({ formato: z.enum(FORMATI_GENERAZIONE) });
 
 export type RichiestaEsporta = z.infer<typeof schemaEsporta>;
 
-/**
- * L'«Esporta come» di una risposta in chat (29/08/2026): i formati
- * generabili più il testo semplice, che non passa da nessun template.
- */
+/** L'«Esporta come» di una risposta in chat: i formati generabili più il testo semplice. */
 export const FORMATI_ESPORTA_RISPOSTA = [...FORMATI_GENERAZIONE, 'txt'] as const;
 
 export type FormatoEsportaRisposta = (typeof FORMATI_ESPORTA_RISPOSTA)[number];
 
-export const schemaEsportaRisposta = z
-  .object({
-    templateId: z.string().min(1).optional(),
-    formato: z.enum(FORMATI_ESPORTA_RISPOSTA).optional(),
-  })
-  .refine((e) => e.templateId !== undefined || e.formato !== undefined, {
-    message: 'Indica il template o il formato.',
-  });
+export const schemaEsportaRisposta = z.object({ formato: z.enum(FORMATI_ESPORTA_RISPOSTA) });
 
 export type RichiestaEsportaRisposta = z.infer<typeof schemaEsportaRisposta>;

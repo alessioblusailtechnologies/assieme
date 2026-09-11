@@ -25,7 +25,7 @@ import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { TokenStore } from '@core/auth/token-store';
 import { Campo } from '@shared/ui/campo/campo';
-import { Citazione, TemplateOutput, etichettaCitazione } from '@core/models';
+import { Citazione, ModelloRiferimento, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -303,35 +303,36 @@ export class Conversazione {
     this.store.inviaEmail(this.messaggioInAzione, a, () => this.emailAperta.set(false));
   }
 
-  // «Genera documento da template»: si sceglie il template, alla conferma
+  // «Genera da modello»: si sceglie il modello di riferimento, alla conferma
   // parte come un messaggio - il lavoro del motore documentale si vede nel
   // filo e l'allegato compare sotto la risposta quando è pronto.
 
-  protected readonly templateAperto = signal(false);
-  protected readonly templateScelto = signal<string | undefined>(undefined);
+  protected readonly modelloAperto = signal(false);
+  protected readonly modelloScelto = signal<string | undefined>(undefined);
+  protected readonly istruzioniModello = signal('');
 
-  /** I template dell'agenzia che si sanno generare, il predefinito del formato per primo. */
-  protected readonly templateDisponibili = computed<TemplateOutput[]>(() =>
-    this.store
-      .template()
-      .filter((t) => t.formato !== 'pptx')
-      .sort((a, b) => Number(b.predefinito) - Number(a.predefinito) || a.nome.localeCompare(b.nome)),
+  /** I modelli dell'agenzia, per nome. */
+  protected readonly modelliDisponibili = computed<ModelloRiferimento[]>(() =>
+    [...this.store.modelli()].sort((a, b) => a.nome.localeCompare(b.nome)),
   );
 
-  protected apriTemplate(messaggioId: string): void {
+  protected apriModelli(messaggioId: string): void {
     this.messaggioInAzione = messaggioId;
-    this.templateScelto.set(this.templateDisponibili()[0]?.id);
-    this.templateAperto.set(true);
+    this.store.ricaricaModelli();
+    this.modelloScelto.set(this.modelliDisponibili()[0]?.id);
+    this.istruzioniModello.set('');
+    this.modelloAperto.set(true);
   }
 
-  protected avviaTemplate(): void {
+  protected avviaModello(): void {
     const messaggioId = this.messaggioInAzione;
-    const template = this.templateDisponibili().find((t) => t.id === this.templateScelto());
-    if (!messaggioId || !template || template.formato === 'pptx') return;
-    this.templateAperto.set(false);
+    const modello = this.modelliDisponibili().find((m) => m.id === this.modelloScelto());
+    if (!messaggioId || !modello) return;
+    this.modelloAperto.set(false);
+    const istruzioni = this.istruzioniModello().trim();
     this.store.inviaEsportazione(
-      { formato: template.formato, templateId: template.id, messaggioId },
-      `«${template.nome}» (${template.formato.toUpperCase()})`,
+      { modelloId: modello.id, messaggioId, ...(istruzioni && { istruzioni }) },
+      modello.nome,
     );
   }
 

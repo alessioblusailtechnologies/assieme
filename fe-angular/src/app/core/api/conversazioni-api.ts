@@ -22,7 +22,6 @@ import {
   RiferimentoDocumento,
   RispostaPrompt,
   RispostaTrascrizione,
-  TemplateOutput,
 } from '@core/models';
 import { SENZA_AVVISO } from '@core/interceptors/errore.interceptor';
 import { SceltaEsporta } from '@shared/esportazione/scelte-esportazione';
@@ -62,7 +61,8 @@ export class ConversazioniApi {
     return `${this.base}/${id}/messaggi`;
   }
 
-  urlTemplate(): string {
+  /** I modelli di riferimento dell'agenzia, per «Genera da modello». */
+  urlModelli(): string {
     return `${environment.apiBase}/template`;
   }
 
@@ -219,14 +219,10 @@ export class ConversazioniApi {
     return this.http.get<Messaggio[]>(this.urlMessaggi(conversazioneId));
   }
 
-  template(): Observable<TemplateOutput[]> {
-    return this.http.get<TemplateOutput[]>(this.urlTemplate());
-  }
-
   /**
-   * RF-C-10: esporta una risposta su un template di output (o sul
-   * predefinito del formato, o sul layout di piattaforma). Il server genera
-   * il file e lo restituisce da scaricare.
+   * RF-C-10: esporta una risposta nel formato scelto, col layout di VELIA e
+   * l'intestazione dell'agenzia. Il server genera il file e lo restituisce
+   * da scaricare.
    */
   esporta(conversazioneId: Id, messaggioId: Id, scelta: SceltaEsporta): Observable<Blob> {
     return this.http.post(

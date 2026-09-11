@@ -213,15 +213,17 @@ export interface EsitoProposta {
 }
 
 /**
- * Un documento generato dal motore su un template, su richiesta dell'utente
- * in chat: il file sta nello Storage, `url` è la rotta che lo serve.
+ * Un documento generato in chat su richiesta dell'utente: col layout di
+ * VELIA («Esporta come») o dalla sandbox su un modello di riferimento. Il
+ * file sta nello Storage, `url` è la rotta che lo serve.
  */
 export interface DocumentoGenerato {
   id: string;
   nome: string;
-  formato: 'pdf' | 'docx' | 'xlsx';
-  /** Il template usato, per raccontarlo; assente col layout di piattaforma. */
-  template?: string;
+  /** `pptx` solo dalla sandbox, su un modello PowerPoint. */
+  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  /** Il modello usato, per raccontarlo; assente col layout di VELIA. */
+  modello?: string;
   url: string;
 }
 
@@ -288,18 +290,22 @@ export const schemaModificheConversazione = z
   .passthrough();
 
 /**
- * La richiesta di Esportazione elaborata (25/08/2026): il messaggio chiede
- * un documento, non una risposta. Il job apre la sandbox documentale sul
- * template scelto (o sul predefinito del formato) e consegna il file come
- * `documento` della risposta. `messaggioId` è la risposta di partenza da
- * impaginare, se si esporta una risposta esistente.
+ * «Genera da modello» (11/09/2026): il messaggio chiede un documento, non
+ * una risposta. Il job apre la sandbox documentale sul modello scelto e
+ * consegna il file come `documento` della risposta, nel formato del modello
+ * salvo `formato`. `messaggioId` è la risposta di partenza da impaginare,
+ * se si parte da una risposta esistente.
  */
-export const schemaEsportazioneElaborata = z.object({
-  formato: z.enum(['pdf', 'docx', 'xlsx']),
-  templateId: z.string().min(1).optional(),
-  messaggioId: z.string().min(1).optional(),
-  istruzioni: z.string().max(4000).optional(),
-});
+export const schemaEsportazioneElaborata = z
+  .object({
+    modelloId: z.string().min(1).optional(),
+    formato: z.enum(['pdf', 'docx', 'xlsx', 'pptx']).optional(),
+    messaggioId: z.string().min(1).optional(),
+    istruzioni: z.string().max(4000).optional(),
+  })
+  .refine((e) => e.modelloId !== undefined || e.formato !== undefined, {
+    message: 'Indica il modello o il formato.',
+  });
 
 export type EsportazioneElaborata = z.infer<typeof schemaEsportazioneElaborata>;
 

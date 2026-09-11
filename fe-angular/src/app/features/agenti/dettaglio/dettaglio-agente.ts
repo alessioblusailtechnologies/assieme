@@ -9,13 +9,11 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { httpResource } from '@angular/common/http';
 
 import {
   EsecuzioneRiepilogo,
   ParametroAgente,
   RiferimentoDocumento,
-  TemplateOutput,
 } from '@core/models';
 import { AgentiApi } from '@core/api/agenti-api';
 import { Badge } from '@shared/ui/badge/badge';
@@ -24,7 +22,6 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { ComponenteStatoEsecuzione } from '../stato-esecuzione';
-import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DettaglioAgenteStore } from './dettaglio-agente-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
@@ -71,7 +68,6 @@ import { etichettaPianificazione } from '../pianificazione';
 })
 export class DettaglioAgente {
   protected readonly store = inject(DettaglioAgenteStore);
-  private readonly apiConversazioni = inject(ConversazioniApi);
   private readonly api = inject(AgentiApi);
   private readonly notifiche = inject(NotificheStore);
 
@@ -106,21 +102,6 @@ export class DettaglioAgente {
   ]);
 
   protected readonly etichettaPianificazione = etichettaPianificazione;
-
-  /* Il nome del template si mostra accanto al formato: l'elenco è già in
-     cache delle conversazioni, la chiamata è la stessa della chat. */
-  private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() =>
-    this.store.agente()?.templateOutputId ? this.apiConversazioni.urlTemplate() : undefined,
-  );
-
-  protected readonly nomeTemplate = computed(() => {
-    const id = this.store.agente()?.templateOutputId;
-    if (!id) return undefined;
-    const template = (this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : []).find(
-      (t) => t.id === id,
-    );
-    return template ? `${template.nome} (${template.formato.toUpperCase()})` : undefined;
-  });
 
   // --- Esecuzione manuale (RF-E-03/05) ------------------------------------
 

@@ -1,23 +1,29 @@
 [
   {
     "id": "tpl-005",
-    "nome": "Carta intestata Meridiana",
-    "formato": "pdf",
-    "descrizione": "Documento su carta intestata dell'agenzia, con firma e recapiti in calce.",
-    "predefinito": true
+    "nome": "Proposta di rinnovo",
+    "formato": "docx",
+    "descrizione": "Le lettere di rinnovo con il confronto fra le condizioni in scadenza e la nuova offerta.",
+    "intestazioneAgenzia": true,
+    "anteprima": "pronta",
+    "caricatoIl": "2026-09-01T09:00:00+02:00"
   },
   {
     "id": "tpl-006",
-    "nome": "Proposta di rinnovo",
+    "nome": "Riepilogo garanzie cliente",
     "formato": "docx",
-    "descrizione": "Lettera di rinnovo con confronto fra condizioni in scadenza e nuova offerta.",
-    "predefinito": true
+    "descrizione": "La sintesi delle coperture di una posizione, da mandare al cliente.",
+    "intestazioneAgenzia": true,
+    "anteprima": "pronta",
+    "caricatoIl": "2026-09-02T09:00:00+02:00"
   },
   {
     "id": "tpl-007",
-    "nome": "Riepilogo garanzie cliente",
-    "formato": "docx",
-    "descrizione": "Sintesi discorsiva delle coperture di una posizione, modificabile prima dell'invio.",
-    "predefinito": false
+    "nome": "Modulo di adesione Allianz",
+    "formato": "pdf",
+    "descrizione": "Il modulo della compagnia, da restituire compilato così com'è.",
+    "intestazioneAgenzia": false,
+    "anteprima": "pronta",
+    "caricatoIl": "2026-09-03T09:00:00+02:00"
   }
 ]

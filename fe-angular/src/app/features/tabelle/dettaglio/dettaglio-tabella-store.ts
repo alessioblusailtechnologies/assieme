@@ -6,16 +6,15 @@ import {
   Id,
   NuovaColonna,
   TabellaAnalisi,
-  TemplateOutput,
 } from '@core/models';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { TabelleApi } from '@core/api/tabelle-api';
 import {
+  SCELTE_ESPORTA_TABELLA,
   SceltaEsportazione,
   nomeFileEsportazione,
-  scelteEsportazione,
 } from '@shared/esportazione/scelte-esportazione';
 import { avanzamentoTabella } from './avanzamento';
 
@@ -146,17 +145,8 @@ export class DettaglioTabellaStore {
 
   // --- Esportazione e chat ------------------------------------------------
 
-  private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() =>
-    this.conversazioni.urlTemplate(),
-  );
-
-  /** RF-C-14: i template di output su cui esportare, XLSX in particolare. */
-  readonly template = computed(() =>
-    this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
-  );
-
-  /** Le voci del menù di esportazione: template dell'agenzia per formato, o il layout di VELIA. */
-  readonly scelteEsportazione = computed(() => scelteEsportazione(this.template()));
+  /** RF-C-14: i formati, col layout di VELIA e l'intestazione dell'agenzia (in Excel, nelle fasce di stampa). */
+  readonly scelteEsportazione = SCELTE_ESPORTA_TABELLA;
 
   esporta(scelta: SceltaEsportazione): void {
     const id = this.id();

@@ -1,72 +1,58 @@
 import { describe, expect, it } from 'vitest';
 
-import type { RigaTemplate } from '../src/generazione/catalogo.js';
-import { NOME_TOOL_ESPORTA_SUBITO, scegliTemplate } from '../src/worker/motore/strumenti.js';
+import { scegliModello, type RigaModello } from '../src/generazione/catalogo.js';
+import { NOME_TOOL_ESPORTA_SUBITO } from '../src/worker/motore/strumenti.js';
 import { etichettaAttivita } from '../src/worker/motore/sessione.js';
 import { promptSistema } from '../src/worker/motore/regole.js';
 
 /**
- * La parte pura del tool `genera_documento`: come si sceglie il template dal
- * testo che il modello passa (nome detto dall'utente, formato, niente), e
- * cosa il prompt racconta dei template dell'agenzia.
+ * La parte pura degli strumenti dei documenti: come si sceglie il modello
+ * di riferimento dal nome che il motore passa, e cosa il prompt racconta dei
+ * modelli dell'agenzia (11/09/2026).
  */
 
-const riga = (id: string, nome: string, formato: RigaTemplate['formato'], predefinito = false): RigaTemplate => ({
+const riga = (id: string, nome: string, formato: RigaModello['formato'], descrizione = ''): RigaModello => ({
   id,
   tenant_id: 't',
   nome,
   formato,
-  descrizione: '',
-  predefinito,
+  descrizione,
+  intestazione_agenzia: true,
+  anteprima: 'pronta',
   path_file: `tenant/t/template/${id}.${formato}`,
+  path_anteprima: null,
+  created_at: new Date('2026-09-11T10:00:00Z'),
 });
 
-const TEMPLATE = [
-  riga('tpl-1', 'Proposta breve', 'docx', true),
+const MODELLI = [
+  riga('tpl-1', 'Proposta breve', 'docx'),
   riga('tpl-2', 'Proposta di rinnovo', 'docx'),
-  riga('tpl-3', 'Carta intestata', 'pdf', true),
-  riga('tpl-4', 'Slide', 'pptx'),
+  riga('tpl-3', 'Carta intestata', 'pdf'),
+  riga('tpl-4', 'Presentazione clienti', 'pptx'),
 ];
 
-describe('scegliTemplate', () => {
-  it('per nome: esatto senza maiuscole, o contenuto se è uno solo; per id', () => {
-    expect(scegliTemplate(TEMPLATE, { template: 'proposta breve' })).toMatchObject({
-      esito: 'ok',
-      template: { id: 'tpl-1', formato: 'docx', personalizzato: true },
-    });
-    expect(scegliTemplate(TEMPLATE, { template: 'rinnovo' })).toMatchObject({
-      esito: 'ok',
-      template: { id: 'tpl-2' },
-    });
-    expect(scegliTemplate(TEMPLATE, { template: 'tpl-3' })).toMatchObject({ esito: 'ok', template: { id: 'tpl-3' } });
+describe('scegliModello', () => {
+  it('per nome: esatto senza maiuscole, o contenuto se è uno solo; per id; PowerPoint compreso', () => {
+    expect(scegliModello(MODELLI, 'proposta breve')).toMatchObject({ esito: 'ok', modello: { id: 'tpl-1' } });
+    expect(scegliModello(MODELLI, 'rinnovo')).toMatchObject({ esito: 'ok', modello: { id: 'tpl-2' } });
+    expect(scegliModello(MODELLI, 'tpl-3')).toMatchObject({ esito: 'ok', modello: { id: 'tpl-3' } });
+    expect(scegliModello(MODELLI, 'presentazione')).toMatchObject({ esito: 'ok', modello: { formato: 'pptx' } });
   });
 
-  it('un nome ambiguo o ignoto non genera: dice al modello cosa c’è', () => {
-    const ambiguo = scegliTemplate(TEMPLATE, { template: 'proposta' });
+  it('un nome ambiguo o ignoto non genera: dice al motore cosa c’è', () => {
+    const ambiguo = scegliModello(MODELLI, 'proposta');
     expect(ambiguo.esito).toBe('non-trovato');
-    expect(ambiguo.esito === 'non-trovato' && ambiguo.motivo).toContain('Più template');
+    expect(ambiguo.esito === 'non-trovato' && ambiguo.motivo).toContain('Più modelli');
 
-    const ignoto = scegliTemplate(TEMPLATE, { template: 'Report direzione' });
+    const ignoto = scegliModello(MODELLI, 'Report direzione');
     expect(ignoto.esito === 'non-trovato' && ignoto.motivo).toContain('«Proposta breve» (docx)');
-    expect(ignoto.esito === 'non-trovato' && ignoto.motivo).not.toContain('Slide');
-  });
 
-  it('formato e template devono andare d’accordo', () => {
-    const esito = scegliTemplate(TEMPLATE, { template: 'Carta intestata', formato: 'docx' });
-    expect(esito.esito === 'non-trovato' && esito.motivo).toContain('è PDF, non DOCX');
-  });
-
-  it('solo il formato: il predefinito, o il layout di piattaforma; niente = PDF', () => {
-    expect(scegliTemplate(TEMPLATE, { formato: 'docx' })).toMatchObject({ esito: 'ok', template: { id: 'tpl-1' } });
-    expect(scegliTemplate(TEMPLATE, { formato: 'xlsx' })).toMatchObject({
-      esito: 'ok',
-      template: { nome: 'Documento VELIA', formato: 'xlsx', personalizzato: false },
-    });
-    expect(scegliTemplate([], {})).toMatchObject({ esito: 'ok', template: { formato: 'pdf', personalizzato: false } });
+    const nessuno = scegliModello([], 'Proposta');
+    expect(nessuno.esito === 'non-trovato' && nessuno.motivo).toContain('non ha modelli caricati');
   });
 });
 
-describe('il tool nel motore', () => {
+describe('gli strumenti nel motore', () => {
   it('l’attività si racconta col titolo del documento, mai col nome del tool', () => {
     expect(etichettaAttivita(NOME_TOOL_ESPORTA_SUBITO, { titolo: 'Proposta RC Auto Rossi' }, 'C:/ws')).toBe(
       'Preparo il documento «Proposta RC Auto Rossi»',
@@ -74,13 +60,20 @@ describe('il tool nel motore', () => {
     expect(etichettaAttivita(NOME_TOOL_ESPORTA_SUBITO, {}, 'C:/ws')).toBe('Preparo il documento');
   });
 
-  it('il prompt elenca i template per nome e spiega quando usare lo strumento', () => {
+  it('il prompt elenca i modelli con la loro riga «quando usarlo» e spiega quando usare gli strumenti', () => {
     const vuoto = { istruzioni: [], riferimenti: [], ricordi: [] };
-    const conTemplate = promptSistema(vuoto, { template: [{ nome: 'Proposta breve', formato: 'docx', predefinito: true }] });
-    expect(conTemplate).toContain('esporta_subito');
-    expect(conTemplate).toContain('esportazione_elaborata');
-    expect(conTemplate).toContain('«Proposta breve» (DOCX, predefinito per il formato)');
-    expect(promptSistema(vuoto, { template: [] })).toContain('non ha template caricati');
+    const conModelli = promptSistema(vuoto, {
+      modelli: [
+        { nome: 'Proposta breve', formato: 'docx', descrizione: 'Per i preventivi RC Auto da una pagina' },
+        { nome: 'Presentazione clienti', formato: 'pptx', descrizione: '' },
+      ],
+    });
+    expect(conModelli).toContain('esporta_subito');
+    expect(conModelli).toContain('esportazione_elaborata');
+    expect(conModelli).toContain('«Proposta breve» (DOCX): Per i preventivi RC Auto da una pagina');
+    expect(conModelli).toMatch(/^- «Presentazione clienti» \(PPTX\)$/m);
+    expect(conModelli).not.toContain('predefinito');
+    expect(promptSistema(vuoto, { modelli: [] })).toContain('non ha modelli caricati');
     expect(promptSistema(vuoto)).not.toContain('esporta_subito');
   });
 });

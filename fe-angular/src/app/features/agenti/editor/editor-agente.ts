@@ -24,14 +24,12 @@ import {
   Pianificazione,
   Ramo,
   RiferimentoDocumento,
-  TemplateOutput,
 } from '@core/models';
 import { AgentiApi } from '@core/api/agenti-api';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
-import { ConversazioniApi } from '@core/api/conversazioni-api';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Select } from '@shared/ui/select/select';
@@ -67,7 +65,6 @@ import { GIORNI_SETTIMANA, frequenzeAmmesse } from '../pianificazione';
 export class EditorAgente {
   private readonly api = inject(AgentiApi);
   private readonly apiDocumenti = inject(DocumentiApi);
-  private readonly apiConversazioni = inject(ConversazioniApi);
   private readonly router = inject(Router);
 
   /** Dalla rotta `/agenti/:id/modifica`; assente in creazione. */
@@ -109,16 +106,6 @@ export class EditorAgente {
   private readonly risorsaRami = httpResource<Ramo[]>(() => this.apiDocumenti.urlRami());
   protected readonly rami = computed(() => (this.risorsaRami.hasValue() ? this.risorsaRami.value() : []));
 
-  private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() =>
-    this.apiConversazioni.urlTemplate(),
-  );
-  protected readonly opzioniTemplate = computed(() =>
-    (this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : []).map((t) => ({
-      valore: t.id,
-      etichetta: `${t.nome} (${t.formato.toUpperCase()})`,
-    })),
-  );
-
   // --- Il modulo ----------------------------------------------------------
 
   protected readonly nome = signal('');
@@ -126,7 +113,6 @@ export class EditorAgente {
   protected readonly istruzioni = signal('');
   protected readonly fonti = signal<FonteAgente[]>([]);
   protected readonly formatoOutput = signal<FormatoOutputAgente>('testo');
-  protected readonly templateId = signal<Id | undefined>(undefined);
   protected readonly parametri = signal<ParametroAgente[]>([]);
 
   protected readonly pianificata = signal(false);
@@ -167,9 +153,6 @@ export class EditorAgente {
     this.formatoOutput.set(base.formatoOutput);
     this.parametri.set(base.parametri);
 
-    /* `creatoDa` è obbligatorio sull'agente e assente sul predefinito: è il
-       discriminante fra «modifica di un agente» e «parti dalla libreria». */
-    if ('creatoDa' in base) this.templateId.set(base.templateOutputId);
 
     const pianificazione =
       'creatoDa' in base ? base.pianificazione : base.pianificazioneSuggerita;
@@ -283,11 +266,8 @@ export class EditorAgente {
   protected readonly opzioniFormato: { valore: FormatoOutputAgente; etichetta: string }[] = [
     { valore: 'testo', etichetta: 'Testo - risposta discorsiva con citazioni' },
     { valore: 'tabella', etichetta: 'Tabella - estrazione strutturata con citazioni' },
-    { valore: 'documento', etichetta: 'Documento - file generato su un template' },
+    { valore: 'documento', etichetta: 'Documento - PDF con l’intestazione dell’agenzia' },
   ];
-
-  /** Il formato `documento` senza template non produce nulla: il vincolo sta qui. */
-  protected readonly serveTemplate = computed(() => this.formatoOutput() === 'documento');
 
   // --- Parametri (RF-E-05) ------------------------------------------------
 
@@ -347,8 +327,7 @@ export class EditorAgente {
     () =>
       !!this.nome().trim() &&
       !!this.istruzioni().trim() &&
-      this.fonti().length >= 1 &&
-      (!this.serveTemplate() || !!this.templateId()),
+      this.fonti().length >= 1,
   );
 
   private componiPianificazione(): Pianificazione | undefined {
@@ -401,12 +380,10 @@ export class EditorAgente {
     const richiesta = id
       ? this.api.modifica(id, {
           ...comune,
-          templateOutputId: this.templateId() ?? null,
           pianificazione: pianificazione ?? null,
         })
       : this.api.crea({
           ...comune,
-          ...(this.templateId() ? { templateOutputId: this.templateId() } : {}),
           ...(pianificazione ? { pianificazione } : {}),
         });
 

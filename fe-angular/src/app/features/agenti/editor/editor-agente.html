@@ -176,20 +176,10 @@
         (valoreChange)="formatoOutput.set($any($event))"
         ariaLabel="Formato dell'output"
       />
-      <ui-select
-        [opzioni]="opzioniTemplate()"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [placeholder]="serveTemplate() ? 'Scegli il template - obbligatorio' : 'Nessun template'"
-        [azzerabile]="!serveTemplate()"
-        [valore]="templateId()"
-        (valoreChange)="templateId.set($any($event))"
-        ariaLabel="Template di output"
-      />
     </div>
     <p class="passo__vuoto">
-      Con un template, ogni esecuzione produce anche il documento impaginato, scaricabile dallo
-      storico.
+      Col formato documento, ogni esecuzione produce anche un PDF col layout di VELIA e
+      l'intestazione dell'agenzia, scaricabile dallo storico.
     </p>
   </section>
 
@@ -343,8 +333,5 @@
       <span>Annulla</span>
     </a>
 
-    @if (serveTemplate() && !templateId()) {
-      <p class="azioni__nota" role="status">Il formato «documento» richiede un template.</p>
-    }
   </footer>
 </div>

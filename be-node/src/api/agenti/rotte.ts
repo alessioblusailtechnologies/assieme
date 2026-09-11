@@ -25,7 +25,7 @@ import { fasceDelTenant } from '../../generazione/catalogo.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
-import { fontiDaCitazioni, templatePerId, versoRisolto } from '../template/rotte.js';
+import { fontiDaCitazioni } from '../template/rotte.js';
 
 /**
  * Gli agenti (RF-E-01…E-13): le rotte che il FE chiama da
@@ -50,7 +50,6 @@ interface RigaAgente {
   istruzioni: string;
   fonti: NuovaFonteAgente[];
   formato_output: Agente['formatoOutput'];
-  template_output_id: string | null;
   parametri: ParametroAgente[];
   pian_frequenza: Pianificazione['frequenza'] | null;
   pian_orario: string | null;
@@ -73,7 +72,8 @@ interface RigaEsecuzione {
   tentativi: number;
   output: string | null;
   citazioni: Citazione[];
-  template_output_id: string | null;
+  /** Quello dell'agente: con `documento`, l'esito si scarica come PDF. */
+  formato_output: Agente['formatoOutput'];
   log: RigaLog[];
   errore: string | null;
 }
@@ -82,14 +82,15 @@ const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const agenteNonTrovato = (): ErroreApi => ErroreApi.nonTrovato('Agente inesistente.');
 
 const SQL_AGENTE = `
-  select id, nome, descrizione, istruzioni, fonti, formato_output, template_output_id,
+  select id, nome, descrizione, istruzioni, fonti, formato_output,
          parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
          pian_sospesa, attivo, creato_da, updated_at
   from velia.agenti`;
 
 const SQL_ESECUZIONE = `
   select id, agente_id, avviata_il, conclusa_il, modalita, stato, parametri, tentativi,
-         output, citazioni, template_output_id, log, errore
+         output, citazioni, log, errore,
+         (select a.formato_output from velia.agenti a where a.id = agente_id) as formato_output
   from velia.agenti_esecuzioni`;
 
 /** La libreria dei predefiniti (RF-E-10): dato di piattaforma, già idratato. */
@@ -100,7 +101,7 @@ function libreriaPredefiniti(): unknown[] {
 }
 
 export interface OpzioniAgenti {
-  /** Nei test: un archivio finto al posto dello Storage (per il documento su template). */
+  /** Nei test: un archivio finto al posto dello Storage (per il documento dell’esecuzione). */
   archivio?: ArchivioFile;
 }
 
@@ -168,21 +169,17 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
         );
       }
       if (nuovo.pianificazione) verificaFrequenza(nuovo.pianificazione.frequenza, limiti.frequenzaMinima);
-      const templateId =
-        nuovo.templateOutputId && (await templatePerId(client, nuovo.templateOutputId))
-          ? nuovo.templateOutputId
-          : null;
 
       const p = nuovo.pianificazione;
       const r = await client.query<{ id: string }>(
         `insert into velia.agenti
-           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output, template_output_id,
+           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output,
             parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
             pian_sospesa, prossima_esecuzione, creato_da)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-                 case when $9::text is not null and not $13
-                   then velia.prossimo_tick($9, $10, $11, $12) end,
-                 $14)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+                 case when $8::text is not null and not $12
+                   then velia.prossimo_tick($8, $9, $10, $11) end,
+                 $13)
          returning id`,
         [
           richiesta.identita.tenantId,
@@ -191,7 +188,6 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
           nuovo.istruzioni,
           JSON.stringify(nuovo.fonti),
           nuovo.formatoOutput,
-          templateId,
           JSON.stringify(nuovo.parametri),
           p?.frequenza ?? null,
           p?.orario ?? null,
@@ -245,11 +241,6 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       if (m.istruzioni !== undefined) assegnazioni.push(`istruzioni = ${par(m.istruzioni)}`);
       if (m.fonti !== undefined) assegnazioni.push(`fonti = ${par(JSON.stringify(m.fonti))}::jsonb`);
       if (m.formatoOutput !== undefined) assegnazioni.push(`formato_output = ${par(m.formatoOutput)}`);
-      if (m.templateOutputId !== undefined) {
-        const valido =
-          m.templateOutputId && (await templatePerId(client, m.templateOutputId)) ? m.templateOutputId : null;
-        if (m.templateOutputId === null || valido) assegnazioni.push(`template_output_id = ${par(valido)}`);
-      }
       if (m.parametri !== undefined) assegnazioni.push(`parametri = ${par(JSON.stringify(m.parametri))}::jsonb`);
       if (m.pianificazione !== undefined) {
         const p = m.pianificazione;
@@ -300,10 +291,10 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       if (!originale) throw agenteNonTrovato();
       const r = await client.query<{ id: string }>(
         `insert into velia.agenti
-           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output, template_output_id,
+           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output,
             parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
             pian_sospesa, prossima_esecuzione, attivo, creato_da)
-         select tenant_id, $3, descrizione, istruzioni, fonti, formato_output, template_output_id,
+         select tenant_id, $3, descrizione, istruzioni, fonti, formato_output,
                 parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
                 true, null, false, $4
          from velia.agenti where id = $1 and tenant_id = $2
@@ -379,7 +370,8 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
         `insert into velia.agenti_esecuzioni (agente_id, tenant_id, modalita, parametri, log)
          values ($1, $2, 'manuale', $3, $4)
          returning id, agente_id, avviata_il, conclusa_il, modalita, stato, parametri, tentativi,
-                   output, citazioni, template_output_id, log, errore`,
+                   output, citazioni, log, errore,
+                   (select a.formato_output from velia.agenti a where a.id = agente_id) as formato_output`,
         [
           agente.id,
           richiesta.identita.tenantId,
@@ -421,27 +413,25 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
   });
 
   /**
-   * Il documento dell'esecuzione (RF-E-13), scaricabile dallo storico. Dal
-   * l'11/09/2026 il template scelto nell'agente dice solo il formato:
-   * l'impaginazione è quella di VELIA con l'intestazione dell'agenzia.
+   * Il documento dell'esecuzione (RF-E-13), scaricabile dallo storico,
+   * per gli agenti col formato `documento`. Dall'11/09/2026 è un PDF col
+   * layout di VELIA e l'intestazione dell'agenzia: gli agenti non scelgono
+   * più un template.
    */
   app.get<{ Params: { id: string; eid: string } }>(
     '/api/agenti/:id/esecuzioni/:eid/documento',
     async (richiesta, risposta) => {
-      const { esecuzione, agente, template } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const { esecuzione, agente } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const esecuzione = await esecuzionePerId(client, richiesta.identita, richiesta.params.id, richiesta.params.eid);
         return {
           esecuzione,
           agente: (await righeAgente(client, richiesta.identita.tenantId, richiesta.params.id))!,
-          template: esecuzione.template_output_id
-            ? await templatePerId(client, esecuzione.template_output_id)
-            : undefined,
         };
       });
-      if (!template || !esecuzione.output || esecuzione.stato !== 'completata') {
+      if (!documentoUrl(esecuzione) || !esecuzione.output) {
         throw ErroreApi.nonTrovato('Questa esecuzione non ha prodotto un documento.');
       }
-      const { formato } = versoRisolto(template);
+      const formato = 'pdf';
       const titolo = `${agente.nome} - esito`;
       const fasce = await conIdentita(poolDb(), richiesta.identita, (client) =>
         fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
@@ -548,7 +538,6 @@ async function agenteCompleto(
     istruzioni: riga.istruzioni,
     fonti: await idrataFonti(client, riga.fonti),
     formatoOutput: riga.formato_output,
-    ...(riga.template_output_id && { templateOutputId: riga.template_output_id }),
     parametri: riga.parametri,
     ...(versoPianificazione(riga) && { pianificazione: versoPianificazione(riga)! }),
     attivo: riga.attivo,
@@ -558,7 +547,7 @@ async function agenteCompleto(
 }
 
 function documentoUrl(r: RigaEsecuzione): string | undefined {
-  return r.stato === 'completata' && r.template_output_id && r.output
+  return r.stato === 'completata' && r.formato_output === 'documento' && r.output
     ? `/api/agenti/${r.agente_id}/esecuzioni/${r.id}/documento`
     : undefined;
 }
@@ -577,7 +566,7 @@ function versoRiepilogoEsecuzione(r: RigaEsecuzione): EsecuzioneRiepilogo {
   };
 }
 
-function versoEsecuzione(r: RigaEsecuzione): EsecuzioneAgente & { template_output_id?: string | null } {
+function versoEsecuzione(r: RigaEsecuzione): EsecuzioneAgente {
   return {
     ...versoRiepilogoEsecuzione(r),
     ...(r.parametri && Object.keys(r.parametri).length && { parametri: r.parametri }),

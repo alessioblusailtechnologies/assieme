@@ -146,8 +146,8 @@
       <p class="definizione__etichetta">Output</p>
       <p>
         {{ agente.formatoOutput }}
-        @if (nomeTemplate(); as nome) {
-          <span class="definizione__nota">- sul template {{ nome }}</span>
+        @if (agente.formatoOutput === 'documento') {
+          <span class="definizione__nota">- PDF con l'intestazione dell'agenzia</span>
         }
       </p>
 

@@ -28,7 +28,7 @@ import {
   promptSistemaCliente,
   promptUtente,
   type MessaggioStoria,
-  type TemplateNelPrompt,
+  type ModelloNelPrompt,
 } from './regole.js';
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
@@ -248,18 +248,18 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
             workspace.perPath,
           );
 
-      /* I template dell'agenzia nel prompt e il tool `genera_documento`:
-         l'utente ottiene il file senza uscire dalla chat. */
-      const templateAgenzia = await db.query<TemplateNelPrompt>(
-        `select nome, formato, predefinito from velia.template where tenant_id = $1 order by created_at, id`,
+      /* I modelli di riferimento dell'agenzia nel prompt, con la loro riga
+         «quando usarlo»: il motore sceglie da lì il modello giusto. */
+      const modelliAgenzia = await db.query<ModelloNelPrompt>(
+        `select nome, formato, descrizione from velia.template where tenant_id = $1 order by created_at, id`,
         [tenantId],
       );
-      /* L'Esportazione elaborata (sandbox documentale), sia dal pulsante sia
+      /* «Genera da modello» (sandbox documentale), sia dal pulsante sia
          a parole: la stessa funzione, con la workspace già materializzata. */
       const elaborata = dip.sandbox
         ? async (r: {
-            formato: 'pdf' | 'docx' | 'xlsx';
-            templateId?: string | undefined;
+            formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx' | undefined;
+            modelloId?: string | undefined;
             istruzioni?: string | undefined;
             contenuto?: string | undefined;
             titolo?: string | undefined;
@@ -279,7 +279,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 conversazioneId: payload.conversazioneId,
                 jobId: job.id,
                 formato: r.formato,
-                templateId: r.templateId,
+                modelloId: r.modelloId,
                 istruzioni: r.istruzioni,
                 contenuto: r.contenuto,
                 titolo: r.titolo,
@@ -299,7 +299,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         if (!elaborata) {
           await emetti({
             tipo: 'errore',
-            messaggio: 'La generazione di documenti da template non è disponibile in questo ambiente.',
+            messaggio: 'La generazione di documenti da modello non è disponibile in questo ambiente.',
           });
           throw new ErroreNonRitentabile('sandbox non configurata');
         }
@@ -315,7 +315,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         try {
           e = await elaborata({
             formato: richiesta.formato,
-            templateId: richiesta.templateId,
+            modelloId: richiesta.modelloId,
             istruzioni: richiesta.istruzioni,
             contenuto,
           });
@@ -396,10 +396,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         },
         ...(elaborata && {
           elaborata: async (r) => {
-            const nomeTemplate = r.template;
             const e = await elaborata({
               formato: r.formato,
-              templateId: nomeTemplate,
+              modelloId: r.modelloId,
               istruzioni: r.istruzioni,
               contenuto: r.contenuto,
               titolo: r.titolo,
@@ -438,7 +437,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         promptSistema: perCliente
           ? promptSistemaCliente(conversazione.chat_istruzioni)
           : promptSistema(dna, {
-              template: templateAgenzia.rows,
+              modelli: modelliAgenzia.rows,
               conRiordino: true,
               catalogo: catalogoArchivioPubblico(workspace.perPath),
             }),

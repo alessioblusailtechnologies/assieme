@@ -90,9 +90,9 @@ export class TabelleApi {
   }
 
   /**
-   * RF-C-14: esportazione su template di output (RF-D-10), XLSX in
-   * particolare. La genera il server — è lui che applica il template
-   * grafico dell'agenzia — e il client scarica il file.
+   * RF-C-14: esportazione nel formato scelto, XLSX in particolare. La genera
+   * il server, col layout di VELIA e l'intestazione dell'agenzia (in Excel,
+   * nelle fasce di stampa), e il client scarica il file.
    */
   esporta(id: Id, scelta: SceltaEsporta): Observable<Blob> {
     return this.http.post(`${this.base}/${id}/esporta`, scelta, { responseType: 'blob' });

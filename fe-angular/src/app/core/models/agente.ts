@@ -16,8 +16,6 @@ export interface Agente {
   istruzioni: string;
   fonti: FonteAgente[];
   formatoOutput: FormatoOutputAgente;
-  /** RF-E-13: se valorizzato, ogni esecuzione produce anche il documento su template. */
-  templateOutputId?: Id;
   /** RF-E-05: gli input variabili che l'esecuzione manuale può fornire. */
   parametri: ParametroAgente[];
   pianificazione?: Pianificazione;
@@ -33,9 +31,9 @@ export interface Agente {
 
 /**
  * L'esito consultabile di ogni esecuzione (RF-E-02): una risposta discorsiva
- * o un'estrazione tabellare — in entrambi i casi testo con citazioni. Il
- * `documento` in più lo produce il template (RF-E-13), e infatti sceglierlo
- * come formato richiede un `templateOutputId`.
+ * o un'estrazione tabellare — in entrambi i casi testo con citazioni. Col
+ * `documento` ogni esecuzione produce anche un PDF col layout di VELIA e
+ * l'intestazione dell'agenzia (RF-E-13, dall'11/09/2026 senza template).
  */
 export type FormatoOutputAgente = 'testo' | 'tabella' | 'documento';
 
@@ -189,7 +187,6 @@ export interface NuovoAgente {
   istruzioni: string;
   fonti: NuovaFonteAgente[];
   formatoOutput: FormatoOutputAgente;
-  templateOutputId?: Id;
   parametri?: ParametroAgente[];
   pianificazione?: Pianificazione;
 }
@@ -201,7 +198,6 @@ export interface ModificheAgente {
   istruzioni?: string;
   fonti?: NuovaFonteAgente[];
   formatoOutput?: FormatoOutputAgente;
-  templateOutputId?: Id | null;
   parametri?: ParametroAgente[];
   pianificazione?: Pianificazione | null;
   attivo?: boolean;

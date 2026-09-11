@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { creaApp, type OpzioniApp } from '../src/api/app.js';
-import { schemaEsporta, schemaEsportaRisposta, schemaPatchTemplate } from '../src/contratto/template.js';
+import { schemaEsportazioneElaborata } from '../src/contratto/conversazioni.js';
+import { schemaEsporta, schemaEsportaRisposta, schemaPatchModello } from '../src/contratto/template.js';
 
 /**
- * Il contratto dei template e dell'intestazione senza database: gli schemi
- * Zod e le risposte che le rotte danno prima di toccare il db — la guardia
- * da amministratore (`template.gestisci`), i formati rifiutati all'ingresso,
- * gli id malformati. L'identità visiva non c'è più (11/09/2026): le sue
- * rotte rispondono 404 come ogni rotta che non esiste.
+ * Il contratto dei modelli di riferimento e dell'intestazione senza
+ * database: gli schemi Zod e le risposte che le rotte danno prima di
+ * toccare il db — la guardia da amministratore (`template.gestisci`), i
+ * formati rifiutati all'ingresso, gli id malformati. L'identità visiva non
+ * c'è più (11/09/2026): le sue rotte rispondono 404 come ogni rotta che non
+ * esiste.
  */
 
 const verifica =
@@ -22,19 +24,27 @@ const verifica =
 const autenticato = { authorization: 'Bearer token-di-prova' };
 
 describe('schemi del contratto', () => {
-  it('il PATCH accetta nome e/o predefinito, niente altro e mai vuoto', () => {
-    expect(schemaPatchTemplate.parse({ predefinito: true })).toEqual({ predefinito: true });
-    expect(schemaPatchTemplate.parse({ nome: ' Proposta breve ' })).toEqual({ nome: 'Proposta breve' });
-    expect(schemaPatchTemplate.safeParse({ tipologiaPredefinita: 'confronto' }).success).toBe(false);
-    expect(schemaPatchTemplate.safeParse({ nome: '' }).success).toBe(false);
-    expect(schemaPatchTemplate.safeParse({}).success).toBe(false);
+  it('il PATCH di un modello accetta nome, «quando usarlo» e intestazione; niente predefinito, mai vuoto', () => {
+    expect(schemaPatchModello.parse({ intestazioneAgenzia: false })).toEqual({ intestazioneAgenzia: false });
+    expect(schemaPatchModello.parse({ nome: ' Proposta breve ' })).toEqual({ nome: 'Proposta breve' });
+    expect(schemaPatchModello.parse({ descrizione: '' })).toEqual({ descrizione: '' });
+    expect(schemaPatchModello.safeParse({ predefinito: true }).success).toBe(false);
+    expect(schemaPatchModello.safeParse({ nome: '' }).success).toBe(false);
+    expect(schemaPatchModello.safeParse({ descrizione: 'x'.repeat(301) }).success).toBe(false);
+    expect(schemaPatchModello.safeParse({}).success).toBe(false);
   });
 
-  it("l'esportazione vuole un template o un formato generabile", () => {
-    expect(schemaEsporta.safeParse({ templateId: 'tpl-1' }).success).toBe(true);
+  it("l'esportazione delle tabelle vuole un formato generabile, e basta", () => {
     expect(schemaEsporta.safeParse({ formato: 'docx' }).success).toBe(true);
     expect(schemaEsporta.safeParse({ formato: 'pptx' }).success).toBe(false);
+    expect(schemaEsporta.safeParse({ templateId: 'tpl-1' }).success).toBe(false);
     expect(schemaEsporta.safeParse({}).success).toBe(false);
+  });
+
+  it('«Genera da modello» vuole il modello o il formato, anche PowerPoint', () => {
+    expect(schemaEsportazioneElaborata.safeParse({ modelloId: 'tpl-1' }).success).toBe(true);
+    expect(schemaEsportazioneElaborata.safeParse({ formato: 'pptx' }).success).toBe(true);
+    expect(schemaEsportazioneElaborata.safeParse({ istruzioni: 'fammelo bene' }).success).toBe(false);
   });
 
   it("l'«Esporta come» della chat ammette anche il testo semplice; le tabelle no", () => {
@@ -107,20 +117,20 @@ describe('le rotte prima del database', () => {
     expect(r.statusCode).toBe(404);
   });
 
-  it("l'esportazione: corpo senza template né formato → 400, id malformati → 404 (mai un errore SQL)", async () => {
-    const senzaTemplate = await daOperatore.inject({
+  it("l'esportazione: corpo senza formato → 400, id malformati → 404 (mai un errore SQL)", async () => {
+    const senzaFormato = await daOperatore.inject({
       method: 'POST',
       url: '/api/conversazioni/non-uuid/messaggi/pure-no/esporta',
       headers: autenticato,
-      payload: {},
+      payload: { templateId: 'tpl-001' },
     });
-    expect(senzaTemplate.statusCode).toBe(400);
+    expect(senzaFormato.statusCode).toBe(400);
 
     const malformati = await daOperatore.inject({
       method: 'POST',
       url: '/api/conversazioni/non-uuid/messaggi/pure-no/esporta',
       headers: autenticato,
-      payload: { templateId: 'tpl-001' },
+      payload: { formato: 'pdf' },
     });
     expect(malformati.statusCode).toBe(404);
     expect(malformati.json()).toMatchObject({ codice: 'NON_TROVATO' });

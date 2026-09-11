@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdfDaTesto } from './pdf.mjs';
-import { risolviTemplate } from './impostazioni.mjs';
+import { risolviFormato } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const leggi = (nome) => JSON.parse(readFileSync(join(QUI, 'data', nome), 'utf8'));
@@ -644,13 +644,9 @@ export async function gestisci(req, res, url, deps) {
   // RF-C-14: esportazione su template di output, XLSX in particolare
   if (rotta[2] === 'esporta' && req.method === 'POST') {
     const corpo = JSON.parse((await leggiCorpo(req)).toString('utf8') || '{}');
-    const template = risolviTemplate(corpo);
-    if (template === null) {
-      inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Indica il template o il formato su cui esportare.' });
-      return true;
-    }
+    const template = risolviFormato(corpo);
     if (!template) {
-      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Template inesistente.' });
+      inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Indica il formato su cui esportare.' });
       return true;
     }
     esportaTabella(res, tabella, template);

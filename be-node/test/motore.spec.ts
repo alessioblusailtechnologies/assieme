@@ -525,7 +525,7 @@ describe('workspace e sessione, le parti pure', () => {
        l'approvazione: descrivergli uno strumento che non ha sarebbe
        insegnargli a promettere qualcosa che non può fare. */
     expect(promptSistema(dna)).not.toContain('proponi_riordino');
-    const conChat = promptSistema(dna, { template: [], conRiordino: true });
+    const conChat = promptSistema(dna, { modelli: [], conRiordino: true });
     expect(conChat).toContain('proponi_riordino');
     expect(conChat).toContain('Riordinare l’archivio');
   });

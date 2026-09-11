@@ -1,10 +1,13 @@
 /**
- * Collaudo dell'Esportazione elaborata col motore VERO e la sandbox vera
+ * Collaudo di «Genera da modello» col motore VERO e la sandbox vera
  * (Docker in locale o Fly, secondo `SANDBOX_AVVIATORE` in .env): la
- * workspace del tenant demo, il template scelto (o il layout), una richiesta,
- * e si guarda cosa consegna. Senza API né coda.
+ * workspace del tenant demo, il modello di riferimento scelto (o nessuno),
+ * una richiesta, e si guarda cosa consegna, intestazione dell'agenzia
+ * compresa. Senza API né coda.
  *
- *   npx tsx tools/collaudo-elaborata.ts pdf "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-template]
+ *   npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-modello]
+ *
+ * `modello` come formato: quello del modello scelto.
  *
  * Costa: una sessione documentale (da mezzo dollaro a un paio). I file
  * consegnati si salvano in local-ingestion/lavorazione e si tolgono dallo
@@ -15,23 +18,23 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { configurazione } from '../src/config.js';
-import type { FormatoGenerazione } from '../src/contratto/template.js';
+import type { FormatoModello } from '../src/contratto/template.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
-import { templateDelTenant } from '../src/generazione/catalogo.js';
+import { modelliDelTenant, scegliModello } from '../src/generazione/catalogo.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
-import { scegliTemplate } from '../src/worker/motore/strumenti.js';
 import { materializzaWorkspace } from '../src/worker/motore/workspace.js';
 import { eseguiEsportazioneElaborata } from '../src/worker/sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly } from '../src/worker/sandbox/sandbox.js';
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
-const formato = process.argv[2] as FormatoGenerazione | undefined;
+const scelta = process.argv[2];
 const istruzioni = process.argv[3];
-const nomeTemplate = process.argv[4];
-if (!formato || !['pdf', 'docx', 'xlsx'].includes(formato) || !istruzioni) {
-  console.error('Uso: npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx> "<istruzioni>" [nome-template]');
+const nomeModello = process.argv[4];
+if (!scelta || !['pdf', 'docx', 'xlsx', 'pptx', 'modello'].includes(scelta) || !istruzioni) {
+  console.error('Uso: npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "<istruzioni>" [nome-modello]');
   process.exit(1);
 }
+const formato = scelta === 'modello' ? undefined : (scelta as FormatoModello);
 const c = configurazione();
 const chiaveApi = c.ANTHROPIC_API_KEY_SANDBOX ?? c.ANTHROPIC_API_KEY ?? '';
 const avviatore =
@@ -48,12 +51,12 @@ try {
   const ws = await materializzaWorkspace({ db, archivio, tenantId: TENANT_DEMO, radice, jobId: 'collaudo-elab', contestoIds: [] });
   console.log(`Workspace: ${ws.perPath.size} documenti`);
 
-  let templateId: string | undefined;
-  if (nomeTemplate) {
-    const scelta = scegliTemplate(await templateDelTenant(db as never, TENANT_DEMO), { template: nomeTemplate });
-    if (scelta.esito !== 'ok' || !scelta.template.id) throw new Error(`template «${nomeTemplate}» non trovato`);
-    templateId = scelta.template.id;
-    console.log(`Template: ${scelta.template.nome} (${scelta.template.formato})`);
+  let modelloId: string | undefined;
+  if (nomeModello) {
+    const trovato = scegliModello(await modelliDelTenant(db as never, TENANT_DEMO), nomeModello);
+    if (trovato.esito !== 'ok') throw new Error(trovato.motivo);
+    modelloId = trovato.modello.id;
+    console.log(`Modello: ${trovato.modello.nome} (${trovato.modello.formato}, intestazione ${trovato.modello.intestazione_agenzia ? "dell'agenzia" : 'sua'})`);
   }
 
   const inizio = Date.now();
@@ -76,7 +79,7 @@ try {
       },
       annullato: () => Promise.resolve(false),
     },
-    { tenantId: TENANT_DEMO, conversazioneId: '00000000-0000-4000-8000-00000000c021', jobId: 'collaudo-elab', formato, templateId, istruzioni },
+    { tenantId: TENANT_DEMO, conversazioneId: '00000000-0000-4000-8000-00000000c021', jobId: 'collaudo-elab', formato, modelloId, istruzioni },
   );
   percorsi = e.percorsi;
   const durata = (Date.now() - inizio) / 1000;

@@ -29,9 +29,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { generaDocx, generaXlsx } from './ufficio.mjs';
 import { generaPdfDaTesto } from './pdf.mjs';
-import { trovaTemplate } from './impostazioni.mjs';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 const leggi = (nome) => JSON.parse(readFileSync(join(QUI, 'data', nome), 'utf8'));
@@ -302,9 +300,10 @@ function avviaSimulazione(agente, esecuzione, utente, trovaDocumento) {
       const esito = componiEsito(agente, esecuzione.parametri, trovaDocumento);
       esecuzione.output = esito.output;
       esecuzione.citazioni = esito.citazioni;
-      if (agente.templateOutputId && trovaTemplate(agente.templateOutputId)) {
+      /* Dall'11/09/2026 il documento è un PDF col layout di VELIA e l'intestazione dell'agenzia: niente template. */
+      if (agente.formatoOutput === 'documento') {
         esecuzione.documentoGeneratoUrl = `/api/agenti/${agente.id}/esecuzioni/${esecuzione.id}/documento`;
-        aggiungiLog(esecuzione, 'info', `Documento generato sul template «${trovaTemplate(agente.templateOutputId).nome}».`);
+        aggiungiLog(esecuzione, 'info', 'Documento pronto da scaricare, in PDF con l’intestazione dell’agenzia.');
       }
       esecuzione.stato = 'completata';
       esecuzione.conclusaIl = adesso();
@@ -337,36 +336,13 @@ function etichettaCitazione(c) {
 }
 
 function scaricaDocumento(res, agente, esecuzione) {
-  const template = trovaTemplate(agente.templateOutputId);
   const titolo = `${agente.nome} - esito`;
   const corpo = testoPiano(esecuzione.output ?? '');
   const fonti = esecuzione.citazioni.map(etichettaCitazione);
-
-  let file;
-  let mime;
-  switch (template?.formato) {
-    case 'xlsx':
-      file = generaXlsx([
-        ['Esito'],
-        ...corpo.split(/\n{2,}/).map((p) => [p.replaceAll('\n', ' ')]),
-        [''],
-        ['Fonti'],
-        ...fonti.map((f) => [f]),
-      ]);
-      mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      break;
-    case 'docx':
-      file = generaDocx(titolo, corpo, fonti);
-      mime = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      break;
-    default:
-      file = generaPdfDaTesto(titolo, fonti.length ? `${corpo}\n\nFonti:\n\n${fonti.join('\n\n')}` : corpo);
-      mime = 'application/pdf';
-  }
-
-  const nomeFile = `${agente.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${esecuzione.id}.${template?.formato ?? 'pdf'}`;
+  const file = generaPdfDaTesto(titolo, fonti.length ? `${corpo}\n\nFonti:\n\n${fonti.join('\n\n')}` : corpo);
+  const nomeFile = `${agente.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${esecuzione.id}.pdf`;
   res.writeHead(200, {
-    'Content-Type': mime,
+    'Content-Type': 'application/pdf',
     'Content-Length': file.length,
     'Content-Disposition': `attachment; filename="${nomeFile}"`,
     'Access-Control-Allow-Origin': '*',
@@ -494,7 +470,6 @@ export async function gestisci(req, res, url, deps) {
       istruzioni: corpo.istruzioni.trim(),
       fonti,
       formatoOutput: ['testo', 'tabella', 'documento'].includes(corpo.formatoOutput) ? corpo.formatoOutput : 'testo',
-      ...(corpo.templateOutputId && trovaTemplate(corpo.templateOutputId) ? { templateOutputId: corpo.templateOutputId } : {}),
       parametri: normalizzaParametri(corpo.parametri) ?? [],
       ...(normalizzaPianificazione(corpo.pianificazione) ? { pianificazione: normalizzaPianificazione(corpo.pianificazione) } : {}),
       attivo: true,
@@ -539,8 +514,6 @@ export async function gestisci(req, res, url, deps) {
       const fonti = normalizzaFonti(modifiche.fonti);
       if (fonti?.length) agente.fonti = fonti;
       if (['testo', 'tabella', 'documento'].includes(modifiche.formatoOutput)) agente.formatoOutput = modifiche.formatoOutput;
-      if (modifiche.templateOutputId === null) delete agente.templateOutputId;
-      else if (modifiche.templateOutputId && trovaTemplate(modifiche.templateOutputId)) agente.templateOutputId = modifiche.templateOutputId;
       const parametri = normalizzaParametri(modifiche.parametri);
       if (parametri) agente.parametri = parametri;
       if (modifiche.pianificazione === null) delete agente.pianificazione;
@@ -667,9 +640,9 @@ export async function gestisci(req, res, url, deps) {
     return true;
   }
 
-  // GET …/documento — il file generato sul template (RF-E-13)
+  // GET …/documento — il PDF dell'esito, per gli agenti col formato documento (RF-E-13)
   if (rotta[4] === 'documento' && req.method === 'GET') {
-    if (!esecuzione.documentoGeneratoUrl || !agente.templateOutputId) {
+    if (!esecuzione.documentoGeneratoUrl) {
       inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Questa esecuzione non ha prodotto un documento.' });
       return true;
     }

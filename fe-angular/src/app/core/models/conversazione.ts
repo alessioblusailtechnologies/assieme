@@ -181,9 +181,10 @@ export interface EsitoProposta {
 export interface DocumentoGenerato {
   id: Id;
   nome: string;
-  formato: 'pdf' | 'docx' | 'xlsx';
-  /** Il template usato; assente col layout di piattaforma. */
-  template?: string;
+  /** `pptx` solo da «Genera da modello», su un modello PowerPoint. */
+  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  /** Il modello usato; assente col layout di VELIA. */
+  modello?: string;
   url: string;
 }
 
@@ -223,7 +224,7 @@ export type EventoStream =
    * lo mostra e lo collega al pannello Memoria, dove si governa.
    */
   | { tipo: 'memoria'; ricordi: RicordoAppreso[] }
-  /** Un documento generato su template durante la risposta: si mostra subito, da scaricare. */
+  /** Un documento generato durante la risposta: si mostra subito, da scaricare. */
   | { tipo: 'documento'; documento: DocumentoGenerato }
   /** Un riordino dell'archivio proposto durante la risposta: la scheda con Approva e Annulla. */
   | { tipo: 'proposta'; proposta: PropostaArchivio }
@@ -239,14 +240,14 @@ export interface RicordoAppreso {
 }
 
 /**
- * La richiesta «Genera documento da template»: il messaggio chiede un
- * documento, non una risposta. Il motore documentale lavora in sandbox sul
- * template scelto e consegna il file come `documento` della risposta.
- * `messaggioId` è la risposta da impaginare.
+ * «Genera da modello» (11/09/2026): il messaggio chiede un documento, non
+ * una risposta. Il motore documentale lavora in sandbox sul modello scelto
+ * e consegna il file come `documento` della risposta, nel formato del
+ * modello salvo `formato`. `messaggioId` è la risposta da impaginare.
  */
 export interface EsportazioneElaborata {
-  formato: 'pdf' | 'docx' | 'xlsx';
-  templateId?: Id;
+  modelloId?: Id;
+  formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx';
   messaggioId?: Id;
   istruzioni?: string;
 }

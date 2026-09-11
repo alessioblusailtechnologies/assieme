@@ -50,37 +50,25 @@ let prossimoUtente = 100;
 let prossimaVoceStorico = 100;
 
 /**
- * L'elenco dei template è condiviso: chat (RF-C-10) e tabelle (RF-C-14)
- * esportano sugli stessi template che questa sezione governa.
+ * I modelli di riferimento (11/09/2026): quelli che la chat richiama con
+ * «Genera da modello». Le esportazioni non li usano più.
  */
-export function trovaTemplate(id) {
-  return TEMPLATE.find((t) => t.id === id);
-}
-
-export function elencoTemplate() {
+export function elencoModelli() {
   return TEMPLATE;
 }
 
-/** Il nome del layout di piattaforma, quando per il formato non c'è un template. */
-export const NOME_LAYOUT_PIATTAFORMA = 'Documento VELIA';
+/** Il nome dei documenti col layout di VELIA. */
+export const NOME_DOCUMENTO = 'Documento VELIA';
 
 /**
- * La scelta di esportazione come sul backend: un template preciso, oppure
- * il predefinito del formato, oppure il layout di piattaforma. Ritorna
- * `undefined` per un templateId ignoto (404), `null` per un corpo vuoto (400).
+ * Il formato di un'esportazione, come sul backend: si sceglie solo quello
+ * (il layout è di VELIA, l'intestazione dell'agenzia). `null` per un corpo
+ * senza un formato generabile (400).
  */
-export function risolviTemplate(corpo) {
-  if (corpo?.templateId) return trovaTemplate(corpo.templateId);
+export function risolviFormato(corpo) {
   const formato = corpo?.formato;
   if (!['pdf', 'docx', 'xlsx'].includes(formato)) return null;
-  return (
-    TEMPLATE.find((t) => t.formato === formato && t.predefinito) ?? {
-      id: undefined,
-      nome: NOME_LAYOUT_PIATTAFORMA,
-      formato,
-      predefinito: false,
-    }
-  );
+  return { nome: NOME_DOCUMENTO, formato };
 }
 
 // ---------------------------------------------------------------------------
@@ -377,14 +365,14 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
     return false;
   }
 
-  // --- Template (RF-D-10…D-13) --------------------------------------------
+  // --- Modelli di riferimento (11/09/2026) ---------------------------------
 
   if (percorso === '/api/template') {
     if (req.method === 'GET') {
       inviaJson(res, 200, TEMPLATE);
       return true;
     }
-    // RF-D-12: template propri del tenant
+    // Qualsiasi dei quattro formati; il mock non converte, l'anteprima è una scheda.
     if (req.method === 'POST') {
       if (!amministratore(req)) return vietato(res, inviaJson);
       const corpo = await leggiCorpo(req);
@@ -399,30 +387,22 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
         if (!formato) {
           inviaJson(res, 400, {
             codice: 'FORMATO_NON_AMMESSO',
-            messaggio: `«${f.nome}»: i template accettano PDF, DOCX o XLSX.`,
+            messaggio: `«${f.nome}»: i modelli possono essere PDF, Word (.docx), Excel (.xlsx) o PowerPoint (.pptx).`,
           });
           return true;
         }
-        /* Come il backend (Fase 4): la generazione PPTX e' rimandata, il
-           caricamento si rifiuta con un motivo leggibile. */
-        if (formato === 'pptx') {
-          inviaJson(res, 415, {
-            codice: 'FORMATO_NON_SUPPORTATO',
-            messaggio: `«${f.nome}»: la generazione PPTX non è ancora disponibile - carica un template PDF, DOCX o XLSX.`,
-          });
-          return true;
-        }
-        const template = {
+        const modello = {
           id: `tpl-${prossimoTemplate++}`,
           nome: f.nome.replace(/\.[^.]+$/, ''),
           formato,
-          descrizione: 'Template dell’agenzia: il documento generato ne conserva l’impaginazione.',
-          /* Il primo template di un formato ne è il predefinito. */
-          predefinito: !TEMPLATE.some((t) => t.formato === formato && t.predefinito),
+          descrizione: '',
+          intestazioneAgenzia: true,
+          anteprima: 'pronta',
+          caricatoIl: new Date().toISOString(),
         };
-        TEMPLATE.push(template);
-        registra(req, 'creazione', 'template', `Caricato il template «${template.nome}»`);
-        creati.push(template);
+        TEMPLATE.push(modello);
+        registra(req, 'creazione', 'template', `Caricato il modello «${modello.nome}»`);
+        creati.push(modello);
       }
       inviaJson(res, 201, { creati });
       return true;
@@ -430,59 +410,64 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
     return false;
   }
 
-  const rottaTemplate = percorso.match(/^\/api\/template\/([^/]+)(\/anteprima)?$/);
+  const rottaTemplate = percorso.match(/^\/api\/template\/([^/]+)(\/anteprima|\/file)?$/);
   if (rottaTemplate) {
-    const template = TEMPLATE.find((t) => t.id === rottaTemplate[1]);
-    if (!template) {
-      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Template inesistente.' });
+    const modello = TEMPLATE.find((t) => t.id === rottaTemplate[1]);
+    if (!modello) {
+      inviaJson(res, 404, { codice: 'NON_TROVATO', messaggio: 'Modello inesistente.' });
       return true;
     }
 
-    /* RF-D-11: l'anteprima, sempre PDF: una scheda che dice come si usa il
-       template (la sandbox ne copia l'impaginazione). */
-    if (rottaTemplate[2] === '/anteprima' && req.method === 'GET') {
+    /* L'anteprima e il file: nel mock, una scheda in PDF che racconta il modello. */
+    if (rottaTemplate[2] && req.method === 'GET') {
       const testo = [
-        template.descrizione,
+        modello.descrizione || 'Nessuna indicazione su quando usarlo.',
         '',
-        'Si usa con «Genera documento da template»: la sandbox lo apre, ne copia impaginazione, stili e tabelle e ci mette il contenuto nuovo.',
+        modello.intestazioneAgenzia
+          ? 'Esce con l’intestazione e il piè di pagina dell’agenzia.'
+          : 'Tiene la sua intestazione.',
+        '',
+        'Si usa con «Genera da modello»: la sandbox lo apre, ne copia struttura e stile e ci mette il contenuto nuovo.',
       ].join('\n');
-      const pdf = generaPdfDaTesto(`Anteprima - ${template.nome}`, testo);
+      const pdf = generaPdfDaTesto(`Anteprima - ${modello.nome}`, testo);
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
         'Content-Length': pdf.length,
-        'Content-Disposition': 'inline',
+        'Content-Disposition': rottaTemplate[2] === '/file' ? `attachment; filename="${modello.id}.pdf"` : 'inline',
         'Access-Control-Allow-Origin': '*',
       });
       res.end(pdf);
       return true;
     }
 
-    // Nome con cui si richiama e/o predefinito per il suo formato (RF-D-13), unico per formato
+    // Nome, «quando usarlo» e intestazione; il predefinito non esiste più
     if (!rottaTemplate[2] && req.method === 'PATCH') {
       if (!amministratore(req)) return vietato(res, inviaJson);
-      const { nome, predefinito } = await corpoJson();
-      if (nome === undefined && predefinito === undefined) {
-        inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Modifiche al template non valide.' });
+      const { nome, descrizione, intestazioneAgenzia, ...altro } = await corpoJson();
+      if (
+        Object.keys(altro).length ||
+        (nome === undefined && descrizione === undefined && intestazioneAgenzia === undefined)
+      ) {
+        inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Modifiche al modello non valide.' });
         return true;
       }
-      if (typeof nome === 'string' && nome.trim() && nome.trim() !== template.nome) {
-        registra(req, 'modifica', 'template', `Il template «${template.nome}» si chiama ora «${nome.trim()}»`);
-        template.nome = nome.trim();
+      if (typeof nome === 'string' && nome.trim() && nome.trim() !== modello.nome) {
+        registra(req, 'modifica', 'template', `Il modello «${modello.nome}» si chiama ora «${nome.trim()}»`);
+        modello.nome = nome.trim();
       }
-      if (typeof predefinito === 'boolean' && predefinito !== template.predefinito) {
-        if (predefinito) {
-          for (const altro of TEMPLATE) {
-            if (altro.formato === template.formato) altro.predefinito = false;
-          }
-        }
-        template.predefinito = predefinito;
+      if (typeof descrizione === 'string' && descrizione.trim() !== modello.descrizione) {
+        modello.descrizione = descrizione.trim().slice(0, 300);
+        registra(req, 'modifica', 'template', `Cambiato «quando usarlo» di «${modello.nome}»`);
+      }
+      if (typeof intestazioneAgenzia === 'boolean' && intestazioneAgenzia !== modello.intestazioneAgenzia) {
+        modello.intestazioneAgenzia = intestazioneAgenzia;
         registra(
           req,
           'modifica',
           'template',
-          predefinito
-            ? `«${template.nome}» è il template predefinito per ${template.formato.toUpperCase()}`
-            : `«${template.nome}» non è più il predefinito per ${template.formato.toUpperCase()}`,
+          intestazioneAgenzia
+            ? `«${modello.nome}» esce con l'intestazione dell'agenzia`
+            : `«${modello.nome}» tiene la sua intestazione`,
         );
       }
       inviaJson(res, 200, TEMPLATE);
@@ -491,50 +476,9 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo }) {
 
     if (!rottaTemplate[2] && req.method === 'DELETE') {
       if (!amministratore(req)) return vietato(res, inviaJson);
-      TEMPLATE.splice(TEMPLATE.indexOf(template), 1);
-      registra(req, 'eliminazione', 'template', `Eliminato il template «${template.nome}»`);
+      TEMPLATE.splice(TEMPLATE.indexOf(modello), 1);
+      registra(req, 'eliminazione', 'template', `Eliminato il modello «${modello.nome}»`);
       res.writeHead(204).end();
-      return true;
-    }
-    return false;
-  }
-
-  // --- Utenti (RF-D-01) ---------------------------------------------------
-
-  if (percorso === '/api/utenti') {
-    if (req.method === 'GET') {
-      if (!amministratore(req)) return vietato(res, inviaJson);
-      inviaJson(res, 200, UTENTI);
-      return true;
-    }
-    if (req.method === 'POST') {
-      if (!amministratore(req)) return vietato(res, inviaJson);
-      const corpo = await corpoJson();
-      if (!corpo.email?.trim() || !corpo.nome?.trim() || !corpo.cognome?.trim()) {
-        inviaJson(res, 400, {
-          codice: 'DATI_MANCANTI',
-          messaggio: 'Servono nome, cognome ed email.',
-        });
-        return true;
-      }
-      if (UTENTI.some((u) => u.email.toLowerCase() === corpo.email.trim().toLowerCase())) {
-        inviaJson(res, 409, {
-          codice: 'EMAIL_ESISTENTE',
-          messaggio: 'Un utente con questa email esiste già nel tenant.',
-        });
-        return true;
-      }
-      const utente = {
-        id: `utn-${prossimoUtente++}`,
-        nome: corpo.nome.trim(),
-        cognome: corpo.cognome.trim(),
-        email: corpo.email.trim(),
-        ruolo: corpo.ruolo === 'amministratore' ? 'amministratore' : 'operatore',
-        tenantId: 'tnt-001',
-        stato: 'invitato',
-      };
-      UTENTI.push(utente);
-      inviaJson(res, 201, utente);
       return true;
     }
     return false;

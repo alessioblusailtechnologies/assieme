@@ -1,3 +1,4 @@
+import { Document, Header, Packer, Paragraph } from 'docx';
 import ExcelJS from 'exceljs';
 import { PDFDocument } from 'pdf-lib';
 import PizZip from 'pizzip';
@@ -14,6 +15,7 @@ import {
   type FasceDocumento,
 } from '../src/generazione/intestazione.js';
 import { componiPdf } from '../src/generazione/pdf.js';
+import { misureFasce, timbra } from '../src/generazione/timbra.js';
 import { componiXlsx } from '../src/generazione/xlsx.js';
 import { leggiConPdfjs } from '../src/worker/ingestion/testimoni.js';
 
@@ -312,5 +314,98 @@ describe('la facciata generaDocumento', () => {
     expect(file.nomeFile).toBe('proposta-di-rinnovo.docx');
     expect(testoParte(file.byte, /^word\/document\.xml$/)).toContain('Testo della proposta.');
     expect(nomeFileGenerato('Carta intestata Méridiana', 'pdf')).toBe('carta-intestata-m-ridiana.pdf');
+  });
+});
+
+describe('la carta dell’agenzia su un documento consegnato (timbra)', () => {
+  it('PDF: le fasce si disegnano su ogni pagina del file, coi numeri di pagina giusti', async () => {
+    const consegnato = await PDFDocument.create();
+    for (let i = 0; i < 3; i++) {
+      const pagina = consegnato.addPage();
+      pagina.drawText(`Corpo della pagina ${i + 1}`, { x: 60, y: 400, size: 12 });
+    }
+    const timbrato = await timbra(Buffer.from(await consegnato.save()), 'pdf', FASCE);
+    const letture = await leggiConPdfjs(timbrato);
+    expect(letture).toHaveLength(3);
+    letture.forEach((lettura, i) => {
+      expect(lettura.testo).toContain(`Corpo della pagina ${i + 1}`);
+      expect(lettura.testo).toContain('Assicurazioni Meridiana S.r.l.');
+      expect(lettura.testo).toContain(`Pagina ${i + 1} di 3`);
+    });
+  });
+
+  it('Word: header e footer dell’agenzia al posto di quelli del documento, in ogni sezione', async () => {
+    const altrui = new Header({ children: [new Paragraph('Carta di un altro ente')] });
+    const consegnato = await Packer.toBuffer(
+      new Document({
+        evenAndOddHeaderAndFooters: true,
+        sections: [
+          {
+            properties: { titlePage: true },
+            headers: { default: altrui, first: altrui, even: altrui },
+            children: [new Paragraph('Prima sezione')],
+          },
+          { children: [new Paragraph('Seconda sezione')] },
+        ],
+      }),
+    );
+    const timbrato = await timbra(consegnato, 'docx', FASCE);
+    const zip = new PizZip(timbrato);
+    const documento = zip.file('word/document.xml')!.asText();
+
+    const sezioni = documento.match(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/g)!;
+    expect(sezioni.length).toBe(2);
+    for (const sezione of sezioni) {
+      expect(sezione).toContain('<w:headerReference w:type="default" r:id="rIdVeliaIntestazione"/>');
+      expect(sezione).toContain('<w:footerReference w:type="default" r:id="rIdVeliaPiede"/>');
+      expect(sezione).not.toMatch(/w:type="(first|even)"/);
+      expect(sezione).not.toContain('titlePg');
+    }
+    expect(zip.file('word/settings.xml')!.asText()).not.toContain('evenAndOddHeaders');
+    expect(testoParte(timbrato, /^word\/velia-intestazione\.xml$/)).toContain('Assicurazioni Meridiana S.r.l.');
+    expect(testoParte(timbrato, /^word\/velia-piede\.xml$/)).toContain('NUMPAGES');
+    expect(zip.file('word/_rels/document.xml.rels')!.asText()).toContain('Target="velia-intestazione.xml"');
+    expect(zip.file('[Content_Types].xml')!.asText()).toContain('PartName="/word/velia-intestazione.xml"');
+    /* Il logo viaggia con la parte, sotto un nome suo. */
+    const relsIntestazione = zip.file('word/_rels/velia-intestazione.xml.rels')!.asText();
+    const logo = /Target="media\/([^"]+)"/.exec(relsIntestazione)![1]!;
+    expect(zip.file(`word/media/${logo}`)).toBeTruthy();
+    expect(testoParte(timbrato, /^word\/document\.xml$/)).toContain('Seconda sezione');
+
+    /* Rifarlo non accumula: le parti di VELIA si sostituiscono. */
+    const due = new PizZip(await timbra(timbrato, 'docx', FASCE));
+    expect(due.file('word/_rels/document.xml.rels')!.asText().match(/rIdVeliaIntestazione/g)).toHaveLength(1);
+  });
+
+  it('Excel: le fasce di stampa su ogni foglio, davanti ai disegni come vuole lo schema', async () => {
+    const cartella = new ExcelJS.Workbook();
+    const primo = cartella.addWorksheet('Confronto');
+    primo.addRow(['Garanzia', 'Franchigia']);
+    const logo = cartella.addImage({ buffer: PNG as unknown as ExcelJS.Buffer, extension: 'png' });
+    primo.addImage(logo, { tl: { col: 3, row: 1 }, ext: { width: 20, height: 20 } });
+    cartella.addWorksheet('Note').addRow(['niente']);
+    const consegnato = Buffer.from(await cartella.xlsx.writeBuffer());
+
+    const timbrato = await timbra(consegnato, 'xlsx', FASCE);
+    const riletta = new ExcelJS.Workbook();
+    await riletta.xlsx.load(timbrato as unknown as ExcelJS.Buffer);
+    for (const nome of ['Confronto', 'Note']) {
+      const foglio = riletta.getWorksheet(nome)!;
+      expect(foglio.headerFooter.oddHeader).toBe(fasciaXlsx(INTESTAZIONE, FASCE.campi));
+      expect(foglio.headerFooter.oddFooter).toBe(fasciaXlsx(PIEDE, FASCE.campi));
+    }
+    const xml = new PizZip(timbrato).file('xl/worksheets/sheet1.xml')!.asText();
+    expect(xml.indexOf('<headerFooter>')).toBeGreaterThan(-1);
+    expect(xml.indexOf('<headerFooter>')).toBeLessThan(xml.indexOf('<drawing'));
+  });
+
+  it('senza fasce il file esce com’è; i margini da lasciare liberi crescono con l’intestazione', async () => {
+    const byte = Buffer.from('%PDF-1.7 non toccato');
+    expect(await timbra(byte, 'pdf', SENZA_FASCE)).toBe(byte);
+    const vuote = await misureFasce(SENZA_FASCE);
+    expect(vuote).toEqual({ altoMm: 20, bassoMm: 20 });
+    const piene = await misureFasce(FASCE);
+    expect(piene.altoMm).toBeGreaterThan(vuote.altoMm);
+    expect(piene.bassoMm).toBeGreaterThan(15);
   });
 });

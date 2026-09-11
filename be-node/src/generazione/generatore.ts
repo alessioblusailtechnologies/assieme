@@ -33,10 +33,12 @@ export interface FileGenerato {
   nomeFile: string;
 }
 
-export const MIME: Record<FormatoDocumento, string> = {
+/** I tipi dei file che escono da VELIA: questo motore, e la sandbox che consegna anche PowerPoint. */
+export const MIME: Record<FormatoDocumento | 'pptx', string> = {
   pdf: 'application/pdf',
   docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 };
 
 /** Il nome del download, in slug. */

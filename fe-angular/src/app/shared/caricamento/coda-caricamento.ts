@@ -62,7 +62,7 @@ export interface FileInCoda {
                 metà strada è il modo più rapido per far credere che qualcosa
                 sia pronto quando non lo è.
               -->
-              <span class="mono esito">in elaborazione</span>
+              <span class="mono esito">{{ esitoCompletato() }}</span>
             }
             @case ('errore') {
               <span class="mono esito">{{ v.messaggio }}</span>
@@ -151,6 +151,11 @@ export interface FileInCoda {
 })
 export class CodaCaricamento {
   readonly file = input.required<readonly FileInCoda[]>();
+  /**
+   * Cosa dire di un file arrivato. Per i documenti è «in elaborazione»: la
+   * lettura parte dopo. Un modello di riferimento invece è pronto subito.
+   */
+  readonly esitoCompletato = input('in elaborazione');
   readonly chiudi = output<void>();
 
   protected readonly inCorso = computed(() => this.file().some((v) => v.stato === 'in-corso'));

@@ -98,29 +98,36 @@ export interface VoceStoricoImpostazioni {
   descrizione: string;
 }
 
-/** I formati che il server sa generare (PPTX è rimandato, punto aperto §6.11). */
+/** I formati che il motore deterministico sa generare («Esporta come», tabelle, agenti). */
 export type FormatoGenerazione = 'pdf' | 'docx' | 'xlsx';
 
-/** L'«Esporta come» di una risposta: i formati generabili più il testo semplice, senza template. */
+/** L'«Esporta come» di una risposta: i formati generabili più il testo semplice. */
 export type FormatoEsportaRisposta = FormatoGenerazione | 'txt';
 
+/** I formati di un modello di riferimento, e di ciò che «Genera da modello» consegna. */
+export type FormatoModello = FormatoGenerazione | 'pptx';
+
+/** A che punto è l'anteprima in PDF di un modello. Un PDF è `pronta` da subito. */
+export type StatoAnteprimaModello = 'assente' | 'in-corso' | 'pronta' | 'errore';
+
 /**
- * Template di output (RF-D-10…D-13).
+ * Un modello di riferimento (11/09/2026, `PIANO-INTESTAZIONE-MODELLI.md`).
  *
- * Un template è un documento dell'agenzia caricato dalle Impostazioni:
- * quanti se ne vogliono, anche più d'uno nello stesso formato, ognuno col
- * nome con cui lo si richiama (in chat, negli agenti). Per ogni formato ce
- * n'è al più uno predefinito; per i formati senza template i documenti
- * escono col layout di piattaforma e l'identità visiva.
+ * Un documento dell'agenzia di qualsiasi formato, quanti se ne vogliono,
+ * che si richiama in chat con «Genera da modello»: la sandbox lo apre, ne
+ * copia struttura e stile e ci mette il contenuto nuovo. La riga «quando
+ * usarlo» è ciò che il motore della chat legge per scegliere il modello
+ * giusto; l'intestazione è quella dell'agenzia, o la sua per i documenti da
+ * restituire come sono (il modulo di una compagnia).
  */
-export interface TemplateOutput {
+export interface ModelloRiferimento {
   id: Id;
   nome: string;
-  formato: FormatoGenerazione | 'pptx';
+  formato: FormatoModello;
   descrizione: string;
-  anteprimaUrl?: string;
-  /** RF-D-13: il predefinito del suo formato. */
-  predefinito: boolean;
+  intestazioneAgenzia: boolean;
+  anteprima: StatoAnteprimaModello;
+  caricatoIl: IsoDateTime;
 }
 
 /** RF-F-02: credenziali per l'accesso via MCP, generabili e revocabili. */

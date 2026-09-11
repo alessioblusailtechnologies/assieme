@@ -11,59 +11,48 @@ import type { Citazione } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import {
   schemaEsportaRisposta,
-  schemaPatchTemplate,
-  type FormatoGenerazione,
-  type TemplateOutput,
+  schemaPatchModello,
+  type FormatoModello,
+  type ModelloRiferimento,
 } from '../../contratto/template.js';
 import {
-  elencoTemplate,
+  elencoModelli,
   fasceDelTenant,
   fontiDaCitazioni,
-  formatoDaScelta,
-  templatePerId,
+  modelloPerId,
+  percorsoModello,
+  versoModello,
 } from '../../generazione/catalogo.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
-import { analizzaMarkdown } from '../../generazione/blocchi.js';
 import { testoSemplice } from '../../generazione/email.js';
-import { generaDocumento, NOME_DOCUMENTO } from '../../generazione/generatore.js';
-import { componiPdf } from '../../generazione/pdf.js';
+import { generaDocumento, MIME, NOME_DOCUMENTO, nomeFileGenerato } from '../../generazione/generatore.js';
 import { richiediAmministratore } from '../plugins/auth.js';
+import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 
 /**
- * La libreria dei template dell'agenzia e l'esportazione della chat
- * (RF-C-10).
+ * I modelli di riferimento dell'agenzia e l'esportazione della chat
+ * (11/09/2026, fase 3 di `PIANO-INTESTAZIONE-MODELLI.md`).
  *
- * Un template è sempre un file caricato dal tenant (`tenant/<tid>/template/`),
- * quanti ne vuole, anche più d'uno per formato, ognuno col nome con cui lo
- * si richiama. Dall'11/09/2026 lo usa solo la sandbox («Genera documento da
- * template»): «Esporta come» esce col layout di VELIA e l'intestazione
- * dell'agenzia (`api/intestazione`), e l'identità visiva non c'è più. Nella
- * fase 3 di `PIANO-INTESTAZIONE-MODELLI.md` i template diventano i modelli
- * di riferimento.
+ * Un modello è un documento dell'agenzia di qualsiasi formato (PDF, Word,
+ * Excel, PowerPoint), quanti se ne vogliono, ognuno col nome con cui lo si
+ * richiama e una riga «quando usarlo». Lo usa solo la sandbox, con «Genera
+ * da modello»; «Esporta come» esce col layout di VELIA e l'intestazione
+ * dell'agenzia. La rotta resta `/api/template`: `/api/modelli` è dei
+ * livelli AI.
+ *
+ * L'anteprima: un PDF si mostra com'è; Word, Excel e PowerPoint si
+ * convertono in PDF una volta, al caricamento, col job `anteprima-modello`
+ * sul runner della sandbox. Finché non c'è, il file si scarica.
  *
  * Le scritture sono dell'amministratore (`template.gestisci`): il 403 parte
  * da qui, l'isolamento fra tenant resta della RLS.
  */
 
-export {
-  NOME_LAYOUT_PIATTAFORMA,
-  elencoTemplate,
-  fontiDaCitazioni,
-  risolviTemplate,
-  templatePerId,
-  versoRisolto,
-  type RigaTemplate,
-  type TemplateRisolto,
-} from '../../generazione/catalogo.js';
-
-const DESCRIZIONE_TEMPLATE = 'Template dell’agenzia: il documento generato ne conserva l’impaginazione.';
+export { fontiDaCitazioni } from '../../generazione/catalogo.js';
 
 const nuovoId = (): string => `tpl-${randomBytes(6).toString('hex')}`;
-
-export const percorsoTemplate = (tenantId: string, id: string, formato: string): string =>
-  `tenant/${tenantId}/template/${id}.${formato}`;
 
 const FIRMA_PDF = Buffer.from('%PDF-');
 const FIRMA_ZIP = Buffer.from('PK');
@@ -71,30 +60,35 @@ const FIRMA_ZIP = Buffer.from('PK');
 /** Id di conversazioni e messaggi: uuid. Un id malformato è un 404, non un errore SQL. */
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+const NOME_FORMATO: Record<FormatoModello, string> = { pdf: 'PDF', docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint' };
+
 export interface OpzioniTemplate {
   /** Nei test: un archivio finto al posto dello Storage. */
   archivio?: ArchivioFile;
+  /** Nei test: chi accoda il job dell'anteprima, al posto della coda vera. */
+  accodaAnteprima?: (modelloId: string, identita: Identita) => Promise<unknown>;
 }
 
 export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemplate = {}): void {
   let archivioStorage: ArchivioFile | undefined;
   const archivio = (): ArchivioFile => opzioni.archivio ?? (archivioStorage ??= new ArchivioStorage());
+  const accodaAnteprima =
+    opzioni.accodaAnteprima ??
+    ((modelloId: string, identita: Identita) =>
+      accoda(poolDb(), 'anteprima-modello', { modelloId }, { tenantId: identita.tenantId, utenteId: identita.utenteId }));
 
-  // --- Libreria dei template (RF-D-10…D-13) --------------------------------
+  // --- I modelli di riferimento --------------------------------------------
 
-  /** L'elenco che chat, tabelle e agenti usano e Impostazioni governa. */
+  /** L'elenco che la chat usa e Impostazioni governa. */
   app.get('/api/template', async (richiesta) => {
-    return conIdentita(poolDb(), richiesta.identita, (client) =>
-      elencoTemplate(client, richiesta.identita.tenantId),
-    );
+    return conIdentita(poolDb(), richiesta.identita, (client) => elencoModelli(client, richiesta.identita.tenantId));
   });
 
   /**
-   * RF-D-12: template dell'agenzia, anche una semplice carta intestata. Il
-   * nome è quello del file, senza estensione: si cambia col PATCH. Il lotto
-   * è atomico: si valida tutto, poi si crea tutto — un file rifiutato non
-   * lascia fratelli a metà. Il primo template di un formato ne diventa il
-   * predefinito. PPTX si rifiuta con un motivo leggibile (§6.11).
+   * Il caricamento: uno o più file, qualsiasi dei quattro formati. Il nome è
+   * quello del file, senza estensione; si cambia col PATCH. Il lotto è
+   * atomico: si valida tutto, poi si crea tutto. Per Word, Excel e
+   * PowerPoint parte la conversione dell'anteprima.
    */
   app.post('/api/template', async (richiesta, risposta) => {
     richiediAmministratore(richiesta);
@@ -102,11 +96,11 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
       throw ErroreApi.datiNonValidi('Il caricamento richiede multipart/form-data.');
     }
 
-    const ricevuti: Array<{ nome: string; formato: FormatoGenerazione; contenuto: Buffer }> = [];
+    const ricevuti: Array<{ nome: string; formato: FormatoModello; contenuto: Buffer }> = [];
     for await (const parte of richiesta.parts()) {
       if (parte.type !== 'file' || !parte.filename) continue;
       const contenuto = await parte.toBuffer();
-      const formato = await verificaTemplate(parte.filename, contenuto, parte.file.truncated);
+      const formato = await verificaModello(parte.filename, contenuto, parte.file.truncated);
       ricevuti.push({ nome: parte.filename, formato, contenuto });
     }
     if (!ricevuti.length) {
@@ -116,159 +110,122 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
     const { tenantId, utenteId } = richiesta.identita;
     const daCreare = ricevuti.map((f) => ({ ...f, id: nuovoId() }));
     const caricati: string[] = [];
+    let creati: ModelloRiferimento[];
     try {
       for (const f of daCreare) {
-        const percorso = percorsoTemplate(tenantId, f.id, f.formato);
-        await archivio().carica(percorso, f.contenuto, tipoMime(f.formato));
+        const percorso = percorsoModello(tenantId, f.id, f.formato);
+        await archivio().carica(percorso, f.contenuto, MIME[f.formato]);
         caricati.push(percorso);
       }
-      const creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-        const esiti: TemplateOutput[] = [];
+      creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const esiti: ModelloRiferimento[] = [];
         for (const f of daCreare) {
           const nome = f.nome.replace(/\.[^.]+$/, '') || f.nome;
-          const senzaPredefinito = await client.query(
-            `select 1 from velia.template where tenant_id = $1 and formato = $2 and predefinito`,
-            [tenantId, f.formato],
-          );
-          const predefinito = senzaPredefinito.rowCount === 0;
+          /* `clock_timestamp()`, non `now()`: nello stesso lotto l'ordine è quello dei file. */
           await client.query(
-            `insert into velia.template (id, tenant_id, nome, formato, descrizione, path_file, predefinito, creato_da)
-             values ($1, $2, $3, $4, $5, $6, $7, $8)`,
-            [
-              f.id,
-              tenantId,
-              nome,
-              f.formato,
-              DESCRIZIONE_TEMPLATE,
-              percorsoTemplate(tenantId, f.id, f.formato),
-              predefinito,
-              utenteId,
-            ],
+            `insert into velia.template (id, tenant_id, nome, formato, descrizione, path_file, anteprima, creato_da, created_at)
+             values ($1, $2, $3, $4, '', $5, $6, $7, clock_timestamp())`,
+            [f.id, tenantId, nome, f.formato, percorsoModello(tenantId, f.id, f.formato), f.formato === 'pdf' ? 'pronta' : 'in-corso', utenteId],
           );
-          await registraStorico(client, richiesta.identita, 'creazione', 'template', `Caricato il template «${nome}»`);
-          esiti.push({ id: f.id, nome, formato: f.formato, descrizione: DESCRIZIONE_TEMPLATE, predefinito });
+          await registraStorico(client, richiesta.identita, 'creazione', 'template', `Caricato il modello «${nome}»`);
+          esiti.push(versoModello((await modelloPerId(client, f.id))!));
         }
         return esiti;
       });
-      void risposta.code(201);
-      return { creati };
     } catch (errore) {
       await archivio()
         .elimina(caricati)
         .catch((e: unknown) => richiesta.log.warn({ err: e, caricati }, 'pulizia storage fallita'));
       throw errore;
     }
+
+    /* L'anteprima dopo il commit: il worker deve trovare la riga. Una coda che non risponde non annulla il caricamento. */
+    for (const m of creati.filter((m) => m.formato !== 'pdf')) {
+      await accodaAnteprima(m.id, richiesta.identita).catch(async (e: unknown) => {
+        richiesta.log.warn({ err: e, modello: m.id }, 'anteprima non accodata');
+        await poolDb().query(`update velia.template set anteprima = 'errore' where id = $1`, [m.id]);
+        m.anteprima = 'errore';
+      });
+    }
+    void risposta.code(201);
+    return { creati };
   });
 
-  /**
-   * Il nome con cui si richiama e/o il predefinito del suo formato (RF-D-13):
-   * assegnarlo lo toglie a chi lo portava. Risponde con l'elenco intero,
-   * com'è nel contratto: il FE ridipinge tutto da qui.
-   */
+  /** Nome, «quando usarlo» e intestazione. Risponde con l'elenco intero: il FE ridipinge da qui. */
   app.patch<{ Params: { id: string } }>('/api/template/:id', async (richiesta) => {
     richiediAmministratore(richiesta);
-    const esito = schemaPatchTemplate.safeParse(richiesta.body ?? {});
-    if (!esito.success) throw ErroreApi.datiNonValidi('Modifiche al template non valide.');
+    const esito = schemaPatchModello.safeParse(richiesta.body ?? {});
+    if (!esito.success) throw ErroreApi.datiNonValidi('Modifiche al modello non valide.');
     const m = esito.data;
 
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
       const { tenantId } = richiesta.identita;
-      const template = await templatePerId(client, richiesta.params.id);
-      if (!template) throw ErroreApi.nonTrovato('Template inesistente.');
+      const modello = await modelloPerId(client, richiesta.params.id);
+      if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
 
-      if (m.nome !== undefined && m.nome !== template.nome) {
-        await client.query(`update velia.template set nome = $3 where id = $1 and tenant_id = $2`, [
-          template.id,
-          tenantId,
-          m.nome,
-        ]);
+      const nome = m.nome ?? modello.nome;
+      await client.query(
+        `update velia.template set nome = $3, descrizione = $4, intestazione_agenzia = $5 where id = $1 and tenant_id = $2`,
+        [modello.id, tenantId, nome, m.descrizione ?? modello.descrizione, m.intestazioneAgenzia ?? modello.intestazione_agenzia],
+      );
+      if (nome !== modello.nome) {
+        await registraStorico(client, richiesta.identita, 'modifica', 'template', `Il modello «${modello.nome}» si chiama ora «${nome}»`);
+      }
+      if (m.descrizione !== undefined && m.descrizione !== modello.descrizione) {
+        await registraStorico(client, richiesta.identita, 'modifica', 'template', `Cambiato «quando usarlo» di «${nome}»`);
+      }
+      if (m.intestazioneAgenzia !== undefined && m.intestazioneAgenzia !== modello.intestazione_agenzia) {
         await registraStorico(
           client,
           richiesta.identita,
           'modifica',
           'template',
-          `Il template «${template.nome}» si chiama ora «${m.nome}»`,
+          m.intestazioneAgenzia
+            ? `«${nome}» esce con l'intestazione dell'agenzia`
+            : `«${nome}» tiene la sua intestazione`,
         );
       }
-      const nome = m.nome ?? template.nome;
-
-      if (m.predefinito !== undefined && m.predefinito !== template.predefinito) {
-        if (m.predefinito) {
-          await client.query(
-            `update velia.template set predefinito = false
-             where tenant_id = $1 and formato = $2 and predefinito`,
-            [tenantId, template.formato],
-          );
-        }
-        await client.query(`update velia.template set predefinito = $3 where id = $1 and tenant_id = $2`, [
-          template.id,
-          tenantId,
-          m.predefinito,
-        ]);
-        await registraStorico(
-          client,
-          richiesta.identita,
-          'modifica',
-          'template',
-          m.predefinito
-            ? `«${nome}» è il template predefinito per ${template.formato.toUpperCase()}`
-            : `«${nome}» non è più il predefinito per ${template.formato.toUpperCase()}`,
-        );
-      }
-      return elencoTemplate(client, tenantId);
+      return elencoModelli(client, tenantId);
     });
   });
 
-  /** Riga e file insieme. Gli agenti che lo usavano restano senza template (FK `set null`). */
+  /** Riga, file e anteprima insieme. */
   app.delete<{ Params: { id: string } }>('/api/template/:id', async (richiesta, risposta) => {
     richiediAmministratore(richiesta);
     await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const template = await templatePerId(client, richiesta.params.id);
-      if (!template) throw ErroreApi.nonTrovato('Template inesistente.');
+      const modello = await modelloPerId(client, richiesta.params.id);
+      if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
       await client.query(`delete from velia.template where id = $1 and tenant_id = $2`, [
-        template.id,
+        modello.id,
         richiesta.identita.tenantId,
       ]);
-      await archivio().elimina([template.path_file]);
-      await registraStorico(
-        client,
-        richiesta.identita,
-        'eliminazione',
-        'template',
-        `Eliminato il template «${template.nome}»`,
-      );
+      await archivio().elimina([modello.path_file, ...(modello.path_anteprima ? [modello.path_anteprima] : [])]);
+      await registraStorico(client, richiesta.identita, 'eliminazione', 'template', `Eliminato il modello «${modello.nome}»`);
     });
     return risposta.code(204).send();
   });
 
-  /**
-   * RF-D-11: l'anteprima, sempre PDF. Un template PDF si mostra com'è. Word
-   * ed Excel li legge solo la sandbox, che ne copia l'impaginazione: finché
-   * non arrivano i modelli di riferimento con l'anteprima convertita (fase 3
-   * del piano) qui c'è una scheda che lo dice, sulla carta dell'agenzia.
-   */
+  /** L'anteprima, sempre PDF: il file stesso, o la conversione quando è pronta. */
   app.get<{ Params: { id: string } }>('/api/template/:id/anteprima', async (richiesta, risposta) => {
-    const { template, fasce } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const template = await templatePerId(client, richiesta.params.id);
-      return {
-        template,
-        fasce: template
-          ? await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, template.nome)
-          : undefined,
-      };
-    });
-    if (!template || !fasce) throw ErroreApi.nonTrovato('Template inesistente.');
-
-    if (template.formato === 'pdf') {
-      return inviaFile(risposta, await archivio().scarica(template.path_file), 'application/pdf', 'inline');
+    const modello = await conIdentita(poolDb(), richiesta.identita, (client) => modelloPerId(client, richiesta.params.id));
+    if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
+    const percorso = modello.formato === 'pdf' ? modello.path_file : modello.anteprima === 'pronta' ? modello.path_anteprima : null;
+    if (!percorso) {
+      throw new ErroreApi(404, 'ANTEPRIMA_NON_PRONTA', `L'anteprima di «${modello.nome}» non è disponibile: scarica il file.`);
     }
-    const testo = [
-      `«${template.nome}» è un file ${template.formato.toUpperCase()}.`,
-      '',
-      'Si usa con «Genera documento da template»: la sandbox lo apre, ne copia impaginazione, stili e tabelle e ci mette il contenuto nuovo.',
-    ].join('\n');
-    const pdf = await componiPdf({ titolo: template.nome, blocchi: analizzaMarkdown(testo), fonti: [], fasce });
-    return inviaFile(risposta, pdf, 'application/pdf', 'inline');
+    return inviaFile(risposta, await archivio().scarica(percorso), 'application/pdf', 'inline');
+  });
+
+  /** Il file originale, com'è stato caricato. */
+  app.get<{ Params: { id: string } }>('/api/template/:id/file', async (richiesta, risposta) => {
+    const modello = await conIdentita(poolDb(), richiesta.identita, (client) => modelloPerId(client, richiesta.params.id));
+    if (!modello) throw ErroreApi.nonTrovato('Modello inesistente.');
+    return inviaFile(
+      risposta,
+      await archivio().scarica(modello.path_file),
+      MIME[modello.formato],
+      `attachment; filename="${nomeFileGenerato(modello.nome, modello.formato)}"`,
+    );
   });
 
   // --- Esportazione della chat (RF-C-10) -----------------------------------
@@ -287,8 +244,7 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
       if (!E_UUID.test(richiesta.params.id) || !E_UUID.test(richiesta.params.mid)) {
         throw ErroreApi.nonTrovato('Messaggio inesistente.');
       }
-      const scelta = esito.data;
-      const testoSolo = scelta.formato === 'txt' && !scelta.templateId;
+      const { formato } = esito.data;
 
       const letto = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const m = await client.query<{ testo: string; citazioni: Citazione[]; titolo: string }>(
@@ -298,28 +254,21 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
           [richiesta.params.id, richiesta.params.mid, richiesta.identita.tenantId],
         );
         const messaggio = m.rows[0];
-        if (!messaggio || testoSolo) return { messaggio };
+        if (!messaggio || formato === 'txt') return { messaggio };
         const titolo = messaggio.titolo.trim() || NOME_DOCUMENTO;
-        return {
-          messaggio,
-          formato: await formatoDaScelta(client, {
-            ...(scelta.templateId && { templateId: scelta.templateId }),
-            ...(scelta.formato && scelta.formato !== 'txt' && { formato: scelta.formato }),
-          }),
-          fasce: await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
-        };
+        return { messaggio, fasce: await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo) };
       });
       const { messaggio } = letto;
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
 
-      if (!letto.formato || !letto.fasce) {
+      if (formato === 'txt' || !letto.fasce) {
         const testo = testoSemplice(messaggio.testo, fontiDaCitazioni(messaggio.citazioni));
         return inviaFile(risposta, Buffer.from(testo, 'utf8'), 'text/plain; charset=utf-8', 'attachment; filename="risposta.txt"');
       }
 
       const titolo = messaggio.titolo.trim() || NOME_DOCUMENTO;
       const file = await generaDocumento({
-        formato: letto.formato,
+        formato,
         nome: titolo,
         titolo,
         testo: messaggio.testo,
@@ -351,63 +300,44 @@ export async function registraStorico(
   );
 }
 
-function tipoMime(formato: FormatoGenerazione): string {
-  return {
-    pdf: 'application/pdf',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  }[formato];
-}
-
-/**
- * Il controllo all'ingresso (RF-D-12): formato dall'estensione, firma dei
- * byte, e che il file si apra davvero.
- */
-async function verificaTemplate(nome: string, contenuto: Buffer, troncato: boolean): Promise<FormatoGenerazione> {
+/** Il controllo all'ingresso: formato dall'estensione, firma dei byte, e che il file si apra davvero. */
+async function verificaModello(nome: string, contenuto: Buffer, troncato: boolean): Promise<FormatoModello> {
   if (troncato) {
-    throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${nome}» supera il limite per i template.`);
+    throw new ErroreApi(413, 'FILE_TROPPO_GRANDE', `«${nome}» supera il limite per i modelli.`);
   }
-  const estensione = /\.(pdf|docx|xlsx|pptx)$/i.exec(nome)?.[1]?.toLowerCase();
+  const estensione = /\.(pdf|docx|xlsx|pptx)$/i.exec(nome)?.[1]?.toLowerCase() as FormatoModello | undefined;
   if (!estensione) {
     throw new ErroreApi(
       400,
       'FORMATO_NON_AMMESSO',
-      `«${nome}»: i template accettano PDF, DOCX o XLSX.`,
+      `«${nome}»: i modelli possono essere PDF, Word (.docx), Excel (.xlsx) o PowerPoint (.pptx).`,
     );
   }
-  if (estensione === 'pptx') {
-    throw new ErroreApi(
-      415,
-      'FORMATO_NON_SUPPORTATO',
-      `«${nome}»: la generazione PPTX non è ancora disponibile - carica un template PDF, DOCX o XLSX.`,
-    );
-  }
+  const illeggibile = (): ErroreApi =>
+    new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${NOME_FORMATO[estensione]} leggibile.`);
 
   if (estensione === 'pdf') {
-    if (!contenuto.subarray(0, 1024).includes(FIRMA_PDF)) {
-      throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un PDF leggibile.`);
-    }
+    if (!contenuto.subarray(0, 1024).includes(FIRMA_PDF)) throw illeggibile();
     try {
-      await PDFDocument.load(contenuto);
+      await PDFDocument.load(contenuto, { ignoreEncryption: true });
     } catch {
-      throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un PDF leggibile.`);
+      throw illeggibile();
     }
     return 'pdf';
   }
 
-  if (!contenuto.subarray(0, 4).includes(FIRMA_ZIP)) {
-    throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${estensione.toUpperCase()} leggibile.`);
-  }
+  if (!contenuto.subarray(0, 4).includes(FIRMA_ZIP)) throw illeggibile();
   try {
-    if (estensione === 'docx') {
-      if (!new PizZip(contenuto).file('word/document.xml')) throw new Error('senza word/document.xml');
-    } else {
+    if (estensione === 'xlsx') {
       await new ExcelJS.Workbook().xlsx.load(contenuto as unknown as ExcelJS.Buffer);
+    } else {
+      const parte = estensione === 'docx' ? 'word/document.xml' : 'ppt/presentation.xml';
+      if (!new PizZip(contenuto).file(parte)) throw new Error(`senza ${parte}`);
     }
   } catch {
-    throw new ErroreApi(400, 'FORMATO_NON_AMMESSO', `«${nome}» non è un file ${estensione.toUpperCase()} leggibile.`);
+    throw illeggibile();
   }
-  return estensione as 'docx' | 'xlsx';
+  return estensione;
 }
 
 function inviaFile(

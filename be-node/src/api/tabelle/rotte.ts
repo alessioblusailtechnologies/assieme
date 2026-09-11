@@ -16,10 +16,10 @@ import {
   type TabellaAnalisi,
   type TabellaRiepilogo,
 } from '../../contratto/tabelle.js';
-import { schemaEsporta as schemaEsportaTemplate } from '../../contratto/template.js';
+import { schemaEsporta } from '../../contratto/template.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
-import { fasceDelTenant, formatoDaScelta } from '../../generazione/catalogo.js';
+import { fasceDelTenant } from '../../generazione/catalogo.js';
 import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
 import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
@@ -377,18 +377,18 @@ export function registraRotteTabelle(app: FastifyInstance, opzioni: OpzioniTabel
   /**
    * RF-C-14: l'esportazione della tabella, XLSX in particolare: la tabella
    * diventa il contenuto, col layout di VELIA e l'intestazione dell'agenzia
-   * (in Excel, nelle fasce di stampa). Un template scelto dice ormai solo il
-   * formato. Le celle in attesa escono come «—», come nel mock.
+   * (in Excel, nelle fasce di stampa). Si sceglie il formato e basta. Le
+   * celle in attesa escono come «—», come nel mock.
    */
   app.post<{ Params: { id: string } }>('/api/tabelle/:id/esporta', async (richiesta, risposta) => {
-    const esito = schemaEsportaTemplate.safeParse(richiesta.body ?? {});
+    const esito = schemaEsporta.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Indica il formato su cui esportare.');
+    const { formato } = esito.data;
 
-    const { tabella, formato, fasce } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+    const { tabella, fasce } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const tabella = await tabellaCompleta(client, controllaId(richiesta.params.id));
       return {
         tabella,
-        formato: await formatoDaScelta(client, esito.data),
         fasce: tabella ? await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, tabella.titolo) : undefined,
       };
     });

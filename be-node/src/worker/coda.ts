@@ -13,7 +13,15 @@ import { configurazione } from '../config.js';
  */
 const coda = (): string => configurazione().CODA_LAVORI;
 
-export type TipoJob = 'prova' | 'ingestion' | 'interrogazione' | 'tabella' | 'agente' | 'memoria';
+export type TipoJob =
+  | 'prova'
+  | 'ingestion'
+  | 'interrogazione'
+  | 'tabella'
+  | 'agente'
+  | 'memoria'
+  /** L'anteprima in PDF di un modello di riferimento Word, Excel o PowerPoint (11/09/2026). */
+  | 'anteprima-modello';
 
 export interface Job {
   id: string;

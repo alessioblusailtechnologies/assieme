@@ -1,146 +1,232 @@
-@if (errore()) {
-  <ui-stato-vuoto
-    icona="errore"
-    titolo="Non siamo riusciti a caricare i template"
-    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
-  >
-    <button uiBottone variante="primario" type="button" (click)="riprova()">
-      <ui-icon name="riprova" [size]="15" />
-      <span>Riprova</span>
-    </button>
-  </ui-stato-vuoto>
-} @else if (inCaricamento() && !template().length) {
-  <div class="scheletri">
-    <ui-scheletro [numeroRighe]="3" />
-    <ui-scheletro [numeroRighe]="3" />
-  </div>
-} @else {
-  @if (template().length) {
-    <ul class="griglia-template">
-      @for (t of template(); track t.id) {
-        <li class="template" [class.is-predefinito]="t.predefinito">
-          <div class="template__testa">
-            <span class="mono template__formato">{{ t.formato }}</span>
-            @if (t.predefinito) {
-              <ui-tag variante="accento">predefinito per {{ t.formato }}</ui-tag>
-            }
-          </div>
+<!-- Tutta la scheda è area di rilascio: un modello si lascia dove capita. -->
+<ui-zona-caricamento
+  aspetto="trasparente"
+  formati=".pdf,.docx,.xlsx,.pptx"
+  descrizioneFormati="PDF, Word, Excel, PowerPoint"
+  (scelti)="carica($event)"
+>
+  <div class="scheda">
+    <div class="testa">
+      <p class="spiega">
+        I documenti dell'agenzia da cui partire con «Genera da modello» in chat: una proposta, un
+        report, un modulo, una presentazione. VELIA ne copia struttura e stile e ci mette il
+        contenuto nuovo. La riga «quando usarlo» aiuta la chat a scegliere quello giusto.
+      </p>
+      @if (puoGestire() && modelli().length) {
+        <button uiBottone type="button" (click)="scegliFile()">
+          <ui-icon name="carica" [size]="15" />
+          <span>Carica modelli</span>
+        </button>
+      }
+    </div>
 
-          @if (inRinomina() === t.id) {
-            <input
-              uiCampo
-              class="template__rinomina"
-              type="text"
-              [value]="nuovoNome()"
-              (input)="nuovoNome.set($any($event.target).value)"
-              (keydown.enter)="confermaRinomina(t)"
-              (keydown.escape)="annullaRinomina()"
-              (blur)="confermaRinomina(t)"
-              aria-label="Nuovo nome del template"
-            />
-          } @else {
-            <h2 class="template__nome">{{ t.nome }}</h2>
-          }
-          <p class="template__descrizione">{{ t.descrizione }}</p>
+    @if (coda().length) {
+      <ui-coda-caricamento [file]="coda()" esitoCompletato="caricato" (chiudi)="svuotaCoda()" />
+    }
 
-          <div class="template__azioni">
-            <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(t)">
-              <ui-icon name="documento" [size]="14" />
-              <span>Anteprima</span>
-            </button>
+    @if (errore()) {
+      <ui-stato-vuoto
+        icona="errore"
+        titolo="Non siamo riusciti a caricare i modelli"
+        descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+      >
+        <button uiBottone variante="primario" type="button" (click)="riprova()">
+          <ui-icon name="riprova" [size]="15" />
+          <span>Riprova</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else if (inCaricamento() && !modelli().length) {
+      <div class="scheletri">
+        <ui-scheletro [numeroRighe]="2" />
+        <ui-scheletro [numeroRighe]="2" />
+      </div>
+    } @else if (!modelli().length) {
+      <ui-stato-vuoto
+        icona="documento"
+        titolo="Nessun modello di riferimento"
+        [descrizione]="
+          puoGestire()
+            ? 'Carica un documento dell’agenzia, o trascinalo qui: PDF, Word, Excel o PowerPoint.'
+            : 'L’amministratore non ne ha ancora caricati. «Esporta come» resta, col layout di VELIA e l’intestazione dell’agenzia.'
+        "
+      >
+        @if (puoGestire()) {
+          <button uiBottone variante="primario" type="button" (click)="scegliFile()">
+            <ui-icon name="carica" [size]="15" />
+            <span>Carica un modello</span>
+          </button>
+        }
+      </ui-stato-vuoto>
+    } @else {
+      <ul class="elenco">
+        @for (m of modelli(); track m.id) {
+          <li class="modello">
+            <div class="modello__riga">
+              <span class="mono modello__formato">{{ nomeFormato[m.formato] }}</span>
 
-            @if (puoGestire()) {
-              @if (!t.predefinito) {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="testo"
-                  type="button"
-                  (click)="impostaPredefinito(t, true)"
-                >
-                  <span>Rendi predefinito</span>
-                </button>
+              @if (inRinomina() === m.id) {
+                <input
+                  uiCampo
+                  class="modello__rinomina"
+                  type="text"
+                  maxlength="120"
+                  [value]="nuovoNome()"
+                  (input)="nuovoNome.set($any($event.target).value)"
+                  (keydown.enter)="confermaRinomina(m)"
+                  (keydown.escape)="annullaRinomina()"
+                  (blur)="confermaRinomina(m)"
+                  aria-label="Nuovo nome del modello"
+                />
               } @else {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="testo"
-                  type="button"
-                  (click)="impostaPredefinito(t, false)"
-                >
-                  <span>Togli predefinito</span>
-                </button>
+                <h2 class="modello__nome">{{ m.nome }}</h2>
               }
 
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                type="button"
-                (click)="iniziaRinomina(t)"
-              >
-                <span>Rinomina</span>
-              </button>
+              <div class="modello__azioni">
+                @switch (m.anteprima) {
+                  @case ('pronta') {
+                    <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(m)">
+                      <ui-icon name="documento" [size]="14" />
+                      <span>Anteprima</span>
+                    </button>
+                  }
+                  @case ('in-corso') {
+                    <span class="mono modello__stato">
+                      <ui-icon name="in-corso" [size]="13" />
+                      anteprima in preparazione
+                    </span>
+                  }
+                  @default {
+                    <button
+                      uiBottone
+                      dimensione="piccolo"
+                      type="button"
+                      [disabled]="inScaricamento() === m.id"
+                      (click)="scarica(m)"
+                    >
+                      <ui-icon name="scarica" [size]="14" />
+                      <span>Scarica</span>
+                    </button>
+                  }
+                }
+                @if (puoGestire()) {
+                  <button
+                    type="button"
+                    class="modello__altro"
+                    [attr.aria-label]="'Altre azioni su ' + m.nome"
+                    (click)="apriMenu($event, m)"
+                  >
+                    <ui-icon name="altre-azioni" [size]="16" />
+                  </button>
+                }
+              </div>
+            </div>
 
-              @if (confermaEliminazione() === t.id) {
+            @if (puoGestire()) {
+              <label class="modello__campo">
+                <span class="modello__etichetta">Quando usarlo</span>
+                <input
+                  uiCampo
+                  class="modello__descrizione"
+                  type="text"
+                  maxlength="300"
+                  placeholder="Per esempio: le proposte di rinnovo RC Auto per i clienti privati"
+                  [value]="m.descrizione"
+                  (keydown.enter)="$any($event.target).blur()"
+                  (blur)="salvaDescrizione(m, $any($event.target).value)"
+                />
+              </label>
+
+              <div
+                class="modello__campo"
+                role="radiogroup"
+                [attr.aria-label]="'Intestazione di ' + m.nome"
+              >
+                <span class="modello__etichetta">Intestazione</span>
+                <div class="segmenti">
+                  <button
+                    type="button"
+                    role="radio"
+                    class="segmento"
+                    [class.is-scelto]="m.intestazioneAgenzia"
+                    [attr.aria-checked]="m.intestazioneAgenzia"
+                    (click)="impostaIntestazione(m, true)"
+                  >
+                    dell'agenzia
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    class="segmento"
+                    [class.is-scelto]="!m.intestazioneAgenzia"
+                    [attr.aria-checked]="!m.intestazioneAgenzia"
+                    (click)="impostaIntestazione(m, false)"
+                  >
+                    la sua
+                  </button>
+                </div>
+                <span class="modello__nota">
+                  {{
+                    m.intestazioneAgenzia
+                      ? 'Il documento esce con l’intestazione e il piè di pagina dell’agenzia.'
+                      : 'Resta quella del modello: per i documenti da restituire come sono.'
+                  }}
+                </span>
+              </div>
+            } @else {
+              @if (m.descrizione) {
+                <p class="modello__testo">{{ m.descrizione }}</p>
+              }
+              <p class="modello__nota">
+                {{
+                  m.intestazioneAgenzia
+                    ? 'Con l’intestazione dell’agenzia'
+                    : 'Con la sua intestazione'
+                }}
+              </p>
+            }
+
+            @if (confermaEliminazione() === m.id) {
+              <div class="modello__conferma" role="alert">
+                <span>Eliminare «{{ m.nome }}»? La chat non potrà più usarlo.</span>
                 <button
                   uiBottone
                   dimensione="piccolo"
                   variante="pericolo"
                   type="button"
-                  (click)="elimina(t)"
+                  (click)="elimina(m)"
                 >
-                  <span>Elimina davvero</span>
+                  Elimina
                 </button>
-              } @else {
                 <button
                   uiBottone
                   dimensione="piccolo"
                   variante="testo"
                   type="button"
-                  (click)="elimina(t)"
+                  (click)="confermaEliminazione.set(undefined)"
                 >
-                  <ui-icon name="elimina" [size]="13" />
-                  <span>Elimina</span>
+                  Annulla
                 </button>
-              }
+              </div>
             }
-          </div>
-        </li>
-      }
-    </ul>
-  } @else {
-    <ui-stato-vuoto
-      icona="documento"
-      titolo="Nessun template caricato"
-      descrizione="Senza template, «Genera documento» impagina da zero, in modo sobrio."
-    />
-  }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</ui-zona-caricamento>
 
-  @if (puoGestire()) {
-    <section class="carica" aria-label="Carica un template dell'agenzia">
-      <p class="mono">Carica un template</p>
-      <p class="carica__spiega">
-        Un documento dell'agenzia da prendere a modello: una lettera, un preventivo, una carta
-        intestata. Non servono segnaposto. Il nome del file diventa il nome del template.
-      </p>
-      <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx" />
-      @if (coda().length) {
-        <ui-coda-caricamento [file]="coda()" (chiudi)="svuotaCoda()" />
-      }
-    </section>
-  }
-}
+<ui-menu-azioni #menuModello [voci]="vociMenu()" />
 
-<!-- Anteprima dell'impaginazione (RF-D-11), sempre come PDF -->
+<!-- L'anteprima, sempre come PDF -->
 <ui-cassetto
   [aperto]="!!anteprima()"
   (apertoChange)="!$event && anteprima.set(undefined)"
   [titolo]="anteprima() ? 'Anteprima - ' + anteprima()!.nome : ''"
+  larghezza="min(760px, 96vw)"
 >
-  @if (anteprima(); as t) {
+  @if (anteprima(); as m) {
     <div class="anteprima">
-      <ui-visualizzatore-pdf class="anteprima__pdf" [fileUrl]="urlAnteprima(t)" />
+      <ui-visualizzatore-pdf class="anteprima__pdf" [fileUrl]="urlAnteprima(m)" />
     </div>
   }
 </ui-cassetto>

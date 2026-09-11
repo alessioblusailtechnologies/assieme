@@ -154,7 +154,7 @@ describe.skipIf(!pronto)('tabelle di analisi col progetto Supabase (motore finto
 
   beforeAll(async () => {
     radice = await mkdtemp(join(tmpdir(), 'velia-tabelle-'));
-    app = creaApp({ logger: false, tabelle: { archivio }, template: { archivio } });
+    app = creaApp({ logger: false, tabelle: { archivio } });
     await pulizia();
     tokenAdmin = await accedi(app, EMAIL_ADMIN);
     tokenOperatore = await accedi(app, EMAIL_OPERATORE);
@@ -346,7 +346,7 @@ describe.skipIf(!pronto)('tabelle di analisi col progetto Supabase (motore finto
   });
 
   it("l'esportazione passa dalla Fase 4: XLSX su colonne vere, nome file dal titolo della tabella", async () => {
-    /* Senza template caricati per il formato: il layout di piattaforma. */
+    /* Il layout di VELIA con l'intestazione dell'agenzia: si sceglie solo il formato. */
     const r = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { formato: 'xlsx' });
     expect(r.statusCode).toBe(200);
     expect(r.headers['content-type']).toContain('spreadsheetml');
@@ -365,9 +365,8 @@ describe.skipIf(!pronto)('tabelle di analisi col progetto Supabase (motore finto
     expect(pdf.statusCode).toBe(200);
     expect(pdf.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
 
-    const ignoto = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { templateId: 'tpl-boh' });
-    expect(ignoto.statusCode).toBe(404);
-    expect(ignoto.json()).toMatchObject({ messaggio: 'Template inesistente.' });
+    const senzaFormato = await richiedi('POST', `/api/tabelle/${tabellaId}/esporta`, tokenAdmin, { templateId: 'tpl-boh' });
+    expect(senzaFormato.statusCode).toBe(400);
   });
 
   it('un id malformato è un 404, non un errore SQL; DELETE → 204 e la tabella sparisce', async () => {

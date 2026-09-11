@@ -43,7 +43,6 @@ interface RigaLavoro {
   istruzioni: string;
   fonti: NuovaFonteAgente[];
   formato_output: 'testo' | 'tabella' | 'documento';
-  template_output_id: string | null;
   parametri: ParametroAgente[];
   creato_da: string | null;
   modello_motore: string | null;
@@ -68,7 +67,7 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
     const r = await db.query<RigaLavoro>(
       `select e.id as esecuzione_id, e.stato, e.modalita, e.parametri as parametri_avvio, e.log,
               a.id as agente_id, a.tenant_id, a.nome, a.istruzioni, a.fonti, a.formato_output,
-              a.template_output_id, a.parametri, a.creato_da, t.modello_motore
+              a.parametri, a.creato_da, t.modello_motore
        from velia.agenti_esecuzioni e
        join velia.agenti a on a.id = e.agente_id
        join velia.tenant t on t.id = a.tenant_id
@@ -180,13 +179,8 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         output = visibile;
       }
 
-      const template = lavoro.template_output_id
-        ? await db.query<{ nome: string }>(`select nome from velia.template where id = $1`, [
-            lavoro.template_output_id,
-          ])
-        : undefined;
-      if (template?.rows[0]) {
-        await annota('info', `Documento generato sul template «${template.rows[0].nome}».`);
+      if (lavoro.formato_output === 'documento') {
+        await annota('info', 'Documento pronto da scaricare, in PDF con l’intestazione dell’agenzia.');
       }
 
       await annota(
@@ -196,14 +190,9 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
       await db.query(
         `update velia.agenti_esecuzioni
          set stato = 'completata', conclusa_il = now(), output = $2, citazioni = $3,
-             template_output_id = $4, errore = null
+             errore = null
          where id = $1`,
-        [
-          esecuzioneId,
-          output,
-          JSON.stringify(citazioni),
-          template?.rows[0] ? lavoro.template_output_id : null,
-        ],
+        [esecuzioneId, output, JSON.stringify(citazioni)],
       );
     } catch (errore) {
       const definitivo = errore instanceof ErroreNonRitentabile || job.tentativi >= 3;

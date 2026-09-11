@@ -48,7 +48,6 @@ export interface Agente {
   istruzioni: string;
   fonti: FonteAgente[];
   formatoOutput: FormatoOutputAgente;
-  templateOutputId?: string;
   parametri: ParametroAgente[];
   pianificazione?: Pianificazione;
   attivo: boolean;
@@ -150,7 +149,6 @@ export const schemaNuovoAgente = z.object({
   istruzioni: z.string().trim().min(1).max(6000),
   fonti: z.array(schemaFonte).min(1).max(20),
   formatoOutput: z.enum(['testo', 'tabella', 'documento']).default('testo'),
-  templateOutputId: z.string().min(1).optional(),
   parametri: z.array(schemaParametro).max(10).default([]),
   pianificazione: schemaPianificazione.optional(),
 });
@@ -162,7 +160,6 @@ export const schemaModificheAgente = z.object({
   istruzioni: z.string().trim().min(1).max(6000).optional(),
   fonti: z.array(schemaFonte).min(1).max(20).optional(),
   formatoOutput: z.enum(['testo', 'tabella', 'documento']).optional(),
-  templateOutputId: z.string().min(1).nullable().optional(),
   parametri: z.array(schemaParametro).max(10).optional(),
   pianificazione: schemaPianificazione.nullable().optional(),
   attivo: z.boolean().optional(),

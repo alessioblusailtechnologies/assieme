@@ -1,113 +1,105 @@
 import type pg from 'pg';
 
 import type { Citazione } from '../contratto/conversazioni.js';
-import { ErroreApi } from '../contratto/errori.js';
 import {
   INTESTAZIONE_INIZIALE,
   immaginiDellaFascia,
   schemaIntestazione,
   type Intestazione,
 } from '../contratto/intestazione.js';
-import type { FormatoGenerazione, RichiestaEsporta, TemplateOutput } from '../contratto/template.js';
+import type { FormatoModello, ModelloRiferimento, StatoAnteprima } from '../contratto/template.js';
 import type { ArchivioFile } from '../worker/ingestion/archivio-file.js';
-import type { FormatoDocumento } from './generatore.js';
 import { dimensioniImmagine, tipoImmagine, type FasceDocumento, type ImmagineFascia } from './intestazione.js';
 
 /**
- * Il catalogo dei template e l'intestazione dell'agenzia, letti dal
+ * I modelli di riferimento e l'intestazione dell'agenzia, letti dal
  * database: le funzioni che API (esporta chat/tabelle, documento degli
  * agenti) e worker (i tool dei documenti in chat, la sandbox) condividono.
  * Niente Fastify qui.
  *
- * Dall'11/09/2026 i template servono solo alla sandbox («Genera documento
- * da template»); i documenti deterministici escono col layout di VELIA e
- * l'intestazione dell'agenzia (`fasceDelTenant`).
+ * Dall'11/09/2026 (fase 3 di `PIANO-INTESTAZIONE-MODELLI.md`) i modelli
+ * servono solo alla sandbox («Genera da modello»); i documenti
+ * deterministici escono col layout di VELIA e l'intestazione dell'agenzia
+ * (`fasceDelTenant`).
  */
 
-export interface RigaTemplate {
+export interface RigaModello {
   id: string;
   tenant_id: string;
   nome: string;
-  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  formato: FormatoModello;
   descrizione: string;
-  predefinito: boolean;
+  intestazione_agenzia: boolean;
+  anteprima: StatoAnteprima;
   path_file: string;
+  path_anteprima: string | null;
+  created_at: Date;
 }
 
-/**
- * Il template risolto per una generazione: un file del tenant, oppure il
- * layout di piattaforma per il formato (`personalizzato: false`, senza file).
- */
-export interface TemplateRisolto {
-  id?: string;
-  nome: string;
-  formato: FormatoGenerazione;
-  personalizzato: boolean;
-  path_file?: string;
-}
+const COLONNE = `id, tenant_id, nome, formato, descrizione, intestazione_agenzia, anteprima, path_file,
+  path_anteprima, created_at`;
 
-/** Il nome del layout di piattaforma: dà il nome al file quando non c'è un template. */
-export const NOME_LAYOUT_PIATTAFORMA = 'Documento VELIA';
+/** Dove sta il file di un modello, e la sua anteprima convertita in PDF. */
+export const percorsoModello = (tenantId: string, id: string, formato: string): string =>
+  `tenant/${tenantId}/template/${id}.${formato}`;
 
-const COLONNE = `id, tenant_id, nome, formato, descrizione, predefinito, path_file`;
+export const percorsoAnteprimaModello = (tenantId: string, id: string): string =>
+  `tenant/${tenantId}/template/${id}-anteprima.pdf`;
 
-export async function templatePerId(client: pg.ClientBase, id: string): Promise<RigaTemplate | undefined> {
-  const r = await client.query<RigaTemplate>(`select ${COLONNE} from velia.template where id = $1`, [id]);
+export async function modelloPerId(client: pg.ClientBase, id: string): Promise<RigaModello | undefined> {
+  const r = await client.query<RigaModello>(`select ${COLONNE} from velia.template where id = $1`, [id]);
   return r.rows[0];
 }
 
-/** I template del tenant, per data di caricamento. */
-export async function templateDelTenant(client: pg.ClientBase, tenantId: string): Promise<RigaTemplate[]> {
-  const r = await client.query<RigaTemplate>(
+/** I modelli del tenant, per data di caricamento. */
+export async function modelliDelTenant(client: pg.ClientBase, tenantId: string): Promise<RigaModello[]> {
+  const r = await client.query<RigaModello>(
     `select ${COLONNE} from velia.template where tenant_id = $1 order by created_at, id`,
     [tenantId],
   );
   return r.rows;
 }
 
-export async function elencoTemplate(client: pg.ClientBase, tenantId: string): Promise<TemplateOutput[]> {
-  return (await templateDelTenant(client, tenantId)).map((r) => ({
+export function versoModello(r: RigaModello): ModelloRiferimento {
+  return {
     id: r.id,
     nome: r.nome,
     formato: r.formato,
     descrizione: r.descrizione,
-    predefinito: r.predefinito,
-  }));
+    intestazioneAgenzia: r.intestazione_agenzia,
+    anteprima: r.formato === 'pdf' ? 'pronta' : r.anteprima,
+    caricatoIl: r.created_at.toISOString(),
+  };
+}
+
+export async function elencoModelli(client: pg.ClientBase, tenantId: string): Promise<ModelloRiferimento[]> {
+  return (await modelliDelTenant(client, tenantId)).map(versoModello);
 }
 
 /**
- * La risoluzione di una scelta di esportazione, unica per chat, tabelle e
- * agenti: un template preciso (404 se non c'è, 415 se PPTX), oppure il
- * predefinito del formato, oppure il layout di piattaforma per quel formato.
+ * Il modello dal nome che il motore della chat passa, come l'ha detto
+ * l'utente: preciso (senza maiuscole) o l'unico che lo contiene, oppure
+ * l'id. Pura: provata a parte.
  */
-export async function risolviTemplate(
-  client: pg.ClientBase,
-  tenantId: string,
-  scelta: RichiestaEsporta,
-): Promise<TemplateRisolto> {
-  if (scelta.templateId) {
-    const riga = await templatePerId(client, scelta.templateId);
-    if (!riga) throw ErroreApi.nonTrovato('Template inesistente.');
-    return versoRisolto(riga);
-  }
-  return layoutPerFormato(await templateDelTenant(client, tenantId), scelta.formato!);
-}
-
-/** Fra i template dati, il predefinito del formato; altrimenti il layout di piattaforma. */
-export function layoutPerFormato(template: RigaTemplate[], formato: FormatoGenerazione): TemplateRisolto {
-  const predefinito = template.find((t) => t.formato === formato && t.predefinito);
-  return predefinito ? versoRisolto(predefinito) : { nome: NOME_LAYOUT_PIATTAFORMA, formato, personalizzato: false };
-}
-
-export function versoRisolto(riga: RigaTemplate): TemplateRisolto {
-  if (riga.formato === 'pptx') {
-    throw new ErroreApi(
-      415,
-      'FORMATO_NON_SUPPORTATO',
-      'La generazione PPTX non è ancora disponibile: scegli un template PDF, DOCX o XLSX.',
-    );
-  }
-  return { id: riga.id, nome: riga.nome, formato: riga.formato, personalizzato: true, path_file: riga.path_file };
+export function scegliModello(
+  modelli: RigaModello[],
+  nome: string,
+): { esito: 'ok'; modello: RigaModello } | { esito: 'non-trovato'; motivo: string } {
+  const cercato = nome.trim().toLowerCase();
+  const preciso = modelli.find((m) => m.id === cercato || m.nome.toLowerCase() === cercato);
+  const parziali = modelli.filter((m) => m.nome.toLowerCase().includes(cercato));
+  const scelto = preciso ?? (parziali.length === 1 ? parziali[0] : undefined);
+  if (scelto) return { esito: 'ok', modello: scelto };
+  const disponibili = modelli.length
+    ? `Modelli dell’agenzia: ${modelli.map((m) => `«${m.nome}» (${m.formato})`).join(', ')}.`
+    : 'L’agenzia non ha modelli caricati: procedi senza, o indica solo il formato.';
+  return {
+    esito: 'non-trovato',
+    motivo:
+      parziali.length > 1
+        ? `Più modelli corrispondono a «${nome}»: ${parziali.map((m) => `«${m.nome}»`).join(', ')}. Chiedi all’utente quale vuole.`
+        : `Nessun modello chiamato «${nome}». ${disponibili}`,
+  };
 }
 
 /** Le fonti nella forma del mock: «Titolo — art. X, p. N». */
@@ -121,19 +113,6 @@ export function fontiDaCitazioni(citazioni: Citazione[]): string[] {
       .join(', ');
     return `${c.documentoTitolo} - ${posizione}`;
   });
-}
-
-/**
- * Il formato di un'esportazione deterministica. Un template scelto (dalle
- * tabelle e dagli agenti, finché non passano ai formati: fase 3 del piano)
- * vale ormai solo per il suo formato; l'impaginazione è sempre quella di
- * VELIA con l'intestazione dell'agenzia.
- */
-export async function formatoDaScelta(client: pg.ClientBase, scelta: RichiestaEsporta): Promise<FormatoDocumento> {
-  if (!scelta.templateId) return scelta.formato!;
-  const riga = await templatePerId(client, scelta.templateId);
-  if (!riga) throw ErroreApi.nonTrovato('Template inesistente.');
-  return versoRisolto(riga).formato;
 }
 
 // ---------------------------------------------------------------------------

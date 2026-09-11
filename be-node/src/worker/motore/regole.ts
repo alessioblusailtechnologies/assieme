@@ -157,12 +157,12 @@ export async function caricaDna(
   return { istruzioni: istruzioni.rows, ricordi: ricordi.rows, riferimenti };
 }
 
-/** Il prompt di sistema: regole fisse + DNA d'Agenzia. */
-/** I template dell'agenzia come li racconta il prompt, quando il tool `genera_documento` è attivo. */
-export interface TemplateNelPrompt {
+/** I modelli di riferimento dell'agenzia come li racconta il prompt, quando gli strumenti dei documenti sono attivi. */
+export interface ModelloNelPrompt {
   nome: string;
   formato: string;
-  predefinito: boolean;
+  /** «Quando usarlo», scritta dall'agenzia: è ciò che fa scegliere il modello giusto. */
+  descrizione: string;
 }
 
 /**
@@ -325,14 +325,15 @@ export function catalogoArchivioPubblico(perPath: Map<string, DocumentoWorkspace
 
 /** Ciò che il prompt di sistema aggiunge alle regole, oltre al DNA. */
 export interface ContestoPromptSistema {
-  template?: TemplateNelPrompt[];
+  /** Presente quando la chat ha gli strumenti dei documenti: i modelli dell'agenzia, anche nessuno. */
+  modelli?: ModelloNelPrompt[];
   conRiordino?: boolean;
   /** Da `catalogoArchivioPubblico()`: stabile per tenant, quindi va in cache. */
   catalogo?: string;
 }
 
 export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema = {}): string {
-  const { template, conRiordino = false, catalogo } = contesto;
+  const { modelli, conRiordino = false, catalogo } = contesto;
   const parti = [REGOLE_MOTORE];
   if (catalogo) parti.push(catalogo);
   if (conRiordino) {
@@ -341,21 +342,21 @@ export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema =
       'Con `proponi_riordino` puoi **proporre** di creare cartelle nell’Archivio Privato e di spostarci dentro dei documenti. Non esegue niente: l’utente vede la proposta sotto la risposta e decide. Usalo quando ti chiede di spostare un documento, di creare una cartella o di mettere ordine - mai di tua iniziativa, l’archivio è suo. Le cartelle si indicano col percorso che vede l’utente («Clienti», «Clienti/Rossi Mario»), il documento col suo file nella workspace. Se serve una cartella che non c’è, mettila come prima operazione e poi spostaci dentro. Quando qualcosa non ti torna - per esempio ti chiedono di intestare una cartella cliente a chi emette una fattura invece che a chi la riceve - dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
     );
   }
-  if (template) {
-    parti.push('\n\n## Documenti su template\n');
+  if (modelli) {
+    parti.push('\n\n## Documenti e modelli\n');
     parti.push(
-      'Hai due strumenti per i file, da usare solo quando l’utente chiede un file, un documento, un’esportazione o nomina un template, mai di tua iniziativa. `esporta_subito` (Esporta come): produce all’istante un PDF, DOCX o XLSX col testo che gli passi, col layout di VELIA e l’intestazione dell’agenzia; per «esportamelo», «fammelo in Excel». Non usa i template: quando l’utente ne nomina uno, l’altro strumento. `esportazione_elaborata` (Genera documento da template, se presente): un motore documentale in sandbox che parte dal template o da un documento di esempio, lo copia e lo adatta con impaginazione fedele, controlla il risultato e consegna; ci mette uno o due minuti e costa di più: per «fammelo fatto bene», «come quel documento», «sul template X», proposte e report da consegnare. Il contenuto e le istruzioni li scrivi tu, completi e per chi leggerà, con le fonti per esteso (titolo e pagina) e senza i rimandi [n] della chat. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
+      'Hai due strumenti per i file, da usare solo quando l’utente chiede un file, un documento, un’esportazione o nomina un modello, mai di tua iniziativa. `esporta_subito` (Esporta come): produce all’istante un PDF, DOCX o XLSX col testo che gli passi, col layout di VELIA e l’intestazione dell’agenzia; per «esportamelo», «fammelo in Excel». Non usa i modelli: quando l’utente ne nomina uno, l’altro strumento. `esportazione_elaborata` (Genera da modello, se presente): un motore documentale in sandbox che parte da un modello di riferimento dell’agenzia, lo copia e lo adatta con impaginazione fedele, controlla il risultato e consegna; ci mette uno o due minuti e costa di più: per «fammelo fatto bene», «come quel documento», «sul modello X», proposte e report da consegnare. Il contenuto e le istruzioni li scrivi tu, completi e per chi leggerà, con le fonti per esteso (titolo e pagina) e senza i rimandi [n] della chat. Il documento non sostituisce la risposta: rispondi comunque in chat, in breve, e chiudi con il blocco delle citazioni come sempre.',
     );
-    if (template.length) {
-      parti.push('\nI template dell’agenzia (richiamali per nome, come li dice l’utente):');
-      for (const t of template) {
-        parti.push(`- «${t.nome}» (${t.formato.toUpperCase()}${t.predefinito ? ', predefinito per il formato' : ''})`);
-      }
+    if (modelli.length) {
       parti.push(
-        'Se l’utente chiede solo un formato, vale il predefinito di quel formato; senza template per il formato esce il layout di VELIA.',
+        '\nI modelli di riferimento dell’agenzia: richiamali per nome, come li dice l’utente; quando non ne nomina uno, scegli quello la cui descrizione corrisponde al documento chiesto, o nessuno.',
       );
+      for (const m of modelli) {
+        const quando = m.descrizione.trim() ? `: ${m.descrizione.trim()}` : '';
+        parti.push(`- «${m.nome}» (${m.formato.toUpperCase()})${quando}`);
+      }
     } else {
-      parti.push('L’agenzia non ha template caricati: i documenti escono col layout di VELIA, indica solo il formato.');
+      parti.push('L’agenzia non ha modelli caricati: i documenti escono col layout di VELIA, indica solo il formato.');
     }
   }
   if (dna.istruzioni.length || dna.riferimenti.length || dna.ricordi.length) {

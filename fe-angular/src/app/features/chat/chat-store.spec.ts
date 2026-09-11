@@ -391,7 +391,7 @@ describe('ChatStore', () => {
     id: 'doc-a',
     nome: 'Proposta Rossi',
     formato: 'pdf',
-    template: 'Proposta breve',
+    modello: 'Proposta breve',
     url: '/api/conversazioni/cnv-1/documenti/doc-a',
   };
   const confronto: DocumentoGenerato = {
@@ -421,7 +421,7 @@ describe('ChatStore', () => {
     /* L'ora è quella della risposta che l'ha generato: di due versioni dello
        stesso documento è l'unica cosa che le distingue. */
     expect(store.output()[1].prodottoIl).toBe('2026-08-26T09:01:00+02:00');
-    expect(store.output()[1].template).toBe('Proposta breve');
+    expect(store.output()[1].modello).toBe('Proposta breve');
   });
 
   it('un documento arrivato in streaming entra nell’output senza ricaricare', async () => {

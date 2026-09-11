@@ -48,9 +48,9 @@ describe('schemi del contratto', () => {
     expect(schemaPianificazione.parse({ frequenza: 'mensile', orario: '07:30', giornoMese: 15 }).giornoMese).toBe(15);
   });
 
-  it('il PATCH ammette null per togliere pianificazione e template', () => {
-    const m = schemaModificheAgente.parse({ pianificazione: null, templateOutputId: null, attivo: false });
-    expect(m).toEqual({ pianificazione: null, templateOutputId: null, attivo: false });
+  it('il PATCH ammette null per togliere la pianificazione; il template non c’è più e si scarta', () => {
+    const m = schemaModificheAgente.parse({ pianificazione: null, templateOutputId: 'tpl-1', attivo: false });
+    expect(m).toEqual({ pianificazione: null, attivo: false });
   });
 });
 

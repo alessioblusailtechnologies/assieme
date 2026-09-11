@@ -21,7 +21,6 @@
     "istruzioni": "Elenca i documenti caricati nell'Archivio Privato negli ultimi sette giorni raggruppandoli per tipologia. Per ciascuno indica chi lo ha caricato e lo stato di elaborazione; segnala a parte i documenti in errore, che vanno ricaricati. Chiudi con il totale dello spazio occupato.",
     "fonti": [{ "tipo": "selezione", "archivio": "privato" }],
     "formatoOutput": "documento",
-    "templateOutputId": "tpl-005",
     "parametri": [],
     "pianificazione": { "frequenza": "settimanale", "orario": "08:00", "giornoSettimana": 1, "sospesa": false },
     "attivo": true,
@@ -31,14 +30,13 @@
   {
     "id": "agt-003",
     "nome": "Verifica preventivo contro polizza in essere",
-    "descrizione": "Confronta un preventivo con le condizioni AUTOPIÙ in essere e produce il confronto sul template dell'agenzia.",
+    "descrizione": "Confronta un preventivo con le condizioni AUTOPIÙ in essere e produce il confronto in PDF con l'intestazione dell'agenzia.",
     "istruzioni": "Confronta il preventivo indicato all'avvio con le Condizioni di Assicurazione Active Veicoli AUTOPIÙ, garanzia per garanzia: massimali, franchigie e scoperti, assistenza, garanzie presenti in una sola delle due offerte. Applica i criteri di valutazione dell'agenzia e cita sempre articolo e pagina. Se una garanzia non compare in un documento, dichiaralo invece di dedurre.",
     "fonti": [
       { "tipo": "documento", "documentoId": "doc-pub-003", "archivio": "pubblico" },
       { "tipo": "documenti-riferimento" }
     ],
     "formatoOutput": "documento",
-    "templateOutputId": "tpl-006",
     "parametri": [
       {
         "chiave": "preventivo",

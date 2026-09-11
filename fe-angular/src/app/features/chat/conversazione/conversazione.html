@@ -150,18 +150,18 @@
                     <span>Esporta come</span>
                   </button>
                   <!--
-                    Il motore documentale in sandbox: parte dal template scelto,
+                    Il motore documentale in sandbox: parte dal modello scelto,
                     impagina, controlla e allega qui in chat. Ci mette un minuto o
                     due: si chiede con un modulo, non con un clic.
                   -->
                   <button
                     type="button"
                     class="azione-esporta"
-                    (click)="apriTemplate(m.id)"
-                    aria-label="Genera un documento da un template dell'agenzia"
+                    (click)="apriModelli(m.id)"
+                    aria-label="Genera un documento da un modello dell'agenzia"
                   >
                     <ui-icon name="documento" [size]="13" />
-                    <span>Genera documento da template</span>
+                    <span>Genera da modello</span>
                   </button>
                   </span>
                 }
@@ -303,8 +303,8 @@
                       <span class="mono output__meta">
                         {{ d.formato }} · {{ d.prodottoIl | date: 'dd/MM HH:mm' }}
                       </span>
-                      @if (d.template) {
-                        <span class="output__template">su «{{ d.template }}»</span>
+                      @if (d.modello) {
+                        <span class="output__template">su «{{ d.modello }}»</span>
                       }
                     </span>
                   </button>
@@ -358,45 +358,59 @@
   }
 </ui-cassetto>
 
-<!-- Genera documento da template: si sceglie il template, poi parte il motore documentale -->
+<!-- Genera da modello: si sceglie il modello, poi parte il motore documentale -->
 <ui-cassetto
-  [aperto]="templateAperto()"
-  (apertoChange)="templateAperto.set($event)"
-  titolo="Genera documento da template"
+  [aperto]="modelloAperto()"
+  (apertoChange)="modelloAperto.set($event)"
+  titolo="Genera da modello"
 >
   <div class="modulo">
     <p class="modulo__spiega">
-      Il motore documentale parte dal template scelto, lo adatta alla risposta conservando
-      l'impaginazione, controlla il risultato pagina per pagina e lo allega qui in chat. Ci mette
-      uno o due minuti, come una risposta lunga.
+      Il motore documentale parte dal modello scelto, ci mette il contenuto della risposta
+      conservandone struttura e stile, controlla il risultato pagina per pagina e lo allega qui in
+      chat. Ci mette uno o due minuti, come una risposta lunga.
     </p>
 
-    @if (templateDisponibili().length) {
-      <div class="scelte" role="radiogroup" aria-label="Template dell'agenzia">
-        @for (t of templateDisponibili(); track t.id) {
-          <label class="scelta" [class.is-scelta]="templateScelto() === t.id">
+    @if (modelliDisponibili().length) {
+      <div class="scelte" role="radiogroup" aria-label="Modelli dell'agenzia">
+        @for (m of modelliDisponibili(); track m.id) {
+          <label class="scelta" [class.is-scelta]="modelloScelto() === m.id">
             <input
               class="scelta__radio"
               type="radio"
-              name="template"
-              [value]="t.id"
-              [checked]="templateScelto() === t.id"
-              (change)="templateScelto.set(t.id)"
+              name="modello"
+              [value]="m.id"
+              [checked]="modelloScelto() === m.id"
+              (change)="modelloScelto.set(m.id)"
             />
             <span class="scelta__testo">
-              <span class="scelta__nome">{{ t.nome }}</span>
-              @if (t.descrizione) {
-                <span class="scelta__descrizione">{{ t.descrizione }}</span>
+              <span class="scelta__nome">{{ m.nome }}</span>
+              @if (m.descrizione) {
+                <span class="scelta__descrizione">{{ m.descrizione }}</span>
               }
             </span>
-            <span class="mono scelta__formato">{{ t.formato }}@if (t.predefinito) { · predefinito }</span>
+            <span class="mono scelta__formato">{{ m.formato }}</span>
           </label>
         }
       </div>
-    } @else {
+
+      <label class="modulo__campo">
+        <span class="modulo__nome">Indicazioni in più <span class="modulo__facoltativo">facoltative</span></span>
+        <textarea
+          uiCampo
+          rows="3"
+          maxlength="2000"
+          placeholder="Per chi è, cosa mettere in evidenza, cosa lasciare fuori…"
+          [value]="istruzioniModello()"
+          (input)="istruzioniModello.set($any($event.target).value)"
+        ></textarea>
+      </label>
+    } @else if (!store.modelliInCaricamento()) {
       <p class="modulo__vuoto">
-        L'agenzia non ha ancora template: se ne carica uno in
-        <a routerLink="/impostazioni/template">Impostazioni › Template di output</a>.
+        L'agenzia non ha ancora modelli di riferimento: se ne carica uno in
+        <a routerLink="/impostazioni/template" [queryParams]="{ scheda: 'modelli' }"
+          >Impostazioni › Template di output › Modelli di riferimento</a
+        >.
       </p>
     }
 
@@ -405,13 +419,13 @@
         uiBottone
         variante="primario"
         type="button"
-        [disabled]="!templateScelto() || store.inRisposta()"
-        (click)="avviaTemplate()"
+        [disabled]="!modelloScelto() || store.inRisposta()"
+        (click)="avviaModello()"
       >
         <ui-icon name="documento" [size]="15" />
         <span>Genera il documento</span>
       </button>
-      <button uiBottone variante="testo" type="button" (click)="templateAperto.set(false)">
+      <button uiBottone variante="testo" type="button" (click)="modelloAperto.set(false)">
         <span>Annulla</span>
       </button>
     </div>

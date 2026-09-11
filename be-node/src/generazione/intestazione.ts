@@ -413,9 +413,18 @@ const ALLINEAMENTO_DOCX = {
 
 const PX_PER_MM = 96 / 25.4;
 
+/**
+ * Il font delle fasce in Word, dichiarato su ogni run: l'Helvetica del PDF
+ * (Arial ne ha le stesse metriche). Senza, header e footer prenderebbero
+ * il font del documento in cui finiscono, anche quello di un file della
+ * sandbox su cui VELIA li stampa (`timbra.ts`).
+ */
+const FONT_DOCX = 'Arial';
+
 function runDocx(testo: string | undefined, stile: Stile, pagina?: 'CURRENT' | 'TOTAL_PAGES'): TextRun {
   return new TextRun({
     ...(pagina ? { children: [PageNumber[pagina]] } : { text: testo ?? '' }),
+    font: FONT_DOCX,
     bold: stile.grassetto,
     italics: stile.corsivo,
     ...(stile.sottolineato && { underline: {} }),

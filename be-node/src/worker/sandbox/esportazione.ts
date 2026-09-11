@@ -11,15 +11,11 @@ import {
   type DocumentoGenerato,
   type EventoStream,
 } from '../../contratto/conversazioni.js';
-import type { FormatoGenerazione } from '../../contratto/template.js';
-import {
-  layoutPerFormato,
-  templateDelTenant,
-  templatePerId,
-  versoRisolto,
-  type TemplateRisolto,
-} from '../../generazione/catalogo.js';
-import { MIME } from '../../generazione/generatore.js';
+import type { FormatoModello } from '../../contratto/template.js';
+import { fasceDelTenant, modelloPerId, type RigaModello } from '../../generazione/catalogo.js';
+import { MIME, NOME_DOCUMENTO } from '../../generazione/generatore.js';
+import type { FasceDocumento } from '../../generazione/intestazione.js';
+import { misureFasce, senzaFasce, timbra } from '../../generazione/timbra.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { etichettaAttivita, type EsitoSessione } from '../motore/sessione.js';
 import type { Workspace } from '../motore/workspace.js';
@@ -27,12 +23,17 @@ import { promptRichiesta, promptSandbox } from './istruzioni.js';
 import { Sandbox, type AvviatoreSandbox, type ParametriSessione } from './sandbox.js';
 
 /**
- * L'Esportazione elaborata: Claude Code dentro la sandbox documentale. Il
- * worker prepara la sandbox (workspace e template), avvia la sessione nel
- * container e ne ascolta lo stream; a ogni `consegna`
- * ritira il file, lo mette nello Storage e lo racconta al FE come
- * `documento` — lo stesso canale dell'«Esporta subito». Alla fine la
- * sandbox si distrugge.
+ * «Genera da modello»: Claude Code dentro la sandbox documentale. Il worker
+ * prepara la sandbox (workspace e modello di riferimento), avvia la
+ * sessione nel container e ne ascolta lo stream; a ogni `consegna` ritira
+ * il file, gli mette l'intestazione dell'agenzia se è il caso, lo porta
+ * nello Storage e lo racconta al FE come `documento`, lo stesso canale di
+ * «Esporta come». Alla fine la sandbox si distrugge.
+ *
+ * L'intestazione (11/09/2026): con un modello «dell'agenzia», o senza
+ * modello, la sandbox lascia libere le fasce e il worker ci stampa quelle
+ * dell'agenzia dopo la consegna (`generazione/timbra.ts`); con un modello
+ * «la sua» comanda il modello. PowerPoint non ne riceve.
  *
  * Le chiavi del worker (db, Storage) non entrano nella sandbox; la chiave
  * Anthropic della sandbox è dedicata e sta dietro il proxy del runner.
@@ -42,12 +43,14 @@ export interface RichiestaElaborata {
   tenantId: string;
   conversazioneId: string;
   jobId: string;
-  formato: FormatoGenerazione;
-  templateId?: string | undefined;
+  /** Assente: quello del modello, o PDF senza modello. */
+  formato?: FormatoModello | undefined;
+  modelloId?: string | undefined;
   istruzioni?: string | undefined;
   /** Il contenuto di partenza (la risposta da esportare), se c'è. */
   contenuto?: string | undefined;
   titolo?: string | undefined;
+  /** Il modello AI della sessione, se il livello della chat ne chiede uno. */
   modello?: string | undefined;
 }
 
@@ -73,30 +76,37 @@ export interface EsitoElaborata {
   generati: DocumentoGenerato[];
   /** I path nello Storage dei file consegnati, per la pulizia se la risposta non passa. */
   percorsi: string[];
-  template: TemplateRisolto;
+  /** Il modello usato, se ce n'era uno. */
+  modello?: { nome: string } | undefined;
 }
 
 export class ErroreElaborata extends Error {}
 
-const FORMATI_CONSEGNA: Record<string, FormatoGenerazione> = { pdf: 'pdf', docx: 'docx', xlsx: 'xlsx' };
+const FORMATI_CONSEGNA: Record<string, FormatoModello> = { pdf: 'pdf', docx: 'docx', xlsx: 'xlsx', pptx: 'pptx' };
 
 export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: RichiestaElaborata): Promise<EsitoElaborata> {
-  /* 1. Il template, dal catalogo. */
+  /* 1. Il modello, e l'intestazione dell'agenzia se tocca a lei. */
   const client = await dip.db.connect();
-  let template: TemplateRisolto;
+  let modello: RigaModello | undefined;
+  let fasce: FasceDocumento | undefined;
+  let formato: FormatoModello;
   try {
-    if (r.templateId) {
-      const riga = await templatePerId(client, r.templateId);
-      if (!riga || riga.tenant_id !== r.tenantId) throw new ErroreElaborata('Il template scelto non esiste più.');
-      template = versoRisolto(riga);
-    } else {
-      template = layoutPerFormato(await templateDelTenant(client, r.tenantId), r.formato);
+    if (r.modelloId) {
+      modello = await modelloPerId(client, r.modelloId);
+      if (!modello || modello.tenant_id !== r.tenantId) throw new ErroreElaborata('Il modello scelto non esiste più.');
+    }
+    formato = r.formato ?? modello?.formato ?? 'pdf';
+    if ((!modello || modello.intestazione_agenzia) && formato !== 'pptx') {
+      const titolo = r.titolo?.trim() || modello?.nome || NOME_DOCUMENTO;
+      fasce = await fasceDelTenant(client, dip.archivio, r.tenantId, titolo);
+      if (senzaFasce(fasce)) fasce = undefined;
     }
   } finally {
     client.release();
   }
+  const margini = fasce ? await misureFasce(fasce) : undefined;
 
-  /* 2. La sandbox, con dentro workspace e template. */
+  /* 2. La sandbox, con dentro workspace e modello. */
   await dip.emetti({ tipo: 'attivita', etichetta: 'Preparo l’ambiente di lavoro' });
   const sandbox = new Sandbox(await dip.avviatore.avvia(r.jobId));
   const generati: DocumentoGenerato[] = [];
@@ -104,11 +114,11 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
   try {
     await sandbox.caricaArchivio('workspace', await zipDirectory(dip.workspace.directory));
 
-    let pathTemplate: string | undefined;
-    if (template.path_file) {
-      const slug = template.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'template';
-      pathTemplate = `/lavoro/template/${slug}.${template.formato}`;
-      await sandbox.scrivi(`template/${slug}.${template.formato}`, await dip.archivio.scarica(template.path_file));
+    let pathModello: string | undefined;
+    if (modello) {
+      const slug = modello.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'modello';
+      pathModello = `/lavoro/modello/${slug}.${modello.formato}`;
+      await sandbox.scrivi(`modello/${slug}.${modello.formato}`, await dip.archivio.scarica(modello.path_file));
     }
 
     await sandbox.esegui('mkdir -p /lavoro/output /lavoro/tmp');
@@ -121,12 +131,22 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
     }));
     const parametri: ParametriSessione = {
       promptSistema: promptSandbox({
-        ...(pathTemplate && { template: { nome: template.nome, formato: template.formato, path: pathTemplate } }),
-        formato: r.formato,
+        ...(modello &&
+          pathModello && {
+            modello: {
+              nome: modello.nome,
+              formato: modello.formato,
+              path: pathModello,
+              descrizione: modello.descrizione,
+              intestazione: modello.intestazione_agenzia ? 'agenzia' : 'sua',
+            },
+          }),
+        formato,
         documenti,
+        ...(margini && { intestazioneAgenzia: margini }),
       }),
       promptUtente: promptRichiesta({
-        formato: r.formato,
+        formato,
         ...(r.titolo && { titolo: r.titolo }),
         ...(r.istruzioni && { istruzioni: r.istruzioni }),
         ...(r.contenuto && { contenuto: r.contenuto }),
@@ -156,18 +176,26 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         } else if (evento.tipo === 'testo') {
           await dip.emetti({ tipo: 'testo', delta: evento.delta });
         } else if (evento.tipo === 'consegna') {
-          const formato = FORMATI_CONSEGNA[evento.formato];
-          if (!formato) continue;
-          const byte = await sandbox.leggi(evento.path);
+          const consegnato = FORMATI_CONSEGNA[evento.formato];
+          if (!consegnato) continue;
+          let byte = await sandbox.leggi(evento.path);
+          if (fasce && consegnato !== 'pptx') {
+            try {
+              byte = await timbra(byte, consegnato, fasce);
+            } catch (errore) {
+              /* Meglio il documento senza intestazione che nessun documento. */
+              console.warn(`[elaborata] intestazione non applicata a ${evento.nome}:`, errore instanceof Error ? errore.message : errore);
+            }
+          }
           const id = randomUUID();
-          const percorso = percorsoDocumentoGenerato(r.tenantId, id, formato);
-          await dip.archivio.carica(percorso, byte, MIME[formato]);
+          const percorso = percorsoDocumentoGenerato(r.tenantId, id, consegnato);
+          await dip.archivio.carica(percorso, byte, MIME[consegnato]);
           percorsi.push(percorso);
           const documento: DocumentoGenerato = {
             id,
             nome: evento.nome,
-            formato,
-            ...(template.personalizzato && { template: template.nome }),
+            formato: consegnato,
+            ...(modello && { modello: modello.nome }),
             url: urlDocumentoGenerato(r.conversazioneId, id),
           };
           generati.push(documento);
@@ -194,7 +222,7 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         documentiLetti: [],
       };
     }
-    return { esito, generati, percorsi, template };
+    return { esito, generati, percorsi, ...(modello && { modello: { nome: modello.nome } }) };
   } finally {
     await sandbox.chiudi().catch(() => undefined);
   }
@@ -215,7 +243,7 @@ export function etichettaSandbox(
     case 'Read': {
       const p = typeof input['file_path'] === 'string' ? input['file_path'] : '';
       if (/\.(png|jpe?g|webp)$/i.test(p)) return 'Controllo la pagina renderizzata';
-      if (p.startsWith('/lavoro/template/')) return 'Studio il template';
+      if (p.startsWith('/lavoro/modello/')) return 'Studio il modello';
       if (p.startsWith('/lavoro/workspace/')) {
         return etichettaAttivita('Read', { ...input, file_path: p.slice('/lavoro/workspace/'.length) }, '', titoloPer);
       }

@@ -24,21 +24,48 @@ async function dockerConImmagine(): Promise<boolean> {
 }
 
 describe('il prompt della sandbox', () => {
-  it('racconta strumenti, ciclo di lavoro e template, e dell’identità visiva non dice più niente', () => {
+  const modello = (intestazione: 'agenzia' | 'sua', formato = 'docx') => ({
+    nome: 'Proposta breve',
+    formato,
+    path: `/lavoro/modello/proposta-breve.${formato}`,
+    descrizione: 'Per i preventivi RC Auto da una pagina',
+    intestazione,
+  });
+
+  it('racconta strumenti, ciclo di lavoro e modello, con la sua riga «quando usarlo»', () => {
     const p = promptSandbox({
-      template: { nome: 'Proposta breve', formato: 'docx', path: '/lavoro/template/proposta-breve.docx' },
+      modello: modello('agenzia'),
       formato: 'pdf',
       documenti: [{ path: '/lavoro/workspace/a.md', titolo: 'Condizioni', archivio: 'pubblico' }],
+      intestazioneAgenzia: { altoMm: 38, bassoMm: 22 },
     });
-    for (const atteso of ['pdftoppm', 'Read', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'soffice', 'chromium-headless']) {
+    for (const atteso of ['pdftoppm', 'Read', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'soffice', 'chromium-headless', 'Per i preventivi RC Auto']) {
       expect(p).toContain(atteso);
     }
-    expect(p).not.toMatch(/identit/i);
-    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).toContain('Nessun template scelto');
+    expect(p).not.toMatch(/identit|template scelto|\/lavoro\/template/i);
+    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).toContain('Nessun modello scelto');
     const r = promptRichiesta({ formato: 'docx', titolo: 'T', istruzioni: 'fai X', contenuto: '# ciao' });
     expect(r).toContain('DOCX');
     expect(r).toContain('fai X');
     expect(r).toContain('# ciao');
+  });
+
+  it('con l’intestazione dell’agenzia: fasce libere coi margini giusti, niente carta del modello', () => {
+    const p = promptSandbox({ modello: modello('agenzia', 'pdf'), formato: 'pdf', documenti: [], intestazioneAgenzia: { altoMm: 38, bassoMm: 22 } });
+    expect(p).toContain('li mette VELIA');
+    expect(p).toContain('margin: 38mm 20mm 22mm 20mm');
+    expect(p).toContain('si guarda, non si usa come sfondo');
+    expect(p).not.toContain('merge_page');
+    expect(p).not.toContain('col numero di pagina in calce');
+  });
+
+  it('con «la sua»: comanda il modello, e un PDF si usa come carta intestata', () => {
+    const p = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [] });
+    expect(p).toContain('sono quelli del modello');
+    expect(p).toContain('merge_page');
+    expect(p).not.toContain('li mette VELIA');
+    const word = promptSandbox({ modello: modello('sua'), formato: 'docx', documenti: [] });
+    expect(word).not.toContain('merge_page');
   });
 });
 

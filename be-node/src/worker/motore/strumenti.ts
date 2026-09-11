@@ -9,15 +9,8 @@ import {
   urlDocumentoGenerato,
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
-import { FORMATI_GENERAZIONE, type FormatoGenerazione } from '../../contratto/template.js';
-import {
-  fasceDelTenant,
-  layoutPerFormato,
-  templateDelTenant,
-  versoRisolto,
-  type RigaTemplate,
-  type TemplateRisolto,
-} from '../../generazione/catalogo.js';
+import { FORMATI_GENERAZIONE, FORMATI_MODELLO, type FormatoModello } from '../../contratto/template.js';
+import { fasceDelTenant, modelliDelTenant, scegliModello } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
 import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
 import type { PropostaArchivio } from '../../contratto/conversazioni.js';
@@ -26,10 +19,10 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 /**
  * Gli strumenti che la chat dà al motore oltre alla lettura: il tool
  * `esporta_subito` (deterministico, istantaneo: layout di VELIA e
- * intestazione dell'agenzia) ed `esportazione_elaborata` (sandbox
- * documentale, sul template o su un documento d'esempio), con cui l'utente
- * ottiene un file senza uscire dalla conversazione («fammelo in Excel»,
- * «fammelo sul template Proposta breve»).
+ * intestazione dell'agenzia) ed `esportazione_elaborata` («Genera da
+ * modello»: sandbox documentale su un modello di riferimento dell'agenzia),
+ * con cui l'utente ottiene un file senza uscire dalla conversazione
+ * («fammelo in Excel», «fammelo sul modello Proposta breve»).
  *
  * Il tool gira nel processo del worker (MCP in-process dell'Agent SDK): il
  * modello passa titolo e contenuto, il worker genera il file con la stessa
@@ -44,13 +37,6 @@ export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`
 export const NOME_TOOL_PROPONI_RIORDINO = `mcp__${NOME_SERVER}__proponi_riordino`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
-
-/** Un template come lo vede il prompt: nome, formato, se è il predefinito. */
-export interface TemplateNelPrompt {
-  nome: string;
-  formato: string;
-  predefinito: boolean;
-}
 
 export interface ContestoStrumenti {
   db: pg.Pool;
@@ -73,8 +59,9 @@ export interface ContestoStrumenti {
    * documentale. Assente = la sandbox non è configurata e il tool non c'è.
    */
   elaborata?: (richiesta: {
-    formato: FormatoGenerazione;
-    template?: string | undefined;
+    formato?: FormatoModello | undefined;
+    /** L'id del modello, già risolto dal nome detto in chat. */
+    modelloId?: string | undefined;
     istruzioni: string;
     contenuto?: string | undefined;
     titolo?: string | undefined;
@@ -90,44 +77,6 @@ export interface StrumentiMotore {
   percorsi: string[];
 }
 
-/**
- * La scelta del template dal testo che il modello passa: un nome (anche
- * approssimato: senza maiuscole, o contenuto nel nome) o un id; con solo il
- * formato vale il predefinito, o il layout di piattaforma. Pura: provata a parte.
- */
-export function scegliTemplate(
-  template: RigaTemplate[],
-  richiesta: { template?: string | undefined; formato?: FormatoGenerazione | undefined },
-): { esito: 'ok'; template: TemplateRisolto } | { esito: 'non-trovato'; motivo: string } {
-  const generabili = template.filter((t) => t.formato !== 'pptx');
-  if (richiesta.template?.trim()) {
-    const cercato = richiesta.template.trim().toLowerCase();
-    const preciso = generabili.find((t) => t.id === cercato || t.nome.toLowerCase() === cercato);
-    const parziale = generabili.filter((t) => t.nome.toLowerCase().includes(cercato));
-    const scelto = preciso ?? (parziale.length === 1 ? parziale[0] : undefined);
-    if (!scelto) {
-      const disponibili = generabili.length
-        ? `Template disponibili: ${generabili.map((t) => `«${t.nome}» (${t.formato})`).join(', ')}.`
-        : 'L’agenzia non ha template caricati: indica solo il formato.';
-      return {
-        esito: 'non-trovato',
-        motivo:
-          parziale.length > 1
-            ? `Più template corrispondono a «${richiesta.template}»: ${parziale.map((t) => `«${t.nome}»`).join(', ')}. Chiedi all’utente quale vuole.`
-            : `Nessun template chiamato «${richiesta.template}». ${disponibili}`,
-      };
-    }
-    if (richiesta.formato && richiesta.formato !== scelto.formato) {
-      return {
-        esito: 'non-trovato',
-        motivo: `Il template «${scelto.nome}» è ${scelto.formato.toUpperCase()}, non ${richiesta.formato.toUpperCase()}: usa il suo formato o scegli un altro template.`,
-      };
-    }
-    return { esito: 'ok', template: versoRisolto(scelto) };
-  }
-  return { esito: 'ok', template: layoutPerFormato(generabili, richiesta.formato ?? 'pdf') };
-}
-
 export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotore {
   const generati: DocumentoGenerato[] = [];
   const percorsi: string[] = [];
@@ -137,7 +86,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     [
       'Genera all’istante un documento (PDF, DOCX o XLSX) col layout di VELIA e l’intestazione dell’agenzia, e lo allega alla risposta, pronto da scaricare.',
       'Usalo SOLO quando l’utente chiede esplicitamente un file, un documento, un’esportazione o un allegato',
-      '(«esporta», «genera un doc», «fammelo in Excel»). Mai di tua iniziativa. Se nomina un template o un documento da imitare, usa invece `esportazione_elaborata`.',
+      '(«esporta», «genera un doc», «fammelo in Excel»). Mai di tua iniziativa. Se nomina un modello o un documento da imitare, usa invece `esportazione_elaborata`.',
       'Passa in `contenuto` il testo completo del documento in Markdown leggero (titoli, elenchi, tabelle, grassetti):',
       'è ciò che finirà nel file — scrivilo per il cliente o il collega che lo leggerà, non per te.',
       'Senza `formato` esce un PDF.',
@@ -200,39 +149,42 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   const esportazioneElaborata = tool(
     'esportazione_elaborata',
     [
-      'Fa preparare un documento di qualità professionale (PDF, DOCX o XLSX) al motore documentale, che lavora in una',
-      'sandbox con Python, Node, LibreOffice e Chromium: apre il template o il documento di esempio, lo copia e lo adatta',
-      'conservando impaginazione e stili, controlla il risultato pagina per pagina e lo allega alla risposta.',
+      'Fa preparare un documento di qualità professionale (PDF, DOCX, XLSX o PPTX) al motore documentale, che lavora in una',
+      'sandbox con Python, Node, LibreOffice e Chromium: apre il modello di riferimento dell’agenzia, lo copia e lo adatta',
+      'conservando struttura e stili, controlla il risultato pagina per pagina e lo allega alla risposta.',
       'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
-      '«da consegnare», una proposta o un report impaginato, o chiede un documento «da template». Per un semplice',
-      '«esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
+      '«da consegnare», una proposta o un report impaginato, o nomina un modello («sul modello X», «da modello»). Per un',
+      'semplice «esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
+      'Scegli il modello fra quelli dell’agenzia, per nome, leggendo a cosa serve ciascuno; senza un modello adatto, omettilo.',
       'Passa in `istruzioni` tutto ciò che il motore documentale deve sapere (cosa produrre, per chi, con quali dati e',
       'da quali documenti della workspace) e in `contenuto` il testo di partenza già scritto, se c’è.',
       'Dopo l’esito, chiudi con UNA riga: il documento è pronto sotto la risposta.',
     ].join(' '),
     {
-      formato: z.enum(FORMATI_GENERAZIONE).describe('Il formato del file: pdf, docx o xlsx.'),
-      template: z.string().optional().describe('Il nome del template o del documento di esempio da usare, come lo ha detto l’utente.'),
+      modello: z.string().optional().describe('Il nome del modello di riferimento da usare, fra quelli dell’agenzia.'),
+      formato: z
+        .enum(FORMATI_MODELLO)
+        .optional()
+        .describe('Il formato del file: pdf, docx, xlsx o pptx. Senza, quello del modello (o PDF).'),
       istruzioni: z.string().min(1).max(4000).describe('Le istruzioni per il motore documentale.'),
       contenuto: z.string().optional().describe('Il testo di partenza in Markdown, se già scritto.'),
       titolo: z.string().max(160).optional(),
     },
     async (args) => {
       if (!contesto.elaborata) {
-        return { content: [{ type: 'text', text: 'La generazione di documenti da template non è disponibile in questo ambiente.' }], isError: true };
+        return { content: [{ type: 'text', text: 'La generazione di documenti da modello non è disponibile in questo ambiente.' }], isError: true };
       }
-      const template = args.template?.trim() ? await risolviNomeTemplate(contesto, args.template) : undefined;
-      if (template === null) {
-        return {
-          content: [{ type: 'text', text: `Nessun template chiamato «${args.template}»: chiedi all’utente quale usare o procedi senza.` }],
-          isError: true,
-        };
+      let modelloId: string | undefined;
+      if (args.modello?.trim()) {
+        const scelta = await risolviNomeModello(contesto, args.modello);
+        if (scelta.esito !== 'ok') return { content: [{ type: 'text', text: scelta.motivo }], isError: true };
+        modelloId = scelta.id;
       }
       let esito;
       try {
         esito = await contesto.elaborata({
           formato: args.formato,
-          template,
+          modelloId,
           istruzioni: args.istruzioni,
           contenuto: args.contenuto,
           titolo: args.titolo,
@@ -251,7 +203,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
           {
             type: 'text',
             text: consegnati
-              ? `Documento da template pronto: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
+              ? `Documento pronto: ${consegnati}, già sotto la risposta. Nota del motore documentale: ${esito.testo}`
               : `Il motore documentale non ha consegnato file. Nota: ${esito.testo}`,
           },
         ],
@@ -379,12 +331,15 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   };
 }
 
-/** Il nome detto dall'utente → l'id del template (null se non c'è nulla di simile). */
-async function risolviNomeTemplate(contesto: ContestoStrumenti, nome: string): Promise<string | null> {
+/** Il nome detto in chat → l'id del modello, o il motivo per cui non c'è (che torna al motore). */
+async function risolviNomeModello(
+  contesto: ContestoStrumenti,
+  nome: string,
+): Promise<{ esito: 'ok'; id: string } | { esito: 'non-trovato'; motivo: string }> {
   const client = await contesto.db.connect();
   try {
-    const scelta = scegliTemplate(await templateDelTenant(client, contesto.tenantId), { template: nome });
-    return scelta.esito === 'ok' && scelta.template.id ? scelta.template.id : null;
+    const scelta = scegliModello(await modelliDelTenant(client, contesto.tenantId), nome);
+    return scelta.esito === 'ok' ? { esito: 'ok', id: scelta.modello.id } : scelta;
   } finally {
     client.release();
   }

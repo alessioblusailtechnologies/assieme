@@ -18,7 +18,7 @@ import {
   RicordoAppreso,
   RiferimentoDocumento,
   StatoAllegato,
-  TemplateOutput,
+  ModelloRiferimento,
 } from '@core/models';
 import { TokenStore } from '@core/auth/token-store';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
@@ -188,13 +188,18 @@ export class ChatStore {
     });
   }
 
-  // --- Template di output (RF-C-10) ---------------------------------------
+  // --- Modelli di riferimento e «Esporta come» (RF-C-10) ------------------
 
-  private readonly risorsaTemplate = httpResource<TemplateOutput[]>(() => this.api.urlTemplate());
+  private readonly risorsaModelli = httpResource<ModelloRiferimento[]>(() => this.api.urlModelli());
 
-  readonly template = computed(() =>
-    this.risorsaTemplate.hasValue() ? this.risorsaTemplate.value() : [],
-  );
+  /** I modelli dell'agenzia, per «Genera da modello». */
+  readonly modelli = computed(() => (this.risorsaModelli.hasValue() ? this.risorsaModelli.value() : []));
+  readonly modelliInCaricamento = this.risorsaModelli.isLoading;
+
+  /** Chi apre «Genera da modello» vede l'elenco di adesso: un collega può averne appena caricato uno. */
+  ricaricaModelli(): void {
+    this.risorsaModelli.reload();
+  }
 
   /** Le voci dell'«Esporta come»: Word, PDF, testo semplice. */
   readonly scelteEsportazione = SCELTE_ESPORTA_COME;
@@ -831,7 +836,7 @@ export class ChatStore {
   }
 
   /**
-   * «Genera documento da template»: un messaggio che chiede un documento.
+   * «Genera da modello»: un messaggio che chiede un documento.
    * Viaggia sullo stesso stream della chat (attività, documento, fine), così
    * il filo mostra il lavoro del motore documentale e l'allegato quando è
    * pronto.
@@ -839,7 +844,7 @@ export class ChatStore {
   inviaEsportazione(richiesta: EsportazioneElaborata, descrizione: string): void {
     const id = this.idAttiva();
     if (!id || this.inRisposta()) return;
-    this.avviaStream(id, `Genera documento da template: ${descrizione}`, [], richiesta);
+    this.avviaStream(id, `Genera da modello: «${descrizione}»`, [], richiesta);
   }
 
   private avviaStream(

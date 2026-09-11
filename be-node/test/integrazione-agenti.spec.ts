@@ -2,9 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { Document, Packer, Paragraph, TextRun } from 'docx';
 import type { FastifyInstance } from 'fastify';
-import PizZip from 'pizzip';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { creaApp } from '../src/api/app.js';
@@ -35,7 +33,7 @@ import type {
  * 429), esecuzione manuale con parametri → job → esito con citazioni
  * validate e log che racconta, RF-E-08 (citazione non verificabile = fallita),
  * retry raccontato fino al fallimento persistente, il tick della
- * pianificazione che accoda, il documento su template dallo storico.
+ * pianificazione che accoda, il documento in PDF dallo storico.
  */
 let config: Configurazione | undefined;
 try {
@@ -53,8 +51,6 @@ const pronto = Boolean(
 const PASSWORD_DEMO = 'velia-demo-2026!';
 const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
 const DOC_FONTE = 'doc-priv-agt00000001';
-/** Un template DOCX dell'agenzia di collaudo: da questa revisione i template sono solo file caricati. */
-const TEMPLATE_AGENTE = 'tpl-agenti-collaudo';
 
 class ArchivioFinto implements ArchivioFile {
   readonly file = new Map<string, Buffer>();
@@ -147,12 +143,11 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     await pool().query(`delete from velia.jobs where tipo = 'agente' and tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.consumi where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.documenti where id = $1`, [DOC_FONTE]);
-    await pool().query(`delete from velia.template where id = $1`, [TEMPLATE_AGENTE]);
   };
 
   beforeAll(async () => {
     radice = await mkdtemp(join(tmpdir(), 'velia-agenti-'));
-    app = creaApp({ logger: false, agenti: { archivio }, template: { archivio } });
+    app = creaApp({ logger: false, agenti: { archivio } });
     await pulizia();
 
     const accesso = await app.inject({
@@ -165,25 +160,6 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     expect(tokenAdmin).toBeTruthy();
 
     gestori.agente = creaGestoreAgenti({ motore, archivio, radice });
-
-    const pathTemplate = `tenant/${TENANT_COLLAUDO}/template/${TEMPLATE_AGENTE}.docx`;
-    const docx = await Packer.toBuffer(
-      new Document({
-        sections: [
-          {
-            children: ['{{titolo}}', '{{contenuto}}', 'Fonti: {{fonti}}'].map(
-              (t) => new Paragraph({ children: [new TextRun(t)] }),
-            ),
-          },
-        ],
-      }),
-    );
-    await archivio.carica(pathTemplate, docx);
-    await pool().query(
-      `insert into velia.template (id, tenant_id, nome, formato, descrizione, path_file, predefinito)
-       values ($1, $2, 'Esito agente', 'docx', '', $3, true)`,
-      [TEMPLATE_AGENTE, TENANT_COLLAUDO, pathTemplate],
-    );
 
     const limiti = await pool().query<typeof limitiOriginali>(
       `select limite_agenti_attivi, limite_esecuzioni_concorrenti from velia.tenant where id = $1`,
@@ -219,8 +195,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
       descrizione: 'Controlla le scadenze delle polizze della flotta.',
       istruzioni: 'Controlla le scadenze e segnala ciò che scade entro 60 giorni.',
       fonti: [{ tipo: 'selezione', archivio: 'privato' }],
-      formatoOutput: 'testo',
-      templateOutputId: TEMPLATE_AGENTE,
+      formatoOutput: 'documento',
       parametri: [
         { chiave: 'polizza', etichetta: 'Polizza da controllare', tipo: 'documento', obbligatorio: true },
       ],
@@ -266,7 +241,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     expect(ignoto.json()).toMatchObject({ codice: 'PARAMETRO_NON_VALIDO' });
   });
 
-  it('esecuzione manuale: job → esito con citazioni validate, log che racconta, documento su template', async () => {
+  it('esecuzione manuale: job → esito con citazioni validate, log che racconta, documento in PDF', async () => {
     const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {
       parametri: { polizza: DOC_FONTE },
     });
@@ -291,7 +266,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     expect(messaggi).toContain('Esecuzione manuale avviata da Tea Collaudo.');
     expect(messaggi).toContain('Parametro polizza = «Polizza flotta aziendale».');
     expect(messaggi).toContain('Raccolte le fonti');
-    expect(messaggi).toContain('Documento generato sul template');
+    expect(messaggi).toContain('Documento pronto da scaricare');
     expect(finita.documentoGeneratoUrl).toBe(`/api/agenti/${agenteId}/esecuzioni/${esecuzione.id}/documento`);
     // Il prompt portava il parametro e la fonte risolta, e i consumi sono origine 'agente'.
     expect(motore.richieste[0]!.promptUtente).toContain('il documento «Polizza flotta aziendale»');
@@ -303,9 +278,8 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
 
     const documento = await richiedi('GET', finita.documentoGeneratoUrl!);
     expect(documento.statusCode).toBe(200);
-    expect(documento.headers['content-type']).toContain('wordprocessingml');
-    const testo = new PizZip(documento.rawPayload).files['word/document.xml']!.asText().replace(/<[^>]+>/g, '');
-    expect(testo).toContain('Nessuna scadenza critica');
+    expect(documento.headers['content-type']).toBe('application/pdf');
+    expect(documento.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
 
     const elenco = await richiedi('GET', '/api/agenti');
     const riepilogo = elenco.json<{ elementi: AgenteRiepilogo[] }>().elementi.find((a) => a.id === agenteId)!;
