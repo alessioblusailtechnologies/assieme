@@ -19,13 +19,13 @@ try {
   config = undefined;
 }
 
-/* Si sceglie Avanzato, che si può scegliere solo con la chiave AKI: senza,
-   la PUT risponderebbe 409 e il test non proverebbe la scrittura. */
+/* Si sceglie Avanzato, che si può scegliere solo con la chiave DeepSeek:
+   senza, la PUT risponderebbe 409 e il test non proverebbe la scrittura. */
 const pronto = Boolean(
   config?.SUPABASE_JWT_SECRET &&
     config.DATABASE_URL &&
     !config.DATABASE_URL.includes('PASSWORD_MANCANTE') &&
-    config.AKI_API_KEY,
+    config.DEEPSEEK_API_KEY,
 );
 
 const PASSWORD_DEMO = 'velia-demo-2026!';
@@ -83,7 +83,7 @@ describe.skipIf(!pronto)('scelta del modello col progetto Supabase', () => {
       [TENANT_COLLAUDO],
     );
     /* Sul tenant va il modello, non il livello: è ciò che il worker leggerà a ogni job. */
-    expect(tenant.rows[0]!.modello_motore).toBe('deepseek-v4-flash-0731-284b');
+    expect(tenant.rows[0]!.modello_motore).toBe('deepseek-flash');
 
     const attivo = await app.inject({
       method: 'GET',

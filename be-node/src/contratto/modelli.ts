@@ -23,10 +23,11 @@ export interface ModelloAI {
 
 /**
  * Chi serve davvero il modello: Anthropic diretta; HostYourAI e AKI.IO
- * (API già Anthropic-compatibili, datacenter UE); Mistral e Gemini, che
- * parlano un altro formato e passano dall'adattatore in-process del worker.
+ * (API già Anthropic-compatibili, datacenter UE) e DeepSeek diretta (API
+ * Anthropic-compatibile, server in Cina); Mistral e Gemini, che parlano un
+ * altro formato e passano dall'adattatore in-process del worker.
  */
-export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'mistral' | 'gemini';
+export type Fornitore = 'anthropic' | 'hostyourai' | 'aki' | 'deepseek' | 'mistral' | 'gemini';
 
 /**
  * Il listino di un fornitore terzo, in € (≈ $) per milione di token. Letti e
@@ -89,6 +90,12 @@ export const MODELLI_SERVITI: ModelloServito[] = [
     fornitore: 'aki',
     tariffa: { input: 0.2, output: 0.5, cache: 0.1 },
   },
+  /* DeepSeek diretta (11/09/2026), finché AKI.IO non approva l'account: la
+     cache c'è ed è automatica, ma i server sono in Cina, quindi i documenti
+     escono dall'UE. `deepseek-flash` è il Flash corrente (V4.1). Listino
+     della fascia di punta, che sono le mattine italiane dei giorni feriali:
+     fuori punta costa la metà. */
+  { sdk: 'deepseek-flash', nome: 'Deepseek V4.1 Flash', fornitore: 'deepseek', tariffa: { input: 0.3, output: 1.2, cache: 0.006 } },
   /* Endpoint globale: i documenti escono dall'UE. */
   { sdk: 'gemini-3.5-flash', nome: 'Gemini 3.5 Flash', fornitore: 'gemini', tariffa: { input: 1.5, output: 9.0, cache: 0.15 } },
   { sdk: 'mistral-large-2512', nome: 'Mistral Large 3', fornitore: 'mistral', tariffa: { input: 0.5, output: 1.5, cache: 0.05 } },
@@ -116,7 +123,9 @@ export const LIVELLI: Livello[] = [
   {
     id: 'livello-avanzato',
     nome: 'Avanzato',
-    sdk: 'deepseek-v4-flash-0731-284b',
+    /* Da DeepSeek diretta finché AKI.IO non approva l'account; poi si torna
+       a `deepseek-v4-flash-0731-284b`, che resta nel banco. */
+    sdk: 'deepseek-flash',
     descrizione:
       'Circa un decimo dei costi di Boost, con risposte più sintetiche e meno citazioni. Adatto alle domande puntuali, meno alle analisi lunghe.',
     adeguatezzaDocumentale: 'media',

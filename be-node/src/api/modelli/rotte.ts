@@ -35,6 +35,7 @@ export function livelliDellaPiattaforma(): Livello[] {
   return catalogoLivelli({
     hostyourai: Boolean(c.HOSTYOURAI_API_KEY),
     aki: Boolean(c.AKI_API_KEY),
+    deepseek: Boolean(c.DEEPSEEK_API_KEY),
     mistral: Boolean(c.MISTRAL_API_KEY),
     gemini: Boolean(c.GEMINI_API_KEY),
   });

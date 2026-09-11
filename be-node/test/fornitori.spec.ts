@@ -12,6 +12,7 @@ import { ambienteModello, costoATariffa, dimenticaAdattatori } from '../src/work
 const chiavi = {
   hostyourai: { chiave: 'hyai-prova', baseUrl: 'https://hostyourai.com' },
   aki: { chiave: 'aki-prova', baseUrl: 'https://aki.io/anthropic' },
+  deepseek: { chiave: 'sk-deepseek-prova', baseUrl: 'https://api.deepseek.com/anthropic' },
   /* Un Mistral che non esiste: l'adattatore si apre lo stesso, e finché
      nessuno gli manda una sessione non chiama nessuno. */
   mistral: { chiave: 'mistral-prova', baseUrl: 'http://127.0.0.1:9' },
@@ -48,6 +49,16 @@ describe('l’ambiente della sessione per fornitore', () => {
     expect(a.usiInclusivi).toBe(true);
   });
 
+  it('il livello Avanzato va a DeepSeek diretta, con la cache al suo prezzo', async () => {
+    const avanzato = LIVELLI.find((l) => l.id === 'livello-avanzato')!;
+    const a = await ambienteModello(avanzato.sdk, chiavi, { PATH: '/bin' });
+    expect(a.terzo).toBe(true);
+    expect(a.tariffa).toEqual({ input: 0.3, output: 1.2, cache: 0.006 });
+    expect(a.env).toMatchObject({ ANTHROPIC_BASE_URL: 'https://api.deepseek.com/anthropic', ANTHROPIC_API_KEY: 'sk-deepseek-prova' });
+    /* DeepSeek tiene la cache fuori da `input_tokens`, come Anthropic. */
+    expect(a.usiInclusivi).toBeUndefined();
+  });
+
   it('un modello Mistral punta l’SDK all’adattatore in-process, non a Mistral', async () => {
     const a = await ambienteModello('mistral-large-2512', chiavi, { PATH: '/bin' });
     expect(a.terzo).toBe(true);
@@ -71,6 +82,7 @@ describe('l’ambiente della sessione per fornitore', () => {
     );
     await expect(ambienteModello('mistral-large-2512', {})).rejects.toThrow(/MISTRAL_API_KEY/);
     await expect(ambienteModello('glm5.3-754b', {})).rejects.toThrow(/AKI_API_KEY/);
+    await expect(ambienteModello('deepseek-flash', {})).rejects.toThrow(/DEEPSEEK_API_KEY/);
   });
 
   it('il costo a tariffa: la cache al suo prezzo, dove il fornitore ce l’ha', () => {
@@ -89,8 +101,8 @@ describe('l’ambiente della sessione per fornitore', () => {
 });
 
 describe('i livelli con e senza chiave', () => {
-  const tutte = { hostyourai: true, aki: true, mistral: true, gemini: true };
-  const nessuna = { hostyourai: false, aki: false, mistral: false, gemini: false };
+  const tutte = { hostyourai: true, aki: true, deepseek: true, mistral: true, gemini: true };
+  const nessuna = { hostyourai: false, aki: false, deepseek: false, mistral: false, gemini: false };
   const disponibili = (chiavi: typeof tutte) =>
     catalogoLivelli(chiavi)
       .filter((l) => l.disponibile)
@@ -101,7 +113,8 @@ describe('i livelli con e senza chiave', () => {
     /* Medio e Boost sono serviti da Anthropic: non dipendono da nessuna chiave in più. */
     expect(disponibili(nessuna)).toEqual(['livello-medio', 'livello-boost']);
     /* Le chiavi non si fanno da spalla: quella di uno non alza l'altro. */
-    expect(disponibili({ ...tutte, aki: false })).toEqual(['livello-medio', 'livello-boost']);
+    expect(disponibili({ ...tutte, deepseek: false })).toEqual(['livello-medio', 'livello-boost']);
+    expect(disponibili({ ...nessuna, deepseek: true })).toEqual(['livello-medio', 'livello-avanzato', 'livello-boost']);
   });
 
   it('ogni livello di un fornitore terzo sta nel banco, altrimenti partirebbe verso Anthropic', () => {

@@ -123,6 +123,14 @@ const schemaAmbiente = z.object({
   AKI_API_KEY: z.string().optional(),
   AKI_BASE_URL: z.string().url().default('https://aki.io/anthropic'),
   /**
+   * DeepSeek diretta (11/09/2026), per il livello Avanzato finché AKI.IO non
+   * approva l'account: API Anthropic-compatibile e cache automatica, ma
+   * **server in Cina**, quindi i documenti escono dall'UE. Serve all'API (il
+   * livello si sceglie solo con la chiave) e al worker.
+   */
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_BASE_URL: z.string().url().default('https://api.deepseek.com/anthropic'),
+  /**
    * Gemini (09/09/2026), dall'endpoint OpenAI-compatibile di Google via
    * l'adattatore. Attenzione: questa è l'API globale, **senza residenza UE**
    * — quella esiste solo su Vertex in una region europea, e si ferma alla

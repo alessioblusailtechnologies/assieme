@@ -49,6 +49,9 @@ services:
         sync: false
       - key: HOSTYOURAI_API_KEY
         sync: false
+      # Il livello Avanzato si sceglie solo se l'API vede la chiave del suo fornitore.
+      - key: DEEPSEEK_API_KEY
+        sync: false
       - key: RESEND_API_KEY
         sync: false
       - key: MISTRAL_API_KEY
@@ -90,6 +93,9 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: HOSTYOURAI_API_KEY
+        sync: false
+      # Il livello Avanzato (DeepSeek diretta, finché AKI.IO non approva l'account).
+      - key: DEEPSEEK_API_KEY
         sync: false
       # Il testimone OCR dell'ingestion visiva: senza, il controllo resta al
       # solo layer di testo del PDF (che sulle scansioni è cieco).

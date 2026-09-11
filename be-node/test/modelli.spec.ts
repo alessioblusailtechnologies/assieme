@@ -18,12 +18,12 @@ import {
  * l'operatore).
  */
 
-/* Qui la chiave AKI manca, come su una piattaforma che non l'ha ancora
+/* Qui la chiave DeepSeek manca, come su una piattaforma che non l'ha ancora
    configurata: il livello Avanzato si vede ma non si sceglie. Prima di ogni
    import, perché `configurazione()` legge l'ambiente una volta sola e il
    .env non sovrascrive una variabile che c'è già. */
 vi.hoisted(() => {
-  process.env['AKI_API_KEY'] = '';
+  process.env['DEEPSEEK_API_KEY'] = '';
 });
 
 const verifica =
@@ -39,15 +39,17 @@ const autenticato = { authorization: 'Bearer token-di-prova' };
 describe('i livelli', () => {
   it("l'attivo è il livello del modello configurato; un id che nessun livello serve si presenta col più potente", () => {
     expect(livelloAttivo('claude-opus-5').id).toBe('livello-boost');
-    expect(livelloAttivo('deepseek-v4-flash-0731-284b').id).toBe('livello-avanzato');
+    expect(livelloAttivo('deepseek-flash').id).toBe('livello-avanzato');
     expect(livelloAttivo('claude-sonnet-5').id).toBe('livello-medio');
     expect(livelloAttivo('un-modello-di-prova').id).toBe('livello-boost');
   });
 
   it('una scelta rimasta su un modello che nessun livello serve non vale più: si torna al default', () => {
     expect(modelloDelTenant('claude-opus-5')).toBe('claude-opus-5');
-    expect(modelloDelTenant('deepseek-v4-flash-0731-284b')).toBe('deepseek-v4-flash-0731-284b');
+    expect(modelloDelTenant('deepseek-flash')).toBe('deepseek-flash');
     expect(modelloDelTenant('glm5.3-754b')).toBeUndefined();
+    /* Il Deepseek di AKI.IO, finché Avanzato sta su DeepSeek diretta. */
+    expect(modelloDelTenant('deepseek-v4-flash-0731-284b')).toBeUndefined();
     expect(modelloDelTenant(null)).toBeUndefined();
   });
 
@@ -56,7 +58,7 @@ describe('i livelli', () => {
     expect(modelloDelLivello('livello-inventato')).toBeUndefined();
     expect(modelloDelLivello(undefined)).toBeUndefined();
     expect(servitoDaAnthropic('claude-sonnet-5')).toBe(true);
-    expect(servitoDaAnthropic('deepseek-v4-flash-0731-284b')).toBe(false);
+    expect(servitoDaAnthropic('deepseek-flash')).toBe(false);
   });
 
   it('la forma pubblica non dice che modello c’è dietro', () => {

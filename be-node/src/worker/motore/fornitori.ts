@@ -6,8 +6,8 @@ import { avviaAdattatoreOpenAI, type AdattatoreOpenAI, type ProfiloFornitore } f
  * motore resta sempre la stessa — cambiano endpoint e chiave, passati
  * all'Agent SDK come ambiente del processo:
  *  - **Anthropic**, diretta;
- *  - **HostYourAI**, che parla già l'API di Anthropic (modelli open in
- *    datacenter UE): basta puntarcelo;
+ *  - **HostYourAI**, **AKI.IO** e **DeepSeek**, che parlano già l'API di
+ *    Anthropic: basta puntarceli;
  *  - **Mistral**, che parla un altro formato: davanti gli si mette
  *    l'adattatore in-process (`adattatore-mistral.ts`), che vive sul
  *    localhost del worker e traduce.
@@ -19,6 +19,7 @@ import { avviaAdattatoreOpenAI, type AdattatoreOpenAI, type ProfiloFornitore } f
 export interface ChiaviFornitori {
   hostyourai?: { chiave?: string; baseUrl: string };
   aki?: { chiave?: string; baseUrl: string };
+  deepseek?: { chiave?: string; baseUrl: string };
   /** `baseUrl` serve solo ai test (un finto fornitore): senza, l'API vera. */
   mistral?: { chiave?: string; baseUrl?: string };
   gemini?: { chiave?: string; baseUrl?: string };
@@ -47,15 +48,15 @@ export async function ambienteModello(
 ): Promise<AmbienteModello> {
   const voce = vocePerSdk(modello);
   /* I gateway che parlano già l'API di Anthropic: cambia solo dove si punta. */
-  if (voce?.fornitore === 'hostyourai' || voce?.fornitore === 'aki') {
-    const gateway = voce.fornitore === 'aki' ? chiavi.aki : chiavi.hostyourai;
-    const variabile = voce.fornitore === 'aki' ? 'AKI_API_KEY' : 'HOSTYOURAI_API_KEY';
+  if (voce?.fornitore === 'hostyourai' || voce?.fornitore === 'aki' || voce?.fornitore === 'deepseek') {
+    const gateway = chiavi[voce.fornitore];
+    const { variabile, usiInclusivi } = GATEWAY_ANTHROPIC[voce.fornitore];
     if (!gateway?.chiave) throw new Error(`Il modello ${voce.nome} richiede ${variabile} in .env.`);
     return {
       env: ambientePuntato(ambienteProcesso, gateway.baseUrl, gateway.chiave),
       terzo: true,
       tariffa: voce.tariffa,
-      ...(voce.fornitore === 'aki' && { usiInclusivi: true }),
+      ...(usiInclusivi && { usiInclusivi }),
     };
   }
   if (voce?.fornitore === 'mistral' || voce?.fornitore === 'gemini') {
@@ -90,6 +91,18 @@ function ambientePuntato(processo: NodeJS.ProcessEnv, baseUrl: string, chiave: s
   delete env['CLAUDE_CODE_OAUTH_TOKEN'];
   return env;
 }
+
+/**
+ * I gateway Anthropic-compatibili: la chiave che vogliono e come contano la
+ * cache negli usi. AKI.IO la mette dentro `input_tokens` (convenzione
+ * OpenAI); DeepSeek la tiene a parte come Anthropic (misurato l'11/09/2026:
+ * stesso prompt due volte, la seconda 233 token nuovi e 6.912 dalla cache).
+ */
+const GATEWAY_ANTHROPIC = {
+  hostyourai: { variabile: 'HOSTYOURAI_API_KEY', usiInclusivi: false },
+  aki: { variabile: 'AKI_API_KEY', usiInclusivi: true },
+  deepseek: { variabile: 'DEEPSEEK_API_KEY', usiInclusivi: false },
+} as const;
 
 /**
  * Chi parla il dialetto OpenAI, e in che cosa differisce. Sono le due
