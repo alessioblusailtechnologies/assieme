@@ -2768,5 +2768,440 @@
   },
   "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/informativa-privacy.md",
   "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-bludrive-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich BluDrive",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich BluDrive",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 61,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurich-bludrive-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-bludrive-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich BluDrive",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich BluDrive",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-bludrive-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-bludrive-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich BluDrive",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich BluDrive",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurich-bludrive-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-auto-ed-2023-11-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Auto",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Auto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 100,
+  "paginaInizio": 19,
+  "edizione": {
+   "id": "edz-zurich-connect-auto-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-auto-ed-2023-11-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Auto",
+  "titolo": "DIP Danni — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Auto",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-connect-auto-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-auto-ed-2023-11-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Auto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 14,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-zurich-connect-auto-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-auto/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-furgoni-ed-2023-11-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Furgoni",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Furgoni",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 76,
+  "paginaInizio": 17,
+  "edizione": {
+   "id": "edz-zurich-connect-furgoni-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-furgoni-ed-2023-11-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Furgoni",
+  "titolo": "DIP Danni — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Furgoni",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-connect-furgoni-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-furgoni-ed-2023-11-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Furgoni",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Furgoni",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 12,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-zurich-connect-furgoni-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-furgoni/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-moto-ciclo-ed-2023-11-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Moto e Ciclo",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Moto e Ciclo",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 85,
+  "paginaInizio": 17,
+  "edizione": {
+   "id": "edz-zurich-connect-moto-ciclo-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-moto-ciclo-ed-2023-11-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Moto e Ciclo",
+  "titolo": "DIP Danni — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Moto e Ciclo",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-connect-moto-ciclo-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-connect-moto-ciclo-ed-2023-11-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "Zurich Connect Moto e Ciclo",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Connect Moto e Ciclo",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 12,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-zurich-connect-moto-ciclo-2023-11",
+   "etichetta": "ed. 11/2023",
+   "validaDal": "2023-11-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-altri-veicoli-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Altri Veicoli",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Altri Veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 69,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurigo-altri-veicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-altri-veicoli-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Altri Veicoli",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Altri Veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-altri-veicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-altri-veicoli-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Altri Veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Altri Veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-altri-veicoli-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-altri-veicoli/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2025-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 66,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurigo-auto-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2026-05-31"
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2025-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-auto-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2026-05-31"
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2025-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-auto-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-01",
+   "corrente": false,
+   "validaAl": "2026-05-31"
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 67,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurigo-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-auto-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Auto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Auto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-auto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-moto-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Moto",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Moto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 56,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurigo-moto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-moto-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Moto",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Moto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-moto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-moto-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Moto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Moto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-moto-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/originale.pdf"
  }
 ]

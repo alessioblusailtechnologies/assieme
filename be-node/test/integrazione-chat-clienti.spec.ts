@@ -152,7 +152,7 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     const ids = righe.map((r) => r.id);
     expect(ids).toContain(pubblicoNelCono);
     expect(ids).not.toContain(pubblicoFuori);
-    /* L'Archivio Pubblico ha 151 documenti: al cliente ne arriva uno. */
+    /* L'Archivio Pubblico ha 175 documenti: al cliente ne arriva uno. */
     expect(ids).toHaveLength(1);
   });
 
