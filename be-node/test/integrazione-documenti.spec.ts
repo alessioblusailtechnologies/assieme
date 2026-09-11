@@ -58,8 +58,8 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 24 Zurich auto (7 prodotti, 8 edizioni). */
-    expect(pagina.totale).toBe(175);
+    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi). */
+    expect(pagina.totale).toBe(202);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;

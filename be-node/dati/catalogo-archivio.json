@@ -2770,6 +2770,168 @@
   "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
  },
  {
+  "id": "doc-zurich-for-family-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "For Family",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia For Family",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 100,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-for-family-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-for-family-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "For Family",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia For Family",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-for-family-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-for-family-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "For Family",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia For Family",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 5,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-for-family-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/for-family/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-metropermetroquadro-forma-mutuo-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "MetroperMetroQuadro Forma Mutuo",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia MetroperMetroQuadro Forma Mutuo",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 21,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-metropermetroquadro-forma-mutuo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-metropermetroquadro-forma-mutuo-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "MetroperMetroQuadro Forma Mutuo",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia MetroperMetroQuadro Forma Mutuo",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-metropermetroquadro-forma-mutuo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-metropermetroquadro-forma-mutuo-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "MetroperMetroQuadro Forma Mutuo",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia MetroperMetroQuadro Forma Mutuo",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-metropermetroquadro-forma-mutuo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/metropermetroquadro-forma-mutuo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-viaggiare-nel-mondo-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Viaggiare nel mondo",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Viaggiare nel mondo",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 24,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-viaggiare-nel-mondo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-viaggiare-nel-mondo-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Viaggiare nel mondo",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Viaggiare nel mondo",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-viaggiare-nel-mondo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-viaggiare-nel-mondo-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Viaggiare nel mondo",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Viaggiare nel mondo",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-viaggiare-nel-mondo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/viaggi/viaggiare-nel-mondo/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-zurich-zurich-bludrive-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-zurich",
   "ramoId": "ram-auto",
@@ -2822,6 +2984,60 @@
   },
   "pathMd": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/zurich/auto/zurich-bludrive/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-condominio-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "Zurich Condominio",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Condominio",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 92,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurich-condominio-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-condominio-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "Zurich Condominio",
+  "titolo": "DIP Danni — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Condominio",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-condominio-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-condominio-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-casa",
+  "prodotto": "Zurich Condominio",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Company Ltd - Rappresentanza Generale per l'Italia Zurich Condominio",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurich-condominio-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/casa/zurich-condominio/ed-2026-06/originale.pdf"
  },
  {
   "id": "doc-zurich-zurich-connect-auto-ed-2023-11-condizioni-di-assicurazione",
@@ -2984,6 +3200,168 @@
   },
   "pathMd": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/zurich/auto/zurich-connect-moto-ciclo/ed-2023-11/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-cover-plus-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich COVER+",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich COVER+",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 26,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-zurich-cover-plus-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-cover-plus-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich COVER+",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich COVER+",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-cover-plus-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-cover-plus-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich COVER+",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich COVER+",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurich-cover-plus-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-cover-plus/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-fortuna-2-0-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich Fortuna 2.0",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Fortuna 2.0",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 71,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-zurich-fortuna-2-0-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-fortuna-2-0-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich Fortuna 2.0",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Fortuna 2.0",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-fortuna-2-0-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-fortuna-2-0-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Zurich Fortuna 2.0",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Fortuna 2.0",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurich-fortuna-2-0-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/infortuni/zurich-fortuna-2-0/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-salute-ed-2026-04-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-salute",
+  "prodotto": "Zurich Salute",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Salute",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 46,
+  "paginaInizio": 8,
+  "edizione": {
+   "id": "edz-zurich-salute-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-salute-ed-2026-04-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-salute",
+  "prodotto": "Zurich Salute",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Salute",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurich-salute-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurich-salute-ed-2026-04-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-salute",
+  "prodotto": "Zurich Salute",
+  "titolo": "DIP Aggiuntivo Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia Zurich Salute",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurich-salute-2026-04",
+   "etichetta": "ed. 04/2026",
+   "validaDal": "2026-04-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/salute/zurich-salute/ed-2026-04/originale.pdf"
  },
  {
   "id": "doc-zurich-zurigo-altri-veicoli-ed-2026-06-condizioni-di-assicurazione",
@@ -3151,6 +3529,60 @@
   "pathPdf": "archivio-pubblico/zurich/auto/zurigo-auto/ed-2026-06/originale.pdf"
  },
  {
+  "id": "doc-zurich-zurigo-monopattini-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Monopattini",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Monopattini",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 25,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-zurigo-monopattini-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-monopattini-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Monopattini",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Monopattini",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-monopattini-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-monopattini-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Monopattini",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Monopattini",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-monopattini-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-monopattini/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-zurich-zurigo-moto-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-zurich",
   "ramoId": "ram-auto",
@@ -3203,5 +3635,59 @@
   },
   "pathMd": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/zurich/auto/zurigo-moto/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-natanti-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Natanti",
+  "titolo": "Condizioni di Assicurazione — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Natanti",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 16,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-zurigo-natanti-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-natanti-ed-2026-06-dip",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Natanti",
+  "titolo": "DIP Danni — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Natanti",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-zurigo-natanti-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-zurich-zurigo-natanti-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-zurich",
+  "ramoId": "ram-auto",
+  "prodotto": "ZuriGò Natanti",
+  "titolo": "DIP Aggiuntivo R.C. Natanti — Zurich Insurance Europe AG - Rappresentanza Generale per l'Italia ZuriGò Natanti",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-zurigo-natanti-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/zurich/auto/zurigo-natanti/ed-2026-06/originale.pdf"
  }
 ]
