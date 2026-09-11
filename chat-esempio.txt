@@ -1,0 +1,364 @@
+Che massimali offre UnipolSai Scudo Cyber per un piccolo studio professionale
+
+Ragionamento
+15 passaggi · 1 min 24 s
+Guardo quali documenti ci sono in archivio
+3 s
+Cerco «massimal, somma assicurata, limite di indennizzo, fatturato» in «DIP Aggiuntivo Danni — Unipol Scudo Cyber»
+0,5 s
+Consulto l’indice dell’archivio
+2 s
+Leggo «DIP Aggiuntivo Danni — Unipol Scudo Cyber»
+5 s
+Leggo «DIP Danni — Unipol Scudo Cyber»
+5 s
+Cerco «del Massimale, della Somma assicurata, Limite di Indennizzo…» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+3 s
+Continuo a leggere «Condizioni di Assicurazione — Unipol Scudo Cyber»
+0,8 s
+Continuo a leggere «Condizioni di Assicurazione — Unipol Scudo Cyber»
+4 s
+Continuo a leggere «Condizioni di Assicurazione — Unipol Scudo Cyber»
+7 s
+Cerco «1.000.000, 250.000, Massimale scegl, combinazion» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+0,9 s
+Continuo a leggere «Condizioni di Assicurazione — Unipol Scudo Cyber»
+4 s
+Continuo a leggere «Condizioni di Assicurazione — Unipol Scudo Cyber»
+10 s
+Cerco nel testo in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+19 s
+Raccolgo le fonti della risposta
+15 s
+Cerco qualcosa da ricordare
+4 s
+In breve: Scudo Cyber non ha massimali "di catalogo". I massimali e le somme assicurate sono quelli concordati con il contraente e indicati in polizza: il set informativo precisa che «tutte le coperture sono offerte nei limiti dei Massimali e/o delle Somme assicurate concordate con il Contraente» DIP Aggiuntivo Dannip. 7, e in glossario il massimale è definito come «le somme indicate in Polizza che rappresentano l'esborso massimo a cui la Società si obbliga», accanto a un «Limite di Indennizzo aggregato» che è il tetto per uno e tutti i sinistri del periodo Condizioni di Assicurazionep. 18. Gli importi effettivi per uno studio professionale li trovi quindi solo nel preventivo/quotazione della compagnia, non nei documenti contrattuali.
+
+Attenzione al target. Il prodotto è rivolto «a persone giuridiche, studi professionali associati e operatori del terzo settore con fatturati fra i 1 milione di euro e i 50 milioni di euro» DIP Aggiuntivo Dannip. 9. Se lo studio fattura meno di 1 milione, è fuori dal perimetro dichiarato: da verificare in assunzione prima di impostare la proposta.
+
+Quello che invece è fissato dal contratto (a prescindere dal massimale scelto)
+Sezione / garanzia	Limite
+RC verso terzi - garanzie base (violazione dati, sicurezza informatica, malware, interruzione attività di terzi, obblighi di notifica)	massimale indicato in polizza Condizioni di Assicurazionep. 29
+RCT - Multe e sanzioni PCI (a pagamento)	10% del massimale di polizza Condizioni di Assicurazionep. 29
+RCT - Firma Elettronica Avanzata (a pagamento)	€ 500.000 per sinistro e periodo di assicurazione, franchigia € 5.000 Condizioni di Assicurazionep. 29
+RCT - Responsabilità civile multimediale (a pagamento)	50% del massimale della sezione RCT Condizioni di Assicurazionep. 29
+RCT - spese di resistenza	un quarto del massimale assicurato indicato in polizza Condizioni di Assicurazionep. 44
+Danni all'organizzazione - garanzia base (rilevazione e investigazione, notifica, istruttoria, monitoraggio credito, consulenti, perdita d'immagine, estorsione informatica, ricostruzione dati)	somma assicurata in polizza Condizioni di Assicurazionep. 35
+Danni all'organizzazione - Diaria giornaliera da interruzione attività	indennità giornaliera di polizza, massimo 90 giorni per sinistro e periodo, franchigia 24 ore Condizioni di Assicurazionep. 35
+Maggiori costi	10% della diaria giornaliera × 90 giorni Condizioni di Assicurazionep. 35
+Trasferimento fraudolento di fondi	5% del limite di indennizzo della sezione, massimo € 50.000 per sinistro e periodo, franchigia € 5.000 Condizioni di Assicurazionep. 33
+PCI-DSS	€ 100.000 per sinistro e periodo, franchigia € 5.000 Condizioni di Assicurazionep. 35
+Interruzione da disfunzione del sistema / Interdipendenza fornitori	50% dell'indennità giornaliera di polizza, massimo 90 giorni Condizioni di Assicurazionep. 35
+Tutela legale	€ 25.000 per sinistro, € 200.000 all'anno (massimale annuo pari all'ottuplo di quello per sinistro) Condizioni di Assicurazionep. 41
+Franchigie base: € 1.000 per sinistro sia sulla sezione RC verso terzi sia su Danni all'organizzazione, salvo importo diverso in polizza DIP Aggiuntivo Dannip. 8; sono attivabili opzioni di aumento (sconto di premio) o riduzione della franchigia (premio aggiuntivo) DIP Aggiuntivo Dannip. 7.
+
+Avvertenza: l'unica garanzia con massimale predeterminato è la tutela legale; per RCT e danni all'organizzazione i valori dipendono interamente dalla quotazione. Ho consultato l'edizione corrente (01/03/2026); in archivio c'è anche l'edizione 01/07/2024, se ti serve per un contratto già in corso.
+
+Se vuoi, posso preparare una scheda di confronto fra due ipotesi di massimale per lo studio, oppure verificare come si comportano le singole garanzie su un caso concreto (per esempio un ransomware con blivi): dimmi tu.
+
+
+Copia
+
+Invia email
+
+Esporta come
+
+Genera da modello
+fammi una bella presentazione che devo poi girare al cliente che lo vede mobile
+
+Ragionamento
+18 passaggi · 3 min 49 s
+Esportazione elaborata in corso
+0,3 s
+Preparo l’ambiente di lavoro
+10 s
+Controllo cartelle di lavoro e fonti Cyber
+6 s
+Verifico importi di tutela legale e soglie nelle fonti
+14 s
+Elenco i font disponibili
+1 min 13 s
+Genero la prima bozza del PDF
+21 s
+Misuro riempimento pagine e lunghezza righe
+25 s
+Unisco le continuazioni brevi e rigenero il PDF
+10 s
+Rendo le pagine in immagini per il controllo
+3 s
+Controllo la pagina renderizzata
+5 s
+Controllo la pagina renderizzata
+4 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+7 s
+Restringo la colonna delle fonti e salvo il PDF finale
+5 s
+Controllo la pagina renderizzata
+3 s
+Consegno «Unipol Scudo Cyber - protezione dai rischi informatici.pdf»
+19 s
+Raccolgo le fonti della risposta
+17 s
+Cerco qualcosa da ricordare
+4 s
+Presentazione pronta, in PDF verticale pensato per la lettura da smartphone: una sezione per pagina, testo grande, importi in elenco e nessuna tabella.
+
+Struttura: perché parlarne, le tre sezioni di garanzia, il punto chiave (i massimali di RC verso terzi e Danni all'organizzazione si concordano in polizza), i dal contratto (firma elettronica avanzata 500.000 euro, PCI-DSS 100.000 euro, trasferimento fraudolento 5% con il massimo di 50.000 euro, tutela legale 25.000 euro per sinistro e 200.000 euro annui), franchigie base di 1.000 euro, validità territoriale, principali esclusioni, requisito di fatturato 1-50 milioni e i dati che ti servono per la quotazione.
+
+Due cose da controllare prima di girarla: il requisito di fatturato, che per uno studio piccolo può non essere soddisfatto (nel documento è dichiarato apertamente, così il discorso lo apri tu e non lo scopre lui), e il fatto che gli importi delle due sezioni principali restano indicativi fino al preventivo della compagnia.
+
+Il documento è pronto qui sotto.
+
+
+Unipol Scudo Cyber - protezione dai rischi informatici.pdf
+pdf
+Altre fonti
+
+DIP Danni — Unipol Scudo Cyber
+art. Che tipo di assicurazione è? · p. 3
+
+DIP Aggiuntivo Danni — Unipol Scudo Cyber
+art. Che cosa è assicurato? · p. 7
+
+Condizioni di Assicurazione — Unipol Scudo Cyber
+art. Sintesi limiti, sottolimiti, franchigie - Sezione Danni all'organizzazione · p. 35
+
+Condizioni di Assicurazione — Unipol Scudo Cyber
+art. Art. 3.4.2 - Trasferimento fraudolento di fondi · p. 33
+
+Condizioni di Assicurazione — Unipol Scudo Cyber
+art. Art. 4.7 - Massimale per periodo di assicurazione · p. 41
+
+DIP Aggiuntivo Danni — Unipol Scudo Cyber
+art. Ci sono limiti di copertura? · p. 8
+
+DIP Danni — Unipol Scudo Cyber
+art. Dove vale la copertura? · p. 4
+
+DIP Aggiuntivo Danni — Unipol Scudo Cyber
+art. A chi è rivolto questo prodotto? · p. 9
+
+Istruzioni e memoria
+2 dalla memoria
+
+Copia
+
+Invia email
+
+Esporta come
+
+Genera da modello
+Immagine incollata 12.34
+fallo in questo stile il pdf
+
+Ragionamento
+20 passaggi · 3 min 50 s
+Raccolgo i documenti della conversazione
+6 s
+Leggo «Immagine incollata 12.34»
+1 min 12 s
+Esportazione elaborata in corso
+0,3 s
+Preparo l’ambiente di lavoro
+11 s
+Controllo la pagina renderizzata
+1,0 s
+Controllo cartelle e font serif disponibili
+56 s
+Genero il PDF e lo rendo in immagini
+7 s
+Controllo la pagina renderizzata
+0,3 s
+Controllo la pagina renderizzata
+7 s
+Controllo la pagina renderizzata
+0,4 s
+Controllo la pagina renderizzata
+11 s
+Rigenero il PDF con stacchi ridotti e rendo le pagine
+6 s
+Controllo la pagina renderizzata
+0,3 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+0,4 s
+Controllo la pagina renderizzata
+5 s
+Copio il PDF finale nella cartella di consegna
+3 s
+Consegno «Unipol Scudo Cyber - protezione dai rischi informatici.pdf»
+17 s
+Raccolgo le fonti della risposta
+15 s
+Cerco qualcosa da ricordare
+12 s
+Rifatto nello stile dell'immagine che mi hai passato Immagine incollata 12.34p. 1: documento continuo su quattro pagine A4, carattere con grazie, titoletti brevi in grassetto senza numerazione, prosa giustificata, bianco e nero, nessuna tabella e nessun elemento decorativo.
+
+Una sola cosa mi sono permesso di non copiare: nell'immagine il testo èccolo e denso, e su smartphone diventerebbe illeggibile (è anche il contrario di come imposti di solito i PDF per il cliente su mobile). Ho tenuto lo stile tipografico ma con corpo 13 pt e interlinea 1,45, e gli importi in elenco verticale. Se invece vuoi la densità identica all'immagine, dimmelo e te lo rifaccio stretto.
+
+Contenuto invariato rispetto alla versione precedente: massimali di RC verso terzi e Danni all'organizzazione da concordare in polizza, limiti già fissati (firma elettronica avanzata 500.000 euro Condizioni di Assicurazionep. 29, PCI-DSS 100.000 euro, trasferimento fraudolento 5% con il massimo di 50.000 euro, tutela legale 25.000 euro per sinistro e 200.000 euro annui Condizioni di Assicurazionep. 41), franchigie base di 1.000 euro DIP Aggiuntivo Dannip. 8, validità territoriale DIP Dannip. 4, esclusioni principali e requisito di fatturato 1-50 milioni DIP Aggiuntivo Dannip. 9.
+
+Il documento è pronto qui sotto.
+
+
+Unipol Scudo Cyber - protezione dai rischi informatici.pdf
+pdf
+
+Istruzioni e memoria
+2 dalla memoria
+
+Copia
+
+Invia email
+
+Esporta come
+
+Genera da modello
+mi puoi creare una piccola presenazioen interattiva che il cliente può vedere da smartphone?
+
+Ragionamento
+3 passaggi · 35 s
+Raccolgo i documenti della conversazione
+29 s
+Raccolgo le fonti della risposta
+2 s
+Cerco qualcosa da ricordare
+5 s
+Una presentazione davvero interattiva (una pagina web che il cliente apre da un link, con menu, sezioni che si aprono e chiudono, eventuale simulatore) non riesco a produrla: i formati che posso consegnarti sono PDF, DOCX, XLSX e PPTX, quindi file da allegare, non un microsito.
+
+Quello che posso fare, e che su di queste due cose:
+
+1. PDF "a tocchi" - documento verticale con una schermata per sezione, un indice iniziale in cui ogni voce è un collegamento che salta alla sezione corrispondente, e un pulsante «torna all'indice» in fondo a ogni schermata. Il cliente lo apre dall'allegato WhatsApp o mail, senza app aggiuntive, e naviga toccando invece di scorrere tutto. Aggiungo, se vuoi, i tuoi contatti come collegamenti attivi (telefono, mail, WhatsApp) in chiusura.
+
+2. Presentazione in PPTX - 8-10 slide in formato verticale, una per argomento, che il cliente sfoglia con lo swipe. Si vede bene, ma gli serve PowerPoint o Google Slides sul telefono: un attrito in più rispetto al PDF.
+
+La prima è la più vicina a quello che intendi e la più comoda per chi la riceve. I contenuti sono già pronti (perché parlarne, le tre sezioni di garanzia, come si decidono gli importi, i limiti già fissati dal contratto, franchigie, dove vale, cosa non copre, come procediamo), quindi è solo questione di impaginarli in quella forma.
+
+Dimmi quale preferisci e la preparo: se vuoi la prima, mandami anche numero e mail da mettere nei collegamenti finali.
+
+
+Istruzioni e memoria
+2 dalla memoria
+Memorizzato
+Per le presentazioni destinate al cliente su smartphone, preferisce un PDF navigabile a tocchi con indice iniziale linkato alle sezioni e un pulsante «torna all'indice» in fondo a ogni schermata, piuttosto che un PPTX verticale. personale
+
+Copia
+
+Invia email
+
+Esporta come
+
+Genera da modello
+si dammi un pdf a tocchi
+
+Ragionamento
+42 passaggi · 6 min 12 s
+Raccolgo i documenti della conversazione
+16 s
+Guardo quali documenti ci sono in archivio
+3 s
+Cerco «Massimal, Somma assicurata, fatturat, milion» in «DIP Danni — Unipol Scudo Cyber»
+2 s
+Cerco «Firma elettronica, PCI, trasferimento fraudolento, tutela l…» in «DIP Danni — Unipol Scudo Cyber»
+3 s
+Leggo «DIP Danni — Unipol Scudo Cyber»
+4 s
+Leggo «DIP Aggiuntivo Danni — Unipol Scudo Cyber»
+5 s
+Cerco «Firma elettronica, 500.000, PCI, 100.000, trasferimento fra…» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+3 s
+Cerco «Firma elettronica» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+4 s
+Cerco «PCI – DSS, PCI-DSS, Trasferimento fraudolento, Tutela legal…» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+Ho abbastanza dati confermati. Procedo a raccogliere il resto (PCI-DSS, trasferimento fraudolento, tutela legale, spese di resistenza) prim…
+5 s
+Cerco nel testo in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+6 s
+Cerco «quarto del massimale, spese di resistenza, Massimale tutela…» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+1 min 8 s
+Esportazione elaborata in corso
+0,3 s
+Preparo l’ambiente di lavoro
+7 s
+Cerco le skill di progetto disponibili nel filesystem
+2 s
+Leggo SKILL.md
+1 min 8 s
+Cerco documenti su Unipol Scudo Cyber nella workspace
+3 s
+Controllo la dimensione dei documenti dell'edizione 2026-03
+2 s
+Leggo «DIP Danni — Unipol Scudo Cyber»
+3 s
+Leggo «DIP Aggiuntivo Danni — Unipol Scudo Cyber»
+4 s
+Cerco «500.000, 100.000, 50.000, 5.000, 25.000, 200.000, Firma ele…» in «Condizioni di Assicurazione — Unipol Scudo Cyber»
+23 s
+Preparo la cartella di lavoro temporanea
+59 s
+Scrivo doc.html
+2 s
+Genero il PDF dall'HTML con Chromium
+7 s
+Controllo numero pagine e presenza di link interni
+3 s
+Rendo le pagine del PDF in immagini per il controllo visivo
+2 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+1 s
+Controllo la pagina renderizzata
+3 s
+Controllo la pagina renderizzata
+2 s
+Controllo la pagina renderizzata
+4 s
+Ispeziono i target dei link della pagina indice
+3 s
+Ispeziono la struttura completa degli annots della pagina indice
+4 s
+Verifico che le destinazioni con nome siano presenti nel PDF
+4 s
+Elenco chiavi del catalogo del PDF
+3 s
+Controllo il contenuto del dizionario Dests
+4 s
+Copio il PDF definitivo nella cartella di output
+2 s
+Consegno «Unipol Scudo Cyber - la tua copertura in breve.pdf»
+15 s
+Raccolgo le fonti della risposta
+14 s
+Cerco qualcosa da ricordare
+4 s
+Fatto: il PDF "a tocchi" è pronto. Indice iniziale con collegamenti veri, una schermata per sezione (perché parlarne, le tre aree di copertura, come si decidono gli importi, i limiti già fissati dal contratto, franchigie, territorialità, esclusioni, requisito di fatturato, dati per la quotazione, come procediamo), pulsante « fondo a ognuna, testo largo e a colonna stretta per lo smartphone, importi in elenco.
+
+Contenuto invariato nella sostanza rispetto alle versioni precedenti: massimali di RC verso terzi e Danni all'organizzazione da concordare in polizza DIP Aggiuntivo Dannip. 7, firma elettronica avanzata 500.000 euro con franchigia 5.000, PCI‑DSS 100.000 euro con franchigia 5.000, trasferimento fraudolento di fondi al 5% con il massimo di 50.000 euro, tutela legale 25.000 euro per sinistro e 200.000 euro annui Condizioni di Assicurazionep. 41, franchigie base di 1.000 euro su entrambe le sezioni principali DIP Aggiuntivo Dannip. 8, validità territoriale DIP Dannip. 4, principali esclusioni DIP Dannip. 3 e requisito di fatturato fra 1 e 50 milioni di euro DIP Aggiuntivo Dannip. 9.
+
+Un promemoria: non avendo i tuoi contatti, l'ultima schermata invita genericamente a «contattare il consulente assicurativo»; appena mi mandi numero e mail li inserisco come collegamenti attivi.
+
+Il documento è pronto qui sotto.
+
+
+Unipol Scudo Cyber - la tua copertura in breve.pdf
+pdf
+
+Istruzioni e memoria
+3 dalla memoria
+
+Copia
+
+Invia email
+
+Esporta come
+
+Genera da modello
