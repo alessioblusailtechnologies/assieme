@@ -16,6 +16,7 @@ import {
   EsitoProposta,
   EventoStream,
   Id,
+  LinkDocumento,
   Messaggio,
   NuovoMessaggio,
   ModoAllegato,
@@ -130,6 +131,28 @@ export class ConversazioniApi {
     return this.http.get(`${this.base}/${conversazioneId}/documenti/${documentoId}`, {
       responseType: 'blob',
     });
+  }
+
+  // --- Il link di un documento generato, da mandare al cliente (11/09/2026) ---
+
+  linkDocumento(conversazioneId: Id, documentoId: Id): Observable<{ link: LinkDocumento | null }> {
+    return this.http.get<{ link: LinkDocumento | null }>(`${this.base}/${conversazioneId}/documenti/${documentoId}/link`);
+  }
+
+  /**
+   * Crea il link, o ne cambia la scadenza: `giorni` da oggi, `null` per
+   * nessuna. Senza, 30 giorni per un link nuovo e invariata per uno che c'è.
+   */
+  condividiDocumento(conversazioneId: Id, documentoId: Id, giorni?: number | null): Observable<{ link: LinkDocumento }> {
+    return this.http.put<{ link: LinkDocumento }>(
+      `${this.base}/${conversazioneId}/documenti/${documentoId}/link`,
+      giorni === undefined ? {} : { giorni },
+    );
+  }
+
+  /** Revoca il link: quel token non apre più niente. */
+  revocaLink(conversazioneId: Id, documentoId: Id): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${conversazioneId}/documenti/${documentoId}/link`);
   }
 
   /**

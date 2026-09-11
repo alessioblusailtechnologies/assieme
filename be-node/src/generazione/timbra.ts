@@ -1,6 +1,7 @@
 import { PDFDocument, PageSizes, type PDFPage } from 'pdf-lib';
 import PizZip from 'pizzip';
 
+import type { FormatoTimbrabile } from '../contratto/formati.js';
 import { componiDocx } from './docx.js';
 import {
   MARGINE,
@@ -31,7 +32,7 @@ import {
  * - **Excel**: le fasce di stampa di ogni foglio, solo testo.
  */
 
-export type FormatoTimbrabile = 'pdf' | 'docx' | 'xlsx';
+export type { FormatoTimbrabile };
 
 export function senzaFasce(fasce: FasceDocumento): boolean {
   return fasciaVuota(fasce.intestazione) && fasciaVuota(fasce.piede);
@@ -41,7 +42,10 @@ export async function timbra(byte: Buffer, formato: FormatoTimbrabile, fasce: Fa
   if (senzaFasce(fasce)) return byte;
   if (formato === 'pdf') return timbraPdf(byte, fasce);
   if (formato === 'docx') return timbraDocx(byte, fasce);
-  return timbraXlsx(byte, fasce);
+  if (formato === 'xlsx') return timbraXlsx(byte, fasce);
+  /* Da quando la sandbox consegna qualsiasi file, un formato che arriva
+     fin qui per sbaglio non va trattato da foglio Excel. */
+  throw new Error(`Il formato ${String(formato)} non riceve intestazione e piè.`);
 }
 
 // ---------------------------------------------------------------------------

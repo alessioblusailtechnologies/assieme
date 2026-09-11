@@ -73,6 +73,11 @@ export interface DipendenzeInterrogazione {
    * messaggio riparte con la storia nel prompt.
    */
   ripresaSessione?: { esiste: (sessioneId: string) => Promise<boolean> };
+  /**
+   * La radice dei link delle pagine condivise (`BASE_LINK_PAGINE`). Senza,
+   * il motore non ha lo strumento `condividi_link`.
+   */
+  baseLinkPagine?: string;
 }
 
 interface PayloadInterrogazione {
@@ -259,7 +264,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       const elaborata = dip.sandbox
         ? async (
             r: {
-              formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx' | undefined;
+              formato?: string | undefined;
               modelloId?: string | undefined;
               istruzioni?: string | undefined;
               contenuto?: string | undefined;
@@ -407,6 +412,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           utente: [...storia.rows.filter((m) => m.autore === 'utente').map((m) => m.testo), payload.testo],
           agenzia: [...dna.istruzioni.map((i) => `${i.titolo} ${i.testo}`), ...dna.ricordi.map((r) => r.testo)],
         },
+        /* I link delle pagine condivise, a nome di chi scrive (fase 2 di PIANO-LINK-E-FORMATI.md). */
+        ...(dip.baseLinkPagine && { pagine: { baseLink: dip.baseLinkPagine, utenteId: payload.utenteId } }),
         ...(elaborata && {
           elaborata: async (r) => {
             const e = await elaborata(

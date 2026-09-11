@@ -9,11 +9,13 @@ import {
   urlDocumentoGenerato,
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
-import { FORMATI_GENERAZIONE, FORMATI_MODELLO, type FormatoModello } from '../../contratto/template.js';
+import { consegnabile } from '../../contratto/formati.js';
+import { FORMATI_GENERAZIONE } from '../../contratto/template.js';
 import { fasceDelTenant, modelliDelTenant, modelloChiesto, scegliModello } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
 import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
 import type { PropostaArchivio } from '../../contratto/conversazioni.js';
+import { condividiDocumento } from '../../pagine/condivise.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 
 /**
@@ -35,6 +37,7 @@ export const NOME_SERVER = 'velia';
 export const NOME_TOOL_ESPORTA_SUBITO = `mcp__${NOME_SERVER}__esporta_subito`;
 export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`;
 export const NOME_TOOL_PROPONI_RIORDINO = `mcp__${NOME_SERVER}__proponi_riordino`;
+export const NOME_TOOL_CONDIVIDI_LINK = `mcp__${NOME_SERVER}__condividi_link`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
@@ -59,7 +62,8 @@ export interface ContestoStrumenti {
    * documentale. Assente = la sandbox non è configurata e il tool non c'è.
    */
   elaborata?: (richiesta: {
-    formato?: FormatoModello | undefined;
+    /** L'estensione: qualsiasi formato tranne gli eseguibili. */
+    formato?: string | undefined;
     /** L'id del modello, già risolto dal nome detto in chat. */
     modelloId?: string | undefined;
     istruzioni: string;
@@ -73,6 +77,11 @@ export interface ContestoStrumenti {
    * fida della scelta del motore.
    */
   richieste?: { utente: string[]; agenzia: string[] };
+  /**
+   * Le pagine condivise (fase 2 di `PIANO-LINK-E-FORMATI.md`): la radice dei
+   * link e chi li crea. Assente = lo strumento `condividi_link` non c'è.
+   */
+  pagine?: { baseLink: string; utenteId: string };
 }
 
 export interface StrumentiMotore {
@@ -156,13 +165,15 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
   const esportazioneElaborata = tool(
     'esportazione_elaborata',
     [
-      'Fa preparare un documento di qualità professionale (PDF, DOCX, XLSX o PPTX) al motore documentale, che lavora in una',
-      'sandbox con Python, Node, LibreOffice e Chromium: lo impagina con cura, controlla il risultato pagina per pagina e lo',
-      'allega alla risposta. Con un `modello` apre il modello di riferimento dell’agenzia e ne conserva struttura e stili;',
-      'senza, impagina da zero con l’intestazione dell’agenzia.',
+      'Fa preparare un file di qualità professionale al motore documentale, che lavora in una sandbox con Python, Node,',
+      'LibreOffice e Chromium: lo impagina con cura, controlla il risultato e lo allega alla risposta. Qualsiasi formato,',
+      'tranne i programmi eseguibili: PDF, Word, Excel, PowerPoint, una pagina web interattiva (HTML: indice, sezioni che',
+      'si aprono, pensata per il telefono), un’immagine (PNG, JPG), CSV, ZIP… Con un `modello` apre il modello di',
+      'riferimento dell’agenzia e ne conserva struttura e stili; senza, impagina da zero col marchio dell’agenzia.',
       'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
-      '«da consegnare», una proposta o un report impaginato, o nomina un modello («sul modello X», «da modello»). Per un',
-      'semplice «esportamelo in pdf» usa invece `esporta_subito`. Mai di tua iniziativa.',
+      '«da consegnare», una proposta, un report impaginato, una presentazione, una pagina interattiva o un’immagine, o nomina',
+      'un modello («sul modello X», «da modello»). Per un semplice «esportamelo in pdf» usa invece `esporta_subito`. Mai di',
+      'tua iniziativa.',
       'Passa `modello` solo quando è chiaro che lo si vuole: l’utente lo nomina o chiede «il modello», una regola del DNA',
       'd’Agenzia lo prescrive, o la sua riga «quando usarlo» descrive proprio il documento chiesto. Mai solo perché c’è:',
       'nel dubbio omettilo.',
@@ -176,9 +187,12 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         .optional()
         .describe('Il nome del modello di riferimento, fra quelli dell’agenzia: solo quando è chiaro che lo si vuole.'),
       formato: z
-        .enum(FORMATI_MODELLO)
+        .string()
+        .max(12)
         .optional()
-        .describe('Il formato del file: pdf, docx, xlsx o pptx. Senza, quello del modello (o PDF).'),
+        .describe(
+          'Il formato del file, come estensione: pdf, docx, xlsx, pptx, html (pagina web interattiva), png, jpg, csv, zip… Senza, quello del modello (o PDF).',
+        ),
       istruzioni: z.string().min(1).max(4000).describe('Le istruzioni per il motore documentale.'),
       contenuto: z.string().optional().describe('Il testo di partenza in Markdown, se già scritto.'),
       titolo: z.string().max(160).optional(),
@@ -186,6 +200,13 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     async (args) => {
       if (!contesto.elaborata) {
         return { content: [{ type: 'text', text: 'La generazione di documenti da modello non è disponibile in questo ambiente.' }], isError: true };
+      }
+      const formato = args.formato?.trim().toLowerCase().replace(/^\./, '') || undefined;
+      if (formato && !consegnabile(formato)) {
+        return {
+          content: [{ type: 'text', text: `Il formato «${formato}» non si può produrre: i programmi eseguibili sono esclusi. Dillo all’utente.` }],
+          isError: true,
+        };
       }
       let modelloId: string | undefined;
       let scartato = '';
@@ -205,7 +226,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       let esito;
       try {
         esito = await contesto.elaborata({
-          formato: args.formato,
+          formato,
           modelloId,
           istruzioni: args.istruzioni,
           contenuto: args.contenuto,
@@ -231,6 +252,85 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         ],
         ...(!consegnati && { isError: true }),
       };
+    },
+  );
+
+  /**
+   * Il link di un documento generato, da mandare al cliente (fase 2 di
+   * `PIANO-LINK-E-FORMATI.md`): la stessa funzione del pulsante «Condividi
+   * link», 30 giorni salvo diverso avviso. Il documento può essere di questa
+   * risposta (ancora solo in memoria) o di una precedente.
+   */
+  const condividiLink = tool(
+    'condividi_link',
+    [
+      'Crea il link di un documento generato in questa conversazione, da mandare al cliente: si apre dal telefono',
+      '(una pagina web, un PDF, un’immagine) o porta a scaricare il file. Usalo quando l’utente chiede una pagina, una',
+      'presentazione o un documento da mandare o girare al cliente, o chiede il link: dopo averlo generato, o per uno',
+      'generato prima. Senza `documento` vale l’ultimo generato. Il link vale 30 giorni salvo `giorni` (null = nessuna',
+      'scadenza) e l’agenzia lo revoca dal documento. Chi ha il link vede il documento: non crearlo per documenti interni.',
+      'Dopo l’esito scrivi il link in chiaro nella risposta, in una riga, con la scadenza.',
+    ].join(' '),
+    {
+      documento: z.string().max(200).optional().describe('Il nome del documento generato, o parte di esso; assente = l’ultimo.'),
+      giorni: z.number().int().min(1).max(365).nullable().optional().describe('Per quanti giorni vale; null = nessuna scadenza.'),
+    },
+    async (args) => {
+      if (!contesto.pagine) {
+        return { content: [{ type: 'text', text: 'I link non sono disponibili in questo ambiente: dillo all’utente.' }], isError: true };
+      }
+      const client = await contesto.db.connect();
+      try {
+        const precedenti = await client.query<{ documento: DocumentoGenerato }>(
+          `select d as documento
+             from velia.messaggi m, jsonb_array_elements(m.documenti) d
+            where m.conversazione_id = $1
+            order by m.inviato_il`,
+          [contesto.conversazioneId],
+        );
+        const tutti = [...precedenti.rows.map((r) => r.documento), ...generati];
+        const cercato = args.documento?.trim().toLowerCase();
+        const candidati = cercato ? tutti.filter((d) => d.nome.toLowerCase().includes(cercato)) : tutti;
+        const documento = candidati.at(-1);
+        if (!documento) {
+          const elenco = tutti.map((d) => `«${d.nome}»`).join(', ');
+          return {
+            content: [
+              {
+                type: 'text',
+                text: elenco
+                  ? `Nessun documento generato si chiama «${args.documento ?? ''}». Ci sono: ${elenco}.`
+                  : 'In questa conversazione non c’è ancora nessun documento generato: prima generalo, poi crea il link.',
+              },
+            ],
+            isError: true,
+          };
+        }
+        const link = await condividiDocumento(
+          client,
+          contesto.pagine.baseLink,
+          {
+            tenantId: contesto.tenantId,
+            conversazioneId: contesto.conversazioneId,
+            documento: { id: documento.id, nome: documento.nome, formato: documento.formato },
+            utenteId: contesto.pagine.utenteId,
+          },
+          args.giorni,
+        );
+        const scadenza = link.scadeIl
+          ? `vale fino al ${new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(link.scadeIl))}`
+          : 'non scade';
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Link di «${documento.nome}»: ${link.url} (${scadenza}; l’agenzia lo revoca dal documento). Scrivilo in chiaro nella risposta.`,
+            },
+          ],
+        };
+      } finally {
+        client.release();
+      }
     },
   );
 
@@ -340,12 +440,14 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       tools: [
         esportaSubito,
         ...(contesto.elaborata ? [esportazioneElaborata] : []),
+        ...(contesto.pagine ? [condividiLink] : []),
         ...(contesto.suProposta ? [proponiRiordino] : []),
       ],
     }),
     nomi: [
       NOME_TOOL_ESPORTA_SUBITO,
       ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
+      ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
       ...(contesto.suProposta ? [NOME_TOOL_PROPONI_RIORDINO] : []),
     ],
     generati,

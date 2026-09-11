@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 import { configurazione } from '../src/config.js';
-import type { FormatoModello } from '../src/contratto/template.js';
+import { consegnabile } from '../src/contratto/formati.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { modelliDelTenant, scegliModello } from '../src/generazione/catalogo.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
@@ -30,11 +30,12 @@ const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
 const scelta = process.argv[2];
 const istruzioni = process.argv[3];
 const nomeModello = process.argv[4];
-if (!scelta || !['pdf', 'docx', 'xlsx', 'pptx', 'modello'].includes(scelta) || !istruzioni) {
-  console.error('Uso: npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "<istruzioni>" [nome-modello]');
+/* Qualsiasi formato tranne gli eseguibili (11/09/2026): pdf, docx, html, png, csv… o «modello» per quello del modello. */
+if (!scelta || !(scelta === 'modello' || consegnabile(scelta)) || !istruzioni) {
+  console.error('Uso: npx tsx tools/collaudo-elaborata.ts <estensione|modello> "<istruzioni>" [nome-modello]');
   process.exit(1);
 }
-const formato = scelta === 'modello' ? undefined : (scelta as FormatoModello);
+const formato = scelta === 'modello' ? undefined : scelta;
 const c = configurazione();
 const chiaveApi = c.ANTHROPIC_API_KEY_SANDBOX ?? c.ANTHROPIC_API_KEY ?? '';
 const avviatore =

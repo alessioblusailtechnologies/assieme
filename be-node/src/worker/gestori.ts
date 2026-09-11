@@ -158,6 +158,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         radice: resolve(c.CARTELLA_WORKER),
         ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
         ...(c.MOTORE_RIPRESA === 'si' && { ripresaSessione: { esiste: (id) => getSessionInfo(id).then((s) => Boolean(s)) } }),
+        baseLinkPagine: c.BASE_LINK_PAGINE,
       });
     }
     await interrogazioneVera(job, strumenti);

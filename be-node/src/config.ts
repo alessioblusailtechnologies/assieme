@@ -186,6 +186,13 @@ const schemaAmbiente = z.object({
   /** In locale; in produzione la porta la assegna la piattaforma in `PORT` (vedi server.ts). */
   PORTA_API: z.coerce.number().int().default(3002),
   /**
+   * La radice dei link delle pagine condivise, `<radice>/p/<token>`
+   * (11/09/2026): l'indirizzo pubblico dell'API, che le serve. Serve
+   * all'API e al worker (lo strumento `condividi_link` del motore). In
+   * locale `http://localhost:3002`; un dominio dedicato si mette qui.
+   */
+  BASE_LINK_PAGINE: z.string().url().default('https://api-dev.sonovelia.it'),
+  /**
    * Origini del front-end ammesse (separate da virgola), quando app e API
    * stanno su host diversi — Cloudflare Pages da una parte, Railway
    * dall'altra. Vuota = niente CORS (stesso host, o dev server col proxy).

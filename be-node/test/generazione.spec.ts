@@ -11,6 +11,7 @@ import {
   type Paragrafo,
 } from '../src/contratto/intestazione.js';
 import { analizzaMarkdown, segmenti, testoPiano } from '../src/generazione/blocchi.js';
+import { cartaPerSandbox } from '../src/generazione/carta.js';
 import { componiDocx } from '../src/generazione/docx.js';
 import { generaDocumento, nomeFileGenerato } from '../src/generazione/generatore.js';
 import {
@@ -600,5 +601,37 @@ describe('la carta dell’agenzia su un documento consegnato (timbra)', () => {
     /* Una fascia bassa non avvicina il corpo al bordo più del margine. */
     const bassa = await misureFasce({ ...SENZA_FASCE, intestazione: { altezza: 4, elementi: [casella('t', 20, 0, 50, 4, [paragrafo('x')])] } });
     expect(bassa.altoMm).toBe(20);
+  });
+
+  it('un formato che non si timbra non viene trattato da foglio Excel', async () => {
+    await expect(timbra(Buffer.from('<html></html>'), 'html' as never, FASCE)).rejects.toThrow(/non riceve intestazione/);
+  });
+});
+
+/*
+ * La carta dell'agenzia per i formati che VELIA non timbra (pagine web,
+ * immagini, PowerPoint): i loghi come sono, e i testi con dove stanno.
+ */
+describe('la carta per la sandbox', () => {
+  it('loghi, testi e colori delle fasce, senza il numero di pagina', () => {
+    const file = cartaPerSandbox(FASCE);
+    expect(file.find((f) => f.path === 'carta/img-000000000001.png')?.byte).toBe(PNG);
+    const md = String(file.find((f) => f.path === 'carta/carta.md')?.byte);
+    expect(md).toContain('Agenzia: Assicurazioni Meridiana S.r.l.');
+    expect(md).toContain('`/lavoro/carta/img-000000000001.png` (a sinistra, 30×15 mm)');
+    expect(md).toContain('> Corso Vinzaglio 12, Torino');
+    expect(md).toContain('> Iscrizione RUI A000123456 · Km&Servizi');
+    expect(md).toContain('#2f4b7c');
+    /* «Pagina N di M» non vale per una pagina web: non si riporta. */
+    expect(md).not.toContain('Pagina');
+    /* L'intestazione prima del piè, e nell'intestazione dall'alto e da sinistra. */
+    expect(md.indexOf('Meridiana S.r.l.', md.indexOf('## Intestazione'))).toBeLessThan(md.indexOf('Corso Vinzaglio'));
+    expect(md.indexOf('## Intestazione')).toBeLessThan(md.indexOf('## Piè di pagina'));
+  });
+
+  it('senza niente nelle fasce resta il nome dell’agenzia', () => {
+    const file = cartaPerSandbox(SENZA_FASCE);
+    expect(file).toHaveLength(1);
+    expect(String(file[0]!.byte)).toContain('Agenzia: z');
   });
 });

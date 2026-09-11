@@ -13,6 +13,7 @@ import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraRotteIntestazione, type OpzioniIntestazione } from './intestazione/rotte.js';
 import { registraRotteIstruzioni, type OpzioniIstruzioni } from './istruzioni/rotte.js';
 import { registraRotteModelli } from './modelli/rotte.js';
+import { registraRottePagine, type OpzioniPagine } from './pagine/rotte.js';
 import { registraAuth, type VerificaToken } from './plugins/auth.js';
 import { registraGestoreErrori } from './plugins/errori.js';
 import { registraRotteRicordi } from './ricordi/rotte.js';
@@ -47,6 +48,8 @@ export interface OpzioniApp {
   sessione?: OpzioniSessione;
   /** Nei test: creazione dell'utenza ospite senza Supabase Auth, e link finto. */
   chatClienti?: OpzioniChatClienti;
+  /** Nei test: Storage finto e radice dei link delle pagine condivise. */
+  pagine?: OpzioniPagine;
 }
 
 /**
@@ -101,6 +104,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteCartelle(app);
   registraRotteChatClienti(app, opzioni.chatClienti);
   registraRotteConversazioni(app, opzioni.conversazioni);
+  registraRottePagine(app, opzioni.pagine);
   registraRotteTemplate(app, opzioni.template);
   registraRotteIntestazione(app, opzioni.intestazione);
   registraRotteTabelle(app, opzioni.tabelle);

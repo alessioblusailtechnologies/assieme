@@ -67,6 +67,28 @@ describe('il prompt della sandbox', () => {
     const word = promptSandbox({ modello: modello('sua'), formato: 'docx', documenti: [] });
     expect(word).not.toContain('merge_page');
   });
+
+  it('una pagina web: un file solo, niente rete, controllata a larghezza di telefono', () => {
+    const p = promptSandbox({ formato: 'html', documenti: [], cartaAgenzia: true });
+    expect(p).toContain('UN file HTML');
+    expect(p).toContain('## Pagina web (HTML)');
+    expect(p).toContain('--window-size=390');
+    expect(p).toContain('Nessuna risorsa esterna');
+    /* Il marchio lo mette la sandbox, coi materiali in /lavoro/carta/: VELIA qui non timbra. */
+    expect(p).toContain('/lavoro/carta/');
+    expect(p).toContain('Il marchio dell\'agenzia lo metti tu');
+    expect(p).not.toContain('li mette VELIA');
+    expect(p).not.toContain('## Immagine');
+  });
+
+  it('un’immagine ha le sue misure; senza carta niente sezione del marchio', () => {
+    const p = promptSandbox({ formato: 'png', documenti: [] });
+    expect(p).toContain('## Immagine');
+    expect(p).toContain('1080×1350');
+    expect(p).not.toContain('/lavoro/carta/');
+    expect(p).not.toContain('## Pagina web');
+    expect(promptRichiesta({ formato: 'png' })).toContain('Produci un file PNG.');
+  });
 });
 
 describe.skipIf(!(await dockerConImmagine()))('la sandbox Docker vera', () => {

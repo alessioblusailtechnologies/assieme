@@ -180,20 +180,32 @@
         -->
         <div class="documenti" aria-label="Documenti generati">
           @for (d of m.documenti; track d.id) {
-            <button
-              type="button"
-              class="documento"
-              (click)="store.scaricaDocumento(d)"
-              [disabled]="store.documentoInScaricamento() === d.id"
-              [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
-            >
-              <ui-icon name="scarica" [size]="13" />
-              <span class="documento__nome">{{ d.nome }}</span>
-              <span class="mono documento__formato">{{ d.formato }}</span>
-              @if (d.modello) {
-                <span class="documento__template">su «{{ d.modello }}»</span>
-              }
-            </button>
+            <span class="documento-riga">
+              <button
+                type="button"
+                class="documento"
+                (click)="store.scaricaDocumento(d)"
+                [disabled]="store.documentoInScaricamento() === d.id"
+                [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
+              >
+                <ui-icon name="scarica" [size]="13" />
+                <span class="documento__nome">{{ d.nome }}</span>
+                <span class="mono documento__formato">{{ d.formato }}</span>
+                @if (d.modello) {
+                  <span class="documento__template">su «{{ d.modello }}»</span>
+                }
+              </button>
+              <!-- Il link da mandare al cliente, che lo apre dal telefono (11/09/2026). -->
+              <button
+                type="button"
+                class="documento documento__condividi"
+                (click)="store.apriCondivisione(d)"
+                [attr.aria-label]="'Condividi il link di ' + d.nome"
+                title="Condividi link"
+              >
+                <ui-icon name="condividi" [size]="13" />
+              </button>
+            </span>
           }
         </div>
       }

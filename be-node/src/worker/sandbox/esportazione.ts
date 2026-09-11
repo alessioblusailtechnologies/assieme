@@ -11,9 +11,10 @@ import {
   type DocumentoGenerato,
   type EventoStream,
 } from '../../contratto/conversazioni.js';
-import type { FormatoModello } from '../../contratto/template.js';
+import { consegnabile, mimeDi, timbrabile } from '../../contratto/formati.js';
+import { cartaPerSandbox } from '../../generazione/carta.js';
 import { fasceDelTenant, modelloPerId, type RigaModello } from '../../generazione/catalogo.js';
-import { MIME, NOME_DOCUMENTO } from '../../generazione/generatore.js';
+import { NOME_DOCUMENTO } from '../../generazione/generatore.js';
 import type { FasceDocumento } from '../../generazione/intestazione.js';
 import { misureFasce, senzaFasce, timbra } from '../../generazione/timbra.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -33,7 +34,10 @@ import { Sandbox, type AvviatoreSandbox, type ParametriSessione } from './sandbo
  * L'intestazione (11/09/2026): con un modello «dell'agenzia», o senza
  * modello, la sandbox lascia libere le fasce e il worker ci stampa quelle
  * dell'agenzia dopo la consegna (`generazione/timbra.ts`); con un modello
- * «la sua» comanda il modello. PowerPoint non ne riceve.
+ * «la sua» comanda il modello. Solo su PDF, Word ed Excel: dalla sera dello
+ * stesso giorno la sandbox consegna qualsiasi formato, e su pagine web,
+ * immagini e PowerPoint il marchio lo mette lei, coi loghi e i testi che
+ * trova in `/lavoro/carta/` (`generazione/carta.ts`).
  *
  * Le chiavi del worker (db, Storage) non entrano nella sandbox; la chiave
  * Anthropic della sandbox è dedicata e sta dietro il proxy del runner.
@@ -43,8 +47,8 @@ export interface RichiestaElaborata {
   tenantId: string;
   conversazioneId: string;
   jobId: string;
-  /** Assente: quello del modello, o PDF senza modello. */
-  formato?: FormatoModello | undefined;
+  /** L'estensione del file da produrre. Assente: quella del modello, o PDF senza modello. */
+  formato?: string | undefined;
   modelloId?: string | undefined;
   istruzioni?: string | undefined;
   /** Il contenuto di partenza (la risposta da esportare), se c'è. */
@@ -82,21 +86,20 @@ export interface EsitoElaborata {
 
 export class ErroreElaborata extends Error {}
 
-const FORMATI_CONSEGNA: Record<string, FormatoModello> = { pdf: 'pdf', docx: 'docx', xlsx: 'xlsx', pptx: 'pptx' };
-
 export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: RichiestaElaborata): Promise<EsitoElaborata> {
   /* 1. Il modello, e l'intestazione dell'agenzia se tocca a lei. */
   const client = await dip.db.connect();
   let modello: RigaModello | undefined;
   let fasce: FasceDocumento | undefined;
-  let formato: FormatoModello;
+  let formato: string;
   try {
     if (r.modelloId) {
       modello = await modelloPerId(client, r.modelloId);
       if (!modello || modello.tenant_id !== r.tenantId) throw new ErroreElaborata('Il modello scelto non esiste più.');
     }
-    formato = r.formato ?? modello?.formato ?? 'pdf';
-    if ((!modello || modello.intestazione_agenzia) && formato !== 'pptx') {
+    formato = (r.formato ?? modello?.formato ?? 'pdf').toLowerCase().replace(/^\./, '');
+    if (!consegnabile(formato)) throw new ErroreElaborata(`Un file «.${formato}» non si può produrre: i programmi eseguibili sono esclusi.`);
+    if (!modello || modello.intestazione_agenzia) {
       const titolo = r.titolo?.trim() || modello?.nome || NOME_DOCUMENTO;
       fasce = await fasceDelTenant(client, dip.archivio, r.tenantId, titolo);
       if (senzaFasce(fasce)) fasce = undefined;
@@ -104,7 +107,11 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
   } finally {
     client.release();
   }
-  const margini = fasce ? await misureFasce(fasce) : undefined;
+  /* Su PDF, Word ed Excel la carta la stampa il worker dopo la consegna, e
+     alla sandbox si dicono solo i margini da lasciare liberi. Sugli altri
+     formati il marchio lo mette la sandbox, coi materiali in /lavoro/carta/. */
+  const margini = fasce && timbrabile(formato) ? await misureFasce(fasce) : undefined;
+  const carta = fasce && !timbrabile(formato) ? cartaPerSandbox(fasce) : undefined;
 
   /* 2. La sandbox, con dentro workspace e modello. */
   await dip.emetti({ tipo: 'attivita', etichetta: 'Preparo l’ambiente di lavoro' });
@@ -120,6 +127,8 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
       pathModello = `/lavoro/modello/${slug}.${modello.formato}`;
       await sandbox.scrivi(`modello/${slug}.${modello.formato}`, await dip.archivio.scarica(modello.path_file));
     }
+
+    for (const f of carta ?? []) await sandbox.scrivi(f.path, f.byte);
 
     await sandbox.esegui('mkdir -p /lavoro/output /lavoro/tmp');
 
@@ -144,6 +153,7 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         formato,
         documenti,
         ...(margini && { intestazioneAgenzia: margini }),
+        ...(carta && { cartaAgenzia: true }),
       }),
       promptUtente: promptRichiesta({
         formato,
@@ -176,10 +186,13 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         } else if (evento.tipo === 'testo') {
           await dip.emetti({ tipo: 'testo', delta: evento.delta });
         } else if (evento.tipo === 'consegna') {
-          const consegnato = FORMATI_CONSEGNA[evento.formato];
-          if (!consegnato) continue;
+          /* Il runner è un altro servizio: l'esclusione degli eseguibili si riapplica qui. */
+          const consegnato = evento.formato.toLowerCase();
+          if (!consegnabile(consegnato)) continue;
           let byte = await sandbox.leggi(evento.path);
-          if (fasce && consegnato !== 'pptx') {
+          /* Si timbra solo dove la sandbox ha lasciato i margini: un PDF
+             consegnato insieme a una pagina web non li ha. */
+          if (fasce && margini && timbrabile(consegnato)) {
             try {
               byte = await timbra(byte, consegnato, fasce);
             } catch (errore) {
@@ -189,11 +202,13 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
           }
           const id = randomUUID();
           const percorso = percorsoDocumentoGenerato(r.tenantId, id, consegnato);
-          await dip.archivio.carica(percorso, byte, MIME[consegnato]);
+          await dip.archivio.carica(percorso, byte, mimeDi(consegnato));
           percorsi.push(percorso);
           const documento: DocumentoGenerato = {
             id,
-            nome: evento.nome,
+            /* Il modello a volte scrive il nome col suo file («Pagina.html»):
+               l'estensione è già il formato, e nel download si raddoppierebbe. */
+            nome: evento.nome.replace(new RegExp(`\\.${consegnato}$`, 'i'), '').trim() || evento.nome,
             formato: consegnato,
             ...(modello && { modello: modello.nome }),
             url: urlDocumentoGenerato(r.conversazioneId, id),

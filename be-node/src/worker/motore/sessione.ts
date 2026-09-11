@@ -475,6 +475,8 @@ export function etichettaAttivita(
     }
     case 'mcp__velia__esportazione_elaborata':
       return 'Esportazione elaborata in corso';
+    case 'mcp__velia__condividi_link':
+      return 'Preparo il link per il cliente';
     case 'mcp__velia__esegui':
     case 'mcp__velia__scrivi_file':
     case 'mcp__velia__leggi_file':

@@ -289,7 +289,7 @@
             <p class="mono output__etichetta">Output</p>
             <ul class="output__elenco">
               @for (d of store.output(); track d.id) {
-                <li>
+                <li class="output__riga">
                   <button
                     type="button"
                     class="output__voce"
@@ -307,6 +307,15 @@
                         <span class="output__template">su «{{ d.modello }}»</span>
                       }
                     </span>
+                  </button>
+                  <button
+                    type="button"
+                    class="output__condividi"
+                    (click)="store.apriCondivisione(d)"
+                    [attr.aria-label]="'Condividi il link di ' + d.nome"
+                    title="Condividi link"
+                  >
+                    <ui-icon name="condividi" [size]="14" />
                   </button>
                 </li>
               }
@@ -430,6 +439,93 @@
       </button>
     </div>
   </div>
+</ui-cassetto>
+
+<!--
+  Condividi link (11/09/2026, fase 2 di PIANO-LINK-E-FORMATI.md): il documento
+  come pagina che il cliente apre dal telefono. Aprire il cassetto crea il link,
+  se non c'è; chi lo ha vede il documento finché non scade o non lo si revoca.
+-->
+<ui-cassetto
+  [aperto]="!!store.condivisione()"
+  (apertoChange)="!$event && store.chiudiCondivisione()"
+  titolo="Condividi link"
+>
+  @if (store.condivisione(); as c) {
+    <div class="modulo">
+      <p class="modulo__spiega">
+        Chi ha il link apre «{{ c.documento.nome }}» dal telefono, senza accedere a Velia. Mandalo
+        solo a chi è destinato.
+      </p>
+
+      @if (c.link; as link) {
+        <label class="modulo__campo">
+          <span class="modulo__nome">Link</span>
+          <span class="link">
+            <input
+              uiCampo
+              class="link__indirizzo"
+              type="text"
+              readonly
+              [value]="link.url"
+              (focus)="$any($event.target).select()"
+            />
+            <button uiBottone type="button" (click)="copiaLink(link.url)">
+              <ui-icon [name]="linkCopiato() ? 'pronto' : 'duplica'" [size]="15" />
+              <span>{{ linkCopiato() ? 'Copiato' : 'Copia' }}</span>
+            </button>
+          </span>
+        </label>
+
+        <div class="modulo__azioni">
+          <a
+            uiBottone
+            variante="primario"
+            [href]="linkWhatsapp(c.documento.nome, link.url)"
+            target="_blank"
+            rel="noopener"
+          >
+            <ui-icon name="whatsapp" [size]="15" />
+            <span>Invia su WhatsApp</span>
+          </a>
+        </div>
+
+        <div class="modulo__campo">
+          <span class="modulo__nome">
+            @if (link.scadeIl) {
+              Scade il {{ link.scadeIl | date: 'd MMMM y' }}. Cambia la scadenza, da oggi:
+            } @else {
+              Non scade. Imposta una scadenza, da oggi:
+            }
+          </span>
+          <span class="durate" role="group" aria-label="Scadenza del link">
+            @for (d of durateLink; track d.etichetta) {
+              <button uiBottone dimensione="piccolo" type="button" [disabled]="c.inCorso" (click)="store.impostaLink(d.giorni)">
+                {{ d.etichetta }}
+              </button>
+            }
+          </span>
+        </div>
+
+        <div class="modulo__azioni">
+          <button uiBottone variante="pericolo" type="button" [disabled]="c.inCorso" (click)="store.revocaLink()">
+            <ui-icon name="elimina" [size]="15" />
+            <span>Revoca il link</span>
+          </button>
+        </div>
+      } @else if (c.inCorso) {
+        <p class="modulo__vuoto">Preparo il link…</p>
+      } @else {
+        <p class="modulo__vuoto">Il documento non ha un link attivo.</p>
+        <div class="modulo__azioni">
+          <button uiBottone variante="primario" type="button" (click)="store.impostaLink()">
+            <ui-icon name="condividi" [size]="15" />
+            <span>Crea il link</span>
+          </button>
+        </div>
+      }
+    </div>
+  }
 </ui-cassetto>
 
 <!-- Invia email a un altro indirizzo: «a me» non ha bisogno del modulo -->

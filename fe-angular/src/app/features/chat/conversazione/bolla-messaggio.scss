@@ -546,6 +546,26 @@
   color: var(--c-text-3);
 }
 
+/* Il documento e, accanto, il suo link: due pulsanti, un gesto ciascuno. */
+.documento-riga {
+  display: inline-flex;
+  gap: var(--sp-1);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.documento__condividi {
+  flex: none;
+  padding-inline: var(--sp-2);
+}
+
+@media (pointer: coarse) {
+  .documento__condividi {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+
 /* ---------- Tabella in arrivo ---------- */
 
 .tabella-in-arrivo {

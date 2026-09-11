@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, of, switchMap } from 'rxjs';
 
 import {
   DestinatarioEmail,
@@ -11,6 +11,7 @@ import {
   EventoStream,
   Id,
   IsoDateTime,
+  LinkDocumento,
   Messaggio,
   ModoAllegato,
   Passo,
@@ -378,6 +379,71 @@ export class ChatStore {
       },
       error: () => this.documentoInScaricamento.set(undefined),
     });
+  }
+
+  // --- Il link di un documento, da mandare al cliente (11/09/2026) ----------
+
+  /**
+   * Il documento di cui si guarda il link: il cassetto «Condividi link» si
+   * apre su questo. `link` assente mentre arriva, o dopo una revoca.
+   */
+  readonly condivisione = signal<{ documento: DocumentoGenerato; link?: LinkDocumento; inCorso: boolean } | undefined>(
+    undefined,
+  );
+
+  /**
+   * Aprire il cassetto vuol dire volere il link: se il documento non ne ha
+   * uno, nasce qui, per 30 giorni. Chi ha il link vede il documento finché
+   * non scade o non lo si revoca.
+   */
+  apriCondivisione(documento: DocumentoGenerato): void {
+    const id = this.idAttiva();
+    if (!id) return;
+    this.condivisione.set({ documento, inCorso: true });
+    this.api
+      .linkDocumento(id, documento.id)
+      .pipe(switchMap((r) => (r.link ? of({ link: r.link }) : this.api.condividiDocumento(id, documento.id))))
+      .subscribe({
+        next: ({ link }) => this.aggiornaCondivisione(documento.id, { link, inCorso: false }),
+        error: () => this.aggiornaCondivisione(documento.id, { inCorso: false }),
+      });
+  }
+
+  /** Cambia la scadenza (giorni da oggi, `null` nessuna), o ricrea il link dopo una revoca. */
+  impostaLink(giorni?: number | null): void {
+    const id = this.idAttiva();
+    const corrente = this.condivisione();
+    if (!id || !corrente || corrente.inCorso) return;
+    const documentoId = corrente.documento.id;
+    this.aggiornaCondivisione(documentoId, { inCorso: true });
+    this.api.condividiDocumento(id, documentoId, giorni).subscribe({
+      next: ({ link }) => this.aggiornaCondivisione(documentoId, { link, inCorso: false }),
+      error: () => this.aggiornaCondivisione(documentoId, { inCorso: false }),
+    });
+  }
+
+  revocaLink(): void {
+    const id = this.idAttiva();
+    const corrente = this.condivisione();
+    if (!id || !corrente?.link || corrente.inCorso) return;
+    const documentoId = corrente.documento.id;
+    this.aggiornaCondivisione(documentoId, { inCorso: true });
+    this.api.revocaLink(id, documentoId).subscribe({
+      next: () => {
+        this.aggiornaCondivisione(documentoId, { link: undefined, inCorso: false });
+        this.notifiche.aggiungi({ gravita: 'successo', titolo: 'Link revocato', dettaglio: 'Chi ce l’ha non apre più il documento.' });
+      },
+      error: () => this.aggiornaCondivisione(documentoId, { inCorso: false }),
+    });
+  }
+
+  chiudiCondivisione(): void {
+    this.condivisione.set(undefined);
+  }
+
+  /** Solo se il cassetto è ancora sullo stesso documento: una risposta lenta non sovrascrive un altro. */
+  private aggiornaCondivisione(documentoId: Id, cambi: { link?: LinkDocumento | undefined; inCorso: boolean }): void {
+    this.condivisione.update((c) => (c?.documento.id === documentoId ? { ...c, ...cambi } : c));
   }
 
   /** RF-C-15: condivide (o smette di condividere) con i colleghi del tenant. */

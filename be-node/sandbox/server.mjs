@@ -39,6 +39,15 @@ const CHIAVE = process.env.SANDBOX_CHIAVE === '1';
 const NETNS = process.env.SANDBOX_NETNS !== '0';
 const RADICE = resolve(process.env.SANDBOX_RADICE ?? '/lavoro');
 const TIMEOUT_MAX_MS = 10 * 60 * 1000;
+/*
+ * L'unico limite sui formati consegnati (11/09/2026): i programmi. Lo
+ * stesso elenco è in `src/generazione/formati.ts`, che il worker riapplica.
+ */
+const ESEGUIBILI = new Set([
+  'exe', 'msi', 'msp', 'bat', 'cmd', 'com', 'scr', 'pif', 'cpl', 'msc', 'lnk', 'reg',
+  'ps1', 'psm1', 'vbs', 'vbe', 'js', 'jse', 'wsf', 'wsh', 'hta',
+  'jar', 'apk', 'app', 'dmg', 'pkg', 'deb', 'rpm', 'sh', 'run', 'bin',
+]);
 
 /** Come utente `lavoro`, nel namespace isolato se c'è: il prefisso di ogni comando del modello. */
 const PREFISSO_LAVORO = NETNS
@@ -200,19 +209,25 @@ async function eseguiSessione(s, parametri) {
   const consegnati = [];
   const consegna = tool(
     'consegna',
-    'Consegna il documento finale all’utente: un file PDF, DOCX o XLSX sotto /lavoro/output, col nome con cui l’utente lo vedrà. Chiamalo a lavoro finito e controllato, una volta per documento.',
+    'Consegna il file finale all’utente, sotto /lavoro/output, col nome con cui l’utente lo vedrà: qualsiasi formato (PDF, Word, Excel, PowerPoint, pagina HTML, immagine, CSV, ZIP…), tranne i programmi eseguibili. Chiamalo a lavoro finito e controllato, una volta per file.',
     { path: z.string().min(1), nome: z.string().min(1).max(160) },
     async (a) => {
       console.log('consegna richiesta:', JSON.stringify(a));
       let p;
       try { p = dentro(a.path); } catch (e) { return { content: [{ type: 'text', text: e.message }], isError: true }; }
-      const estensione = basename(p).split('.').pop()?.toLowerCase() ?? '';
-      if (!['pdf', 'docx', 'xlsx'].includes(estensione)) {
-        return { content: [{ type: 'text', text: `Posso consegnare solo PDF, DOCX o XLSX, non «.${estensione}».` }], isError: true };
+      const nomeFile = basename(p);
+      const estensione = nomeFile.includes('.') ? nomeFile.split('.').pop().toLowerCase() : '';
+      if (!/^[a-z0-9]{1,10}$/.test(estensione)) {
+        return { content: [{ type: 'text', text: `Il file «${nomeFile}» non ha un’estensione: dagliene una che dica il formato (es. .pdf, .html, .png).` }], isError: true };
+      }
+      if (ESEGUIBILI.has(estensione)) {
+        return { content: [{ type: 'text', text: `I programmi eseguibili («.${estensione}») non si consegnano.` }], isError: true };
       }
       let byte;
       try { byte = await stat(p); } catch (e) { console.log('consegna fallita:', p, e.message); return { content: [{ type: 'text', text: `File inesistente: ${p} (${e.message}). Usa il path assoluto sotto /lavoro/output.` }], isError: true }; }
       if (!byte.size) return { content: [{ type: 'text', text: 'Il file è vuoto.' }], isError: true };
+      /* Il worker lo ritira intero in memoria e lo porta nello Storage. */
+      if (byte.size > 100 * 1024 * 1024) return { content: [{ type: 'text', text: 'Il file supera i 100 MB: alleggeriscilo (immagini compresse, meno pagine) o dividilo.' }], isError: true };
       const rel = p.slice(RADICE.length + 1).split(sep).join('/');
       consegnati.push({ path: rel, nome: a.nome, formato: estensione, byte: byte.size });
       emetti({ tipo: 'consegna', path: rel, nome: a.nome, formato: estensione, byte: byte.size });

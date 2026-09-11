@@ -25,7 +25,7 @@ import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { TokenStore } from '@core/auth/token-store';
 import { Campo } from '@shared/ui/campo/campo';
-import { Citazione, ModelloRiferimento, etichettaCitazione } from '@core/models';
+import { Citazione, DURATE_LINK, ModelloRiferimento, etichettaCitazione } from '@core/models';
 import { Composer } from '../composer/composer';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -301,6 +301,24 @@ export class Conversazione {
     const a = this.emailDestinatario().trim();
     if (!this.messaggioInAzione || !this.emailValida()) return;
     this.store.inviaEmail(this.messaggioInAzione, a, () => this.emailAperta.set(false));
+  }
+
+  // «Condividi link»: il documento come pagina che il cliente apre dal
+  // telefono. Il link lo tiene lo store; qui solo copia e WhatsApp.
+
+  protected readonly durateLink = DURATE_LINK;
+  protected readonly linkCopiato = signal(false);
+
+  protected copiaLink(url: string): void {
+    void navigator.clipboard?.writeText(url).then(() => {
+      this.linkCopiato.set(true);
+      setTimeout(() => this.linkCopiato.set(false), 2000);
+    });
+  }
+
+  /** WhatsApp sceglie a chi mandarlo: qui solo il testo, col nome del documento e il link. */
+  protected linkWhatsapp(nome: string, url: string): string {
+    return `https://wa.me/?text=${encodeURIComponent(`${nome}: ${url}`)}`;
   }
 
   // «Genera da modello»: si sceglie il modello di riferimento, alla conferma

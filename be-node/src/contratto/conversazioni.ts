@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { consegnabile } from './formati.js';
+
 /**
  * Specchio di `fe-angular/src/app/core/models/{conversazione,citazione,comune}.ts`
  * e di `core/api/conversazioni-api.ts`, col comportamento fissato da
@@ -220,8 +222,12 @@ export interface EsitoProposta {
 export interface DocumentoGenerato {
   id: string;
   nome: string;
-  /** `pptx` solo dalla sandbox, su un modello PowerPoint. */
-  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  /**
+   * L'estensione del file. «Esporta come» fa PDF, Word ed Excel; la sandbox
+   * dall'11/09/2026 qualsiasi formato tranne gli eseguibili (pagine web,
+   * immagini, PowerPoint, CSV, ZIP…).
+   */
+  formato: string;
   /** Il modello usato, per raccontarlo; assente col layout di VELIA. */
   modello?: string;
   url: string;
@@ -299,7 +305,12 @@ export const schemaModificheConversazione = z
 export const schemaEsportazioneElaborata = z
   .object({
     modelloId: z.string().min(1).optional(),
-    formato: z.enum(['pdf', 'docx', 'xlsx', 'pptx']).optional(),
+    /** L'estensione: qualsiasi formato tranne gli eseguibili (`generazione/formati.ts`). */
+    formato: z
+      .string()
+      .transform((f) => f.trim().toLowerCase().replace(/^\./, ''))
+      .refine(consegnabile, 'Formato non ammesso.')
+      .optional(),
     messaggioId: z.string().min(1).optional(),
     istruzioni: z.string().max(4000).optional(),
   })

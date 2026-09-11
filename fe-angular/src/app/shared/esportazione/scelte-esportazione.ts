@@ -33,11 +33,8 @@ export const SCELTE_ESPORTA_TABELLA: SceltaEsportazione[] = [
   { etichetta: 'PDF', dettaglio: 'pdf', formato: 'pdf', scelta: { formato: 'pdf' } },
 ];
 
-/** Il nome del download, con la regola del server: slug del nome, estensione del formato (anche `pptx`, da un modello). */
-export function nomeFileEsportazione(
-  nome: string,
-  formato: FormatoEsportaRisposta | 'pptx',
-): string {
+/** Il nome del download, con la regola del server: slug del nome, estensione del formato (qualsiasi, da «Genera da modello»). */
+export function nomeFileEsportazione(nome: string, formato: string): string {
   return `${
     nome
       .toLowerCase()

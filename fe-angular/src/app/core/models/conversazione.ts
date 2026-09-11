@@ -181,8 +181,12 @@ export interface EsitoProposta {
 export interface DocumentoGenerato {
   id: Id;
   nome: string;
-  /** `pptx` solo da «Genera da modello», su un modello PowerPoint. */
-  formato: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  /**
+   * L'estensione del file. «Esporta come» fa PDF, Word ed Excel; «Genera da
+   * modello» dall'11/09/2026 qualsiasi formato tranne gli eseguibili (pagine
+   * web, immagini, PowerPoint, CSV, ZIP…).
+   */
+  formato: string;
   /** Il modello usato; assente col layout di VELIA. */
   modello?: string;
   url: string;
@@ -247,7 +251,8 @@ export interface RicordoAppreso {
  */
 export interface EsportazioneElaborata {
   modelloId?: Id;
-  formato?: 'pdf' | 'docx' | 'xlsx' | 'pptx';
+  /** L'estensione: qualsiasi formato tranne gli eseguibili. */
+  formato?: string;
   messaggioId?: Id;
   istruzioni?: string;
 }

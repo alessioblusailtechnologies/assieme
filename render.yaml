@@ -33,6 +33,11 @@ services:
       # finché non lo fa notare uno di loro.
       - key: BASE_LINK_CHAT
         value: https://app-dev.sonovelia.it
+      # La radice dei link delle pagine condivise, `<radice>/p/<token>`: le
+      # serve questo servizio. Come per BASE_LINK_CHAT, su main va l'API di
+      # produzione, o i clienti finiscono sull'ambiente di prova.
+      - key: BASE_LINK_PAGINE
+        value: https://api-dev.sonovelia.it
       - key: MODELLO_MOTORE
         value: claude-opus-5
       - key: SUPABASE_URL
@@ -78,6 +83,9 @@ services:
         value: info
       - key: MODELLO_MOTORE
         value: claude-opus-5
+      # Il link che lo strumento `condividi_link` del motore scrive in chat.
+      - key: BASE_LINK_PAGINE
+        value: https://api-dev.sonovelia.it
       - key: CARTELLA_WORKER
         value: /app/.velia-worker
       - key: SUPABASE_URL

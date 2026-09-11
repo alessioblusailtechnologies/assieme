@@ -92,7 +92,11 @@ export function registraAuth(
   app.decorateRequest('identita');
 
   app.addHook('onRequest', async (richiesta) => {
-    if (ROTTE_PUBBLICHE.has(richiesta.url.split('?')[0] ?? '')) return;
+    const percorso = richiesta.url.split('?')[0] ?? '';
+    if (ROTTE_PUBBLICHE.has(percorso)) return;
+    /* Le pagine condivise (11/09/2026): il token nel percorso è la
+       credenziale, e la rotta la verifica da sé a ogni apertura. */
+    if (percorso.startsWith('/p/')) return;
 
     const intestazione = richiesta.headers.authorization;
 

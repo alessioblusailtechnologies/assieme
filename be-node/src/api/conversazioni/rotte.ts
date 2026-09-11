@@ -33,12 +33,13 @@ import {
   type StatoDocumento,
 } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
+import { mimeDi } from '../../contratto/formati.js';
 import { applicaProposta } from '../../archivio/proposta.js';
 import { configurazione } from '../../config.js';
 import { inviaEmail } from '../../email/invio.js';
 import { fontiDaCitazioni } from '../../generazione/catalogo.js';
 import { componiEmailRisposta } from '../../generazione/email.js';
-import { MIME, nomeFileGenerato } from '../../generazione/generatore.js';
+import { nomeFileGenerato } from '../../generazione/generatore.js';
 import {
   nuovoIdPrivato,
   percorsoOriginale,
@@ -420,10 +421,14 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       const byte = await archivio().scarica(
         percorsoDocumentoGenerato(richiesta.identita.tenantId, documento.id, documento.formato),
       );
+      /* Qualsiasi formato, dall'11/09/2026: sempre da scaricare, mai da
+         aprire nell'origine dell'API (una pagina HTML generata ci
+         eseguirebbe i suoi script), e senza che il browser indovini il tipo. */
       return risposta
-        .header('Content-Type', MIME[documento.formato])
+        .header('Content-Type', mimeDi(documento.formato))
         .header('Content-Length', byte.length)
         .header('Content-Disposition', `attachment; filename="${nomeFileGenerato(documento.nome, documento.formato)}"`)
+        .header('X-Content-Type-Options', 'nosniff')
         .send(byte);
     },
   );

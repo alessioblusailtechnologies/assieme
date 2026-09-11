@@ -53,6 +53,7 @@ Un'immagine sola (`be-node/Dockerfile`) e **due servizi** dallo stesso repo: il 
    | `MISTRAL_API_KEY` | chiave Mistral | opzionale: senza, la dettatura nel composer risponde 503 |
    | `MODELLO_MOTORE` | `claude-opus-5` | default |
    | `MOTORE_EFFORT` | `medium` | opzionale, vedi costi |
+   | `BASE_LINK_PAGINE` | `https://api.sonovelia.it` | la radice dei link delle pagine condivise (`/p/<token>`), servite dall'API; su api e worker |
    | `CORS_ORIGINI` | `https://app.sonovelia.it` | **solo api** |
    | `LOG_LIVELLO` | `info` | |
 

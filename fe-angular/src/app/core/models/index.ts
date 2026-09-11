@@ -24,3 +24,4 @@ export * from './memoria';
 export * from './impostazioni';
 export * from './intestazione';
 export * from './chat-cliente';
+export * from './pagine';

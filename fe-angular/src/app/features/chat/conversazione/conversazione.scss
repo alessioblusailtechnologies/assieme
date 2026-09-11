@@ -406,6 +406,45 @@
   min-width: 0;
 }
 
+/* Il documento e il suo link per il cliente, affiancati. */
+.output__riga {
+  display: flex;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.output__riga .output__voce {
+  flex: 1;
+  min-width: 0;
+}
+
+.output__condividi {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-text-3);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-brand),
+    color var(--dur-fast) var(--ease-brand);
+}
+
+.output__condividi:hover,
+.output__condividi:focus-visible {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+@media (pointer: coarse) {
+  .output__condividi {
+    width: 44px;
+  }
+}
+
 .output__nome {
   line-height: 1.4;
   overflow-wrap: break-word;
@@ -663,6 +702,25 @@
 .modulo__azioni {
   display: flex;
   gap: var(--sp-2);
+}
+
+/* «Condividi link»: l'indirizzo da copiare, e le durate da oggi. */
+.link {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.link__indirizzo {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--f-mono);
+  font-size: var(--t-xs);
+}
+
+.durate {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
 }
 
 /* La scelta del template: una riga per template, il radio nativo tenuto
