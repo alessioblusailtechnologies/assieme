@@ -31,7 +31,7 @@ const VOCI: VoceSezione[] = [
   {
     percorso: 'template',
     etichetta: 'Template di output',
-    spiega: 'Documenti generati con l’identità dell’agenzia',
+    spiega: 'Intestazione dei documenti e modelli di riferimento',
   },
   {
     percorso: 'canali',

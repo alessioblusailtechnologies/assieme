@@ -37,16 +37,16 @@ Si parte da zero: nessuna migrazione di template, identità visiva o predefiniti
 
 ### Dati
 
-- Tabella `velia.intestazione`: `tenant_id` (chiave), `intestazione jsonb`, `piede jsonb`, `colore_primario`, `aggiornata_il`, `aggiornata_da`. Proprietario `velia_app` (vedi la memoria sulle migrazioni: senza, l'app la legge a zero righe in silenzio). Lettura per i membri del tenant; scrittura dall'API dopo la guardia da amministratore.
+- Tabella `velia.intestazione`: `tenant_id` (chiave), `intestazione jsonb`, `piede jsonb`, `aggiornata_il`, `aggiornata_da`. Proprietario `velia_app` (vedi la memoria sulle migrazioni: senza, l'app la legge a zero righe in silenzio). Lettura per i membri del tenant; scrittura dall'API dopo la guardia da amministratore.
 - Immagini nello Storage, `tenant/<tid>/intestazione/<id>.<ext>`, citate per id nel JSON.
 - Il backend valida il JSON con uno schema zod dello stesso vincolo dell'editor e rifiuta ciò che ne esce (400): l'editor non lo produce, ma l'API non se ne fida.
 - Senza una riga, l'intestazione è vuota e il piè porta solo il numero di pagina.
 
 ### API
 
-- `GET` / `PUT /api/intestazione`: il JSON di intestazione e piè più il colore.
+- `GET` / `PUT /api/intestazione`: il JSON di intestazione e piè.
 - `POST /api/intestazione/immagini`, `GET /api/intestazione/immagini/:id`.
-- `GET /api/intestazione/anteprima?formato=pdf|docx`: un documento d'esempio col vero motore di resa.
+- `POST /api/intestazione/anteprima` (`formato: pdf | docx`): un documento d'esempio di due pagine col vero motore di resa, sul contenuto non ancora salvato.
 - `/api/modelli` è già dei livelli AI: i modelli di documento restano sotto `/api/template`.
 
 ### Resa (`be-node/src/generazione/intestazione.ts`)
@@ -61,7 +61,7 @@ Un solo modulo che dal JSON produce:
 ### Front-end
 
 - Pagina a due schede, con lo stesso schema di Istruzioni (`role="tablist"`, `.scheda`).
-- `shared/ui/editor-intestazione`: un componente nostro sopra `@tiptap/core` e le sue estensioni open (paragraph, text, bold, italic, underline, text-align, text-style, color, image, history), più due nodi nostri: `colonne` e `campo`. Niente wrapper di terzi.
+- `features/impostazioni/template/intestazione/`: un componente nostro sopra `@tiptap/core` e le sue estensioni open (paragraph, text, bold, italic, underline, hard-break, text-align, text-style, color, undo-redo, gapcursor, trailing-node, placeholder), più i nodi nostri: `immagine`, `colonne`/`colonna` e `campo`. Niente wrapper di terzi.
 - Barra degli strumenti con i nostri pulsanti e i token del design system.
 - Tela in proporzione A4, alla larghezza utile vera, così un a capo nell'editor è un a capo nel PDF.
 - Anteprima: il PDF di `/api/intestazione/anteprima` nel visualizzatore PDF che c'è già.
@@ -88,8 +88,9 @@ Un solo modulo che dal JSON produce:
 1. **Intestazione, backend.** FATTA l'11/09/2026. Schema zod (`contratto/intestazione.ts`), tabella `velia.intestazione` (migrazione `20260911100000`, che cancella anche `velia.identita_visiva`), rotte `api/intestazione`, resa PDF/Word/Excel (`generazione/intestazione.ts`), anteprima; Esporta come, agenti, tabelle, strumento `esporta_subito` ed email senza identità né segnaposto; la sandbox senza la sezione dell'identità.
    Test: il testo dell'intestazione è su ogni pagina del PDF (pdfjs) coi numeri di pagina giusti; `header` e `footer` del DOCX portano testo, immagine e campi `PAGE`/`NUMPAGES`; le fasce di stampa dell'XLSX; un JSON fuori schema risponde 400; l'integrazione salva, serve l'immagine e fa l'anteprima col motore vero.
    Trovato strada facendo: `widthOfTextAtSize` di pdf-lib misura con la crenatura ma `drawText` disegna senza, e «P.IVA 0123» usciva «P.IVA0123». Ora si misura carattere per carattere (`generazione/misura.ts`), anche nel corpo dei documenti e nei PDF impaginati dall'ingestion.
-2. **Intestazione, front-end.** Pagina a schede, editor vincolato, immagini, anteprima.
-   Test del componente (la barra applica i segni, i campi si inseriscono, niente fuori schema); screenshot desktop e mobile.
+2. **Intestazione, front-end.** FATTA l'11/09/2026. Pagina a schede (`?scheda=modelli` per arrivare alla seconda); `features/impostazioni/template/intestazione/`: le estensioni dello schema (`estensioni.ts`: campo, immagine, colonne, dimensione), la normalizzazione verso il contratto (`normalizza.ts`: colori incollati in esadecimale, paragrafi vuoti in coda tolti, testi oltre 500 caratteri spezzati, tetti dello schema detti prima del server), l'editor (un foglio A4 in scala con `--pt` in unità del contenitore, le due fasce, una barra sola che lavora sulla fascia col cursore) e la scheda (salva, annulla, anteprima PDF nel cassetto, prova in Word). TipTap 3.31.3 senza wrapper; il pezzo pesa nel solo chunk lazy della pagina.
+   Test: normalizzazione e componente (grassetto dalla barra, campo dal menù nella fascia giusta, allineamento/dimensione/colonne nella forma del contratto, l'HTML incollato fuori schema si perde, larghezza e allineamento dell'immagine selezionata, ricarica senza cronologia, sola lettura per chi non amministra); screenshot desktop e mobile, anteprima col motore vero.
+   Trovato strada facendo: con un'immagine selezionata, Chrome non sposta il cursore al clic su un paragrafo vuoto e la prima lettera cancellava il logo; il clic fuori dal nodo ora lo porta dove cade (`spostaDaNodoSelezionato`).
 3. **Modelli.** Tabella nuova, caricamento di ogni formato, anteprima convertita, schede; «Genera da modello» in chat, prompt e tool, carta intestata alla sandbox.
    Collaudo con `tools/collaudo-elaborata.ts` su un modello Word con «dell'agenzia» e su un modulo PDF con «la sua».
 

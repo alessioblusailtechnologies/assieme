@@ -1,0 +1,146 @@
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare i template"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !template().length) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="3" />
+    <ui-scheletro [numeroRighe]="3" />
+  </div>
+} @else {
+  @if (template().length) {
+    <ul class="griglia-template">
+      @for (t of template(); track t.id) {
+        <li class="template" [class.is-predefinito]="t.predefinito">
+          <div class="template__testa">
+            <span class="mono template__formato">{{ t.formato }}</span>
+            @if (t.predefinito) {
+              <ui-tag variante="accento">predefinito per {{ t.formato }}</ui-tag>
+            }
+          </div>
+
+          @if (inRinomina() === t.id) {
+            <input
+              uiCampo
+              class="template__rinomina"
+              type="text"
+              [value]="nuovoNome()"
+              (input)="nuovoNome.set($any($event.target).value)"
+              (keydown.enter)="confermaRinomina(t)"
+              (keydown.escape)="annullaRinomina()"
+              (blur)="confermaRinomina(t)"
+              aria-label="Nuovo nome del template"
+            />
+          } @else {
+            <h2 class="template__nome">{{ t.nome }}</h2>
+          }
+          <p class="template__descrizione">{{ t.descrizione }}</p>
+
+          <div class="template__azioni">
+            <button uiBottone dimensione="piccolo" type="button" (click)="anteprima.set(t)">
+              <ui-icon name="documento" [size]="14" />
+              <span>Anteprima</span>
+            </button>
+
+            @if (puoGestire()) {
+              @if (!t.predefinito) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="impostaPredefinito(t, true)"
+                >
+                  <span>Rendi predefinito</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="impostaPredefinito(t, false)"
+                >
+                  <span>Togli predefinito</span>
+                </button>
+              }
+
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="testo"
+                type="button"
+                (click)="iniziaRinomina(t)"
+              >
+                <span>Rinomina</span>
+              </button>
+
+              @if (confermaEliminazione() === t.id) {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="pericolo"
+                  type="button"
+                  (click)="elimina(t)"
+                >
+                  <span>Elimina davvero</span>
+                </button>
+              } @else {
+                <button
+                  uiBottone
+                  dimensione="piccolo"
+                  variante="testo"
+                  type="button"
+                  (click)="elimina(t)"
+                >
+                  <ui-icon name="elimina" [size]="13" />
+                  <span>Elimina</span>
+                </button>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  } @else {
+    <ui-stato-vuoto
+      icona="documento"
+      titolo="Nessun template caricato"
+      descrizione="Senza template, «Genera documento» impagina da zero, in modo sobrio."
+    />
+  }
+
+  @if (puoGestire()) {
+    <section class="carica" aria-label="Carica un template dell'agenzia">
+      <p class="mono">Carica un template</p>
+      <p class="carica__spiega">
+        Un documento dell'agenzia da prendere a modello: una lettera, un preventivo, una carta
+        intestata. Non servono segnaposto. Il nome del file diventa il nome del template.
+      </p>
+      <ui-zona-caricamento (scelti)="carica($event)" formati=".pdf,.docx,.xlsx" />
+      @if (coda().length) {
+        <ui-coda-caricamento [file]="coda()" (chiudi)="svuotaCoda()" />
+      }
+    </section>
+  }
+}
+
+<!-- Anteprima dell'impaginazione (RF-D-11), sempre come PDF -->
+<ui-cassetto
+  [aperto]="!!anteprima()"
+  (apertoChange)="!$event && anteprima.set(undefined)"
+  [titolo]="anteprima() ? 'Anteprima - ' + anteprima()!.nome : ''"
+>
+  @if (anteprima(); as t) {
+    <div class="anteprima">
+      <ui-visualizzatore-pdf class="anteprima__pdf" [fileUrl]="urlAnteprima(t)" />
+    </div>
+  }
+</ui-cassetto>

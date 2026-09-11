@@ -1,0 +1,108 @@
+<p class="spiega">
+  Su ogni documento che esce da VELIA: «Esporta come» PDF e Word, i documenti degli agenti, le
+  tabelle e i modelli di riferimento. In Excel va solo il testo, nelle fasce di stampa.
+  @if (!puoGestire()) {
+    La modifica è riservata all'amministratore.
+  }
+</p>
+
+@if (erroreCaricamento()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare l'intestazione"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (!contenuto()) {
+  <div class="scheletri">
+    <ui-scheletro [numeroRighe]="2" />
+    <ui-scheletro [numeroRighe]="5" />
+  </div>
+} @else {
+  <app-editor-intestazione
+    [valore]="contenuto()!"
+    [modificabile]="puoGestire()"
+    (cambiato)="cambiato($event)"
+  />
+
+  <div class="azioni">
+    <div class="azioni__anteprima">
+      <button
+        uiBottone
+        dimensione="piccolo"
+        type="button"
+        [disabled]="!!anteprimaInCorso() || !!limite()"
+        (click)="anteprima('pdf')"
+      >
+        <ui-icon [name]="anteprimaInCorso() === 'pdf' ? 'in-corso' : 'documento'" [size]="14" />
+        <span>Anteprima PDF</span>
+      </button>
+      <button
+        uiBottone
+        dimensione="piccolo"
+        variante="testo"
+        type="button"
+        [disabled]="!!anteprimaInCorso() || !!limite()"
+        (click)="anteprima('docx')"
+      >
+        <ui-icon [name]="anteprimaInCorso() === 'docx' ? 'in-corso' : 'scarica'" [size]="14" />
+        <span>Prova in Word</span>
+      </button>
+    </div>
+
+    @if (puoGestire()) {
+      <div class="azioni__salva">
+        @if (modificata()) {
+          <span class="mono azioni__stato">modifiche non salvate</span>
+          <button
+            uiBottone
+            variante="testo"
+            type="button"
+            [disabled]="salvataggio()"
+            (click)="annulla()"
+          >
+            Annulla
+          </button>
+        } @else if (aggiornataIl(); as quando) {
+          <span class="mono azioni__stato">salvata il {{ quando | date: 'dd/MM/yyyy HH:mm' }}</span>
+        }
+        <button
+          uiBottone
+          variante="primario"
+          type="button"
+          [disabled]="!modificata() || salvataggio() || !!limite()"
+          (click)="salva()"
+        >
+          <span>{{ salvataggio() ? 'Salvataggio…' : 'Salva' }}</span>
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (limite(); as l) {
+    <p class="avviso" role="alert">{{ l }} Accorcia prima di salvare.</p>
+  }
+  @if (erroreSalvataggio(); as e) {
+    <p class="avviso" role="alert">{{ e }}</p>
+  }
+  @if (erroreAnteprima(); as e) {
+    <p class="avviso" role="alert">{{ e }}</p>
+  }
+}
+
+<ui-cassetto
+  [aperto]="!!urlAnteprima()"
+  (apertoChange)="!$event && chiudiAnteprima()"
+  titolo="Anteprima - documento d'esempio"
+  larghezza="min(760px, 96vw)"
+>
+  @if (urlAnteprima(); as url) {
+    <div class="anteprima">
+      <ui-visualizzatore-pdf class="anteprima__pdf" [fileUrl]="url" />
+    </div>
+  }
+</ui-cassetto>

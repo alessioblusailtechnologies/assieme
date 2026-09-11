@@ -1,0 +1,362 @@
+/* Barra e foglio della stessa larghezza: il foglio non supera l'A4 a 96 dpi. */
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+  max-width: 796px;
+}
+
+/* ---------- Barra ---------- */
+
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1) var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+}
+
+.gruppo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.gruppo + .gruppo {
+  padding-left: var(--sp-3);
+  border-left: 1px solid var(--c-line-soft);
+}
+
+.strumento {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-width: 30px;
+  height: 30px;
+  padding: 0 var(--sp-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+  cursor: pointer;
+}
+
+.strumento:hover:not(:disabled) {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+.strumento:disabled {
+  color: var(--c-text-ghost);
+  cursor: default;
+}
+
+.strumento.is-attivo {
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+}
+
+.strumento--testo {
+  padding: 0 var(--sp-2);
+}
+
+.dimensione {
+  height: 30px;
+  margin-left: var(--sp-1);
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  font: inherit;
+  font-size: var(--t-sm);
+  color: var(--c-text);
+}
+
+.tinta {
+  width: 22px;
+  height: 22px;
+  margin: 0 2px;
+  padding: 0;
+  border: 2px solid var(--c-surface);
+  border-radius: var(--radius-pieno);
+  background: var(--tinta);
+  box-shadow: 0 0 0 1px var(--c-line);
+  cursor: pointer;
+}
+
+.tinta.is-attivo {
+  box-shadow: 0 0 0 2px var(--c-accent);
+}
+
+.tinta-libera {
+  position: relative;
+}
+
+/* Il selettore nativo, invisibile sopra l'icona: il clic apre la tavolozza del sistema. */
+.tinta-libera__campo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* ---------- Immagine selezionata ---------- */
+
+.gruppo--immagine {
+  gap: var(--sp-2);
+}
+
+.larghezza {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.larghezza input {
+  width: 4.5em;
+  height: 28px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  font: inherit;
+  color: var(--c-text);
+}
+
+.errore {
+  font-size: var(--t-sm);
+  color: var(--c-neg);
+}
+
+/* ---------- Foglio ----------
+ *
+ * Carta bianca anche col tema scuro: è il documento, non l'interfaccia.
+ * `--pt` è un punto tipografico alla larghezza del foglio (A4 = 595,28 pt),
+ * e le misure che seguono sono quelle del motore (`generazione/pdf.ts` e
+ * `generazione/intestazione.ts`): margini 56 pt, cima 34, fondo 28,
+ * 3 pt fra i blocchi, 14 fra le colonne, interlinea 1,3.
+ */
+
+.scorrimento {
+  overflow-x: auto;
+  padding-block: var(--sp-2);
+}
+
+.cornice {
+  container-type: inline-size;
+  min-width: 540px;
+  max-width: 794px;
+}
+
+.foglio {
+  --pt: calc(100cqw / 595.28);
+  --mm: calc(var(--pt) * 72 / 25.4);
+  display: flex;
+  flex-direction: column;
+  gap: calc(16 * var(--pt));
+  padding: calc(34 * var(--pt)) calc(56 * var(--pt)) calc(28 * var(--pt));
+  background: #fff;
+  border: 1px solid var(--c-line);
+  border-radius: 2px;
+  box-shadow: 0 2px 10px var(--c-ombra-lieve);
+  color: #262626;
+  font-family: helvetica, arial, 'Liberation Sans', sans-serif;
+  font-size: calc(9 * var(--pt));
+  line-height: 1.3;
+}
+
+.fascia {
+  position: relative;
+  border-radius: 1px;
+  outline: 1px dashed transparent;
+  outline-offset: calc(6 * var(--pt));
+}
+
+.foglio:not(.is-sola-lettura) .fascia:hover {
+  outline-color: #d6d3cc;
+}
+
+.fascia.is-attiva,
+.fascia.is-attiva:hover {
+  outline-color: #9fb0cf;
+}
+
+/* L'etichetta sul bordo tratteggiato, come Word sulla linea della testata. */
+.fascia__etichetta {
+  position: absolute;
+  top: calc(-6 * var(--pt) - 0.65em);
+  left: calc(6 * var(--pt));
+  padding: 0 4px;
+  border: 0;
+  background: #fff;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a19d94;
+  cursor: text;
+}
+
+.fascia--piede .fascia__etichetta {
+  top: auto;
+  bottom: calc(-6 * var(--pt) - 0.65em);
+}
+
+.fascia.is-attiva .fascia__etichetta {
+  color: #2f4b7c;
+}
+
+/* Il corpo del documento, finto e sbiadito: dice dove stanno le due fasce. */
+.corpo {
+  display: flex;
+  flex-direction: column;
+  gap: calc(7 * var(--pt));
+  padding-block: calc(10 * var(--pt)) calc(24 * var(--pt));
+  pointer-events: none;
+}
+
+.corpo__titolo,
+.corpo__riga {
+  display: block;
+  height: calc(5 * var(--pt));
+  border-radius: 2px;
+  background: #eeece8;
+}
+
+.corpo__titolo {
+  width: 42%;
+  height: calc(9 * var(--pt));
+  margin-bottom: calc(6 * var(--pt));
+  background: #e3e1dc;
+}
+
+.corpo__riga--corta {
+  width: 58%;
+}
+
+.corpo__riga--media {
+  width: 76%;
+}
+
+.corpo__salto {
+  height: calc(4 * var(--pt));
+}
+
+/* ---------- Il contenuto di TipTap ---------- */
+
+.fascia__editor ::ng-deep .ProseMirror {
+  min-height: calc(9 * 1.3 * var(--pt));
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.fascia__editor ::ng-deep .ProseMirror p {
+  margin: 0;
+}
+
+.fascia__editor ::ng-deep .ProseMirror > * + *,
+.fascia__editor ::ng-deep .colonna-fascia > * + * {
+  margin-top: calc(3 * var(--pt));
+}
+
+.fascia__editor ::ng-deep .colonne-fascia {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  column-gap: calc(14 * var(--pt));
+}
+
+.foglio:not(.is-sola-lettura) .fascia__editor ::ng-deep .colonna-fascia {
+  outline: 1px dotted #d6d3cc;
+  outline-offset: 2px;
+}
+
+.fascia__editor ::ng-deep .immagine-fascia {
+  margin: 0;
+  line-height: 0;
+}
+
+.fascia__editor ::ng-deep .immagine-fascia img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  min-height: calc(8 * var(--pt));
+  background: #f4f3f0;
+}
+
+.fascia__editor ::ng-deep .immagine-fascia.is-selezionata img {
+  outline: 2px solid #2f4b7c;
+  outline-offset: 1px;
+}
+
+/* Il campo è una targhetta: non si scrive dentro, si sposta e si cancella tutto insieme. */
+.fascia__editor ::ng-deep .campo-fascia {
+  padding: 0 calc(2 * var(--pt));
+  border-radius: 2px;
+  background: #e9eef6;
+  color: #2f4b7c;
+  white-space: nowrap;
+}
+
+.fascia__editor ::ng-deep .campo-fascia.ProseMirror-selectednode {
+  outline: 1px solid #2f4b7c;
+}
+
+.fascia__editor ::ng-deep p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #a19d94;
+  pointer-events: none;
+}
+
+.fascia__editor ::ng-deep .ProseMirror-gapcursor {
+  position: relative;
+  display: none;
+  pointer-events: none;
+}
+
+.fascia__editor ::ng-deep .ProseMirror-focused .ProseMirror-gapcursor {
+  display: block;
+}
+
+.fascia__editor ::ng-deep .ProseMirror-gapcursor::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  display: block;
+  width: 20px;
+  border-top: 1px solid #262626;
+  animation: cursore-lampeggia 1.1s steps(2, start) infinite;
+}
+
+@keyframes cursore-lampeggia {
+  to {
+    visibility: hidden;
+  }
+}
+
+@media (pointer: coarse) {
+  .strumento {
+    min-width: 40px;
+    height: 40px;
+  }
+
+  .dimensione {
+    height: 40px;
+    font-size: 16px;
+  }
+}

@@ -36,6 +36,19 @@ import FilterIcon from '@hugeicons/core-free-icons/FilterIcon';
 import Folder01Icon from '@hugeicons/core-free-icons/Folder01Icon';
 import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
 import FolderOpenIcon from '@hugeicons/core-free-icons/FolderOpenIcon';
+import HashtagIcon from '@hugeicons/core-free-icons/HashtagIcon';
+import Image01Icon from '@hugeicons/core-free-icons/Image01Icon';
+import LayoutThreeColumnIcon from '@hugeicons/core-free-icons/LayoutThreeColumnIcon';
+import LayoutTwoColumnIcon from '@hugeicons/core-free-icons/LayoutTwoColumnIcon';
+import RedoIcon from '@hugeicons/core-free-icons/RedoIcon';
+import TextAlignCenterIcon from '@hugeicons/core-free-icons/TextAlignCenterIcon';
+import TextAlignLeftIcon from '@hugeicons/core-free-icons/TextAlignLeftIcon';
+import TextAlignRightIcon from '@hugeicons/core-free-icons/TextAlignRightIcon';
+import TextBoldIcon from '@hugeicons/core-free-icons/TextBoldIcon';
+import TextColorIcon from '@hugeicons/core-free-icons/TextColorIcon';
+import TextItalicIcon from '@hugeicons/core-free-icons/TextItalicIcon';
+import TextUnderlineIcon from '@hugeicons/core-free-icons/TextUnderlineIcon';
+import UndoIcon from '@hugeicons/core-free-icons/UndoIcon';
 import InboxIcon from '@hugeicons/core-free-icons/InboxIcon';
 import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
 import LibraryIcon from '@hugeicons/core-free-icons/LibraryIcon';
@@ -148,6 +161,21 @@ export const REGISTRO_ICONE = {
   'comprimi-barra': SidebarLeft01Icon,
   'espandi-giu': ArrowDown01Icon,
   'espandi-destra': ArrowRight01Icon,
+
+  // --- L'editor di intestazione e piè di pagina (11/09/2026) ---
+  grassetto: TextBoldIcon,
+  corsivo: TextItalicIcon,
+  sottolineato: TextUnderlineIcon,
+  'colore-testo': TextColorIcon,
+  'allinea-sinistra': TextAlignLeftIcon,
+  'allinea-centro': TextAlignCenterIcon,
+  'allinea-destra': TextAlignRightIcon,
+  immagine: Image01Icon,
+  'due-colonne': LayoutTwoColumnIcon,
+  'tre-colonne': LayoutThreeColumnIcon,
+  campo: HashtagIcon,
+  annulla: UndoIcon,
+  ripeti: RedoIcon,
 
   // --- Cartelle dell'Archivio Privato (Fase 10) ---
   cartella: Folder01Icon,

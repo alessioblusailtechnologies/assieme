@@ -1,0 +1,313 @@
+@if (modificabile()) {
+  <!--
+    I pulsanti non prendono il fuoco al clic (mousedown senza default): la
+    selezione resta nell'editor, e il comando la trova dove l'avevi lasciata.
+  -->
+  <div
+    class="barra"
+    role="toolbar"
+    [attr.aria-label]="
+      attiva() === 'intestazione'
+        ? 'Formattazione dell’intestazione'
+        : 'Formattazione del piè di pagina'
+    "
+  >
+    <div class="gruppo">
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Annulla"
+        title="Annulla"
+        [disabled]="!stato().puoAnnullare"
+        (mousedown)="$event.preventDefault()"
+        (click)="annulla()"
+      >
+        <ui-icon name="annulla" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Ripeti"
+        title="Ripeti"
+        [disabled]="!stato().puoRipetere"
+        (mousedown)="$event.preventDefault()"
+        (click)="ripeti()"
+      >
+        <ui-icon name="ripeti" [size]="16" />
+      </button>
+    </div>
+
+    <!-- Con un'immagine selezionata i segni del testo non servono: al loro posto la larghezza, senza far saltare il foglio. -->
+    @if (stato().immagine; as immagine) {
+      <div class="gruppo gruppo--immagine" role="group" aria-label="Immagine selezionata">
+        <label class="larghezza">
+          <span>Larghezza</span>
+          <input
+            type="number"
+            min="5"
+            max="180"
+            step="1"
+            [value]="immagine.larghezza"
+            (input)="larghezzaImmagine($any($event.target).value)"
+          />
+          <span class="mono">mm</span>
+        </label>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          (mousedown)="$event.preventDefault()"
+          (click)="togliImmagine()"
+        >
+          <ui-icon name="elimina" [size]="14" />
+          <span>Togli immagine</span>
+        </button>
+      </div>
+    } @else {
+      <div class="gruppo">
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Grassetto"
+          title="Grassetto"
+          [class.is-attivo]="stato().grassetto"
+          [attr.aria-pressed]="stato().grassetto"
+          (mousedown)="$event.preventDefault()"
+          (click)="grassetto()"
+        >
+          <ui-icon name="grassetto" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Corsivo"
+          title="Corsivo"
+          [class.is-attivo]="stato().corsivo"
+          [attr.aria-pressed]="stato().corsivo"
+          (mousedown)="$event.preventDefault()"
+          (click)="corsivo()"
+        >
+          <ui-icon name="corsivo" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Sottolineato"
+          title="Sottolineato"
+          [class.is-attivo]="stato().sottolineato"
+          [attr.aria-pressed]="stato().sottolineato"
+          (mousedown)="$event.preventDefault()"
+          (click)="sottolineato()"
+        >
+          <ui-icon name="sottolineato" [size]="16" />
+        </button>
+        <select
+          class="dimensione"
+          aria-label="Dimensione del testo"
+          [value]="stato().dimensione"
+          (change)="dimensione($any($event.target).value)"
+        >
+          <option value="piccolo">Piccolo</option>
+          <option value="normale">Normale</option>
+          <option value="grande">Grande</option>
+        </select>
+      </div>
+
+      <div class="gruppo" role="group" aria-label="Colore del testo">
+        @for (t of tinte; track t.etichetta) {
+          <button
+            type="button"
+            class="tinta"
+            [style.--tinta]="t.valore ?? coloreTesto"
+            [attr.aria-label]="t.etichetta"
+            [title]="t.etichetta"
+            [class.is-attivo]="stato().colore === t.valore"
+            [attr.aria-pressed]="stato().colore === t.valore"
+            (mousedown)="$event.preventDefault()"
+            (click)="colore(t.valore)"
+          ></button>
+        }
+        @for (c of tinteUsate(); track c) {
+          <button
+            type="button"
+            class="tinta"
+            [style.--tinta]="c"
+            [attr.aria-label]="'Colore ' + c"
+            [title]="c"
+            [class.is-attivo]="stato().colore === c"
+            [attr.aria-pressed]="stato().colore === c"
+            (mousedown)="$event.preventDefault()"
+            (click)="colore(c)"
+          ></button>
+        }
+        <label class="strumento tinta-libera" title="Un altro colore, quello del marchio">
+          <ui-icon name="colore-testo" [size]="16" />
+          <input
+            type="color"
+            class="tinta-libera__campo"
+            aria-label="Scegli un altro colore"
+            [value]="stato().colore ?? coloreTesto"
+            (change)="colore($any($event.target).value)"
+          />
+        </label>
+      </div>
+    }
+
+    <div class="gruppo" role="group" aria-label="Allineamento">
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Allinea a sinistra"
+        title="Allinea a sinistra"
+        [class.is-attivo]="stato().allineamento === 'left'"
+        [attr.aria-pressed]="stato().allineamento === 'left'"
+        (mousedown)="$event.preventDefault()"
+        (click)="allinea('left')"
+      >
+        <ui-icon name="allinea-sinistra" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Allinea al centro"
+        title="Allinea al centro"
+        [class.is-attivo]="stato().allineamento === 'center'"
+        [attr.aria-pressed]="stato().allineamento === 'center'"
+        (mousedown)="$event.preventDefault()"
+        (click)="allinea('center')"
+      >
+        <ui-icon name="allinea-centro" [size]="16" />
+      </button>
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Allinea a destra"
+        title="Allinea a destra"
+        [class.is-attivo]="stato().allineamento === 'right'"
+        [attr.aria-pressed]="stato().allineamento === 'right'"
+        (mousedown)="$event.preventDefault()"
+        (click)="allinea('right')"
+      >
+        <ui-icon name="allinea-destra" [size]="16" />
+      </button>
+    </div>
+
+    <div class="gruppo">
+      <button
+        type="button"
+        class="strumento"
+        aria-label="Inserisci un’immagine"
+        title="Logo o immagine (PNG o JPEG)"
+        [disabled]="caricamentoImmagine()"
+        (mousedown)="$event.preventDefault()"
+        (click)="scegliImmagine()"
+      >
+        <ui-icon [name]="caricamentoImmagine() ? 'in-corso' : 'immagine'" [size]="16" />
+      </button>
+      @if (stato().inColonne) {
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Il contenuto resta, una colonna dopo l’altra"
+          (mousedown)="$event.preventDefault()"
+          (click)="togliColonne()"
+        >
+          Togli colonne
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Due colonne"
+          title="Due colonne"
+          (mousedown)="$event.preventDefault()"
+          (click)="colonne(2)"
+        >
+          <ui-icon name="due-colonne" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Tre colonne"
+          title="Tre colonne"
+          (mousedown)="$event.preventDefault()"
+          (click)="colonne(3)"
+        >
+          <ui-icon name="tre-colonne" [size]="16" />
+        </button>
+      }
+      <button
+        type="button"
+        class="strumento strumento--testo"
+        title="Numero di pagina, data, titolo del documento…"
+        (mousedown)="$event.preventDefault()"
+        (click)="menuCampi.apri($event)"
+      >
+        <ui-icon name="campo" [size]="15" />
+        <span>Campo</span>
+      </button>
+    </div>
+
+    <input
+      #sceltaFile
+      type="file"
+      hidden
+      accept="image/png,image/jpeg"
+      (change)="caricaImmagine($event)"
+    />
+  </div>
+
+  @if (erroreImmagine(); as errore) {
+    <p class="errore" role="alert">{{ errore }}</p>
+  }
+}
+
+<!-- Il foglio: scorre di lato sotto una certa larghezza, invece di scendere a caratteri illeggibili. -->
+<div class="scorrimento">
+  <div class="cornice">
+    <div class="foglio" [class.is-sola-lettura]="!modificabile()">
+      <section
+        class="fascia"
+        [class.is-attiva]="modificabile() && attiva() === 'intestazione'"
+        aria-label="Intestazione"
+      >
+        <button
+          type="button"
+          class="mono fascia__etichetta"
+          tabindex="-1"
+          (click)="attivaFascia('intestazione')"
+        >
+          Intestazione
+        </button>
+        <div #zonaIntestazione class="fascia__editor"></div>
+      </section>
+
+      <div class="corpo" aria-hidden="true">
+        <span class="corpo__titolo"></span>
+        <span class="corpo__riga"></span>
+        <span class="corpo__riga"></span>
+        <span class="corpo__riga corpo__riga--corta"></span>
+        <span class="corpo__salto"></span>
+        <span class="corpo__riga"></span>
+        <span class="corpo__riga corpo__riga--media"></span>
+      </div>
+
+      <section
+        class="fascia fascia--piede"
+        [class.is-attiva]="modificabile() && attiva() === 'piede'"
+        aria-label="Piè di pagina"
+      >
+        <button
+          type="button"
+          class="mono fascia__etichetta"
+          tabindex="-1"
+          (click)="attivaFascia('piede')"
+        >
+          Piè di pagina
+        </button>
+        <div #zonaPiede class="fascia__editor"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<ui-menu-azioni #menuCampi [voci]="vociCampo" />

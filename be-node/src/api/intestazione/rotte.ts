@@ -47,7 +47,7 @@ const LIMITE_IMMAGINE = 2 * 1024 * 1024;
 
 const nuovoIdImmagine = (tipo: 'png' | 'jpg'): string => `img-${randomBytes(6).toString('hex')}.${tipo}`;
 
-/** Il documento d'esempio dell'anteprima: tutto quello che il layout sa fare, in una pagina e mezzo. */
+/** Il documento d'esempio dell'anteprima: tutto quello che il layout sa fare, su due pagine, per vedere girare i numeri. */
 const TESTO_ANTEPRIMA = [
   '## Oggetto',
   '',
@@ -67,11 +67,10 @@ const TESTO_ANTEPRIMA = [
   '',
   '## Note',
   '',
-  ...Array.from(
-    { length: 6 },
-    () =>
-      'I dati riportati sono di esempio. Nei documenti veri qui c’è il testo della risposta o dell’analisi, con le fonti in coda: titolo del documento, articolo e pagina.',
-  ),
+  ...Array.from({ length: 14 }, () => [
+    'I dati riportati sono di esempio. Nei documenti veri qui c’è il testo della risposta o dell’analisi, con le fonti in coda: titolo del documento, articolo e pagina.',
+    '',
+  ]).flat(),
 ].join('\n');
 
 export function registraRotteIntestazione(app: FastifyInstance, opzioni: OpzioniIntestazione = {}): void {
