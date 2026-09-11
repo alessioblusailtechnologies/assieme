@@ -9,14 +9,17 @@ import {
 } from 'pdf-lib';
 
 import type { Blocco, Segmento } from './blocchi.js';
-import { preparaFascePdf, type FasceDocumento } from './intestazione.js';
+import { MARGINE, margineCorpo, preparaFascePdf, type FasceDocumento } from './intestazione.js';
 import { larghezzaTesto } from './misura.js';
 
 /**
  * Il compositore PDF: il layout di VELIA fra l'intestazione e il piè di
  * pagina dell'agenzia (11/09/2026, `intestazione.ts`). Le fasce si misurano
  * prima, perché il corpo sappia dove cominciare e dove finire, e si
- * disegnano per ultime, quando il totale delle pagine è noto.
+ * disegnano per ultime, quando il totale delle pagine è noto. La testa parte
+ * dal bordo alto e il piede finisce su quello basso: il corpo sta sotto la
+ * prima e sopra il secondo, col respiro, e mai più vicino al bordo del
+ * margine.
  *
  * I font sono gli standard (Helvetica, WinAnsi): niente da incorporare, il
  * file resta piccolo e si apre ovunque. Ciò che WinAnsi non copre diventa
@@ -31,13 +34,7 @@ export interface OpzioniPdf {
 }
 
 const [LARGHEZZA, ALTEZZA] = PageSizes.A4;
-const MARGINE = 56;
 const LARGHEZZA_TESTO = LARGHEZZA - MARGINE * 2;
-/** Dal bordo alto alla cima dell'intestazione, e dal bordo basso al fondo del piè. */
-const CIMA = 34;
-const FONDO = 28;
-/** Il respiro fra una fascia e il corpo. */
-const RESPIRO = 16;
 
 /** L'accento del layout di VELIA: titoli, puntini, testata delle tabelle. */
 const ACCENTO = '#2f4b7c';
@@ -57,7 +54,6 @@ export async function componiPdf(opzioni: OpzioniPdf): Promise<Buffer> {
   const normale = await doc.embedFont(StandardFonts.Helvetica);
   const grassetto = await doc.embedFont(StandardFonts.HelveticaBold);
   const corsivo = await doc.embedFont(StandardFonts.HelveticaOblique);
-  const grassettoCorsivo = await doc.embedFont(StandardFonts.HelveticaBoldOblique);
 
   /* Ciò che il font non codifica corromperebbe il file: si sostituisce. */
   const codificabili = new Set(normale.getCharacterSet());
@@ -66,17 +62,11 @@ export async function componiPdf(opzioni: OpzioniPdf): Promise<Buffer> {
 
   const colore = coloreDaEsadecimale(ACCENTO);
 
-  const fasce = await preparaFascePdf(doc, opzioni.fasce, { normale, grassetto, corsivo, grassettoCorsivo }, sanifica, {
-    larghezzaPagina: LARGHEZZA,
-    altezzaPagina: ALTEZZA,
-    margine: MARGINE,
-    cima: CIMA,
-    fondo: FONDO,
-  });
+  const fasce = await preparaFascePdf(doc, opzioni.fasce, { larghezza: LARGHEZZA, altezza: ALTEZZA });
 
   /* Il corpo sta fra le fasce; una fascia vuota non si prende spazio. */
-  const inizioContenuto = fasce.altezzaIntestazione ? ALTEZZA - CIMA - fasce.altezzaIntestazione - RESPIRO : ALTEZZA - MARGINE;
-  const fineContenuto = fasce.altezzaPiede ? FONDO + fasce.altezzaPiede + RESPIRO : MARGINE;
+  const inizioContenuto = ALTEZZA - margineCorpo(fasce.altezzaIntestazione);
+  const fineContenuto = margineCorpo(fasce.altezzaPiede);
 
   let pagina!: PDFPage;
   let y = 0;

@@ -98,16 +98,20 @@ describe('le rotte prima del database', () => {
       method: 'PUT',
       url: '/api/intestazione',
       headers: autenticato,
-      payload: { intestazione: { type: 'doc', content: [{ type: 'table', content: [] }] }, piede: { type: 'doc', content: [] } },
+      payload: {
+        intestazione: { altezza: 20, elementi: [{ tipo: 'tabella', id: 't', x: 0, y: 0, larghezza: 50, altezza: 10 }] },
+        piede: { altezza: 0, elementi: [] },
+      },
     });
     expect(tabella.statusCode).toBe(400);
     expect(tabella.json()).toMatchObject({ codice: 'DATI_NON_VALIDI' });
 
+    /* Il flusso di paragrafi di prima della tela non passa più. */
     const anteprima = await daOperatore.inject({
       method: 'POST',
       url: '/api/intestazione/anteprima',
       headers: autenticato,
-      payload: { intestazione: { type: 'doc' }, piede: { type: 'doc', content: [{ type: 'bulletList' }] } },
+      payload: { intestazione: { type: 'doc' }, piede: { type: 'doc', content: [] } },
     });
     expect(anteprima.statusCode).toBe(400);
   });

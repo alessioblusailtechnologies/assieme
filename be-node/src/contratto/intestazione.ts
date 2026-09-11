@@ -5,24 +5,36 @@ import { z } from 'zod';
  * dell'identità visiva: il marchio dell'agenzia su ogni documento che esce
  * da VELIA sta solo qui.
  *
- * Ciascuna delle due fasce è il documento JSON dell'editor (TipTap, fase 2
- * di `PIANO-INTESTAZIONE-MODELLI.md`), ma di uno schema **vincolato** a ciò
- * che si sa riprodurre identico in PDF e in Word: paragrafi allineati,
- * testo con pochi segni, immagini, una riga fino a tre colonne, campi che
- * si risolvono pagina per pagina. Tabelle libere, elenchi, link, font a
- * scelta e sfondi non ci sono: sono ciò che fa divergere l'anteprima dal
- * documento.
+ * Ciascuna delle due fasce è una **tela**: una striscia larga quanto il
+ * foglio A4 e alta quanto si vuole, dove caselle di testo, immagini e forme
+ * stanno dove l'agenzia le mette, in millimetri dal bordo del foglio. La
+ * testa parte dal bordo alto della pagina, il piede finisce su quello basso.
+ * È la libertà delle caselle di testo di Word, e si riproduce uguale in PDF
+ * (il motore disegna alle coordinate) e in Word (caselle e immagini ancorate
+ * alla pagina). Prima era un flusso di paragrafi, immagini e colonne, e il
+ * testo accanto a un logo alto non si poteva centrare.
  *
- * Il backend non si fida dell'editor: un nodo fuori schema è un 400. Gli
- * attributi sconosciuti di un nodo noto invece si scartano (zod li toglie),
- * perché la resa legge solo quelli che conosce.
+ * Il testo di una casella è il JSON dell'editor (TipTap), vincolato a ciò
+ * che si sa riprodurre: paragrafi allineati, pochi segni, tre famiglie di
+ * font, campi che si risolvono pagina per pagina. Tabelle, elenchi e link
+ * non ci sono.
+ *
+ * Il backend non si fida dell'editor: un elemento fuori schema, o fuori
+ * dalla sua fascia, è un 400. Gli attributi sconosciuti di un nodo noto
+ * invece si scartano (zod li toglie), perché la resa legge solo quelli che
+ * conosce.
  */
 
 export const ALLINEAMENTI = ['left', 'center', 'right'] as const;
 export type Allineamento = (typeof ALLINEAMENTI)[number];
 
-export const DIMENSIONI = ['piccolo', 'normale', 'grande'] as const;
-export type Dimensione = (typeof DIMENSIONI)[number];
+/** Dove sta il testo in una casella più alta di lui: in cima, a metà, in fondo. */
+export const ANCORAGGI = ['top', 'middle', 'bottom'] as const;
+export type Ancoraggio = (typeof ANCORAGGI)[number];
+
+/** Le tre famiglie dei font standard del PDF: Helvetica, Times e Courier (in Word Arial, Times New Roman, Courier New). */
+export const FAMIGLIE = ['sans', 'serif', 'mono'] as const;
+export type Famiglia = (typeof FAMIGLIE)[number];
 
 /** I campi che si risolvono al momento di generare, alcuni pagina per pagina. */
 export const CAMPI = ['pagina', 'pagine', 'data', 'titolo', 'agenzia'] as const;
@@ -31,7 +43,19 @@ export type NomeCampo = (typeof CAMPI)[number];
 /** L'id di un'immagine caricata, con la sua estensione: è anche il nome del file nello Storage. */
 export const E_ID_IMMAGINE = /^img-[0-9a-f]{12}\.(png|jpg)$/;
 
+/** Il foglio, in millimetri: le fasce sono larghe quanto lui. */
+export const LARGHEZZA_FOGLIO = 210;
+export const ALTEZZA_MASSIMA_FASCIA = 100;
+
+/** Il corpo e il colore del testo di una casella che non dice altro. */
+export const CORPO_BASE = 9;
+export const COLORE_BASE = '#262626';
+
+/** Quanto un elemento può sporgere dalla sua fascia prima di essere un errore: gli arrotondamenti dell'editor. */
+const TOLLERANZA = 0.5;
+
 const colore = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+const corpo = z.number().min(5).max(72);
 
 const schemaMarca = z.discriminatedUnion('type', [
   z.object({ type: z.literal('bold') }),
@@ -42,7 +66,9 @@ const schemaMarca = z.discriminatedUnion('type', [
     attrs: z
       .object({
         color: colore.nullable().optional(),
-        fontSize: z.enum(DIMENSIONI).nullable().optional(),
+        /** In punti. */
+        fontSize: corpo.nullable().optional(),
+        fontFamily: z.enum(FAMIGLIE).nullable().optional(),
       })
       .optional(),
   }),
@@ -63,52 +89,70 @@ export type Inline = z.infer<typeof schemaInline>;
 const schemaParagrafo = z.object({
   type: z.literal('paragraph'),
   attrs: z.object({ textAlign: z.enum(ALLINEAMENTI).nullable().optional() }).optional(),
-  content: z.array(schemaInline).max(60).optional(),
-});
-
-/**
- * Dove va il testo che segue un'immagine: sotto (l'immagine ha la sua
- * riga) o accanto, come il «testo intorno» di Word: l'immagine sta a
- * sinistra o a destra e i paragrafi dopo le scorrono a fianco, a
- * `distanza` millimetri, finché non la superano in altezza. Un'immagine
- * al centro ha sempre il testo sotto.
- */
-export const DISPOSIZIONI_TESTO = ['sotto', 'accanto'] as const;
-export type DisposizioneTesto = (typeof DISPOSIZIONI_TESTO)[number];
-
-const schemaImmagine = z.object({
-  type: z.literal('immagine'),
-  attrs: z.object({
-    id: z.string().regex(E_ID_IMMAGINE),
-    /** In millimetri, sulla carta. */
-    larghezza: z.number().min(5).max(180),
-    allineamento: z.enum(ALLINEAMENTI).default('left'),
-    testo: z.enum(DISPOSIZIONI_TESTO).default('sotto'),
-    /** In millimetri, fra l'immagine e il testo accanto. */
-    distanza: z.number().min(0).max(30).default(3),
-  }),
-});
-
-const schemaColonna = z.object({
-  type: z.literal('colonna'),
-  content: z.array(z.union([schemaParagrafo, schemaImmagine])).min(1).max(10),
-});
-
-const schemaColonne = z.object({
-  type: z.literal('colonne'),
-  content: z.array(schemaColonna).min(2).max(3),
+  content: z.array(schemaInline).max(80).optional(),
 });
 
 export type Paragrafo = z.infer<typeof schemaParagrafo>;
-export type Immagine = z.infer<typeof schemaImmagine>;
-export type Colonne = z.infer<typeof schemaColonne>;
-export type BloccoColonna = Paragrafo | Immagine;
-export type Blocco = Paragrafo | Immagine | Colonne;
 
-export const schemaFascia = z.object({
-  type: z.literal('doc'),
-  content: z.array(z.union([schemaParagrafo, schemaImmagine, schemaColonne])).max(20).default([]),
+/** Posizione e misure di un elemento, in millimetri dall'angolo in alto a sinistra della sua fascia. */
+const geometria = {
+  id: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
+  x: z.number().min(0).max(LARGHEZZA_FOGLIO),
+  y: z.number().min(0).max(ALTEZZA_MASSIMA_FASCIA),
+  larghezza: z.number().min(0.1).max(LARGHEZZA_FOGLIO),
+  altezza: z.number().min(0.1).max(ALTEZZA_MASSIMA_FASCIA),
+};
+
+/**
+ * Una casella di testo. Corpo, famiglia e colore sono quelli del testo che
+ * non ne dice altri; i segni li cambiano a pezzi. La casella è alta almeno
+ * quanto il suo testo: `altezza` conta quando è di più, e allora
+ * `verticale` dice dove sta il testo.
+ */
+const schemaTesto = z.object({
+  tipo: z.literal('testo'),
+  ...geometria,
+  verticale: z.enum(ANCORAGGI).default('top'),
+  dimensione: corpo.default(CORPO_BASE),
+  famiglia: z.enum(FAMIGLIE).default('sans'),
+  colore: colore.default(COLORE_BASE),
+  paragrafi: z.array(schemaParagrafo).min(1).max(30),
 });
+
+/** Un logo o un marchio, alle misure scelte (l'editor tiene le proporzioni). */
+const schemaImmagine = z.object({
+  tipo: z.literal('immagine'),
+  ...geometria,
+  immagine: z.string().regex(E_ID_IMMAGINE),
+});
+
+/** Un rettangolo pieno: una linea, se basso; una banda di colore, se largo. */
+const schemaForma = z.object({
+  tipo: z.literal('forma'),
+  ...geometria,
+  colore,
+});
+
+const schemaElemento = z.discriminatedUnion('tipo', [schemaTesto, schemaImmagine, schemaForma]);
+
+export type ElementoTesto = z.infer<typeof schemaTesto>;
+export type ElementoImmagine = z.infer<typeof schemaImmagine>;
+export type ElementoForma = z.infer<typeof schemaForma>;
+export type Elemento = z.infer<typeof schemaElemento>;
+
+/** Una fascia: quanto è alta, e che cosa c'è dentro, dal fondo alla cima (l'ultimo copre gli altri). */
+export const schemaFascia = z
+  .object({
+    altezza: z.number().min(0).max(ALTEZZA_MASSIMA_FASCIA),
+    elementi: z.array(schemaElemento).max(40).default([]),
+  })
+  .superRefine((fascia, ctx) => {
+    fascia.elementi.forEach((e, i) => {
+      if (e.x + e.larghezza > LARGHEZZA_FOGLIO + TOLLERANZA || e.y + e.altezza > fascia.altezza + TOLLERANZA) {
+        ctx.addIssue({ code: 'custom', path: ['elementi', i], message: 'elemento fuori dalla fascia' });
+      }
+    });
+  });
 
 export type Fascia = z.infer<typeof schemaFascia>;
 
@@ -130,48 +174,53 @@ export interface IntestazioneSalvata extends Intestazione {
   aggiornataIl?: string;
 }
 
-/** La risposta al caricamento di un'immagine: l'id da mettere nel nodo, e dove vederla. */
+/** La risposta al caricamento di un'immagine: l'id da mettere nell'elemento, e dove vederla. */
 export interface ImmagineCaricata {
   id: string;
   url: string;
 }
 
-export const FASCIA_VUOTA: Fascia = { type: 'doc', content: [] };
+export const FASCIA_VUOTA: Fascia = { altezza: 0, elementi: [] };
 
 /**
  * Il punto di partenza di un'agenzia che non ha ancora scritto niente:
- * intestazione vuota, e nel piè il solo numero di pagina, a destra. È ciò
- * che un documento senza marchio deve comunque avere.
+ * intestazione vuota, e nel piè il solo numero di pagina, a destra, sul
+ * margine del testo. È ciò che un documento senza marchio deve comunque avere.
  */
 export const INTESTAZIONE_INIZIALE: Intestazione = {
   intestazione: FASCIA_VUOTA,
   piede: {
-    type: 'doc',
-    content: [
+    altezza: 15,
+    elementi: [
       {
-        type: 'paragraph',
-        attrs: { textAlign: 'right' },
-        content: [
-          { type: 'text', text: 'Pagina ', marks: [{ type: 'textStyle', attrs: { fontSize: 'piccolo' } }] },
-          { type: 'campo', attrs: { nome: 'pagina' }, marks: [{ type: 'textStyle', attrs: { fontSize: 'piccolo' } }] },
-          { type: 'text', text: ' di ', marks: [{ type: 'textStyle', attrs: { fontSize: 'piccolo' } }] },
-          { type: 'campo', attrs: { nome: 'pagine' }, marks: [{ type: 'textStyle', attrs: { fontSize: 'piccolo' } }] },
+        tipo: 'testo',
+        id: 'numero-pagina',
+        x: 130.2,
+        y: 1.7,
+        larghezza: 60,
+        altezza: 3.5,
+        verticale: 'top',
+        dimensione: 7.5,
+        famiglia: 'sans',
+        colore: COLORE_BASE,
+        paragrafi: [
+          {
+            type: 'paragraph',
+            attrs: { textAlign: 'right' },
+            content: [
+              { type: 'text', text: 'Pagina ' },
+              { type: 'campo', attrs: { nome: 'pagina' } },
+              { type: 'text', text: ' di ' },
+              { type: 'campo', attrs: { nome: 'pagine' } },
+            ],
+          },
         ],
       },
     ],
   },
 };
 
-/** Gli id delle immagini citate da una fascia, colonne comprese. */
+/** Gli id delle immagini citate da una fascia. */
 export function immaginiDellaFascia(fascia: Fascia): string[] {
-  const ids: string[] = [];
-  for (const blocco of fascia.content) {
-    if (blocco.type === 'immagine') ids.push(blocco.attrs.id);
-    if (blocco.type === 'colonne') {
-      for (const colonna of blocco.content) {
-        for (const b of colonna.content) if (b.type === 'immagine') ids.push(b.attrs.id);
-      }
-    }
-  }
-  return ids;
+  return fascia.elementi.flatMap((e) => (e.tipo === 'immagine' ? [e.immagine] : []));
 }

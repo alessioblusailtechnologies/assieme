@@ -1,276 +1,500 @@
 @if (modificabile()) {
   <!--
-    I pulsanti non prendono il fuoco al clic (mousedown senza default): la
-    selezione resta nell'editor, e il comando la trova dove l'avevi lasciata.
+    Tre righe che non cambiano posto: che cosa aggiungere e come disporlo,
+    dove sta ciò che è selezionato, e com'è fatto. I pulsanti non prendono il
+    fuoco al clic (mousedown senza default): la selezione resta dov'era, nella
+    tela o nel testo della casella.
   -->
-  <div
-    class="barra"
-    role="toolbar"
-    [attr.aria-label]="
-      attiva() === 'intestazione'
-        ? 'Formattazione dell’intestazione'
-        : 'Formattazione del piè di pagina'
-    "
-  >
-    <div class="gruppo">
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Annulla"
-        title="Annulla"
-        [disabled]="!stato().puoAnnullare"
-        (mousedown)="$event.preventDefault()"
-        (click)="annulla()"
-      >
-        <ui-icon name="annulla" [size]="16" />
-      </button>
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Ripeti"
-        title="Ripeti"
-        [disabled]="!stato().puoRipetere"
-        (mousedown)="$event.preventDefault()"
-        (click)="ripeti()"
-      >
-        <ui-icon name="ripeti" [size]="16" />
-      </button>
-    </div>
-
-    <!-- Con un'immagine selezionata i segni del testo non servono: al loro posto la larghezza, senza far saltare il foglio. -->
-    @if (stato().immagine; as immagine) {
-      <div class="gruppo gruppo--immagine" role="group" aria-label="Immagine selezionata">
-        <label class="larghezza">
-          <span>Larghezza</span>
-          <input
-            type="number"
-            min="5"
-            max="180"
-            step="1"
-            [value]="immagine.larghezza"
-            (input)="larghezzaImmagine($any($event.target).value)"
-          />
-          <span class="mono">mm</span>
-        </label>
-        <button
-          type="button"
-          class="strumento strumento--testo"
-          title="Il testo che segue scorre a fianco dell’immagine, poi continua sotto"
-          [class.is-attivo]="immagine.accanto"
-          [attr.aria-pressed]="immagine.accanto"
-          (mousedown)="$event.preventDefault()"
-          (click)="testoAccanto()"
-        >
-          <ui-icon name="allinea-sinistra" [size]="14" />
-          <span>Testo accanto</span>
-        </button>
-        @if (immagine.accanto) {
-          <label class="larghezza">
-            <span>Distanza</span>
-            <input
-              type="number"
-              min="0"
-              max="30"
-              step="1"
-              [value]="immagine.distanza"
-              (input)="distanzaImmagine($any($event.target).value)"
-            />
-            <span class="mono">mm</span>
-          </label>
-        }
-        <button
-          type="button"
-          class="strumento strumento--testo"
-          (mousedown)="$event.preventDefault()"
-          (click)="togliImmagine()"
-        >
-          <ui-icon name="elimina" [size]="14" />
-          <span>Togli immagine</span>
-        </button>
-      </div>
-    } @else {
+  <div class="barra" role="toolbar" aria-label="Strumenti di intestazione e piè di pagina">
+    <div class="barra__riga">
       <div class="gruppo">
         <button
           type="button"
           class="strumento"
-          aria-label="Grassetto"
-          title="Grassetto"
-          [class.is-attivo]="stato().grassetto"
-          [attr.aria-pressed]="stato().grassetto"
+          aria-label="Annulla"
+          title="Annulla (Ctrl+Z)"
+          [disabled]="!stato().puoAnnullare"
           (mousedown)="$event.preventDefault()"
-          (click)="grassetto()"
+          (click)="annulla()"
         >
-          <ui-icon name="grassetto" [size]="16" />
+          <ui-icon name="annulla" [size]="16" />
         </button>
         <button
           type="button"
           class="strumento"
-          aria-label="Corsivo"
-          title="Corsivo"
-          [class.is-attivo]="stato().corsivo"
-          [attr.aria-pressed]="stato().corsivo"
+          aria-label="Ripeti"
+          title="Ripeti (Ctrl+Y)"
+          [disabled]="!stato().puoRipetere"
           (mousedown)="$event.preventDefault()"
-          (click)="corsivo()"
+          (click)="ripeti()"
         >
-          <ui-icon name="corsivo" [size]="16" />
+          <ui-icon name="ripeti" [size]="16" />
         </button>
-        <button
-          type="button"
-          class="strumento"
-          aria-label="Sottolineato"
-          title="Sottolineato"
-          [class.is-attivo]="stato().sottolineato"
-          [attr.aria-pressed]="stato().sottolineato"
-          (mousedown)="$event.preventDefault()"
-          (click)="sottolineato()"
-        >
-          <ui-icon name="sottolineato" [size]="16" />
-        </button>
-        <select
-          class="dimensione"
-          aria-label="Dimensione del testo"
-          [value]="stato().dimensione"
-          (change)="dimensione($any($event.target).value)"
-        >
-          <option value="piccolo">Piccolo</option>
-          <option value="normale">Normale</option>
-          <option value="grande">Grande</option>
-        </select>
       </div>
 
-      <div class="gruppo" role="group" aria-label="Colore del testo">
-        @for (t of tinte; track t.etichetta) {
-          <button
-            type="button"
-            class="tinta"
-            [style.--tinta]="t.valore ?? coloreTesto"
-            [attr.aria-label]="t.etichetta"
-            [title]="t.etichetta"
-            [class.is-attivo]="stato().colore === t.valore"
-            [attr.aria-pressed]="stato().colore === t.valore"
-            (mousedown)="$event.preventDefault()"
-            (click)="colore(t.valore)"
-          ></button>
-        }
-        @for (c of tinteUsate(); track c) {
-          <button
-            type="button"
-            class="tinta"
-            [style.--tinta]="c"
-            [attr.aria-label]="'Colore ' + c"
-            [title]="c"
-            [class.is-attivo]="stato().colore === c"
-            [attr.aria-pressed]="stato().colore === c"
-            (mousedown)="$event.preventDefault()"
-            (click)="colore(c)"
-          ></button>
-        }
-        <label class="strumento tinta-libera" title="Un altro colore, quello del marchio">
-          <ui-icon name="colore-testo" [size]="16" />
-          <input
-            type="color"
-            class="tinta-libera__campo"
-            aria-label="Scegli un altro colore"
-            [value]="stato().colore ?? coloreTesto"
-            (change)="colore($any($event.target).value)"
-          />
-        </label>
-      </div>
-    }
-
-    <div class="gruppo" role="group" aria-label="Allineamento">
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Allinea a sinistra"
-        title="Allinea a sinistra"
-        [class.is-attivo]="stato().allineamento === 'left'"
-        [attr.aria-pressed]="stato().allineamento === 'left'"
-        (mousedown)="$event.preventDefault()"
-        (click)="allinea('left')"
-      >
-        <ui-icon name="allinea-sinistra" [size]="16" />
-      </button>
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Allinea al centro"
-        title="Allinea al centro"
-        [class.is-attivo]="stato().allineamento === 'center'"
-        [attr.aria-pressed]="stato().allineamento === 'center'"
-        (mousedown)="$event.preventDefault()"
-        (click)="allinea('center')"
-      >
-        <ui-icon name="allinea-centro" [size]="16" />
-      </button>
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Allinea a destra"
-        title="Allinea a destra"
-        [class.is-attivo]="stato().allineamento === 'right'"
-        [attr.aria-pressed]="stato().allineamento === 'right'"
-        (mousedown)="$event.preventDefault()"
-        (click)="allinea('right')"
-      >
-        <ui-icon name="allinea-destra" [size]="16" />
-      </button>
-    </div>
-
-    <div class="gruppo">
-      <button
-        type="button"
-        class="strumento"
-        aria-label="Inserisci un’immagine"
-        title="Logo o immagine (PNG o JPEG)"
-        [disabled]="caricamentoImmagine()"
-        (mousedown)="$event.preventDefault()"
-        (click)="scegliImmagine()"
-      >
-        <ui-icon [name]="caricamentoImmagine() ? 'in-corso' : 'immagine'" [size]="16" />
-      </button>
-      @if (stato().inColonne) {
+      <div class="gruppo" role="group" aria-label="Aggiungi">
         <button
           type="button"
           class="strumento strumento--testo"
-          title="Il contenuto resta, una colonna dopo l’altra"
+          title="Una casella di testo: la sposti dove vuoi, doppio clic per scriverci"
           (mousedown)="$event.preventDefault()"
-          (click)="togliColonne()"
+          (click)="aggiungiTesto()"
         >
-          Togli colonne
+          <ui-icon name="casella-testo" [size]="15" />
+          <span>Testo</span>
         </button>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Logo o immagine (PNG o JPEG)"
+          [disabled]="caricamentoImmagine()"
+          (mousedown)="$event.preventDefault()"
+          (click)="scegliImmagine()"
+        >
+          <ui-icon [name]="caricamentoImmagine() ? 'in-corso' : 'immagine'" [size]="15" />
+          <span>Immagine</span>
+        </button>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Una linea da margine a margine"
+          (mousedown)="$event.preventDefault()"
+          (click)="aggiungiLinea()"
+        >
+          <ui-icon name="linea" [size]="15" />
+          <span>Linea</span>
+        </button>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Un riquadro colorato: una banda, uno sfondo per il logo"
+          (mousedown)="$event.preventDefault()"
+          (click)="aggiungiRettangolo()"
+        >
+          <ui-icon name="rettangolo" [size]="15" />
+          <span>Riquadro</span>
+        </button>
+        <button
+          type="button"
+          class="strumento strumento--testo"
+          title="Numero di pagina, data, titolo del documento…"
+          (mousedown)="$event.preventDefault()"
+          (click)="menuCampi.apri($event)"
+        >
+          <ui-icon name="campo" [size]="15" />
+          <span>Campo</span>
+        </button>
+      </div>
+
+      <div class="gruppo" role="group" aria-label="Disponi">
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Porta in primo piano"
+          title="In primo piano: sopra gli altri"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="livello('avanti')"
+        >
+          <ui-icon name="porta-avanti" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Porta dietro"
+          title="Dietro a tutti: uno sfondo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="livello('dietro')"
+        >
+          <ui-icon name="porta-dietro" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Duplica"
+          title="Duplica (Ctrl+D)"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="duplica()"
+        >
+          <ui-icon name="duplica" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Elimina"
+          title="Elimina (Canc)"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="elimina()"
+        >
+          <ui-icon name="elimina" [size]="16" />
+        </button>
+      </div>
+    </div>
+
+    <div class="barra__riga barra__riga--fissa">
+      <div class="gruppo" role="group" aria-label="Allinea">
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Allinea a sinistra"
+          title="Allinea a sinistra: fra loro, o sul margine se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('sinistra')"
+        >
+          <ui-icon name="allinea-bordo-sinistro" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Centra in orizzontale"
+          title="Centra in orizzontale: fra loro, o nella pagina se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('centro')"
+        >
+          <ui-icon name="allinea-centro-orizzontale" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Allinea a destra"
+          title="Allinea a destra: fra loro, o sul margine se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('destra')"
+        >
+          <ui-icon name="allinea-bordo-destro" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Allinea in alto"
+          title="Allinea in alto: fra loro, o in cima alla fascia se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('alto')"
+        >
+          <ui-icon name="allinea-bordo-alto" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Centra in verticale"
+          title="Centra in verticale: fra loro (il testo a metà del logo), o nella fascia se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('mezzo')"
+        >
+          <ui-icon name="allinea-centro-verticale" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Allinea in basso"
+          title="Allinea in basso: fra loro, o in fondo alla fascia se è uno solo"
+          [disabled]="!stato().quanti"
+          (mousedown)="$event.preventDefault()"
+          (click)="allineaSelezione('basso')"
+        >
+          <ui-icon name="allinea-bordo-basso" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Distribuisci in orizzontale"
+          title="Spazi uguali in orizzontale (almeno tre elementi)"
+          [disabled]="stato().quanti < 3"
+          (mousedown)="$event.preventDefault()"
+          (click)="distribuisciSelezione('x')"
+        >
+          <ui-icon name="distribuisci-orizzontale" [size]="16" />
+        </button>
+        <button
+          type="button"
+          class="strumento"
+          aria-label="Distribuisci in verticale"
+          title="Spazi uguali in verticale (almeno tre elementi)"
+          [disabled]="stato().quanti < 3"
+          (mousedown)="$event.preventDefault()"
+          (click)="distribuisciSelezione('y')"
+        >
+          <ui-icon name="distribuisci-verticale" [size]="16" />
+        </button>
+      </div>
+
+      @if (stato().unico; as e) {
+        <div
+          class="gruppo gruppo--misure"
+          role="group"
+          aria-label="Posizione e misure, in millimetri"
+        >
+          <label class="misura" title="Dal bordo sinistro del foglio">
+            <span>X</span>
+            <input
+              class="campo-barra"
+              type="number"
+              step="0.5"
+              [value]="e.x"
+              (change)="impostaGeometria('x', $any($event.target).value)"
+            />
+          </label>
+          <label class="misura" title="Dalla cima della fascia">
+            <span>Y</span>
+            <input
+              class="campo-barra"
+              type="number"
+              step="0.5"
+              [value]="e.y"
+              (change)="impostaGeometria('y', $any($event.target).value)"
+            />
+          </label>
+          <label class="misura" title="Larghezza">
+            <span>L</span>
+            <input
+              class="campo-barra"
+              type="number"
+              step="0.5"
+              min="0.1"
+              [value]="e.larghezza"
+              (change)="impostaGeometria('larghezza', $any($event.target).value)"
+            />
+          </label>
+          <label class="misura" title="Altezza">
+            <span>A</span>
+            <input
+              class="campo-barra"
+              type="number"
+              step="0.5"
+              min="0.1"
+              [value]="e.altezza"
+              (change)="impostaGeometria('altezza', $any($event.target).value)"
+            />
+          </label>
+          <span class="mono barra__unita">mm</span>
+        </div>
+      } @else if (stato().quanti > 1) {
+        <span class="barra__nota"
+          >{{ stato().quanti }} elementi selezionati: trascinali insieme, o allineali</span
+        >
       } @else {
-        <button
-          type="button"
-          class="strumento"
-          aria-label="Due colonne"
-          title="Due colonne"
-          (mousedown)="$event.preventDefault()"
-          (click)="colonne(2)"
-        >
-          <ui-icon name="due-colonne" [size]="16" />
-        </button>
-        <button
-          type="button"
-          class="strumento"
-          aria-label="Tre colonne"
-          title="Tre colonne"
-          (mousedown)="$event.preventDefault()"
-          (click)="colonne(3)"
-        >
-          <ui-icon name="tre-colonne" [size]="16" />
-        </button>
+        <div class="gruppo gruppo--misure">
+          <label
+            class="misura"
+            title="Da qui in giù comincia il corpo del documento (nel piè, da qui in su)"
+          >
+            <span>{{ attiva() === 'intestazione' ? 'Altezza intestazione' : 'Altezza piè' }}</span>
+            <input
+              class="campo-barra"
+              type="number"
+              step="1"
+              min="0"
+              max="100"
+              [value]="modello()[attiva()].altezza"
+              [disabled]="!modello()[attiva()].elementi.length"
+              (change)="impostaAltezzaFascia($any($event.target).value)"
+            />
+          </label>
+          <span class="mono barra__unita">mm</span>
+        </div>
       }
-      <button
-        type="button"
-        class="strumento strumento--testo"
-        title="Numero di pagina, data, titolo del documento…"
-        (mousedown)="$event.preventDefault()"
-        (click)="menuCampi.apri($event)"
-      >
-        <ui-icon name="campo" [size]="15" />
-        <span>Campo</span>
-      </button>
+    </div>
+
+    <!-- La terza riga cambia con ciò che è selezionato, ma resta alta uguale: il foglio non salta. -->
+    <div class="barra__riga barra__riga--fissa">
+      @if (stato().testo; as t) {
+        <div class="gruppo" role="group" aria-label="Carattere">
+          <select
+            class="campo-barra"
+            aria-label="Font"
+            [value]="t.famiglia ?? ''"
+            (change)="famiglia($any($event.target).value)"
+          >
+            @if (!t.famiglia) {
+              <option value="" disabled>Misto</option>
+            }
+            @for (f of famiglie; track f[0]) {
+              <option [value]="f[0]">{{ f[1] }}</option>
+            }
+          </select>
+          <label class="misura" title="Corpo in punti: scegli o scrivi, dal 5 al 72">
+            <input
+              class="campo-barra campo-barra--corpo"
+              type="number"
+              min="5"
+              max="72"
+              step="0.5"
+              list="corpi-intestazione"
+              aria-label="Corpo in punti"
+              [value]="t.corpo ?? ''"
+              (change)="corpo($any($event.target).value)"
+            />
+            <span class="mono">pt</span>
+          </label>
+          <datalist id="corpi-intestazione">
+            @for (c of corpi; track c) {
+              <option [value]="c"></option>
+            }
+          </datalist>
+        </div>
+
+        <div class="gruppo">
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Grassetto"
+            title="Grassetto"
+            [class.is-attivo]="t.grassetto"
+            [attr.aria-pressed]="t.grassetto"
+            (mousedown)="$event.preventDefault()"
+            (click)="segno('bold')"
+          >
+            <ui-icon name="grassetto" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Corsivo"
+            title="Corsivo"
+            [class.is-attivo]="t.corsivo"
+            [attr.aria-pressed]="t.corsivo"
+            (mousedown)="$event.preventDefault()"
+            (click)="segno('italic')"
+          >
+            <ui-icon name="corsivo" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Sottolineato"
+            title="Sottolineato"
+            [class.is-attivo]="t.sottolineato"
+            [attr.aria-pressed]="t.sottolineato"
+            (mousedown)="$event.preventDefault()"
+            (click)="segno('underline')"
+          >
+            <ui-icon name="sottolineato" [size]="16" />
+          </button>
+        </div>
+
+        <div class="gruppo" role="group" aria-label="Colore del testo">
+          <ng-container *ngTemplateOutlet="tavolozza; context: { $implicit: t.colore }" />
+        </div>
+
+        <div class="gruppo" role="group" aria-label="Allineamento del testo">
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo a sinistra"
+            title="Testo a sinistra nella casella"
+            [class.is-attivo]="t.allineamento === 'left'"
+            [attr.aria-pressed]="t.allineamento === 'left'"
+            (mousedown)="$event.preventDefault()"
+            (click)="allineaTesto('left')"
+          >
+            <ui-icon name="allinea-sinistra" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo al centro"
+            title="Testo al centro della casella"
+            [class.is-attivo]="t.allineamento === 'center'"
+            [attr.aria-pressed]="t.allineamento === 'center'"
+            (mousedown)="$event.preventDefault()"
+            (click)="allineaTesto('center')"
+          >
+            <ui-icon name="allinea-centro" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo a destra"
+            title="Testo a destra nella casella"
+            [class.is-attivo]="t.allineamento === 'right'"
+            [attr.aria-pressed]="t.allineamento === 'right'"
+            (mousedown)="$event.preventDefault()"
+            (click)="allineaTesto('right')"
+          >
+            <ui-icon name="allinea-destra" [size]="16" />
+          </button>
+        </div>
+
+        <div class="gruppo" role="group" aria-label="Testo nella casella, in verticale">
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo in alto"
+            title="Il testo in cima alla casella"
+            [class.is-attivo]="t.verticale === 'top'"
+            [attr.aria-pressed]="t.verticale === 'top'"
+            (mousedown)="$event.preventDefault()"
+            (click)="verticaleTesto('top')"
+          >
+            <ui-icon name="testo-in-alto" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo a metà"
+            title="Il testo a metà della casella: allungala quanto il logo, e ci sta centrato"
+            [class.is-attivo]="t.verticale === 'middle'"
+            [attr.aria-pressed]="t.verticale === 'middle'"
+            (mousedown)="$event.preventDefault()"
+            (click)="verticaleTesto('middle')"
+          >
+            <ui-icon name="testo-a-meta" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Testo in basso"
+            title="Il testo in fondo alla casella"
+            [class.is-attivo]="t.verticale === 'bottom'"
+            [attr.aria-pressed]="t.verticale === 'bottom'"
+            (mousedown)="$event.preventDefault()"
+            (click)="verticaleTesto('bottom')"
+          >
+            <ui-icon name="testo-in-basso" [size]="16" />
+          </button>
+          <button
+            type="button"
+            class="strumento"
+            aria-label="Adatta al testo"
+            title="La casella alta quanto il suo testo"
+            (mousedown)="$event.preventDefault()"
+            (click)="adattaAlTesto()"
+          >
+            <ui-icon name="adatta-al-testo" [size]="16" />
+          </button>
+        </div>
+      } @else if (stato().forme) {
+        <div class="gruppo" role="group" aria-label="Colore">
+          <ng-container *ngTemplateOutlet="tavolozza; context: { $implicit: stato().forma }" />
+        </div>
+      } @else if (stato().immagine) {
+        <div class="gruppo">
+          <button
+            type="button"
+            class="strumento strumento--testo"
+            title="Un'altra immagine allo stesso posto, con la stessa larghezza"
+            [disabled]="caricamentoImmagine()"
+            (mousedown)="$event.preventDefault()"
+            (click)="scegliImmagine(true)"
+          >
+            <ui-icon name="immagine" [size]="15" />
+            <span>Sostituisci</span>
+          </button>
+        </div>
+      } @else {
+        <span class="barra__nota">
+          Trascina per spostare · doppio clic su un testo per scriverci · Maiuscolo per selezionarne
+          più d’uno · Alt per staccarsi dalle guide
+        </span>
+      }
     </div>
 
     <input
@@ -287,51 +511,237 @@
   }
 }
 
+<ng-template #tavolozza let-attuale>
+  @for (t of tinte; track t.valore) {
+    <button
+      type="button"
+      class="tinta"
+      [style.--tinta]="t.valore"
+      [attr.aria-label]="t.etichetta"
+      [title]="t.etichetta"
+      [class.is-attivo]="attuale === t.valore"
+      [attr.aria-pressed]="attuale === t.valore"
+      (mousedown)="$event.preventDefault()"
+      (click)="colore(t.valore)"
+    ></button>
+  }
+  @for (c of tinteUsate(); track c) {
+    <button
+      type="button"
+      class="tinta"
+      [style.--tinta]="c"
+      [attr.aria-label]="'Colore ' + c"
+      [title]="c"
+      [class.is-attivo]="attuale === c"
+      [attr.aria-pressed]="attuale === c"
+      (mousedown)="$event.preventDefault()"
+      (click)="colore(c)"
+    ></button>
+  }
+  <label class="strumento tinta-libera" title="Un altro colore, quello del marchio">
+    <ui-icon name="colore-testo" [size]="16" />
+    <input
+      type="color"
+      class="tinta-libera__campo"
+      aria-label="Scegli un altro colore"
+      [value]="attuale ?? '#262626'"
+      (change)="colore($any($event.target).value)"
+    />
+  </label>
+</ng-template>
+
 <!-- Il foglio: scorre di lato sotto una certa larghezza, invece di scendere a caratteri illeggibili. -->
 <div class="scorrimento">
   <div class="cornice">
-    <div class="foglio" [class.is-sola-lettura]="!modificabile()">
-      <section
-        class="fascia"
-        [class.is-attiva]="modificabile() && attiva() === 'intestazione'"
-        aria-label="Intestazione"
-      >
-        <button
-          type="button"
-          class="mono fascia__etichetta"
-          tabindex="-1"
-          (click)="attivaFascia('intestazione')"
-        >
-          Intestazione
-        </button>
-        <div #zonaIntestazione class="fascia__editor"></div>
-      </section>
+    <div
+      #foglio
+      class="foglio"
+      [class.is-sola-lettura]="!modificabile()"
+      [attr.tabindex]="modificabile() ? 0 : null"
+      aria-label="Foglio A4: intestazione e piè di pagina"
+      (keydown)="tastiera($event)"
+    >
+      @for (nome of fasce; track nome) {
+        @if (nome === 'piede') {
+          <!-- Il corpo del documento, finto e sbiadito: dice dove stanno le due fasce. -->
+          <div
+            class="corpo"
+            aria-hidden="true"
+            [style.padding-top]="mm(spazioCorpo('intestazione'))"
+            [style.padding-bottom]="mm(spazioCorpo('piede'))"
+          >
+            <span class="corpo__titolo"></span>
+            <span class="corpo__riga"></span>
+            <span class="corpo__riga"></span>
+            <span class="corpo__riga corpo__riga--corta"></span>
+            <span class="corpo__salto"></span>
+            <span class="corpo__riga"></span>
+            <span class="corpo__riga corpo__riga--media"></span>
+          </div>
+        }
 
-      <div class="corpo" aria-hidden="true">
-        <span class="corpo__titolo"></span>
-        <span class="corpo__riga"></span>
-        <span class="corpo__riga"></span>
-        <span class="corpo__riga corpo__riga--corta"></span>
-        <span class="corpo__salto"></span>
-        <span class="corpo__riga"></span>
-        <span class="corpo__riga corpo__riga--media"></span>
-      </div>
-
-      <section
-        class="fascia fascia--piede"
-        [class.is-attiva]="modificabile() && attiva() === 'piede'"
-        aria-label="Piè di pagina"
-      >
-        <button
-          type="button"
-          class="mono fascia__etichetta"
-          tabindex="-1"
-          (click)="attivaFascia('piede')"
+        <section
+          class="fascia"
+          [class.fascia--piede]="nome === 'piede'"
+          [class.is-attiva]="modificabile() && attiva() === nome"
+          [attr.aria-label]="nome === 'intestazione' ? 'Intestazione' : 'Piè di pagina'"
         >
-          Piè di pagina
-        </button>
-        <div #zonaPiede class="fascia__editor"></div>
-      </section>
+          <span class="mono fascia__etichetta" aria-hidden="true">
+            {{ nome === 'intestazione' ? 'Intestazione' : 'Piè di pagina' }}
+          </span>
+
+          <div
+            class="fascia__tela"
+            [attr.data-fascia]="nome"
+            [style.height]="mm(altezzaMostrata(nome))"
+            (pointerdown)="premiTela($event, nome)"
+          >
+            @if (modificabile() && attiva() === nome) {
+              <span class="guida-margine" [style.left]="mm(margine)"></span>
+              <span class="guida-margine" [style.left]="mm(larghezzaFoglio - margine)"></span>
+            }
+            @if (!modello()[nome].elementi.length) {
+              <p class="fascia__vuota">
+                {{ nome === 'intestazione' ? 'Intestazione vuota.' : 'Piè di pagina vuoto.' }}
+                @if (modificabile()) {
+                  Aggiungi un testo, un’immagine o una linea dalla barra.
+                }
+              </p>
+            }
+
+            @for (e of modello()[nome].elementi; track e.id; let i = $index) {
+              @if (e.tipo === 'testo') {
+                <div
+                  class="elemento elemento--testo"
+                  [class.is-in-modifica]="inModifica() === e.id"
+                  [attr.data-id]="e.id"
+                  [attr.aria-label]="descrizione(e)"
+                  [style.left]="mm(e.x)"
+                  [style.top]="mm(e.y)"
+                  [style.width]="mm(e.larghezza)"
+                  [style.min-height]="mm(e.altezza)"
+                  [style.z-index]="i + 1"
+                  [style.justify-content]="verticale(e)"
+                  [style.font-size]="pt(e.dimensione)"
+                  [style.font-family]="fontFamiglia[e.famiglia]"
+                  [style.color]="e.colore"
+                  (pointerdown)="premiElemento($event, nome, e)"
+                >
+                  <app-casella-testo
+                    [idElemento]="e.id"
+                    [paragrafi]="e.paragrafi"
+                    [inModifica]="inModifica() === e.id"
+                    (cambiato)="testoCambiato(nome, e.id, $event)"
+                    (altezza)="altezzaTesto(e.id, $event)"
+                    (tasto)="tastoCasella($event)"
+                    (transazione)="transazione()"
+                  />
+                </div>
+              } @else if (e.tipo === 'immagine') {
+                <div
+                  class="elemento elemento--immagine"
+                  [attr.data-id]="e.id"
+                  role="img"
+                  [attr.aria-label]="descrizione(e)"
+                  [style.left]="mm(e.x)"
+                  [style.top]="mm(e.y)"
+                  [style.width]="mm(e.larghezza)"
+                  [style.height]="mm(e.altezza)"
+                  [style.z-index]="i + 1"
+                  (pointerdown)="premiElemento($event, nome, e)"
+                >
+                  @if (urlImmagini()[e.immagine]; as url) {
+                    <img [src]="url" alt="" draggable="false" />
+                  }
+                </div>
+              } @else {
+                <div
+                  class="elemento elemento--forma"
+                  [attr.data-id]="e.id"
+                  role="img"
+                  [attr.aria-label]="descrizione(e)"
+                  [style.left]="mm(e.x)"
+                  [style.top]="mm(e.y)"
+                  [style.width]="mm(e.larghezza)"
+                  [style.height]="mm(e.altezza)"
+                  [style.z-index]="i + 1"
+                  [style.background]="e.colore"
+                  (pointerdown)="premiElemento($event, nome, e)"
+                ></div>
+              }
+            }
+
+            @if (modificabile() && attiva() === nome) {
+              @for (e of selezionati(); track e.id) {
+                <div
+                  class="cornice-selezione"
+                  [class.is-scrittura]="inModifica() === e.id"
+                  [style.left]="mm(e.x)"
+                  [style.top]="mm(e.y)"
+                  [style.width]="mm(e.larghezza)"
+                  [style.height]="mm(altezzaVisiva(e))"
+                >
+                  @if (inModifica() === e.id) {
+                    @for (lato of ['n', 'e', 's', 'w']; track lato) {
+                      <span
+                        class="cornice-selezione__bordo"
+                        [attr.data-lato]="lato"
+                        title="Trascina per spostare la casella"
+                        (pointerdown)="premiBordo($event, nome)"
+                      ></span>
+                    }
+                  }
+                </div>
+              }
+              @if (stato().unico; as u) {
+                <div
+                  class="maniglie"
+                  [style.left]="mm(u.x)"
+                  [style.top]="mm(u.y)"
+                  [style.width]="mm(u.larghezza)"
+                  [style.height]="mm(altezzaVisiva(u))"
+                >
+                  @for (m of maniglie(u); track m) {
+                    <span
+                      class="maniglia"
+                      [attr.data-maniglia]="m"
+                      (pointerdown)="premiManiglia($event, nome, m)"
+                    ></span>
+                  }
+                </div>
+              }
+              @for (g of guide(); track $index) {
+                <span
+                  class="guida"
+                  [class.guida--x]="g.asse === 'x'"
+                  [class.guida--y]="g.asse === 'y'"
+                  [style.left]="g.asse === 'x' ? mm(g.valore) : null"
+                  [style.top]="g.asse === 'y' ? mm(g.valore) : null"
+                ></span>
+              }
+              @if (lazo(); as l) {
+                <span
+                  class="lazo"
+                  [style.left]="mm(l.x)"
+                  [style.top]="mm(l.y)"
+                  [style.width]="mm(l.larghezza)"
+                  [style.height]="mm(l.altezza)"
+                ></span>
+              }
+            }
+
+            @if (modificabile() && modello()[nome].elementi.length) {
+              <div
+                class="fascia__altezza"
+                title="Trascina per cambiare l’altezza della fascia"
+                (pointerdown)="premiAltezza($event, nome)"
+              >
+                <span class="mono">{{ modello()[nome].altezza }} mm</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
     </div>
   </div>
 </div>

@@ -1,4 +1,27 @@
-import { coloreEsadecimale, fasciaDaEditor, fasciaPerEditor, limiteSuperato } from './normalizza';
+import { ElementoTesto, Fascia } from '@core/models';
+import {
+  coloreEsadecimale,
+  corpoValido,
+  fasciaNormalizzata,
+  limiteSuperato,
+  paragrafiDaEditor,
+  testoVuoto,
+} from './normalizza';
+
+const casella = (altro: Partial<ElementoTesto> = {}): ElementoTesto => ({
+  tipo: 'testo',
+  id: 't1',
+  x: 20,
+  y: 2,
+  larghezza: 60,
+  altezza: 5,
+  verticale: 'top',
+  dimensione: 9,
+  famiglia: 'sans',
+  colore: '#262626',
+  paragrafi: [{ type: 'paragraph', content: [{ type: 'text', text: 'Agenzia Rossi' }] }],
+  ...altro,
+});
 
 describe('normalizza', () => {
   it('i colori incollati diventano esadecimali, il resto si perde', () => {
@@ -9,8 +32,16 @@ describe('normalizza', () => {
     expect(coloreEsadecimale(null)).toBeUndefined();
   });
 
-  it('toglie gli attributi vuoti e i paragrafi vuoti in coda', () => {
-    const fascia = fasciaDaEditor({
+  it('i corpi vanno al mezzo punto, dentro i limiti del motore', () => {
+    expect(corpoValido('9.3')).toBe(9.5);
+    expect(corpoValido(3)).toBe(5);
+    expect(corpoValido(200)).toBe(72);
+    expect(corpoValido('')).toBeUndefined();
+    expect(corpoValido(null)).toBeUndefined();
+  });
+
+  it('il testo di una casella: attributi vuoti via, segni nella forma del contratto', () => {
+    const paragrafi = paragrafiDaEditor({
       type: 'doc',
       content: [
         {
@@ -22,102 +53,59 @@ describe('normalizza', () => {
               text: 'Agenzia Rossi',
               marks: [
                 { type: 'bold' },
-                { type: 'textStyle', attrs: { color: null, fontSize: null } },
+                {
+                  type: 'textStyle',
+                  attrs: { color: 'rgb(200, 0, 0)', fontSize: '12', fontFamily: 'serif' },
+                },
+                {
+                  type: 'textStyle',
+                  attrs: { color: null, fontSize: null, fontFamily: 'Comic Sans' },
+                },
+                { type: 'link', attrs: { href: 'https://x' } },
               ],
             },
           ],
         },
         { type: 'paragraph', attrs: { textAlign: 'left' } },
-        { type: 'paragraph', attrs: { textAlign: null } },
-      ],
-    });
-    expect(fascia).toEqual({
-      type: 'doc',
-      content: [
-        {
-          type: 'paragraph',
-          content: [{ type: 'text', text: 'Agenzia Rossi', marks: [{ type: 'bold' }] }],
-        },
-      ],
-    });
-  });
-
-  it('un editor vuoto salva una fascia vuota, e una fascia vuota torna un paragrafo dove scrivere', () => {
-    expect(fasciaDaEditor({ type: 'doc', content: [{ type: 'paragraph' }] })).toEqual({
-      type: 'doc',
-      content: [],
-    });
-    expect(fasciaPerEditor({ type: 'doc', content: [] })).toEqual({
-      type: 'doc',
-      content: [{ type: 'paragraph' }],
-    });
-  });
-
-  it('i nodi fuori schema e le immagini senza id valido non passano', () => {
-    const fascia = fasciaDaEditor({
-      type: 'doc',
-      content: [
         { type: 'bulletList', content: [] },
-        { type: 'immagine', attrs: { id: '', larghezza: 30, allineamento: 'left' } },
-        {
-          type: 'immagine',
-          attrs: { id: 'img-0123456789ab.png', larghezza: '400', allineamento: 'justify' },
-        },
         {
           type: 'paragraph',
-          content: [
-            { type: 'text', text: 'link', marks: [{ type: 'link', attrs: { href: 'https://x' } }] },
-            { type: 'campo', attrs: { nome: 'pagina' } },
-            { type: 'campo', attrs: { nome: 'inventato' } },
-          ],
+          attrs: { textAlign: 'right' },
+          content: [{ type: 'campo', attrs: { nome: 'inventato' } }],
         },
       ],
     });
-    expect(fascia.content).toEqual([
-      {
-        type: 'immagine',
-        attrs: { id: 'img-0123456789ab.png', larghezza: 180, allineamento: 'left' },
-      },
+    expect(paragrafi).toEqual([
       {
         type: 'paragraph',
         content: [
-          { type: 'text', text: 'link' },
-          { type: 'campo', attrs: { nome: 'pagina' } },
+          {
+            type: 'text',
+            text: 'Agenzia Rossi',
+            marks: [
+              { type: 'bold' },
+              { type: 'textStyle', attrs: { color: '#c80000', fontSize: 12, fontFamily: 'serif' } },
+            ],
+          },
         ],
       },
+      { type: 'paragraph' },
+      { type: 'paragraph', attrs: { textAlign: 'right' } },
     ]);
   });
 
-  it('il testo accanto resta solo dove ha un lato, con la distanza nei limiti', () => {
-    const img = (attrs: Record<string, unknown>) =>
-      fasciaDaEditor({
-        type: 'doc',
-        content: [
-          { type: 'immagine', attrs: { id: 'img-0123456789ab.png', larghezza: 30, ...attrs } },
-        ],
-      }).content[0];
-    expect(img({ allineamento: 'right', testo: 'accanto', distanza: 50 })).toEqual({
-      type: 'immagine',
-      attrs: {
-        id: 'img-0123456789ab.png',
-        larghezza: 30,
-        allineamento: 'right',
-        testo: 'accanto',
-        distanza: 30,
-      },
-    });
-    expect(img({ allineamento: 'center', testo: 'accanto', distanza: 5 })).toEqual({
-      type: 'immagine',
-      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'center' },
-    });
-    expect(img({ allineamento: 'left', testo: 'sotto', distanza: 3 })).toEqual({
-      type: 'immagine',
-      attrs: { id: 'img-0123456789ab.png', larghezza: 30, allineamento: 'left' },
-    });
+  it('una casella ha sempre almeno un paragrafo, e senza testo né campi è vuota', () => {
+    expect(paragrafiDaEditor({ type: 'doc', content: [] })).toEqual([{ type: 'paragraph' }]);
+    expect(
+      testoVuoto([{ type: 'paragraph' }, { type: 'paragraph', content: [{ type: 'hardBreak' }] }]),
+    ).toBe(true);
+    expect(
+      testoVuoto([{ type: 'paragraph', content: [{ type: 'campo', attrs: { nome: 'pagina' } }] }]),
+    ).toBe(false);
   });
 
   it('un testo più lungo di 500 caratteri si spezza, con gli stessi segni', () => {
-    const fascia = fasciaDaEditor({
+    const [p] = paragrafiDaEditor({
       type: 'doc',
       content: [
         {
@@ -126,47 +114,96 @@ describe('normalizza', () => {
         },
       ],
     });
-    const pezzi = (fascia.content[0] as { content: { text: string; marks: unknown }[] }).content;
-    expect(pezzi.map((p) => p.text.length)).toEqual([500, 500, 200]);
-    expect(pezzi.every((p) => JSON.stringify(p.marks) === '[{"type":"italic"}]')).toBe(true);
+    const pezzi = p!.content as { text: string; marks: unknown }[];
+    expect(pezzi.map((x) => x.text.length)).toEqual([500, 500, 200]);
+    expect(pezzi.every((x) => JSON.stringify(x.marks) === '[{"type":"italic"}]')).toBe(true);
   });
 
-  it('le colonne restano colonne, e una colonna svuotata tiene un paragrafo', () => {
-    const fascia = fasciaDaEditor({
-      type: 'doc',
-      content: [
+  it('la fascia: millimetri al decimo, tutto dentro il foglio, alta quanto il suo elemento più basso', () => {
+    const fascia = fasciaNormalizzata({
+      altezza: 10,
+      elementi: [
+        casella({ x: 199.456, y: 7.04, larghezza: 30, altezza: 8.66 }),
         {
-          type: 'colonne',
-          content: [
-            {
-              type: 'colonna',
-              content: [{ type: 'paragraph', content: [{ type: 'text', text: 'sx' }] }],
-            },
-            { type: 'colonna', content: [] },
-          ],
+          tipo: 'immagine',
+          id: 'i1',
+          x: -4,
+          y: 0,
+          larghezza: 30,
+          altezza: 12.34,
+          immagine: 'img-0123456789ab.png',
+        },
+        {
+          tipo: 'immagine',
+          id: 'i2',
+          x: 0,
+          y: 0,
+          larghezza: 30,
+          altezza: 12,
+          immagine: '../logo.png',
+        },
+        {
+          tipo: 'forma',
+          id: 'f1',
+          x: 20,
+          y: 3,
+          larghezza: 170,
+          altezza: 0.3,
+          colore: 'rgb(47, 75, 124)',
         },
       ],
     });
-    expect(fascia.content).toEqual([
+    /* Il testo spostato dentro il bordo destro; la fascia allungata sotto la casella (7 + 8,7). */
+    expect(fascia.altezza).toBe(15.7);
+    expect(fascia.elementi).toEqual([
+      { ...casella(), x: 180, y: 7, larghezza: 30, altezza: 8.7 },
       {
-        type: 'colonne',
-        content: [
-          {
-            type: 'colonna',
-            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'sx' }] }],
-          },
-          { type: 'colonna', content: [{ type: 'paragraph' }] },
-        ],
+        tipo: 'immagine',
+        id: 'i1',
+        x: 0,
+        y: 0,
+        larghezza: 30,
+        altezza: 12.3,
+        immagine: 'img-0123456789ab.png',
       },
+      { tipo: 'forma', id: 'f1', x: 20, y: 3, larghezza: 170, altezza: 0.3, colore: '#2f4b7c' },
     ]);
   });
 
+  it('una fascia senza elementi è alta zero, e i valori strani di una casella tornano a quelli di sempre', () => {
+    expect(fasciaNormalizzata({ altezza: 30, elementi: [] })).toEqual({ altezza: 0, elementi: [] });
+    const [e] = fasciaNormalizzata({
+      altezza: 10,
+      elementi: [
+        casella({
+          verticale: 'giu' as never,
+          dimensione: Number.NaN,
+          famiglia: 'Arial' as never,
+          colore: 'blu',
+        }),
+      ],
+    }).elementi;
+    expect(e).toMatchObject({
+      verticale: 'top',
+      dimensione: 9,
+      famiglia: 'sans',
+      colore: '#262626',
+    });
+  });
+
   it('dice il tetto superato prima che lo dica il server', () => {
-    const molti = {
-      type: 'doc' as const,
-      content: Array.from({ length: 21 }, () => ({ type: 'paragraph' as const })),
+    const molti: Fascia = {
+      altezza: 20,
+      elementi: Array.from({ length: 41 }, (_, i) => casella({ id: `t${i}` })),
     };
-    expect(limiteSuperato(molti)).toMatch(/20/);
-    expect(limiteSuperato({ type: 'doc', content: [] })).toBeUndefined();
+    expect(limiteSuperato(molti)).toMatch(/40/);
+    const righe: Fascia = {
+      altezza: 20,
+      elementi: [
+        casella({ paragrafi: Array.from({ length: 31 }, () => ({ type: 'paragraph' as const })) }),
+      ],
+    };
+    expect(limiteSuperato(righe)).toMatch(/30/);
+    expect(limiteSuperato({ altezza: 0, elementi: [] })).toBeUndefined();
   });
 });

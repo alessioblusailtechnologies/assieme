@@ -38,9 +38,24 @@ import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
 import FolderOpenIcon from '@hugeicons/core-free-icons/FolderOpenIcon';
 import HashtagIcon from '@hugeicons/core-free-icons/HashtagIcon';
 import Image01Icon from '@hugeicons/core-free-icons/Image01Icon';
-import LayoutThreeColumnIcon from '@hugeicons/core-free-icons/LayoutThreeColumnIcon';
-import LayoutTwoColumnIcon from '@hugeicons/core-free-icons/LayoutTwoColumnIcon';
+import AlignBottomIcon from '@hugeicons/core-free-icons/AlignBottomIcon';
+import AlignBoxBottomCenterIcon from '@hugeicons/core-free-icons/AlignBoxBottomCenterIcon';
+import AlignBoxMiddleCenterIcon from '@hugeicons/core-free-icons/AlignBoxMiddleCenterIcon';
+import AlignBoxTopCenterIcon from '@hugeicons/core-free-icons/AlignBoxTopCenterIcon';
+import AlignHorizontalCenterIcon from '@hugeicons/core-free-icons/AlignHorizontalCenterIcon';
+import AlignLeftIcon from '@hugeicons/core-free-icons/AlignLeftIcon';
+import AlignRightIcon from '@hugeicons/core-free-icons/AlignRightIcon';
+import AlignTopIcon from '@hugeicons/core-free-icons/AlignTopIcon';
+import AlignVerticalCenterIcon from '@hugeicons/core-free-icons/AlignVerticalCenterIcon';
+import DistributeHorizontalCenterIcon from '@hugeicons/core-free-icons/DistributeHorizontalCenterIcon';
+import DistributeVerticalCenterIcon from '@hugeicons/core-free-icons/DistributeVerticalCenterIcon';
+import FitToScreenIcon from '@hugeicons/core-free-icons/FitToScreenIcon';
+import LayerBringToFrontIcon from '@hugeicons/core-free-icons/LayerBringToFrontIcon';
+import LayerSendToBackIcon from '@hugeicons/core-free-icons/LayerSendToBackIcon';
+import MinusSignIcon from '@hugeicons/core-free-icons/MinusSignIcon';
 import RedoIcon from '@hugeicons/core-free-icons/RedoIcon';
+import SquareIcon from '@hugeicons/core-free-icons/SquareIcon';
+import TextSquareIcon from '@hugeicons/core-free-icons/TextSquareIcon';
 import TextAlignCenterIcon from '@hugeicons/core-free-icons/TextAlignCenterIcon';
 import TextAlignLeftIcon from '@hugeicons/core-free-icons/TextAlignLeftIcon';
 import TextAlignRightIcon from '@hugeicons/core-free-icons/TextAlignRightIcon';
@@ -171,11 +186,27 @@ export const REGISTRO_ICONE = {
   'allinea-centro': TextAlignCenterIcon,
   'allinea-destra': TextAlignRightIcon,
   immagine: Image01Icon,
-  'due-colonne': LayoutTwoColumnIcon,
-  'tre-colonne': LayoutThreeColumnIcon,
   campo: HashtagIcon,
   annulla: UndoIcon,
   ripeti: RedoIcon,
+  /* La tela: gli elementi da aggiungere, e come disporli (11/09/2026). */
+  'casella-testo': TextSquareIcon,
+  linea: MinusSignIcon,
+  rettangolo: SquareIcon,
+  'allinea-bordo-sinistro': AlignLeftIcon,
+  'allinea-centro-orizzontale': AlignHorizontalCenterIcon,
+  'allinea-bordo-destro': AlignRightIcon,
+  'allinea-bordo-alto': AlignTopIcon,
+  'allinea-centro-verticale': AlignVerticalCenterIcon,
+  'allinea-bordo-basso': AlignBottomIcon,
+  'distribuisci-orizzontale': DistributeHorizontalCenterIcon,
+  'distribuisci-verticale': DistributeVerticalCenterIcon,
+  'porta-avanti': LayerBringToFrontIcon,
+  'porta-dietro': LayerSendToBackIcon,
+  'testo-in-alto': AlignBoxTopCenterIcon,
+  'testo-a-meta': AlignBoxMiddleCenterIcon,
+  'testo-in-basso': AlignBoxBottomCenterIcon,
+  'adatta-al-testo': FitToScreenIcon,
 
   // --- Cartelle dell'Archivio Privato (Fase 10) ---
   cartella: Folder01Icon,

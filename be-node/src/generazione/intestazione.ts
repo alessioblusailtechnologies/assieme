@@ -1,52 +1,55 @@
 import {
   AlignmentType,
-  HorizontalPositionAlign,
+  FrameAnchorType,
+  FrameWrap,
+  HeightRule,
   HorizontalPositionRelativeFrom,
   ImageRun,
+  LineRuleType,
   PageNumber,
   Paragraph,
-  Table,
-  TableBorders,
-  TableCell,
-  TableRow,
   TextRun,
-  TextWrappingSide,
   TextWrappingType,
   VerticalPositionRelativeFrom,
-  WidthType,
+  WpsShapeRun,
+  type IFloating,
+  type IFrameOptions,
 } from 'docx';
-import { rgb, type PDFDocument, type PDFFont, type PDFImage, type PDFPage, type RGB } from 'pdf-lib';
+import { StandardFontEmbedder, StandardFonts, rgb, type PDFDocument, type PDFFont, type PDFImage, type PDFPage, type RGB } from 'pdf-lib';
 
-import type {
-  Allineamento,
-  Blocco,
-  BloccoColonna,
-  Colonne,
-  Dimensione,
-  Fascia,
-  Immagine,
-  Marca,
-  NomeCampo,
-  Paragrafo,
+import {
+  LARGHEZZA_FOGLIO,
+  type Allineamento,
+  type Ancoraggio,
+  type Elemento,
+  type ElementoTesto,
+  type Famiglia,
+  type Fascia,
+  type Marca,
+  type NomeCampo,
+  type Paragrafo,
 } from '../contratto/intestazione.js';
-import { larghezzaTesto } from './misura.js';
 
 /**
- * La resa di intestazione e piè di pagina (11/09/2026): un JSON solo, lo
- * stesso che l'agenzia compone nell'editor, e tre uscite.
+ * La resa di intestazione e piè di pagina (11/09/2026): una tela per fascia,
+ * la stessa che l'agenzia compone nell'editor, e tre uscite.
  *
- * - **PDF** (pdf-lib): le fasce si impaginano nella larghezza utile della
- *   pagina e se ne misura l'altezza, da cui il corpo ricava i suoi margini.
- *   I campi si risolvono pagina per pagina: il totale lo si conosce solo
- *   dopo aver impaginato il corpo, e infatti le fasce si disegnano per
+ * - **PDF** (pdf-lib): ogni elemento si disegna alle sue coordinate; il testo
+ *   di una casella va a capo nella sua larghezza e sta in cima, a metà o in
+ *   fondo. I campi si risolvono pagina per pagina: il totale lo si conosce
+ *   solo dopo aver impaginato il corpo, e infatti le fasce si disegnano per
  *   ultime.
- * - **Word** (`docx`): `Header` e `Footer` con paragrafi, immagini, una
- *   tabella senza bordi per le colonne, i campi `PAGE` e `NUMPAGES`.
+ * - **Word** (`docx`): `Header` e `Footer` con un paragrafo alto quanto la
+ *   fascia, a cui sono ancorate immagini e forme; le caselle di testo sono
+ *   cornici di paragrafo nelle stesse posizioni; i campi `PAGE` e
+ *   `NUMPAGES`.
  * - **Excel** (exceljs): le fasce di stampa sinistra, centro e destra, solo
- *   testo. Excel non ne sa fare di più senza trucchi che poi non reggono.
+ *   testo, secondo dove sta la casella sul foglio.
  *
- * Lo schema è vincolato (`contratto/intestazione.ts`) proprio perché queste
- * tre rese dicano la stessa cosa dell'anteprima.
+ * Il testo si impagina con le metriche dei font standard del PDF anche per
+ * Word, e con le regole dell'editor: interlinea 1,3 del corpo più grande
+ * della riga, mai meno del corpo della casella. Così la casella è alta
+ * uguale nei tre posti.
  */
 
 export interface ImmagineFascia {
@@ -70,30 +73,44 @@ export interface ContestoPagina {
   pagine: number;
 }
 
-/** Le misure dei tre corpi di testo, in punti tipografici. */
-const PUNTI: Record<Dimensione, number> = { piccolo: 7.5, normale: 9, grande: 12 };
+/** Un millimetro in punti tipografici. */
+export const MM = 72 / 25.4;
+/** Il margine del corpo sui quattro lati, in punti: anche il minimo sotto una fascia bassa. */
+export const MARGINE = 56;
+/** Il respiro fra una fascia e il corpo, in punti. */
+export const RESPIRO = 16;
 
-const COLORE_TESTO = '#262626';
-const MM = 72 / 25.4;
-const SPAZIO_FRA_BLOCCHI = 3;
-const SPAZIO_FRA_COLONNE = 14;
+const INTERLINEA = 1.3;
+
+/** Dove comincia (o finisce) il corpo, in punti dal bordo: dopo la fascia e il respiro, mai più vicino del margine. */
+export const margineCorpo = (altezzaFascia: number): number =>
+  altezzaFascia ? Math.max(MARGINE, altezzaFascia + RESPIRO) : MARGINE;
 
 interface Stile {
   grassetto: boolean;
   corsivo: boolean;
   sottolineato: boolean;
-  dimensione: Dimensione;
+  dimensione: number;
+  famiglia: Famiglia;
   colore: string;
 }
 
-function stileDi(marche: Marca[] | undefined): Stile {
-  const stile: Stile = { grassetto: false, corsivo: false, sottolineato: false, dimensione: 'normale', colore: COLORE_TESTO };
+function stileDi(marche: Marca[] | undefined, casella: ElementoTesto): Stile {
+  const stile: Stile = {
+    grassetto: false,
+    corsivo: false,
+    sottolineato: false,
+    dimensione: casella.dimensione,
+    famiglia: casella.famiglia,
+    colore: casella.colore,
+  };
   for (const m of marche ?? []) {
     if (m.type === 'bold') stile.grassetto = true;
     else if (m.type === 'italic') stile.corsivo = true;
     else if (m.type === 'underline') stile.sottolineato = true;
     else {
       if (m.attrs?.fontSize) stile.dimensione = m.attrs.fontSize;
+      if (m.attrs?.fontFamily) stile.famiglia = m.attrs.fontFamily;
       if (m.attrs?.color) stile.colore = m.attrs.color;
     }
   }
@@ -118,7 +135,21 @@ export function valoreCampo(nome: NomeCampo, campi: FasceDocumento['campi'], pag
 
 /** Una fascia senza niente dentro: niente da disegnare, e nessuno spazio da riservarle. */
 export function fasciaVuota(fascia: Fascia): boolean {
-  return fascia.content.length === 0;
+  return fascia.elementi.length === 0;
+}
+
+/**
+ * Di quanto spostare un elemento su un foglio che non è largo 210 mm (un
+ * file della sandbox in orizzontale, per dire): ciò che sta nel terzo
+ * sinistro resta dal bordo sinistro, ciò che sta in quello destro dal
+ * destro, il resto al centro.
+ */
+export function spostamentoOrizzontale(e: Elemento, larghezzaFoglioMm: number): number {
+  const scarto = larghezzaFoglioMm - LARGHEZZA_FOGLIO;
+  if (Math.abs(scarto) < 0.5) return 0;
+  const centro = e.x + e.larghezza / 2;
+  if (centro < LARGHEZZA_FOGLIO / 3) return 0;
+  return centro > (LARGHEZZA_FOGLIO * 2) / 3 ? scarto : scarto / 2;
 }
 
 // ---------------------------------------------------------------------------
@@ -156,55 +187,180 @@ export function dimensioniImmagine(byte: Buffer): { larghezzaPx: number; altezza
 }
 
 // ---------------------------------------------------------------------------
-// PDF
+// Il testo di una casella: parole, righe, altezza
 // ---------------------------------------------------------------------------
 
-export interface FontPdf {
-  normale: PDFFont;
-  grassetto: PDFFont;
-  corsivo: PDFFont;
-  grassettoCorsivo: PDFFont;
+/** I quattro tagli di ogni famiglia: normale, grassetto, corsivo, grassetto corsivo. */
+const FONT_PDF: Record<Famiglia, readonly [StandardFonts, StandardFonts, StandardFonts, StandardFonts]> = {
+  sans: [StandardFonts.Helvetica, StandardFonts.HelveticaBold, StandardFonts.HelveticaOblique, StandardFonts.HelveticaBoldOblique],
+  serif: [StandardFonts.TimesRoman, StandardFonts.TimesRomanBold, StandardFonts.TimesRomanItalic, StandardFonts.TimesRomanBoldItalic],
+  mono: [StandardFonts.Courier, StandardFonts.CourierBold, StandardFonts.CourierOblique, StandardFonts.CourierBoldOblique],
+};
+
+const nomeFont = (s: Stile): StandardFonts => FONT_PDF[s.famiglia][(s.grassetto ? 1 : 0) + (s.corsivo ? 2 : 0)]!;
+
+/**
+ * Dove cade la linea di base in una riga alta 1,3 volte il corpo, in corpi
+ * dalla cima: mezza interlinea più l'ascendente, come lo calcola il browser
+ * con Arial, Times New Roman e Courier New (le metriche dei font del PDF).
+ */
+const BASE_LINEA: Record<Famiglia, number> = { sans: 0.997, serif: 0.988, mono: 0.917 };
+
+const metriche = new Map<StandardFonts, StandardFontEmbedder>();
+
+/** Le metriche di un font standard, senza bisogno di un documento: servono anche a Word. */
+function metrica(nome: StandardFonts): StandardFontEmbedder {
+  let m = metriche.get(nome);
+  if (!m) {
+    m = StandardFontEmbedder.for(nome as unknown as Parameters<typeof StandardFontEmbedder.for>[0]);
+    metriche.set(nome, m);
+  }
+  return m;
+}
+
+const codificabili = new Set(metrica(StandardFonts.Helvetica).encoding.supportedCodePoints);
+
+/** Ciò che WinAnsi non codifica corromperebbe il PDF: diventa `?`. Tabulazioni e a capo diventano spazi. */
+export function sanificaPdf(testo: string): string {
+  return [...testo.replace(/[\t\r\n]/g, ' ')].map((c) => (codificabili.has(c.codePointAt(0) ?? 0) ? c : '?')).join('');
+}
+
+/**
+ * La larghezza di un testo come `drawText` lo disegna: carattere per
+ * carattere, perché `widthOfTextAtSize` misura con la crenatura e il disegno
+ * è senza (`misura.ts`).
+ */
+function larghezza(testo: string, stile: Stile): number {
+  const m = metrica(nomeFont(stile));
+  let totale = 0;
+  for (const c of testo) totale += m.widthOfTextAtSize(c, stile.dimensione);
+  return totale;
 }
 
 interface Parola {
+  /** Già sanificato: è ciò che si misura e si disegna. */
   testo: string;
-  font: PDFFont;
-  dimensione: number;
-  colore: RGB;
-  sottolineato: boolean;
-  /** Vero se prima c'era uno spazio: solo lì si può andare a capo. */
-  spazioPrima: boolean;
+  stile: Stile;
+  /** Quanti spazi la precedono: solo lì si può andare a capo. */
+  spazi: number;
 }
 
-interface RigaPdf {
+interface Riga {
   parole: Parola[];
   larghezza: number;
-  altezza: number;
+  /** Il corpo più grande della riga, mai meno di quello della casella: l'altezza è 1,3 volte questo. */
   dimensione: number;
-  /** Lo spazio della riga: stretto accanto a un'immagine col testo accanto, pieno dopo. */
-  spazio: SpazioRiga;
+  famiglia: Famiglia;
+  allineamento: Allineamento;
 }
 
-/** Quanto è larga una riga e da dove parte, rispetto al bordo sinistro del blocco. */
-interface SpazioRiga {
-  larghezza: number;
-  scostamento: number;
-}
-
-/** Un'immagine col testo accanto: fino a che altezza toglie spazio, quanto, e da che lato. */
-interface Affiancata {
-  basso: number;
-  ingombro: number;
-  lato: 'left' | 'right';
-}
-
-/** Ciò che un blocco impaginato sa fare: dire quanto è alto e disegnarsi. */
-interface Impaginato {
+interface TestoImpaginato {
+  righe: Riga[];
+  /** Del solo testo, in punti. */
   altezza: number;
-  disegna(pagina: PDFPage, x: number, yCima: number): void;
 }
+
+const larghezzaSpazi = (p: Parola): number => (p.spazi ? larghezza(' ', p.stile) * p.spazi : 0);
+
+function parole(p: Paragrafo, casella: ElementoTesto, campi: FasceDocumento['campi'], contesto: ContestoPagina): Array<Parola | 'a-capo'> {
+  const fuori: Array<Parola | 'a-capo'> = [];
+  let spazi = 0;
+  const aggiungi = (testo: string, stile: Stile): void => {
+    for (const pezzo of sanificaPdf(testo).split(/( +)/)) {
+      if (!pezzo) continue;
+      if (pezzo.startsWith(' ')) {
+        spazi += pezzo.length;
+        continue;
+      }
+      fuori.push({ testo: pezzo, stile, spazi });
+      spazi = 0;
+    }
+  };
+  for (const nodo of p.content ?? []) {
+    if (nodo.type === 'hardBreak') {
+      fuori.push('a-capo');
+      spazi = 0;
+    } else if (nodo.type === 'text') aggiungi(nodo.text, stileDi(nodo.marks, casella));
+    else aggiungi(valoreCampo(nodo.attrs.nome, campi, contesto), stileDi(nodo.marks, casella));
+  }
+  return fuori;
+}
+
+/**
+ * Le righe di una casella: si va a capo solo davanti a una parola preceduta
+ * da spazi, le altre restano attaccate; una parola più lunga della casella
+ * ne esce, come nell'editor.
+ */
+function impaginaTesto(casella: ElementoTesto, campi: FasceDocumento['campi'], contesto: ContestoPagina): TestoImpaginato {
+  const disponibile = casella.larghezza * MM;
+  const righe: Riga[] = [];
+  for (const p of casella.paragrafi) {
+    const allineamento = p.attrs?.textAlign ?? 'left';
+    let corrente: Riga | undefined;
+    const nuova = (): Riga => ({ parole: [], larghezza: 0, dimensione: casella.dimensione, famiglia: casella.famiglia, allineamento });
+    const chiudi = (): void => {
+      righe.push(corrente ?? nuova());
+      corrente = undefined;
+    };
+    /* I gruppi: una parola con gli spazi davanti e quelle attaccate dopo. */
+    const gruppi: Array<Parola[] | 'a-capo'> = [];
+    for (const e of parole(p, casella, campi, contesto)) {
+      const ultimo = gruppi[gruppi.length - 1];
+      if (e === 'a-capo') gruppi.push('a-capo');
+      else if (!e.spazi && Array.isArray(ultimo)) ultimo.push(e);
+      else gruppi.push([e]);
+    }
+    for (const g of gruppi) {
+      if (g === 'a-capo') {
+        chiudi();
+        continue;
+      }
+      const misura = g.reduce((s, x) => s + larghezza(x.testo, x.stile), 0);
+      if (corrente?.parole.length && corrente.larghezza + larghezzaSpazi(g[0]!) + misura > disponibile) chiudi();
+      corrente ??= nuova();
+      /* A inizio riga gli spazi non si vedono. */
+      const primo = corrente.parole.length ? g[0]! : { ...g[0]!, spazi: 0 };
+      corrente.larghezza += larghezzaSpazi(primo) + misura;
+      corrente.parole.push(primo, ...g.slice(1));
+      for (const x of g) {
+        if (x.stile.dimensione > corrente.dimensione) {
+          corrente.dimensione = x.stile.dimensione;
+          corrente.famiglia = x.stile.famiglia;
+        }
+      }
+    }
+    chiudi();
+  }
+  return { righe, altezza: righe.reduce((s, r) => s + r.dimensione * INTERLINEA, 0) };
+}
+
+/** Il rappresentativo dei numeri di pagina, per le misure: cambiano di una cifra, non di una riga. */
+const RAPPRESENTATIVO: ContestoPagina = { pagina: 88, pagine: 88 };
+
+/** L'altezza di un elemento sulla carta, in punti: una casella è alta almeno quanto il suo testo. */
+function altezzaElemento(e: Elemento, campi: FasceDocumento['campi']): number {
+  if (e.tipo !== 'testo') return e.altezza * MM;
+  return Math.max(e.altezza * MM, impaginaTesto(e, campi, RAPPRESENTATIVO).altezza);
+}
+
+/** L'altezza di una fascia sulla carta, in punti: la sua, o di più se un testo sporge sotto. */
+function altezzaFascia(fascia: Fascia, campi: FasceDocumento['campi']): number {
+  if (fasciaVuota(fascia)) return 0;
+  return Math.max(fascia.altezza * MM, ...fascia.elementi.map((e) => e.y * MM + altezzaElemento(e, campi)));
+}
+
+const scostamentoVerticale = (verticale: Ancoraggio, disponibile: number, occupato: number): number =>
+  verticale === 'middle' ? (disponibile - occupato) / 2 : verticale === 'bottom' ? disponibile - occupato : 0;
+
+const xAllineato = (allineamento: Allineamento, disponibile: number, occupato: number): number =>
+  allineamento === 'center' ? (disponibile - occupato) / 2 : allineamento === 'right' ? disponibile - occupato : 0;
+
+// ---------------------------------------------------------------------------
+// PDF
+// ---------------------------------------------------------------------------
 
 export interface FascePdf {
+  /** In punti; zero per una fascia vuota. */
   altezzaIntestazione: number;
   altezzaPiede: number;
   /** Disegna intestazione e piè sulla pagina, coi campi di quella pagina. */
@@ -216,21 +372,15 @@ function coloreRgb(hex: string): RGB {
   return rgb(((n >> 16) & 0xff) / 255, ((n >> 8) & 0xff) / 255, (n & 0xff) / 255);
 }
 
-const xAllineato = (allineamento: Allineamento, x: number, disponibile: number, occupato: number): number =>
-  allineamento === 'center' ? x + (disponibile - occupato) / 2 : allineamento === 'right' ? x + disponibile - occupato : x;
-
 /**
- * Prepara le fasce per un documento: incorpora le immagini una volta sola,
- * misura le altezze (con un contesto di pagina rappresentativo: i numeri di
- * pagina cambiano di una cifra, non di una riga) e restituisce chi le
- * disegna pagina per pagina.
+ * Prepara le fasce per un documento con pagine di queste misure (in punti):
+ * incorpora immagini e font una volta sola, misura le altezze e restituisce
+ * chi le disegna pagina per pagina.
  */
 export async function preparaFascePdf(
   doc: PDFDocument,
   fasce: FasceDocumento,
-  font: FontPdf,
-  sanifica: (testo: string) => string,
-  geometria: { larghezzaPagina: number; altezzaPagina: number; margine: number; cima: number; fondo: number },
+  pagina: { larghezza: number; altezza: number },
 ): Promise<FascePdf> {
   const incorporate = new Map<string, PDFImage>();
   for (const [id, immagine] of fasce.immagini) {
@@ -241,251 +391,80 @@ export async function preparaFascePdf(
     }
   }
 
-  const larghezza = geometria.larghezzaPagina - geometria.margine * 2;
+  /* I font delle famiglie usate, nei quattro tagli: tre famiglie per dodici font sarebbero troppi per un logo e due righe. */
+  const font = new Map<StandardFonts, PDFFont>();
+  for (const e of [...fasce.intestazione.elementi, ...fasce.piede.elementi]) {
+    if (e.tipo !== 'testo') continue;
+    const famiglie = new Set<Famiglia>([e.famiglia]);
+    for (const p of e.paragrafi) {
+      for (const n of p.content ?? []) {
+        if (n.type === 'hardBreak') continue;
+        for (const m of n.marks ?? []) if (m.type === 'textStyle' && m.attrs?.fontFamily) famiglie.add(m.attrs.fontFamily);
+      }
+    }
+    for (const f of famiglie) for (const nome of FONT_PDF[f]) if (!font.has(nome)) font.set(nome, await doc.embedFont(nome));
+  }
 
-  const fontDi = (s: Stile): PDFFont =>
-    s.grassetto && s.corsivo ? font.grassettoCorsivo : s.grassetto ? font.grassetto : s.corsivo ? font.corsivo : font.normale;
+  const larghezzaFoglioMm = pagina.larghezza / MM;
 
-  /** Le parole di un paragrafo, con lo spazio che le precede e i campi già risolti. */
-  const parole = (p: Paragrafo, contesto: ContestoPagina): Array<Parola | 'a-capo'> => {
-    const fuori: Array<Parola | 'a-capo'> = [];
-    let spazio = false;
-    const aggiungi = (testo: string, stile: Stile): void => {
-      for (const pezzo of sanifica(testo).split(/( +)/)) {
-        if (!pezzo) continue;
-        if (/^ +$/.test(pezzo)) {
-          spazio = true;
-          continue;
-        }
-        fuori.push({
-          testo: pezzo,
-          font: fontDi(stile),
-          dimensione: PUNTI[stile.dimensione],
-          colore: coloreRgb(stile.colore),
-          sottolineato: stile.sottolineato,
-          spazioPrima: spazio,
+  const disegnaTesto = (p: PDFPage, e: ElementoTesto, x: number, cima: number, contesto: ContestoPagina): void => {
+    const testo = impaginaTesto(e, fasce.campi, contesto);
+    const disponibile = e.larghezza * MM;
+    let y = cima - scostamentoVerticale(e.verticale, Math.max(e.altezza * MM, testo.altezza), testo.altezza);
+    for (const riga of testo.righe) {
+      const base = y - riga.dimensione * BASE_LINEA[riga.famiglia];
+      let cursore = x + xAllineato(riga.allineamento, disponibile, riga.larghezza);
+      for (const parola of riga.parole) {
+        cursore += larghezzaSpazi(parola);
+        const misura = larghezza(parola.testo, parola.stile);
+        const colore = coloreRgb(parola.stile.colore);
+        p.drawText(parola.testo, {
+          x: cursore,
+          y: base,
+          size: parola.stile.dimensione,
+          font: font.get(nomeFont(parola.stile))!,
+          color: colore,
         });
-        spazio = false;
-      }
-    };
-    for (const nodo of p.content ?? []) {
-      if (nodo.type === 'hardBreak') {
-        fuori.push('a-capo');
-        spazio = false;
-      } else if (nodo.type === 'text') {
-        aggiungi(nodo.text, stileDi(nodo.marks));
-      } else {
-        aggiungi(valoreCampo(nodo.attrs.nome, fasce.campi, contesto), stileDi(nodo.marks));
-      }
-    }
-    return fuori;
-  };
-
-  const larghezzaParola = (p: Parola): number => larghezzaTesto(p.font, p.testo, p.dimensione);
-  const larghezzaSpazio = (p: Parola): number => larghezzaTesto(p.font, ' ', p.dimensione);
-
-  /**
-   * Va a capo solo davanti a una parola preceduta da uno spazio: le altre
-   * restano attaccate. Ogni riga chiede il suo spazio dall'altezza a cui
-   * comincia: accanto a un'immagine col testo accanto è più stretta.
-   */
-  const righe = (elementi: Array<Parola | 'a-capo'>, spazioA: (yCima: number) => SpazioRiga): RigaPdf[] => {
-    const fuori: RigaPdf[] = [];
-    let yCima = 0;
-    const nuova = (): RigaPdf => ({ parole: [], larghezza: 0, altezza: 0, dimensione: 0, spazio: spazioA(yCima) });
-    let corrente = nuova();
-    const chiudi = (): void => {
-      const dimensione = corrente.dimensione || PUNTI.normale;
-      fuori.push({ ...corrente, dimensione, altezza: dimensione * 1.3 });
-      yCima += dimensione * 1.3;
-      corrente = nuova();
-    };
-    /* I gruppi: una parola con lo spazio davanti e quelle attaccate dopo. */
-    const gruppi: Array<Parola[] | 'a-capo'> = [];
-    for (const e of elementi) {
-      const ultimo = gruppi[gruppi.length - 1];
-      if (e === 'a-capo') gruppi.push('a-capo');
-      else if (!e.spazioPrima && Array.isArray(ultimo)) ultimo.push(e);
-      else gruppi.push([e]);
-    }
-    for (const g of gruppi) {
-      if (g === 'a-capo') {
-        chiudi();
-        continue;
-      }
-      const spazio = corrente.parole.length && g[0]!.spazioPrima ? larghezzaSpazio(g[0]!) : 0;
-      const misura = g.reduce((s, p) => s + larghezzaParola(p), 0);
-      if (corrente.parole.length && corrente.larghezza + spazio + misura > corrente.spazio.larghezza) {
-        chiudi();
-        g[0] = { ...g[0]!, spazioPrima: false };
-        corrente.parole.push(...g);
-        corrente.larghezza = misura;
-      } else {
-        if (!corrente.parole.length) g[0] = { ...g[0]!, spazioPrima: false };
-        corrente.parole.push(...g);
-        corrente.larghezza += spazio + misura;
-      }
-      corrente.dimensione = Math.max(corrente.dimensione, ...g.map((p) => p.dimensione));
-    }
-    chiudi();
-    return fuori;
-  };
-
-  const impaginaParagrafo = (
-    p: Paragrafo,
-    spazioA: (yCima: number) => SpazioRiga,
-    contesto: ContestoPagina,
-  ): Impaginato => {
-    const allineamento = p.attrs?.textAlign ?? 'left';
-    const linee = righe(parole(p, contesto), spazioA);
-    return {
-      altezza: linee.reduce((s, r) => s + r.altezza, 0),
-      disegna(pagina, x, yCima) {
-        let y = yCima;
-        for (const riga of linee) {
-          const base = y - riga.dimensione;
-          let cursore = xAllineato(allineamento, x + riga.spazio.scostamento, riga.spazio.larghezza, riga.larghezza);
-          for (const parola of riga.parole) {
-            if (parola.spazioPrima) cursore += larghezzaSpazio(parola);
-            const misura = larghezzaParola(parola);
-            pagina.drawText(parola.testo, { x: cursore, y: base, size: parola.dimensione, font: parola.font, color: parola.colore });
-            if (parola.sottolineato) {
-              pagina.drawLine({
-                start: { x: cursore, y: base - 1.5 },
-                end: { x: cursore + misura, y: base - 1.5 },
-                thickness: 0.5,
-                color: parola.colore,
-              });
-            }
-            cursore += misura;
-          }
-          y -= riga.altezza;
+        if (parola.stile.sottolineato) {
+          const spessore = Math.max(0.4, parola.stile.dimensione * 0.06);
+          p.drawLine({
+            start: { x: cursore, y: base - parola.stile.dimensione * 0.13 },
+            end: { x: cursore + misura, y: base - parola.stile.dimensione * 0.13 },
+            thickness: spessore,
+            color: colore,
+          });
         }
-      },
-    };
-  };
-
-  const impaginaImmagine = (b: Immagine, disponibile: number): Impaginato & { larghezza: number } => {
-    const immagine = incorporate.get(b.attrs.id);
-    if (!immagine) return { altezza: 0, larghezza: 0, disegna: () => undefined };
-    const larghezzaImmagine = Math.min(b.attrs.larghezza * MM, disponibile);
-    const altezza = (larghezzaImmagine * immagine.height) / immagine.width;
-    return {
-      altezza,
-      larghezza: larghezzaImmagine,
-      disegna(pagina, x, yCima) {
-        pagina.drawImage(immagine, {
-          x: xAllineato(b.attrs.allineamento, x, disponibile, larghezzaImmagine),
-          y: yCima - altezza,
-          width: larghezzaImmagine,
-          height: altezza,
-        });
-      },
-    };
-  };
-
-  const impaginaColonne = (b: Colonne, disponibile: number, contesto: ContestoPagina): Impaginato => {
-    const n = b.content.length;
-    const larghezzaColonna = (disponibile - SPAZIO_FRA_COLONNE * (n - 1)) / n;
-    const colonne = b.content.map((c) => impaginaBlocchi(c.content, larghezzaColonna, contesto));
-    return {
-      altezza: Math.max(...colonne.map((c) => c.altezza)),
-      disegna(pagina, x, yCima) {
-        colonne.forEach((c, i) => c.disegna(pagina, x + i * (larghezzaColonna + SPAZIO_FRA_COLONNE), yCima));
-      },
-    };
-  };
-
-  /**
-   * I blocchi uno sotto l'altro, e un'immagine col testo accanto che si
-   * mette di lato: i paragrafi che la seguono cominciano alla sua altezza e
-   * le scorrono a fianco, riga per riga, finché non la superano. Un'altra
-   * immagine o una riga a colonne ricomincia sotto di lei. È il «testo
-   * intorno» di Word, e il `float` dell'editor.
-   */
-  const impaginaBlocchi = (blocchi: Array<Blocco | BloccoColonna>, disponibile: number, contesto: ContestoPagina): Impaginato => {
-    const posati: Array<{ dy: number; pezzo: Impaginato }> = [];
-    let y = 0;
-    let primo = true;
-    let accanto: Affiancata | undefined;
-    /** Vero subito dopo un'immagine col testo accanto: il blocco che segue comincia alla sua altezza. */
-    let allaSuaAltezza = false;
-
-    const spaziatura = (): void => {
-      if (!primo && !allaSuaAltezza) y += SPAZIO_FRA_BLOCCHI;
-      primo = false;
-      allaSuaAltezza = false;
-    };
-    const sottoLImmagine = (): void => {
-      if (accanto) y = Math.max(y, accanto.basso);
-      accanto = undefined;
-      allaSuaAltezza = false;
-    };
-
-    for (const b of blocchi) {
-      if (b.type === 'paragraph') {
-        spaziatura();
-        const inizio = y;
-        const lato = accanto;
-        const spazioA = (yRiga: number): SpazioRiga =>
-          lato && inizio + yRiga < lato.basso
-            ? { larghezza: Math.max(0, disponibile - lato.ingombro), scostamento: lato.lato === 'left' ? lato.ingombro : 0 }
-            : { larghezza: disponibile, scostamento: 0 };
-        const pezzo = impaginaParagrafo(b, spazioA, contesto);
-        posati.push({ dy: inizio, pezzo });
-        y = inizio + pezzo.altezza;
-        continue;
+        cursore += misura;
       }
-
-      sottoLImmagine();
-      spaziatura();
-      if (b.type === 'immagine') {
-        const pezzo = impaginaImmagine(b, disponibile);
-        posati.push({ dy: y, pezzo });
-        if (b.attrs.testo === 'accanto' && b.attrs.allineamento !== 'center' && pezzo.altezza) {
-          accanto = {
-            basso: y + pezzo.altezza,
-            ingombro: pezzo.larghezza + b.attrs.distanza * MM,
-            lato: b.attrs.allineamento,
-          };
-          allaSuaAltezza = true;
-        } else {
-          y += pezzo.altezza;
-        }
-        continue;
-      }
-      const pezzo = impaginaColonne(b, disponibile, contesto);
-      posati.push({ dy: y, pezzo });
-      y += pezzo.altezza;
+      y -= riga.dimensione * INTERLINEA;
     }
-
-    return {
-      altezza: Math.max(y, accanto?.basso ?? 0),
-      disegna(pagina, x, yCima) {
-        for (const { dy, pezzo } of posati) pezzo.disegna(pagina, x, yCima - dy);
-      },
-    };
   };
 
-  const rappresentativo: ContestoPagina = { pagina: 88, pagine: 88 };
-  const altezzaIntestazione = impaginaBlocchi(fasce.intestazione.content, larghezza, rappresentativo).altezza;
-  const altezzaPiede = impaginaBlocchi(fasce.piede.content, larghezza, rappresentativo).altezza;
+  /** Una fascia disegnata a partire da `cima` (in punti dal basso della pagina), elemento per elemento, dal fondo in su. */
+  const disegnaFascia = (p: PDFPage, fascia: Fascia, cima: number, contesto: ContestoPagina): void => {
+    for (const e of fascia.elementi) {
+      const x = (e.x + spostamentoOrizzontale(e, larghezzaFoglioMm)) * MM;
+      const top = cima - e.y * MM;
+      if (e.tipo === 'testo') disegnaTesto(p, e, x, top, contesto);
+      else if (e.tipo === 'immagine') {
+        const immagine = incorporate.get(e.immagine);
+        if (immagine) p.drawImage(immagine, { x, y: top - e.altezza * MM, width: e.larghezza * MM, height: e.altezza * MM });
+      } else {
+        p.drawRectangle({ x, y: top - e.altezza * MM, width: e.larghezza * MM, height: e.altezza * MM, color: coloreRgb(e.colore) });
+      }
+    }
+  };
+
+  const altezzaIntestazione = altezzaFascia(fasce.intestazione, fasce.campi);
+  /* Il piè finisce sul bordo basso: un testo che sporge andrebbe fuori dal foglio, e l'editor non lo lascia fare. */
+  const altezzaPiede = fasciaVuota(fasce.piede) ? 0 : fasce.piede.altezza * MM;
 
   return {
     altezzaIntestazione,
     altezzaPiede,
-    disegna(pagina, contesto) {
-      if (!fasciaVuota(fasce.intestazione)) {
-        impaginaBlocchi(fasce.intestazione.content, larghezza, contesto).disegna(
-          pagina,
-          geometria.margine,
-          geometria.altezzaPagina - geometria.cima,
-        );
-      }
-      if (!fasciaVuota(fasce.piede)) {
-        const piede = impaginaBlocchi(fasce.piede.content, larghezza, contesto);
-        piede.disegna(pagina, geometria.margine, geometria.fondo + piede.altezza);
-      }
+    disegna(p, contesto) {
+      if (!fasciaVuota(fasce.intestazione)) disegnaFascia(p, fasce.intestazione, pagina.altezza, contesto);
+      if (!fasciaVuota(fasce.piede)) disegnaFascia(p, fasce.piede, altezzaPiede, contesto);
     },
   };
 }
@@ -500,125 +479,176 @@ const ALLINEAMENTO_DOCX = {
   right: AlignmentType.RIGHT,
 } as const;
 
-const PX_PER_MM = 96 / 25.4;
+/** Il foglio su cui finiscono le fasce di Word, in millimetri: un A4 in verticale, se il documento non dice altro. */
+export interface FoglioDocx {
+  larghezzaMm: number;
+  altezzaMm: number;
+}
+
+const A4: FoglioDocx = { larghezzaMm: LARGHEZZA_FOGLIO, altezzaMm: 297 };
 
 /**
- * Il font delle fasce in Word, dichiarato su ogni run: l'Helvetica del PDF
- * (Arial ne ha le stesse metriche). Senza, header e footer prenderebbero
- * il font del documento in cui finiscono, anche quello di un file della
- * sandbox su cui VELIA li stampa (`timbra.ts`).
+ * I font delle fasce in Word, dichiarati su ogni run: quelli con le
+ * metriche dei font del PDF. Senza, header e footer prenderebbero il font
+ * del documento in cui finiscono, anche quello di un file della sandbox su
+ * cui VELIA li stampa (`timbra.ts`).
  */
-const FONT_DOCX = 'Arial';
+const FONT_DOCX: Record<Famiglia, string> = { sans: 'Arial', serif: 'Times New Roman', mono: 'Courier New' };
+
+/** Un millimetro in EMU, l'unità delle posizioni di un disegno; in pixel a 96 dpi, quella delle misure per `docx`. */
+const EMU_PER_MM = 36_000;
+const PX_PER_MM = 96 / 25.4;
+/** Un punto in ventesimi, l'unità delle interlinee e delle cornici. */
+const TWIP_PER_PT = 20;
+const twip = (mm: number): number => Math.round(mm * MM * TWIP_PER_PT);
+
+/** Gli id dei disegni devono essere unici nel documento: quelli delle fasce stanno lontani da quelli del corpo. */
+const PRIMO_ID_DISEGNO = { intestazione: 7100, piede: 7300 } as const;
 
 function runDocx(testo: string | undefined, stile: Stile, pagina?: 'CURRENT' | 'TOTAL_PAGES'): TextRun {
   return new TextRun({
     ...(pagina ? { children: [PageNumber[pagina]] } : { text: testo ?? '' }),
-    font: FONT_DOCX,
+    font: FONT_DOCX[stile.famiglia],
     bold: stile.grassetto,
     italics: stile.corsivo,
     ...(stile.sottolineato && { underline: {} }),
-    size: Math.round(PUNTI[stile.dimensione] * 2),
+    size: Math.round(stile.dimensione * 2),
     color: stile.colore.replace('#', ''),
   });
 }
 
-function paragrafoDocx(p: Paragrafo, fasce: FasceDocumento, ancorata?: ImageRun): Paragraph {
-  const figli: Array<TextRun | ImageRun> = ancorata ? [ancorata] : [];
+/** Un paragrafo di una casella: interlinea esatta, 1,3 volte il corpo più grande, come nel PDF e nell'editor. */
+function paragrafoDocx(p: Paragrafo, casella: ElementoTesto, fasce: FasceDocumento, cornice: IFrameOptions): Paragraph {
+  const figli: TextRun[] = [];
+  let corpo = casella.dimensione;
   for (const nodo of p.content ?? []) {
-    if (nodo.type === 'hardBreak') figli.push(new TextRun({ break: 1 }));
-    else if (nodo.type === 'text') figli.push(runDocx(nodo.text, stileDi(nodo.marks)));
-    else if (nodo.attrs.nome === 'pagina') figli.push(runDocx(undefined, stileDi(nodo.marks), 'CURRENT'));
-    else if (nodo.attrs.nome === 'pagine') figli.push(runDocx(undefined, stileDi(nodo.marks), 'TOTAL_PAGES'));
-    else figli.push(runDocx(valoreCampo(nodo.attrs.nome, fasce.campi), stileDi(nodo.marks)));
+    if (nodo.type === 'hardBreak') {
+      figli.push(new TextRun({ break: 1 }));
+      continue;
+    }
+    const stile = stileDi(nodo.marks, casella);
+    corpo = Math.max(corpo, stile.dimensione);
+    if (nodo.type === 'text') figli.push(runDocx(nodo.text, stile));
+    else if (nodo.attrs.nome === 'pagina') figli.push(runDocx(undefined, stile, 'CURRENT'));
+    else if (nodo.attrs.nome === 'pagine') figli.push(runDocx(undefined, stile, 'TOTAL_PAGES'));
+    else figli.push(runDocx(valoreCampo(nodo.attrs.nome, fasce.campi), stile));
   }
   return new Paragraph({
+    frame: cornice,
     alignment: ALLINEAMENTO_DOCX[p.attrs?.textAlign ?? 'left'],
-    spacing: { after: 40 },
+    spacing: { before: 0, after: 0, line: Math.round(corpo * INTERLINEA * TWIP_PER_PT), lineRule: LineRuleType.EXACT },
     children: figli,
   });
 }
 
-/** Un millimetro in EMU, l'unità delle distanze di un disegno in Word. */
-const EMU_PER_MM = 36_000;
+/**
+ * Una casella di testo in Word: una cornice di paragrafo (`w:framePr`)
+ * rispetto alla pagina, larga quanto la casella e alta quanto il suo testo,
+ * già spostata in cima, a metà o in fondo alla casella. Le caselle di
+ * testo di DrawingML sarebbero più naturali, ma LibreOffice ne mette il
+ * testo nell'angolo della pagina quando il corpo del documento è corto; le
+ * cornici le leggono uguali Word e LibreOffice. I paragrafi consecutivi con
+ * la stessa cornice fanno una cornice sola.
+ */
+function corniceDocx(
+  e: ElementoTesto,
+  fascia: Fascia,
+  fasce: FasceDocumento,
+  dove: 'intestazione' | 'piede',
+  foglio: FoglioDocx,
+): Paragraph[] {
+  const testo = impaginaTesto(e, fasce.campi, RAPPRESENTATIVO).altezza / MM;
+  const scarto = scostamentoVerticale(e.verticale, Math.max(e.altezza, testo), testo);
+  const cima = dove === 'intestazione' ? 0 : foglio.altezzaMm - fascia.altezza;
+  const cornice: IFrameOptions = {
+    type: 'absolute',
+    position: { x: twip(e.x + spostamentoOrizzontale(e, foglio.larghezzaMm)), y: twip(cima + e.y + scarto) },
+    width: twip(e.larghezza),
+    height: twip(testo),
+    anchor: { horizontal: FrameAnchorType.PAGE, vertical: FrameAnchorType.PAGE },
+    rule: HeightRule.ATLEAST,
+    wrap: FrameWrap.AROUND,
+    space: { horizontal: 0, vertical: 0 },
+  };
+  return e.paragrafi.map((p) => paragrafoDocx(p, e, fasce, cornice));
+}
 
-const affiancata = (b: Immagine): boolean => b.attrs.testo === 'accanto' && b.attrs.allineamento !== 'center';
-
-function immagineDocx(b: Immagine, fasce: FasceDocumento): ImageRun | undefined {
-  const immagine = fasce.immagini.get(b.attrs.id);
-  if (!immagine) return undefined;
-  const larghezza = Math.round(b.attrs.larghezza * PX_PER_MM);
-  const altezza = Math.round((larghezza * immagine.altezzaPx) / Math.max(1, immagine.larghezzaPx));
-  const dimensioni = { type: immagine.tipo, data: immagine.byte, transformation: { width: larghezza, height: altezza } };
-  if (!affiancata(b)) return new ImageRun(dimensioni);
-  /* Il «testo intorno» di Word: l'immagine sta al margine della colonna e il testo le scorre accanto. */
-  const lato = b.attrs.allineamento === 'right' ? 'right' : 'left';
-  const distanza = Math.round(b.attrs.distanza * EMU_PER_MM);
-  return new ImageRun({
-    ...dimensioni,
-    floating: {
-      horizontalPosition: {
-        relative: HorizontalPositionRelativeFrom.COLUMN,
-        align: lato === 'left' ? HorizontalPositionAlign.LEFT : HorizontalPositionAlign.RIGHT,
-      },
-      verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
-      wrap: { type: TextWrappingType.SQUARE, side: lato === 'left' ? TextWrappingSide.RIGHT : TextWrappingSide.LEFT },
-      margins: lato === 'left' ? { right: distanza } : { left: distanza },
-      layoutInCell: true,
+/**
+ * Un'immagine o una forma: un disegno ancorato al paragrafo che fa da
+ * fascia, dietro al testo (le cornici delle caselle ci stanno sopra, come
+ * nell'editor quando il testo è su un riquadro colorato).
+ */
+function disegnoDocx(e: Elemento, fasce: FasceDocumento, id: number, larghezzaFoglioMm: number): ImageRun | WpsShapeRun | undefined {
+  /* Rispetto alla pagina in orizzontale, al paragrafo che fa da fascia in verticale: nel piè, quello che finisce sul bordo basso. */
+  const floating: IFloating = {
+    horizontalPosition: {
+      relative: HorizontalPositionRelativeFrom.PAGE,
+      offset: Math.round((e.x + spostamentoOrizzontale(e, larghezzaFoglioMm)) * EMU_PER_MM),
     },
+    verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: Math.round(e.y * EMU_PER_MM) },
+    wrap: { type: TextWrappingType.NONE },
+    allowOverlap: true,
+    behindDocument: true,
+    layoutInCell: true,
+    zIndex: id,
+  };
+  const altText = { id: String(id), name: `VELIA ${id}` };
+  const larghezzaPx = e.larghezza * PX_PER_MM;
+
+  if (e.tipo === 'immagine') {
+    const immagine = fasce.immagini.get(e.immagine);
+    if (!immagine) return undefined;
+    return new ImageRun({
+      type: immagine.tipo,
+      data: immagine.byte,
+      transformation: { width: larghezzaPx, height: e.altezza * PX_PER_MM },
+      floating,
+      altText,
+    });
+  }
+  if (e.tipo === 'testo') return undefined;
+  /* Una forma è un rettangolo pieno, senza bordo e senza testo. */
+  return new WpsShapeRun({
+    type: 'wps',
+    children: [new Paragraph({ spacing: { before: 0, after: 0, line: TWIP_PER_PT, lineRule: LineRuleType.EXACT } })],
+    transformation: { width: larghezzaPx, height: e.altezza * PX_PER_MM },
+    floating,
+    altText,
+    solidFill: { type: 'rgb', value: e.colore.replace('#', '').toUpperCase() },
+    bodyProperties: { margins: { top: 0, bottom: 0, left: 0, right: 0 } },
   });
 }
 
 /**
- * I blocchi in Word. Un'immagine col testo accanto non ha un paragrafo suo
- * (sarebbe una riga vuota prima del testo): si ancora al paragrafo che la
- * segue, così il testo comincia alla sua altezza come nel PDF.
+ * Il contenuto di un `Header` o `Footer` di Word; vuoto se la fascia è vuota.
+ *
+ * Un paragrafo con l'interlinea esatta alta quanto la fascia, a cui sono
+ * ancorate immagini e forme: così Word gli fa spazio e sposta il corpo,
+ * come fa il PDF (la distanza di header e footer dal bordo va messa a zero,
+ * in `docx.ts` e in `timbra.ts`). Le caselle di testo sono cornici rispetto
+ * alla pagina, fuori dal flusso. Nell'intestazione il respiro sta dopo il
+ * paragrafo, nel piè prima, in un paragrafo suo: il piè finisce sul bordo
+ * basso della pagina.
  */
-function blocchiDocx(blocchi: Array<Blocco | BloccoColonna>, fasce: FasceDocumento): Array<Paragraph | Table> {
-  const fuori: Array<Paragraph | Table> = [];
-  let inAttesa: ImageRun | undefined;
-  const scarica = (): void => {
-    if (inAttesa) fuori.push(new Paragraph({ children: [inAttesa] }));
-    inAttesa = undefined;
-  };
-  for (const b of blocchi) {
-    if (b.type === 'paragraph') {
-      fuori.push(paragrafoDocx(b, fasce, inAttesa));
-      inAttesa = undefined;
-    } else if (b.type === 'immagine') {
-      scarica();
-      const run = immagineDocx(b, fasce);
-      if (run && affiancata(b)) inAttesa = run;
-      else if (run) fuori.push(new Paragraph({ alignment: ALLINEAMENTO_DOCX[b.attrs.allineamento], children: [run] }));
-    } else {
-      scarica();
-      const quota = Math.floor(100 / b.content.length);
-      fuori.push(
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          borders: TableBorders.NONE,
-          rows: [
-            new TableRow({
-              children: b.content.map((colonna) => {
-                const figli = blocchiDocx(colonna.content, fasce).filter((x): x is Paragraph => x instanceof Paragraph);
-                return new TableCell({
-                  width: { size: quota, type: WidthType.PERCENTAGE },
-                  borders: TableBorders.NONE,
-                  children: figli.length ? figli : [new Paragraph({})],
-                });
-              }),
-            }),
-          ],
-        }),
-      );
-    }
+export function fasciaDocx(
+  fascia: Fascia,
+  fasce: FasceDocumento,
+  dove: 'intestazione' | 'piede',
+  foglio: FoglioDocx = A4,
+): Paragraph[] {
+  if (fasciaVuota(fascia)) return [];
+  const cornici = fascia.elementi.flatMap((e) => (e.tipo === 'testo' ? corniceDocx(e, fascia, fasce, dove, foglio) : []));
+  const disegni = fascia.elementi.flatMap((e, i) => disegnoDocx(e, fasce, PRIMO_ID_DISEGNO[dove] + i, foglio.larghezzaMm) ?? []);
+  const alta = dove === 'intestazione' ? altezzaFascia(fascia, fasce.campi) : fascia.altezza * MM;
+  const esatta = (pt: number) => ({ before: 0, line: Math.max(TWIP_PER_PT, Math.round(pt * TWIP_PER_PT)), lineRule: LineRuleType.EXACT });
+  if (dove === 'intestazione') {
+    return [...cornici, new Paragraph({ spacing: { ...esatta(alta), after: RESPIRO * TWIP_PER_PT }, children: disegni })];
   }
-  scarica();
-  return fuori;
-}
-
-/** Il contenuto di un `Header` o `Footer` di Word; vuoto se la fascia è vuota. */
-export function fasciaDocx(fascia: Fascia, fasce: FasceDocumento): Array<Paragraph | Table> {
-  return blocchiDocx(fascia.content, fasce);
+  return [
+    ...cornici,
+    new Paragraph({ spacing: { ...esatta(RESPIRO), after: 0 } }),
+    new Paragraph({ spacing: { ...esatta(alta), after: 0 }, children: disegni }),
+  ];
 }
 
 // ---------------------------------------------------------------------------
@@ -629,10 +659,10 @@ export function fasciaDocx(fascia: Fascia, fasce: FasceDocumento): Array<Paragra
 const MASSIMO_EXCEL = 255;
 
 /**
- * Le fasce di stampa di Excel: `&L`, `&C`, `&R`. Una riga a colonne va nelle
- * tre sezioni (due colonne: sinistra e destra); un paragrafo fuori dalle
- * colonne va nella sezione del suo allineamento. Solo testo: le immagini in
- * un'intestazione di Excel non reggono fra un programma e l'altro.
+ * Le fasce di stampa di Excel: `&L`, `&C`, `&R`. Ogni casella di testo va
+ * nella sezione del terzo di foglio dove cade il suo centro, dall'alto in
+ * basso. Solo testo: le immagini in un'intestazione di Excel non reggono
+ * fra un programma e l'altro.
  */
 export function fasciaXlsx(fascia: Fascia, campi: FasceDocumento['campi']): string {
   const sezioni: Record<Allineamento, string[]> = { left: [], center: [], right: [] };
@@ -648,20 +678,14 @@ export function fasciaXlsx(fascia: Fascia, campi: FasceDocumento['campi']): stri
     }
     return s.trim();
   };
-  for (const b of fascia.content) {
-    if (b.type === 'paragraph') {
-      const testo = testoParagrafo(b);
-      if (testo) sezioni[b.attrs?.textAlign ?? 'left'].push(testo);
-    } else if (b.type === 'colonne') {
-      const posti: Allineamento[] = b.content.length === 2 ? ['left', 'right'] : ['left', 'center', 'right'];
-      b.content.forEach((colonna, i) => {
-        for (const x of colonna.content) {
-          if (x.type !== 'paragraph') continue;
-          const testo = testoParagrafo(x);
-          if (testo) sezioni[posti[i]!].push(testo);
-        }
-      });
-    }
+  const caselle = fascia.elementi
+    .filter((e): e is ElementoTesto => e.tipo === 'testo')
+    .sort((a, b) => a.y - b.y || a.x - b.x);
+  for (const casella of caselle) {
+    const testo = casella.paragrafi.map(testoParagrafo).filter(Boolean).join('\n');
+    if (!testo) continue;
+    const centro = casella.x + casella.larghezza / 2;
+    sezioni[centro < LARGHEZZA_FOGLIO / 3 ? 'left' : centro > (LARGHEZZA_FOGLIO * 2) / 3 ? 'right' : 'center'].push(testo);
   }
   const pezzi: string[] = [];
   if (sezioni.left.length) pezzi.push(`&L${sezioni.left.join('\n')}`);

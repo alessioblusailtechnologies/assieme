@@ -113,33 +113,51 @@ const testoDocx = (byte: Buffer, parte: RegExp = /^word\/document\.xml$/): strin
     .join('\n');
 };
 
-/** Un'intestazione a due colonne col logo, e il piè col numero di pagina. */
+/** Il logo a sinistra e il nome a destra, centrato sull'altezza del logo; nel piè il numero di pagina. */
 const intestazioneDiProva = (idLogo: string, nome = 'Agenzia di Collaudo') => ({
   intestazione: {
-    type: 'doc',
-    content: [
+    altezza: 30,
+    elementi: [
+      { tipo: 'immagine', id: 'logo', x: 20, y: 8, larghezza: 25, altezza: 18, immagine: idLogo },
       {
-        type: 'colonne',
-        content: [
-          { type: 'colonna', content: [{ type: 'immagine', attrs: { id: idLogo, larghezza: 25, allineamento: 'left' } }] },
-          {
-            type: 'colonna',
-            content: [
-              { type: 'paragraph', attrs: { textAlign: 'right' }, content: [{ type: 'text', text: nome, marks: [{ type: 'bold' }] }] },
-            ],
-          },
+        tipo: 'testo',
+        id: 'nome',
+        x: 110.2,
+        y: 8,
+        larghezza: 80,
+        altezza: 18,
+        verticale: 'middle',
+        dimensione: 12,
+        famiglia: 'sans',
+        colore: '#2f4b7c',
+        paragrafi: [
+          { type: 'paragraph', attrs: { textAlign: 'right' }, content: [{ type: 'text', text: nome, marks: [{ type: 'bold' }] }] },
         ],
       },
     ],
   },
   piede: {
-    type: 'doc',
-    content: [
+    altezza: 14,
+    elementi: [
       {
-        type: 'paragraph',
-        content: [
-          { type: 'text', text: 'Via del Collaudo 1, Torino · pagina ' },
-          { type: 'campo', attrs: { nome: 'pagina' } },
+        tipo: 'testo',
+        id: 'recapito',
+        x: 19.8,
+        y: 4,
+        larghezza: 170.4,
+        altezza: 4,
+        verticale: 'top',
+        dimensione: 8,
+        famiglia: 'sans',
+        colore: '#262626',
+        paragrafi: [
+          {
+            type: 'paragraph',
+            content: [
+              { type: 'text', text: 'Via del Collaudo 1, Torino · pagina ' },
+              { type: 'campo', attrs: { nome: 'pagina' } },
+            ],
+          },
         ],
       },
     ],
@@ -363,7 +381,7 @@ describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
 
   it("l'intestazione: quella di partenza finché non c'è, poi ciò che l'amministratore salva, logo compreso", async () => {
     const vergine = (await richiedi('GET', '/api/intestazione', tokenOperatore)).json<IntestazioneSalvata>();
-    expect(vergine.intestazione.content).toEqual([]);
+    expect(vergine.intestazione.elementi).toEqual([]);
     expect(JSON.stringify(vergine.piede)).toContain('"nome":"pagina"');
     expect(vergine.aggiornataIl).toBeUndefined();
 

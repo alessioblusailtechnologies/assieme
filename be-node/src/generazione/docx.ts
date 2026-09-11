@@ -13,20 +13,28 @@ import {
 } from 'docx';
 
 import type { Blocco, Segmento } from './blocchi.js';
-import { fasciaDocx, fasciaVuota, type FasceDocumento } from './intestazione.js';
+import { MARGINE, fasciaDocx, fasciaVuota, type FasceDocumento, type FoglioDocx } from './intestazione.js';
 
 /**
  * Il compositore DOCX: il layout di VELIA con la libreria `docx`, e in
  * testa e in calce l'intestazione e il piè di pagina dell'agenzia
  * (11/09/2026, `intestazione.ts`), come `Header` e `Footer` veri di Word:
  * chi apre il file li ritrova dove se li aspetta, e li può ritoccare.
+ *
+ * I margini sono quelli del PDF; header e footer stanno a filo del bordo,
+ * perché le coordinate degli elementi delle fasce si contano da lì.
  */
+
+/** Un punto in ventesimi, l'unità dei margini di Word. */
+const TWIP_PER_PT = 20;
 
 export interface OpzioniDocx {
   titolo: string;
   blocchi: Blocco[];
   fonti: string[];
   fasce: FasceDocumento;
+  /** Il foglio su cui finiranno le fasce, se non è un A4 in verticale (`timbra.ts`). */
+  foglio?: FoglioDocx;
 }
 
 /** L'accento del layout di VELIA: titoli e testata delle tabelle. */
@@ -126,16 +134,26 @@ export async function componiDocx(opzioni: OpzioniDocx): Promise<Buffer> {
   }
 
   const { intestazione, piede } = opzioni.fasce;
+  const margine = MARGINE * TWIP_PER_PT;
   const documento = new Document({
     creator: 'VELIA',
     title: opzioni.titolo,
     sections: [
       {
+        properties: {
+          page: { margin: { top: margine, right: margine, bottom: margine, left: margine, header: 0, footer: 0 } },
+        },
         ...(!fasciaVuota(intestazione) && {
-          headers: { default: new Header({ children: fasciaDocx(intestazione, opzioni.fasce) }) },
+          headers: {
+            default: new Header({
+              children: fasciaDocx(intestazione, opzioni.fasce, 'intestazione', opzioni.foglio),
+            }),
+          },
         }),
         ...(!fasciaVuota(piede) && {
-          footers: { default: new Footer({ children: fasciaDocx(piede, opzioni.fasce) }) },
+          footers: {
+            default: new Footer({ children: fasciaDocx(piede, opzioni.fasce, 'piede', opzioni.foglio) }),
+          },
         }),
         children: figli,
       },

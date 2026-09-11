@@ -1,8 +1,17 @@
-import { PDFDocument, PageSizes, StandardFonts, type PDFPage } from 'pdf-lib';
+import { PDFDocument, PageSizes, type PDFPage } from 'pdf-lib';
 import PizZip from 'pizzip';
 
 import { componiDocx } from './docx.js';
-import { fasciaVuota, fasciaXlsx, preparaFascePdf, type FasceDocumento, type FascePdf, type FontPdf } from './intestazione.js';
+import {
+  MARGINE,
+  MM,
+  fasciaVuota,
+  fasciaXlsx,
+  margineCorpo,
+  preparaFascePdf,
+  type FasceDocumento,
+  type FascePdf,
+} from './intestazione.js';
 
 /**
  * La carta dell'agenzia su un documento già fatto (11/09/2026, fase 3 di
@@ -21,13 +30,6 @@ import { fasciaVuota, fasciaXlsx, preparaFascePdf, type FasceDocumento, type Fas
  *   dell'agenzia, in ogni sezione; il resto del pacchetto non si tocca.
  * - **Excel**: le fasce di stampa di ogni foglio, solo testo.
  */
-
-/** Le misure del layout di VELIA, in punti: le stesse di `pdf.ts`. */
-const MARGINE = 56;
-const CIMA = 34;
-const FONDO = 28;
-const RESPIRO = 16;
-const MM = 72 / 25.4;
 
 export type FormatoTimbrabile = 'pdf' | 'docx' | 'xlsx';
 
@@ -52,31 +54,12 @@ export async function timbra(byte: Buffer, formato: FormatoTimbrabile, fasce: Fa
  * messa dopo, non copra il contenuto.
  */
 export async function misureFasce(fasce: FasceDocumento): Promise<{ altoMm: number; bassoMm: number }> {
-  const doc = await PDFDocument.create();
-  const [larghezzaPagina, altezzaPagina] = PageSizes.A4;
-  const f = await preparaFasce(doc, fasce, larghezzaPagina, altezzaPagina);
-  const alto = f.altezzaIntestazione ? CIMA + f.altezzaIntestazione + RESPIRO : MARGINE;
-  const basso = f.altezzaPiede ? FONDO + f.altezzaPiede + RESPIRO : MARGINE;
-  return { altoMm: Math.ceil(alto / MM), bassoMm: Math.ceil(basso / MM) };
-}
-
-async function preparaFasce(doc: PDFDocument, fasce: FasceDocumento, larghezza: number, altezza: number): Promise<FascePdf> {
-  const font: FontPdf = {
-    normale: await doc.embedFont(StandardFonts.Helvetica),
-    grassetto: await doc.embedFont(StandardFonts.HelveticaBold),
-    corsivo: await doc.embedFont(StandardFonts.HelveticaOblique),
-    grassettoCorsivo: await doc.embedFont(StandardFonts.HelveticaBoldOblique),
+  const [larghezza, altezza] = PageSizes.A4;
+  const f = await preparaFascePdf(await PDFDocument.create(), fasce, { larghezza, altezza });
+  return {
+    altoMm: Math.ceil(margineCorpo(f.altezzaIntestazione) / MM),
+    bassoMm: Math.ceil(margineCorpo(f.altezzaPiede) / MM),
   };
-  const codificabili = new Set(font.normale.getCharacterSet());
-  const sanifica = (testo: string): string =>
-    [...testo.replace(/\s+/g, ' ')].map((c) => (codificabili.has(c.codePointAt(0) ?? 0) ? c : '?')).join('');
-  return preparaFascePdf(doc, fasce, font, sanifica, {
-    larghezzaPagina: larghezza,
-    altezzaPagina: altezza,
-    margine: MARGINE,
-    cima: CIMA,
-    fondo: FONDO,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -93,7 +76,7 @@ export async function timbraPdf(byte: Buffer, fasce: FasceDocumento): Promise<Bu
     const chiave = `${Math.round(width)}x${Math.round(height)}`;
     let f = perFormato.get(chiave);
     if (!f) {
-      f = await preparaFasce(doc, fasce, width, height);
+      f = await preparaFascePdf(doc, fasce, { larghezza: width, altezza: height });
       perFormato.set(chiave, f);
     }
     return f;
@@ -117,18 +100,56 @@ const NS_R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationship
 const ID_HEADER = 'rIdVeliaIntestazione';
 const ID_FOOTER = 'rIdVeliaPiede';
 
+/** Un millimetro in ventesimi di punto, l'unità delle misure di pagina di Word. */
+const TWIP_PER_MM = 72 * 20 / 25.4;
+
+/** I margini di una sezione che non ne dichiara: quelli del PDF, con header e footer a filo del bordo. */
+const MARGINI_PREDEFINITI = `<w:pgMar w:top="${MARGINE * 20}" w:right="${MARGINE * 20}" w:bottom="${MARGINE * 20}" w:left="${MARGINE * 20}" w:header="0" w:footer="0" w:gutter="0"/>`;
+
+/**
+ * Header e footer a filo del bordo della pagina: gli elementi delle fasce
+ * hanno le coordinate contate da lì (`fasciaDocx`). Gli altri margini della
+ * sezione restano come la sandbox li ha voluti.
+ */
+function fasceAFilo(interno: string): string {
+  if (/<w:pgMar\b/.test(interno)) {
+    return interno.replace(/<w:pgMar\b([^>]*?)\s*\/>/, (_t, attributi: string) => {
+      const altri = attributi.replace(/\s+w:(header|footer)="[^"]*"/g, '');
+      return `<w:pgMar${altri} w:header="0" w:footer="0"/>`;
+    });
+  }
+  const formato = /<w:pgSz\b[^>]*\/>/.exec(interno);
+  if (!formato) return MARGINI_PREDEFINITI + interno;
+  const dopo = formato.index + formato[0].length;
+  return interno.slice(0, dopo) + MARGINI_PREDEFINITI + interno.slice(dopo);
+}
+
 /**
  * Header e footer dell'agenzia al posto di quelli del documento.
  *
  * Le parti si prendono da un documento vuoto composto col motore di
- * «Esporta come» (`componiDocx`), che sa già fare immagini, colonne e
- * campi `PAGE`/`NUMPAGES`; si copiano nel pacchetto con nomi nuovi, e ogni
- * `w:sectPr` punta a loro. Prima pagina diversa e pagine pari/dispari si
- * spengono: l'intestazione è una sola, su tutte.
+ * «Esporta come» (`componiDocx`), che sa già fare caselle di testo,
+ * immagini, forme e campi `PAGE`/`NUMPAGES`; si copiano nel pacchetto con
+ * nomi nuovi, e ogni `w:sectPr` punta a loro, con header e footer a filo del
+ * bordo. Prima pagina diversa e pagine pari/dispari si spengono:
+ * l'intestazione è una sola, su tutte.
  */
 export async function timbraDocx(byte: Buffer, fasce: FasceDocumento): Promise<Buffer> {
-  const carta = new PizZip(await componiDocx({ titolo: '', blocchi: [], fonti: [], fasce }));
   const zip = new PizZip(byte);
+  /* Le fasce si dispongono sul foglio della prima sezione: un A4 in orizzontale sposta a destra ciò che sta a destra, e il piè sta sul suo fondo. */
+  const formato = /<w:pgSz\b[^>]*\/>/.exec(testo(zip, 'word/document.xml'))?.[0] ?? '';
+  const larghezzaTwip = Number(/\bw:w="(\d+)"/.exec(formato)?.[1]);
+  const altezzaTwip = Number(/\bw:h="(\d+)"/.exec(formato)?.[1]);
+  const carta = new PizZip(
+    await componiDocx({
+      titolo: '',
+      blocchi: [],
+      fonti: [],
+      fasce,
+      ...(larghezzaTwip > 0 &&
+        altezzaTwip > 0 && { foglio: { larghezzaMm: larghezzaTwip / TWIP_PER_MM, altezzaMm: altezzaTwip / TWIP_PER_MM } }),
+    }),
+  );
 
   const relsCarta = testo(carta, 'word/_rels/document.xml.rels');
   const parteCarta = (tipo: string): string | undefined => {
@@ -184,20 +205,22 @@ export async function timbraDocx(byte: Buffer, fasce: FasceDocumento): Promise<B
   let documento = testo(zip, 'word/document.xml');
   const sezione = (interno: string): string =>
     riferimenti +
-    interno
-      .replace(/<w:(header|footer)Reference\b[^>]*\/>/g, '')
-      .replace(/<w:titlePg\b[^>]*\/>/g, '');
+    fasceAFilo(
+      interno
+        .replace(/<w:(header|footer)Reference\b[^>]*\/>/g, '')
+        .replace(/<w:titlePg\b[^>]*\/>/g, ''),
+    );
   let sezioni = 0;
   documento = documento
     .replace(/<w:sectPr\b([^>]*)\/>/g, (_t, attributi: string) => {
       sezioni++;
-      return `<w:sectPr${attributi}>${riferimenti}</w:sectPr>`;
+      return `<w:sectPr${attributi}>${sezione('')}</w:sectPr>`;
     })
     .replace(/<w:sectPr\b([^>]*)>([\s\S]*?)<\/w:sectPr>/g, (_t, attributi: string, interno: string) => {
       sezioni++;
       return `<w:sectPr${attributi}>${sezione(interno)}</w:sectPr>`;
     });
-  if (!sezioni) documento = documento.replace('</w:body>', `<w:sectPr>${riferimenti}</w:sectPr></w:body>`);
+  if (!sezioni) documento = documento.replace('</w:body>', `<w:sectPr>${sezione('')}</w:sectPr></w:body>`);
   if (!/xmlns:r="/.test(documento.slice(0, 3000))) {
     documento = documento.replace(/<w:document\b/, `<w:document xmlns:r="${NS_R}"`);
   }

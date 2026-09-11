@@ -10,7 +10,6 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
-import type { JSONContent } from '@tiptap/core';
 
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
@@ -23,13 +22,13 @@ import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 import { EditorIntestazione } from './editor-intestazione';
-import { fasciaDaEditor, limiteSuperato } from './normalizza';
+import { fasciaNormalizzata, limiteSuperato } from './normalizza';
 
 /** La stessa forma che esce dall'editor: così «modificata» confronta cose confrontabili. */
 function normalizzata(intestazione: Intestazione): Intestazione {
   return {
-    intestazione: fasciaDaEditor(intestazione.intestazione as JSONContent),
-    piede: fasciaDaEditor(intestazione.piede as JSONContent),
+    intestazione: fasciaNormalizzata(intestazione.intestazione),
+    piede: fasciaNormalizzata(intestazione.piede),
   };
 }
 
