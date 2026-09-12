@@ -46,18 +46,14 @@ export const NAVIGAZIONE: GruppoNavigazione[] = [
   },
   {
     etichetta: 'Automazione',
-    voci: [
-      { percorso: '/agenti', etichetta: 'Agenti', icona: 'agente' },
-      /* Sta in Automazione e non in Agenzia: come gli agenti, è lavoro che
-         gira senza che qualcuno lo chieda ogni volta — con la differenza
-         che qui a chiedere è il cliente. Solo amministratori. */
-      {
-        percorso: '/chat-clienti',
-        etichetta: 'Chat per i clienti',
-        icona: 'chat',
-        permesso: 'utenti.gestisci',
-      },
-    ],
+    /*
+     * Le chat per i clienti non stanno più qui (13/09/2026): una chat è di
+     * un cliente, e il posto dove la si apre e la si guarda è la sua
+     * scheda. Una voce di menù a parte chiedeva di ricordarsi che esiste un
+     * secondo elenco delle stesse cose. Le rotte restano: `/chat-clienti`
+     * è ancora la vista d'insieme, e ci si arriva dalla scheda del cliente.
+     */
+    voci: [{ percorso: '/agenti', etichetta: 'Agenti', icona: 'agente' }],
   },
   {
     etichetta: 'Agenzia',

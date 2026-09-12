@@ -27,10 +27,13 @@ import { ErroreMicrofono, Registratore } from './registratore';
 import { immaginiIncollate } from './appunti';
 import {
   chipAllegatoPerChiave,
+  chipCliente,
   chipPerId,
   creaChipAllegato,
+  creaChipCliente,
   creaChipDocumento,
   idChip,
+  idChipCliente,
   posizionaCursore,
   posizioneCursore,
   ripulisciSeVuoto,
@@ -144,7 +147,8 @@ export class Composer {
       /* Letto qui perché l'effect lo segua: il chip di un allegato cambia
          faccia quando il server finisce di leggerlo, o quando fallisce. */
       const elaborazioni = this.store.elaborazioni();
-      untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati, elaborazioni));
+      const cliente = this.store.cliente();
+      untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati, elaborazioni, cliente));
     });
   }
 
@@ -165,6 +169,9 @@ export class Composer {
       // Un chip tolto con Backspace: il riferimento se ne va con lui.
       this.store.riferimentiBozza.update((r) => r.filter((d) => presenti.has(chiaveGruppo(d))));
     }
+    /* Anche il cliente: cancellare il suo chip è il modo naturale di dire
+       «non è di lui che parlo», e deve valere quanto la ×. */
+    if (this.store.cliente() && !idChipCliente(editor)) this.store.staccaCliente();
     this.aggiornaCursore();
   }
 
@@ -250,23 +257,36 @@ export class Composer {
   }
 
   /**
-   * Un cliente menzionato: la conversazione diventa sua, e la `@` sparisce
-   * dal testo.
+   * Un cliente menzionato: la `@query` diventa il suo chip, lì dove stava,
+   * e la conversazione diventa sua.
    *
-   * Non nasce un chip come per i documenti: il cliente non è un documento
-   * nel contesto, è **di chi si sta parlando**, e si vede nella barra del
-   * contesto, dove resta finché non lo si stacca. Un chip nel messaggio
-   * direbbe che quella menzione vale per quel messaggio, e non è così.
+   * Il chip è quello dei documenti con l'icona di una persona, perché il
+   * gesto è lo stesso e chi scrive deve vedere subito che cosa ha scelto.
+   * A differenza di un documento, però, non se ne va con la bozza: il
+   * cliente è della conversazione, e il chip resta finché non lo si toglie
+   * con la ×.
    */
   protected aggancia(cliente: { id: string; nome: string }): void {
     this.inScelta = true;
     const menzione = this.menzione();
     const editor = this.editor;
     editor.focus();
-    if (menzione) sostituisciIntervallo(editor, menzione.inizio, this.cursore(), document.createTextNode(''));
+    const chip = this.nuovoChipCliente(cliente);
+    const da = menzione ? menzione.inizio : this.cursore();
+    sostituisciIntervallo(editor, da, this.cursore(), chip);
+    scriviDopoChip(editor, chip, ' ');
     this.store.agganciaCliente(cliente);
     this.aggiorna();
     this.inScelta = false;
+  }
+
+  /** Il chip del cliente: toglierlo lo stacca dalla conversazione. */
+  private nuovoChipCliente(cliente: { id: string; nome: string }): HTMLElement {
+    return creaChipCliente(cliente, () => {
+      this.store.staccaCliente();
+      this.editor.focus();
+      this.aggiorna();
+    });
   }
 
   /**
@@ -465,6 +485,7 @@ export class Composer {
     riferimenti: RiferimentoDocumento[],
     allegati: AllegatoInCorso[],
     elaborazioni: Map<Id, StatoElaborazioneAllegato>,
+    cliente: { id: Id; nome: string } | undefined,
   ): void {
     const editor = this.editor;
     const presenti = new Set(idChip(editor));
@@ -475,6 +496,9 @@ export class Composer {
 
     if (testoEditor(editor) !== testo) {
       editor.replaceChildren();
+      /* Il cliente per primo: è di chi si parla, e viene prima di che cosa
+         si guarda. */
+      if (cliente) editor.append(this.nuovoChipCliente(cliente), document.createTextNode(' '));
       for (const g of gruppi) editor.append(this.nuovoChip(g), document.createTextNode(' '));
       if (testo) editor.append(document.createTextNode(testo));
       if (document.activeElement === editor) posizionaCursore(editor, testo.length);
@@ -482,6 +506,11 @@ export class Composer {
       for (const id of presenti) if (!attesi.has(id)) chipPerId(editor, id)?.remove();
       for (const g of gruppi) {
         if (!presenti.has(g.chiave)) editor.append(document.createTextNode(' '), this.nuovoChip(g));
+      }
+      const suo = idChipCliente(editor);
+      if (suo && suo !== cliente?.id) chipCliente(editor)?.remove();
+      if (cliente && suo !== cliente.id) {
+        editor.prepend(this.nuovoChipCliente(cliente), document.createTextNode(' '));
       }
     }
 

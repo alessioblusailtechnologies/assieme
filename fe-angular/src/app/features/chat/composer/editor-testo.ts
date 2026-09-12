@@ -15,6 +15,7 @@ import { NomeIcona, REGISTRO_ICONE } from '@shared/ui/icona/registro-icone';
 export const CLASSE_CHIP = 'riferimento';
 const ATTR_ID = 'data-id';
 const ATTR_CHIAVE = 'data-chiave';
+const ATTR_CLIENTE = 'data-cliente';
 
 export interface ChipDocumento {
   id: string;
@@ -80,6 +81,15 @@ export function chipPerId(radice: HTMLElement, id: string): HTMLElement | null {
     if (c.getAttribute(ATTR_ID) === id) return c;
   }
   return null;
+}
+
+/** Il chip del cliente, se la conversazione ne ha uno: ce n'è al più uno. */
+export function chipCliente(radice: HTMLElement): HTMLElement | null {
+  return radice.querySelector<HTMLElement>(`.${CLASSE_CHIP}[${ATTR_CLIENTE}]`);
+}
+
+export function idChipCliente(radice: HTMLElement): string | undefined {
+  return chipCliente(radice)?.getAttribute(ATTR_CLIENTE) ?? undefined;
 }
 
 export function chipAllegatoPerChiave(radice: HTMLElement, chiave: number): HTMLElement | null {
@@ -261,6 +271,27 @@ export function creaChipDocumento(
   }
 
   chip.append(bottoneTogli(`Togli il riferimento a ${doc.titolo}`, togli));
+  return chip;
+}
+
+/**
+ * Il chip del cliente di cui si parla.
+ *
+ * Sta fra le parole come quello di un documento, con la stessa forma e la
+ * stessa ×, perché è lo stesso gesto: si scrive «@», si sceglie, e quello
+ * che si è scelto si vede dov'era la menzione. Cambia solo l'icona, che è
+ * una persona e non un archivio: il cliente non è un documento in più nel
+ * contesto, è di chi si sta parlando.
+ */
+export function creaChipCliente(
+  cliente: { id: string; nome: string },
+  togli: () => void,
+): HTMLElement {
+  const chip = scheletroChip();
+  chip.setAttribute(ATTR_CLIENTE, cliente.id);
+  chip.classList.add('riferimento--cliente');
+  chip.append(creaSvgIcona('utente', 12), titolo(cliente.nome));
+  chip.append(bottoneTogli(`Stacca ${cliente.nome} dalla conversazione`, togli));
   return chip;
 }
 
