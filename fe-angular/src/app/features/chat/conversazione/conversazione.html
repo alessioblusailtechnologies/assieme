@@ -162,18 +162,17 @@
           finora si poteva consegnarne uno solo: il resto andava ricomposto
           a mano.
 
-          Una pillola appoggiata sopra il composer, larga quanto il suo
-          contenuto: non è un secondo riquadro che compete col campo, ed è
-          chiusa in un bordo perché quattro parole sciolte sopra l'input si
-          leggevano come una didascalia. L'etichetta sta dentro, prima dei
-          gesti, e li qualifica: senza, si leggerebbero come azioni
-          sull'ultima risposta.
+          Una fascia attaccata sopra il campo, dello stesso colore
+          dell'accento in punta di piedi: i due pezzi sono un blocco solo, e
+          si legge come «il posto da cui la conversazione esce», non come
+          una didascalia dell'input né come un terzo riquadro. Il perimetro
+          non è più scritto - lo dice la posizione - ma resta negli
+          `aria-label`, perché chi non vede dove sta il pulsante deve pur
+          sapere su che cosa agisce.
         -->
-        @if (!perCliente() && haRisposte()) {
+        @if (barraAzioni()) {
           <div class="utility">
             <div class="utility__barra" role="group" aria-label="Azioni su tutta la conversazione">
-              <span class="mono utility__ambito">Tutta la chat</span>
-              <span class="utility__riga" aria-hidden="true"></span>
               <button
                 type="button"
                 class="azione-esporta"
@@ -217,7 +216,7 @@
             </div>
           </div>
         }
-        <app-composer [giaInContesto]="idContesto()" />
+        <app-composer [giaInContesto]="idContesto()" [attaccatoSopra]="barraAzioni()" />
       </div>
     </div>
 

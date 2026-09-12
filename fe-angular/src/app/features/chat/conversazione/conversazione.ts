@@ -277,9 +277,16 @@ export class Conversazione {
    * copiare, mandare o impaginare, e quattro pulsanti spenti sono peggio di
    * nessun pulsante.
    */
-  protected readonly haRisposte = computed(() =>
+  private readonly haRisposte = computed(() =>
     this.store.messaggi().some((m) => m.autore === 'assistente' && !m.inCorso && !!m.testo),
   );
+
+  /**
+   * Se la barra c'è. Il composer lo deve sapere: quando la barra gli sta
+   * appoggiata sopra smette di arrotondarsi in cima, e i due pezzi
+   * diventano un blocco solo.
+   */
+  protected readonly barraAzioni = computed(() => !this.perCliente() && this.haRisposte());
 
   protected readonly copiataChat = signal(false);
 

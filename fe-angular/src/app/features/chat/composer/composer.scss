@@ -129,6 +129,13 @@
   border-color: var(--c-accent);
 }
 
+/* Con la barra delle azioni appoggiata sopra, il campo non si arrotonda in
+   cima: i due bordi si incontrano e diventano un riquadro solo. */
+:host(.is-attaccato) .campo {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .campo__testo {
   /* L'editor contenteditable: cresce col testo fino al tetto, poi scorre. */
   width: 100%;

@@ -541,68 +541,49 @@
 /* ---------- La barra delle azioni su tutta la chat ---------- */
 
 /*
- * Sta sopra il composer e sotto il filo. I pulsanti sono quelli di una
- * bolla, ma chiusi in una pillola: sciolti sopra l'input si leggevano come
- * una didascalia del campo. La pillola è larga quanto il suo contenuto -
- * a tutta riga sarebbe un secondo riquadro sopra il primo, e due scatole
- * incolonnate spostano il peso della schermata dal filo al fondo.
+ * La fascia delle azioni sulla conversazione: attaccata sopra il campo, e
+ * di un colore suo.
+ *
+ * Non è più una pillola che galleggia: ha la larghezza del composer, gli si
+ * appoggia addosso (`attaccatoSopra` gli toglie gli angoli in cima) e i due
+ * bordi si incontrano in un riquadro solo. È il motivo per cui il perimetro
+ * non c'è più scritto: la posizione dice già che vale per tutto quello che
+ * sta sopra, e l'accento in punta di piedi la distingue dalle azioni di una
+ * bolla, che sono neutre e stanno dentro il filo.
  */
 .utility {
   display: flex;
-  padding-bottom: var(--sp-2);
 }
 
 .utility__barra {
-  display: inline-flex;
+  display: flex;
+  flex: 1;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-1);
   min-width: 0;
-  padding: 3px var(--sp-2) 3px var(--sp-3);
+  padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--c-line);
-  border-radius: var(--radius-pieno);
-  background: var(--c-surface-tint);
+  border-bottom: 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--c-accent-soft);
 }
 
-/* Il resto lo fa `.mono`: famiglia, misura, maiuscoletto, colore. */
-.utility__ambito {
-  white-space: nowrap;
+/* Il campo sotto si accende scrivendo: il bordo della fascia lo segue, o
+   la giunzione cambierebbe colore a metà. */
+.fondo:has(app-composer:focus-within) .utility__barra {
+  border-color: var(--c-accent);
 }
 
-/* La stanghetta fra il perimetro e i gesti: dice «vale per tutto quello
-   che segue» meglio di uno spazio più largo. */
-.utility__riga {
-  width: 1px;
-  align-self: stretch;
-  min-height: 16px;
-  margin: 0 var(--sp-1);
-  background: var(--c-line);
+/* Sul fondo tinto il grigio dei pulsanti è troppo poco. */
+.utility__barra .azione-esporta {
+  color: var(--c-text-2);
 }
 
-/* Dentro la pillola i pulsanti non hanno bisogno del loro fondo. */
 .utility__barra .azione-esporta:hover,
 .utility__barra .azione-esporta:focus-visible {
-  border-color: var(--c-text-3);
-}
-
-/*
- * Schermo stretto: la pillola va a capo, e da lozenga a due righe non si
- * guarda. Diventa una scheda, col perimetro sulla sua riga.
- */
-@media (max-width: 600px) {
-  .utility__barra {
-    border-radius: var(--radius);
-    padding: var(--sp-2);
-  }
-
-  .utility__ambito {
-    flex-basis: 100%;
-    margin-bottom: var(--sp-1);
-  }
-
-  .utility__riga {
-    display: none;
-  }
+  border-color: var(--c-accent);
+  color: var(--c-text);
 }
 
 /* Il raccoglitore sotto una risposta: quadrato, senza etichetta, accanto

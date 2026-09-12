@@ -66,6 +66,9 @@ import { menzioneAlCursore } from './menzione';
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './composer.html',
   styleUrl: './composer.scss',
+  host: {
+    '[class.is-attaccato]': 'attaccatoSopra()',
+  },
 })
 export class Composer {
   protected readonly store = inject(ChatStore);
@@ -80,6 +83,17 @@ export class Composer {
 
   /** Documenti da non riproporre nel selettore: già nel contesto. */
   readonly giaInContesto = input<string[]>([]);
+
+  /**
+   * Vero quando sopra il campo c'è qualcosa che gli si appoggia (la barra
+   * delle azioni sulla conversazione, 12/09/2026): il riquadro smette di
+   * arrotondarsi in cima, e i due pezzi diventano un blocco solo.
+   *
+   * Lo dice chi lo usa invece di farselo indovinare, e soprattutto invece
+   * di far allungare le mani sul `.campo` da fuori: è dentro questo
+   * componente, e da fuori si raggiunge solo forzando l'incapsulamento.
+   */
+  readonly attaccatoSopra = input(false);
 
   private readonly area = viewChild.required<ElementRef<HTMLDivElement>>('area');
   private readonly campoFile = viewChild.required<ElementRef<HTMLInputElement>>('file');
