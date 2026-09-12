@@ -224,6 +224,38 @@ for (const d of catalogo) {
 }
 console.log(`catalogo aggiornato: ${catalogo.length} righe`);
 
+/* Quale edizione è la corrente lo dice il catalogo intero, non questo albero.
+   Un'edizione nuova arriva da sola, in una cartella sua, e l'edizione che
+   supera è già a database: senza questo passaggio resterebbero corrente
+   tutte e due, e nel FE il prodotto avrebbe due edizioni in vigore. */
+const prodotti = [...new Set(catalogo.map((d) => `${d.compagniaId}\u0000${d.prodotto}`))];
+for (const chiave of prodotti) {
+  const [compagniaId, prodotto] = chiave.split('\u0000');
+  const esito = await db.query(
+    `with edizioni as (
+       select distinct edizione_id, edizione_valida_dal
+         from velia.documenti
+        where archivio = 'pubblico' and compagnia_id = $1 and prodotto = $2
+     ), ordinate as (
+       select edizione_id, edizione_valida_dal,
+              lead(edizione_valida_dal) over (order by edizione_valida_dal nulls first) as successiva
+         from edizioni
+     )
+     update velia.documenti d
+        set edizione_corrente = (o.successiva is null),
+            edizione_valida_al = case when o.successiva is null then null
+                                      else (o.successiva - interval '1 day')::date end
+       from ordinate o
+      where d.archivio = 'pubblico' and d.compagnia_id = $1 and d.prodotto = $2
+        and d.edizione_id is not distinct from o.edizione_id
+        and (d.edizione_corrente is distinct from (o.successiva is null)
+             or d.edizione_valida_al is distinct from case when o.successiva is null then null
+                                                           else (o.successiva - interval '1 day')::date end)`,
+    [compagniaId, prodotto],
+  );
+  if (esito.rowCount) console.log(`edizioni ricalcolate: ${prodotto} (${esito.rowCount} righe)`);
+}
+
 /* --------------------------------------------------------------- manifesto */
 
 /* Il manifesto si AGGIORNA, non si riscrive: l'albero di lavorazione di

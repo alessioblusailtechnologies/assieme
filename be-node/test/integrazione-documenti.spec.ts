@@ -58,8 +58,8 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 10 UnipolSai Km&Servizi (due edizioni) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto). */
-    expect(pagina.totale).toBe(222);
+    /* 82 Unipol (14 prodotti: i 9 set auto ed. 05/2026 entrati il 12/09/2026, le due edizioni storiche di Km&Servizi Autovetture, Scudo Cyber in due edizioni, 3 Focus Commercio) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto) + 6 Generali (2 contratti base). */
+    expect(pagina.totale).toBe(274);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;
@@ -78,33 +78,38 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     }
   });
 
-  it('filtri combinati: compagnia + ramo + solo correnti = i 5 documenti ed. 11/2022', async () => {
+  it('filtri combinati: compagnia + ramo + solo correnti = i 52 documenti ed. 05/2026', async () => {
     const r = await richiedi(
       '/api/documenti?compagniaId=cmp-unipolsai&ramoId=ram-auto&soloCorrenti=true',
       tokenAdmin,
     );
     const pagina = r.json<PaginaDocumenti>();
-    expect(pagina.totale).toBe(5);
+    /* I nove set auto entrati il 12/09/2026 portano tutti la stessa data. */
+    expect(pagina.totale).toBe(52);
     for (const d of pagina.elementi) {
       expect(d.compagnia.id).toBe('cmp-unipolsai');
       expect(d.edizione.corrente).toBe(true);
-      expect(d.edizione.etichetta).toBe('ed. 11/2022');
+      expect(d.edizione.etichetta).toBe('ed. 05/2026');
     }
   });
 
-  it('dettaglio del DIP corrente: le due edizioni vere, dalla più recente', async () => {
+  it('dettaglio di un DIP: le tre edizioni vere, dalla più recente', async () => {
     const r = await richiedi(
       '/api/documenti/doc-unipolsai-km-servizi-autovetture-ed-2022-11-dip',
       tokenAdmin,
     );
     expect(r.statusCode).toBe(200);
     const dettaglio = r.json<DettaglioDocumento>();
-    expect(dettaglio.edizioni).toHaveLength(2);
+    /* Dal 12/09/2026 la corrente è la 05/2026: chiesta una storica, si
+       vedono tutte e tre, e la 11/2022 dice fin quando è valsa. */
+    expect(dettaglio.edizioni).toHaveLength(3);
     expect(dettaglio.edizioni[0]!.corrente).toBe(true);
-    expect(dettaglio.edizioni[0]!.validaDal).toBe('2022-11-01');
-    expect(dettaglio.edizioni[1]!.validaDal).toBe('2019-01-01');
+    expect(dettaglio.edizioni[0]!.validaDal).toBe('2026-05-01');
+    expect(dettaglio.edizioni[1]!.validaDal).toBe('2022-11-01');
+    expect(dettaglio.edizioni[1]!.validaAl).toBe('2026-04-30');
+    expect(dettaglio.edizioni[2]!.validaDal).toBe('2019-01-01');
     // RF-A-04: la storica dichiara fin quando è valsa.
-    expect(dettaglio.edizioni[1]!.validaAl).toBe('2022-10-31');
+    expect(dettaglio.edizioni[2]!.validaAl).toBe('2022-10-31');
     // Il DIP comincia in copertina…
     expect(dettaglio.paginaInizio).toBe(1);
   });
@@ -146,13 +151,16 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     expect(smarca.json<{ preferito: boolean }>().preferito).toBe(false);
   });
 
-  it('soloPreferiti restituisce i marcati del seed (DIP e Condizioni correnti)', async () => {
+  it('soloPreferiti restituisce i marcati del seed (DIP e Condizioni di Km&Servizi)', async () => {
     const r = await richiedi('/api/documenti?soloPreferiti=true', tokenAdmin);
     const pagina = r.json<PaginaDocumenti>();
     expect(pagina.totale).toBe(2);
     for (const d of pagina.elementi) {
       expect(d.preferito).toBe(true);
-      expect(d.edizione.corrente).toBe(true);
+      /* Il preferito è del documento, non dell'edizione: questi due erano
+         correnti quando il seed li ha marcati, e il 12/09/2026 la 05/2026
+         li ha superati senza toglierli dai preferiti di nessuno. */
+      expect(d.prodotto).toBe('Km&Servizi Autovetture');
     }
   });
 

@@ -2581,6 +2581,168 @@
   "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Autovetture",
+  "titolo": "Condizioni di Assicurazione — Unipol Contratto Base RCA Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 12,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-contratto-base-rca-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Autovetture",
+  "titolo": "DIP Danni — Unipol Contratto Base RCA Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-rca-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Contratto Base RCA Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-contratto-base-rca-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Autovetture",
+  "titolo": "Informativa Privacy — Unipol Contratto Base RCA Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 25,
+  "edizione": {
+   "id": "edz-contratto-base-rca-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-tabelle-conversione-cu-ci",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Autovetture",
+  "titolo": "Tabelle di conversione fra classe C.U. e classe di merito interna — Unipol Contratto Base RCA Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 33,
+  "edizione": {
+   "id": "edz-contratto-base-rca-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/tabelle-conversione-cu-ci.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-ciclomotori-motocicli-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Ciclomotori e Motocicli",
+  "titolo": "Condizioni di Assicurazione — Unipol Contratto Base RCA Ciclomotori e Motocicli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 11,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-contratto-base-rca-ciclomotori-motocicli-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-ciclomotori-motocicli-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Ciclomotori e Motocicli",
+  "titolo": "DIP Danni — Unipol Contratto Base RCA Ciclomotori e Motocicli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-contratto-base-rca-ciclomotori-motocicli-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-ciclomotori-motocicli-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Ciclomotori e Motocicli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Contratto Base RCA Ciclomotori e Motocicli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-contratto-base-rca-ciclomotori-motocicli-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-contratto-base-rca-ciclomotori-motocicli-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Contratto Base RCA Ciclomotori e Motocicli",
+  "titolo": "Informativa Privacy — Unipol Contratto Base RCA Ciclomotori e Motocicli",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 23,
+  "edizione": {
+   "id": "edz-contratto-base-rca-ciclomotori-motocicli-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/contratto-base-rca-ciclomotori-motocicli/ed-2026-05/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-focus-commercio-autoriparatori-ed-2026-03-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-imprese",
@@ -2797,6 +2959,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/imprese/focus-ufficio-studi/ed-2026-03/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-km-servizi-autocarri-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autocarri e altri veicoli",
+  "titolo": "Condizioni di Assicurazione — Unipol Km&Servizi Autocarri e altri veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 160,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-km-servizi-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autocarri-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autocarri e altri veicoli",
+  "titolo": "DIP Danni — Unipol Km&Servizi Autocarri e altri veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-km-servizi-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autocarri-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autocarri e altri veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Km&Servizi Autocarri e altri veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-km-servizi-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autocarri-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autocarri e altri veicoli",
+  "titolo": "Informativa Privacy — Unipol Km&Servizi Autocarri e altri veicoli",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 179,
+  "edizione": {
+   "id": "edz-km-servizi-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autocarri-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autocarri e altri veicoli",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Km&Servizi Autocarri e altri veicoli",
+  "tipologia": "altro",
+  "numeroPagine": 4,
+  "paginaInizio": 173,
+  "edizione": {
+   "id": "edz-km-servizi-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-km-servizi-autovetture-ed-2019-01-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
@@ -2982,6 +3234,222 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2022-11/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Condizioni di Assicurazione — Unipol Km&Servizi Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 184,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Danni — Unipol Km&Servizi Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Km&Servizi Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Informativa Privacy — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 203,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 3,
+  "paginaInizio": 197,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-scatola-nera-condizioni-generali",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Scatola Nera - Condizioni generali del contratto di abbonamento — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 16,
+  "paginaInizio": 299,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/scatola-nera-condizioni-generali.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-scatola-nera-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Scatola Nera - Informativa privacy UnipolTech — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 10,
+  "paginaInizio": 289,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/scatola-nera-informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-scatola-nera-nota-informativa",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Scatola Nera - Nota informativa precontrattuale — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 5,
+  "paginaInizio": 283,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/scatola-nera-nota-informativa.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-tabelle-conversione-cu-ci",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Tabelle di conversione fra classe C.U. e classe di merito interna — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 213,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/tabelle-conversione-cu-ci.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-unibox-condizioni-generali",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Unibox - Condizioni generali del contratto di abbonamento — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 32,
+  "paginaInizio": 247,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/unibox-condizioni-generali.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-unibox-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Unibox - Informativa privacy UnipolTech — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 15,
+  "paginaInizio": 231,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/unibox-informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-autovetture-ed-2026-05-unibox-nota-informativa",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Autovetture",
+  "titolo": "Servizi telematici Unibox - Nota informativa precontrattuale — Unipol Km&Servizi Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 13,
+  "paginaInizio": 217,
+  "edizione": {
+   "id": "edz-km-servizi-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/unibox-nota-informativa.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-scudo-cyber-ed-2024-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-cyber",
@@ -3128,6 +3596,474 @@
   },
   "pathMd": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/informativa-privacy.md",
   "pathPdf": "archivio-pubblico/unipolsai/cyber/scudo-cyber/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-2ruote-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 74,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-2ruote-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-2ruote-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "titolo": "DIP Danni — Unipol Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-2ruote-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-2ruote-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-2ruote-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-2ruote-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "titolo": "Informativa Privacy — Unipol Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 91,
+  "edizione": {
+   "id": "edz-unica-2ruote-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-2ruote-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica R.C.A. 2Ruote Ciclomotori e Motocicli",
+  "tipologia": "altro",
+  "numeroPagine": 3,
+  "paginaInizio": 87,
+  "edizione": {
+   "id": "edz-unica-2ruote-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-2ruote/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autocarri-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autocarri e altri Veicoli",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica R.C.A. Autocarri e altri Veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 88,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autocarri-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autocarri e altri Veicoli",
+  "titolo": "DIP Danni — Unipol Unica R.C.A. Autocarri e altri Veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autocarri-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autocarri e altri Veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Unica R.C.A. Autocarri e altri Veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autocarri-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autocarri e altri Veicoli",
+  "titolo": "Informativa Privacy — Unipol Unica R.C.A. Autocarri e altri Veicoli",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 105,
+  "edizione": {
+   "id": "edz-unica-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autocarri-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autocarri e altri Veicoli",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica R.C.A. Autocarri e altri Veicoli",
+  "tipologia": "altro",
+  "numeroPagine": 3,
+  "paginaInizio": 101,
+  "edizione": {
+   "id": "edz-unica-autocarri-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autocarri/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autovetture-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autovetture",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica R.C.A. Autovetture",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 86,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autovetture-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autovetture",
+  "titolo": "DIP Danni — Unipol Unica R.C.A. Autovetture",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autovetture-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autovetture",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Unica R.C.A. Autovetture",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autovetture-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autovetture",
+  "titolo": "Informativa Privacy — Unipol Unica R.C.A. Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 103,
+  "edizione": {
+   "id": "edz-unica-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-autovetture-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica R.C.A. Autovetture",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica R.C.A. Autovetture",
+  "tipologia": "altro",
+  "numeroPagine": 3,
+  "paginaInizio": 99,
+  "edizione": {
+   "id": "edz-unica-autovetture-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Protezione Veicolo ed altri rischi della circolazione",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Protezione Veicolo ed altri rischi della circolazione",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 248,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-protezione-veicolo-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Protezione Veicolo ed altri rischi della circolazione",
+  "titolo": "DIP Danni — Unipol Unica Protezione Veicolo ed altri rischi della circolazione",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-protezione-veicolo-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Protezione Veicolo ed altri rischi della circolazione",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Protezione Veicolo ed altri rischi della circolazione",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 5,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-protezione-veicolo-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Protezione Veicolo ed altri rischi della circolazione",
+  "titolo": "Informativa Privacy — Unipol Unica Protezione Veicolo ed altri rischi della circolazione",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 267,
+  "edizione": {
+   "id": "edz-unica-protezione-veicolo-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Protezione Veicolo ed altri rischi della circolazione",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Protezione Veicolo ed altri rischi della circolazione",
+  "tipologia": "altro",
+  "numeroPagine": 4,
+  "paginaInizio": 261,
+  "edizione": {
+   "id": "edz-unica-protezione-veicolo-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-scatola-nera-condizioni-generali",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Scatola Nera - Condizioni generali del contratto di abbonamento — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 16,
+  "paginaInizio": 79,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/scatola-nera-condizioni-generali.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-scatola-nera-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Scatola Nera - Informativa privacy UnipolTech — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 10,
+  "paginaInizio": 69,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/scatola-nera-informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-scatola-nera-nota-informativa",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Scatola Nera - Nota informativa precontrattuale — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 5,
+  "paginaInizio": 63,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/scatola-nera-nota-informativa.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-unibox-condizioni-generali",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Unibox - Condizioni generali del contratto di abbonamento — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 29,
+  "paginaInizio": 31,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/unibox-condizioni-generali.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-unibox-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Unibox - Informativa privacy UnipolTech — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 15,
+  "paginaInizio": 15,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/unibox-informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-unibox-nota-informativa",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Unica Servizi Telematici",
+  "titolo": "Servizi telematici Unibox - Nota informativa precontrattuale — Unipol Unica Servizi Telematici",
+  "tipologia": "altro",
+  "numeroPagine": 11,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-servizi-telematici-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/unibox-nota-informativa.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
  },
  {
   "id": "doc-zurich-for-family-ed-2026-06-condizioni-di-assicurazione",
