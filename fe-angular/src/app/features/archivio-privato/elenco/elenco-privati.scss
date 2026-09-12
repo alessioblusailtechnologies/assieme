@@ -1,10 +1,10 @@
 /*
- * Archivio Privato: un gestore di file.
+ * Archivio Privato: un elenco solo, con le sue faccette.
  *
- * La schermata è una colonna di sezioni — dove sei, la ricerca, le cartelle,
- * i documenti — e non più una testata con una tabella sotto. Niente riquadro
- * di caricamento fisso: tutta l'area è zona di rilascio e il tratteggio
- * compare solo mentre si trascina.
+ * La schermata è una colonna di sezioni — che cosa stai guardando, la
+ * ricerca, i documenti — e non una testata con una tabella sotto. Niente
+ * riquadro di caricamento fisso: tutta l'area è zona di rilascio e il
+ * tratteggio compare solo mentre si trascina.
  *
  * Non c'è nessuna tabella, e con lei se ne vanno i problemi che aveva: le
  * colonne che non cedono, il pulsante che finisce fuori, le larghezze da
@@ -201,250 +201,6 @@ ui-zona-caricamento {
   text-transform: uppercase;
 }
 
-/* ---------- La barra del percorso ---------- */
-
-/*
- * Dove si è dentro l'archivio, e come risalire. Sta accanto alle cartelle e
- * non in cima alla pagina: lassù le briciole dicono in che schermata sei,
- * questa dice in che cartella, ed è quella che si guarda mentre si naviga.
- *
- * Le tappe sono collegamenti veri con i loro parametri: il clic centrale
- * apre in una scheda nuova e il tasto Indietro risale l'albero, perché dove
- * si sta guardando vive nella querystring.
- */
-.percorso {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  font-size: var(--t-body);
-}
-
-.percorso__tappa {
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
-  color: var(--c-text-3);
-  text-decoration: none;
-  transition: background var(--dur-fast) var(--ease-brand);
-}
-
-.percorso__tappa:hover {
-  background: var(--c-surface-tint);
-  color: var(--c-text);
-  text-decoration: none;
-}
-
-.percorso__separatore {
-  color: var(--c-text-ghost);
-}
-
-/* Dove si è: non è un collegamento e si vede che non lo è. */
-.percorso__qui {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-2);
-  color: var(--c-text);
-  font-weight: 500;
-}
-
-.percorso__qui ui-icon {
-  color: var(--c-text-3);
-}
-
-/* ---------- Le cartelle: schede in griglia ---------- */
-
-/*
- * Una griglia che si riempie da sola: le cartelle di un livello sono poche,
- * e a colonne fisse su uno schermo largo resterebbero tre schede e mezzo
- * metro di vuoto.
- */
-.schede {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: var(--sp-3);
-}
-
-.scheda {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-width: 0;
-  padding: 0;
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-  color: var(--c-text);
-  font: inherit;
-  font-size: var(--t-body);
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background var(--dur-fast) var(--ease-brand),
-    border-color var(--dur-fast) var(--ease-brand);
-}
-
-.scheda:hover {
-  border-color: var(--c-line-dark);
-  background: var(--c-surface-tint);
-}
-
-/* Il corpo della scheda apre la cartella; i tre puntini fanno altro. Sono
-   due gesti diversi e non devono contendersi lo stesso clic. */
-.scheda__apri {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-2) var(--sp-3) var(--sp-4);
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.scheda__azioni {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  margin-right: var(--sp-2);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--c-text-ghost);
-  cursor: pointer;
-}
-
-.scheda__azioni:hover {
-  background: var(--c-page-alt);
-  color: var(--c-text);
-}
-
-/* Le schede senza azioni tengono il loro respiro a destra. */
-.scheda--sistemare,
-.scheda--aggiungi {
-  padding: var(--sp-3) var(--sp-4);
-}
-
-.scheda__icona {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-sm);
-  background: var(--c-page-alt);
-  color: var(--c-text-2);
-}
-
-.scheda__nome {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.scheda__quanti {
-  flex: none;
-  color: var(--c-text-mute);
-  font-size: var(--t-sm);
-  font-variant-numeric: tabular-nums;
-}
-
-/*
- * «Da sistemare» è l'unica scheda che chiede qualcosa: si distingue dal
- * colore, non da una posizione speciale. Quando è vuota non compare affatto,
- * ed è la condizione a cui si punta.
- */
-.scheda--sistemare .scheda__icona {
-  background: var(--c-warn-soft);
-  color: var(--c-warn);
-}
-
-.scheda--sistemare .scheda__quanti {
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pieno);
-  background: var(--c-warn-soft);
-  color: var(--c-warn);
-  font-weight: 600;
-}
-
-.scheda.is-scelta {
-  border-color: var(--c-accent);
-  background: var(--c-accent-soft);
-}
-
-/* La scheda che aggiunge è la stessa forma col segno del provvisorio. */
-.scheda--aggiungi {
-  border-style: dashed;
-  background: none;
-  color: var(--c-text-3);
-}
-
-.scheda--aggiungi .scheda__icona {
-  background: none;
-  color: var(--c-text-3);
-}
-
-/* ---------- Il pannello delle azioni sulle cartelle ---------- */
-
-/*
- * Rinomina, sposta ed elimina compaiono **sotto l'albero**, non in una
- * finestra modale: così si continua a vedere la cartella che si sta
- * cambiando e dove sta, che è metà dell'informazione quando si sposta un
- * ramo.
- */
-.pannello {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-  margin-top: var(--sp-2);
-  padding: var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-}
-
-.pannello__campo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.pannello__campo input,
-.pannello__campo ui-select {
-  width: 100%;
-  max-width: 28rem;
-}
-
-.pannello__nome {
-  color: var(--c-text);
-  font-size: var(--t-body);
-}
-
-.pannello__avviso {
-  margin: 0;
-  color: var(--c-text-3);
-  font-size: var(--t-sm);
-  line-height: 1.5;
-}
-
-.pannello__azioni {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-
 /* ---------- L'interruttore elenco/griglia ---------- */
 
 .vista {
@@ -562,14 +318,6 @@ ui-zona-caricamento {
   color: var(--c-text-2);
 }
 
-.doc__dove {
-  flex: none;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pieno);
-  background: var(--c-page-alt);
-  color: var(--c-text-3);
-}
-
 .doc__etichetta {
   flex: none;
   padding: 0 var(--sp-2);
@@ -598,8 +346,8 @@ ui-zona-caricamento {
 /* ---------- I documenti in griglia ---------- */
 
 /*
- * L'altra vista del gestore di file. Utile a colpo d'occhio su una cartella
- * di poche decine; l'elenco resta il modo predefinito perché su un archivio
+ * L'altra vista dell'elenco. Utile a colpo d'occhio su poche decine di
+ * documenti; l'elenco resta il modo predefinito perché su un archivio
  * vero è il cliente a distinguere le righe, e in una piastrella il cliente
  * non ci sta.
  */

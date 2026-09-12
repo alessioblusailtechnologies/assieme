@@ -1,10 +1,11 @@
-import type { Interrogabile } from './albero.js';
+import type { Interrogabile } from '../db/interrogabile.js';
 
 /**
- * La risoluzione del cliente: il pezzo difficile di tutta la Fase 10.
+ * La risoluzione del cliente: il pezzo difficile, e quello sopravvissuto.
  *
- * Sapere che al livello 1 dell'albero ci sono i clienti non dice che
- * «ROSSI M.» è la cartella «Rossi Mario». Qui si decide, e si decide
+ * Nata in Fase 10 per sapere che «ROSSI M.» è la cartella «Rossi Mario»,
+ * dal 12/09/2026 è ciò che resta quando l'albero se ne va, e non serve più
+ * a collocare ma a intestare. Qui si decide, e si decide
  * **deterministicamente prima e col modello per ultimo**: normalizzazione,
  * match esatto su nome e alias (il caso normale di un'agenzia, che costa
  * zero chiamate), identificativi fiscali, candidati per somiglianza, e solo
@@ -223,9 +224,9 @@ export async function aggiungiAlias(
 }
 
 /**
- * Due clienti che erano lo stesso: il perduto cede documenti, alias e
- * cartella, poi sparisce. Serve il giorno dopo l'importazione, perché la
- * prima cosa che un'agenzia vede è un paio di clienti sdoppiati.
+ * Due clienti che erano lo stesso: il perduto cede documenti, alias,
+ * conversazioni e chat, poi sparisce. Serve il giorno dopo l'importazione,
+ * perché la prima cosa che un'agenzia vede è un paio di clienti sdoppiati.
  */
 export async function fondiClienti(
   client: Interrogabile,
@@ -250,13 +251,18 @@ export async function fondiClienti(
      where tenant_id = $1 and cliente_id = $3`,
     [tenantId, vincitoreId, assorbitoId],
   );
-  /* La cartella dell'assorbito non si butta: i documenti dentro restano
-     dove l'utente li vede. Perde solo l'aggancio, così il vincitore resta
-     l'unico ad averne uno (l'indice unico lo pretende). */
+  /* Anche ciò che al cliente si aggancia senza essere un documento: una
+     conversazione e una chat intestate a chi sta per sparire finirebbero
+     una senza cliente e l'altra cancellata dal `cascade`. */
   await client.query(
-    `update velia.cartelle set cliente_id = null
-     where tenant_id = $1 and cliente_id = $2`,
-    [tenantId, assorbitoId],
+    `update velia.conversazioni set cliente_id = $2
+     where tenant_id = $1 and cliente_id = $3`,
+    [tenantId, vincitoreId, assorbitoId],
+  );
+  await client.query(
+    `update velia.chat_clienti set cliente_id = $2
+     where tenant_id = $1 and cliente_id = $3`,
+    [tenantId, vincitoreId, assorbitoId],
   );
   await client.query(`delete from velia.clienti where id = $2 and tenant_id = $1`, [
     tenantId,

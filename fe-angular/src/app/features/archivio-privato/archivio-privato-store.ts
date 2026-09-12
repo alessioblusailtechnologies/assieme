@@ -5,8 +5,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
-  AlberoCartelle,
-  Cartella,
   Cliente,
   DocumentoPrivato,
   ErroreApi,
@@ -18,12 +16,7 @@ import {
   StatoElaborazione,
   TipologiaDocumento,
 } from '@core/models';
-import {
-  CartelleApi,
-  DestinazioneDocumenti,
-  ModificheCartella,
-  NuovaCartella,
-} from '@core/api/cartelle-api';
+import { ClientiApi } from '@core/api/clienti-api';
 import { DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
 
 /** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione. */
@@ -47,7 +40,7 @@ export interface VoceCoda {
 @Injectable()
 export class ArchivioPrivatoStore {
   private readonly api = inject(DocumentiPrivatiApi);
-  private readonly apiCartelle = inject(CartelleApi);
+  private readonly apiClienti = inject(ClientiApi);
   private readonly rotta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
@@ -60,23 +53,20 @@ export class ArchivioPrivatoStore {
   readonly ricerca = signal('');
 
   /**
-   * Dove si sta guardando — una cartella col suo sottoalbero, oppure «Da
-   * sistemare», che sono due viste che si escludono perché il non collocato
-   * non sta *in* nessuna cartella — **vive nell'URL**, non in un signal.
+   * Di chi si stanno guardando i documenti — un cliente, oppure «Senza
+   * cliente», che sono due viste che si escludono — **vive nell'URL**, non
+   * in un signal.
    *
-   * In un gestore di file la cartella aperta è un posto, e un posto deve
-   * avere un indirizzo: così il tasto Indietro del browser risale l'albero,
-   * un aggiornamento della pagina non ti riporta in cima, e le briciole
-   * possono essere collegamenti veri invece di pulsanti che simulano una
-   * navigazione. Tenerlo in un signal è esattamente ciò che rendeva le
-   * briciole inerti: puntavano alla rotta in cui eri già.
+   * Un filtro che si condivide con un collega e che il tasto Indietro sa
+   * annullare è un posto, e un posto deve avere un indirizzo. Tenerlo in un
+   * signal rendeva inerti le briciole: puntavano alla rotta in cui eri già.
    */
   private readonly parametri = toSignal(this.rotta.queryParamMap, {
     initialValue: undefined,
   });
 
-  readonly cartella = computed<Id | undefined>(() => this.parametri()?.get('cartella') ?? undefined);
-  readonly daSistemare = computed(() => this.parametri()?.get('vista') === 'da-sistemare');
+  readonly cliente = computed<Id | undefined>(() => this.parametri()?.get('cliente') ?? undefined);
+  readonly senzaCliente = computed(() => this.parametri()?.get('vista') === 'senza-cliente');
 
   private readonly ricercaAttesa = toSignal(
     toObservable(this.ricerca).pipe(debounceTime(300), distinctUntilChanged()),
@@ -90,8 +80,8 @@ export class ArchivioPrivatoStore {
       this.etichetta(),
       this.soloRiferimenti(),
       this.ricercaAttesa(),
-      this.cartella(),
-      this.daSistemare(),
+      this.cliente(),
+      this.senzaCliente(),
     ],
     computation: () => 1,
   });
@@ -104,15 +94,15 @@ export class ArchivioPrivatoStore {
     stato: this.stato(),
     etichetta: this.etichetta(),
     soloRiferimenti: this.soloRiferimenti(),
-    cartellaId: this.daSistemare() ? undefined : this.cartella(),
-    daSistemare: this.daSistemare(),
+    clienteId: this.senzaCliente() ? undefined : this.cliente(),
+    senzaCliente: this.senzaCliente(),
     pagina: this.pagina(),
     perPagina: this.perPagina(),
   }));
 
-  /* La cartella non conta come «filtro attivo»: è dove sei, non un filtro
-     che hai messo. Azzerare i filtri dentro una cartella deve lasciarti
-     dentro quella cartella, altrimenti il pulsante ti sposta invece di
+  /* Il cliente non conta come «filtro attivo»: è dove sei, non un filtro
+     che hai messo. Azzerare i filtri mentre si guarda un cliente deve
+     lasciarti su quel cliente, altrimenti il pulsante ti sposta invece di
      ripulire. */
   readonly filtriAttivi = computed(
     () =>
@@ -130,10 +120,7 @@ export class ArchivioPrivatoStore {
   );
   private readonly risorsaEtichette = httpResource<Etichetta[]>(() => this.api.urlEtichette());
   private readonly risorsaSpazio = httpResource<SpazioTenant>(() => this.api.urlSpazio());
-  private readonly risorsaAlbero = httpResource<AlberoCartelle>(() => this.apiCartelle.urlAlbero());
-  private readonly risorsaClienti = httpResource<Paginato<Cliente>>(() =>
-    this.apiCartelle.urlClienti(),
-  );
+  private readonly risorsaClienti = httpResource<Paginato<Cliente>>(() => this.apiClienti.url());
 
   readonly documenti = computed(() =>
     this.risorsaElenco.hasValue() ? this.risorsaElenco.value().elementi : [],
@@ -151,53 +138,13 @@ export class ArchivioPrivatoStore {
     this.risorsaSpazio.hasValue() ? this.risorsaSpazio.value() : undefined,
   );
 
-  readonly albero = computed<Cartella[]>(() =>
-    this.risorsaAlbero.hasValue() ? this.risorsaAlbero.value().radici : [],
-  );
-  readonly quantiDaSistemare = computed(() =>
-    this.risorsaAlbero.hasValue() ? this.risorsaAlbero.value().daSistemare : 0,
-  );
   readonly clienti = computed<Cliente[]>(() =>
     this.risorsaClienti.hasValue() ? this.risorsaClienti.value().elementi : [],
   );
 
-  /** L'albero appiattito: serve alle tendine di spostamento e alle briciole. */
-  readonly cartelleInPiano = computed<Cartella[]>(() => {
-    const piatte: Cartella[] = [];
-    const scendi = (c: Cartella[]): void => {
-      for (const x of c) {
-        piatte.push(x);
-        scendi(x.figli);
-      }
-    };
-    scendi(this.albero());
-    return piatte;
-  });
-
-  readonly cartellaCorrente = computed<Cartella | undefined>(() => {
-    const id = this.cartella();
-    return id ? this.cartelleInPiano().find((c) => c.id === id) : undefined;
-  });
-
-  /**
-   * La catena dalla radice fino a dove si è, cartella corrente compresa.
-   *
-   * È quello che serve per **risalire**: da `Clienti/Rossi Mario/Auto` si
-   * deve poter tornare a «Rossi Mario», non solo in cima all'archivio. Sta
-   * qui e non nel componente perché è una domanda sull'albero, non su come
-   * lo si disegna.
-   */
-  readonly catenaCartelle = computed<Cartella[]>(() => {
-    const per = new Map(this.cartelleInPiano().map((c) => [c.id, c]));
-    const catena: Cartella[] = [];
-    const visti = new Set<string>();
-    let corrente = this.cartellaCorrente();
-    while (corrente && !visti.has(corrente.id)) {
-      visti.add(corrente.id);
-      catena.unshift(corrente);
-      corrente = corrente.parentId ? per.get(corrente.parentId) : undefined;
-    }
-    return catena;
+  readonly clienteCorrente = computed<Cliente | undefined>(() => {
+    const id = this.cliente();
+    return id ? this.clienti().find((c) => c.id === id) : undefined;
   });
 
   // --- Interrogazione periodica -------------------------------------------
@@ -273,9 +220,7 @@ export class ArchivioPrivatoStore {
         }
         if (evento.type === HttpEventType.Response) {
           aggiorna((v) => ({ ...v, stato: 'completato', percentuale: 100 }));
-          /* Un archivio importato porta con sé le sue cartelle: se il lotto
-             ne ha create, l'albero è cambiato e va riletto insieme al resto.
-             I file che uno zip conteneva ma non sappiamo leggere si dicono,
+          /* I file che uno zip conteneva ma non sappiamo leggere si dicono,
              invece di sparire in silenzio. */
           const ignorati = evento.body?.ignorati ?? [];
           if (ignorati.length) this.vociIgnorate.set(ignorati);
@@ -313,60 +258,34 @@ export class ArchivioPrivatoStore {
     this.soloRiferimenti.set(false);
   }
 
-  // --- Cartelle -----------------------------------------------------------
+  // --- Clienti ------------------------------------------------------------
 
   /**
-   * Aprire una cartella; senza argomento si torna a tutto l'archivio.
+   * Guardare i documenti di un cliente; senza argomento si torna a tutto
+   * l'archivio.
    *
-   * `replaceUrl: false`: ogni cartella aperta è una tappa nella cronologia,
-   * ed è così che il tasto Indietro risale l'albero un livello alla volta.
+   * Ogni cliente aperto è una tappa nella cronologia: il tasto Indietro
+   * riporta dove si era, e l'indirizzo si può mandare a un collega.
    */
   apri(id?: Id): Promise<boolean> {
     return this.router.navigate([], {
       relativeTo: this.rotta,
-      queryParams: { cartella: id ?? null, vista: null },
+      queryParams: { cliente: id ?? null, vista: null },
       queryParamsHandling: 'merge',
     });
   }
 
-  apriDaSistemare(): Promise<boolean> {
+  apriSenzaCliente(): Promise<boolean> {
     return this.router.navigate([], {
       relativeTo: this.rotta,
-      queryParams: { cartella: null, vista: 'da-sistemare' },
+      queryParams: { cliente: null, vista: 'senza-cliente' },
       queryParamsHandling: 'merge',
     });
   }
 
-  creaCartella(
-    cartella: NuovaCartella,
-    esiti: { fatto?: () => void; errore?: (e: ErroreApi | null) => void } = {},
-  ): void {
-    this.apiCartelle.crea(cartella).subscribe({
-      next: () => {
-        this.ricaricaTutto();
-        esiti.fatto?.();
-      },
-      error: (err: HttpErrorResponse) => esiti.errore?.((err.error as ErroreApi) ?? null),
-    });
-  }
-
-  modificaCartella(id: Id, modifiche: ModificheCartella): void {
-    this.apiCartelle.modifica(id, modifiche).subscribe({ next: () => this.ricaricaTutto() });
-  }
-
-  eliminaCartella(id: Id, documenti: DestinazioneDocumenti): void {
-    this.apiCartelle.elimina(id, documenti).subscribe({
-      next: () => {
-        // Si stava guardando dentro: dopo non esiste più, si torna alla radice.
-        if (this.cartella() === id) void this.apri(undefined);
-        this.ricaricaTutto();
-      },
-    });
-  }
-
-  /** Spostare un documento a mano: da qui in poi la collocazione è definitiva. */
-  sposta(id: Id, cartellaId: Id | null): void {
-    this.modifica(id, { cartellaId });
+  /** Intestare a mano: da qui in poi il cliente è definitivo. */
+  intesta(id: Id, clienteId: Id | null): void {
+    this.modifica(id, { clienteId });
   }
 
   riprova(): void {
@@ -392,10 +311,8 @@ export class ArchivioPrivatoStore {
     this.risorsaElenco.reload();
     this.risorsaEtichette.reload();
     this.risorsaSpazio.reload();
-    /* Anche l'albero: spostare un documento cambia i conteggi delle cartelle
-       e quello di «Da sistemare», che sono numeri che l'utente sta guardando
-       mentre lavora. */
-    this.risorsaAlbero.reload();
+    /* Anche i clienti: intestare un documento cambia i loro conteggi, che
+       sono numeri che l'utente sta guardando mentre lavora. */
     this.risorsaClienti.reload();
   }
 }

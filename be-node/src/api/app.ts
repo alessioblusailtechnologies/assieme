@@ -6,8 +6,8 @@ import { poolDb } from '../db/pool.js';
 
 import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
-import { registraRotteCartelle } from './cartelle/rotte.js';
 import { registraRotteChatClienti, type OpzioniChatClienti } from './chat-clienti/rotte.js';
+import { registraRotteClienti } from './clienti/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraRotteIntestazione, type OpzioniIntestazione } from './intestazione/rotte.js';
@@ -101,7 +101,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
-  registraRotteCartelle(app);
+  registraRotteClienti(app);
   registraRotteChatClienti(app, opzioni.chatClienti);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRottePagine(app, opzioni.pagine);

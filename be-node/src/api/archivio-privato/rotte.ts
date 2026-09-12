@@ -24,15 +24,6 @@ import {
   normalizzaPercorso,
   type FileConPercorso,
 } from './zip.js';
-import {
-  assicuraPercorso,
-  caricaCartelle,
-  eDiscendente,
-  indicizza,
-  percorsoDi,
-  segnaDaRicalcolare,
-  type RigaCartella,
-} from '../../archivio/albero.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { accoda } from '../../worker/coda.js';
@@ -71,22 +62,16 @@ interface RigaPrivato {
   ramo_id: string | null;
   ramo_nome: string | null;
   ramo_codice: string | null;
-  cartella_id: string | null;
   cliente_id: string | null;
   cliente_nome: string | null;
-  collocazione_da_confermare: boolean;
+  cliente_da_confermare: boolean;
   numero_polizza: string | null;
   decorrenza: string | null;
   scadenza: string | null;
   totale?: string;
 }
 
-/**
- * Il percorso leggibile non si calcola in SQL: l'albero è piccolo (cartelle,
- * non documenti) e si carica una volta per richiesta. Una CTE ricorsiva per
- * riga costerebbe di più e si leggerebbe peggio.
- */
-function versoDocumento(r: RigaPrivato, cartelle?: Map<string, RigaCartella>): DocumentoPrivato {
+function versoDocumento(r: RigaPrivato): DocumentoPrivato {
   const compagnia: Compagnia | undefined = r.compagnia_id
     ? {
         id: r.compagnia_id,
@@ -116,10 +101,8 @@ function versoDocumento(r: RigaPrivato, cartelle?: Map<string, RigaCartella>): D
     ...(r.classificazione_da_confermare && { classificazioneDaConfermare: true }),
     documentoDiRiferimento: r.documento_di_riferimento,
     visibilita: r.visibilita,
-    ...(r.cartella_id && { cartellaId: r.cartella_id }),
-    ...(r.cartella_id && cartelle && { percorso: percorsoDi(r.cartella_id, cartelle) }),
     ...(r.cliente_id && r.cliente_nome && { cliente: { id: r.cliente_id, nome: r.cliente_nome } }),
-    ...(r.collocazione_da_confermare && { collocazioneDaConfermare: true }),
+    ...(r.cliente_da_confermare && { clienteDaConfermare: true }),
     ...(r.numero_polizza && { numeroPolizza: r.numero_polizza }),
     ...(r.decorrenza && { decorrenza: r.decorrenza }),
     ...(r.scadenza && { scadenza: r.scadenza }),
@@ -134,8 +117,8 @@ const SQL_BASE = `
          c.id as compagnia_id, c.nome as compagnia_nome,
          c.ultimo_aggiornamento as compagnia_aggiornamento,
          r.id as ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
-         d.cartella_id, d.cliente_id, cl.nome as cliente_nome,
-         d.collocazione_da_confermare, d.numero_polizza,
+         d.cliente_id, cl.nome as cliente_nome,
+         d.cliente_da_confermare, d.numero_polizza,
          to_char(d.decorrenza, 'YYYY-MM-DD') as decorrenza,
          to_char(d.scadenza, 'YYYY-MM-DD') as scadenza
   from velia.documenti d
@@ -200,31 +183,16 @@ export function registraRotteArchivioPrivato(
       return `$${parametri.length}`;
     };
 
-    /* L'albero serve due volte: a capire quali cartelle rientrano nel filtro
-       (cliccare una cartella mostra anche il sottoalbero, è quello che ci si
-       aspetta) e a scrivere il percorso leggibile su ogni riga. Si carica
-       una volta sola, fuori dal ciclo. */
-    const cartelle = indicizza(
-      await conIdentita(poolDb(), richiesta.identita, (client) =>
-        caricaCartelle(client, richiesta.identita.tenantId),
-      ),
-    );
-
     if (filtri.tipologia) condizioni.push(`d.tipologia = ${par(filtri.tipologia)}`);
     if (filtri.stato) condizioni.push(`d.stato = ${par(filtri.stato)}`);
     if (filtri.etichetta) condizioni.push(`${par(filtri.etichetta)} = any(d.etichette)`);
     if (filtri.soloRiferimenti) condizioni.push(`d.documento_di_riferimento`);
     if (filtri.clienteId) condizioni.push(`d.cliente_id = ${par(filtri.clienteId)}`);
-    /* «Da sistemare» è una vista a sé: il non collocato, che è una condizione
-       normale e non un errore. Non si combina con una cartella. */
-    if (filtri.daSistemare) {
-      condizioni.push(`d.cartella_id is null`);
-    } else if (filtri.cartellaId) {
-      const dentro = filtri.soloQui
-        ? [filtri.cartellaId]
-        : [...cartelle.keys()].filter((id) => eDiscendente(id, filtri.cartellaId!, cartelle));
-      condizioni.push(`d.cartella_id = any(${par(dentro)})`);
-    }
+    /* «Senza cliente» è una vista a sé, e non si combina con un cliente:
+       sono due domande diverse. Non è un errore — circolari, modulistica e
+       note tecniche un cliente non ce l'hanno per natura. */
+    if (filtri.senzaCliente) condizioni.push(`d.cliente_id is null`);
+    if (filtri.daConfermare) condizioni.push(`d.cliente_da_confermare`);
 
     /* Come lo stub: tutte le parole, in qualsiasi ordine, senza accenti —
        su titolo, riferimento cliente ed etichette (non compagnia né ramo:
@@ -256,7 +224,7 @@ export function registraRotteArchivioPrivato(
         totale = Number(conta.rows[0]?.totale ?? 0);
       }
       return {
-        elementi: righe.rows.map((r) => versoDocumento(r, cartelle)),
+        elementi: righe.rows.map(versoDocumento),
         totale,
         pagina: filtri.pagina,
         perPagina: filtri.perPagina,
@@ -387,18 +355,7 @@ export function registraRotteArchivioPrivato(
 
       creati = await conIdentita(poolDb(), richiesta.identita, async (client) => {
         const esiti: DocumentoPrivato[] = [];
-        let cartelleToccate = false;
         for (const f of daCreare) {
-          /* Il percorso di origine diventa albero: è questo il momento in
-             cui la cartellazione dell'agenzia entra in VELIA, ed è da qui
-             che l'osservazione ricaverà la convenzione. Una collocazione
-             che arriva dall'utente non è una proposta: nasce già confermata. */
-          const cartelle = cartelleDelPercorso(f.percorsoOrigine);
-          const cartellaId = cartelle.length
-            ? await assicuraPercorso(client, tenantId, cartelle)
-            : null;
-          if (cartellaId) cartelleToccate = true;
-
           /* `path_pdf` è dove il documento da mostrare *starà*: per un PDF
              è il file appena caricato, per gli altri il PDF che l'ingestion
              comporrà. Fino ad allora il documento non è pronto, e
@@ -407,8 +364,8 @@ export function registraRotteArchivioPrivato(
             `insert into velia.documenti
                (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
                 path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
-                classificazione_da_confermare, cartella_id, percorso_origine)
-             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true, $10, $11)`,
+                classificazione_da_confermare, percorso_origine)
+             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true, $10)`,
             [
               f.id,
               tenantId,
@@ -419,14 +376,15 @@ export function registraRotteArchivioPrivato(
               f.nome,
               utenteId,
               f.contenuto.length,
-              cartellaId,
+              /* Il percorso con cui il file è arrivato non diventa più un
+                 ramo d'albero, ma resta scritto: è un fatto sul
+                 caricamento, e dalla Fase 3 è da lì che nascono le
+                 etichette di un'importazione. */
               f.percorsoOrigine ?? null,
             ],
           );
           esiti.push((await documentoPerId(client, tenantId, f.id))!);
         }
-        // I cambi di struttura, e solo quelli, rifanno la convenzione.
-        if (cartelleToccate) await segnaDaRicalcolare(client, tenantId);
         return esiti;
       });
     } catch (errore) {
@@ -508,17 +466,12 @@ export function registraRotteArchivioPrivato(
         assegnazioni.push(`etichette = ${par([...new Set(m.etichette)])}::text[]`);
       }
       if (m.clienteId !== undefined) {
-        if (m.clienteId !== null) await esisteRigaDelTenant(client, 'clienti', m.clienteId, tenantId);
-        assegnazioni.push(`cliente_id = ${par(m.clienteId)}`);
-      }
-      if (m.cartellaId !== undefined) {
-        if (m.cartellaId !== null) {
-          await esisteRigaDelTenant(client, 'cartelle', m.cartellaId, tenantId);
-        }
-        /* Spostare a mano è definitivo: da qui in poi nessun ricalcolo della
-           convenzione rimette il documento in discussione. Senza questa riga
-           si costruisce il software che rimette le cose dove dice lui. */
-        assegnazioni.push(`cartella_id = ${par(m.cartellaId)}`, `collocazione_da_confermare = false`);
+        if (m.clienteId !== null) await esisteCliente(client, m.clienteId, tenantId);
+        /* Intestare a mano è definitivo: la proposta dell'ingestion si
+           spegne e nessuna rilavorazione rimette il documento in
+           discussione. Senza questa riga si costruisce il software che
+           rimette le cose dove dice lui. */
+        assegnazioni.push(`cliente_id = ${par(m.clienteId)}`, `cliente_da_confermare = false`);
       }
 
       await client.query(
@@ -672,11 +625,7 @@ async function documentoPerId(
 ): Promise<DocumentoPrivato | undefined> {
   const righe = await client.query<RigaPrivato>(`${SQL_BASE} and d.id = $2`, [tenantId, id]);
   const riga = righe.rows[0];
-  if (!riga) return undefined;
-  // L'albero si carica solo se serve: un documento in «Da sistemare» non ha
-  // percorso da scrivere, e la scheda è la rotta più chiamata dopo l'elenco.
-  const cartelle = riga.cartella_id ? indicizza(await caricaCartelle(client, tenantId)) : undefined;
-  return versoDocumento(riga, cartelle);
+  return riga ? versoDocumento(riga) : undefined;
 }
 
 export async function spazioDelTenant(client: pg.ClientBase, tenantId: string): Promise<SpazioTenant> {
@@ -701,22 +650,13 @@ export async function spazioDelTenant(client: pg.ClientBase, tenantId: string): 
   };
 }
 
-/** Cartella o cliente devono esistere **e** essere di questo tenant. */
-async function esisteRigaDelTenant(
-  client: pg.ClientBase,
-  tabella: 'cartelle' | 'clienti',
-  id: string,
-  tenantId: string,
-): Promise<void> {
-  const r = await client.query(`select 1 from velia.${tabella} where id = $1 and tenant_id = $2`, [
+/** Il cliente deve esistere **e** essere di questo tenant. */
+async function esisteCliente(client: pg.ClientBase, id: string, tenantId: string): Promise<void> {
+  const r = await client.query(`select 1 from velia.clienti where id = $1 and tenant_id = $2`, [
     id,
     tenantId,
   ]);
-  if (!r.rowCount) {
-    throw ErroreApi.datiNonValidi(
-      tabella === 'cartelle' ? 'Cartella inesistente.' : 'Cliente inesistente.',
-    );
-  }
+  if (!r.rowCount) throw ErroreApi.datiNonValidi('Cliente inesistente.');
 }
 
 async function verificaTassonomia(

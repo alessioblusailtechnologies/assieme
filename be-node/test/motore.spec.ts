@@ -26,6 +26,7 @@ const doc = (parziale: Partial<DocumentoWorkspace> & { id: string; titolo: strin
   archivio: 'pubblico',
   descrizione: null,
   immagine: null,
+  cliente: null,
   tipologia: 'dip',
   numeroPagine: 10,
   paginaMassima: 10,
@@ -524,10 +525,10 @@ describe('workspace e sessione, le parti pure', () => {
     /* Un agente che gira di notte non ha nessuno a cui chiedere
        l'approvazione: descrivergli uno strumento che non ha sarebbe
        insegnargli a promettere qualcosa che non può fare. */
-    expect(promptSistema(dna)).not.toContain('proponi_riordino');
-    const conChat = promptSistema(dna, { modelli: [], conRiordino: true });
-    expect(conChat).toContain('proponi_riordino');
-    expect(conChat).toContain('Riordinare l’archivio');
+    expect(promptSistema(dna)).not.toContain('proponi_assegnazione');
+    const conChat = promptSistema(dna, { modelli: [], conAssegnazione: true });
+    expect(conChat).toContain('proponi_assegnazione');
+    expect(conChat).toContain('Intestare ed etichettare');
   });
 
   it('il prompt di ripresa: niente storia (è già nel contesto della sessione), contesto e domanda sì', () => {

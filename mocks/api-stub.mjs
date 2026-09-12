@@ -43,7 +43,7 @@ import {
   gestisci as gestisciArchivioPrivato,
   trovaDocumento as trovaDocumentoPrivato,
 } from './archivio-privato.mjs';
-import { gestisci as gestisciCartelle } from './cartelle.mjs';
+import { gestisci as gestisciClienti } from './clienti.mjs';
 import { gestisci as gestisciAgenti } from './agenti.mjs';
 import { gestisci as gestisciChat } from './chat.mjs';
 import { gestisci as gestisciImpostazioni } from './impostazioni.mjs';
@@ -388,10 +388,10 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  /* Fase 10: l'albero delle cartelle, l'anagrafica clienti e la convenzione
-     osservata. Senza queste rotte la demo mostrerebbe un archivio senza
-     struttura, cioè racconterebbe un prodotto diverso da quello che è. */
-  if (await gestisciCartelle(req, res, url, { inviaJson, leggiCorpo }, documentiPrivati())) {
+  /* L'anagrafica clienti: è l'asse dell'Archivio Privato (12/09/2026).
+     Senza queste rotte la demo mostrerebbe documenti che non sono di
+     nessuno, cioè racconterebbe un prodotto diverso da quello che è. */
+  if (await gestisciClienti(req, res, url, { inviaJson, leggiCorpo }, documentiPrivati())) {
     return;
   }
 

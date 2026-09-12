@@ -1,8 +1,7 @@
 <!--
-  L'Archivio Privato è un gestore di file, non una tabella di dati: si entra
-  nelle cartelle, si guarda cosa contengono, si trascina dentro roba. La
-  schermata dice questo — dove sei, l'azione principale accanto, la ricerca,
-  poi le cartelle e poi i documenti.
+  L'Archivio Privato è un elenco solo, con le sue faccette: cliente,
+  tipologia, etichette, stato. La schermata dice questo — che cosa stai
+  guardando, l'azione principale accanto, la ricerca, poi i documenti.
 
   Tutta l'area di lavoro è zona di rilascio (`aspetto="trasparente"`): il
   riquadro tratteggiato compare mentre trascini e sparisce subito dopo,
@@ -32,10 +31,10 @@
         {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
         <!--
           Il peso è quello dell'archivio intero e si scrive solo dove il
-          conteggio è quello dell'archivio intero: dentro una cartella,
-          «0 documenti · 2,8 MB» sarebbe una contraddizione.
+          conteggio è quello dell'archivio intero: filtrando su un cliente,
+          «2 documenti · 2,8 MB» sarebbe una contraddizione.
         -->
-        @if (allaRadice() && spazio(); as s) {
+        @if (suTutto() && spazio(); as s) {
           · {{ s.usato }}
         }
       </span>
@@ -48,10 +47,6 @@
 
       </div>
     </div>
-
-    @if (store.cartellaCorrente()?.descrizione; as descrizione) {
-      <p class="descrizione">{{ descrizione }}</p>
-    }
 
   </header>
 
@@ -85,6 +80,24 @@
   -->
   @if (filtriAperti()) {
     <section class="filtri" aria-label="Filtri dell'archivio">
+      <!--
+        Il cliente è una faccetta come le altre, ma sta per prima: è l'asse
+        su cui gira l'archivio, e «Senza cliente» è in coda alla stessa
+        tendina perché è la stessa domanda, non una vista a parte da
+        cercare altrove.
+      -->
+      <ui-select
+        class="filtri__campo"
+        [valore]="clienteScelto()"
+        (valoreChange)="scegliCliente($any($event))"
+        [opzioni]="opzioniCliente()"
+        campoEtichetta="etichetta"
+        campoValore="valore"
+        placeholder="Tutti i clienti"
+        [azzerabile]="true"
+        ariaLabel="Filtra per cliente"
+      />
+
       <ui-select
         class="filtri__campo"
         [(valore)]="store.tipologia"
@@ -164,248 +177,6 @@
     </p>
   }
 
-  <!-- ---------- Cartelle ---------- -->
-
-  <section class="sezione" aria-label="Cartelle">
-    <!--
-      La barra del percorso: dove si è dentro l'archivio e come risalire.
-      Sta qui, accanto alle cartelle, e non in cima alla pagina: lassù le
-      briciole dicono in che schermata sei, questa dice in che cartella —
-      ed è quella che si guarda mentre si naviga.
-    -->
-    <nav class="percorso" aria-label="Percorso nell'archivio">
-      @for (tappa of percorso(); track tappa.etichetta; let ultima = $last) {
-        @if (ultima) {
-          <span class="percorso__qui" aria-current="page">
-            <ui-icon [name]="store.daSistemare() ? 'da-sistemare' : 'cartella-aperta'" [size]="15" />
-            {{ tappa.etichetta }}
-          </span>
-        } @else {
-          <a class="percorso__tappa" [routerLink]="tappa.percorso" [queryParams]="tappa.parametri ?? {}">
-            {{ tappa.etichetta }}
-          </a>
-          <span class="percorso__separatore" aria-hidden="true">›</span>
-        }
-      }
-    </nav>
-
-    <div class="schede">
-      <!--
-        «Da sistemare» è una scheda come le altre e sta per prima: è dove
-        finisce quello che l'AI non ha saputo collocare, e due minuti al
-        giorno lì tengono in ordine l'archivio. In fondo non si aprirebbe mai.
-      -->
-      @if (daSistemareVisibile()) {
-        <button
-          type="button"
-          class="scheda scheda--sistemare"
-          [class.is-scelta]="store.daSistemare()"
-          (click)="store.apriDaSistemare()"
-        >
-          <span class="scheda__icona"><ui-icon name="da-sistemare" [size]="17" /></span>
-          <span class="scheda__nome">Da sistemare</span>
-          <span class="scheda__quanti">{{ store.quantiDaSistemare() }}</span>
-        </button>
-      }
-
-      @for (cartella of sottoCartelle(); track cartella.id) {
-        <div class="scheda" [title]="cartella.descrizione ?? cartella.percorso">
-          <button type="button" class="scheda__apri" (click)="store.apri(cartella.id)">
-            <span class="scheda__icona"><ui-icon name="cartella" [size]="17" /></span>
-            <span class="scheda__nome">{{ cartella.nome }}</span>
-            @if (cartella.documentiTotali) {
-              <span class="scheda__quanti">{{ cartella.documentiTotali }}</span>
-            }
-          </button>
-          <!-- Rinomina, sposta, elimina: senza doverci entrare dentro. -->
-          <button
-            type="button"
-            class="scheda__azioni"
-            [attr.aria-label]="'Azioni su ' + cartella.nome"
-            (click)="apriAzioni({ cartella, evento: $event })"
-          >
-            <ui-icon name="altre-azioni" [size]="15" />
-          </button>
-        </div>
-      }
-
-      <button type="button" class="scheda scheda--aggiungi" (click)="apriModuloCartella()">
-        <span class="scheda__icona"><ui-icon name="aggiungi" [size]="17" /></span>
-        <span class="scheda__nome">Nuova cartella</span>
-      </button>
-    </div>
-
-    <ui-menu-azioni #menuCartella [voci]="vociCartella" />
-
-    <!-- La cartella nuova: nasce dentro quella aperta. -->
-    @if (creando()) {
-      <form class="pannello" (submit)="$event.preventDefault(); creaCartella()">
-        <label class="pannello__campo">
-          <span class="pannello__nome">Nuova cartella</span>
-          <input
-            uiCampo
-            type="text"
-            [value]="nuovoNome()"
-            (input)="nuovoNome.set($any($event.target).value)"
-            [placeholder]="
-              store.cartellaCorrente() ? 'Dentro ' + store.cartellaCorrente()!.nome : 'In cima'
-            "
-            aria-label="Nome della nuova cartella"
-            #campoNuovaCartella
-          />
-        </label>
-        @if (avvisoSimile(); as avviso) {
-          <p class="pannello__avviso">
-            {{ avviso }}
-            <button
-              uiBottone
-              variante="testo"
-              dimensione="piccolo"
-              type="button"
-              (click)="creaCartella(true)"
-            >
-              <span>Crea comunque</span>
-            </button>
-          </p>
-        }
-        <div class="pannello__azioni">
-          <button uiBottone variante="primario" dimensione="piccolo" type="submit">Crea</button>
-          <button
-            uiBottone
-            variante="testo"
-            dimensione="piccolo"
-            type="button"
-            (click)="annullaModuloCartella()"
-          >
-            Annulla
-          </button>
-        </div>
-      </form>
-    }
-
-    <!--
-      Rinomina, sposta ed elimina valgono per qualunque cartella dell'albero,
-      non solo per quella in cui si è entrati. Il modulo compare qui sotto e
-      non in una finestra: si vede la cartella mentre la si cambia.
-    -->
-    @if (cartellaInAzione(); as cartella) {
-      @switch (azione()) {
-        @case ('rinomina') {
-          <form class="pannello" (submit)="$event.preventDefault(); confermaRinomina()">
-            <label class="pannello__campo">
-              <span class="pannello__nome">Rinomina «{{ cartella.nome }}»</span>
-              <input
-                uiCampo
-                type="text"
-                [value]="nomeInModifica()"
-                (input)="nomeInModifica.set($any($event.target).value)"
-                aria-label="Nuovo nome della cartella"
-              />
-            </label>
-            <div class="pannello__azioni">
-              <button uiBottone variante="primario" dimensione="piccolo" type="submit">
-                Salva
-              </button>
-              <button
-                uiBottone
-                variante="testo"
-                dimensione="piccolo"
-                type="button"
-                (click)="chiudiAzione()"
-              >
-                Annulla
-              </button>
-            </div>
-          </form>
-        }
-        @case ('sposta') {
-          <div class="pannello">
-            <!--
-              Non un <label>: `ui-select` non è un controllo nativo e
-              avvolgerlo non lo aggancerebbe comunque. Il nome accessibile
-              glielo dà `ariaLabel`, come nel resto dell'applicazione.
-            -->
-            <div class="pannello__campo">
-              <span class="pannello__nome">Sposta «{{ cartella.nome }}» in</span>
-              <ui-select
-                [(valore)]="destinazione"
-                [opzioni]="destinazioni()"
-                campoEtichetta="percorso"
-                campoValore="id"
-                placeholder="Scegli la destinazione"
-                ariaLabel="Cartella di destinazione"
-              />
-            </div>
-            <p class="pannello__avviso">
-              I documenti restano dentro la cartella: si sposta il ramo, non il
-              contenuto.
-            </p>
-            <div class="pannello__azioni">
-              <button
-                uiBottone
-                variante="primario"
-                dimensione="piccolo"
-                type="button"
-                [disabled]="destinazione() === undefined"
-                (click)="confermaSpostamento()"
-              >
-                Sposta
-              </button>
-              <button
-                uiBottone
-                variante="testo"
-                dimensione="piccolo"
-                type="button"
-                (click)="chiudiAzione()"
-              >
-                Annulla
-              </button>
-            </div>
-          </div>
-        }
-        @case ('elimina') {
-          <div class="pannello">
-            <span class="pannello__nome">
-              Elimina «{{ cartella.nome }}»: e i {{ cartella.documentiTotali }} documenti che
-              contiene?
-            </span>
-            <div class="pannello__azioni">
-              <button
-                uiBottone
-                variante="primario"
-                dimensione="piccolo"
-                type="button"
-                (click)="eliminaCartella('da-sistemare')"
-              >
-                Mandali in «Da sistemare»
-              </button>
-              @if (cartella.parentId) {
-                <button
-                  uiBottone
-                  variante="secondario"
-                  dimensione="piccolo"
-                  type="button"
-                  (click)="eliminaCartella('al-padre')"
-                >
-                  Spostali nella cartella sopra
-                </button>
-              }
-              <button
-                uiBottone
-                variante="testo"
-                dimensione="piccolo"
-                type="button"
-                (click)="chiudiAzione()"
-              >
-                Annulla
-              </button>
-            </div>
-          </div>
-        }
-      }
-    }
-  </section>
-
   <!-- ---------- Documenti ---------- -->
 
   <section class="sezione sezione--documenti" aria-label="Documenti">
@@ -454,7 +225,7 @@
       </div>
     } @else if (!documenti().length) {
       <ui-stato-vuoto
-        [icona]="store.daSistemare() ? 'pronto' : 'archivio-privato'"
+        [icona]="store.senzaCliente() ? 'pronto' : 'archivio-privato'"
         [titolo]="statoVuoto().titolo"
         [descrizione]="statoVuoto().descrizione"
       >
@@ -485,11 +256,6 @@
                   <span class="doc__cliente">{{ doc.cliente.nome }}</span>
                 } @else if (doc.riferimentoCliente) {
                   <span class="doc__cliente">{{ doc.riferimentoCliente }}</span>
-                }
-                @if (mostraPercorso() && doc.percorso) {
-                  <span class="doc__dove" [title]="doc.percorso">
-                    {{ ultimoSegmento(doc.percorso) }}
-                  </span>
                 }
                 @for (e of doc.etichette.slice(0, 2); track e) {
                   <span class="doc__etichetta">{{ e }}</span>

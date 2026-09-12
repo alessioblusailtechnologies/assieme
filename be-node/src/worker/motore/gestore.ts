@@ -474,7 +474,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           ? promptSistemaCliente(conversazione.chat_istruzioni)
           : promptSistema(dna, {
               modelli: modelliAgenzia.rows,
-              conRiordino: true,
+              conAssegnazione: true,
               catalogo: catalogoArchivioPubblico(workspace.perPath),
             }),
         ...(perCliente

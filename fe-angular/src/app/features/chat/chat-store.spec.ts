@@ -573,11 +573,19 @@ describe('ChatStore', () => {
     expect(storico.inRisposta().has('cnv-1')).toBe(false);
   });
 
-  it('il riordino si approva una volta sola, e la scheda passa allo stato deciso', async () => {
+  it('la proposta si approva una volta sola, e la scheda passa allo stato deciso', async () => {
     const riordino: PropostaArchivio = {
       id: 'prp-1',
       stato: 'proposta',
-      operazioni: [{ azione: 'crea-cartella', nome: 'Wiselyst S.r.l.', dentro: 'Clienti' }],
+      operazioni: [
+        {
+          azione: 'intesta-documento',
+          documentoId: 'doc-priv-1',
+          titolo: 'Fattura 36',
+          clienteId: 'cl-1',
+          cliente: 'Wiselyst S.r.l.',
+        },
+      ],
     };
     await avvia([conversazione('cnv-1')]);
     store.apri('cnv-1');
@@ -588,7 +596,7 @@ describe('ChatStore', () => {
 
     store.decidiProposta(riordino, 'approva');
     /* Due clic, una sola scrittura: mentre la prima è in volo la scheda è
-       ferma, o si applicherebbe due volte lo stesso riordino. */
+       ferma, o si applicherebbe due volte la stessa proposta. */
     store.decidiProposta(riordino, 'approva');
     await microtask();
     expect(store.inDecisione('prp-1')).toBe(true);

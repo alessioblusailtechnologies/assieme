@@ -6,10 +6,12 @@ import type { FileRicevuto } from './formati.js';
  * L'importazione di un archivio esistente.
  *
  * Un'agenzia non arriva mai senza documenti: arriva con la sua
- * cartellazione, fatta in anni di lavoro, ed è da quella che nasce la
- * convenzione. Quindi l'importazione **deve conservare i percorsi**: un
- * upload che li appiattisce butta via esattamente l'informazione da cui
- * dipende tutto il resto della Fase 10.
+ * cartellazione, fatta in anni di lavoro. Dal 12/09/2026 quella
+ * cartellazione non diventa più un albero in VELIA, ma resta
+ * un'informazione: l'importazione **deve conservare i percorsi**
+ * (`percorso_origine`), perché è da lì che l'ingestion ricava le etichette
+ * e, spesso, il nome del cliente. Un upload che li appiattisce butta via
+ * il poco che si sa di come quel materiale era organizzato.
  *
  * Due strade, stesso risultato. Il browser sa mandare una cartella intera
  * (`webkitdirectory`) e allora ogni file porta il suo percorso relativo in
@@ -107,7 +109,14 @@ export function normalizzaPercorso(grezzo: string): string | null {
   return parti.join('/');
 }
 
-/** Le sole cartelle del percorso, senza il nome del file. */
+/**
+ * Le sole cartelle del percorso, senza il nome del file.
+ *
+ * Sono le directory dentro lo zip, non le cartelle dell'archivio (che dal
+ * 12/09/2026 non esistono più): servono a tenere insieme un'email e i suoi
+ * allegati, e a conservare in `percorso_origine` com'era organizzato il
+ * materiale che l'agenzia ha caricato.
+ */
 export function cartelleDelPercorso(percorso: string | undefined): string[] {
   if (!percorso) return [];
   const parti = percorso.split('/').filter(Boolean);

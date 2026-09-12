@@ -121,9 +121,10 @@ export interface DocumentoPrivato extends DocumentoBase {
   caricatoIl: IsoDateTime;
   dimensioneByte: number;
   /**
-   * RF-B-04. Etichette e non cartelle: un documento sta in una cartella sola,
-   * ma il lavoro reale è per cliente **e** per ramo — due assi ortogonali che
-   * le cartelle non sanno rappresentare.
+   * RF-B-04. Le etichette sono trasversali: un documento è di un cliente
+   * solo, ma può essere insieme «da rinnovare» e «auto». Dal 12/09/2026,
+   * senza più le cartelle, sono anche il modo in cui l'archivio resta
+   * navigabile.
    */
   etichette: string[];
   /** Classificazione assistita (RF-B-03), sempre correggibile dall'utente. */
@@ -153,21 +154,18 @@ export interface DocumentoPrivato extends DocumentoBase {
   /** RF-B-07: condiviso col tenant o riservato a chi l'ha caricato. */
   visibilita: 'tenant' | 'personale';
   /**
-   * RF-B-04, Fase 10: dove sta. Assente significa «Da sistemare», che è una
-   * condizione normale e visibile: il documento è pronto e citabile lo
-   * stesso, e qualcuno lo colloca quando passa di lì.
+   * Di chi è. Assente significa «Senza cliente», che è una condizione
+   * normale e non un errore: circolari, modulistica e note tecniche un
+   * cliente non ce l'hanno per natura, e il documento è pronto e citabile
+   * come tutti gli altri.
    */
-  cartellaId?: Id;
-  /** Il percorso leggibile, per la colonna dell'elenco e per la scheda. */
-  percorso?: string;
-  /** Il cliente risolto, non più una stringa scritta a mano. */
   cliente?: { id: Id; nome: string };
   /**
-   * La collocazione è una proposta del sistema. Si spegne appena l'utente
-   * sposta a mano, e da quel momento nessun ricalcolo la rimette in
+   * Il cliente è una proposta dell'ingestion. Si spegne appena l'utente
+   * intesta a mano, e da quel momento nessuna rilavorazione lo rimette in
    * discussione: stessa regola di `classificazioneDaConfermare`.
    */
-  collocazioneDaConfermare?: boolean;
+  clienteDaConfermare?: boolean;
   numeroPolizza?: string;
   decorrenza?: IsoDate;
   scadenza?: IsoDate;
@@ -253,13 +251,11 @@ export interface FiltriDocumentiPrivati {
   stato?: StatoElaborazione;
   etichetta?: string;
   soloRiferimenti?: boolean;
-  /** Una cartella e il suo sottoalbero: è quello che ci si aspetta cliccandola. */
-  cartellaId?: Id;
-  /** Solo la cartella esatta, senza scendere. */
-  soloQui?: boolean;
-  /** Il non collocato: una vista a sé, non si combina con `cartellaId`. */
-  daSistemare?: boolean;
   clienteId?: Id;
+  /** Quelli di nessuno: una vista a sé, non si combina con `clienteId`. */
+  senzaCliente?: boolean;
+  /** La coda di lavoro: le proposte dell'ingestion ancora da confermare. */
+  daConfermare?: boolean;
   pagina?: number;
   perPagina?: number;
 }

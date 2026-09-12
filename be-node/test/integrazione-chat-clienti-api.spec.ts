@@ -44,8 +44,8 @@ const pool = () => poolDb();
 describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
   let app: FastifyInstance;
   let token = '';
-  let cartellaRossi = '';
-  let cartellaBianchi = '';
+  let clienteRossi = '';
+  let clienteBianchi = '';
   let pubblico = '';
   /** Le utenze finte create dai test, da ripulire alla fine. */
   const ospitiCreati: string[] = [];
@@ -83,15 +83,15 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
 
     await pulisci();
     const rossi = await pool().query<{ id: string }>(
-      `insert into velia.cartelle (tenant_id, nome, slug) values ($1, 'Rossi Mario', 'rossi-api') returning id`,
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Rossi Mario', '') returning id`,
       [TENANT],
     );
-    cartellaRossi = rossi.rows[0]!.id;
+    clienteRossi = rossi.rows[0]!.id;
     const bianchi = await pool().query<{ id: string }>(
-      `insert into velia.cartelle (tenant_id, nome, slug) values ($1, 'Bianchi Luigi', 'bianchi-api') returning id`,
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Bianchi Luigi', '') returning id`,
       [TENANT],
     );
-    cartellaBianchi = bianchi.rows[0]!.id;
+    clienteBianchi = bianchi.rows[0]!.id;
     const doc = await pool().query<{ id: string }>(
       `select id from velia.documenti where archivio = 'pubblico' order by id limit 1`,
     );
@@ -113,7 +113,7 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
         .catch(() => undefined);
     }
     ospitiCreati.length = 0;
-    await pool().query(`delete from velia.cartelle where tenant_id = $1`, [TENANT]);
+    await pool().query(`delete from velia.clienti where tenant_id = $1`, [TENANT]);
   }
 
   it('crea la chat, il cono e il link in un colpo solo', async () => {
@@ -122,8 +122,8 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
       nome: 'Mario',
       cognome: 'Rossi',
       istruzioni: 'È cliente dal 1998: dagli del tu.',
-      cartelle: [cartellaRossi],
-      documenti: [pubblico],
+      clienteId: clienteRossi,
+      aggiunti: [pubblico],
     });
     expect(creata.statusCode).toBe(201);
     const link = creata.json<LinkChatCliente>();
@@ -146,8 +146,9 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
     const elenco = await comeAgenzia('GET', '/api/chat-clienti');
     expect(elenco.statusCode).toBe(200);
     const chat = elenco.json<ChatCliente[]>()[0]!;
-    expect(chat.cartelle.map((c) => c.percorso)).toEqual(['Rossi Mario']);
-    expect(chat.documenti.map((d) => d.id)).toEqual([pubblico]);
+    expect(chat.clienteNome).toBe('Rossi Mario');
+    expect(chat.aggiunti.map((d) => d.id)).toEqual([pubblico]);
+    expect(chat.esclusi).toEqual([]);
     expect(chat.domandeFatte).toBe(0);
     expect(chat.costoUsd).toBe(0);
     /* Le istruzioni tornano all'agenzia, che le ha scritte: è al cliente
@@ -176,14 +177,23 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
     expect(ingresso.statusCode).toBe(200);
   });
 
-  it('rifiuta una cartella che non è dell’agenzia', async () => {
+  it('rifiuta un documento che non è leggibile da questa agenzia', async () => {
     const elenco = await comeAgenzia('GET', '/api/chat-clienti');
     const chat = elenco.json<ChatCliente[]>()[0]!;
     const esito = await comeAgenzia('PATCH', `/api/chat-clienti/${chat.id}`, {
-      cartelle: [randomUUID()],
+      aggiunti: [randomUUID()],
     });
     /* Un 400 dice all'agenzia che ha sbagliato; la RLS da sola avrebbe
        fatto sparire la riga in silenzio. */
+    expect(esito.statusCode).toBe(400);
+  });
+
+  it('una chat senza cliente non si crea: senza cliente il cono è vuoto', async () => {
+    const esito = await comeAgenzia('POST', '/api/chat-clienti', {
+      titolo: 'Senza nessuno',
+      nome: 'Nessuno',
+      cognome: 'Ignoto',
+    });
     expect(esito.statusCode).toBe(400);
   });
 
@@ -192,7 +202,7 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
       titolo: 'Luigi Bianchi',
       nome: 'Luigi',
       cognome: 'Bianchi',
-      cartelle: [cartellaBianchi],
+      clienteId: clienteBianchi,
     });
     const vecchio = creata.json<LinkChatCliente>();
     const nuovo = await comeAgenzia('POST', `/api/chat-clienti/${vecchio.chatId}/link`);
@@ -218,6 +228,7 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
       titolo: 'Da sospendere',
       nome: 'Anna',
       cognome: 'Verdi',
+      clienteId: clienteBianchi,
     });
     const link = creata.json<LinkChatCliente>();
     await comeAgenzia('PATCH', `/api/chat-clienti/${link.chatId}`, { stato: 'sospesa' });
@@ -244,7 +255,7 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
       method: 'POST',
       url: '/api/chat-clienti',
       headers: { authorization: `Bearer ${accesso.json<EsitoAccesso>().tokenAccesso}` },
-      payload: { titolo: 'Abusiva', nome: 'X', cognome: 'Y' },
+      payload: { titolo: 'Abusiva', nome: 'X', cognome: 'Y', clienteId: clienteRossi },
     });
     /* Aprire un canale verso un cliente, e decidere che cosa può leggere,
        non è un'operazione da tutti i giorni. */

@@ -37,9 +37,9 @@ const EMAIL_OSPITE = 't.due@collaudo.sonovelia.it';
 const EMAIL_AGENZIA = 't.uno@collaudo.sonovelia.it';
 
 const DOC_ROSSI = 'doc-collaudo-cono-rossi';
-const DOC_ROSSI_SOTTO = 'doc-collaudo-cono-rossi-sotto';
+const DOC_ROSSI_ESCLUSO = 'doc-collaudo-cono-rossi-escluso';
 const DOC_BIANCHI = 'doc-collaudo-cono-bianchi';
-const DOC_SENZA_CARTELLA = 'doc-collaudo-cono-orfano';
+const DOC_SENZA_CLIENTE = 'doc-collaudo-cono-orfano';
 
 const pool = () => poolDb();
 
@@ -47,8 +47,8 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
   let ospiteId = '';
   let agenziaId = '';
   let chatId = '';
-  let cartellaRossi = '';
-  let cartellaBianchi = '';
+  let clienteRossi = '';
+  let clienteBianchi = '';
   let pubblicoNelCono = '';
   let pubblicoFuori = '';
   let ruoloOriginale = 'operatore';
@@ -68,36 +68,30 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
 
     await pulisci();
 
-    /* Due clienti dell'agenzia, con una cartella a testa; sotto Rossi una
-       sottocartella, perché il cono è «la cartella e quello che c'è sotto». */
+    /* Due clienti dell'agenzia: il cono è il primo, e basta questo. */
     const rossi = await pool().query<{ id: string }>(
-      `insert into velia.cartelle (tenant_id, nome, slug) values ($1, 'Rossi Mario', 'rossi-mario') returning id`,
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Rossi Mario', '') returning id`,
       [TENANT],
     );
-    cartellaRossi = rossi.rows[0]!.id;
-    const sotto = await pool().query<{ id: string }>(
-      `insert into velia.cartelle (tenant_id, parent_id, nome, slug)
-       values ($1, $2, 'Sinistri', 'sinistri') returning id`,
-      [TENANT, cartellaRossi],
-    );
+    clienteRossi = rossi.rows[0]!.id;
     const bianchi = await pool().query<{ id: string }>(
-      `insert into velia.cartelle (tenant_id, nome, slug) values ($1, 'Bianchi Luigi', 'bianchi-luigi') returning id`,
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Bianchi Luigi', '') returning id`,
       [TENANT],
     );
-    cartellaBianchi = bianchi.rows[0]!.id;
+    clienteBianchi = bianchi.rows[0]!.id;
 
-    const doc = (id: string, titolo: string, cartella: string | null) =>
+    const doc = (id: string, titolo: string, cliente: string | null) =>
       pool().query(
         `insert into velia.documenti
            (id, archivio, tenant_id, titolo, tipologia, stato, numero_pagine, path_md,
-            cartella_id, caricato_il, dimensione_byte)
+            cliente_id, caricato_il, dimensione_byte)
          values ($1, 'privato', $2, $3, 'polizza', 'pronto', 1, $4, $5, now(), 1000)`,
-        [id, TENANT, titolo, `tenant/${TENANT}/documenti/${id}.md`, cartella],
+        [id, TENANT, titolo, `tenant/${TENANT}/documenti/${id}.md`, cliente],
       );
-    await doc(DOC_ROSSI, 'Polizza auto Rossi', cartellaRossi);
-    await doc(DOC_ROSSI_SOTTO, 'Sinistro 2026 Rossi', sotto.rows[0]!.id);
-    await doc(DOC_BIANCHI, 'Polizza auto Bianchi', cartellaBianchi);
-    await doc(DOC_SENZA_CARTELLA, 'Documento mai collocato', null);
+    await doc(DOC_ROSSI, 'Polizza auto Rossi', clienteRossi);
+    await doc(DOC_ROSSI_ESCLUSO, 'Perizia interna Rossi', clienteRossi);
+    await doc(DOC_BIANCHI, 'Polizza auto Bianchi', clienteBianchi);
+    await doc(DOC_SENZA_CLIENTE, 'Circolare ANIA', null);
 
     /* Due documenti pubblici veri: uno entra nel cono, l'altro no. */
     const pubblici = await pool().query<{ id: string }>(
@@ -107,18 +101,17 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     pubblicoFuori = pubblici.rows[1]!.id;
 
     const chat = await pool().query<{ id: string }>(
-      `insert into velia.chat_clienti (tenant_id, ospite_id, titolo, token_hash, creata_da)
-       values ($1, $2, 'Rossi Mario — polizza auto', 'hash-di-collaudo', $3) returning id`,
-      [TENANT, ospiteId, agenziaId],
+      `insert into velia.chat_clienti (tenant_id, cliente_id, ospite_id, titolo, token_hash, creata_da)
+       values ($1, $2, $3, 'Rossi Mario — polizza auto', 'hash-di-collaudo', $4) returning id`,
+      [TENANT, clienteRossi, ospiteId, agenziaId],
     );
     chatId = chat.rows[0]!.id;
+    /* Un pubblico in più, e un documento del cliente che il cliente non
+       deve vedere: gli scostamenti sono la stessa tabella, con un flag. */
     await pool().query(
-      `insert into velia.chat_clienti_cartelle (chat_id, cartella_id) values ($1, $2)`,
-      [chatId, cartellaRossi],
-    );
-    await pool().query(
-      `insert into velia.chat_clienti_documenti (chat_id, documento_id) values ($1, $2)`,
-      [chatId, pubblicoNelCono],
+      `insert into velia.chat_clienti_documenti (chat_id, documento_id, escluso)
+       values ($1, $2, false), ($1, $3, true)`,
+      [chatId, pubblicoNelCono, DOC_ROSSI_ESCLUSO],
     );
   }, 60_000);
 
@@ -131,9 +124,9 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
   async function pulisci(): Promise<void> {
     await pool().query(`delete from velia.chat_clienti where tenant_id = $1`, [TENANT]);
     await pool().query(`delete from velia.documenti where id = any($1)`, [
-      [DOC_ROSSI, DOC_ROSSI_SOTTO, DOC_BIANCHI, DOC_SENZA_CARTELLA],
+      [DOC_ROSSI, DOC_ROSSI_ESCLUSO, DOC_BIANCHI, DOC_SENZA_CLIENTE],
     ]);
-    await pool().query(`delete from velia.cartelle where tenant_id = $1`, [TENANT]);
+    await pool().query(`delete from velia.clienti where tenant_id = $1`, [TENANT]);
   }
 
   /** Che cosa vede l'ospite in una tabella, con la sua identità. */
@@ -142,9 +135,9 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
 
   // --- Quello che deve vedere ---------------------------------------------
 
-  it('vede i documenti del cono, sottocartelle comprese', async () => {
+  it('vede i documenti del suo cliente, e non quello escluso a mano', async () => {
     const righe = await visti(`select id from velia.documenti where archivio = 'privato' order by id`);
-    expect(righe.map((r) => r.id)).toEqual([DOC_ROSSI, DOC_ROSSI_SOTTO]);
+    expect(righe.map((r) => r.id)).toEqual([DOC_ROSSI]);
   });
 
   it('vede il documento pubblico scelto, e non gli altri', async () => {
@@ -163,18 +156,11 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     expect(righe).toHaveLength(0);
   });
 
-  it('non vede un documento privato che non è in nessuna cartella', async () => {
-    /* Il default sicuro: ciò che non è stato messo da nessuna parte non è
-       stato dato a nessuno. */
-    const righe = await visti(`select id from velia.documenti where id = $1`, [DOC_SENZA_CARTELLA]);
+  it('non vede un documento privato che non è intestato a nessuno', async () => {
+    /* Il default sicuro: ciò che non è di nessuno non è stato dato a
+       nessuno. Una circolare interna non diventa roba del cliente. */
+    const righe = await visti(`select id from velia.documenti where id = $1`, [DOC_SENZA_CLIENTE]);
     expect(righe).toHaveLength(0);
-  });
-
-  it('non vede la cartella di un altro cliente', async () => {
-    const righe = await visti(`select id from velia.cartelle order by nome`);
-    const ids = righe.map((r) => r.id);
-    expect(ids).toContain(cartellaRossi);
-    expect(ids).not.toContain(cartellaBianchi);
   });
 
   it('non vede l’anagrafica clienti, le istruzioni, gli utenti, i template', async () => {
@@ -216,7 +202,7 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     await expect(
       conIdentita(pool(), ospite(), (c) =>
         c.query(
-          `insert into velia.cartelle (tenant_id, nome, slug) values ($1, 'Abusiva', 'abusiva')`,
+          `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Abusivo', '')`,
           [TENANT],
         ),
       ),
@@ -266,12 +252,12 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     const ids = dentro.rows.map((r) => r.id).sort();
 
     expect(ids).toContain(DOC_ROSSI);
-    expect(ids).toContain(DOC_ROSSI_SOTTO);
     expect(ids).toContain(pubblicoNelCono);
+    expect(ids).not.toContain(DOC_ROSSI_ESCLUSO);
     expect(ids).not.toContain(DOC_BIANCHI);
-    expect(ids).not.toContain(DOC_SENZA_CARTELLA);
+    expect(ids).not.toContain(DOC_SENZA_CLIENTE);
     expect(ids).not.toContain(pubblicoFuori);
-    expect(ids).toHaveLength(3);
+    expect(ids).toHaveLength(2);
   });
 
   it('senza chat cliente la workspace resta quella dell’agenzia', async () => {
@@ -281,7 +267,7 @@ describe.skipIf(!pronto)('Chat cliente · il cono di lettura', () => {
     const tutto = await documentiPerWorkspace(pool(), { tenantId: TENANT, contestoIds: [] });
     const ids = tutto.rows.map((r) => r.id);
     expect(ids).toContain(DOC_BIANCHI);
-    expect(ids).toContain(DOC_SENZA_CARTELLA);
+    expect(ids).toContain(DOC_SENZA_CLIENTE);
     expect(ids).toContain(pubblicoFuori);
     expect(ids.length).toBeGreaterThan(100);
   });

@@ -123,12 +123,17 @@
 
         <!--
           Il cliente non è più testo libero: è una voce dell'anagrafica, ed è
-          quello che permette di ritrovare la cartella giusta al prossimo
-          documento. La riga scritta a mano resta sotto, per le pratiche che
-          un cliente non ce l'hanno (un preventivo di un prospect, una nota).
+          l'unico aggancio del documento (12/09/2026). La riga scritta a mano
+          resta sotto, per le pratiche che un cliente non ce l'hanno (un
+          preventivo di un prospect, una nota interna).
         -->
         <div class="campo">
           <span class="campo__nome">Cliente</span>
+          @if (clienteDaConfermare()) {
+            <p class="campo__nota">
+              Proposto dal sistema. Confermalo scegliendo tu, o lascialo così.
+            </p>
+          }
           @if (doc.cliente; as c) {
             <div class="collegato">
               <ui-icon name="utente" [size]="14" />
@@ -180,30 +185,6 @@
             placeholder="es. polizza 123456"
           />
         </label>
-
-        <!--
-          Spostare non è un campo del modulo: è un'azione, si applica subito, e
-          da quel momento la collocazione è definitiva — nessun ricalcolo la
-          rimette in discussione.
-        -->
-        <div class="campo">
-          <span class="campo__nome">Cartella</span>
-          @if (collocazioneDaConfermare()) {
-            <p class="campo__nota">
-              Proposta dal sistema. Confermala spostandola dove vuoi, o lasciala dov'è.
-            </p>
-          }
-          <ui-select
-            [opzioni]="cartelle()"
-            campoEtichetta="percorso"
-            campoValore="id"
-            [valore]="doc.cartellaId"
-            placeholder="Da sistemare"
-            [azzerabile]="true"
-            ariaLabel="Sposta in un'altra cartella"
-            (valoreChange)="sposta($any($event) ?? null)"
-          />
-        </div>
 
         <div class="campo">
           <span class="campo__nome">Etichette</span>

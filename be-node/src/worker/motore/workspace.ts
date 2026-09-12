@@ -6,17 +6,7 @@ import { join, posix } from 'node:path';
 import type pg from 'pg';
 
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
-import {
-  caricaCartelle,
-  indicizza,
-  percorsoSlug,
-  type RigaCartella,
-} from '../../archivio/albero.js';
 import { GLOSSARIO_RISCHI, NOME_GLOSSARIO } from '../../archivio/glossario.js';
-import {
-  assicuraConvenzioneAggiornata,
-  convenzioneEffettiva,
-} from '../../archivio/convenzione.js';
 
 /**
  * La workspace di un job (piano §4.3, doc motore §3 e §5): una directory
@@ -57,6 +47,14 @@ export interface DocumentoWorkspace {
   prodotto: string | null;
   edizione: string | null;
   riferimentoCliente: string | null;
+  /**
+   * Il cliente a cui il documento è intestato, per nome (12/09/2026).
+   *
+   * Sta negli `INDICE.md` ed è la colonna con cui il motore risponde a
+   * «cosa ha Rossi»: l'id non gli servirebbe a niente, il nome è quello che
+   * l'utente pronuncia e quello che si trova con Grep.
+   */
+  cliente: string | null;
   etichette: string[];
   documentoDiRiferimento: boolean;
   /**
@@ -113,7 +111,8 @@ interface RigaDocumento {
   edizione_etichetta: string | null;
   riferimento_cliente: string | null;
   etichette: string[] | null;
-  cartella_id: string | null;
+  cliente_id: string | null;
+  cliente_nome: string | null;
   documento_di_riferimento: boolean | null;
   caricato_il: Date | null;
 }
@@ -137,11 +136,13 @@ export interface OpzioniWorkspace {
    * La chat cliente da cui nasce la conversazione, se è una chat cliente.
    *
    * Quando c'è, la workspace **non** contiene l'archivio dell'agenzia ma il
-   * solo cono di quella chat. È il presidio che conta: il worker parla al
-   * database con la connessione di sistema e non passa dalla RLS, quindi
-   * qui non c'è una seconda rete sotto. Ciò che finisce in questa directory
-   * è esattamente ciò che il cliente può leggere, perché il motore ha
-   * Read/Grep/Glob confinati e non esiste altro che questa directory.
+   * solo cono di quella chat: i documenti del suo cliente, più gli extra
+   * scelti a mano, meno gli esclusi. È il presidio che conta — il worker
+   * parla al database con la connessione di sistema e non passa dalla RLS,
+   * quindi qui non c'è una seconda rete sotto. Ciò che finisce in questa
+   * directory è esattamente ciò che il cliente può leggere, perché il
+   * motore ha Read/Grep/Glob confinati e non esiste altro che questa
+   * directory.
    */
   chatClienteId?: string;
 }
@@ -153,9 +154,10 @@ const TTL_INDICI_MS = 60 * 60 * 1000;
  * Che cosa entra nella directory che il motore può leggere: **il confine**.
  *
  * Per l'agenzia è tutto l'Archivio Pubblico, tutto il proprio privato e gli
- * allegati della conversazione. Per una **chat cliente** è il solo cono: i
- * documenti pubblici scelti a mano e i privati che stanno nel sottoalbero
- * delle cartelle scelte.
+ * allegati della conversazione. Per una **chat cliente** è il solo cono:
+ * i documenti del suo cliente, più quelli scelti a mano (i prodotti
+ * pubblici che lo riguardano, un documento privato di un altro fascicolo),
+ * meno quelli esclusi a mano.
  *
  * La definizione del cono è la stessa delle funzioni SQL usate dalle policy
  * (`velia.documenti_nel_cono`), riscritta qui di proposito: il worker parla
@@ -171,31 +173,28 @@ export async function documentiPerWorkspace(
   cono: { tenantId: string; contestoIds: string[]; chatClienteId?: string | null },
 ): Promise<pg.QueryResult<RigaDocumento>> {
   return db.query<RigaDocumento>(
-    `with recursive cono_cartelle as (
-       select cc.cartella_id as id
-       from velia.chat_clienti_cartelle cc
-       join velia.chat_clienti k on k.id = cc.chat_id
+    `with chat as (
+       select k.id, k.cliente_id
+       from velia.chat_clienti k
        where $3::uuid is not null and k.id = $3::uuid and k.tenant_id = $1
          and k.stato = 'attiva' and (k.scade_il is null or k.scade_il > now())
-       union
-       select f.id from velia.cartelle f join cono_cartelle a on f.parent_id = a.id
      ),
-     cono_pubblici as (
-       select cd.documento_id as id
+     scelti as (
+       select cd.documento_id as id, cd.escluso
        from velia.chat_clienti_documenti cd
-       join velia.chat_clienti k on k.id = cd.chat_id
-       where $3::uuid is not null and k.id = $3::uuid and k.tenant_id = $1
-         and k.stato = 'attiva' and (k.scade_il is null or k.scade_il > now())
+       join chat on chat.id = cd.chat_id
      )
      select d.id, d.archivio, d.titolo, d.descrizione, d.tipologia, d.numero_pagine, d.pagina_inizio,
             d.path_pdf, d.path_md, d.formato, d.path_originale, d.stato,
             d.updated_at, d.compagnia_id, c.nome as compagnia_nome,
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
-            d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette, d.cartella_id,
+            d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette,
+            d.cliente_id, cl.nome as cliente_nome,
             d.documento_di_riferimento, d.caricato_il
      from velia.documenti d
      left join velia.compagnie c on c.id = d.compagnia_id
      left join velia.rami r on r.id = d.ramo_id
+     left join velia.clienti cl on cl.id = d.cliente_id
      where (d.path_md is not null or (d.archivio = 'conversazione' and d.path_originale is not null))
        and (
          case when $3::uuid is null then
@@ -203,9 +202,10 @@ export async function documentiPerWorkspace(
            or (d.archivio = 'privato' and d.tenant_id = $1 and d.stato = 'pronto')
            or (d.archivio = 'conversazione' and d.tenant_id = $1 and d.stato = 'pronto' and d.id = any($2))
          else
-           (d.archivio = 'pubblico' and d.id in (select id from cono_pubblici))
+           d.id in (select id from scelti where not escluso)
            or (d.archivio = 'privato' and d.tenant_id = $1 and d.stato = 'pronto'
-               and d.cartella_id in (select id from cono_cartelle))
+               and d.cliente_id = (select cliente_id from chat)
+               and d.id not in (select id from scelti where escluso))
          end
        )
      order by d.archivio, d.compagnia_id, d.prodotto, d.edizione_valida_dal, d.tipologia, d.caricato_il`,
@@ -226,26 +226,17 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
    * Per l'agenzia: tutto il pubblico, tutto il proprio privato, gli
    * allegati di questa conversazione.
    *
-   * Per una chat cliente: **solo il cono**. I documenti pubblici scelti a
-   * mano, e i privati che stanno nel sottoalbero delle cartelle scelte —
-   * la stessa definizione delle funzioni SQL usate dalle policy, scritta
-   * qui una seconda volta perché qui non c'è RLS a fare da rete. Gli
-   * allegati restano fuori: in una chat cliente non si carica niente.
+   * Per una chat cliente: **solo il cono**. I documenti del suo cliente,
+   * più quelli scelti a mano e meno quelli esclusi — la stessa definizione
+   * della funzione SQL usata dalle policy, scritta qui una seconda volta
+   * perché qui non c'è RLS a fare da rete. Gli allegati restano fuori: in
+   * una chat cliente non si carica niente.
    */
   const righe = await documentiPerWorkspace(db, {
     tenantId,
     contestoIds,
     chatClienteId: opzioni.chatClienteId ?? null,
   });
-
-  /* L'albero dell'agenzia e la convenzione che lo spiega (Fase 10): è quello
-     che trasforma un elenco di quattromila righe in un archivio navigabile.
-     Il ricalcolo qui è solo quello a costo zero — la forma, dedotta dai nomi:
-     le descrizioni delle cartelle le fa scrivere l'ingestion, perché il
-     percorso di query non deve mai fermarsi ad aspettare un modello. */
-  await assicuraConvenzioneAggiornata(db, tenantId);
-  const cartelle = indicizza(await caricaCartelle(db, tenantId));
-  const convenzione = await convenzioneEffettiva(db, tenantId);
 
   const perPath = new Map<string, DocumentoWorkspace>();
   const perId = new Map<string, string>();
@@ -265,8 +256,8 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
        col nome che avrebbe avuto il suo .md e la sua estensione vera. */
     const originale = !riga.path_md && riga.path_originale ? riga.path_originale : null;
     const relativo = originale
-      ? percorsoNellaWorkspace(riga, cartelle).replace(/\.md$/i, originale.slice(originale.lastIndexOf('.')).toLowerCase())
-      : percorsoNellaWorkspace(riga, cartelle);
+      ? percorsoNellaWorkspace(riga).replace(/\.md$/i, originale.slice(originale.lastIndexOf('.')).toLowerCase())
+      : percorsoNellaWorkspace(riga);
     try {
       const origine = await cache.file(originale ?? riga.path_md!, riga.updated_at.toISOString());
       await collega(origine, join(directory, ...relativo.split('/')));
@@ -372,7 +363,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
     }
   }
 
-  await scriviIndiciTenant(directory, perPath, cartelle, convenzione);
+  await scriviIndiciTenant(directory, perPath);
 
   return {
     directory,
@@ -384,36 +375,25 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
 }
 
 /**
- * Il path relativo (posix) di un documento nell'albero della workspace.
+ * Il path relativo (posix) di un documento nella workspace.
  *
- * Dalla Fase 10 il privato segue **l'albero vero dell'agenzia**, non più la
- * sola tipologia: è così che la cartella diventa un nome che l'utente può
- * pronunciare in chat («guarda nei rinnovi di gennaio») e che il modello
- * ritrova con Glob. Senza cartella si finisce in `da-sistemare/`, che è
- * esattamente ciò che l'utente vede nell'interfaccia: la stessa parola nei
- * due posti, o le domande non tornano.
- *
- * Il ripiego sulla tipologia resta per l'archivio di un tenant che non ha
- * ancora nessuna cartella.
+ * Il privato torna a raggrupparsi per **tipologia** (12/09/2026): l'albero
+ * libero della Fase 10 non c'è più, e la tipologia è un insieme chiuso e
+ * piccolo — non un albero in cui perdersi, ma nemmeno quattromila file in
+ * una directory sola. Il cliente diventerà il livello portante anche qui
+ * con la Fase 7 del `PIANO-CLIENTI.md`; fino ad allora sta nei metadati e
+ * negli indici, dove il motore lo trova con Grep.
  */
-export function percorsoNellaWorkspace(
-  riga: {
-    id: string;
-    archivio: 'pubblico' | 'privato' | 'conversazione';
-    titolo: string;
-    tipologia: string;
-    path_md: string | null;
-    cartella_id?: string | null;
-  },
-  cartelle?: Map<string, RigaCartella>,
-): string {
+export function percorsoNellaWorkspace(riga: {
+  id: string;
+  archivio: 'pubblico' | 'privato' | 'conversazione';
+  titolo: string;
+  tipologia: string;
+  path_md: string | null;
+}): string {
   if (riga.archivio === 'pubblico') return riga.path_md!.replace(/^\/+/, '');
   const nome = `${slug(riga.titolo)}--${riga.id}.md`;
   if (riga.archivio !== 'privato') return `tenant/allegati/${nome}`;
-  if (riga.cartella_id && cartelle?.has(riga.cartella_id)) {
-    return `tenant/documenti/${percorsoSlug(riga.cartella_id, cartelle)}/${nome}`;
-  }
-  if (cartelle?.size) return `tenant/documenti/da-sistemare/${nome}`;
   return `tenant/documenti/${riga.tipologia}/${nome}`;
 }
 
@@ -427,24 +407,6 @@ export function slug(testo: string): string {
       .replace(/^-+|-+$/g, '')
       .slice(0, 60) || 'documento'
   );
-}
-
-/**
- * La riga di una cartella, ritrovata dal path materializzato: i path sono a
- * slug, le cartelle pure, quindi si confronta slug con slug.
- */
-function descrizioneDellaCartella(
-  cartella: string,
-  cartelle: Map<string, RigaCartella>,
-): string | null {
-  const cercato = cartella.replace(/^tenant\/documenti\/?/, '');
-  if (!cercato) return null;
-  for (const riga of cartelle.values()) {
-    if (percorsoSlug(riga.id, cartelle) === cercato) {
-      return riga.descrizione ? `> ${riga.descrizione}` : null;
-    }
-  }
-  return null;
 }
 
 function versoDocumento(
@@ -468,6 +430,7 @@ function versoDocumento(
     prodotto: r.prodotto,
     edizione: r.edizione_etichetta,
     riferimentoCliente: r.riferimento_cliente,
+    cliente: r.cliente_nome,
     etichette: r.etichette ?? [],
     documentoDiRiferimento: r.documento_di_riferimento ?? false,
   };
@@ -475,20 +438,18 @@ function versoDocumento(
 
 /**
  * Gli INDICE.md del tenant si generano qui, dai metadati: nello Storage il
- * privato è piatto per id, e cartella/cliente/etichette cambiano nel tempo.
+ * privato è piatto per id, e cliente, etichette e tipologia cambiano nel
+ * tempo.
  *
- * Dalla Fase 10 sono **uno per cartella** e non più uno solo con tutto
- * dentro. La ragione è pratica: un'agenzia con quattromila documenti
- * produceva un file da quattromila righe che il modello leggeva per intero
- * a ogni messaggio. Ora alla radice c'è la convenzione — che cosa
- * significano i livelli dell'albero — e dentro ogni cartella ci sono i suoi
- * documenti. Il modello scende con Glob invece di leggere una tabella.
+ * Uno per tipologia, e non uno solo con tutto dentro: un'agenzia con
+ * quattromila documenti produceva un file da quattromila righe che il
+ * modello leggeva per intero a ogni messaggio. La colonna che conta è
+ * **Cliente**: è con quella che il motore risponde a «cosa ha Rossi», ed è
+ * il motivo per cui questi indici si leggono con Grep prima che con Read.
  */
 async function scriviIndiciTenant(
   directory: string,
   perPath: Map<string, DocumentoWorkspace>,
-  cartelle: Map<string, RigaCartella>,
-  convenzione: string,
 ): Promise<void> {
   const privati = [...perPath.entries()].filter(([, d]) => d.archivio === 'privato');
   const allegati = [...perPath.entries()].filter(([, d]) => d.archivio === 'conversazione');
@@ -499,9 +460,11 @@ async function scriviIndiciTenant(
   const cella = (testo: string): string => testo.replace(/\s*\n\s*/g, ' ').replace(/\|/g, '/').trim();
 
   const rigaDoc = ([path, d]: [string, DocumentoWorkspace]): string =>
-    `| \`${posix.basename(path)}\` | ${cella(d.titolo)} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.riferimentoCliente ? cella(d.riferimentoCliente) : '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} | ${d.descrizione ? cella(d.descrizione) : '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
+    `| \`${posix.basename(path)}\` | ${cella(d.titolo)} | ${d.cliente ? cella(d.cliente) : '—'} | ${d.tipologia} | ${d.compagnia ?? '—'} | ${d.ramo ?? '—'} | ${d.numeroPagine ?? '?'} | ${d.etichette.join(', ') || '—'} | ${d.descrizione ? cella(d.descrizione) : '—'} |${d.documentoDiRiferimento ? ' ★' : ''}`;
   const intestazione =
-    '| File | Titolo | Tipologia | Compagnia | Ramo | Cliente/pratica | Pagine | Etichette | Cosa contiene |\n|---|---|---|---|---|---|---|---|---|';
+    '| File | Titolo | Cliente | Tipologia | Compagnia | Ramo | Pagine | Etichette | Cosa contiene |\n|---|---|---|---|---|---|---|---|---|';
+
+  const clienti = new Set(privati.map(([, d]) => d.cliente).filter((c): c is string => Boolean(c)));
 
   const radice =
     '# Indice della workspace\n\n' +
@@ -509,9 +472,8 @@ async function scriviIndiciTenant(
     (conPubblico
       ? `- \`archivio-pubblico/${NOME_GLOSSARIO}\` — con quali parole i contratti scrivono i rischi che l'utente nomina a modo suo. Aprilo quando una ricerca non dà risultati, prima di concludere che una garanzia non c'è.\n`
       : '') +
-    `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti). Ogni cartella ha il suo \`INDICE.md\`; la mappa dei livelli è in \`tenant/documenti/INDICE.md\`.\n` +
-    `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n` +
-    (convenzione ? `\n---\n\n${convenzione}` : '');
+    `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti), per tipologia. Ogni cartella ha il suo \`INDICE.md\`, con il **cliente** di ogni documento: vedi \`tenant/documenti/INDICE.md\`.\n` +
+    `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n`;
   await writeFile(join(directory, 'INDICE.md'), radice, 'utf8');
 
   // Un indice per cartella: si raggruppa per directory del path materializzato.
@@ -533,9 +495,13 @@ async function scriviIndiciTenant(
     join(directory, 'tenant', 'documenti', 'INDICE.md'),
     '# Archivio privato dell’agenzia\n\n' +
       (privati.length
-        ? `${convenzione ? `${convenzione}\n\n---\n\n` : ''}` +
-          `## Cartelle che contengono documenti\n\n${mappa || '(nessuna)'}\n\n` +
+        ? `I documenti sono raggruppati per tipologia, e ognuno è intestato a un cliente (o a nessuno: circolari, modulistica e note tecniche un cliente non ce l’hanno).\n\n` +
+          `## Cartelle\n\n${mappa || '(nessuna)'}\n\n` +
           'Ogni cartella ha il suo `INDICE.md` con i documenti che contiene: aprilo invece di elencare i file.\n' +
+          (clienti.size
+            ? `\n## Clienti con documenti in archivio (${clienti.size})\n\n${[...clienti].sort((a, b) => a.localeCompare(b)).map((c) => `- ${c}`).join('\n')}\n\n` +
+              'Per trovare i documenti di un cliente, cerca il suo nome negli `INDICE.md` con Grep: la colonna «Cliente» ce l’ha ogni riga.\n'
+            : '') +
           `${perCartella.has('tenant/documenti') ? `\n## Direttamente qui\n\n${intestazione}\n${perCartella.get('tenant/documenti')!.map(rigaDoc).join('\n')}\n` : ''}` +
           '\n★ = documento di riferimento dell’agenzia (contesto permanente).\n'
         : 'Nessun documento privato.\n'),
@@ -545,13 +511,9 @@ async function scriviIndiciTenant(
   for (const [cartella, documenti] of perCartella) {
     if (cartella === 'tenant/documenti') continue;
     await mkdir(join(directory, ...cartella.split('/')), { recursive: true });
-    /* La descrizione scritta per la cartella (osservata o dell'utente) è la
-       stessa che l'AI legge quando colloca: un artefatto, due usi. */
-    const riga = descrizioneDellaCartella(cartella, cartelle);
     await writeFile(
       join(directory, ...cartella.split('/'), 'INDICE.md'),
       `# ${cartella.replace('tenant/documenti/', '')}\n\n` +
-        (riga ? `${riga}\n\n` : '') +
         `${intestazione}\n${documenti.map(rigaDoc).join('\n')}\n`,
       'utf8',
     );
@@ -573,6 +535,7 @@ async function scriviIndiciTenant(
     'utf8',
   );
 }
+
 
 /** Hard link se il filesystem lo permette (stesso volume), altrimenti copia. */
 async function collega(origine: string, destinazione: string): Promise<void> {

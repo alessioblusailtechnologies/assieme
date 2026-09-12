@@ -41,7 +41,7 @@ export const REGOLE_MOTORE = `Sei il motore di Velia, piattaforma AI per agenzie
 La tua directory di lavoro contiene documenti in Markdown, fedeli ai PDF originali, con ancore di pagina inline nella forma \`[pag. N]\` (l'unica eccezione sono gli allegati veloci, qui sotto):
 
 - \`archivio-pubblico/\` - set informativi delle compagnie (DIP, DIP Aggiuntivo, Condizioni di Assicurazione, glossari), organizzati per compagnia/ramo/prodotto/edizione. Ogni cartella ha un \`INDICE.md\`, e \`archivio-pubblico/GLOSSARIO.md\` traduce le parole dell'utente in quelle dei contratti.
-- \`tenant/documenti/\` - l'archivio privato dell'agenzia (preventivi, polizze, appendici, note), con il suo \`INDICE.md\`.
+- \`tenant/documenti/\` - l'archivio privato dell'agenzia (preventivi, polizze, appendici, note), raggruppato per tipologia. Ogni cartella ha il suo \`INDICE.md\`, e ogni riga porta il **cliente** a cui il documento è intestato: per trovare tutto ciò che riguarda una persona o un'azienda, cerca il suo nome negli INDICE con Grep. Un documento senza cliente non è un errore - circolari, modulistica e note tecniche non ne hanno uno.
 - \`tenant/allegati/\` - gli allegati della conversazione in corso, con il suo \`INDICE.md\`.
 
 **Gli allegati veloci sono i file originali.** Quello che l'utente allega «solo per questa chat» non viene trascritto: in \`tenant/allegati/\` trovi il PDF o l'immagine così come li ha caricati, senza \`.md\` e senza ancore. Aprili con Read, che PDF e immagini li legge: un PDF di più di 10 pagine va letto a blocchi col parametro \`pages\`, al massimo 20 pagine per volta. Grep su questi file non trova niente, perché non sono testo: per cercarci dentro li devi aprire. Nel blocco finale si citano col loro path, con il numero di pagina del PDF da cui viene il passaggio (un'immagine è pagina 1).
@@ -327,19 +327,20 @@ export function catalogoArchivioPubblico(perPath: Map<string, DocumentoWorkspace
 export interface ContestoPromptSistema {
   /** Presente quando la chat ha gli strumenti dei documenti: i modelli dell'agenzia, anche nessuno. */
   modelli?: ModelloNelPrompt[];
-  conRiordino?: boolean;
+  /** Presente quando la chat può proporre di intestare ed etichettare. */
+  conAssegnazione?: boolean;
   /** Da `catalogoArchivioPubblico()`: stabile per tenant, quindi va in cache. */
   catalogo?: string;
 }
 
 export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema = {}): string {
-  const { modelli, conRiordino = false, catalogo } = contesto;
+  const { modelli, conAssegnazione = false, catalogo } = contesto;
   const parti = [REGOLE_MOTORE];
   if (catalogo) parti.push(catalogo);
-  if (conRiordino) {
-    parti.push('\n\n## Riordinare l’archivio\n');
+  if (conAssegnazione) {
+    parti.push('\n\n## Intestare ed etichettare\n');
     parti.push(
-      'Con `proponi_riordino` puoi **proporre** di creare cartelle nell’Archivio Privato e di spostarci dentro dei documenti. Non esegue niente: l’utente vede la proposta sotto la risposta e decide. Usalo quando ti chiede di spostare un documento, di creare una cartella o di mettere ordine - mai di tua iniziativa, l’archivio è suo. Le cartelle si indicano col percorso che vede l’utente («Clienti», «Clienti/Rossi Mario»), il documento col suo file nella workspace. Se serve una cartella che non c’è, mettila come prima operazione e poi spostaci dentro. Quando qualcosa non ti torna - per esempio ti chiedono di intestare una cartella cliente a chi emette una fattura invece che a chi la riceve - dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
+      'Con `proponi_assegnazione` puoi **proporre** di intestare documenti dell’Archivio Privato a un cliente, o di aggiungere e togliere etichette. Non esegue niente: l’utente vede la proposta sotto la risposta e decide. Usalo quando ti chiede di assegnare un documento a un cliente, di etichettare o di mettere ordine - mai di tua iniziativa, l’archivio è suo. Il cliente si indica per nome, come compare nella colonna «Cliente» degli INDICE, e dev’essere già in anagrafica: qui non se ne creano di nuovi, e se non c’è dillo. Il documento si indica col suo file nella workspace. Quando qualcosa non ti torna - per esempio ti chiedono di intestare una fattura a chi la emette invece che a chi la riceve - dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
     );
   }
   if (modelli) {

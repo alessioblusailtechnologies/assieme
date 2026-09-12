@@ -3,9 +3,11 @@ import type { Id, IsoDateTime } from './comune';
 /**
  * Le chat destinate ai clienti dell'agenzia (07/09/2026).
  *
- * L'agenzia ne crea una per un suo cliente, ne sceglie **a mano** il cono di
- * lettura — cartelle dell'Archivio Privato e documenti pubblici — e le
- * istruzioni con cui l'assistente deve rispondergli. Ne esce un link.
+ * L'agenzia ne crea una **per un suo cliente**, e il cono di lettura è il
+ * cliente stesso: i suoi documenti, calcolati ogni volta, così una polizza
+ * caricata domani entra da sola. A mano si scelgono solo gli scostamenti —
+ * un documento in più, uno da non mostrare — e le istruzioni con cui
+ * l'assistente deve rispondergli. Ne esce un link.
  *
  * Specchio di `be-node/src/contratto/chat-clienti.ts`.
  */
@@ -15,8 +17,9 @@ export type StatoChatCliente = 'attiva' | 'sospesa' | 'scaduta';
 export interface ChatCliente {
   id: Id;
   titolo: string;
-  clienteId?: Id;
-  clienteNome?: string;
+  /** Obbligatorio dal 12/09/2026: è il cliente a fare il cono. */
+  clienteId: Id;
+  clienteNome: string;
   /** Chi entra dal link: il nome che l'agenzia gli ha dato. */
   ospite: { id: Id; nome: string; cognome: string };
   stato: StatoChatCliente;
@@ -25,8 +28,10 @@ export interface ChatCliente {
   domandeFatte: number;
   /** Le istruzioni le vede l'agenzia, che le ha scritte: al cliente no. */
   istruzioni?: string;
-  cartelle: { id: Id; percorso: string }[];
-  documenti: { id: Id; titolo: string }[];
+  /* Gli scostamenti dal cono: i documenti del cliente non si elencano, perché
+     cambiano da soli quando l'agenzia ne carica uno. */
+  aggiunti: { id: Id; titolo: string }[];
+  esclusi: { id: Id; titolo: string }[];
   creataIl: IsoDateTime;
   /**
    * Il link da mandare al cliente, pronto da copiare. Assente sulle chat

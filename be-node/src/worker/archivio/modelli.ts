@@ -1,23 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { configurazione } from '../../config.js';
-import type { Sceglicartella } from '../../archivio/collocazione.js';
 import type { Sceglitore } from '../../archivio/clienti.js';
-import type { Descrittore } from '../../archivio/convenzione.js';
 
 /**
- * Le tre domande brevi che la Fase 10 fa al modello, e nessuna di più.
+ * La domanda breve che l'ingestion fa al modello, e nessuna di più.
  *
- * Tutto il resto della collocazione è deterministico — normalizzazione,
- * match esatto, discesa nell'albero — e questa è la ragione per cui il
- * sistema regge su un archivio vero: il modello lo si chiama solo dove
- * serve davvero un giudizio, cioè su un'ambiguità, e mai per calcolare un
- * percorso.
+ * Erano tre (cliente, cartella, descrizione della cartella) finché
+ * l'archivio era un albero; dal 12/09/2026 resta solo la prima, perché è
+ * l'unica che riguardi un giudizio e non un calcolo. Tutto il resto
+ * dell'intestazione è deterministico — normalizzazione, match esatto,
+ * identificativi, somiglianza — ed è la ragione per cui regge su un
+ * archivio vero: il modello si chiama solo sull'ambiguità.
  *
- * Regola comune a tutte e tre: **il modello sceglie fra ciò che gli
- * mostriamo, non oltre**. Un id che non è nell'elenco viene scartato dal
- * chiamante, esattamente come già si fa con le tassonomie in
- * `classificatore.ts`.
+ * La regola resta: **il modello sceglie fra ciò che gli mostriamo, non
+ * oltre**. Un id che non è nell'elenco viene scartato dal chiamante,
+ * esattamente come già si fa con le tassonomie in `classificatore.ts`.
  */
 
 function client(): Anthropic {
@@ -26,7 +24,7 @@ function client(): Anthropic {
   return new Anthropic({ apiKey: chiave });
 }
 
-/** Le domande di collocazione sono corte: un modello economico basta e avanza. */
+/** La domanda è corta: un modello economico basta e avanza. */
 function modello(): string {
   return configurazione().MODELLO_INGESTION_RAPIDA;
 }
@@ -85,68 +83,5 @@ export class SceglitoreModello implements Sceglitore {
     if (typeof risposta.id === 'string') return { id: risposta.id };
     if (risposta.nuovo === true) return { nuovo: true };
     return null;
-  }
-}
-
-const ISTRUZIONI_CARTELLA = `Lavori nell'archivio di un'agenzia assicurativa italiana. Ti do un documento appena arrivato e l'elenco delle cartelle in cui potrebbe andare, con la descrizione di cosa contengono. Devi dire in quale va.
-
-Rispondi SOLO con un oggetto JSON:
-- {"id": "<id di una delle cartelle elencate>"} se una è chiaramente la sua;
-- {"incerto": true} se nessuna lo è in modo evidente.
-
-Non proporre cartelle nuove e non scegliere per esclusione: "incerto" è una risposta giusta e frequente. Il documento finisce in «Da sistemare», resta cercabile e citabile come tutti gli altri, e qualcuno lo colloca quando passa di lì.`;
-
-export class SceglicartellaModello implements Sceglicartella {
-  async scegli(domanda: {
-    titolo: string;
-    tipologia: string;
-    convenzione: string;
-    cartelle: Array<{ id: string; percorso: string; descrizione?: string }>;
-  }): Promise<{ id: string } | null> {
-    const elenco = domanda.cartelle
-      .map((c) => `- ${c.id}: ${c.percorso}${c.descrizione ? ` — ${c.descrizione}` : ''}`)
-      .join('\n');
-    const testo =
-      (domanda.convenzione ? `${domanda.convenzione}\n\n---\n\n` : '') +
-      `Documento: ${domanda.titolo}\nTipologia: ${domanda.tipologia}\n\n` +
-      `Cartelle disponibili:\n${elenco}`;
-
-    const risposta = estraiJson(await chiedi(ISTRUZIONI_CARTELLA, testo)) as {
-      id?: unknown;
-      incerto?: unknown;
-    };
-    if (risposta.incerto) return null;
-    return typeof risposta.id === 'string' ? { id: risposta.id } : null;
-  }
-}
-
-const ISTRUZIONI_DESCRIZIONE = `Lavori nell'archivio di un'agenzia assicurativa italiana. Per ogni cartella ti do il percorso e i titoli di alcuni documenti che contiene. Scrivi per ciascuna UNA riga che dica cosa ci va dentro, come la scriveresti per un collega appena arrivato.
-
-Rispondi SOLO con un oggetto JSON che ha per chiave l'id della cartella e per valore la riga, così: {"<id>": "qui le circolari ANIA e le comunicazioni di aggiornamento normativo"}.
-
-Una riga sola, in minuscolo, senza punto finale, massimo venticinque parole. Descrivi il criterio, non l'elenco: «i moduli in bianco da far firmare al cliente» è utile, «tre moduli e un listino» no. Se i titoli non bastano a capire un criterio, ometti quella chiave invece di inventarne uno.`;
-
-export class DescrittoreModello implements Descrittore {
-  async descrivi(
-    cartelle: Array<{ id: string; percorso: string; titoli: string[] }>,
-  ): Promise<Map<string, string>> {
-    const testo = cartelle
-      .map(
-        (c) =>
-          `## ${c.id}\nPercorso: ${c.percorso}\nDocumenti:\n${c.titoli.map((t) => `- ${t}`).join('\n')}`,
-      )
-      .join('\n\n');
-
-    const risposta = estraiJson(await chiedi(ISTRUZIONI_DESCRIZIONE, testo, 1500));
-    const mappa = new Map<string, string>();
-    if (risposta && typeof risposta === 'object') {
-      for (const [id, valore] of Object.entries(risposta as Record<string, unknown>)) {
-        // Mai una descrizione su una cartella che non gli avevamo mostrato.
-        if (typeof valore === 'string' && cartelle.some((c) => c.id === id)) {
-          mappa.set(id, valore);
-        }
-      }
-    }
-    return mappa;
   }
 }

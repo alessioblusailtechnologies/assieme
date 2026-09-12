@@ -41,46 +41,23 @@
     </div>
   }
 
-  @if (conoVuoto()) {
-    <!--
-      Non è un avviso di forma: con il cono vuoto il motore non ha niente da
-      leggere, e al cliente risponde che non sa. Meglio dirlo qui.
-    -->
-    <p class="avviso">
-      Il cono è vuoto: finché non scegli almeno una cartella o un documento, a
-      questo cliente l'assistente non sa rispondere nulla.
-    </p>
-  }
-
   <section class="sezione">
     <h2 class="sezione__titolo">Che cosa può leggere</h2>
+    <!--
+      Il cono non si compone più: è il cliente. Dirlo qui serve, perché è
+      una garanzia e insieme una conseguenza — una polizza caricata domani
+      entra da sola, e nessuno deve ricordarsi di aggiungerla.
+    -->
     <p class="sezione__nota">
-      Spuntare una cartella comprende <strong>tutto quello che c'è sotto</strong>.
-      Un documento che non sta in nessuna cartella non entra in nessun cono.
+      Tutti i documenti di <strong>{{ chat()?.clienteNome }}</strong>, anche quelli che
+      caricherai più avanti. Qui sotto puoi aggiungere qualcosa in più — i prodotti
+      dell'Archivio Pubblico che lo riguardano — o togliere un documento che non
+      vuoi mostrargli.
     </p>
-
-    <div class="albero">
-      @for (v of voci(); track v.cartella.id) {
-        <label class="cartella" [style.padding-left.px]="12 + v.profondita * 18">
-          <input
-            type="checkbox"
-            [checked]="cartellaScelta(v.cartella.id)"
-            (change)="commutaCartella(v.cartella.id)"
-          />
-          <ui-icon name="cartella" [size]="14" />
-          <span class="cartella__nome">{{ v.cartella.nome }}</span>
-          @if (v.cartella.clienteId) {
-            <span class="cartella__cliente">cliente</span>
-          }
-        </label>
-      } @empty {
-        <p class="albero__vuoto">L'Archivio Privato non ha ancora cartelle.</p>
-      }
-    </div>
   </section>
 
   <section class="sezione">
-    <h2 class="sezione__titolo">Prodotti dell'Archivio Pubblico</h2>
+    <h2 class="sezione__titolo">Documenti in più</h2>
     <p class="sezione__nota">
       Solo quelli che riguardano questo cliente: l'archivio intero non serve a
       lui e allunga il lavoro dell'assistente.

@@ -8,13 +8,16 @@
     "dimensioneByte": 284160,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-07-28T09:14:00+02:00",
-    "etichette": ["Rossi Mario", "RC Auto", "in trattativa"],
+    "etichette": [
+      "Rossi Mario",
+      "RC Auto",
+      "in trattativa"
+    ],
     "compagniaId": "cmp-unipolsai",
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
     "visibilita": "tenant",
-    "cartellaId": "car-004",
     "clienteId": "cli-001"
   },
   {
@@ -26,13 +29,15 @@
     "dimensioneByte": 892416,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-07-28T09:16:00+02:00",
-    "etichette": ["Rossi Mario", "RC Auto"],
+    "etichette": [
+      "Rossi Mario",
+      "RC Auto"
+    ],
     "compagniaId": "cmp-generali",
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
     "visibilita": "tenant",
-    "cartellaId": "car-005",
     "clienteId": "cli-001"
   },
   {
@@ -44,13 +49,13 @@
     "dimensioneByte": 2145280,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-06-02T11:30:00+02:00",
-    "etichette": ["convenzioni"],
+    "etichette": [
+      "convenzioni"
+    ],
     "compagniaId": "cmp-generali",
     "documentoDiRiferimento": true,
     "visibilita": "tenant",
-    "cartellaId": "car-006",
-    "clienteId": "cli-002",
-    "collocazioneDaConfermare": true
+    "clienteId": "cli-002"
   },
   {
     "id": "doc-priv-004",
@@ -61,11 +66,12 @@
     "dimensioneByte": 318464,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-05-14T16:05:00+02:00",
-    "etichette": ["prassi interna"],
+    "etichette": [
+      "prassi interna"
+    ],
     "ramoId": "ram-auto",
     "documentoDiRiferimento": true,
-    "visibilita": "tenant",
-    "cartellaId": "car-011"
+    "visibilita": "tenant"
   },
   {
     "id": "doc-priv-005",
@@ -76,13 +82,15 @@
     "dimensioneByte": 148480,
     "caricatoDa": "utn-004",
     "caricatoIl": "2026-07-30T14:22:00+02:00",
-    "etichette": ["Rossi Mario", "RC Auto"],
+    "etichette": [
+      "Rossi Mario",
+      "RC Auto"
+    ],
     "compagniaId": "cmp-generali",
     "ramoId": "ram-auto",
     "riferimentoCliente": "Rossi Mario",
     "documentoDiRiferimento": false,
-    "visibilita": "tenant",
-    "cartellaId": "car-010"
+    "visibilita": "tenant"
   },
   {
     "id": "doc-priv-006",
@@ -93,7 +101,11 @@
     "dimensioneByte": 421888,
     "caricatoDa": "utn-004",
     "caricatoIl": "2026-08-01T10:48:00+02:00",
-    "etichette": ["Bianchi & Associati", "RC Professionale", "in trattativa"],
+    "etichette": [
+      "Bianchi & Associati",
+      "RC Professionale",
+      "in trattativa"
+    ],
     "compagniaId": "cmp-allianz",
     "ramoId": "ram-rc-prof",
     "riferimentoCliente": "Bianchi & Associati",
@@ -109,7 +121,10 @@
     "dimensioneByte": 3670016,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-08-03T08:55:00+02:00",
-    "etichette": ["Verdi Anna", "Salute"],
+    "etichette": [
+      "Verdi Anna",
+      "Salute"
+    ],
     "ramoId": "ram-salute",
     "riferimentoCliente": "Verdi Anna",
     "documentoDiRiferimento": false,
@@ -124,7 +139,10 @@
     "dimensioneByte": 587776,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-04-09T09:00:00+02:00",
-    "etichette": ["prassi interna", "RC Auto"],
+    "etichette": [
+      "prassi interna",
+      "RC Auto"
+    ],
     "ramoId": "ram-auto",
     "documentoDiRiferimento": true,
     "visibilita": "tenant"
@@ -138,7 +156,10 @@
     "dimensioneByte": 194560,
     "caricatoDa": "utn-004",
     "caricatoIl": "2026-07-21T15:10:00+02:00",
-    "etichette": ["Zurich", "Salute"],
+    "etichette": [
+      "Zurich",
+      "Salute"
+    ],
     "compagniaId": "cmp-zurich",
     "ramoId": "ram-salute",
     "documentoDiRiferimento": false,
@@ -152,7 +173,10 @@
     "dimensioneByte": 512000,
     "caricatoDa": "utn-001",
     "caricatoIl": "2026-08-04T17:40:00+02:00",
-    "etichette": ["Neri Giulia", "Casa"],
+    "etichette": [
+      "Neri Giulia",
+      "Casa"
+    ],
     "compagniaId": "cmp-realemutua",
     "ramoId": "ram-casa",
     "riferimentoCliente": "Neri Giulia",

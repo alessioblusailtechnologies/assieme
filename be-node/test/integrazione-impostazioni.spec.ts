@@ -237,6 +237,7 @@ describe.skipIf(!pronto)('impostazioni complete col progetto Supabase', () => {
           titolo: 'Polizza convenzione ANIA',
           descrizione: null,
           immagine: null,
+          cliente: null,
           archivio: 'privato',
           tipologia: 'polizza',
           numeroPagine: 3,

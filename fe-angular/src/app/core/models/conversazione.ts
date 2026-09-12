@@ -158,11 +158,11 @@ export interface Passo {
 }
 
 /**
- * Un riordino **proposto**, mai eseguito.
+ * Un intervento sull'archivio **proposto**, mai eseguito.
  *
- * L'assistente legge l'archivio e non lo tocca: quando serve creare una
- * cartella o spostarci dentro un documento, lo chiede. La scheda dice per
- * intero che cosa succederebbe, e la scrittura parte solo dal clic
+ * L'assistente legge l'archivio e non lo tocca: quando serve intestare un
+ * documento a un cliente o cambiargli le etichette, lo chiede. La scheda
+ * dice per intero che cosa succederebbe, e la scrittura parte solo dal clic
  * dell'utente. Uno stato diverso da `proposta` è una decisione già presa:
  * la scheda resta a raccontarla, senza più pulsanti.
  */
@@ -176,22 +176,25 @@ export interface PropostaArchivio {
 
 export type OperazioneArchivio =
   | {
-      azione: 'crea-cartella';
-      nome: string;
-      /** Il percorso della cartella che la conterrà; assente = in cima all'archivio. */
-      dentro?: string;
-    }
-  | {
-      azione: 'sposta-documento';
+      azione: 'intesta-documento';
       documentoId: Id;
       titolo: string;
-      /** Il percorso di destinazione, anche se è una cartella di questa stessa proposta. */
-      verso: string;
+      clienteId: Id;
+      /** Il nome del cliente, che è quello che l'utente legge nella scheda. */
+      cliente: string;
+    }
+  | {
+      azione: 'etichetta-documento';
+      documentoId: Id;
+      titolo: string;
+      aggiungi: string[];
+      togli: string[];
     };
 
 /**
  * L'esito dell'approvazione. `mancate` non è un errore: elenca quello che nel
- * frattempo non si poteva più fare (una cartella eliminata da un collega).
+ * frattempo non si poteva più fare (un cliente fuso da un collega, un
+ * documento eliminato).
  */
 export interface EsitoProposta {
   proposta: PropostaArchivio;

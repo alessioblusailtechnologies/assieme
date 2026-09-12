@@ -20,15 +20,7 @@ import { contaPagine } from './pdf.js';
 import { ePngOJpeg, riconosciFormato } from './riconoscimento.js';
 import { mimeDi } from '../../contratto/formati.js';
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
-import type { TipologiaDocumento } from '../../contratto/documenti.js';
-import { segnaDaRicalcolare } from '../../archivio/albero.js';
 import { risolviCliente, type Sceglitore } from '../../archivio/clienti.js';
-import { collocaDocumento, type Sceglicartella } from '../../archivio/collocazione.js';
-import {
-  assicuraConvenzioneAggiornata,
-  convenzioneEffettiva,
-  type Descrittore,
-} from '../../archivio/convenzione.js';
 import type { SecondoSguardo } from './secondo-sguardo.js';
 
 /**
@@ -64,14 +56,10 @@ export interface DipendenzeIngestion {
   convertitoreRapido?: Convertitore;
   pagineNelBlocco?: number;
   pagineNelBloccoRapido?: number;
-  /* Fase 10 — il passo 3b. Tutti opzionali, e ognuno che manca toglie una
-     capacità senza rompere niente: senza `sceglitore` un contraente ambiguo
-     non diventa un cliente, senza `sceglicartella` un documento senza cliente
-     non viene collocato, senza `descrittore` le cartelle libere restano senza
-     riga. In tutti i casi il documento è pronto e sta in «Da sistemare». */
+  /* Il passo 3b, l'intestazione al cliente. Opzionale: senza `sceglitore`
+     un contraente ambiguo non diventa un cliente, e il documento resta
+     senza cliente — pronto, cercabile e citabile come tutti gli altri. */
   sceglitore?: Sceglitore;
-  sceglicartella?: Sceglicartella;
-  descrittore?: Descrittore;
   /* Fase 3 di PIANO-LINK-E-FORMATI.md (11/09/2026): i formati che si
      leggono convertendoli. Senza, quei documenti finiscono in errore con un
      messaggio che dice perché. */
@@ -217,11 +205,10 @@ interface RigaDaConvertire {
   edizione_valida_dal: string | null;
   compagnia_nome: string | null;
   classificazione_da_confermare: boolean;
-  /* Fase 10: il materiale della collocazione. `cartella_id` valorizzato
-     significa che il documento è arrivato con un percorso suo, e allora la
-     collocazione automatica non ha niente da dire. */
+  /* Il materiale dell'intestazione. `cliente_id` valorizzato significa che
+     il documento è arrivato già intestato, e allora il passo 3b non ha
+     niente da dire. */
   ramo_nome: string | null;
-  cartella_id: string | null;
   cliente_id: string | null;
   caricato_il: Date | null;
 }
@@ -231,9 +218,9 @@ interface RigaDaConvertire {
  * Markdown con ancore di pagina — l'unica chiamata API che contiene i byte
  * di un documento — e, per l'Archivio Privato, il passo 3: la
  * classificazione proposta dal modello, che l'utente conferma o corregge.
- * La collocazione fine (INDICE dell'archivio privato) arriva con la
- * materializzazione della workspace in Fase 3: Postgres è la verità sulla
- * navigazione, lo Storage sui contenuti.
+ * L'indice dell'archivio privato arriva con la materializzazione della
+ * workspace: Postgres è la verità sulla navigazione, lo Storage sui
+ * contenuti.
  *
  * Idempotente per costruzione: ogni passo riscrive, non appende. Un doppio
  * arrivo del messaggio riconverte e sovrascrive lo stesso .md.
@@ -257,7 +244,7 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
       `select d.id, d.archivio, d.titolo, d.tipologia, d.prodotto, d.nome_file,
               d.formato, d.path_originale, d.path_pdf, d.path_md, d.edizione_valida_dal,
               d.classificazione_da_confermare, c.nome as compagnia_nome,
-              r.nome as ramo_nome, d.cartella_id, d.cliente_id, d.caricato_il
+              r.nome as ramo_nome, d.cliente_id, d.caricato_il
        from velia.documenti d
        left join velia.compagnie c on c.id = d.compagnia_id
        left join velia.rami r on r.id = d.ramo_id
@@ -436,12 +423,11 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         proposta = await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
       }
 
-      /* Passo 3b (Fase 10): dove va. Distinto dal passo 4, che è il posto
-         nello Storage. Non blocca mai: un documento che nessuno sa collocare
-         resta `pronto` e finisce in «Da sistemare», cercabile e citabile
-         come tutti gli altri. */
+      /* Passo 3b: di chi è. Non blocca mai: un documento che nessuno sa
+         intestare resta `pronto` e finisce fra quelli senza cliente,
+         cercabile e citabile come tutti gli altri. */
       if (documento.archivio === 'privato' && job.tenant_id) {
-        await colloca(db, job, documento, job.tenant_id, proposta, dipendenze);
+        await intesta(db, job, documento, job.tenant_id, proposta, dipendenze);
       }
 
       /* `path_pdf` si scrive anche qui: per chi non è arrivato in PDF è
@@ -543,7 +529,7 @@ async function proponiClassificazione(
     ramoId,
   });
 
-  /* Il chiamante ne ha bisogno per la collocazione: la tassonomia l'ha già
+  /* Il chiamante ne ha bisogno per l'intestazione: la tassonomia l'ha già
      ripulita, quindi si restituisce la proposta *corretta*, non quella
      grezza del modello. */
   return {
@@ -557,18 +543,20 @@ async function proponiClassificazione(
 }
 
 /**
- * Il passo 3b: dove va questo documento.
+ * Il passo 3b: di chi è questo documento.
  *
- * Tre cose in fila, e ognuna può fermarsi senza conseguenze. Prima si tiene
- * aggiornata la convenzione (solo se l'albero è cambiato di forma), poi si
- * risolve il contraente in un cliente vero, poi si sceglie la cartella. Se
- * una qualsiasi non riesce, il documento resta in «Da sistemare»: è una
- * condizione visibile che si rimedia in due secondi, mentre un documento
- * nella cartella sbagliata si scopre fra sei mesi.
+ * Dal 12/09/2026 è una cosa sola invece di tre: si risolve il contraente in
+ * un cliente vero. Non c'è più un albero in cui sbagliare ramo, e quello
+ * che resta è il pezzo che funzionava — nome normalizzato, alias,
+ * identificativi fiscali, somiglianza, e il modello solo sugli ambigui.
  *
- * Non tocca mai lo stato del documento: la collocazione non è una porta.
+ * Se non si sa, non si prova: il documento resta **senza cliente**, che è
+ * una condizione visibile e si rimedia in due secondi, mentre un documento
+ * intestato alla persona sbagliata si scopre fra sei mesi.
+ *
+ * Non tocca mai lo stato del documento: l'intestazione non è una porta.
  */
-async function colloca(
+async function intesta(
   db: pg.Pool,
   job: Job,
   documento: RigaDaConvertire,
@@ -576,111 +564,63 @@ async function colloca(
   proposta: (PropostaClassificazione & { compagniaNome?: string }) | undefined,
   dipendenze: DipendenzeIngestion,
 ): Promise<void> {
-  /* Il documento è arrivato con un percorso suo (importazione, o upload di
-     una cartella): quella è la collocazione dell'utente e non si discute.
-     Si dice comunque, perché un passo che a volte non lascia traccia è un
-     passo che non si riesce a diagnosticare quando qualcosa non torna. */
-  if (documento.cartella_id) {
-    await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+  /* Il documento è arrivato già intestato (l'utente lo ha caricato dalla
+     scheda di un cliente): quella è la sua parola e non si discute. Si dice
+     comunque, perché un passo che a volte non lascia traccia è un passo che
+     non si riesce a diagnosticare quando qualcosa non torna. */
+  if (documento.cliente_id) {
+    await emettiEvento(db, job.id, 'ingestion-cliente-saltato', {
       documentoId: documento.id,
-      motivo: 'il documento è arrivato con una cartella sua',
+      motivo: 'il documento è arrivato già intestato',
     });
     return;
   }
 
   try {
-    await assicuraConvenzioneAggiornata(db, tenantId, dipendenze.descrittore);
-
-    let clienteId = documento.cliente_id;
-    let clienteNome: string | null = null;
-    if (!clienteId) {
-      const risolto = await risolviCliente(
-        db,
-        tenantId,
-        {
-          /* Solo `contraente`: `riferimentoCliente` è il riferimento della
-             pratica in testo libero («Fattura n. 36 del 31.08.2026 - WISELYST
-             S.R.L.») e usarlo come nome di persona faceva nascere clienti che
-             clienti non sono — visto succedere, il 04/09. */
-          contraente: proposta?.contraente ?? null,
-          codiceFiscale: proposta?.codiceFiscale ?? null,
-          partitaIva: proposta?.partitaIva ?? null,
-          ...(proposta?.fiducia && { fiducia: proposta.fiducia }),
-        },
-        dipendenze.sceglitore,
-      );
-      if (risolto) {
-        clienteId = risolto.id;
-        clienteNome = risolto.nome;
-        await db.query(`update velia.documenti set cliente_id = $2 where id = $1`, [
-          documento.id,
-          risolto.id,
-        ]);
-        await emettiEvento(db, job.id, 'ingestion-cliente', {
-          documentoId: documento.id,
-          clienteId: risolto.id,
-          nome: risolto.nome,
-          creato: risolto.creato,
-          via: risolto.via,
-        });
-      }
-    } else {
-      const r = await db.query<{ nome: string }>(`select nome from velia.clienti where id = $1`, [
-        clienteId,
-      ]);
-      clienteNome = r.rows[0]?.nome ?? null;
-    }
-
-    const esito = await collocaDocumento(
+    const risolto = await risolviCliente(
       db,
       tenantId,
       {
-        clienteId,
-        clienteNome,
-        compagniaNome: proposta?.compagniaNome ?? documento.compagnia_nome,
-        ramoNome: documento.ramo_nome,
-        prodotto: documento.prodotto,
-        tipologia: (proposta?.tipologia ?? documento.tipologia) as TipologiaDocumento,
-        decorrenza: proposta?.decorrenza ?? null,
-        caricatoIl: documento.caricato_il,
-        titolo: documento.titolo,
+        /* Solo `contraente`: `riferimentoCliente` è il riferimento della
+           pratica in testo libero («Fattura n. 36 del 31.08.2026 - WISELYST
+           S.R.L.») e usarlo come nome di persona faceva nascere clienti che
+           clienti non sono — visto succedere, il 04/09. */
+        contraente: proposta?.contraente ?? null,
+        codiceFiscale: proposta?.codiceFiscale ?? null,
+        partitaIva: proposta?.partitaIva ?? null,
+        ...(proposta?.fiducia && { fiducia: proposta.fiducia }),
       },
-      {
-        ...(dipendenze.sceglicartella && { sceglicartella: dipendenze.sceglicartella }),
-        convenzione: await convenzioneEffettiva(db, tenantId),
-      },
+      dipendenze.sceglitore,
     );
 
-    if (!esito) {
-      await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+    if (!risolto) {
+      await emettiEvento(db, job.id, 'ingestion-cliente-saltato', {
         documentoId: documento.id,
-        motivo: 'nessuna cartella individuata con sicurezza',
+        motivo: 'nessun cliente individuato con sicurezza',
       });
       return;
     }
 
-    /* `collocazione_da_confermare` a vero: è una proposta, e resta tale
-       finché l'utente non sposta a mano. `collocazione_proposta` conserva
-       il percorso proposto — il delta con quello finale è l'unica misura
-       onesta della qualità del classificatore. */
+    /* `cliente_da_confermare` a vero: è una proposta, e resta tale finché
+       l'utente non intesta a mano. La condizione `cliente_id is null`
+       protegge dalla corsa con chi, intanto, l'ha intestato lui. */
     await db.query(
       `update velia.documenti
-       set cartella_id = $2, collocazione_proposta = $3, collocazione_da_confermare = true
-       where id = $1 and cartella_id is null`,
-      [documento.id, esito.cartellaId, esito.percorso],
+       set cliente_id = $2, cliente_da_confermare = true
+       where id = $1 and cliente_id is null`,
+      [documento.id, risolto.id],
     );
-    // Cartelle nate adesso = albero cambiato di forma: la convenzione va rifatta.
-    if (esito.create) await segnaDaRicalcolare(db, tenantId);
-    await emettiEvento(db, job.id, 'ingestion-collocazione', {
+    await emettiEvento(db, job.id, 'ingestion-cliente', {
       documentoId: documento.id,
-      cartellaId: esito.cartellaId,
-      percorso: esito.percorso,
-      cartelleCreate: esito.create,
+      clienteId: risolto.id,
+      nome: risolto.nome,
+      creato: risolto.creato,
+      via: risolto.via,
     });
   } catch (errore) {
-    /* Come per la classificazione: una collocazione mancata non è
-       un'ingestion fallita. Il documento è convertito, pronto e citabile. */
-    await emettiEvento(db, job.id, 'ingestion-collocazione-saltata', {
+    /* Come per la classificazione: un cliente mancato non è un'ingestion
+       fallita. Il documento è convertito, pronto e citabile. */
+    await emettiEvento(db, job.id, 'ingestion-cliente-saltato', {
       documentoId: documento.id,
       motivo: errore instanceof Error ? errore.message : String(errore),
     });

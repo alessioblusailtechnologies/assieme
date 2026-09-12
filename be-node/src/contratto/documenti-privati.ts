@@ -33,14 +33,12 @@ export interface DocumentoPrivato {
   classificazioneDaConfermare?: boolean;
   documentoDiRiferimento: boolean;
   visibilita: 'tenant' | 'personale';
-  /* Fase 10 — dove sta e di chi è. Assenti = «Da sistemare», che è una
-     condizione normale: il documento è pronto e referenziabile lo stesso. */
-  cartellaId?: string;
-  /** Il percorso leggibile dalla radice: quello che l'utente vede e pronuncia. */
-  percorso?: string;
+  /* Di chi è. Assente = «Senza cliente», che è una condizione normale e non
+     un errore: il documento è pronto e citabile lo stesso, e circolari e
+     modulistica un cliente non ce l'hanno per natura (12/09/2026). */
   cliente?: { id: string; nome: string };
-  /** Vero finché la collocazione è una proposta: uno spostamento a mano la fissa. */
-  collocazioneDaConfermare?: boolean;
+  /** Vero finché il cliente è una proposta dell'ingestion: intestarlo a mano la fissa. */
+  clienteDaConfermare?: boolean;
   numeroPolizza?: string;
   decorrenza?: string;
   scadenza?: string;
@@ -95,14 +93,12 @@ export const schemaFiltriDocumentiPrivati = z.object({
   stato: z.enum(STATI_ELABORAZIONE).optional(),
   etichetta: z.string().optional(),
   soloRiferimenti: booleanoQuery,
-  /* Fase 10. `cartellaId` da solo mostra anche il sottoalbero (è quello che
-     ci si aspetta cliccando una cartella nell'albero); `soloQui` la
-     restringe alla cartella esatta. `daSistemare` è il non-collocato, e non
-     si combina con `cartellaId`: sono due viste diverse. */
-  cartellaId: z.string().uuid().optional(),
-  soloQui: booleanoQuery,
-  daSistemare: booleanoQuery,
+  /* `clienteId` e `senzaCliente` sono due viste diverse e non si
+     combinano; `daConfermare` è la coda di lavoro di chi rivede le
+     proposte dell'ingestion. */
   clienteId: z.string().uuid().optional(),
+  senzaCliente: booleanoQuery,
+  daConfermare: booleanoQuery,
   pagina: z.coerce.number().int().min(1).default(1),
   perPagina: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -130,10 +126,9 @@ export const schemaModificheDocumento = z
     ramoId: z.string().min(1).nullable().optional(),
     riferimentoCliente: z.string().trim().max(200).nullable().optional(),
     etichette: z.array(etichetta).max(30).optional(),
-    /* Fase 10. Spostare a mano è definitivo: `collocazioneDaConfermare` si
-       spegne e nessun ricalcolo rimette il documento in discussione.
-       `null` su `cartellaId` lo rimanda in «Da sistemare». */
-    cartellaId: z.string().uuid().nullable().optional(),
+    /* Intestare a mano è definitivo: `clienteDaConfermare` si spegne e
+       nessuna rilavorazione rimette il documento in discussione. `null` lo
+       rimanda fra quelli senza cliente. */
     clienteId: z.string().uuid().nullable().optional(),
   })
   .strict();

@@ -42,11 +42,11 @@ export class PropostaRiordino {
   protected readonly titolo = computed(() => {
     switch (this.proposta().stato) {
       case 'applicata':
-        return 'Riordino applicato';
+        return 'Modifica applicata';
       case 'annullata':
-        return 'Riordino annullato';
+        return 'Modifica annullata';
       default:
-        return 'Riordino proposto';
+        return 'Modifica proposta';
     }
   });
 
@@ -56,12 +56,23 @@ export class PropostaRiordino {
     return n === 1 ? '1 operazione' : `${n} operazioni`;
   });
 
-  protected nome(op: OperazioneArchivio): string {
-    return op.azione === 'crea-cartella' ? op.nome : op.titolo;
+  protected verbo(op: OperazioneArchivio): string {
+    return op.azione === 'intesta-documento' ? 'Intesta' : 'Etichetta';
   }
 
+  protected nome(op: OperazioneArchivio): string {
+    return op.titolo;
+  }
+
+  /** Che cosa diventa: il cliente, oppure le etichette che cambiano. */
   protected dove(op: OperazioneArchivio): string {
-    return op.azione === 'crea-cartella' ? (op.dentro ?? 'in cima all’archivio') : op.verso;
+    if (op.azione === 'intesta-documento') return op.cliente;
+    return [
+      op.aggiungi.length ? `+ ${op.aggiungi.join(', ')}` : '',
+      op.togli.length ? `− ${op.togli.join(', ')}` : '',
+    ]
+      .filter(Boolean)
+      .join('  ');
   }
 
   protected decidi(decisione: 'approva' | 'annulla'): void {

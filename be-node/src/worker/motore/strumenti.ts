@@ -36,7 +36,7 @@ import type { ArchivioFile } from '../ingestion/archivio-file.js';
 export const NOME_SERVER = 'velia';
 export const NOME_TOOL_ESPORTA_SUBITO = `mcp__${NOME_SERVER}__esporta_subito`;
 export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`;
-export const NOME_TOOL_PROPONI_RIORDINO = `mcp__${NOME_SERVER}__proponi_riordino`;
+export const NOME_TOOL_PROPONI_ASSEGNAZIONE = `mcp__${NOME_SERVER}__proponi_assegnazione`;
 export const NOME_TOOL_CONDIVIDI_LINK = `mcp__${NOME_SERVER}__condividi_link`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
@@ -51,9 +51,9 @@ export interface ContestoStrumenti {
   /** Chiamato a ogni documento generato: l'evento verso il FE parte da qui. */
   suDocumento: (documento: DocumentoGenerato) => Promise<void>;
   /**
-   * Chiamato quando il modello propone un riordino dell'archivio: deposita
-   * la proposta e la racconta al FE. Assente = il tool non c'è, e
-   * l'assistente resta in sola lettura come è sempre stato.
+   * Chiamato quando il modello propone di intestare o etichettare dei
+   * documenti: deposita la proposta e la racconta al FE. Assente = il tool
+   * non c'è, e l'assistente resta in sola lettura come è sempre stato.
    */
   suProposta?: (proposta: Omit<PropostaArchivio, 'id' | 'stato'>) => Promise<PropostaArchivio>;
   /**
@@ -338,43 +338,46 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
    * L'unico tool che riguarda l'archivio, e non lo tocca: **propone**.
    *
    * Il motore continua a non avere strumenti di scrittura e non ne guadagna
-   * uno qui. Deposita un riordino, l'utente lo vede sotto la risposta con
+   * uno qui. Deposita una proposta, l'utente la vede sotto la risposta con
    * due pulsanti, e la scrittura la fa l'API con l'identità di chi approva.
    * Se nessuno approva, non succede niente.
    */
-  const proponiRiordino = tool(
-    'proponi_riordino',
+  const proponiAssegnazione = tool(
+    'proponi_assegnazione',
     [
-      'Propone all’utente di riordinare l’Archivio Privato: creare cartelle e spostarci dentro dei documenti.',
+      'Propone all’utente di intestare dei documenti dell’Archivio Privato a un cliente, o di aggiungere e togliere etichette.',
       'Non esegue niente: l’utente vede la proposta sotto la risposta e decide se approvarla.',
-      'Usalo quando l’utente chiede di spostare un documento, di creare una cartella o di mettere ordine.',
+      'Usalo quando l’utente chiede di assegnare un documento a un cliente, di etichettare o di mettere ordine.',
       'Mai di tua iniziativa: l’archivio è suo.',
-      'I percorsi delle cartelle si scrivono come li vede l’utente («Clienti», «Clienti/Rossi Mario»), non come path della workspace.',
+      'Il cliente si indica **per nome**, come compare nella colonna «Cliente» degli INDICE («Rossi Mario»): deve essere già in anagrafica, qui non se ne creano di nuovi.',
       'Il documento si indica col suo file nella workspace, lo stesso che useresti per citarlo.',
-      'Se una cartella che ti serve non esiste ancora, mettila come prima operazione e poi spostaci dentro: le operazioni si applicano in ordine.',
+      'Quando qualcosa non ti torna - per esempio ti chiedono di intestare una fattura a chi la emette invece che a chi la riceve - dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
       'Dopo l’esito, di’ in UNA riga cosa hai proposto e che lo trova lì sotto da approvare.',
     ].join(' '),
     {
       operazioni: z
         .array(
           z.object({
-            azione: z.enum(['crea-cartella', 'sposta-documento']),
-            nome: z.string().max(120).optional().describe('crea-cartella: il nome della cartella nuova.'),
-            dentro: z
-              .string()
-              .max(400)
-              .optional()
-              .describe('crea-cartella: la cartella che la conterrà, per percorso; assente = in cima.'),
+            azione: z.enum(['intesta-documento', 'etichetta-documento']),
             documento: z
               .string()
               .max(400)
-              .optional()
-              .describe('sposta-documento: il file del documento nella workspace.'),
-            verso: z
+              .describe('Il file del documento nella workspace.'),
+            cliente: z
               .string()
-              .max(400)
+              .max(200)
               .optional()
-              .describe('sposta-documento: la cartella di destinazione, per percorso.'),
+              .describe('intesta-documento: il nome del cliente, già in anagrafica.'),
+            aggiungi: z
+              .array(z.string().max(60))
+              .max(10)
+              .optional()
+              .describe('etichetta-documento: le etichette da aggiungere.'),
+            togli: z
+              .array(z.string().max(60))
+              .max(10)
+              .optional()
+              .describe('etichetta-documento: le etichette da togliere.'),
           }),
         )
         .min(1)
@@ -402,14 +405,14 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         client.release();
       }
       /* Il motivo del rifiuto torna al modello, non all'utente: così si
-         corregge dentro la stessa risposta invece di proporre un riordino
+         corregge dentro la stessa risposta invece di proporre qualcosa
          che poi non si applica. */
       if (!esito.operazioni.length) {
         return {
           content: [
             {
               type: 'text',
-              text: `Non ho potuto preparare il riordino: ${esito.rifiutate.join('; ')}. Chiedi all’utente come procedere.`,
+              text: `Non ho potuto preparare la proposta: ${esito.rifiutate.join('; ')}. Chiedi all’utente come procedere.`,
             },
           ],
           isError: true,
@@ -426,7 +429,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         content: [
           {
             type: 'text',
-            text: `Riordino proposto (${proposta.operazioni.length} operazioni). L’utente lo trova sotto la risposta e decide se approvarlo: finché non lo fa, l’archivio non cambia.${scartate}`,
+            text: `Proposta depositata (${proposta.operazioni.length} operazioni). L’utente la trova sotto la risposta e decide se approvarla: finché non lo fa, l’archivio non cambia.${scartate}`,
           },
         ],
       };
@@ -441,14 +444,14 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         esportaSubito,
         ...(contesto.elaborata ? [esportazioneElaborata] : []),
         ...(contesto.pagine ? [condividiLink] : []),
-        ...(contesto.suProposta ? [proponiRiordino] : []),
+        ...(contesto.suProposta ? [proponiAssegnazione] : []),
       ],
     }),
     nomi: [
       NOME_TOOL_ESPORTA_SUBITO,
       ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
       ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
-      ...(contesto.suProposta ? [NOME_TOOL_PROPONI_RIORDINO] : []),
+      ...(contesto.suProposta ? [NOME_TOOL_PROPONI_ASSEGNAZIONE] : []),
     ],
     generati,
     percorsi,

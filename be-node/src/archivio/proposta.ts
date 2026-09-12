@@ -1,41 +1,36 @@
-import type {
-  OperazioneArchivio,
-  PropostaArchivio,
-} from '../contratto/conversazioni.js';
-import {
-  assicuraCartella,
-  caricaCartelle,
-  indicizza,
-  percorsoDi,
-  segnaDaRicalcolare,
-  type Interrogabile,
-} from './albero.js';
+import type { OperazioneArchivio, PropostaArchivio } from '../contratto/conversazioni.js';
+import type { Interrogabile } from '../db/interrogabile.js';
+import { cercaCandidati } from './clienti.js';
 
 /**
- * Il riordino che l'assistente propone e l'utente approva.
+ * Quello che l'assistente propone e l'utente approva.
  *
  * Due momenti separati, e la separazione è il punto. **Risolvere** avviene
  * nel worker mentre il modello parla: si traduce quello che ha detto a
- * parole («metti la fattura sotto Blusail») in operazioni su id veri, e si
- * rifiuta tutto ciò che non torna, così l'utente non si trova davanti una
- * proposta che non si può applicare. **Applicare** avviene solo dopo un clic,
+ * parole («questi tre sono di Rossi») in operazioni su id veri, e si rifiuta
+ * tutto ciò che non torna, così l'utente non si trova davanti una proposta
+ * che non si può applicare. **Applicare** avviene solo dopo un clic,
  * nell'API, con l'identità di chi approva.
  *
  * Il modello non scrive mai: qui non guadagna uno strumento di scrittura,
  * guadagna la possibilità di chiedere.
+ *
+ * Dal 12/09/2026 l'oggetto della proposta cambia insieme all'archivio: non
+ * più cartelle da creare e documenti da spostare, ma **di chi è un
+ * documento e come si etichetta**. Il meccanismo è lo stesso, e resta lo
+ * stesso perché era la parte giusta.
  */
 
 /** Come il modello descrive un'operazione: a parole, non per id. */
 export interface OperazioneChiesta {
-  azione: 'crea-cartella' | 'sposta-documento';
-  /** Per `crea-cartella`: il nome della cartella nuova. */
-  nome?: string;
-  /** Per `crea-cartella`: il percorso della cartella che la conterrà. */
-  dentro?: string;
-  /** Per `sposta-documento`: il path nella workspace, o l'id del documento. */
+  azione: 'intesta-documento' | 'etichetta-documento';
+  /** Il path nella workspace, o l'id del documento. */
   documento?: string;
-  /** Per `sposta-documento`: il percorso della cartella di destinazione. */
-  verso?: string;
+  /** `intesta-documento`: il cliente, per nome. */
+  cliente?: string;
+  /** `etichetta-documento`: le etichette da aggiungere e da togliere. */
+  aggiungi?: string[];
+  togli?: string[];
 }
 
 export interface EsitoRisoluzione {
@@ -54,75 +49,36 @@ export function idDelDocumento(riferimento: string): string | null {
   return /^doc-priv-[0-9a-f]+$/i.test(riferimento.trim()) ? riferimento.trim() : null;
 }
 
-/** Confronto fra percorsi come li scrive un umano: senza accenti né maiuscole. */
-function chiave(testo: string): string {
-  return testo
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/^tenant\/documenti\//, '')
-    .replace(/[^a-z0-9/]+/g, ' ')
-    .replace(/\s*\/\s*/g, '/')
-    .trim();
-}
+/** Sopra questa somiglianza, un cliente proposto per nome è quel cliente. */
+const SOGLIA_CLIENTE = 0.85;
 
 /**
  * Da quello che il modello ha detto alle operazioni su id veri.
  *
  * Tutto ciò che non si risolve viene **rifiutato con un motivo**, e il motivo
  * torna al modello: meglio che si corregga subito, dentro la stessa risposta,
- * che proporre all'utente un riordino che poi non si applica.
+ * che proporre all'utente un'operazione che poi non si applica.
+ *
+ * Un cliente si risolve solo se esiste già o se il nome è inequivocabile.
+ * **Qui non nascono clienti nuovi**: crearne uno è un gesto dell'agenzia,
+ * non l'effetto collaterale di una frase in chat.
  */
 export async function risolviProposta(
   client: Interrogabile,
   tenantId: string,
   chieste: OperazioneChiesta[],
 ): Promise<EsitoRisoluzione> {
-  const righe = await caricaCartelle(client, tenantId);
-  const per = indicizza(righe);
-  const percorsi = new Map(righe.map((r) => [chiave(percorsoDi(r.id, per)), r]));
-
   const operazioni: OperazioneArchivio[] = [];
   const rifiutate: string[] = [];
-  /* Le cartelle che questa stessa proposta creerà: una può essere la
-     destinazione di uno spostamento più avanti nell'elenco. */
-  const inArrivo = new Set<string>();
 
   for (const chiesta of chieste) {
-    if (chiesta.azione === 'crea-cartella') {
-      const nome = (chiesta.nome ?? '').trim();
-      if (!nome) {
-        rifiutate.push('una creazione senza nome della cartella');
-        continue;
-      }
-      const dentro = chiesta.dentro?.trim();
-      const padre = dentro ? percorsi.get(chiave(dentro)) : undefined;
-      if (dentro && !padre && !inArrivo.has(chiave(dentro))) {
-        rifiutate.push(`«${dentro}» non è una cartella dell'archivio`);
-        continue;
-      }
-      const percorsoNuovo = chiave(dentro ? `${dentro}/${nome}` : nome);
-      if (percorsi.has(percorsoNuovo) || inArrivo.has(percorsoNuovo)) {
-        rifiutate.push(`«${nome}» dentro «${dentro ?? 'la radice'}» esiste già`);
-        continue;
-      }
-      inArrivo.add(percorsoNuovo);
-      operazioni.push({
-        azione: 'crea-cartella',
-        nome,
-        ...(padre && { dentroId: padre.id }),
-        ...(dentro && { dentro }),
-      });
-      continue;
-    }
-
     const id = idDelDocumento(chiesta.documento ?? '');
     if (!id) {
       rifiutate.push(`«${chiesta.documento ?? ''}» non è un documento riconoscibile`);
       continue;
     }
-    const doc = await client.query<{ id: string; titolo: string }>(
-      `select id, titolo from velia.documenti
+    const doc = await client.query<{ id: string; titolo: string; etichette: string[] }>(
+      `select id, titolo, etichette from velia.documenti
        where id = $1 and tenant_id = $2 and archivio = 'privato'`,
       [id, tenantId],
     );
@@ -131,22 +87,40 @@ export async function risolviProposta(
       rifiutate.push(`il documento «${id}» non è nell'archivio privato di questa agenzia`);
       continue;
     }
-    const verso = (chiesta.verso ?? '').trim();
-    const destinazione = percorsi.get(chiave(verso));
-    if (!verso) {
-      rifiutate.push(`manca la cartella di destinazione per «${riga.titolo}»`);
+
+    if (chiesta.azione === 'intesta-documento') {
+      const nome = (chiesta.cliente ?? '').trim();
+      if (!nome) {
+        rifiutate.push(`manca il cliente a cui intestare «${riga.titolo}»`);
+        continue;
+      }
+      const cliente = await trovaCliente(client, tenantId, nome);
+      if ('motivo' in cliente) {
+        rifiutate.push(cliente.motivo);
+        continue;
+      }
+      operazioni.push({
+        azione: 'intesta-documento',
+        documentoId: riga.id,
+        titolo: riga.titolo,
+        clienteId: cliente.id,
+        cliente: cliente.nome,
+      });
       continue;
     }
-    if (!destinazione && !inArrivo.has(chiave(verso))) {
-      rifiutate.push(`«${verso}» non è una cartella dell'archivio`);
+
+    const aggiungi = ripulisci(chiesta.aggiungi);
+    const togli = ripulisci(chiesta.togli);
+    if (!aggiungi.length && !togli.length) {
+      rifiutate.push(`per «${riga.titolo}» non è stata indicata nessuna etichetta`);
       continue;
     }
     operazioni.push({
-      azione: 'sposta-documento',
+      azione: 'etichetta-documento',
       documentoId: riga.id,
       titolo: riga.titolo,
-      ...(destinazione && { versoId: destinazione.id }),
-      verso,
+      aggiungi,
+      togli,
     });
   }
 
@@ -154,12 +128,52 @@ export async function risolviProposta(
 }
 
 /**
- * L'applicazione, dopo il clic. In ordine, perché una cartella creata dalla
- * prima operazione può essere la destinazione della seconda.
+ * Il cliente detto per nome, o il motivo per cui non si può usare.
+ *
+ * Prima il nome normalizzato e gli alias (che è il caso normale e costa una
+ * query), poi la somiglianza. Un nome ambiguo non si indovina: si elencano i
+ * candidati al modello, che chiede all'utente.
+ */
+async function trovaCliente(
+  client: Interrogabile,
+  tenantId: string,
+  nome: string,
+): Promise<{ id: string; nome: string } | { motivo: string }> {
+  const esatto = await client.query<{ id: string; nome: string }>(
+    `select id, nome from velia.clienti
+     where tenant_id = $1
+       and (nome_normalizzato = velia.normalizza_nome($2)
+            or exists (select 1 from unnest(alias) a
+                       where velia.normalizza_nome(a) = velia.normalizza_nome($2)))
+     limit 1`,
+    [tenantId, nome],
+  );
+  if (esatto.rows[0]) return esatto.rows[0];
+
+  const candidati = await cercaCandidati(client, tenantId, nome);
+  const certo = candidati.length === 1 && candidati[0]!.somiglianza >= SOGLIA_CLIENTE;
+  if (certo) return { id: candidati[0]!.id, nome: candidati[0]!.nome };
+
+  return {
+    motivo: candidati.length
+      ? `«${nome}» non è un cliente in anagrafica; i più simili sono ${candidati
+          .map((c) => `«${c.nome}»`)
+          .join(', ')}`
+      : `«${nome}» non è un cliente in anagrafica, e va creato prima dalla sezione Clienti`,
+  };
+}
+
+/** Etichette come le scriverebbe un umano: senza vuoti, senza doppioni. */
+function ripulisci(etichette: string[] | undefined): string[] {
+  return [...new Set((etichette ?? []).map((e) => e.trim()).filter(Boolean))].slice(0, 30);
+}
+
+/**
+ * L'applicazione, dopo il clic.
  *
  * Non è una transazione sola per scelta: se a metà qualcosa non si può più
- * fare — l'utente ha spostato una cartella nel frattempo — quello che è
- * riuscito resta, e si dice cosa non è passato. Annullare a metà un riordino
+ * fare — un collega ha eliminato il documento nel frattempo — quello che è
+ * riuscito resta, e si dice cosa non è passato. Annullare a metà un lavoro
  * già visibile confonderebbe più di quanto protegga.
  */
 export async function applicaProposta(
@@ -169,61 +183,60 @@ export async function applicaProposta(
 ): Promise<{ fatte: number; mancate: string[] }> {
   const mancate: string[] = [];
   let fatte = 0;
-  /* I nomi delle cartelle create qui dentro, per gli spostamenti che le
-     riferiscono senza id. */
-  const create = new Map<string, string>();
 
   for (const op of operazioni) {
     try {
-      if (op.azione === 'crea-cartella') {
-        const id = await assicuraCartella(client, tenantId, {
-          parentId: op.dentroId ?? null,
-          nome: op.nome,
-        });
-        create.set(chiave(op.dentro ? `${op.dentro}/${op.nome}` : op.nome), id);
+      if (op.azione === 'intesta-documento') {
+        /* Il cliente dev'essere ancora di questo tenant: fra la proposta e
+           il clic può essere stato fuso o eliminato da qualcun altro. */
+        const esiste = await client.query(
+          `select 1 from velia.clienti where id = $1 and tenant_id = $2`,
+          [op.clienteId, tenantId],
+        );
+        if (!esiste.rowCount) {
+          mancate.push(`«${op.titolo}»: il cliente «${op.cliente}» non esiste più`);
+          continue;
+        }
+        /* Intestare a mano è definitivo, e approvare è intestare a mano:
+           `cliente_da_confermare` si spegne e nessuna rilavorazione rimette
+           il documento in discussione (stessa regola della scheda). */
+        const fatto = await client.query(
+          `update velia.documenti
+           set cliente_id = $3, cliente_da_confermare = false
+           where id = $1 and tenant_id = $2 and archivio = 'privato'`,
+          [op.documentoId, tenantId, op.clienteId],
+        );
+        if (!fatto.rowCount) {
+          mancate.push(`«${op.titolo}» non è più nell'archivio`);
+          continue;
+        }
         fatte += 1;
         continue;
       }
 
-      const versoId = op.versoId ?? create.get(chiave(op.verso)) ?? null;
-      if (!versoId) {
-        mancate.push(`«${op.titolo}»: la cartella «${op.verso}» non esiste più`);
-        continue;
-      }
-      /* La destinazione dev'essere ancora una cartella di questo tenant: fra
-         la proposta e il clic può essere stata eliminata da qualcun altro. */
-      const esiste = await client.query(
-        `select 1 from velia.cartelle where id = $1 and tenant_id = $2`,
-        [versoId, tenantId],
-      );
-      if (!esiste.rowCount) {
-        mancate.push(`«${op.titolo}»: la cartella «${op.verso}» non esiste più`);
-        continue;
-      }
-      /* Spostare a mano è definitivo, e approvare è spostare a mano: la
-         collocazione non torna più in discussione (stessa regola della
-         scheda del documento). */
-      const spostato = await client.query(
+      /* Le etichette si aggiungono e si tolgono, non si sostituiscono: la
+         proposta parla di due o tre parole, e l'archivio ne può avere altre
+         che nessuno ha chiesto di toccare. */
+      const fatto = await client.query(
         `update velia.documenti
-         set cartella_id = $3, collocazione_da_confermare = false
+         set etichette = (
+           select coalesce(array_agg(distinct e order by e), '{}')
+           from unnest(etichette || $3::text[]) e
+           where e <> all($4::text[])
+         )
          where id = $1 and tenant_id = $2 and archivio = 'privato'`,
-        [op.documentoId, tenantId, versoId],
+        [op.documentoId, tenantId, op.aggiungi, op.togli],
       );
-      if (!spostato.rowCount) {
+      if (!fatto.rowCount) {
         mancate.push(`«${op.titolo}» non è più nell'archivio`);
         continue;
       }
       fatte += 1;
     } catch (errore) {
-      mancate.push(
-        `${op.azione === 'crea-cartella' ? `«${op.nome}»` : `«${op.titolo}»`}: ${
-          errore instanceof Error ? errore.message : String(errore)
-        }`,
-      );
+      mancate.push(`«${op.titolo}»: ${errore instanceof Error ? errore.message : String(errore)}`);
     }
   }
 
-  if (fatte) await segnaDaRicalcolare(client, tenantId);
   return { fatte, mancate };
 }
 
@@ -231,9 +244,14 @@ export async function applicaProposta(
 export function raccontaProposta(proposta: PropostaArchivio): string {
   return proposta.operazioni
     .map((op) =>
-      op.azione === 'crea-cartella'
-        ? `creare «${op.nome}»${op.dentro ? ` dentro «${op.dentro}»` : ' in cima all’archivio'}`
-        : `spostare «${op.titolo}» in «${op.verso}»`,
+      op.azione === 'intesta-documento'
+        ? `intestare «${op.titolo}» a «${op.cliente}»`
+        : [
+            op.aggiungi.length ? `aggiungere ${op.aggiungi.map((e) => `«${e}»`).join(', ')}` : '',
+            op.togli.length ? `togliere ${op.togli.map((e) => `«${e}»`).join(', ')}` : '',
+          ]
+            .filter(Boolean)
+            .join(' e ') + ` su «${op.titolo}»`,
     )
-    .join(', ');
+    .join('; ');
 }

@@ -4,7 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 
 import { ArchivioPrivatoStore } from './archivio-privato-store';
-import { Cartella, DocumentoPrivato, Paginato, StatoElaborazione } from '@core/models';
+import { Cliente, DocumentoPrivato, Paginato, StatoElaborazione } from '@core/models';
 
 function documento(id: string, stato: StatoElaborazione): DocumentoPrivato {
   return {
@@ -38,8 +38,9 @@ describe('ArchivioPrivatoStore', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      /* Lo store legge dall'URL dove si sta guardando (la cartella aperta è un
-         posto, e un posto ha un indirizzo): senza router non si costruisce. */
+      /* Lo store legge dall'URL di chi si sta guardando (un filtro che si
+         condivide è un posto, e un posto ha un indirizzo): senza router non
+         si costruisce. */
       providers: [
         ArchivioPrivatoStore,
         provideRouter([]),
@@ -61,7 +62,7 @@ describe('ArchivioPrivatoStore', () => {
   });
 
   /** Soddisfa le risorse che partono da sole alla costruzione. */
-  async function avvia(elementi: DocumentoPrivato[], albero: Cartella[] = []) {
+  async function avvia(elementi: DocumentoPrivato[], clienti: Cliente[] = []) {
     await new Promise((r) => setTimeout(r, 0));
     http.expectOne((r) => r.url.startsWith('/api/documenti-privati')).flush(pagina(elementi));
     http.match('/api/etichette').forEach((r) => r.flush([]));
@@ -73,11 +74,12 @@ describe('ArchivioPrivatoStore', () => {
         numeroDocumenti: elementi.length,
       }),
     );
-    // Fase 10: l'albero delle cartelle e l'anagrafica clienti.
-    http.match('/api/cartelle').forEach((r) => r.flush({ radici: albero, daSistemare: 2 }));
+    // L'anagrafica: è l'asse su cui l'archivio si filtra.
     http
-      .match('/api/clienti')
-      .forEach((r) => r.flush({ elementi: [], totale: 0, pagina: 1, perPagina: 50 }));
+      .match((r) => r.url.startsWith('/api/clienti'))
+      .forEach((r) =>
+        r.flush({ elementi: clienti, totale: clienti.length, pagina: 1, perPagina: 50 }),
+      );
     await new Promise((r) => setTimeout(r, 0));
   }
 
@@ -195,87 +197,57 @@ describe('ArchivioPrivatoStore', () => {
     expect(store.coda().length).toBe(0);
   });
 
-  // --- Cartelle (Fase 10) ---------------------------------------------------
+  // --- Clienti --------------------------------------------------------------
 
-  const cartella = (id: string, nome: string, figli: Cartella[] = []): Cartella => ({
+  const cliente = (id: string, nome: string): Cliente => ({
     id,
     nome,
-    percorso: nome,
-    descrizioneDaUtente: false,
+    tipo: 'persona',
+    alias: [],
+    etichette: [],
+    stato: 'attivo',
     documenti: 0,
-    documentiTotali: 0,
-    figli,
+    creatoIl: '2026-09-01T10:00:00+02:00',
   });
 
-  it('aprire una cartella e aprire «Da sistemare» sono due viste che si escludono', async () => {
-    await avvia([], [cartella('c1', 'Clienti')]);
+  it('guardare un cliente e guardare «senza cliente» sono due viste che si escludono', async () => {
+    await avvia([], [cliente('cl1', 'Rossi Mario')]);
 
-    await store.apri('c1');
-    expect(store.filtri().cartellaId).toBe('c1');
-    expect(store.filtri().daSistemare).toBe(false);
+    await store.apri('cl1');
+    expect(store.filtri().clienteId).toBe('cl1');
+    expect(store.filtri().senzaCliente).toBe(false);
 
-    /* Il non collocato non sta *in* nessuna cartella: chiederlo dentro una
-       cartella non vorrebbe dire niente, e il filtro deve dirlo. */
-    await store.apriDaSistemare();
-    expect(store.filtri().daSistemare).toBe(true);
-    expect(store.filtri().cartellaId).toBeUndefined();
+    /* Chi non ha cliente non è «di» nessuno: chiederlo mentre se ne guarda
+       uno non vorrebbe dire niente, e il filtro deve dirlo. */
+    await store.apriSenzaCliente();
+    expect(store.filtri().senzaCliente).toBe(true);
+    expect(store.filtri().clienteId).toBeUndefined();
 
     await store.apri(undefined);
-    expect(store.filtri().cartellaId).toBeUndefined();
-    expect(store.filtri().daSistemare).toBe(false);
+    expect(store.filtri().clienteId).toBeUndefined();
+    expect(store.filtri().senzaCliente).toBe(false);
   });
 
-  it('la cartella aperta non conta come filtro attivo', async () => {
-    await avvia([], [cartella('c1', 'Clienti')]);
+  it('il cliente che si sta guardando non conta come filtro attivo', async () => {
+    await avvia([], [cliente('cl1', 'Rossi Mario')]);
 
-    await store.apri('c1');
-    /* Altrimenti «Azzera i filtri» ti sposterebbe fuori dalla cartella invece
-       di ripulire la ricerca: sarebbe un pulsante che fa due cose. */
+    await store.apri('cl1');
+    /* Altrimenti «Azzera i filtri» ti porterebbe fuori dal cliente invece di
+       ripulire la ricerca: sarebbe un pulsante che fa due cose. */
     expect(store.filtriAttivi()).toBe(false);
 
-    store.ricerca.set('rossi');
+    store.ricerca.set('polizza');
     expect(store.filtriAttivi()).toBe(true);
   });
 
-  it('appiattisce l albero per le tendine di spostamento', async () => {
-    await avvia(
-      [],
-      [cartella('c1', 'Clienti', [cartella('c2', 'Rossi Mario')]), cartella('u1', 'Utils')],
-    );
+  it('sa dire quale cliente si sta guardando', async () => {
+    await avvia([], [cliente('cl1', 'Rossi Mario'), cliente('cl2', 'Bianchi Luigi')]);
 
-    expect(store.cartelleInPiano().map((c) => c.id)).toEqual(['c1', 'c2', 'u1']);
-    await store.apri('c2');
-    expect(store.cartellaCorrente()?.nome).toBe('Rossi Mario');
-  });
+    await store.apri('cl2');
+    expect(store.clienteCorrente()?.nome).toBe('Bianchi Luigi');
 
-  it('dà la catena per risalire da una cartella profonda', async () => {
-    /* Clienti › Rossi Mario › Auto: è il caso in cui prima si restava
-       intrappolati, perché le briciole si fermavano alla radice. */
-    const auto = cartella('c3', 'Auto');
-    auto.parentId = 'c2';
-    const rossi = cartella('c2', 'Rossi Mario', [auto]);
-    rossi.parentId = 'c1';
-    await avvia([], [cartella('c1', 'Clienti', [rossi])]);
-
-    await store.apri('c3');
-    expect(store.catenaCartelle().map((c) => c.nome)).toEqual([
-      'Clienti',
-      'Rossi Mario',
-      'Auto',
-    ]);
-
-    // E si risale davvero: aprire il penultimo anello porta un livello sopra.
-    await store.apri('c2');
-    expect(store.cartellaCorrente()?.nome).toBe('Rossi Mario');
-    expect(store.catenaCartelle().map((c) => c.nome)).toEqual(['Clienti', 'Rossi Mario']);
-
-    // Alla radice la catena è vuota: non si è dentro niente.
     await store.apri(undefined);
-    expect(store.catenaCartelle()).toEqual([]);
+    expect(store.clienteCorrente()).toBeUndefined();
   });
 
-  it('mostra quanti documenti aspettano di essere sistemati', async () => {
-    await avvia([], [cartella('c1', 'Clienti')]);
-    expect(store.quantiDaSistemare()).toBe(2);
-  });
 });

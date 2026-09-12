@@ -91,17 +91,19 @@ export class ElencoChatClienti {
     return 'attiva';
   }
 
+  /**
+   * Che cosa legge questa chat, in una riga.
+   *
+   * Il cono è il cliente — i suoi documenti, che il server calcola a ogni
+   * domanda — quindi qui si dice il cliente, e accanto solo gli
+   * scostamenti: quello che è stato aggiunto e quello che è stato tolto a
+   * mano.
+   */
   protected coperturaCono(c: ChatCliente): string {
-    const parti: string[] = [];
-    if (c.cartelle.length) {
-      parti.push(c.cartelle.length === 1 ? '1 cartella' : `${c.cartelle.length} cartelle`);
-    }
-    if (c.documenti.length) {
-      parti.push(c.documenti.length === 1 ? '1 documento' : `${c.documenti.length} documenti`);
-    }
-    /* Un cono vuoto non è un dettaglio: è una chat che al cliente non
-       risponde niente, e va detto qui invece che scoprirlo da lui. */
-    return parti.length ? parti.join(' · ') : 'cono vuoto: non legge nulla';
+    const parti: string[] = [`i documenti di ${c.clienteNome}`];
+    if (c.aggiunti.length) parti.push(`+${c.aggiunti.length}`);
+    if (c.esclusi.length) parti.push(`−${c.esclusi.length}`);
+    return parti.join(' · ');
   }
 
   /**

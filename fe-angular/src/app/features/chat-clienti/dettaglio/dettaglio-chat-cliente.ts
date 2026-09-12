@@ -11,21 +11,14 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
-import { CartelleApi } from '@core/api/cartelle-api';
 import { DocumentiApi } from '@core/api/documenti-api';
-import type { AlberoCartelle, Cartella, DocumentoPubblico, Id, Paginato } from '@core/models';
+import type { DocumentoPubblico, Id, Paginato } from '@core/models';
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatClientiStore } from '../chat-clienti-store';
-
-/** Una cartella dell'albero, appiattita con la sua profondità per il rientro. */
-interface VoceAlbero {
-  cartella: Cartella;
-  profondita: number;
-}
 
 /**
  * La scheda di una chat cliente: il cono, le istruzioni, i limiti, il link.
@@ -44,7 +37,6 @@ interface VoceAlbero {
 })
 export class DettaglioChatCliente {
   protected readonly store = inject(ChatClientiStore);
-  private readonly cartelleApi = inject(CartelleApi);
   private readonly documentiApi = inject(DocumentiApi);
   private readonly router = inject(Router);
   private readonly conferme = inject(ConfermeStore);
@@ -54,7 +46,6 @@ export class DettaglioChatCliente {
   protected readonly chat = computed(() => this.store.perId(this.id()));
 
   /** Le scelte in corso: si salvano insieme, non una alla volta. */
-  protected readonly cartelleScelte = signal<Set<Id>>(new Set());
   protected readonly documentiScelti = signal<Map<Id, string>>(new Map());
   protected readonly istruzioni = signal('');
   protected readonly tetto = signal<string>('');
@@ -62,33 +53,7 @@ export class DettaglioChatCliente {
   protected readonly inSalvataggio = signal(false);
   private idCaricato = '';
 
-  // --- L'albero dell'agenzia ------------------------------------------------
-
-  private readonly risorsaAlbero = httpResource<AlberoCartelle>(() =>
-    this.cartelleApi.urlAlbero(),
-  );
-
-  /**
-   * L'albero appiattito, perché una lista con rientri si legge meglio di un
-   * albero pieghevole quando le voci sono poche decine — e soprattutto si
-   * scorre con gli occhi tutta insieme, che è quello che serve quando devi
-   * essere sicuro di non aver spuntato la cartella sbagliata.
-   */
-  protected readonly voci = computed<VoceAlbero[]>(() => {
-    const albero = this.risorsaAlbero.hasValue() ? this.risorsaAlbero.value() : undefined;
-    if (!albero) return [];
-    const piatto: VoceAlbero[] = [];
-    const scendi = (cartelle: Cartella[], profondita: number): void => {
-      for (const cartella of cartelle) {
-        piatto.push({ cartella, profondita });
-        scendi(cartella.figli ?? [], profondita + 1);
-      }
-    };
-    scendi(albero.radici, 0);
-    return piatto;
-  });
-
-  // --- I documenti pubblici -------------------------------------------------
+  // --- I documenti da aggiungere --------------------------------------------
 
   protected readonly ricerca = signal('');
 
@@ -125,28 +90,9 @@ export class DettaglioChatCliente {
     const chat = this.chat();
     if (!chat || this.idCaricato === chat.id) return;
     this.idCaricato = chat.id;
-    this.cartelleScelte.set(new Set(chat.cartelle.map((c) => c.id)));
-    this.documentiScelti.set(new Map(chat.documenti.map((d) => [d.id, d.titolo])));
+    this.documentiScelti.set(new Map(chat.aggiunti.map((d) => [d.id, d.titolo])));
     this.istruzioni.set(chat.istruzioni ?? '');
     this.tetto.set(chat.tettoDomande ? String(chat.tettoDomande) : '');
-  }
-
-  protected cartellaScelta(id: Id): boolean {
-    return this.cartelleScelte().has(id);
-  }
-
-  /**
-   * Spuntare una cartella prende **anche tutto quello che c'è sotto**: è la
-   * definizione del cono a database, e va detta qui invece che scoperta
-   * dopo, quando una sottocartella con documenti di un altro cliente è già
-   * finita nelle mani di qualcuno.
-   */
-  protected commutaCartella(id: Id): void {
-    const scelte = new Set(this.cartelleScelte());
-    if (scelte.has(id)) scelte.delete(id);
-    else scelte.add(id);
-    this.cartelleScelte.set(scelte);
-    this.salvato.set(false);
   }
 
   protected documentoScelto(id: Id): boolean {
@@ -166,9 +112,11 @@ export class DettaglioChatCliente {
     [...this.documentiScelti()].map(([id, titolo]) => ({ id, titolo })),
   );
 
-  protected readonly conoVuoto = computed(
-    () => !this.cartelleScelte().size && !this.documentiScelti().size,
-  );
+  /**
+   * Il cono non è mai vuoto: sono i documenti del cliente, e li calcola il
+   * server a ogni domanda. Quello che si sceglie qui è **in più**.
+   */
+  protected readonly senzaAggiunte = computed(() => !this.documentiScelti().size);
 
   protected async salva(): Promise<void> {
     const chat = this.chat();
@@ -177,8 +125,7 @@ export class DettaglioChatCliente {
     try {
       const tetto = Number.parseInt(this.tetto(), 10);
       await this.store.modifica(chat.id, {
-        cartelle: [...this.cartelleScelte()],
-        documenti: [...this.documentiScelti().keys()],
+        aggiunti: [...this.documentiScelti().keys()],
         istruzioni: this.istruzioni().trim() || null,
         tettoDomande: Number.isFinite(tetto) && tetto > 0 ? tetto : null,
       });

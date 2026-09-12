@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 
-import { percorsoDi, caricaCartelle, indicizza } from '../../archivio/albero.js';
 import {
   schemaModificaChatCliente,
   schemaNuovaChatCliente,
@@ -85,24 +84,24 @@ async function creaUtenzaSuAuth(email: string): Promise<string> {
 
 function versoChat(
   riga: RigaChat,
-  cartelle: Array<{ id: string; percorso: string }>,
-  documenti: Array<{ id: string; titolo: string }>,
+  aggiunti: Array<{ id: string; titolo: string }>,
+  esclusi: Array<{ id: string; titolo: string }>,
   costoUsd: number,
   baseLink: string,
 ): ChatCliente {
   return {
     id: riga.id,
     titolo: riga.titolo,
-    ...(riga.cliente_id && { clienteId: riga.cliente_id }),
-    ...(riga.cliente_nome && { clienteNome: riga.cliente_nome }),
+    clienteId: riga.cliente_id!,
+    clienteNome: riga.cliente_nome ?? '',
     ospite: { id: riga.ospite_id, nome: riga.ospite_nome, cognome: riga.ospite_cognome },
     stato: riga.stato,
     ...(riga.scade_il && { scadeIl: riga.scade_il.toISOString() }),
     ...(riga.tetto_domande !== null && { tettoDomande: riga.tetto_domande }),
     domandeFatte: riga.domande_fatte,
     ...(riga.istruzioni && { istruzioni: riga.istruzioni }),
-    cartelle,
-    documenti,
+    aggiunti,
+    esclusi,
     creataIl: riga.created_at.toISOString(),
     ...(riga.token && { url: `${baseLink}/c/${riga.token}` }),
     costoUsd,
@@ -131,106 +130,105 @@ async function costiPerChat(tenantId: string): Promise<Map<string, number>> {
   return new Map(righe.rows.map((r) => [r.chat_cliente_id, Number(r.costo)]));
 }
 
-/** Il cono di una o più chat, in due query invece che in due per chat. */
+/**
+ * Il cono di una o più chat: **gli extra**, non il cono intero.
+ *
+ * Dal 12/09/2026 il cono è il cliente — i suoi documenti, calcolati ogni
+ * volta — e quello che si conserva qui sono gli scostamenti: i documenti
+ * aggiunti a mano (i prodotti pubblici che lo riguardano, un documento
+ * privato di un altro fascicolo) e quelli tolti a mano (una perizia
+ * interna). L'elenco dei documenti del cliente non si scrive da nessuna
+ * parte, perché cambia da sé quando l'agenzia ne carica uno nuovo.
+ */
 async function coniDi(
   client: pg.ClientBase,
-  tenantId: string,
   chatIds: string[],
 ): Promise<{
-  cartelle: Map<string, Array<{ id: string; percorso: string }>>;
-  documenti: Map<string, Array<{ id: string; titolo: string }>>;
+  aggiunti: Map<string, Array<{ id: string; titolo: string }>>;
+  esclusi: Map<string, Array<{ id: string; titolo: string }>>;
 }> {
-  const cartelle = new Map<string, Array<{ id: string; percorso: string }>>();
-  const documenti = new Map<string, Array<{ id: string; titolo: string }>>();
-  if (!chatIds.length) return { cartelle, documenti };
+  const aggiunti = new Map<string, Array<{ id: string; titolo: string }>>();
+  const esclusi = new Map<string, Array<{ id: string; titolo: string }>>();
+  if (!chatIds.length) return { aggiunti, esclusi };
 
-  const alberoRighe = await caricaCartelle(client, tenantId);
-  const albero = indicizza(alberoRighe);
-
-  const c = await client.query<{ chat_id: string; cartella_id: string }>(
-    `select chat_id, cartella_id from velia.chat_clienti_cartelle where chat_id = any($1)`,
-    [chatIds],
-  );
-  for (const r of c.rows) {
-    const elenco = cartelle.get(r.chat_id) ?? [];
-    elenco.push({ id: r.cartella_id, percorso: percorsoDi(r.cartella_id, albero) });
-    cartelle.set(r.chat_id, elenco);
-  }
-
-  const d = await client.query<{ chat_id: string; documento_id: string; titolo: string }>(
-    `select cd.chat_id, cd.documento_id, d.titolo
+  const d = await client.query<{
+    chat_id: string;
+    documento_id: string;
+    titolo: string;
+    escluso: boolean;
+  }>(
+    `select cd.chat_id, cd.documento_id, d.titolo, cd.escluso
        from velia.chat_clienti_documenti cd
        join velia.documenti d on d.id = cd.documento_id
       where cd.chat_id = any($1)`,
     [chatIds],
   );
   for (const r of d.rows) {
-    const elenco = documenti.get(r.chat_id) ?? [];
+    const dove = r.escluso ? esclusi : aggiunti;
+    const elenco = dove.get(r.chat_id) ?? [];
     elenco.push({ id: r.documento_id, titolo: r.titolo });
-    documenti.set(r.chat_id, elenco);
+    dove.set(r.chat_id, elenco);
   }
-  return { cartelle, documenti };
+  return { aggiunti, esclusi };
 }
 
 /**
- * Riscrive il cono di una chat.
+ * Riscrive gli scostamenti del cono di una chat.
  *
- * Cancella e reinserisce invece di calcolare le differenze: il cono è
- * piccolo (poche decine di voci) e la sostituzione in blocco non lascia
- * stati intermedi in cui il cliente vedrebbe un cono a metà.
+ * Cancella e reinserisce invece di calcolare le differenze: sono poche
+ * voci, e la sostituzione in blocco non lascia stati intermedi in cui il
+ * cliente vedrebbe un cono a metà.
  */
 async function scriviCono(
   client: pg.ClientBase,
   chatId: string,
   tenantId: string,
-  cartelle: string[] | undefined,
-  documenti: string[] | undefined,
+  aggiunti: string[] | undefined,
+  esclusi: string[] | undefined,
 ): Promise<void> {
-  if (cartelle) {
-    /* Le cartelle devono essere dell'agenzia: un id di un altro tenant qui
-       dentro sarebbe una fuga scritta a mano. La RLS lo impedirebbe già,
-       ma un 400 dice all'agenzia che ha sbagliato, invece di far sparire
-       una riga in silenzio. */
-    if (cartelle.length) {
-      const valide = await client.query<{ n: string }>(
-        `select count(*) as n from velia.cartelle where tenant_id = $1 and id = any($2)`,
-        [tenantId, cartelle],
-      );
-      if (Number(valide.rows[0]?.n ?? 0) !== new Set(cartelle).size) {
-        throw ErroreApi.datiNonValidi('Una delle cartelle scelte non esiste in questo archivio.');
-      }
+  if (!aggiunti && !esclusi) return;
+
+  /* I documenti devono essere leggibili da questa agenzia: un pubblico
+     qualsiasi, o un privato suo. Un id di un altro tenant qui dentro
+     sarebbe una fuga scritta a mano; la RLS lo impedirebbe già, ma un 400
+     dice all'agenzia che ha sbagliato invece di far sparire una riga in
+     silenzio. */
+  const controlla = async (ids: string[]): Promise<void> => {
+    if (!ids.length) return;
+    const valide = await client.query<{ n: string }>(
+      `select count(*) as n from velia.documenti
+        where id = any($1) and (archivio = 'pubblico' or tenant_id = $2)`,
+      [ids, tenantId],
+    );
+    if (Number(valide.rows[0]?.n ?? 0) !== new Set(ids).size) {
+      throw ErroreApi.datiNonValidi('Uno dei documenti scelti non esiste.');
     }
-    await client.query(`delete from velia.chat_clienti_cartelle where chat_id = $1`, [chatId]);
-    for (const id of new Set(cartelle)) {
-      await client.query(
-        `insert into velia.chat_clienti_cartelle (chat_id, cartella_id) values ($1, $2)`,
-        [chatId, id],
-      );
-    }
+  };
+  await controlla(aggiunti ?? []);
+  await controlla(esclusi ?? []);
+
+  const doppi = (aggiunti ?? []).filter((id) => (esclusi ?? []).includes(id));
+  if (doppi.length) {
+    throw ErroreApi.datiNonValidi('Un documento non può essere insieme aggiunto ed escluso.');
   }
 
-  if (documenti) {
-    if (documenti.length) {
-      /* Solo documenti pubblici: i privati entrano dalle cartelle, e
-         sceglierli uno per uno vorrebbe dire un cono che non si aggiorna
-         quando l'agenzia sposta un documento. */
-      const valide = await client.query<{ n: string }>(
-        `select count(*) as n from velia.documenti where archivio = 'pubblico' and id = any($1)`,
-        [documenti],
-      );
-      if (Number(valide.rows[0]?.n ?? 0) !== new Set(documenti).size) {
-        throw ErroreApi.datiNonValidi('Uno dei documenti scelti non è nell’Archivio Pubblico.');
-      }
-    }
-    await client.query(`delete from velia.chat_clienti_documenti where chat_id = $1`, [chatId]);
-    for (const id of new Set(documenti)) {
-      await client.query(
-        `insert into velia.chat_clienti_documenti (chat_id, documento_id) values ($1, $2)`,
-        [chatId, id],
-      );
-    }
+  await client.query(`delete from velia.chat_clienti_documenti where chat_id = $1`, [chatId]);
+  for (const id of new Set(aggiunti ?? [])) {
+    await client.query(
+      `insert into velia.chat_clienti_documenti (chat_id, documento_id, escluso)
+       values ($1, $2, false)`,
+      [chatId, id],
+    );
+  }
+  for (const id of new Set(esclusi ?? [])) {
+    await client.query(
+      `insert into velia.chat_clienti_documenti (chat_id, documento_id, escluso)
+       values ($1, $2, true)`,
+      [chatId, id],
+    );
   }
 }
+
 
 export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniChatClienti = {}): void {
   const creaUtenza = opzioni.creaUtenzaOspite ?? creaUtenzaSuAuth;
@@ -247,14 +245,13 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
       );
       const coni = await coniDi(
         client,
-        richiesta.identita.tenantId,
         righe.rows.map((r) => r.id),
       );
       return righe.rows.map((r) =>
         versoChat(
           r,
-          coni.cartelle.get(r.id) ?? [],
-          coni.documenti.get(r.id) ?? [],
+          coni.aggiunti.get(r.id) ?? [],
+          coni.esclusi.get(r.id) ?? [],
           costi.get(r.id) ?? 0,
           baseLink,
         ),
@@ -325,8 +322,8 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
           client,
           chatId,
           richiesta.identita.tenantId,
-          dati.data.cartelle,
-          dati.data.documenti,
+          dati.data.aggiunti,
+          dati.data.esclusi,
         );
         return chatId;
       });
@@ -377,19 +374,19 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
         client,
         id,
         richiesta.identita.tenantId,
-        dati.data.cartelle,
-        dati.data.documenti,
+        dati.data.aggiunti,
+        dati.data.esclusi,
       );
 
       const righe = await client.query<RigaChat>(`${SQL_CHAT} where k.id = $1`, [id]);
       const riga = righe.rows[0];
       if (!riga) throw ErroreApi.nonTrovato('Questa chat non esiste.');
-      const coni = await coniDi(client, richiesta.identita.tenantId, [id]);
+      const coni = await coniDi(client, [id]);
       const costi = await costiPerChat(richiesta.identita.tenantId);
       return versoChat(
         riga,
-        coni.cartelle.get(id) ?? [],
-        coni.documenti.get(id) ?? [],
+        coni.aggiunti.get(id) ?? [],
+        coni.esclusi.get(id) ?? [],
         costi.get(id) ?? 0,
         baseLink,
       );

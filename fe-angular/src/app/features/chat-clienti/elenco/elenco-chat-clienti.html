@@ -72,7 +72,7 @@
   <ui-stato-vuoto
     icona="chat"
     titolo="Nessuna chat per i clienti"
-    descrizione="Creane una: scegli quali cartelle e quali prodotti può leggere, e manda il link al cliente."
+    descrizione="Creane una: scegli il cliente, e manda il link. L'assistente leggerà i suoi documenti."
   />
 } @else {
   <ul class="elenco">
@@ -82,7 +82,7 @@
           <span class="riga__titolo">{{ c.titolo }}</span>
           <span class="riga__ospite">{{ c.ospite.nome }} {{ c.ospite.cognome }}</span>
         </a>
-        <span class="riga__cono" [class.is-vuoto]="!c.cartelle.length && !c.documenti.length">
+        <span class="riga__cono">
           {{ coperturaCono(c) }}
         </span>
         <span class="riga__stato" [class]="'is-' + c.stato">

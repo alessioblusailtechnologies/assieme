@@ -176,8 +176,9 @@ export interface Passo {
 }
 
 /**
- * Un riordino dell'archivio che l'assistente **propone**, e che nessuno
- * applica finché l'utente non lo approva.
+ * Un intervento sull'archivio che l'assistente **propone**, e che nessuno
+ * applica finché l'utente non lo approva: intestare documenti a un cliente,
+ * aggiungere o togliere etichette.
  *
  * È la scelta di fondo, e non cambia: il motore lavora su una copia in sola
  * lettura e non ha strumenti per scrivere. Qui non ne guadagna uno, guadagna
@@ -195,27 +196,26 @@ export interface PropostaArchivio {
 
 export type OperazioneArchivio =
   | {
-      azione: 'crea-cartella';
-      nome: string;
-      /** La cartella che la conterrà; assente = in cima all'archivio. */
-      dentroId?: string;
-      dentro?: string;
-    }
-  | {
-      azione: 'sposta-documento';
+      azione: 'intesta-documento';
       documentoId: string;
       titolo: string;
-      /**
-       * Dove va. `versoId` assente con `verso` valorizzato significa una
-       * cartella che questa stessa proposta sta per creare: si risolve
-       * quando si applica, nell'ordine in cui le operazioni sono scritte.
-       */
-      versoId?: string;
-      verso: string;
+      /** Risolto al momento della proposta: qui non nascono clienti nuovi. */
+      clienteId: string;
+      cliente: string;
+    }
+  | {
+      azione: 'etichetta-documento';
+      documentoId: string;
+      titolo: string;
+      /* Si aggiunge e si toglie, non si sostituisce: la proposta parla di
+         due parole, e il documento ne può avere altre che nessuno ha
+         chiesto di toccare. */
+      aggiungi: string[];
+      togli: string[];
     };
 
 /**
- * La decisione su una proposta di riordino: `PATCH
+ * La decisione su una proposta: `PATCH
  * /api/conversazioni/:id/proposte/:pid`. Non c'è un terzo stato: o si applica
  * o si lascia perdere, e in entrambi i casi la proposta smette di chiedere.
  */
@@ -227,8 +227,8 @@ export type DecisioneProposta = z.infer<typeof schemaDecisioneProposta>;
 
 /**
  * L'esito dell'approvazione. `mancate` non è un errore: è l'elenco di quello
- * che nel frattempo non si poteva più fare (una cartella eliminata da un
- * collega, un documento spostato altrove). Il resto è stato applicato.
+ * che nel frattempo non si poteva più fare (un cliente fuso da un collega,
+ * un documento eliminato). Il resto è stato applicato.
  */
 export interface EsitoProposta {
   proposta: PropostaArchivio;
