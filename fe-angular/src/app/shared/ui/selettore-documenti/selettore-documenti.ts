@@ -19,6 +19,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import {
   Archivio,
+  Cliente,
   Documento,
   DocumentoPrivato,
   DocumentoPubblico,
@@ -28,6 +29,7 @@ import {
   SetDiRiferimento,
   SetInformativo,
 } from '@core/models';
+import { ClientiApi } from '@core/api/clienti-api';
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
 import { Icona } from '@shared/ui/icona/icona';
@@ -46,6 +48,15 @@ export interface VoceSelettore {
    * anche quando si sceglie un prodotto.
    */
   riferimenti: RiferimentoDocumento[];
+  /**
+   * Il cliente, quando la voce è un cliente e non un documento (12/09/2026).
+   *
+   * Menzionare un cliente non mette documenti nel contesto: aggancia la
+   * conversazione a lui. Duecento documenti nel contesto non sarebbero un
+   * contesto, sarebbero un archivio; al motore basta sapere di chi si parla,
+   * e i suoi documenti se li apre.
+   */
+  cliente?: { id: string; nome: string };
   /** Riga secondaria: compagnia e prodotto, o tipologia ed etichette. */
   dettaglio: string;
   /** Edizione superata: referenziabile, ma va detto (RF-A-04). */
@@ -115,6 +126,7 @@ const RISULTATI_PER_ARCHIVIO = 6;
 export class SelettoreDocumenti {
   private readonly apiPubblici = inject(DocumentiApi);
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
+  private readonly apiClienti = inject(ClientiApi);
 
   /**
    * Il seme della ricerca: ciò che stava dopo la `@` all'apertura — di
@@ -155,7 +167,18 @@ export class SelettoreDocumenti {
    */
   readonly granularita = input<'documento' | 'prodotto'>('documento');
 
+  /**
+   * Se fra i risultati ci vanno anche i clienti.
+   *
+   * Vero in chat, dove agganciare la conversazione a un cliente ha senso;
+   * falso dove una riga è per forza un documento (le righe di una tabella,
+   * i documenti di riferimento di un agente).
+   */
+  readonly conClienti = input(false);
+
   readonly scelto = output<RiferimentoDocumento>();
+  /** Un cliente menzionato: chi ascolta aggancia la conversazione a lui. */
+  readonly clienteScelto = output<{ id: string; nome: string }>();
   /** Un set informativo scelto: i suoi documenti, tutti insieme. */
   readonly sceltiInsieme = output<RiferimentoDocumento[]>();
   readonly chiuso = output<void>();
@@ -206,12 +229,19 @@ export class SelettoreDocumenti {
       perPagina: RISULTATI_PER_ARCHIVIO,
     }),
   );
+  /* I clienti si propongono solo dove ha senso agganciarne uno: in chat.
+     Nelle righe di una tabella o fra i documenti di un agente, un cliente
+     non è una riga possibile. */
+  private readonly risorsaClienti = httpResource<Paginato<Cliente>>(() =>
+    this.conClienti() ? this.apiClienti.url({ q: this.queryAttesa() || undefined }) : undefined,
+  );
 
   protected readonly inCaricamento = computed(
     () =>
       this.risorsaPubblici.isLoading() ||
       this.risorsaSet.isLoading() ||
-      this.risorsaPrivati.isLoading(),
+      this.risorsaPrivati.isLoading() ||
+      this.risorsaClienti.isLoading(),
   );
 
   protected readonly gruppi = computed(() => {
@@ -230,8 +260,9 @@ export class SelettoreDocumenti {
       voci: (elenco?.elementi ?? [])
         .map(versoVoce)
         /* Un set sparisce solo quando è già dentro tutto: se ne manca un
-           pezzo, sceglierlo di nuovo porta dentro quello che manca. */
-        .filter((v) => v.riferimenti.some((r) => !esclusi.has(r.id))),
+           pezzo, sceglierlo di nuovo porta dentro quello che manca. Un
+           cliente non ha riferimenti e non sparisce mai. */
+        .filter((v) => v.cliente || v.riferimenti.some((r) => !esclusi.has(r.id))),
       /* Quanti ne ha in tutto l'archivio: senza, sei risultati su ottanta si
          leggono come «ce ne sono sei», e non si affina mai la ricerca. */
       totale: elenco?.totale ?? 0,
@@ -251,6 +282,13 @@ export class SelettoreDocumenti {
           );
 
     return [
+      /* I clienti per primi quando ci sono: chi scrive «@rossi» cerca lui,
+         non un documento che lo nomina. */
+      gruppo(
+        'Clienti',
+        this.risorsaClienti.hasValue() ? this.risorsaClienti.value() : undefined,
+        (c) => voceCliente(c, query),
+      ),
       pubblici,
       gruppo(
         'Archivio privato',
@@ -413,6 +451,11 @@ export class SelettoreDocumenti {
      altro di fila non deve cancellare a mano, e chi chiude il pannello non
      se ne accorge. */
   private consegna(voce: VoceSelettore): void {
+    if (voce.cliente) {
+      this.clienteScelto.emit(voce.cliente);
+      this.ricerca.set('');
+      return;
+    }
     const [primo, ...altri] = voce.riferimenti;
     if (!primo) return;
     if (altri.length) this.sceltiInsieme.emit(voce.riferimenti);
@@ -425,6 +468,28 @@ const evidenziato = (titolo: string, dettaglio: string, query: string) => ({
   titoloEvidenziato: evidenziaTermini(titolo, query),
   dettaglioEvidenziato: evidenziaTermini(dettaglio, query),
 });
+
+/**
+ * Un cliente fra i risultati della `@`.
+ *
+ * Il dettaglio dice quanti documenti ha e con che altri nomi compare: sono
+ * le due cose che fanno riconoscere il cliente giusto quando ce ne sono due
+ * che si somigliano.
+ */
+function voceCliente(c: Cliente, query: string): VoceSelettore {
+  const parti = [c.documenti === 1 ? '1 documento' : `${c.documenti} documenti`];
+  if (c.alias.length) parti.push(`anche ${c.alias.join(', ')}`);
+  const dettaglio = parti.join(' · ');
+  return {
+    chiave: `cliente:${c.id}`,
+    archivio: 'privato',
+    riferimenti: [],
+    cliente: { id: c.id, nome: c.nome },
+    dettaglio,
+    storico: false,
+    ...evidenziato(c.nome, dettaglio, query),
+  };
+}
 
 function voce(d: Documento, query: string): VoceSelettore {
   if (d.archivio === 'pubblico') {

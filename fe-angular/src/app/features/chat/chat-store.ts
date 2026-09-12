@@ -743,6 +743,47 @@ export class ChatStore {
   /** I riferimenti del messaggio in volo: contesto già vero sul server, non ancora nell'elenco locale. */
   readonly riferimentiInVolo = computed(() => this.streamAttivo()?.riferimenti ?? []);
 
+  // --- Il cliente di cui si parla -----------------------------------------
+
+  /**
+   * Il cliente menzionato **prima** che la conversazione esista.
+   *
+   * Come i riferimenti della bozza: si può menzionare qualcuno nella
+   * schermata iniziale, dove non c'è ancora niente a cui agganciarlo, e
+   * l'aggancio vero avviene alla creazione.
+   */
+  readonly clienteBozza = signal<{ id: Id; nome: string } | undefined>(undefined);
+
+  /** Quello agganciato davvero, o quello che lo sarà appena si invia. */
+  readonly cliente = computed(() => this.attiva()?.cliente ?? this.clienteBozza());
+
+  /**
+   * Menzionare un cliente: la conversazione diventa sua.
+   *
+   * Non porta documenti nel contesto — duecento documenti non sarebbero un
+   * contesto, sarebbero un archivio — ma dice al motore di chi si parla: la
+   * sua scheda entra nella workspace, e la conversazione compare nella sua
+   * pagina.
+   */
+  agganciaCliente(cliente: { id: Id; nome: string }): void {
+    const id = this.idAttiva();
+    if (!id) {
+      this.clienteBozza.set(cliente);
+      return;
+    }
+    /* Si ricarica l'elenco invece di rattoppare la riga: il cliente si
+       vede da lì (la conversazione attiva è una voce dello storico), e una
+       copia locale che diverge è il modo in cui il nome resta indietro. */
+    this.api.aggancia(id, cliente.id).subscribe({ next: () => this.storico.ricarica() });
+  }
+
+  staccaCliente(): void {
+    const id = this.idAttiva();
+    this.clienteBozza.set(undefined);
+    if (!id) return;
+    this.api.aggancia(id, null).subscribe({ next: () => this.storico.ricarica() });
+  }
+
   aggiungiRiferimento(documento: RiferimentoDocumento): void {
     this.riferimentiBozza.update((r) =>
       r.some((d) => d.id === documento.id) ? r : [...r, documento],
@@ -954,8 +995,10 @@ export class ChatStore {
       return;
     }
 
-    this.api.crea().subscribe({
+    const cliente = this.clienteBozza();
+    this.api.crea(cliente ? { clienteId: cliente.id } : {}).subscribe({
       next: (conversazione) => {
+        this.clienteBozza.set(undefined);
         /* L'id si imposta prima di navigare: così `apri()` riconosce la
            conversazione come già aperta e non ricarica nulla. */
         this.idAttiva.set(conversazione.id);

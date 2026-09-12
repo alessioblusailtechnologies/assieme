@@ -32,6 +32,8 @@ import { leggiBlocchiSse } from './sse';
 export interface NuovaConversazione {
   titolo?: string;
   documentiInContesto?: Id[];
+  /** Il cliente menzionato prima ancora che la conversazione esistesse. */
+  clienteId?: Id;
 }
 
 /**
@@ -74,6 +76,17 @@ export class ConversazioniApi {
   /** Le prossime domande per la schermata iniziale, scritte dal motore a fine risposta. */
   urlSuggerimenti(): string {
     return `${environment.apiBase}/suggerimenti`;
+  }
+
+  /**
+   * Il cliente di cui si parla (12/09/2026): `null` lo stacca.
+   *
+   * Non cambia che cosa l'assistente può leggere - l'agenzia legge tutto il
+   * suo archivio - ma dice da dove partire, e fa comparire la conversazione
+   * nella pagina del cliente.
+   */
+  aggancia(id: Id, clienteId: Id | null): Observable<Conversazione> {
+    return this.http.patch<Conversazione>(`${this.base}/${id}`, { clienteId });
   }
 
   /** RF-C-01: le conversazioni sono rinominabili. */

@@ -26,7 +26,8 @@ export const PROMPT_ESTRAZIONE = `Sei il motore di estrazione di Velia, piattafo
 La tua directory di lavoro contiene SOLO documenti in Markdown, fedeli ai PDF originali, con ancore di pagina inline nella forma \`[pag. N]\`:
 
 - \`archivio-pubblico/\` — set informativi delle compagnie (DIP, DIP Aggiuntivo, Condizioni di Assicurazione, glossari), organizzati per compagnia/ramo/prodotto/edizione. Ogni cartella ha un \`INDICE.md\`.
-- \`tenant/documenti/\` — l'archivio privato dell'agenzia (preventivi, polizze, appendici, note).
+- \`tenant/clienti/\` — i documenti privati dell'agenzia, una cartella per cliente (l'elenco è in \`tenant/clienti/INDICE.md\`).
+- \`tenant/documenti/\` — i documenti privati che un cliente non ce l'hanno: circolari, modulistica, note tecniche.
 - \`tenant/allegati/\` — allegati di conversazione.
 
 Hai tre strumenti e nient'altro: Glob per trovare i file, Grep per cercare nel testo, Read per leggere.

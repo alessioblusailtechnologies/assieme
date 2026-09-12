@@ -113,6 +113,7 @@ interface RigaConversazione {
   sessione_sdk_modello: string | null;
   /** La chat cliente da cui nasce la conversazione, se è una chat cliente (07/09/2026). */
   chat_cliente_id: string | null;
+  cliente_id: string | null;
   /** Le istruzioni che l'agenzia ha scritto per quella chat. */
   chat_istruzioni: string | null;
 }
@@ -157,7 +158,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     const conv = await db.query<RigaConversazione>(
       `select c.id, c.tenant_id, c.documenti_in_contesto, c.sessione_sdk, c.sessione_sdk_modello,
               t.modello_motore, t.memoria_attiva,
-              c.chat_cliente_id, k.istruzioni as chat_istruzioni
+              c.chat_cliente_id, c.cliente_id, k.istruzioni as chat_istruzioni
        from velia.conversazioni c
        join velia.tenant t on t.id = c.tenant_id
        left join velia.chat_clienti k on k.id = c.chat_cliente_id
@@ -203,6 +204,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
            l'archivio dell'agenzia: è il presidio che regge da solo, perché
            su questo percorso non c'è la RLS. */
         ...(conversazione.chat_cliente_id && { chatClienteId: conversazione.chat_cliente_id }),
+        /* Il cliente di cui si sta parlando: la sua scheda finisce su disco,
+           con i recapiti e le scadenze che nei documenti non ci sono. */
+        ...(conversazione.cliente_id && { clienteId: conversazione.cliente_id }),
       });
 
       /* Si riprende solo se la trascrizione è ancora su questo disco (altro
@@ -393,6 +397,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         suDocumento: async (documento) => {
           await emetti({ tipo: 'documento', documento });
         },
+        /* Gli strumenti sui clienti escono dalla directory e interrogano il
+           database: per l'agenzia, mai per una chat cliente. */
+        ...(conversazione.chat_cliente_id ? {} : { clienti: true }),
         /*
          * Il riordino proposto si deposita e si racconta, non si esegue. La
          * riga nasce `proposta`: diventerà `applicata` solo se qualcuno
@@ -475,6 +482,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           : promptSistema(dna, {
               modelli: modelliAgenzia.rows,
               conAssegnazione: true,
+              conClienti: true,
               catalogo: catalogoArchivioPubblico(workspace.perPath),
             }),
         ...(perCliente

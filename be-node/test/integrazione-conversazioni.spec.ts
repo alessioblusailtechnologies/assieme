@@ -358,10 +358,16 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
          questo database il worker di sviluppo pesca dalla stessa coda. */
       const allegato = ws.mancanti.find((m) => m.id === allegatoId);
       expect(allegato?.motivo).toMatch(/elaborazione (non ancora conclusa|fallita)/);
+      /* Dal 12/09/2026 il privato non è più un elenco solo: i documenti di
+         un cliente stanno nella sua cartella, gli altri per tipologia, e il
+         ruolino dei clienti è il file da cui si parte. */
       const indice = await readFile(join(ws.directory, 'tenant', 'documenti', 'INDICE.md'), 'utf8');
-      expect(indice).toContain('Archivio privato');
+      expect(indice).toContain('Documenti senza cliente');
+      const ruolino = await readFile(join(ws.directory, 'tenant', 'clienti', 'INDICE.md'), 'utf8');
+      expect(ruolino).toContain('# I clienti');
       const radice = await readFile(join(ws.directory, 'INDICE.md'), 'utf8');
       expect(radice).toContain('archivio-pubblico/');
+      expect(radice).toContain('tenant/clienti/');
       /* Il glossario dei rischi viene dal codice: c'è sempre quando c'è il
          pubblico, ed è annunciato in cima perché il modello lo apra quando
          una ricerca non dà risultati. */

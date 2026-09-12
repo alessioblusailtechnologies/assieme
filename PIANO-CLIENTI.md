@@ -6,7 +6,7 @@ Non è un rimescolamento di schermate, è un **cambio di asse portante**. Dalla 
 
 E si porta dietro una semplificazione vera. Sparisce il pezzo più fragile della Fase 10 — decidere in quale ramo di un albero libero collocare un documento (`archivio/collocazione.ts`, `convenzione.ts`, `albero.ts`, il tool `proponi_riordino`) — e resta la risoluzione del cliente (`archivio/clienti.ts`), che è la parte buona, già scritta e già collaudata: normalizzazione, alias, identificativi fiscali, candidati per somiglianza, e il modello solo sugli ambigui.
 
-**Stato**: **Fasi 1-6 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, la sezione Clienti si vede, l'archivio si lavora in blocco e la chat col cliente si apre dalla sua scheda. Resta la 7, il motore.
+**Stato**: **fatto** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, la sezione Clienti si vede, l'archivio si lavora in blocco, la chat col cliente si apre dalla sua scheda e il motore naviga per cliente. Resta da decidere se ricaricare l'archivio vero (vedi «Quello che resta aperto»).
 
 **Niente di tutto questo è in produzione**, e il committente può svuotare l'Archivio Privato (12/09/2026). Quindi non c'è nessuna migrazione di dati da progettare: le tabelle dell'albero si eliminano subito e il codice che le serve se ne va con loro, nella prima fase invece che nell'ultima. L'Archivio **Pubblico** non si tocca: i lotti trascritti (Zurich, HDI, Unipol, Allianz, AXA, Generali, Nobis…) non hanno niente a che vedere con le cartelle, che sono del tenant.
 
@@ -232,11 +232,19 @@ Il cono era già stato riscritto con la Fase 1, da tutte e due le parti — `doc
 
 *Collaudato*: il giro intero in un Chrome vero, dalla scheda di SCRIMIERI ANDREA — modulo precompilato, chat creata, cono con i suoi **2 documenti** (compreso quello intestato dall'ingestion in Fase 3), uno escluso, e poi eliminata, che rimuove anche l'utenza ospite. `ng lint` pulito, 240 test FE, build di produzione verde.
 
-### Fase 7 · Il motore
+### ✅ Fase 7 · Il motore (12/09/2026)
 
-Workspace nella forma nuova, ruolino, `SCHEDA.md` per i clienti in gioco, i due strumenti, `proponi_assegnazione`, regole riscritte, menzione `@cliente` nel composer, `conversazioni.cliente_id` con la scheda «Conversazioni» del cliente.
+**La workspace ha preso la forma dell'archivio.** Un documento intestato non sta più in un elenco piatto: sta in `tenant/clienti/<nome>--<id>/`, insieme agli altri suoi. Quello che un cliente non ce l'ha resta in `tenant/documenti/<tipologia>/`. Il motore ci arriva come ci arriverebbe una persona: apre il ruolino, trova la riga, entra nella cartella.
 
-*Collaudo*: tre domande vere in chat sull'archivio ricaricato — «cosa ha Rossi», «chi ha l'auto in scadenza a marzo», «assegna questi tre documenti a Bianchi» — con le citazioni verificate, e il giro di `tools/collaudo-motore.ts` come dopo ogni ritocco al prompt.
+**Il ruolino si grepa, non si legge.** `tenant/clienti/INDICE.md` è una riga per cliente (nome, cartella, tipo, quanti documenti, con che altri nomi compare, etichette). Su un'agenzia vera sono tremila righe, duecento kilobyte: leggerlo intero sarebbe un contesto buttato a ogni domanda, e le regole lo dicono esplicitamente. La `SCHEDA.md` invece si scrive solo per i **clienti in gioco** — quello agganciato alla conversazione e quelli dei documenti nel contesto — perché scriverne tremila a ogni messaggio è I/O buttato; per tutti gli altri c'è lo strumento.
+
+**Due strumenti per quello che la navigazione non può fare.** `cerca_clienti` risponde alle domande di portafoglio (chi scade entro marzo, chi ha una certa etichetta, chi è senza documenti) che con Grep vorrebbero venti letture; `scheda_cliente` porta a casa recapiti e scadenze di uno solo, per nome o per id, e dice «ambiguo» invece di indovinare quando i nomi si somigliano. Ci sono solo quando l'agenzia è dall'altra parte: nella chat di un cliente la rubrica non esiste.
+
+**`proponi_riordino` è diventato `proponi_assegnazione`.** Il meccanismo — l'assistente propone, l'agenzia approva — non si butta insieme alle cartelle: cambia oggetto. Non più «questo documento va in questa cartella», ma «questo documento è di questo cliente, e queste sono le sue etichette».
+
+**`@cliente` nel composer.** Scrivendo «@scrim» il pannello mette i clienti per primi, con la loro icona: chi scrive il nome di una persona cerca lei, non un documento che la nomina. Sceglierlo non lascia un chip nel testo — il cliente non è un documento nel contesto, è **di chi si parla** — ma aggancia la conversazione, che così compare anche nella sua scheda. Nella schermata iniziale la conversazione non esiste ancora: il cliente resta in una pillola sopra il campo, e diventa `clienteId` alla creazione.
+
+*Collaudato*: due giri veri di `tools/collaudo-motore.ts` sull'archivio demo, che hanno percorso le due strade — ruolino → cartella → documento per «cosa ha in essere Scrimieri» (5 turni, 0,1258 $) e `cerca_clienti` per la domanda di portafoglio (7 turni, 0,0834 $) — con le citazioni validate contro la workspace. La menzione provata in un Chrome vero. `ng lint` pulito, 240 test FE, build di produzione verde; lato backend 326 test unitari e le quattro suite d'integrazione (clienti, chat clienti, archivio privato, conversazioni) verdi, 56 test.
 
 ## Quello che si butta
 
@@ -247,3 +255,4 @@ Vale la pena scriverlo, perché è il guadagno vero, e succede tutto nella Fase 
 - **La polizza come entità** è esclusa per decisione, e va bene finché i documenti di un cliente sono pochi. Il giorno in cui un cliente ne avrà trenta su cinque polizze, l'elenco piatto chiederà un raggruppamento: i metadati per farlo (`numero_polizza`, `decorrenza`, `scadenza`) ci sono già, e nessuna scelta di questo piano lo impedisce.
 - **Le scadenze** non hanno ancora un posto: una volta che i dati stanno sul cliente, lo scadenzario è una query e un agente. Fuori da questo piano.
 - **L'import dell'anagrafica** da un gestionale (CSV, Excel): prevedibile alla prima agenzia vera, non previsto qui.
+- **La ricarica dell'archivio vero** è l'ultimo collaudo che manca, ed è una spesa: i 22 documenti privati del tenant demo sono stati ingeriti prima della Fase 3, quindi 20 non hanno cliente e 6 prenderebbero etichette. Rifarli (`tools/rilavora-ingestion.ts`) costa chiamate al modello, e la decisione è dell'agenzia, non del piano.

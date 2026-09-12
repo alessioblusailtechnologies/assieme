@@ -80,6 +80,15 @@ export interface Conversazione {
    * singolo messaggio.
    */
   documentiInContesto: RiferimentoDocumento[];
+  /**
+   * Il cliente di cui si sta parlando, se qualcuno l'ha menzionato con `@`.
+   *
+   * Non è un filtro: l'assistente continua a leggere tutto l'archivio
+   * dell'agenzia. È un punto di partenza - la sua scheda entra nel lavoro
+   * del motore - e il modo in cui questa conversazione compare nella pagina
+   * del cliente.
+   */
+  cliente?: { id: Id; nome: string };
   /** RF-C-15: condivisa in sola lettura con gli altri utenti del tenant. */
   condivisa: boolean;
   autoreId: Id;

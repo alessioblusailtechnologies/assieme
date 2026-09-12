@@ -250,6 +250,26 @@ export class Composer {
   }
 
   /**
+   * Un cliente menzionato: la conversazione diventa sua, e la `@` sparisce
+   * dal testo.
+   *
+   * Non nasce un chip come per i documenti: il cliente non è un documento
+   * nel contesto, è **di chi si sta parlando**, e si vede nella barra del
+   * contesto, dove resta finché non lo si stacca. Un chip nel messaggio
+   * direbbe che quella menzione vale per quel messaggio, e non è così.
+   */
+  protected aggancia(cliente: { id: string; nome: string }): void {
+    this.inScelta = true;
+    const menzione = this.menzione();
+    const editor = this.editor;
+    editor.focus();
+    if (menzione) sostituisciIntervallo(editor, menzione.inizio, this.cursore(), document.createTextNode(''));
+    this.store.agganciaCliente(cliente);
+    this.aggiorna();
+    this.inScelta = false;
+  }
+
+  /**
    * Un prodotto scelto: i documenti del suo set entrano tutti nel contesto,
    * ma nel testo compare **un chip solo**, col nome del prodotto. Toglierlo
    * li toglie insieme, che è il motivo per cui sono un gruppo.

@@ -82,6 +82,16 @@ export interface Conversazione {
   creataIl: string;
   aggiornataIl: string;
   documentiInContesto: RiferimentoDocumento[];
+  /**
+   * Il cliente di cui si sta parlando (12/09/2026), quando qualcuno l'ha
+   * menzionato con `@`.
+   *
+   * Non è un filtro — l'agenzia continua a leggere tutto il suo archivio —
+   * ma un punto di partenza: la scheda del cliente finisce nella workspace,
+   * e la conversazione compare nella sua pagina. Menzionare un cliente non
+   * restringe, orienta.
+   */
+  cliente?: { id: string; nome: string };
   condivisa: boolean;
   autoreId: string;
   /**
@@ -314,6 +324,8 @@ export const schemaModificheConversazione = z
   .object({
     titolo: z.string().optional(),
     condivisa: z.boolean().optional(),
+    /** `null` stacca il cliente: la conversazione torna a non essere di nessuno. */
+    clienteId: z.string().uuid().nullable().optional(),
   })
   .passthrough();
 

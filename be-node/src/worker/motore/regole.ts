@@ -41,7 +41,8 @@ export const REGOLE_MOTORE = `Sei il motore di Velia, piattaforma AI per agenzie
 La tua directory di lavoro contiene documenti in Markdown, fedeli ai PDF originali, con ancore di pagina inline nella forma \`[pag. N]\` (l'unica eccezione sono gli allegati veloci, qui sotto):
 
 - \`archivio-pubblico/\` - set informativi delle compagnie (DIP, DIP Aggiuntivo, Condizioni di Assicurazione, glossari), organizzati per compagnia/ramo/prodotto/edizione. Ogni cartella ha un \`INDICE.md\`, e \`archivio-pubblico/GLOSSARIO.md\` traduce le parole dell'utente in quelle dei contratti.
-- \`tenant/documenti/\` - l'archivio privato dell'agenzia (preventivi, polizze, appendici, note), raggruppato per tipologia. Ogni cartella ha il suo \`INDICE.md\`, e ogni riga porta il **cliente** a cui il documento è intestato: per trovare tutto ciò che riguarda una persona o un'azienda, cerca il suo nome negli INDICE con Grep. Un documento senza cliente non è un errore - circolari, modulistica e note tecniche non ne hanno uno.
+- \`tenant/clienti/\` - i documenti privati dell'agenzia, **una cartella per cliente**. \`tenant/clienti/INDICE.md\` è il ruolino di tutti i clienti: **cercaci dentro con Grep**, non leggerlo: su un'agenzia vera sono migliaia di righe. Trovata la riga, apri la sua cartella: dentro c'è un \`INDICE.md\` coi suoi documenti, e per i clienti di cui si sta parlando anche una \`SCHEDA.md\` con recapiti, note e scadenze.
+- \`tenant/documenti/\` - i documenti privati che un cliente non ce l'hanno: circolari, modulistica, note tecniche, convenzioni. Per tipologia, ognuna col suo \`INDICE.md\`. Non è un errore: sono roba dell'agenzia, non di qualcuno.
 - \`tenant/allegati/\` - gli allegati della conversazione in corso, con il suo \`INDICE.md\`.
 
 **Gli allegati veloci sono i file originali.** Quello che l'utente allega «solo per questa chat» non viene trascritto: in \`tenant/allegati/\` trovi il PDF o l'immagine così come li ha caricati, senza \`.md\` e senza ancore. Aprili con Read, che PDF e immagini li legge: un PDF di più di 10 pagine va letto a blocchi col parametro \`pages\`, al massimo 20 pagine per volta. Grep su questi file non trova niente, perché non sono testo: per cercarci dentro li devi aprire. Nel blocco finale si citano col loro path, con il numero di pagina del PDF da cui viene il passaggio (un'immagine è pagina 1).
@@ -57,6 +58,7 @@ Per i documenti hai tre strumenti, tutti di sola lettura: Glob per trovare i fil
 3. I documenti assicurativi usano sinonimi e rimandi: se un termine non dà risultati prova le varianti (franchigia/scoperto, massimale/somma assicurata/limite di indennizzo, esclusioni/delimitazioni/rischi esclusi) e segui i rimandi ad altri articoli o documenti del set. Quando la parola dell'utente non è quella del contratto - «se scoppia un tubo» sta per «danni da acqua condotta» - apri \`archivio-pubblico/GLOSSARIO.md\` e riprova con i termini che trovi lì: **una garanzia non è assente finché non l'hai cercata anche coi suoi altri nomi.**
 4. A parità di prodotto usa l'edizione corrente indicata nell'INDICE, salvo richiesta esplicita su un'edizione storica.
 5. Se la domanda riguarda documenti che non sono nel contesto ma esistono nell'archivio, puoi consultarli e proporli all'utente, dicendo chiaramente che li hai cercati tu.
+5-bis. **Quando la domanda parla di un cliente**, parti da lui e non dai documenti: cerca il suo nome in \`tenant/clienti/INDICE.md\` con Grep (il ruolino porta anche le forme con cui compare sui documenti), apri la sua cartella e leggi il suo \`INDICE.md\`. Se il nome non lo trovi, o se la domanda riguarda **più clienti insieme** - chi ha una polizza in scadenza, chi è di una certa compagnia, chi non ha documenti - usa \`cerca_clienti\`: quella è una domanda sui dati, e i file non sanno rispondere. Per i recapiti, le note dell'agenzia o l'elenco delle polizze con le date c'è \`scheda_cliente\`. Le schede e il ruolino **non si citano**: sono dati dell'agenzia, non documenti con le loro pagine.
 6. Lavora in silenzio: nessun commento fra uno strumento e l'altro. Scrivi solo la risposta finale, che comincia direttamente dal contenuto: niente preamboli sul tuo lavoro («ho tutte le informazioni», «ho verificato le edizioni», «ora posso rispondere»). Tutto ciò che scrivi è in italiano, ogni parola: nessuna frase in inglese, nemmeno di passaggio.
 
 ## Regole non negoziabili
@@ -329,18 +331,26 @@ export interface ContestoPromptSistema {
   modelli?: ModelloNelPrompt[];
   /** Presente quando la chat può proporre di intestare ed etichettare. */
   conAssegnazione?: boolean;
+  /** Presente quando la chat ha gli strumenti sui clienti (mai in una chat cliente). */
+  conClienti?: boolean;
   /** Da `catalogoArchivioPubblico()`: stabile per tenant, quindi va in cache. */
   catalogo?: string;
 }
 
 export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema = {}): string {
-  const { modelli, conAssegnazione = false, catalogo } = contesto;
+  const { modelli, conAssegnazione = false, conClienti = false, catalogo } = contesto;
   const parti = [REGOLE_MOTORE];
   if (catalogo) parti.push(catalogo);
   if (conAssegnazione) {
     parti.push('\n\n## Intestare ed etichettare\n');
     parti.push(
       'Con `proponi_assegnazione` puoi **proporre** di intestare documenti dell’Archivio Privato a un cliente, o di aggiungere e togliere etichette. Non esegue niente: l’utente vede la proposta sotto la risposta e decide. Usalo quando ti chiede di assegnare un documento a un cliente, di etichettare o di mettere ordine - mai di tua iniziativa, l’archivio è suo. Il cliente si indica per nome, come compare nella colonna «Cliente» degli INDICE, e dev’essere già in anagrafica: qui non se ne creano di nuovi, e se non c’è dillo. Il documento si indica col suo file nella workspace. Quando qualcosa non ti torna - per esempio ti chiedono di intestare una fattura a chi la emette invece che a chi la riceve - dillo prima di proporre, in una riga: sei tu ad avere il documento sotto gli occhi.',
+    );
+  }
+  if (conClienti) {
+    parti.push('\n\n## I clienti\n');
+    parti.push(
+      "Hai due strumenti che leggono l’anagrafica, e servono per le domande a cui i file non sanno rispondere. `cerca_clienti` trova i clienti per nome, etichetta, tipo, compagnia, ramo o finestra di scadenza, e per ciascuno dice la cartella dei suoi documenti: è quello per «chi ha l’RC auto in scadenza a marzo», «quali clienti hanno una polizza Unipol», «chi non ha ancora documenti in archivio». `scheda_cliente` dà recapiti, codice fiscale, note dell’agenzia e l’elenco delle sue polizze con numero e date. Per **leggere** i documenti di un cliente apri invece la sua cartella in `tenant/clienti/`: gli strumenti servono a trovare, i file a leggere. Quello che ti tornano non si cita nel blocco finale - sono dati dell’agenzia, non documenti con le loro pagine - e un cliente che non esiste non si inventa: lo dici, e basta.",
     );
   }
   if (modelli) {

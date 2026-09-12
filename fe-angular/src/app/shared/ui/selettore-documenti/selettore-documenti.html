@@ -98,7 +98,9 @@
             (mouseenter)="indiceAttivo.set(voci().indexOf(voce))"
           >
             <ui-icon
-              [name]="voce.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'"
+              [name]="
+                voce.cliente ? 'utente' : voce.archivio === 'pubblico' ? 'archivio-pubblico' : 'archivio-privato'
+              "
               [size]="15"
             />
             <span class="voce__testo">

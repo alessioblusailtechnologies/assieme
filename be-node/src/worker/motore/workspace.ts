@@ -48,13 +48,18 @@ export interface DocumentoWorkspace {
   edizione: string | null;
   riferimentoCliente: string | null;
   /**
-   * Il cliente a cui il documento è intestato, per nome (12/09/2026).
+   * Il cliente a cui il documento è intestato (12/09/2026).
    *
-   * Sta negli `INDICE.md` ed è la colonna con cui il motore risponde a
-   * «cosa ha Rossi»: l'id non gli servirebbe a niente, il nome è quello che
-   * l'utente pronuncia e quello che si trova con Grep.
+   * Il **nome** è quello che l'utente pronuncia e quello che si trova con
+   * Grep; l'**id** serve solo a comporre la cartella, che deve restare
+   * stabile anche se due clienti si chiamano quasi uguali.
    */
   cliente: string | null;
+  clienteId: string | null;
+  /* Le due cose che di una polizza si chiedono per prime, e che la scheda
+     del cliente mette in fila come scadenzario. */
+  numeroPolizza: string | null;
+  scadenza: string | null;
   etichette: string[];
   documentoDiRiferimento: boolean;
   /**
@@ -113,6 +118,8 @@ interface RigaDocumento {
   etichette: string[] | null;
   cliente_id: string | null;
   cliente_nome: string | null;
+  numero_polizza: string | null;
+  scadenza: string | null;
   documento_di_riferimento: boolean | null;
   caricato_il: Date | null;
 }
@@ -132,6 +139,15 @@ export interface OpzioniWorkspace {
   cartella?: string;
   /** Gli id del contesto della conversazione (allegati compresi). */
   contestoIds: string[];
+  /**
+   * Il cliente agganciato alla conversazione, se ce n'è uno.
+   *
+   * Non cambia che cosa si può leggere — l'agenzia legge tutto il suo
+   * archivio — ma dice **di chi si sta parlando**: la sua scheda viene
+   * scritta su disco, e il prompt lo nomina. Menzionare un cliente non è un
+   * filtro, è dire al motore da dove partire.
+   */
+  clienteId?: string;
   /**
    * La chat cliente da cui nasce la conversazione, se è una chat cliente.
    *
@@ -190,6 +206,7 @@ export async function documentiPerWorkspace(
             d.ramo_id, r.nome as ramo_nome, r.codice as ramo_codice,
             d.prodotto, d.edizione_etichetta, d.riferimento_cliente, d.etichette,
             d.cliente_id, cl.nome as cliente_nome,
+            d.numero_polizza, to_char(d.scadenza, 'YYYY-MM-DD') as scadenza,
             d.documento_di_riferimento, d.caricato_il
      from velia.documenti d
      left join velia.compagnie c on c.id = d.compagnia_id
@@ -363,7 +380,26 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
     }
   }
 
-  await scriviIndiciTenant(directory, perPath);
+  /*
+   * I clienti: il ruolino li elenca tutti (è un file da grepare), le schede
+   * si scrivono solo per quelli **in gioco** — quello agganciato alla
+   * conversazione e quelli dei documenti nel contesto. Scriverne tremila a
+   * ogni messaggio sarebbe I/O buttato, e per gli altri c'è lo strumento.
+   *
+   * In una chat cliente non se ne scrive nessuno: là dentro non esistono
+   * «gli altri clienti», e il ruolino direbbe al cliente che l'agenzia ne
+   * ha altri duemila.
+   */
+  const clienti = opzioni.chatClienteId ? [] : await clientiDelTenant(db, tenantId);
+  const inGioco = new Set<string>();
+  if (!opzioni.chatClienteId) {
+    if (opzioni.clienteId) inGioco.add(opzioni.clienteId);
+    for (const riga of righe.rows) {
+      if (riga.cliente_id && contestoIds.includes(riga.id)) inGioco.add(riga.cliente_id);
+    }
+  }
+
+  await scriviIndiciTenant(directory, perPath, clienti, inGioco);
 
   return {
     directory,
@@ -377,12 +413,18 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
 /**
  * Il path relativo (posix) di un documento nella workspace.
  *
- * Il privato torna a raggrupparsi per **tipologia** (12/09/2026): l'albero
- * libero della Fase 10 non c'è più, e la tipologia è un insieme chiuso e
- * piccolo — non un albero in cui perdersi, ma nemmeno quattromila file in
- * una directory sola. Il cliente diventerà il livello portante anche qui
- * con la Fase 7 del `PIANO-CLIENTI.md`; fino ad allora sta nei metadati e
- * negli indici, dove il motore lo trova con Grep.
+ * Il privato si raggruppa **per cliente** (Fase 7 del `PIANO-CLIENTI.md`):
+ * è l'asse su cui gira l'archivio, ed è la domanda che l'utente fa davvero
+ * («cosa ha Rossi»). Una cartella per cliente tiene ogni directory piccola
+ * anche con quattromila documenti, e la si trova con un Glob sul nome.
+ *
+ * La cartella porta **nome e id**: due «Rossi Mario» non si mescolano, e
+ * rinominare un cliente non fa migrare niente — il path cambia al job
+ * dopo, e i path non sono mai stati la verità (le citazioni si ancorano
+ * agli id).
+ *
+ * Chi un cliente non ce l'ha resta per tipologia: circolari, modulistica e
+ * note tecniche non sono di nessuno, e la tipologia è un insieme chiuso.
  */
 export function percorsoNellaWorkspace(riga: {
   id: string;
@@ -390,11 +432,21 @@ export function percorsoNellaWorkspace(riga: {
   titolo: string;
   tipologia: string;
   path_md: string | null;
+  cliente_nome?: string | null;
+  cliente_id?: string | null;
 }): string {
   if (riga.archivio === 'pubblico') return riga.path_md!.replace(/^\/+/, '');
   const nome = `${slug(riga.titolo)}--${riga.id}.md`;
   if (riga.archivio !== 'privato') return `tenant/allegati/${nome}`;
+  if (riga.cliente_id && riga.cliente_nome) {
+    return `tenant/clienti/${cartellaCliente(riga.cliente_nome, riga.cliente_id)}/${nome}`;
+  }
   return `tenant/documenti/${riga.tipologia}/${nome}`;
+}
+
+/** La cartella di un cliente: il nome per leggerlo, l'id per non confonderlo. */
+export function cartellaCliente(nome: string, id: string): string {
+  return `${slug(nome)}--${id}`;
 }
 
 export function slug(testo: string): string {
@@ -431,6 +483,9 @@ function versoDocumento(
     edizione: r.edizione_etichetta,
     riferimentoCliente: r.riferimento_cliente,
     cliente: r.cliente_nome,
+    clienteId: r.cliente_id,
+    numeroPolizza: r.numero_polizza,
+    scadenza: r.scadenza,
     etichette: r.etichette ?? [],
     documentoDiRiferimento: r.documento_di_riferimento ?? false,
   };
@@ -441,15 +496,24 @@ function versoDocumento(
  * privato è piatto per id, e cliente, etichette e tipologia cambiano nel
  * tempo.
  *
- * Uno per tipologia, e non uno solo con tutto dentro: un'agenzia con
- * quattromila documenti produceva un file da quattromila righe che il
- * modello leggeva per intero a ogni messaggio. La colonna che conta è
- * **Cliente**: è con quella che il motore risponde a «cosa ha Rossi», ed è
- * il motivo per cui questi indici si leggono con Grep prima che con Read.
+ * La forma è quella dell'archivio: **una cartella per cliente**, più una
+ * per tipologia per ciò che un cliente non ce l'ha. Tre regole la tengono
+ * in piedi su un'agenzia vera:
+ *
+ * 1. il **ruolino** (`tenant/clienti/INDICE.md`) è un file da *grepare*,
+ *    non da leggere: tremila righe sono duecento kilobyte, e il modello ci
+ *    cerca dentro un nome per ottenere una cartella;
+ * 2. ogni cartella ha il suo indice, così scendere costa una lettura sola;
+ * 3. la **scheda** di un cliente si scrive solo per quelli in gioco —
+ *    l'agganciato alla conversazione e quelli dei documenti nel contesto —
+ *    perché scriverne tremila a ogni messaggio è I/O buttato, e per gli
+ *    altri c'è lo strumento.
  */
 async function scriviIndiciTenant(
   directory: string,
   perPath: Map<string, DocumentoWorkspace>,
+  clienti: ClienteWorkspace[],
+  inGioco: Set<string>,
 ): Promise<void> {
   const privati = [...perPath.entries()].filter(([, d]) => d.archivio === 'privato');
   const allegati = [...perPath.entries()].filter(([, d]) => d.archivio === 'conversazione');
@@ -464,7 +528,7 @@ async function scriviIndiciTenant(
   const intestazione =
     '| File | Titolo | Cliente | Tipologia | Compagnia | Ramo | Pagine | Etichette | Cosa contiene |\n|---|---|---|---|---|---|---|---|---|';
 
-  const clienti = new Set(privati.map(([, d]) => d.cliente).filter((c): c is string => Boolean(c)));
+  const senzaCliente = privati.filter(([, d]) => !d.clienteId);
 
   const radice =
     '# Indice della workspace\n\n' +
@@ -472,7 +536,8 @@ async function scriviIndiciTenant(
     (conPubblico
       ? `- \`archivio-pubblico/${NOME_GLOSSARIO}\` — con quali parole i contratti scrivono i rischi che l'utente nomina a modo suo. Aprilo quando una ricerca non dà risultati, prima di concludere che una garanzia non c'è.\n`
       : '') +
-    `- \`tenant/documenti/\` — l'archivio privato dell'agenzia (${privati.length} documenti), per tipologia. Ogni cartella ha il suo \`INDICE.md\`, con il **cliente** di ogni documento: vedi \`tenant/documenti/INDICE.md\`.\n` +
+    `- \`tenant/clienti/\` — una cartella per cliente, con i suoi documenti. L'elenco è in \`tenant/clienti/INDICE.md\`: **cercaci dentro con Grep**, non leggerlo.\n` +
+    `- \`tenant/documenti/\` — i documenti privati che un cliente non ce l'hanno (${senzaCliente.length}): circolari, modulistica, note tecniche. Per tipologia.\n` +
     `- \`tenant/allegati/\` — gli allegati della conversazione in corso (${allegati.length}). Vedi \`tenant/allegati/INDICE.md\`.\n`;
   await writeFile(join(directory, 'INDICE.md'), radice, 'utf8');
 
@@ -485,36 +550,95 @@ async function scriviIndiciTenant(
     else perCartella.set(cartella, [voce]);
   }
 
+  // --- Il ruolino dei clienti ----------------------------------------------
+
+  await mkdir(join(directory, 'tenant', 'clienti'), { recursive: true });
+  const quanti = clienti.length;
+  const ruolino =
+    '# I clienti dell’agenzia\n\n' +
+    (quanti
+      ? `Sono ${quanti}. **Questo file si cerca con Grep**, non si legge: trova la riga del cliente che ti serve e apri la sua cartella.\n\n` +
+        '| Cliente | Cartella | Tipo | Documenti | Anche come | Etichette |\n|---|---|---|---|---|---|\n' +
+        clienti
+          .map(
+            (c) =>
+              `| ${cella(c.nome)} | \`tenant/clienti/${cartellaCliente(c.nome, c.id)}/\` | ${c.tipo} | ${c.documenti} | ${c.alias.length ? cella(c.alias.join(', ')) : '—'} | ${c.etichette.length ? cella(c.etichette.join(', ')) : '—'} |`,
+          )
+          .join('\n') +
+        '\n\n' +
+        'La colonna «Anche come» sono le forme con cui il cliente compare sui documenti: se un nome non lo trovi, cercalo lì.\n' +
+        'Un cliente con zero documenti esiste lo stesso: la sua cartella non c’è, e di lui sai quello che dice questa riga.\n'
+      : 'Nessun cliente in anagrafica.\n');
+  await writeFile(join(directory, 'tenant', 'clienti', 'INDICE.md'), ruolino, 'utf8');
+
+  const perId = new Map(clienti.map((c) => [c.id, c]));
+
+  // --- Una cartella per cliente, col suo indice (e la scheda se è in gioco)
+  for (const [cartella, documenti] of perCartella) {
+    if (!cartella.startsWith('tenant/clienti/')) continue;
+    await mkdir(join(directory, ...cartella.split('/')), { recursive: true });
+    const id = cartella.slice(cartella.lastIndexOf('--') + 2);
+    const cliente = perId.get(id);
+    const nome = cliente?.nome ?? documenti[0]?.[1].cliente ?? cartella;
+    await writeFile(
+      join(directory, ...cartella.split('/'), 'INDICE.md'),
+      `# ${nome}\n\n` +
+        `${documenti.length} document${documenti.length === 1 ? 'o' : 'i'} in archivio.\n\n` +
+        `${intestazione}\n${documenti.map(rigaDoc).join('\n')}\n` +
+        (cliente && inGioco.has(id) ? '\nChi è, i suoi recapiti e le sue scadenze: `SCHEDA.md`.\n' : ''),
+      'utf8',
+    );
+    if (cliente && inGioco.has(id)) {
+      await writeFile(
+        join(directory, ...cartella.split('/'), 'SCHEDA.md'),
+        schedaCliente(cliente, documenti),
+        'utf8',
+      );
+    }
+  }
+
+  /* Un cliente in gioco può non avere ancora documenti: la sua cartella non
+     nascerebbe, e la scheda — che è il motivo per cui lo si è menzionato —
+     non ci sarebbe. Si crea qui. */
+  for (const id of inGioco) {
+    const cliente = perId.get(id);
+    if (!cliente) continue;
+    const cartella = `tenant/clienti/${cartellaCliente(cliente.nome, cliente.id)}`;
+    if (perCartella.has(cartella)) continue;
+    await mkdir(join(directory, ...cartella.split('/')), { recursive: true });
+    await writeFile(
+      join(directory, ...cartella.split('/'), 'SCHEDA.md'),
+      schedaCliente(cliente, []),
+      'utf8',
+    );
+  }
+
+  // --- Quello che un cliente non ce l'ha -----------------------------------
+
   await mkdir(join(directory, 'tenant', 'documenti'), { recursive: true });
   const mappa = [...perCartella.entries()]
-    .filter(([c]) => c !== 'tenant/documenti')
+    .filter(([c]) => c.startsWith('tenant/documenti/'))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([c, docs]) => `- \`${c}/\` — ${docs.length} document${docs.length === 1 ? 'o' : 'i'}`)
     .join('\n');
   await writeFile(
     join(directory, 'tenant', 'documenti', 'INDICE.md'),
-    '# Archivio privato dell’agenzia\n\n' +
-      (privati.length
-        ? `I documenti sono raggruppati per tipologia, e ognuno è intestato a un cliente (o a nessuno: circolari, modulistica e note tecniche un cliente non ce l’hanno).\n\n` +
-          `## Cartelle\n\n${mappa || '(nessuna)'}\n\n` +
-          'Ogni cartella ha il suo `INDICE.md` con i documenti che contiene: aprilo invece di elencare i file.\n' +
-          (clienti.size
-            ? `\n## Clienti con documenti in archivio (${clienti.size})\n\n${[...clienti].sort((a, b) => a.localeCompare(b)).map((c) => `- ${c}`).join('\n')}\n\n` +
-              'Per trovare i documenti di un cliente, cerca il suo nome negli `INDICE.md` con Grep: la colonna «Cliente» ce l’ha ogni riga.\n'
-            : '') +
-          `${perCartella.has('tenant/documenti') ? `\n## Direttamente qui\n\n${intestazione}\n${perCartella.get('tenant/documenti')!.map(rigaDoc).join('\n')}\n` : ''}` +
+    '# Documenti senza cliente\n\n' +
+      (senzaCliente.length
+        ? 'Circolari, modulistica, note tecniche, convenzioni: roba dell’agenzia, non di qualcuno. Per tipologia.\n\n' +
+          `${mappa || '(nessuna)'}\n\n` +
+          'I documenti di un cliente stanno in `tenant/clienti/`, una cartella per ciascuno.\n' +
           '\n★ = documento di riferimento dell’agenzia (contesto permanente).\n'
-        : 'Nessun documento privato.\n'),
+        : 'Nessuno: ogni documento privato è intestato a un cliente.\n'),
     'utf8',
   );
 
   for (const [cartella, documenti] of perCartella) {
-    if (cartella === 'tenant/documenti') continue;
+    if (!cartella.startsWith('tenant/documenti/')) continue;
     await mkdir(join(directory, ...cartella.split('/')), { recursive: true });
     await writeFile(
       join(directory, ...cartella.split('/'), 'INDICE.md'),
-      `# ${cartella.replace('tenant/documenti/', '')}\n\n` +
-        `${intestazione}\n${documenti.map(rigaDoc).join('\n')}\n`,
+      `# ${cartella.replace('tenant/documenti/', '')}\n\n${intestazione}\n${documenti.map(rigaDoc).join('\n')}\n`,
       'utf8',
     );
   }
@@ -534,6 +658,96 @@ async function scriviIndiciTenant(
         : 'Nessun allegato.\n'),
     'utf8',
   );
+}
+
+/**
+ * Un cliente come lo vede la workspace.
+ *
+ * I recapiti stanno qui ma finiscono su disco **solo nella scheda di un
+ * cliente in gioco**: il ruolino porta ciò che serve a trovarlo (nome,
+ * forme alternative, quanti documenti), non i suoi dati personali.
+ */
+interface ClienteWorkspace {
+  id: string;
+  nome: string;
+  tipo: string;
+  alias: string[];
+  etichette: string[];
+  documenti: number;
+  email: string | null;
+  telefono: string | null;
+  indirizzo: string | null;
+  nato_il: string | null;
+  note: string | null;
+  codice_fiscale: string | null;
+  partita_iva: string | null;
+}
+
+async function clientiDelTenant(db: pg.Pool, tenantId: string): Promise<ClienteWorkspace[]> {
+  const r = await db.query<ClienteWorkspace>(
+    `select c.id, c.nome, c.tipo, c.alias, c.etichette,
+            c.email, c.telefono, c.indirizzo, to_char(c.nato_il, 'YYYY-MM-DD') as nato_il,
+            c.note, c.codice_fiscale, c.partita_iva,
+            (select count(*) from velia.documenti d
+              where d.tenant_id = c.tenant_id and d.cliente_id = c.id)::int as documenti
+       from velia.clienti c
+      where c.tenant_id = $1 and c.stato = 'attivo'
+      order by c.nome`,
+    [tenantId],
+  );
+  return r.rows;
+}
+
+/**
+ * La scheda di un cliente: quello che di lui non si vede dai documenti.
+ *
+ * È un **dato dell'agenzia**, non una fonte: le regole dicono di non
+ * citarla, perché una citazione deve puntare a un documento con la sua
+ * pagina, e un recapito non ha pagine.
+ */
+function schedaCliente(c: ClienteWorkspace, documenti: Array<[string, DocumentoWorkspace]>): string {
+  const righe = [
+    `# ${c.nome}`,
+    '',
+    `- Tipo: ${c.tipo}`,
+    ...(c.codice_fiscale ? [`- Codice fiscale: ${c.codice_fiscale}`] : []),
+    ...(c.partita_iva ? [`- Partita IVA: ${c.partita_iva}`] : []),
+    ...(c.nato_il ? [`- Nato il: ${c.nato_il}`] : []),
+    ...(c.email ? [`- Email: ${c.email}`] : []),
+    ...(c.telefono ? [`- Telefono: ${c.telefono}`] : []),
+    ...(c.indirizzo ? [`- Indirizzo: ${c.indirizzo}`] : []),
+    ...(c.alias.length ? [`- Sui documenti compare anche come: ${c.alias.join(', ')}`] : []),
+    ...(c.etichette.length ? [`- Etichette: ${c.etichette.join(', ')}`] : []),
+    '',
+  ];
+  if (c.note?.trim()) righe.push('## Note dell’agenzia', '', c.note.trim(), '');
+
+  const conScadenza = documenti
+    .map(([, d]) => d)
+    .filter((d) => d.scadenza)
+    .sort((a, b) => (a.scadenza ?? '').localeCompare(b.scadenza ?? ''));
+  if (conScadenza.length) {
+    righe.push(
+      '## Scadenze',
+      '',
+      ...conScadenza.map(
+        (d) => `- ${d.scadenza} — ${d.titolo}${d.numeroPolizza ? ` (polizza ${d.numeroPolizza})` : ''}`,
+      ),
+      '',
+    );
+  }
+
+  righe.push(
+    `## I suoi documenti (${documenti.length})`,
+    '',
+    documenti.length
+      ? 'Sono i file di questa cartella: l’elenco con i titoli è in `INDICE.md`.'
+      : 'Nessun documento in archivio.',
+    '',
+    'Questa scheda è un **dato dell’agenzia**, non un documento: non si cita nel blocco finale.',
+    '',
+  );
+  return righe.join('\n');
 }
 
 

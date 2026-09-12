@@ -94,6 +94,8 @@ interface RigaConversazione {
   created_at: Date;
   updated_at: Date;
   documenti_in_contesto: string[];
+  cliente_id: string | null;
+  cliente_nome?: string | null;
   condivisa: boolean;
   autore_id: string;
 }
@@ -148,7 +150,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.get('/api/conversazioni', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<PaginaConversazioni> => {
       const righe = await client.query<RigaConversazione>(
-        `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id
+        `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id
          from velia.conversazioni where tenant_id = $1 order by updated_at desc, id`,
         [richiesta.identita.tenantId],
       );
@@ -188,7 +190,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       const r = await client.query<RigaConversazione>(
         `insert into velia.conversazioni (tenant_id, autore_id, titolo, documenti_in_contesto, chat_cliente_id)
          values ($1, $2, $3, $4, $5)
-         returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id`,
+         returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id`,
         [
           richiesta.identita.tenantId,
           richiesta.identita.utenteId,
@@ -448,11 +450,23 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       const esistente = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
       const titolo = typeof m.titolo === 'string' && m.titolo.trim() ? m.titolo.trim() : esistente.titolo;
       const condivisa = typeof m.condivisa === 'boolean' ? m.condivisa : esistente.condivisa;
+      /* Il cliente: assente = non toccare, `null` = staccare. Chi lo scrive
+         dev'essere di questo tenant, o sarebbe un modo per farsi scrivere
+         un id altrui in una riga propria. */
+      const cliente =
+        m.clienteId === undefined ? esistente.cliente_id : m.clienteId;
+      if (typeof m.clienteId === 'string') {
+        const suo = await client.query(
+          `select 1 from velia.clienti where id = $1 and tenant_id = $2`,
+          [m.clienteId, richiesta.identita.tenantId],
+        );
+        if (!suo.rowCount) throw ErroreApi.datiNonValidi('Cliente inesistente.');
+      }
       const r = await client.query<RigaConversazione>(
-        `update velia.conversazioni set titolo = $2, condivisa = $3, updated_at = now()
+        `update velia.conversazioni set titolo = $2, condivisa = $3, cliente_id = $5, updated_at = now()
          where id = $1 and tenant_id = $4
-         returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id`,
-        [richiesta.params.id, titolo, condivisa, richiesta.identita.tenantId],
+         returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id`,
+        [richiesta.params.id, titolo, condivisa, richiesta.identita.tenantId, cliente],
       );
       if (!r.rowCount) throw ErroreApi.permessoNegato('Solo chi ha aperto la conversazione può modificarla.');
       return (await idrata(client, r.rows))[0]!;
@@ -608,7 +622,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
           const r = await client.query<RigaConversazione>(
             `update velia.conversazioni set documenti_in_contesto = $2, updated_at = now()
              where id = $1 and tenant_id = $3
-             returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id`,
+             returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id`,
             [esistente.id, contesto, richiesta.identita.tenantId],
           );
           if (!r.rowCount) throw ErroreApi.permessoNegato('Solo chi ha aperto la conversazione può modificarne il contesto.');
@@ -1016,7 +1030,7 @@ async function conversazionePerId(
   id: string,
 ): Promise<RigaConversazione> {
   const r = await client.query<RigaConversazione>(
-    `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id
+    `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id
      from velia.conversazioni where id = $1 and tenant_id = $2`,
     [id, identita.tenantId],
   );
@@ -1121,6 +1135,18 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
       });
     }
   }
+  /* Il cliente esce col suo nome, come i documenti coi loro titoli: chi
+     guarda una conversazione deve leggere «Rossi Mario», non un uuid. */
+  const clienti = new Map<string, string>();
+  const idsClienti = [...new Set(righe.map((r) => r.cliente_id).filter((x): x is string => Boolean(x)))];
+  if (idsClienti.length) {
+    const r = await client.query<{ id: string; nome: string }>(
+      `select id, nome from velia.clienti where id = any($1)`,
+      [idsClienti],
+    );
+    for (const c of r.rows) clienti.set(c.id, c.nome);
+  }
+
   const inCorso = await conversazioniInRisposta(righe.map((r) => r.id));
   return righe.map((r) => ({
     id: r.id,
@@ -1130,6 +1156,9 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
     documentiInContesto: r.documenti_in_contesto
       .map((id) => titoli.get(id))
       .filter((d): d is RiferimentoDocumento => Boolean(d)),
+    ...(r.cliente_id && clienti.has(r.cliente_id)
+      ? { cliente: { id: r.cliente_id, nome: clienti.get(r.cliente_id)! } }
+      : {}),
     condivisa: r.condivisa,
     autoreId: r.autore_id,
     ...(inCorso.has(r.id) && { rispostaInCorso: true }),

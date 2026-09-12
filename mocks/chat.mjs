@@ -33,6 +33,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { generaDocx, generaXlsx } from './ufficio.mjs';
+import { clientePerId } from './clienti.mjs';
 import { generaPdf, generaPdfDaTesto } from './pdf.mjs';
 import { accogliAllegato, leggiMultipart } from './archivio-privato.mjs';
 import { risolviFormato } from './impostazioni.mjs';
@@ -275,6 +276,11 @@ const trovaConversazione = (id) => CONVERSAZIONI.find((c) => c.id === id);
 function componi(conversazione, trovaDocumento) {
   return {
     ...conversazione,
+    /* Il cliente esce col suo nome, come i documenti coi loro titoli: nella
+       barra del contesto si legge «Rossi Mario», non un id. */
+    ...(conversazione.clienteId && clientePerId(conversazione.clienteId)
+      ? { cliente: clientePerId(conversazione.clienteId) }
+      : {}),
     /* La risposta è un lavoro del server: se è in volo lo si dice a
        chiunque chieda l'elenco, non solo a chi l'ha avviata. */
     ...(IN_VOLO.has(conversazione.id) ? { rispostaInCorso: true } : {}),
@@ -653,6 +659,7 @@ export async function gestisci(req, res, url, deps) {
       documentiInContesto: [],
       condivisa: false,
       autoreId: 'utn-004',
+      ...(corpo.clienteId && { clienteId: corpo.clienteId }),
     };
     for (const documentoId of corpo.documentiInContesto ?? []) {
       if (!aggiungiAlContesto(conversazione, documentoId, deps, res)) return true;
@@ -757,6 +764,11 @@ export async function gestisci(req, res, url, deps) {
       }
       if (typeof modifiche.condivisa === 'boolean') {
         conversazione.condivisa = modifiche.condivisa;
+      }
+      /* Di chi si parla: `null` stacca, assente non tocca. */
+      if (modifiche.clienteId !== undefined) {
+        if (modifiche.clienteId === null) delete conversazione.clienteId;
+        else conversazione.clienteId = modifiche.clienteId;
       }
       conversazione.aggiornataIl = new Date().toISOString();
       inviaJson(res, 200, esporta(conversazione));

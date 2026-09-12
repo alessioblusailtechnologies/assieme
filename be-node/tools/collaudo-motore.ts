@@ -6,6 +6,11 @@
  *
  *   npx tsx tools/collaudo-motore.ts "Che franchigie prevede la garanzia furto?" [modello]
  *   CONTESTO=all-xxx,doc-priv-yyy npx tsx tools/collaudo-motore.ts "Guarda l’immagine e dimmi che stile ha"
+ *   CLIENTE=<id> npx tsx tools/collaudo-motore.ts "Che polizze ha?"
+ *
+ * Gli strumenti sui clienti (`cerca_clienti`, `scheda_cliente`) sono
+ * montati come in chat: senza, una domanda di portafoglio non si può
+ * provare, e quella è metà della Fase 7 del `PIANO-CLIENTI.md`.
  *
  * Costa: una sessione agentica (da decine di centesimi a qualche dollaro).
  * Usa la workspace del tenant demo, tutto l'Archivio Pubblico, nessun DNA.
@@ -19,6 +24,7 @@ import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
 import { caricaDna, promptSistema, promptUtente } from '../src/worker/motore/regole.js';
 import { MotoreAgentSdk } from '../src/worker/motore/sessione.js';
+import { creaStrumentiMotore } from '../src/worker/motore/strumenti.js';
 import { separaBlocco, validaBlocco } from '../src/worker/motore/validazione.js';
 import { materializzaWorkspace } from '../src/worker/motore/workspace.js';
 
@@ -42,6 +48,7 @@ try {
     radice,
     jobId: 'collaudo',
     contestoIds: (process.env.CONTESTO ?? '').split(',').map((x) => x.trim()).filter(Boolean),
+    ...(process.env.CLIENTE && { clienteId: process.env.CLIENTE }),
   });
   console.log(`Workspace: ${ws.directory} — ${ws.perPath.size} documenti`);
   const dna = await caricaDna(db, TENANT_DEMO, utente.rows[0]?.id ?? '', { ramiIds: [], compagnieIds: [] }, ws.perPath);
@@ -62,14 +69,25 @@ try {
     },
   });
 
+  const strumenti = creaStrumentiMotore({
+    db,
+    archivio: new ArchivioStorage(),
+    tenantId: TENANT_DEMO,
+    conversazioneId: 'collaudo',
+    messaggioId: 'collaudo',
+    suDocumento: () => Promise.resolve(),
+    clienti: true,
+  });
+
   let testoStream = '';
   const inizio = Date.now();
   const esito = await motore.interroga(
     {
       directory: ws.directory,
       titoloPer: (path) => ws.perPath.get(path)?.titolo,
-      promptSistema: promptSistema(dna),
+      promptSistema: promptSistema(dna, { conClienti: true }),
       promptUtente: promptUtente({ documenti: [], mancanti: [], storia: [], domanda }),
+      strumenti: { server: strumenti.server, nomi: strumenti.nomi },
     },
     {
       passo: (p) => {

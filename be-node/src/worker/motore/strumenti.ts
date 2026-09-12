@@ -14,6 +14,8 @@ import { FORMATI_GENERAZIONE } from '../../contratto/template.js';
 import { fasceDelTenant, modelliDelTenant, modelloChiesto, scegliModello } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
 import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
+import { cercaClienti, schedaCliente } from './clienti.js';
+import { cartellaCliente } from './workspace.js';
 import type { PropostaArchivio } from '../../contratto/conversazioni.js';
 import { condividiDocumento } from '../../pagine/condivise.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
@@ -38,6 +40,8 @@ export const NOME_TOOL_ESPORTA_SUBITO = `mcp__${NOME_SERVER}__esporta_subito`;
 export const NOME_TOOL_ELABORATA = `mcp__${NOME_SERVER}__esportazione_elaborata`;
 export const NOME_TOOL_PROPONI_ASSEGNAZIONE = `mcp__${NOME_SERVER}__proponi_assegnazione`;
 export const NOME_TOOL_CONDIVIDI_LINK = `mcp__${NOME_SERVER}__condividi_link`;
+export const NOME_TOOL_CERCA_CLIENTI = `mcp__${NOME_SERVER}__cerca_clienti`;
+export const NOME_TOOL_SCHEDA_CLIENTE = `mcp__${NOME_SERVER}__scheda_cliente`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
@@ -82,6 +86,15 @@ export interface ContestoStrumenti {
    * link e chi li crea. Assente = lo strumento `condividi_link` non c'è.
    */
   pagine?: { baseLink: string; utenteId: string };
+  /**
+   * Gli strumenti sui clienti (Fase 7 del `PIANO-CLIENTI.md`).
+   *
+   * Vero **solo per l'agenzia**: in una chat cliente non si montano, perché
+   * là dentro gli altri clienti non devono essere nemmeno un'idea. È un
+   * interruttore e non un oggetto perché quello che serve — database e
+   * tenant — il contesto ce l'ha già.
+   */
+  clienti?: boolean;
 }
 
 export interface StrumentiMotore {
@@ -436,6 +449,157 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  /**
+   * I due strumenti sui clienti: **i file navigano, gli strumenti
+   * interrogano**.
+   *
+   * La workspace risponde a «cosa ha Rossi» — c'è una cartella col suo
+   * nome — ma non a «chi ha l'auto in scadenza a marzo»: quella è una
+   * domanda sui dati, e i dati stanno nel database. Senza questi due, il
+   * modello proverebbe a rispondere leggendo tremila cartelle, o (peggio)
+   * rispondendo sulle poche che ha guardato.
+   *
+   * Sono di sola lettura, sempre filtrati per tenant, e si montano **solo
+   * per l'agenzia**: in una chat cliente non esistono, perché là dentro
+   * «gli altri clienti» non devono nemmeno essere un'idea.
+   */
+  const cercaClientiTool = tool(
+    'cerca_clienti',
+    [
+      'Cerca fra i clienti dell’agenzia e torna un elenco: nome, cartella dei suoi documenti, quanti ne ha, la prossima scadenza.',
+      'Usalo per le domande sul portafoglio, quelle che i documenti da soli non sanno rispondere: «chi ha l’RC auto in scadenza a marzo»,',
+      '«quali clienti hanno una polizza Unipol», «chi non ha ancora documenti in archivio». Usalo anche quando un nome non lo trovi nel ruolino.',
+      'Per leggere i documenti di **un** cliente invece apri la sua cartella in `tenant/clienti/`: questo strumento serve a trovarli, non a leggerli.',
+      'Le date si scrivono AAAA-MM-GG.',
+    ].join(' '),
+    {
+      nome: z.string().max(200).optional().describe('Parte del nome, o una forma con cui compare sui documenti.'),
+      etichetta: z.string().max(60).optional().describe('Un’etichetta del cliente, es. «in rinnovo».'),
+      tipo: z.enum(['persona', 'azienda']).optional(),
+      compagnia: z.string().max(120).optional().describe('Ha almeno un documento di questa compagnia.'),
+      ramo: z.string().max(120).optional().describe('Ha almeno un documento di questo ramo, es. «auto».'),
+      scadenzaDa: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .describe('Ha un documento che scade da questa data in poi.'),
+      scadenzaA: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .describe('Ha un documento che scade entro questa data.'),
+      senzaDocumenti: z.boolean().optional().describe('Solo i clienti che non hanno nessun documento.'),
+      limite: z.number().int().min(1).max(100).optional().describe('Quanti al massimo; di norma 25.'),
+    },
+    async (args) => {
+      if (!contesto.clienti) {
+        return { content: [{ type: 'text', text: 'Qui non posso cercare fra i clienti.' }], isError: true };
+      }
+      const righe = await cercaClienti(contesto.db, contesto.tenantId, args);
+      if (!righe.length) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: 'Nessun cliente con questi criteri. Se cercavi per nome, prova con meno lettere: il nome potrebbe essere scritto in un altro modo.',
+            },
+          ],
+        };
+      }
+      const tabella = righe
+        .map(
+          (c) =>
+            `- ${c.nome} (${c.tipo}) — ${c.documenti} document${c.documenti === 1 ? 'o' : 'i'}` +
+            `${c.prossima_scadenza ? `, prossima scadenza ${c.prossima_scadenza}` : ''}` +
+            `${c.etichette.length ? `, etichette: ${c.etichette.join(', ')}` : ''}` +
+            `\n  cartella: \`tenant/clienti/${cartellaCliente(c.nome, c.id)}/\``,
+        )
+        .join('\n');
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${righe.length} client${righe.length === 1 ? 'e' : 'i'}:\n${tabella}\n\nI documenti si leggono aprendo la cartella; i nomi si riportano come sono scritti qui.`,
+          },
+        ],
+      };
+    },
+  );
+
+  const schedaClienteTool = tool(
+    'scheda_cliente',
+    [
+      'La scheda di un cliente: recapiti, codice fiscale o partita IVA, note dell’agenzia, e l’elenco dei suoi documenti con numero di polizza, decorrenza e scadenza.',
+      'Usalo quando ti serve un dato del cliente che nei documenti non c’è (un recapito, una nota) o per avere in un colpo solo le sue polizze con le date.',
+      'Il nome si scrive come lo dice l’utente: lo risolvo io. Se ce n’è più d’uno che somiglia te li elenco, e chiedi tu quale.',
+      'Non è una fonte da citare: è un dato dell’agenzia, non un documento con le sue pagine.',
+    ].join(' '),
+    {
+      cliente: z.string().min(1).max(200).describe('Il nome del cliente, come lo dice l’utente.'),
+    },
+    async (args) => {
+      if (!contesto.clienti) {
+        return { content: [{ type: 'text', text: 'Qui non posso leggere le schede dei clienti.' }], isError: true };
+      }
+      const esito = await schedaCliente(contesto.db, contesto.tenantId, args.cliente);
+      if (esito.esito === 'assente') {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `«${args.cliente}» non è in anagrafica. Non inventarlo: dillo all’utente, che può crearlo dalla sezione Clienti.`,
+            },
+          ],
+        };
+      }
+      if (esito.esito === 'ambiguo') {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `Ce n’è più d’uno che somiglia a «${args.cliente}»: ${esito.candidati.map((c) => `«${c.nome}»`).join(', ')}. Chiedi all’utente quale, invece di sceglierne uno.`,
+            },
+          ],
+        };
+      }
+      const c = esito.cliente;
+      const anagrafica = [
+        `# ${c.nome} (${c.tipo})`,
+        c.codice_fiscale ? `Codice fiscale: ${c.codice_fiscale}` : '',
+        c.partita_iva ? `Partita IVA: ${c.partita_iva}` : '',
+        c.nato_il ? `Nato il: ${c.nato_il}` : '',
+        c.email ? `Email: ${c.email}` : '',
+        c.telefono ? `Telefono: ${c.telefono}` : '',
+        c.indirizzo ? `Indirizzo: ${c.indirizzo}` : '',
+        c.alias.length ? `Sui documenti compare anche come: ${c.alias.join(', ')}` : '',
+        c.etichette.length ? `Etichette: ${c.etichette.join(', ')}` : '',
+        c.note?.trim() ? `Note dell’agenzia: ${c.note.trim()}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const documenti = esito.documenti.length
+        ? esito.documenti
+            .map(
+              (d) =>
+                `- ${d.titolo} (${d.tipologia}${d.compagnia ? `, ${d.compagnia}` : ''}${d.ramo ? `, ${d.ramo}` : ''})` +
+                `${d.numero_polizza ? ` — polizza ${d.numero_polizza}` : ''}` +
+                `${d.decorrenza ? `, dal ${d.decorrenza}` : ''}${d.scadenza ? ` al ${d.scadenza}` : ''}`,
+            )
+            .join('\n')
+        : '(nessun documento in archivio)';
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${anagrafica}\n\n## I suoi documenti (${esito.documenti.length})\n${documenti}\n\nI documenti si leggono in \`tenant/clienti/${cartellaCliente(c.nome, c.id)}/\`. Questa scheda non si cita: è un dato dell’agenzia, non un documento.`,
+          },
+        ],
+      };
+    },
+  );
+
   return {
     server: createSdkMcpServer({
       name: NOME_SERVER,
@@ -445,6 +609,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         ...(contesto.elaborata ? [esportazioneElaborata] : []),
         ...(contesto.pagine ? [condividiLink] : []),
         ...(contesto.suProposta ? [proponiAssegnazione] : []),
+        ...(contesto.clienti ? [cercaClientiTool, schedaClienteTool] : []),
       ],
     }),
     nomi: [
@@ -452,6 +617,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
       ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
       ...(contesto.suProposta ? [NOME_TOOL_PROPONI_ASSEGNAZIONE] : []),
+      ...(contesto.clienti ? [NOME_TOOL_CERCA_CLIENTI, NOME_TOOL_SCHEDA_CLIENTE] : []),
     ],
     generati,
     percorsi,

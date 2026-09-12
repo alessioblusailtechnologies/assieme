@@ -22,7 +22,29 @@
         </p>
       }
 
-      <app-composer />
+      <div class="benvenuto__campo">
+        <!--
+          Di chi si parlerà (12/09/2026). Qui la conversazione non esiste
+          ancora e la barra del contesto nemmeno: il cliente menzionato si
+          vede qui, e resta finché non lo si stacca o non si invia.
+        -->
+        @if (store.cliente(); as cliente) {
+          <div class="benvenuto__cliente">
+            <ui-icon name="utente" [size]="14" />
+            <span class="benvenuto__nome">{{ cliente.nome }}</span>
+            <button
+              type="button"
+              class="contesto__togli"
+              [attr.aria-label]="'Stacca ' + cliente.nome + ' dalla conversazione'"
+              title="Stacca il cliente"
+              (click)="store.staccaCliente()"
+            >
+              <ui-icon name="chiudi" [size]="12" />
+            </button>
+          </div>
+        }
+        <app-composer />
+      </div>
 
       <!--
         I suggerimenti sono domande costruite sul contesto dell'agenzia: al
@@ -264,6 +286,26 @@
             <ui-icon name="comprimi-barra" [size]="14" class="contesto__freccia" />
           </button>
         </div>
+        <!--
+          Di chi si sta parlando (12/09/2026). Non è un documento e non sta
+          nell'elenco: è il cliente a cui la conversazione è agganciata, e
+          il motore parte da lui - la sua scheda, i suoi documenti.
+        -->
+        @if (store.cliente(); as cliente) {
+          <div class="contesto__cliente">
+            <ui-icon name="utente" [size]="14" />
+            <a class="contesto__titolo" [routerLink]="['/clienti', cliente.id]">{{ cliente.nome }}</a>
+            <button
+              type="button"
+              class="contesto__togli"
+              [attr.aria-label]="'Stacca ' + cliente.nome + ' dalla conversazione'"
+              title="Stacca il cliente"
+              (click)="store.staccaCliente()"
+            >
+              <ui-icon name="chiudi" [size]="12" />
+            </button>
+          </div>
+        }
         @if (contesto().length) {
         <!--
           Una riga per gruppo: un documento, o il prodotto coi documenti del
