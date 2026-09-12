@@ -21,6 +21,7 @@ import { ePngOJpeg, riconosciFormato } from './riconoscimento.js';
 import { mimeDi } from '../../contratto/formati.js';
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
 import { risolviCliente, type Sceglitore } from '../../archivio/clienti.js';
+import { etichetteDaAggiungere, etichetteProposte } from '../../archivio/etichette.js';
 import type { SecondoSguardo } from './secondo-sguardo.js';
 
 /**
@@ -210,6 +211,10 @@ interface RigaDaConvertire {
      niente da dire. */
   ramo_nome: string | null;
   cliente_id: string | null;
+  /* Come il file era organizzato prima di arrivare: da qui nascono le
+     etichette (passo 3c), non più le cartelle. */
+  percorso_origine: string | null;
+  etichette: string[] | null;
   caricato_il: Date | null;
 }
 
@@ -244,7 +249,8 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
       `select d.id, d.archivio, d.titolo, d.tipologia, d.prodotto, d.nome_file,
               d.formato, d.path_originale, d.path_pdf, d.path_md, d.edizione_valida_dal,
               d.classificazione_da_confermare, c.nome as compagnia_nome,
-              r.nome as ramo_nome, d.cliente_id, d.caricato_il
+              r.nome as ramo_nome, d.cliente_id, d.percorso_origine, d.etichette,
+              d.caricato_il
        from velia.documenti d
        left join velia.compagnie c on c.id = d.compagnia_id
        left join velia.rami r on r.id = d.ramo_id
@@ -423,11 +429,12 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
         proposta = await proponiClassificazione(db, job, documento, corpo, dipendenze.classificatore);
       }
 
-      /* Passo 3b: di chi è. Non blocca mai: un documento che nessuno sa
-         intestare resta `pronto` e finisce fra quelli senza cliente,
-         cercabile e citabile come tutti gli altri. */
+      /* Passo 3b: di chi è, e 3c: com'è. Non bloccano mai — un documento che
+         nessuno sa intestare resta `pronto` e finisce fra quelli senza
+         cliente, cercabile e citabile come tutti gli altri. */
       if (documento.archivio === 'privato' && job.tenant_id) {
-        await intesta(db, job, documento, job.tenant_id, proposta, dipendenze);
+        const cliente = await intesta(db, job, documento, job.tenant_id, proposta, dipendenze);
+        await etichetta(db, job, documento, proposta, cliente);
       }
 
       /* `path_pdf` si scrive anche qui: per chi non è arrivato in PDF è
@@ -462,13 +469,22 @@ export function contieneTesto(markdown: string): boolean {
   });
 }
 
+/**
+ * La proposta con i nomi di tassonomia già risolti: il gestore li usa per
+ * intestare ed etichettare senza rileggere la riga che sta scrivendo.
+ */
+type PropostaConNomi = PropostaClassificazione & {
+  compagniaNome?: string | undefined;
+  ramoNome?: string | undefined;
+};
+
 async function proponiClassificazione(
   db: pg.Pool,
   job: Job,
   documento: RigaDaConvertire,
   corpo: string,
   classificatore: Classificatore,
-): Promise<PropostaClassificazione | undefined> {
+): Promise<PropostaConNomi | undefined> {
   const [compagnie, rami] = await Promise.all([
     db.query<VoceTassonomia>('select id, nome from velia.compagnie order by nome'),
     db.query<VoceTassonomia>('select id, nome from velia.rami order by nome'),
@@ -529,9 +545,12 @@ async function proponiClassificazione(
     ramoId,
   });
 
-  /* Il chiamante ne ha bisogno per l'intestazione: la tassonomia l'ha già
-     ripulita, quindi si restituisce la proposta *corretta*, non quella
-     grezza del modello. */
+  /* Il chiamante ne ha bisogno per l'intestazione e per le etichette: la
+     tassonomia l'ha già ripulita, quindi si restituisce la proposta
+     *corretta*, non quella grezza del modello. I nomi viaggiano insieme
+     agli id perché la riga del documento è stata letta **prima** di questa
+     scrittura: rileggerla darebbe la compagnia del giro precedente, e la
+     prima lavorazione uscirebbe senza etichette. */
   return {
     ...proposta,
     compagniaId,
@@ -539,6 +558,7 @@ async function proponiClassificazione(
     ...(compagniaId && {
       compagniaNome: compagnie.rows.find((c) => c.id === compagniaId)?.nome,
     }),
+    ...(ramoId && { ramoNome: rami.rows.find((r) => r.id === ramoId)?.nome }),
   };
 }
 
@@ -561,9 +581,9 @@ async function intesta(
   job: Job,
   documento: RigaDaConvertire,
   tenantId: string,
-  proposta: (PropostaClassificazione & { compagniaNome?: string }) | undefined,
+  proposta: PropostaConNomi | undefined,
   dipendenze: DipendenzeIngestion,
-): Promise<void> {
+): Promise<string | null> {
   /* Il documento è arrivato già intestato (l'utente lo ha caricato dalla
      scheda di un cliente): quella è la sua parola e non si discute. Si dice
      comunque, perché un passo che a volte non lascia traccia è un passo che
@@ -573,7 +593,10 @@ async function intesta(
       documentoId: documento.id,
       motivo: 'il documento è arrivato già intestato',
     });
-    return;
+    const suo = await db.query<{ nome: string }>(`select nome from velia.clienti where id = $1`, [
+      documento.cliente_id,
+    ]);
+    return suo.rows[0]?.nome ?? null;
   }
 
   try {
@@ -598,7 +621,7 @@ async function intesta(
         documentoId: documento.id,
         motivo: 'nessun cliente individuato con sicurezza',
       });
-      return;
+      return null;
     }
 
     /* `cliente_da_confermare` a vero: è una proposta, e resta tale finché
@@ -617,10 +640,66 @@ async function intesta(
       creato: risolto.creato,
       via: risolto.via,
     });
+    return risolto.nome;
   } catch (errore) {
     /* Come per la classificazione: un cliente mancato non è un'ingestion
        fallita. Il documento è convertito, pronto e citabile. */
     await emettiEvento(db, job.id, 'ingestion-cliente-saltato', {
+      documentoId: documento.id,
+      motivo: errore instanceof Error ? errore.message : String(errore),
+    });
+    return null;
+  }
+}
+
+/**
+ * Il passo 3c: com'è questo documento.
+ *
+ * Le etichette sono l'unico asse trasversale rimasto dopo l'albero, e un
+ * archivio in cui le mette solo chi si ricorda di metterle non ne ha
+ * nessuno. Si derivano da fatti — la compagnia e il ramo riconosciuti dalla
+ * tassonomia, l'annualità della decorrenza, le cartelle da cui il file è
+ * arrivato — e **non si chiedono a un modello**: una faccetta serve finché
+ * il vocabolario è piccolo, e un modello che inventa etichette libere
+ * produce «RC Auto», «Rc auto» e «Auto» sullo stesso ramo.
+ *
+ * Si aggiungono soltanto: quelle che l'utente ha scritto non si toccano.
+ */
+async function etichetta(
+  db: pg.Pool,
+  job: Job,
+  documento: RigaDaConvertire,
+  proposta: PropostaConNomi | undefined,
+  clienteNome: string | null,
+): Promise<void> {
+  try {
+    const proposte = etichetteProposte({
+      compagnia: proposta?.compagniaNome ?? documento.compagnia_nome,
+      ramo: proposta?.ramoNome ?? documento.ramo_nome,
+      decorrenza: proposta?.decorrenza ?? null,
+      percorsoOrigine: documento.percorso_origine,
+      clienteNome,
+    });
+    const nuove = etichetteDaAggiungere(documento.etichette ?? [], proposte);
+    if (!nuove.length) return;
+
+    await db.query(
+      `update velia.documenti
+         set etichette = (
+           select coalesce(array_agg(distinct e order by e), '{}')
+           from unnest(etichette || $2::text[]) e
+         )
+       where id = $1`,
+      [documento.id, nuove],
+    );
+    await emettiEvento(db, job.id, 'ingestion-etichette', {
+      documentoId: documento.id,
+      etichette: nuove,
+    });
+  } catch (errore) {
+    /* Un'etichetta mancata non è un'ingestion fallita, come tutto il resto
+       di questo passo. */
+    await emettiEvento(db, job.id, 'ingestion-etichette-saltate', {
       documentoId: documento.id,
       motivo: errore instanceof Error ? errore.message : String(errore),
     });

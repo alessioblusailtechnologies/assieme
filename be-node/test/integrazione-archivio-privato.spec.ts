@@ -385,6 +385,57 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
     expect(file.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
   });
 
+  it('ingestion: intesta al cliente ed etichetta da sé (Fase 3)', async () => {
+    /*
+     * Il passo 3b e il 3c insieme, che è come si vedono in un'agenzia vera:
+     * dal contraente scritto sul documento nasce (o si ritrova) il cliente,
+     * e da compagnia, ramo e annualità nascono le etichette con cui poi si
+     * filtra. Nessuna delle due cose la chiede un modello: il cliente lo
+     * risolve la normalizzazione, le etichette sono fatti.
+     */
+    /* Un documento suo, e non uno di quelli che gli altri test guardano:
+       intestare ed etichettare cambiano stato, e uno stato condiviso fra
+       test è un fallimento che arriva dal test di prima. */
+    const caricato = await carica(tokenAdmin, [
+      { nome: 'polizza-bianchi.pdf', contenuto: await pdfDiProva() },
+    ]);
+    const id = caricato.json<EsitoCaricamento>().creati[0]!.id;
+
+    const gestore = creaGestoreIngestion({
+      convertitore: new ConvertitoreFinto(),
+      classificatore: new ClassificatoreFinto({
+        tipologia: 'polizza',
+        compagniaId: 'cmp-unipolsai',
+        ramoId: 'ram-auto',
+        contraente: 'BIANCHI LUIGI',
+        decorrenza: '2026-03-01',
+        fiducia: 'alta',
+      }),
+      archivio,
+    });
+    await gestore(await jobPer(id), { db: pool() });
+
+    const doc = (await richiedi('GET', `/api/documenti-privati/${id}`, tokenAdmin)).json<DocumentoPrivato>();
+
+    expect(doc.cliente?.nome).toBe('BIANCHI LUIGI');
+    /* Il cliente è una proposta finché nessuno la conferma, come la
+       classificazione: si vede, e si corregge in due secondi. */
+    expect(doc.clienteDaConfermare).toBe(true);
+    /* Il nome della compagnia è quello della tassonomia, non quello che il
+       modello ha creduto di leggere: è il motivo per cui l'etichetta si
+       scrive sempre uguale e quindi si può filtrare. */
+    expect(doc.etichette).toContain('UnipolSai Assicurazioni');
+    expect(doc.etichette).toContain('2026');
+
+    /* Rilavorare non duplica e non toglie: le etichette si sommano. */
+    await gestore(await jobPer(id), { db: pool() });
+    const dopo = (await richiedi('GET', `/api/documenti-privati/${id}`, tokenAdmin)).json<DocumentoPrivato>();
+    expect(dopo.etichette).toEqual(doc.etichette);
+
+    await richiedi('DELETE', `/api/documenti-privati/${id}`, tokenAdmin);
+    await pool().query(`delete from velia.clienti where tenant_id = $1`, [TENANT_COLLAUDO]);
+  });
+
   it('PATCH: titolo, etichette, riferimento cliente svuotato con null; la proposta è confermata', async () => {
     const r = await richiedi('PATCH', `/api/documenti-privati/${creati[0]}`, tokenAdmin, {
       titolo: 'Preventivo Rossi',

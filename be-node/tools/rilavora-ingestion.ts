@@ -14,6 +14,12 @@
  *   npx tsx tools/rilavora-ingestion.ts all-1923a64d69e9
  *   npx tsx tools/rilavora-ingestion.ts --tutti           # tutti quelli in errore
  *
+ * Un id esplicito si rilavora **in qualunque stato**, non solo se è in
+ * errore: dopo un cambio alla catena di ingestion (il 12/09/2026: il
+ * cliente e le etichette) l'unico modo onesto di sapere se funziona è
+ * ripassarla su documenti veri, che sono `pronto`. `--tutti` resta quello
+ * che era: i documenti in errore, e basta.
+ *
  * Non tocca la coda e non crea job: riusa l'id del job esistente perché gli
  * eventi abbiano dove attaccarsi. Se il documento va a buon fine torna
  * `pronto` e la chat se ne accorge da sola al battito successivo.
@@ -22,7 +28,7 @@
  * https://api-dev.sonovelia.it/api/salute` dice su che commit sta.
  */
 import { chiudiPool, poolDb } from '../src/db/pool.js';
-import type { Job } from '../src/contratto/agenti.js';
+import type { Job } from '../src/worker/coda.js';
 import { gestori } from '../src/worker/gestori.js';
 
 interface RigaErrore {
@@ -43,22 +49,23 @@ try {
   if (!tutti && !soloElenco && !richiesti.length) {
     console.error('Uso: npx tsx tools/rilavora-ingestion.ts <documentoId> | --tutti | --elenco');
   } else {
-    const inErrore = await db.query<RigaErrore>(
+    const candidati = await db.query<RigaErrore>(
       `select id, titolo, archivio, formato, errore_elaborazione from velia.documenti
-       where stato = 'errore' and ($1::text[] = '{}' or id = any($1))
+       where ($1::text[] <> '{}' or stato = 'errore')
+         and ($1::text[] = '{}' or id = any($1))
        order by caricato_il desc nulls last`,
       [richiesti],
     );
 
-    if (!inErrore.rows.length) {
-      console.log(richiesti.length ? 'Nessuno di quegli id è in errore.' : 'Nessun documento in errore.');
+    if (!candidati.rows.length) {
+      console.log(richiesti.length ? 'Nessuno di quegli id esiste.' : 'Nessun documento in errore.');
     } else if (soloElenco) {
-      for (const d of inErrore.rows) {
+      for (const d of candidati.rows) {
         console.log(`${d.id}  ${(d.formato ?? '?').padEnd(9)} ${d.titolo}\n   ${d.errore_elaborazione ?? ''}`);
       }
-      console.log(`\n${inErrore.rows.length} documenti in errore.`);
+      console.log(`\n${candidati.rows.length} documenti in errore.`);
     } else {
-      const daFare = tutti ? inErrore.rows : inErrore.rows.filter((d) => richiesti.includes(d.id));
+      const daFare = tutti ? candidati.rows : candidati.rows.filter((d) => richiesti.includes(d.id));
       for (const documento of daFare) {
         /* Il job esistente dà l'id a cui appendere gli eventi: senza, la
            scrittura degli eventi cade sulla foreign key. */
@@ -68,10 +75,24 @@ try {
            order by created_at desc limit 1`,
           [documento.id],
         );
-        const riga = job.rows[0];
+        /* Il job originale può non esserci più: la coda si ripulisce, e un
+           documento di sei mesi fa non ha più la sua riga. Se ne crea uno
+           nuovo, fuori dalla coda, solo perché gli eventi abbiano dove
+           attaccarsi — la chiave esterna di `eventi_job` lo pretende. */
+        let riga = job.rows[0];
         if (!riga) {
-          console.error(`✗ ${documento.id}: nessun job di ingestion da cui ripartire`);
-          continue;
+          const nato = await db.query<{ id: string; tenant_id: string; utente_id: string | null; payload: Record<string, unknown> }>(
+            `insert into velia.jobs (tipo, stato, payload, tenant_id)
+             select 'ingestion', 'in-esecuzione', jsonb_build_object('documentoId', d.id), d.tenant_id
+               from velia.documenti d where d.id = $1
+             returning id, tenant_id, utente_id, payload`,
+            [documento.id],
+          );
+          riga = nato.rows[0];
+          if (!riga) {
+            console.error(`✗ ${documento.id}: documento inesistente`);
+            continue;
+          }
         }
         await db.query(
           `update velia.documenti set stato = 'in-coda', errore_elaborazione = null where id = $1`,
@@ -79,14 +100,19 @@ try {
         );
         console.log(`· ${documento.id} — ${documento.titolo}`);
         try {
+          /* Le colonne si chiamano come a database: il gestore legge
+             `job.tenant_id`, e con un `tenantId` in camelCase l'intestazione
+             al cliente e le etichette si saltano in silenzio — il documento
+             torna «pronto» e sembra tutto a posto. */
           await gestori.ingestion!(
             {
               id: riga.id,
               tipo: 'ingestion',
               stato: 'in-esecuzione',
+              tentativi: 0,
               payload: riga.payload,
-              tenantId: riga.tenant_id,
-              utenteId: riga.utente_id,
+              tenant_id: riga.tenant_id,
+              utente_id: riga.utente_id,
             } as unknown as Job,
             { db },
           );

@@ -6,7 +6,7 @@ Non è un rimescolamento di schermate, è un **cambio di asse portante**. Dalla 
 
 E si porta dietro una semplificazione vera. Sparisce il pezzo più fragile della Fase 10 — decidere in quale ramo di un albero libero collocare un documento (`archivio/collocazione.ts`, `convenzione.ts`, `albero.ts`, il tool `proponi_riordino`) — e resta la risoluzione del cliente (`archivio/clienti.ts`), che è la parte buona, già scritta e già collaudata: normalizzazione, alias, identificativi fiscali, candidati per somiglianza, e il modello solo sugli ambigui.
 
-**Stato**: **Fasi 1, 2 e 4 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono e la sezione Clienti si vede. Restano la 3 (ingestion e ricarica), la 5 (lavoro in blocco nell'archivio), la 6 (chat dalla scheda) e la 7 (motore).
+**Stato**: **Fasi 1, 2, 3 e 4 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, e la sezione Clienti si vede. Restano la 5 (lavoro in blocco nell'archivio), la 6 (chat dalla scheda) e la 7 (motore).
 
 **Niente di tutto questo è in produzione**, e il committente può svuotare l'Archivio Privato (12/09/2026). Quindi non c'è nessuna migrazione di dati da progettare: le tabelle dell'albero si eliminano subito e il codice che le serve se ne va con loro, nella prima fase invece che nell'ultima. L'Archivio **Pubblico** non si tocca: i lotti trascritti (Zurich, HDI, Unipol, Allianz, AXA, Generali, Nobis…) non hanno niente a che vedere con le cartelle, che sono del tenant.
 
@@ -170,11 +170,20 @@ In più: `POST /api/documenti-privati/assegna` (cliente ed etichette su una sele
 
 *Collaudato*: `test/integrazione-clienti.spec.ts`, 8 test sul giorno dopo l'importazione — creare col quasi-doppione, ritrovare per alias e codice fiscale, assegnare in blocco, rinominare e fondere un'etichetta, la scheda, la fusione di due clienti sdoppiati, l'eliminazione.
 
-### Fase 3 · Ingestion
+### ✅ Fase 3 · Ingestion (12/09/2026)
 
-`worker/ingestion/gestore.ts` chiama `risolviCliente` e basta: `collocaDocumento` esce dalla catena. Il documento nasce con il cliente proposto e `cliente_da_confermare`, o senza cliente, che è una condizione normale. Il classificatore propone anche le **etichette** (compagnia, ramo, anno di decorrenza, tipologia commerciale), che sono ciò che tiene insieme un archivio piatto.
+Il passo 3b (`risolviCliente`) era già arrivato con la Fase 1. Qui si aggiunge il **3c, le etichette** (`archivio/etichette.ts`), e qui c'è la scelta che conta:
 
-*Collaudo*: **è qui che si ricarica l'archivio svuotato**, ed è il collaudo migliore che ci sia: un lotto vero di documenti d'agenzia, con la percentuale di documenti che prendono il cliente giusto e le etichette che reggono.
+**Le etichette si derivano da fatti, non si chiedono a un modello.** Compagnia e ramo vengono dalla tassonomia (quindi si scrivono sempre uguali), l'annualità dalla decorrenza, e i pezzi del percorso con cui il file è arrivato diventano etichette invece che cartelle. La ragione è pratica prima che economica: una faccetta serve finché il vocabolario è piccolo, e un modello che inventa etichette libere produce «RC Auto», «Rc auto» e «Auto» sullo stesso ramo — a quel punto filtrare non serve più. Si scartano i contenitori (`Clienti/`, `Polizze/`: valgono per tutti), il nome del cliente (è già un'entità sua) e le numerazioni di cartelle; il tetto è sei etichette, e non si toglie mai niente a ciò che l'utente ha scritto.
+
+**Due difetti trovati collaudando**, che senza una prova su un documento vero non si sarebbero visti:
+
+- i nomi di compagnia e ramo vanno passati **insieme alla proposta**, non riletti dalla riga: la riga del documento è stata letta prima che la classificazione la scrivesse, e la prima lavorazione usciva senza etichette mentre la seconda le aveva. Ora `proponiClassificazione` restituisce anche `compagniaNome` e `ramoNome`;
+- `tools/rilavora-ingestion.ts` costruiva un job finto in **camelCase** mentre il gestore legge `job.tenant_id`: intestazione ed etichette si saltavano in silenzio, e il documento tornava «pronto» come se tutto fosse a posto. Lo stesso tool ora rilavora un id esplicito **in qualunque stato** (non solo in errore) e si crea il job quando la coda l'ha già ripulito: dopo un cambio alla catena, ripassarla su documenti veri è l'unico modo onesto di sapere se funziona.
+
+*Collaudato*: 8 test d'unità su `etichetteProposte` (contano più le cose che **non** diventano etichetta), un test d'integrazione che intesta ed etichetta con la catena vera e prova che rilavorare non duplica, e **una rilavorazione su un documento vero dell'archivio demo**: `slide-preventivo-auto-mercedes-cla-scrimieri-andrea` è stato intestato a «SCRIMIERI ANDREA» (`via: nome`, cioè match esatto sul nome normalizzato: nessuna chiamata al modello e nessun cliente doppione) e ha preso «UnipolSai Assicurazioni», «RC Auto e veicoli», «2026».
+
+Sull'archivio demo, oggi: 22 documenti privati, 2 con cliente, 6 prenderebbero almeno un'etichetta con i dati che hanno già. Gli altri sono in gran parte materiale di prova (README, indirizzari, time-track) o documenti entrati prima che il classificatore estraesse il contraente: **la ricarica vera resta da fare**, ed è un'operazione che costa chiamate al modello (lettura visiva, un documento alla volta), quindi la decide il committente.
 
 ### ✅ Fase 4 · La sezione Clienti (12/09/2026)
 
