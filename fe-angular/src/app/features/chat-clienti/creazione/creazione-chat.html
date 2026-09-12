@@ -1,0 +1,53 @@
+<!--
+  Il minimo per aprire il canale: per chi è, come si chiama la chat, e il
+  nome con cui il cliente si vedrà chiamare. Tutto il resto — che cosa legge
+  in più, le istruzioni, i tetti — si decide dopo, nella scheda della chat.
+-->
+<form class="creazione" (submit)="$event.preventDefault(); crea()">
+  @if (!cliente()) {
+    <div class="creazione__campo">
+      <span>Per quale cliente</span>
+      <ui-select
+        [valore]="clienteId()"
+        (valoreChange)="scegliCliente($any($event))"
+        [opzioni]="clienti()"
+        campoEtichetta="nome"
+        campoValore="id"
+        placeholder="Scegli un cliente"
+        ariaLabel="Il cliente di questa chat"
+      />
+    </div>
+  }
+
+  <label class="creazione__campo">
+    <span>Come si chiama questa chat</span>
+    <input uiCampo [(ngModel)]="titolo" name="titolo" placeholder="Mario Rossi — polizza auto" />
+  </label>
+
+  <div class="creazione__coppia">
+    <label class="creazione__campo">
+      <span>Nome del cliente</span>
+      <input uiCampo [(ngModel)]="nome" name="nome" placeholder="Mario" />
+    </label>
+    <label class="creazione__campo">
+      <span>Cognome</span>
+      <input uiCampo [(ngModel)]="cognome" name="cognome" placeholder="Rossi" />
+    </label>
+  </div>
+
+  <p class="creazione__nota">
+    L'assistente leggerà i documenti di questo cliente, anche quelli che caricherai
+    più avanti. Nella scheda della chat puoi aggiungerne altri o toglierne.
+  </p>
+
+  @if (errore(); as e) {
+    <p class="creazione__errore">{{ e }}</p>
+  }
+
+  <div class="creazione__azioni">
+    <button uiBottone type="button" (click)="annulla()">Annulla</button>
+    <button uiBottone variante="primario" type="submit" [disabled]="!puoCreare() || inCorso()">
+      {{ inCorso() ? 'Creo…' : 'Crea e prendi il link' }}
+    </button>
+  </div>
+</form>

@@ -230,3 +230,47 @@
   font-size: var(--t-sm);
   color: var(--c-text-3);
 }
+
+/* ---------- Quello che il cliente legge davvero ---------- */
+
+/*
+ * Non è una lista da comporre: è la lista che il server calcola, messa
+ * sotto gli occhi dell'agenzia. Togliere un documento è l'eccezione, e si
+ * vede che lo è — la riga resta lì, barrata, invece di sparire.
+ */
+.suoi {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  list-style: none;
+  overflow: hidden;
+}
+
+.suo {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--c-line-soft);
+  font-size: var(--t-sm);
+}
+
+.suo:last-child {
+  border-bottom: 0;
+}
+
+.suo__titolo {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suo.is-escluso .suo__titolo {
+  color: var(--c-text-mute);
+  text-decoration: line-through;
+}

@@ -44,16 +44,40 @@
   <section class="sezione">
     <h2 class="sezione__titolo">Che cosa può leggere</h2>
     <!--
-      Il cono non si compone più: è il cliente. Dirlo qui serve, perché è
-      una garanzia e insieme una conseguenza — una polizza caricata domani
-      entra da sola, e nessuno deve ricordarsi di aggiungerla.
+      Il cono non si compone più: è il cliente. Ma dirlo non basta — qui si
+      **mostrano** i documenti che leggerà, perché il cono lo calcola il
+      server a ogni domanda e l'agenzia deve poterlo guardare, non fidarsi
+      di una frase. Una polizza caricata domani entra da sola.
     -->
     <p class="sezione__nota">
       Tutti i documenti di <strong>{{ chat()?.clienteNome }}</strong>, anche quelli che
-      caricherai più avanti. Qui sotto puoi aggiungere qualcosa in più — i prodotti
-      dell'Archivio Pubblico che lo riguardano — o togliere un documento che non
-      vuoi mostrargli.
+      caricherai più avanti: oggi sono {{ quantiLegge() }}. Se qualcuno non deve
+      vederlo — una perizia, una nota interna — toglilo qui.
     </p>
+
+    @if (suoi().length) {
+      <ul class="suoi">
+        @for (d of suoi(); track d.id) {
+          <li class="suo" [class.is-escluso]="escluso(d.id)">
+            <span class="suo__titolo">{{ d.titolo }}</span>
+            <button
+              uiBottone
+              variante="testo"
+              dimensione="piccolo"
+              type="button"
+              (click)="commutaEscluso({ id: d.id, titolo: d.titolo })"
+            >
+              {{ escluso(d.id) ? 'Rimettilo' : 'Non mostrarlo' }}
+            </button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="sezione__nota">
+        Questo cliente non ha ancora documenti in archivio: finché non ne carichi
+        uno, l'assistente saprà rispondergli solo sui prodotti che aggiungi qui sotto.
+      </p>
+    }
   </section>
 
   <section class="sezione">

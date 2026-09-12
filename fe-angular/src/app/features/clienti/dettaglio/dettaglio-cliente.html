@@ -350,16 +350,22 @@
         risponde leggendo <strong>i suoi documenti</strong>, e nient'altro.
       </p>
 
-      @if (!chat().length) {
+      @if (inCreazioneChat()) {
+        <app-creazione-chat
+          [cliente]="c"
+          (creata)="apriChat($event)"
+          (annullata)="inCreazioneChat.set(false)"
+        />
+      } @else if (!chat().length) {
         <ui-stato-vuoto
           icona="chat"
           titolo="Nessuna chat con questo cliente"
-          descrizione="Aprine una dalla sezione «Chat per i clienti»: scegli lui, e il link è pronto."
+          descrizione="Aprine una: il link è pronto subito, e l'assistente risponderà sui suoi documenti."
         >
-          <a uiBottone variante="primario" routerLink="/chat-clienti">
+          <button uiBottone variante="primario" type="button" (click)="inCreazioneChat.set(true)">
             <ui-icon name="chat" [size]="15" />
-            <span>Vai alle chat</span>
-          </a>
+            <span>Apri una chat</span>
+          </button>
         </ui-stato-vuoto>
       } @else {
         <ul class="chat">
@@ -380,6 +386,15 @@
             </li>
           }
         </ul>
+
+        @if (!inCreazioneChat()) {
+          <div class="azioni-chat">
+            <button uiBottone type="button" (click)="inCreazioneChat.set(true)">
+              <ui-icon name="aggiungi" [size]="15" />
+              <span>Apri un'altra chat</span>
+            </button>
+          </div>
+        }
       }
     </section>
   }

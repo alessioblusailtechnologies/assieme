@@ -12,68 +12,22 @@
 
 @if (store.linkAppenaCreato(); as link) {
   <!--
-    Il link si vede una volta sola: il server ne conserva solo l'impronta.
-    Sta in cima e resta finché non si cambia pagina, perché chi lo perde
-    deve rigenerarlo — e il vecchio muore.
+    Sta in cima appena creata la chat, perché è la cosa che si stava
+    cercando. Non è l'unica occasione per averlo — si rilegge da ogni riga —
+    ma è quella in cui serve.
   -->
   <div class="link">
     <p class="link__titolo">Il link da mandare al cliente</p>
     <code class="link__url">{{ link.url }}</code>
     <p class="link__nota">
-      Si vede solo adesso. Copialo: non c'è modo di rileggerlo, e rigenerarlo
-      spegne quello di prima.
+      Lo ritrovi anche dopo, dalla sua riga. Rigenerarlo invece spegne quello
+      che il cliente ha già in mano.
     </p>
   </div>
 }
 
 @if (inCreazione()) {
-  <div class="creazione">
-    <div class="creazione__campo">
-      <span>Per quale cliente</span>
-      <ui-select
-        [valore]="clienteId()"
-        (valoreChange)="scegliCliente($any($event))"
-        [opzioni]="clienti()"
-        campoEtichetta="nome"
-        campoValore="id"
-        placeholder="Scegli un cliente"
-        ariaLabel="Il cliente di questa chat"
-      />
-    </div>
-    <label class="creazione__campo">
-      <span>Come si chiama questa chat</span>
-      <input uiCampo [(ngModel)]="titolo" placeholder="Mario Rossi — polizza auto" />
-    </label>
-    <div class="creazione__coppia">
-      <label class="creazione__campo">
-        <span>Nome del cliente</span>
-        <input uiCampo [(ngModel)]="nome" placeholder="Mario" />
-      </label>
-      <label class="creazione__campo">
-        <span>Cognome</span>
-        <input uiCampo [(ngModel)]="cognome" placeholder="Rossi" />
-      </label>
-    </div>
-    <p class="creazione__nota">
-      L'assistente leggerà i documenti di questo cliente, anche quelli che
-      caricherai più avanti. Nella scheda puoi aggiungerne altri o toglierne.
-    </p>
-    @if (erroreCreazione(); as e) {
-      <p class="creazione__errore">{{ e }}</p>
-    }
-    <div class="creazione__azioni">
-      <button type="button" uiBottone (click)="annulla()">Annulla</button>
-      <button
-        type="button"
-        uiBottone
-        variante="primario"
-        [disabled]="!puoCreare() || salvataggioInCorso()"
-        (click)="crea()"
-      >
-        {{ salvataggioInCorso() ? 'Creo…' : 'Crea e componi il cono' }}
-      </button>
-    </div>
-  </div>
+  <app-creazione-chat (creata)="apriChat($event)" (annullata)="inCreazione.set(false)" />
 }
 
 @if (store.inCaricamento() && !store.conta()) {

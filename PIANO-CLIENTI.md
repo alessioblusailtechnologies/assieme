@@ -6,7 +6,7 @@ Non è un rimescolamento di schermate, è un **cambio di asse portante**. Dalla 
 
 E si porta dietro una semplificazione vera. Sparisce il pezzo più fragile della Fase 10 — decidere in quale ramo di un albero libero collocare un documento (`archivio/collocazione.ts`, `convenzione.ts`, `albero.ts`, il tool `proponi_riordino`) — e resta la risoluzione del cliente (`archivio/clienti.ts`), che è la parte buona, già scritta e già collaudata: normalizzazione, alias, identificativi fiscali, candidati per somiglianza, e il modello solo sugli ambigui.
 
-**Stato**: **Fasi 1, 2, 3, 4 e 5 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, la sezione Clienti si vede e l'archivio si lavora in blocco. Restano la 6 (chat dalla scheda) e la 7 (motore).
+**Stato**: **Fasi 1-6 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, la sezione Clienti si vede, l'archivio si lavora in blocco e la chat col cliente si apre dalla sua scheda. Resta la 7, il motore.
 
 **Niente di tutto questo è in produzione**, e il committente può svuotare l'Archivio Privato (12/09/2026). Quindi non c'è nessuna migrazione di dati da progettare: le tabelle dell'albero si eliminano subito e il codice che le serve se ne va con loro, nella prima fase invece che nell'ultima. L'Archivio **Pubblico** non si tocca: i lotti trascritti (Zurich, HDI, Unipol, Allianz, AXA, Generali, Nobis…) non hanno niente a che vedere con le cartelle, che sono del tenant.
 
@@ -218,13 +218,19 @@ La coda delle proposte («Solo i clienti da confermare») ha una porta nei filtr
 
 *Collaudato*: 5 test nuovi sullo store (la selezione, l'assegnazione che svuota la selezione, il filtro che segue l'etichetta rinominata) e 1 d'integrazione sulla conferma in blocco; il giro completo provato in un Chrome vero — seleziona, scegli il cliente, «Intesta», e il documento esce dalla vista «senza cliente» (19 → 18) mentre la barra si chiude. **Difetto trovato guardando il telefono**: la riga era diventata un contenitore con dentro il collegamento, e la regola per schermi stretti mandava a capo il contenitore invece del collegamento — i titoli sparivano. Corretto, e riguardato.
 
-### Fase 6 · Le chat cliente dentro il cliente
+### ✅ Fase 6 · Le chat cliente dentro il cliente (12/09/2026)
 
-Il cono è già stato riscritto con la Fase 1, da tutte e due le parti — `documentiPerWorkspace` per il worker e `velia.documenti_nel_cono()` per le policy, che restano due definizioni gemelle e volutamente duplicate — ed è già dinamico: una polizza caricata domani entra da sola, e l'interfaccia lo dice.
+Il cono era già stato riscritto con la Fase 1, da tutte e due le parti — `documentiPerWorkspace` per il worker e `velia.documenti_nel_cono()` per le policy, due definizioni gemelle e volutamente duplicate. Qui arriva il lato dell'agenzia.
 
-Resta il lato dell'agenzia: la creazione di una chat che parte dalla scheda del cliente, la scelta degli esclusi (oggi si possono solo aggiungere documenti, non toglierne), e `/chat-clienti` che diventa una vista d'insieme (stato, costo, scadenze) invece di una schermata di composizione.
+**Il cono si guarda, non si immagina.** La scheda della chat elenca i documenti che il cliente leggerà davvero — sono i suoi, che il server ricalcola a ogni domanda — e accanto a ciascuno c'è «Non mostrarlo». Escludere lascia la riga al suo posto, barrata: è un'eccezione, e deve vedersi che lo è. Dire soltanto «legge i suoi documenti» avrebbe chiesto all'agenzia di fidarsi di una frase.
 
-*Collaudo*: `integrazione-chat-clienti` riscritta; la prova che conta è che un documento di un altro cliente non compaia nella workspace di quella chat.
+**La chat si apre dalla scheda del cliente**, dove si sa già per chi è. Il modulo vive in un componente solo (`features/chat-clienti/creazione/`), usato anche dall'elenco: due moduli gemelli avrebbero cominciato a divergere al primo campo aggiunto. Non passa dallo store delle chat — quello è fornito dalla rotta `/chat-clienti` e dalla scheda di un cliente non esiste (`NG0201`) — ma dall'API, che è di radice.
+
+**Nome e cognome si indovinano solo quando non c'è ambiguità.** «SCRIMIERI ANDREA» si divide; «De Vincentis Alessio» no, e i campi restano da riempire. Due campi vuoti sono meglio di due campi pieni e sbagliati, perché i secondi non li rilegge nessuno e il cliente si vedrebbe chiamare «De» dal primo messaggio.
+
+`/chat-clienti` resta la vista d'insieme: chi, stato, costo, il link da copiare. La nota che diceva «il link si vede una volta sola» è stata corretta — dal 07/09 si rilegge da ogni riga, e una bugia nell'interfaccia costa più di una riga sbagliata nel codice.
+
+*Collaudato*: il giro intero in un Chrome vero, dalla scheda di SCRIMIERI ANDREA — modulo precompilato, chat creata, cono con i suoi **2 documenti** (compreso quello intestato dall'ingestion in Fase 3), uno escluso, e poi eliminata, che rimuove anche l'utenza ospite. `ng lint` pulito, 240 test FE, build di produzione verde.
 
 ### Fase 7 · Il motore
 

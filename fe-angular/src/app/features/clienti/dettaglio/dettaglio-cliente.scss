@@ -429,3 +429,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Aprire un'altra chat: sotto l'elenco, perché è un'aggiunta a quello che
+   c'è già, non l'azione principale della scheda. */
+.azioni-chat {
+  display: flex;
+  justify-content: flex-start;
+}

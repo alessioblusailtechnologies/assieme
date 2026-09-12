@@ -1,63 +1,34 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { httpResource } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
-import { ClientiApi } from '@core/api/clienti-api';
-import type { ChatCliente, Cliente, Paginato } from '@core/models';
+import type { ChatCliente } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
-import { Campo } from '@shared/ui/campo/campo';
+import { CreazioneChat } from '../creazione/creazione-chat';
 import { Icona } from '@shared/ui/icona/icona';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
-import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { ChatClientiStore } from '../chat-clienti-store';
 
 /**
- * Le chat per i clienti dell'agenzia.
+ * Le chat per i clienti dell'agenzia: **la vista d'insieme**.
  *
- * L'elenco dice tre cose per riga, e sono le tre che si guardano davvero:
- * di chi è la chat, se il link è ancora aperto, e quanto è costata. Il cono
- * di lettura si compone nella scheda, dove c'è lo spazio per sbagliare meno.
+ * L'elenco dice tre cose per riga, e sono le tre che si guardano davvero: di
+ * chi è la chat, se il link è ancora aperto, e quanto è costata. Quello che
+ * una chat legge non si compone qui — è il suo cliente — e le istruzioni
+ * stanno nella scheda, dove c'è lo spazio per pensarci.
  */
 @Component({
   selector: 'app-elenco-chat-clienti',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Bottone, Campo, FormsModule, Icona, RouterLink, Scheletro, Select, StatoVuoto],
+  imports: [Bottone, CreazioneChat, Icona, RouterLink, Scheletro, StatoVuoto],
   templateUrl: './elenco-chat-clienti.html',
   styleUrl: './elenco-chat-clienti.scss',
 })
 export class ElencoChatClienti {
   protected readonly store = inject(ChatClientiStore);
   private readonly router = inject(Router);
-  private readonly clientiApi = inject(ClientiApi);
 
   protected readonly inCreazione = signal(false);
-  protected readonly titolo = signal('');
-  protected readonly nome = signal('');
-  protected readonly cognome = signal('');
-  protected readonly clienteId = signal<string | undefined>(undefined);
-  protected readonly salvataggioInCorso = signal(false);
-  protected readonly erroreCreazione = signal<string | undefined>(undefined);
-
-  /**
-   * L'anagrafica, per scegliere di chi è la chat.
-   *
-   * Non è un dettaglio del modulo: **è il cono**. Senza cliente la chat non
-   * avrebbe niente da leggere, ed è per questo che il pulsante resta spento
-   * finché non se ne sceglie uno.
-   */
-  private readonly risorsaClienti = httpResource<Paginato<Cliente>>(() => this.clientiApi.url());
-
-  protected readonly clienti = computed<Cliente[]>(() =>
-    this.risorsaClienti.hasValue() ? this.risorsaClienti.value().elementi : [],
-  );
-
-  protected readonly puoCreare = computed(
-    () =>
-      Boolean(this.titolo().trim() && this.nome().trim() && this.cognome().trim()) &&
-      Boolean(this.clienteId()),
-  );
 
   constructor() {
     void this.store.ricarica();
@@ -65,61 +36,16 @@ export class ElencoChatClienti {
 
   protected apriCreazione(): void {
     this.inCreazione.set(true);
-    this.erroreCreazione.set(undefined);
   }
 
-  protected annulla(): void {
+  /**
+   * Appena creata si entra nella sua scheda: è lì che c'è il link da
+   * mandare, e ciò che il cliente vedrà in più o in meno.
+   */
+  protected async apriChat(id: string): Promise<void> {
     this.inCreazione.set(false);
-    this.titolo.set('');
-    this.nome.set('');
-    this.cognome.set('');
-    this.clienteId.set(undefined);
-  }
-
-  /**
-   * Scegliendo il cliente si riempiono nome e cognome dell'ospite, se sono
-   * ancora vuoti: nove volte su dieci sono gli stessi, e riscriverli è
-   * lavoro che il sistema può fare da sé. Se l'agenzia li cambia, restano
-   * cambiati.
-   */
-  protected scegliCliente(id: string | undefined): void {
-    this.clienteId.set(id);
-    const cliente = this.clienti().find((c) => c.id === id);
-    if (!cliente) return;
-    if (!this.titolo().trim()) this.titolo.set(cliente.nome);
-    if (!this.nome().trim() && !this.cognome().trim()) {
-      const parti = cliente.nome.trim().split(/\s+/);
-      this.cognome.set(parti.length > 1 ? parti[0]! : cliente.nome);
-      this.nome.set(parti.slice(1).join(' ') || cliente.nome);
-    }
-  }
-
-  /**
-   * Si crea con il minimo e si prosegue nella scheda.
-   *
-   * Il cono non si compone più: è il cliente, e si sceglie qui perché senza
-   * di lui la chat non saprebbe rispondere a niente. Nella scheda restano
-   * gli scostamenti — un documento in più, uno da non mostrare — e le
-   * istruzioni.
-   */
-  protected async crea(): Promise<void> {
-    if (!this.puoCreare() || this.salvataggioInCorso()) return;
-    this.salvataggioInCorso.set(true);
-    this.erroreCreazione.set(undefined);
-    try {
-      const link = await this.store.crea({
-        titolo: this.titolo().trim(),
-        nome: this.nome().trim(),
-        cognome: this.cognome().trim(),
-        clienteId: this.clienteId()!,
-      });
-      this.annulla();
-      await this.router.navigate(['/chat-clienti', link.chatId]);
-    } catch {
-      this.erroreCreazione.set('Non è stato possibile creare la chat.');
-    } finally {
-      this.salvataggioInCorso.set(false);
-    }
+    await this.store.ricarica();
+    await this.router.navigate(['/chat-clienti', id]);
   }
 
   protected etichettaStato(c: ChatCliente): string {
@@ -144,12 +70,6 @@ export class ElencoChatClienti {
     return parti.join(' · ');
   }
 
-  /**
-   * Copia il link negli appunti.
-   *
-   * Il riscontro dura due secondi e sta sulla riga: chi copia un link deve
-   * sapere che è successo prima di incollarlo altrove, o lo copia due volte.
-   */
   protected readonly copiato = signal<string | undefined>(undefined);
 
   protected async copia(c: ChatCliente): Promise<void> {
@@ -157,12 +77,9 @@ export class ElencoChatClienti {
     try {
       await navigator.clipboard.writeText(c.url);
       this.copiato.set(c.id);
-      setTimeout(() => {
-        if (this.copiato() === c.id) this.copiato.set(undefined);
-      }, 2000);
+      setTimeout(() => this.copiato.set(undefined), 2000);
     } catch {
-      /* Appunti negati (contesto non sicuro, permesso rifiutato): il link
-         resta visibile nella scheda, da selezionare a mano. */
+      /* Appunti negati: il link resta nella scheda, si copia a mano. */
     }
   }
 }

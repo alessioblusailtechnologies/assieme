@@ -12,7 +12,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { DocumentiApi } from '@core/api/documenti-api';
-import type { DocumentoPubblico, Id, Paginato } from '@core/models';
+import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
+import type { DocumentoPrivato, DocumentoPubblico, Id, Paginato } from '@core/models';
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
@@ -47,11 +48,50 @@ export class DettaglioChatCliente {
 
   /** Le scelte in corso: si salvano insieme, non una alla volta. */
   protected readonly documentiScelti = signal<Map<Id, string>>(new Map());
+  /** Quelli del cliente che **non** deve vedere: una perizia, una nota interna. */
+  protected readonly documentiEsclusi = signal<Map<Id, string>>(new Map());
   protected readonly istruzioni = signal('');
   protected readonly tetto = signal<string>('');
   protected readonly salvato = signal(false);
   protected readonly inSalvataggio = signal(false);
   private idCaricato = '';
+
+  // --- Che cosa legge davvero -----------------------------------------------
+
+  private readonly apiPrivati = inject(DocumentiPrivatiApi);
+
+  /**
+   * I documenti del cliente, che **sono** il cono.
+   *
+   * Mostrarli non è un dettaglio di comodo: il cono è calcolato dal server a
+   * ogni domanda, quindi qui non c'è una lista da comporre — c'è una lista
+   * da guardare, per sapere che cosa il cliente leggerà davvero. Senza,
+   * l'agenzia dovrebbe fidarsi di una frase.
+   */
+  private readonly risorsaSuoi = httpResource<Paginato<DocumentoPrivato>>(() => {
+    const cliente = this.chat()?.clienteId;
+    return cliente ? this.apiPrivati.urlElenco({ clienteId: cliente, perPagina: 100 }) : undefined;
+  });
+
+  protected readonly suoi = computed(() =>
+    this.risorsaSuoi.hasValue() ? this.risorsaSuoi.value().elementi : [],
+  );
+
+  protected readonly quantiLegge = computed(
+    () => this.suoi().filter((d) => !this.documentiEsclusi().has(d.id)).length + this.documentiScelti().size,
+  );
+
+  protected escluso(id: Id): boolean {
+    return this.documentiEsclusi().has(id);
+  }
+
+  protected commutaEscluso(doc: { id: Id; titolo: string }): void {
+    const esclusi = new Map(this.documentiEsclusi());
+    if (esclusi.has(doc.id)) esclusi.delete(doc.id);
+    else esclusi.set(doc.id, doc.titolo);
+    this.documentiEsclusi.set(esclusi);
+    this.salvato.set(false);
+  }
 
   // --- I documenti da aggiungere --------------------------------------------
 
@@ -91,6 +131,7 @@ export class DettaglioChatCliente {
     if (!chat || this.idCaricato === chat.id) return;
     this.idCaricato = chat.id;
     this.documentiScelti.set(new Map(chat.aggiunti.map((d) => [d.id, d.titolo])));
+    this.documentiEsclusi.set(new Map(chat.esclusi.map((d) => [d.id, d.titolo])));
     this.istruzioni.set(chat.istruzioni ?? '');
     this.tetto.set(chat.tettoDomande ? String(chat.tettoDomande) : '');
   }
@@ -126,6 +167,7 @@ export class DettaglioChatCliente {
       const tetto = Number.parseInt(this.tetto(), 10);
       await this.store.modifica(chat.id, {
         aggiunti: [...this.documentiScelti().keys()],
+        esclusi: [...this.documentiEsclusi().keys()],
         istruzioni: this.istruzioni().trim() || null,
         tettoDomande: Number.isFinite(tetto) && tetto > 0 ? tetto : null,
       });
