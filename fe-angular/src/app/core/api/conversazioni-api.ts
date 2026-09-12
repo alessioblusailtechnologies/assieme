@@ -255,6 +255,17 @@ export class ConversazioniApi {
     );
   }
 
+  /**
+   * Lo stesso, su tutto il filo (12/09/2026): domande e risposte in fila,
+   * con le fonti di tutte le risposte in coda. Le azioni della barra sopra
+   * il composer passano da qui.
+   */
+  esportaConversazione(conversazioneId: Id, scelta: SceltaEsporta): Observable<Blob> {
+    return this.http.post(`${this.base}/${conversazioneId}/esporta`, scelta, {
+      responseType: 'blob',
+    });
+  }
+
   /** La dettatura: l'audio del microfono va al server, torna il testo. */
   trascrivi(audio: Blob): Observable<RispostaTrascrizione> {
     const corpo = new FormData();
@@ -274,6 +285,11 @@ export class ConversazioniApi {
       `${this.base}/${conversazioneId}/messaggi/${messaggioId}/email`,
       { a },
     );
+  }
+
+  /** «Invia email» su tutto il filo (12/09/2026): la consulenza, non il suo ultimo giro. */
+  inviaEmailConversazione(conversazioneId: Id, a: DestinatarioEmail): Observable<EsitoEmailRisposta> {
+    return this.http.post<EsitoEmailRisposta>(`${this.base}/${conversazioneId}/email`, { a });
   }
 
   /**

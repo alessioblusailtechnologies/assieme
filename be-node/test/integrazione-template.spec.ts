@@ -215,6 +215,13 @@ describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
     });
     expect(conversazione.statusCode).toBe(201);
     conversazioneId = conversazione.json<{ id: string }>().id;
+    /* La domanda che precede la risposta: serve all'esportazione di tutto il
+       filo (12/09/2026), che mette in fila domande e risposte. */
+    await poolDb().query(
+      `insert into velia.messaggi (conversazione_id, tenant_id, autore, testo, inviato_il)
+       values ($1, $2, 'utente', $3, now() - interval '1 minute')`,
+      [conversazioneId, TENANT_COLLAUDO, 'Che scoperto ha la garanzia furto?'],
+    );
     const m = await poolDb().query<{ id: string }>(
       `insert into velia.messaggi (conversazione_id, tenant_id, autore, testo, citazioni)
        values ($1, $2, 'assistente', $3, $4) returning id`,
@@ -498,6 +505,41 @@ describe.skipIf(!pronto)('modelli e generazione col progetto Supabase', () => {
       { templateId: modelloWord.id },
     );
     expect(conTemplate.statusCode).toBe(400);
+  });
+
+  /*
+   * «Esporta come» dalla barra sopra il composer (12/09/2026): la stessa
+   * azione sul filo intero. Domande e risposte in fila, le fonti di tutte
+   * le risposte in coda, il file titolato come la conversazione.
+   */
+  it("l'esportazione della conversazione intera: domande e risposte in fila, le fonti in coda", async () => {
+    const r = await richiedi('POST', `/api/conversazioni/${conversazioneId}/esporta`, tokenAdmin, {
+      formato: 'docx',
+    });
+    expect(r.statusCode).toBe(200);
+    expect(r.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.docx"');
+    const testo = testoDocx(r.rawPayload);
+    expect(testo).toContain('Domanda');
+    expect(testo).toContain('Che scoperto ha la garanzia furto?');
+    expect(testo).toContain('La garanzia Furto prevede uno scoperto del 10%.');
+    expect(testo).toContain('Documento di prova - art. 12, p. 3');
+    expect(testoDocx(r.rawPayload, /^word\/header\d*\.xml$/)).toContain('Agenzia di Collaudo');
+
+    /* Il testo semplice esce col nome della conversazione, non «risposta». */
+    const piano = await richiedi('POST', `/api/conversazioni/${conversazioneId}/esporta`, tokenAdmin, {
+      formato: 'txt',
+    });
+    expect(piano.statusCode).toBe(200);
+    expect(piano.headers['content-disposition']).toBe('attachment; filename="prova-esportazione.txt"');
+    expect(piano.rawPayload.toString('utf8')).toContain('Che scoperto ha la garanzia furto?');
+  });
+
+  it("una conversazione che non si vede non si esporta, nemmeno intera", async () => {
+    const altrui = await richiedi('POST', `/api/conversazioni/${conversazioneId}/esporta`, tokenOperatore, {
+      formato: 'pdf',
+    });
+    expect(altrui.statusCode).toBe(404);
+    expect(altrui.json()).toMatchObject({ messaggio: 'Conversazione inesistente.' });
   });
 
   it("l'esportazione di un messaggio che non si vede è un 404, anche per l'operatore sull'altrui", async () => {

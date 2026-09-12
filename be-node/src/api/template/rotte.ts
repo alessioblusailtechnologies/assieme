@@ -28,6 +28,7 @@ import {
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
 import { testoSemplice } from '../../generazione/email.js';
+import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { generaDocumento, NOME_DOCUMENTO, nomeFileGenerato } from '../../generazione/generatore.js';
 import { richiediAmministratore } from '../plugins/auth.js';
 import { accoda } from '../../worker/coda.js';
@@ -61,6 +62,11 @@ const FIRMA_ZIP = Buffer.from('PK');
 
 /** Id di conversazioni e messaggi: uuid. Un id malformato è un 404, non un errore SQL. */
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Una riga di `velia.messaggi` come serve alla trascrizione della chat. */
+interface RigaTrascrizione extends MessaggioDaTrascrivere {
+  autore: 'utente' | 'assistente';
+}
 
 const NOME_FORMATO: Record<string, string> = { pdf: 'PDF', docx: 'Word', xlsx: 'Excel', pptx: 'PowerPoint' };
 
@@ -277,6 +283,71 @@ export function registraRotteTemplate(app: FastifyInstance, opzioni: OpzioniTemp
         titolo,
         testo: messaggio.testo,
         fonti: fontiDaCitazioni(messaggio.citazioni),
+        fasce: letto.fasce,
+      });
+
+      return inviaFile(risposta, file.byte, file.contentType, `attachment; filename="${file.nomeFile}"`);
+    },
+  );
+
+  /**
+   * «Esporta come» sulla **conversazione intera** (12/09/2026): domande e
+   * risposte in fila, con le fonti di tutte le risposte in coda, nello
+   * stesso formato e con lo stesso layout della singola risposta.
+   *
+   * È la stessa azione, con un altro perimetro: una consulenza è fatta di
+   * più giri, e consegnarne uno solo obbliga a ricomporre il resto a mano.
+   */
+  app.post<{ Params: { id: string } }>(
+    '/api/conversazioni/:id/esporta',
+    async (richiesta, risposta) => {
+      const esito = schemaEsportaRisposta.safeParse(richiesta.body ?? {});
+      if (!esito.success) throw ErroreApi.datiNonValidi('Indica il formato su cui esportare.');
+      if (!E_UUID.test(richiesta.params.id)) throw ErroreApi.nonTrovato('Conversazione inesistente.');
+      const { formato } = esito.data;
+
+      const letto = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const c = await client.query<{ titolo: string }>(
+          `select titolo from velia.conversazioni where id = $1 and tenant_id = $2`,
+          [richiesta.params.id, richiesta.identita.tenantId],
+        );
+        if (!c.rowCount) return undefined;
+        const m = await client.query<RigaTrascrizione>(
+          `select autore, testo, citazioni from velia.messaggi
+           where conversazione_id = $1 and tenant_id = $2
+           order by inviato_il, id`,
+          [richiesta.params.id, richiesta.identita.tenantId],
+        );
+        const titolo = c.rows[0]!.titolo.trim() || NOME_DOCUMENTO;
+        return {
+          titolo,
+          messaggi: m.rows,
+          ...(formato !== 'txt' && {
+            fasce: await fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
+          }),
+        };
+      });
+      if (!letto) throw ErroreApi.nonTrovato('Conversazione inesistente.');
+
+      const { testo, fonti } = trascriviConversazione(letto.messaggi);
+      if (!testo) throw ErroreApi.datiNonValidi('La conversazione non ha ancora niente da esportare.');
+
+      if (formato === 'txt' || !letto.fasce) {
+        const piano = `${letto.titolo}\n\n${testoSemplice(testo, fonti)}`;
+        return inviaFile(
+          risposta,
+          Buffer.from(piano, 'utf8'),
+          'text/plain; charset=utf-8',
+          `attachment; filename="${nomeFileGenerato(letto.titolo, 'txt')}"`,
+        );
+      }
+
+      const file = await generaDocumento({
+        formato,
+        nome: letto.titolo,
+        titolo: letto.titolo,
+        testo,
+        fonti,
         fasce: letto.fasce,
       });
 

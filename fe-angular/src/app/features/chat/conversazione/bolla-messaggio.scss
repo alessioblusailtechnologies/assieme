@@ -528,6 +528,37 @@
   opacity: 0.7;
 }
 
+/* Il file c'è ma non è ancora consegnabile: l'anello che gira prende il
+   posto della freccia, nella stessa misura, così il chip non si allarga
+   quando diventa scaricabile. */
+.documento__attesa {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  flex: none;
+  border: 1.5px solid var(--c-line);
+  border-top-color: var(--c-accent);
+  border-radius: 50%;
+  animation: giro 0.9s linear infinite;
+}
+
+@keyframes giro {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Il nome sbiadisce con l'attesa: si legge, ma dice che non è ancora ora. */
+.documento-riga.is-in-arrivo .documento__nome {
+  color: var(--c-text-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documento__attesa {
+    animation-duration: 2.4s;
+  }
+}
+
 .documento__nome {
   min-width: 0;
   overflow: hidden;

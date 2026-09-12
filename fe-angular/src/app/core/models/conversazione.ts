@@ -276,6 +276,11 @@ export interface EsportazioneElaborata {
   /** L'estensione: qualsiasi formato tranne gli eseguibili. */
   formato?: string;
   messaggioId?: Id;
+  /**
+   * Su che cosa lavora il motore documentale (12/09/2026): la risposta di
+   * `messaggioId`, oppure tutto il filo. Assente = la risposta.
+   */
+  ambito?: 'messaggio' | 'conversazione';
   istruzioni?: string;
 }
 

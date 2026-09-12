@@ -8,6 +8,7 @@ import type {
   PropostaArchivio,
 } from '../../contratto/conversazioni.js';
 import { modelloDelLivello, modelloDelTenant, servitoDaAnthropic } from '../../contratto/modelli.js';
+import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
 import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
 import type { Job } from '../coda.js';
@@ -318,7 +319,19 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           throw new ErroreNonRitentabile('sandbox non configurata');
         }
         let contenuto: string | undefined;
-        if (richiesta.messaggioId) {
+        if (richiesta.ambito === 'conversazione') {
+          /* Il documento si fa su tutto il filo (12/09/2026): domande e
+             risposte in fila, come le legge chi ha seguito la consulenza.
+             Fuori i due messaggi di questa richiesta: «Genera da modello:
+             "Proposta breve"» è un comando alla macchina, non un pezzo
+             della consulenza, e la risposta non è ancora stata scritta. */
+          const m = await db.query<MessaggioDaTrascrivere & { autore: 'utente' | 'assistente' }>(
+            `select autore, testo, citazioni from velia.messaggi
+             where conversazione_id = $1 and id <> $2 order by inviato_il, id`,
+            [payload.conversazioneId, payload.messaggioUtenteId],
+          );
+          contenuto = trascriviConversazione(m.rows).testo || undefined;
+        } else if (richiesta.messaggioId) {
           const m = await db.query<{ testo: string }>(
             `select testo from velia.messaggi where id = $1 and conversazione_id = $2 and autore = 'assistente'`,
             [richiesta.messaggioId, payload.conversazioneId],

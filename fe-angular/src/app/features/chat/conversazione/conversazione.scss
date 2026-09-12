@@ -425,6 +425,42 @@
   min-width: 0;
 }
 
+/* Il file è annunciato ma non ancora consegnabile: la riga c'è tutta, con
+   l'anello al posto della freccia. Meno sbiadita di una riga che sta
+   scendendo, perché qui c'è qualcosa da guardare. */
+.output__riga.is-in-arrivo .output__voce:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.output__riga.is-in-arrivo .output__nome {
+  color: var(--c-text-3);
+}
+
+.output__attesa {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-top: 2px;
+  border: 1.5px solid var(--c-line);
+  border-top-color: var(--c-accent);
+  border-radius: 50%;
+  animation: giro-output 0.9s linear infinite;
+}
+
+@keyframes giro-output {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .output__attesa {
+    animation-duration: 2.4s;
+  }
+}
+
 .output__condividi {
   flex: none;
   display: grid;
@@ -500,6 +536,38 @@
 
 .fondo app-composer {
   display: block;
+}
+
+/* ---------- La barra delle azioni su tutta la chat ---------- */
+
+/*
+ * Sta sopra il composer e sotto il filo, e pesa quanto le azioni di una
+ * bolla: gli stessi pulsanti, la stessa misura. L'etichetta a sinistra dice
+ * il perimetro - senza, si leggerebbero come azioni sull'ultima risposta,
+ * che è proprio l'equivoco che questa riga esiste per togliere.
+ */
+.utility {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-2);
+}
+
+/* Il resto lo fa `.mono`: famiglia, misura, maiuscoletto, colore. */
+.utility__ambito {
+  margin-right: var(--sp-1);
+}
+
+/* Schermo stretto: l'etichetta prende la sua riga e i gesti restano in fila. */
+@media (max-width: 600px) {
+  .utility {
+    gap: var(--sp-1);
+  }
+
+  .utility__ambito {
+    flex-basis: 100%;
+  }
 }
 
 /* Stesso disegno del pulsante «Copia» della bolla: il contenuto proiettato

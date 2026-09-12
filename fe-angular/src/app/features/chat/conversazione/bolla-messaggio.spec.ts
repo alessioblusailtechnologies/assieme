@@ -196,3 +196,67 @@ describe('BollaMessaggio · i passi del motore', () => {
     expect(dom.querySelectorAll('.passo').length).toBe(2);
   });
 });
+
+/**
+ * Il chip del documento generato (12/09/2026).
+ *
+ * Il motore annuncia il file appena l'ha caricato, ma il server lo serve
+ * leggendo l'elenco dal messaggio, e il messaggio si scrive a risposta
+ * completa: in mezzo c'era una finestra in cui il chip si lasciava premere
+ * e rispondeva «contenuto non disponibile».
+ */
+describe('BollaMessaggio · il documento generato', () => {
+  function conDocumento(inCorso: boolean): MessaggioInStream {
+    return {
+      id: 'msg-doc',
+      conversazioneId: 'cnv-1',
+      autore: 'assistente',
+      testo: 'Il documento è pronto qui sotto.',
+      inviatoIl: '2026-09-12T10:00:00.000Z',
+      documentiReferenziati: [],
+      citazioni: [],
+      provenienze: [],
+      documenti: [{ id: 'doc-1', nome: 'Proposta Rossi', formato: 'pdf', url: '/api/x' }],
+      inCorso,
+    };
+  }
+
+  async function monta(m: MessaggioInStream): Promise<ComponentFixture<BollaMessaggio>> {
+    await TestBed.configureTestingModule({
+      imports: [BollaMessaggio],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), ChatStore],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BollaMessaggio);
+    fixture.componentRef.setInput('messaggio', m);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('mentre la risposta scorre il chip aspetta, e non si lascia premere', async () => {
+    const dom = (await monta(conDocumento(true))).nativeElement as HTMLElement;
+
+    /* Il chip c'è: è la cosa che si stava aspettando. */
+    expect(dom.querySelector('.documento__nome')?.textContent?.trim()).toBe('Proposta Rossi');
+    expect(dom.querySelector('.documento__attesa')).toBeTruthy();
+    expect((dom.querySelector('.documento') as HTMLButtonElement).disabled).toBe(true);
+    expect(dom.querySelector('.documento')?.getAttribute('aria-busy')).toBe('true');
+    /* Nemmeno il link da mandare al cliente: non c'è ancora niente da condividere. */
+    expect((dom.querySelector('.documento__condividi') as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('a risposta chiusa diventa un download, con la freccia al posto dell’attesa', async () => {
+    const fixture = await monta(conDocumento(true));
+    const dom = fixture.nativeElement as HTMLElement;
+
+    fixture.componentRef.setInput('messaggio', conDocumento(false));
+    fixture.detectChanges();
+
+    expect(dom.querySelector('.documento__attesa')).toBeNull();
+    expect((dom.querySelector('.documento') as HTMLButtonElement).disabled).toBe(false);
+    expect(dom.querySelector('.documento')?.getAttribute('aria-label')).toBe(
+      'Scarica Proposta Rossi (pdf)',
+    );
+    expect((dom.querySelector('.documento__condividi') as HTMLButtonElement).disabled).toBe(false);
+  });
+});

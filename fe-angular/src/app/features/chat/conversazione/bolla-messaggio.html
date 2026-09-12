@@ -180,15 +180,34 @@
         -->
         <div class="documenti" aria-label="Documenti generati">
           @for (d of m.documenti; track d.id) {
-            <span class="documento-riga">
+            <!--
+              Finché la risposta scorre il file è annunciato ma non ancora
+              consegnabile: il server lo cerca nell'elenco del messaggio, e
+              il messaggio si scrive solo a risposta completa. Il chip resta
+              (è la cosa che si stava aspettando) con l'attesa al posto della
+              freccia, e non si lascia premere. Prima di oggi (12/09/2026) si
+              lasciava premere e rispondeva «contenuto non disponibile».
+            -->
+            @let inArrivo = m.inCorso === true;
+            <span class="documento-riga" [class.is-in-arrivo]="inArrivo">
               <button
                 type="button"
                 class="documento"
                 (click)="store.scaricaDocumento(d)"
-                [disabled]="store.documentoInScaricamento() === d.id"
-                [attr.aria-label]="'Scarica ' + d.nome + ' (' + d.formato + ')'"
+                [disabled]="inArrivo || store.documentoInScaricamento() === d.id"
+                [attr.aria-busy]="inArrivo"
+                [attr.aria-label]="
+                  inArrivo
+                    ? d.nome + ': lo sto preparando'
+                    : 'Scarica ' + d.nome + ' (' + d.formato + ')'
+                "
+                [title]="inArrivo ? 'Ancora qualche istante: il file si sta chiudendo' : ''"
               >
-                <ui-icon name="scarica" [size]="13" />
+                @if (inArrivo) {
+                  <span class="documento__attesa" aria-hidden="true"></span>
+                } @else {
+                  <ui-icon name="scarica" [size]="13" />
+                }
                 <span class="documento__nome">{{ d.nome }}</span>
                 <span class="mono documento__formato">{{ d.formato }}</span>
                 @if (d.modello) {
@@ -200,6 +219,7 @@
                 type="button"
                 class="documento documento__condividi"
                 (click)="store.apriCondivisione(d)"
+                [disabled]="inArrivo"
                 [attr.aria-label]="'Condividi il link di ' + d.nome"
                 title="Condividi link"
               >

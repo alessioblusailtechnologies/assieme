@@ -443,6 +443,52 @@ describe('ChatStore', () => {
     await microtask();
 
     expect(store.output().map((d) => d.id)).toEqual(['doc-a']);
+
+    /*
+     * Ma non è ancora scaricabile (12/09/2026): il server lo cerca
+     * nell'elenco del messaggio, che si scrive a risposta completa. Fino ad
+     * allora il clic tornava «documento inesistente».
+     */
+    expect(store.output()[0].inPreparazione).toBe(true);
+    expect(store.documentiInPreparazione().has('doc-a')).toBe(true);
+    store.scaricaDocumento(store.output()[0]);
+    store.apriCondivisione(store.output()[0]);
+    http.expectNone('/api/conversazioni/cnv-1/documenti/doc-a');
+    http.expectNone('/api/conversazioni/cnv-1/documenti/doc-a/link');
+
+    manda({ tipo: 'fine' });
+    await microtask();
+    http.match('/api/conversazioni').forEach((r) => r.flush([conversazione('cnv-1')]));
+
+    expect(store.output()[0].inPreparazione).toBeUndefined();
+    expect(store.documentiInPreparazione().size).toBe(0);
+  });
+
+  it('una risposta caduta a metà non lascia in giro i documenti che ha annunciato', async () => {
+    /* Il server li cancella dallo Storage: il messaggio non li ha mai
+       elencati, e un chip che promette un file che non esiste è peggio di
+       nessun chip. */
+    await avvia();
+    const stream = await invia('Preparami la proposta');
+
+    let ricevuto = '';
+    const manda = (evento: EventoStream) => {
+      ricevuto += blocco(evento);
+      stream.event({
+        type: HttpEventType.DownloadProgress,
+        loaded: ricevuto.length,
+        partialText: ricevuto,
+      } as HttpDownloadProgressEvent);
+    };
+
+    manda({ tipo: 'inizio', messaggioId: 'msg-9', messaggioUtenteId: 'msg-8' });
+    manda({ tipo: 'documento', documento: proposta });
+    await microtask();
+    expect(store.output().length).toBe(1);
+
+    manda({ tipo: 'errore', messaggio: 'Il motore documentale si è fermato.' });
+    await microtask();
+    expect(store.output()).toEqual([]);
   });
 
   it('scarica un documento una volta sola, anche a due clic', async () => {

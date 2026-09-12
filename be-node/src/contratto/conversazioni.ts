@@ -334,6 +334,13 @@ export const schemaEsportazioneElaborata = z
       .refine(consegnabile, 'Formato non ammesso.')
       .optional(),
     messaggioId: z.string().min(1).optional(),
+    /**
+     * Su che cosa lavora il motore documentale (12/09/2026): la risposta di
+     * `messaggioId`, oppure tutto il filo, domande e risposte in fila. La
+     * stessa azione con due perimetri, come «Esporta come» e «Invia email».
+     * Assente = la risposta, che è il comportamento di sempre.
+     */
+    ambito: z.enum(['messaggio', 'conversazione']).optional(),
     istruzioni: z.string().max(4000).optional(),
   })
   .refine((e) => e.modelloId !== undefined || e.formato !== undefined, {

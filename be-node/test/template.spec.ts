@@ -140,6 +140,27 @@ describe('le rotte prima del database', () => {
     expect(malformati.json()).toMatchObject({ codice: 'NON_TROVATO' });
   });
 
+  /* «Esporta come» su tutto il filo (12/09/2026): stesse difese, un
+     segmento in meno nell'indirizzo. */
+  it("l'esportazione della conversazione intera: senza formato → 400, id malformato → 404", async () => {
+    const senzaFormato = await daOperatore.inject({
+      method: 'POST',
+      url: '/api/conversazioni/non-uuid/esporta',
+      headers: autenticato,
+      payload: {},
+    });
+    expect(senzaFormato.statusCode).toBe(400);
+
+    const malformato = await daOperatore.inject({
+      method: 'POST',
+      url: '/api/conversazioni/non-uuid/esporta',
+      headers: autenticato,
+      payload: { formato: 'pdf' },
+    });
+    expect(malformato.statusCode).toBe(404);
+    expect(malformato.json()).toMatchObject({ codice: 'NON_TROVATO' });
+  });
+
   it('senza token → 401 su ogni rotta del dominio; l’identità visiva non esiste più', async () => {
     for (const url of ['/api/template', '/api/intestazione', '/api/intestazione/immagini/img-000000000001.png']) {
       const r = await daOperatore.inject({ method: 'GET', url });

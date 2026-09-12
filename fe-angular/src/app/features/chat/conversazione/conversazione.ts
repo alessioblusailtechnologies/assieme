@@ -20,7 +20,7 @@ import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { httpResource } from '@angular/common/http';
 
-import { ChatStore } from '../chat-store';
+import { AmbitoAzione, ChatStore } from '../chat-store';
 import { salutoPer } from '../saluto';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { TokenStore } from '@core/auth/token-store';
@@ -269,31 +269,53 @@ export class Conversazione {
     }
   }
 
-  // --- Le azioni sotto una risposta (RF-C-10) ------------------------------
+  // --- Le azioni: sotto una risposta, e su tutta la chat (RF-C-10) ---------
+
+  /**
+   * La barra sopra il composer compare quando c'è una consulenza da
+   * consegnare: almeno una risposta finita. Prima non ci sarebbe niente da
+   * copiare, mandare o impaginare, e quattro pulsanti spenti sono peggio di
+   * nessun pulsante.
+   */
+  protected readonly haRisposte = computed(() =>
+    this.store.messaggi().some((m) => m.autore === 'assistente' && !m.inCorso && !!m.testo),
+  );
+
+  protected readonly copiataChat = signal(false);
+
+  protected copiaChat(): void {
+    void this.store.copiaConversazione().then(() => {
+      this.copiataChat.set(true);
+      setTimeout(() => this.copiataChat.set(false), 2000);
+    });
+  }
+
 
   /*
    * Un solo menu per tutto il filo, non uno per messaggio: si aggancia al
-   * pulsante premuto e ricorda per quale messaggio è stato aperto. Vale per
+   * pulsante premuto e ricorda su che cosa è stato aperto. Vale per
    * l'«Esporta come» e per l'«Invia email».
+   *
+   * Dal 12/09/2026 l'ambito è due cose: l'id di una risposta, o tutto il
+   * filo. Le azioni sotto una bolla e quelle della barra sopra il composer
+   * sono le stesse e passano di qui: una sola macchina, due perimetri.
    */
   private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
   private readonly menuEmail = viewChild<MenuAzioni>('menuEmail');
 
-  /** Il messaggio su cui è stata chiesta un'azione, finché il menu o il modulo è aperto. */
-  private messaggioInAzione?: string;
+  /** Su che cosa è stata chiesta un'azione, finché il menu o il modulo è aperto. */
+  private ambitoInAzione: AmbitoAzione = 'conversazione';
 
   // «Esporta come»: Word, PDF, testo semplice - un download immediato.
 
   protected readonly vociEsporta: VoceMenu[] = this.store.scelteEsportazione.map((scelta) => ({
     etichetta: scelta.etichetta,
     dettaglio: scelta.dettaglio,
-    azione: () => {
-      if (this.messaggioInAzione) this.store.esporta(this.messaggioInAzione, scelta);
-    },
+    azione: () => this.store.esporta(this.ambitoInAzione, scelta),
   }));
 
-  protected apriEsporta(evento: Event, messaggioId: string): void {
-    this.messaggioInAzione = messaggioId;
+  protected apriEsporta(evento: Event, ambito: AmbitoAzione): void {
+    this.ambitoInAzione = ambito;
     this.menuEsporta()?.apri(evento);
   }
 
@@ -307,9 +329,7 @@ export class Conversazione {
     {
       etichetta: 'A me',
       dettaglio: this.sessione.utente()?.email ?? '',
-      azione: () => {
-        if (this.messaggioInAzione) this.store.inviaEmail(this.messaggioInAzione, 'me');
-      },
+      azione: () => this.store.inviaEmail(this.ambitoInAzione, 'me'),
     },
     {
       etichetta: 'A un altro indirizzo…',
@@ -320,16 +340,16 @@ export class Conversazione {
     },
   ]);
 
-  protected apriEmail(evento: Event, messaggioId: string): void {
-    this.messaggioInAzione = messaggioId;
+  protected apriEmail(evento: Event, ambito: AmbitoAzione): void {
+    this.ambitoInAzione = ambito;
     this.menuEmail()?.apri(evento);
   }
 
   protected inviaEmailAltro(evento: Event): void {
     evento.preventDefault();
     const a = this.emailDestinatario().trim();
-    if (!this.messaggioInAzione || !this.emailValida()) return;
-    this.store.inviaEmail(this.messaggioInAzione, a, () => this.emailAperta.set(false));
+    if (!this.emailValida()) return;
+    this.store.inviaEmail(this.ambitoInAzione, a, () => this.emailAperta.set(false));
   }
 
   // «Condividi link»: il documento come pagina che il cliente apre dal
@@ -363,8 +383,12 @@ export class Conversazione {
     [...this.store.modelli()].sort((a, b) => a.nome.localeCompare(b.nome)),
   );
 
-  protected apriModelli(messaggioId: string): void {
-    this.messaggioInAzione = messaggioId;
+  /** Il cassetto è uno solo per i due perimetri: qui dice su quale sta lavorando. */
+  protected readonly modelloSuTuttaLaChat = signal(false);
+
+  protected apriModelli(ambito: AmbitoAzione): void {
+    this.ambitoInAzione = ambito;
+    this.modelloSuTuttaLaChat.set(ambito === 'conversazione');
     this.store.ricaricaModelli();
     this.modelloScelto.set(this.modelliDisponibili()[0]?.id);
     this.istruzioniModello.set('');
@@ -372,13 +396,19 @@ export class Conversazione {
   }
 
   protected avviaModello(): void {
-    const messaggioId = this.messaggioInAzione;
+    const ambito = this.ambitoInAzione;
     const modello = this.modelliDisponibili().find((m) => m.id === this.modelloScelto());
-    if (!messaggioId || !modello) return;
+    if (!modello) return;
     this.modelloAperto.set(false);
     const istruzioni = this.istruzioniModello().trim();
     this.store.inviaEsportazione(
-      { modelloId: modello.id, messaggioId, ...(istruzioni && { istruzioni }) },
+      {
+        modelloId: modello.id,
+        ...(ambito === 'conversazione'
+          ? { ambito: 'conversazione' as const }
+          : { messaggioId: ambito }),
+        ...(istruzioni && { istruzioni }),
+      },
       modello.nome,
     );
   }

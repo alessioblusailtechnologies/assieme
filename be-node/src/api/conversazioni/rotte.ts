@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 
-import type { FastifyInstance, FastifyReply } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance, FastifyReply } from 'fastify';
 import type pg from 'pg';
 
 import {
@@ -40,6 +40,7 @@ import { configurazione } from '../../config.js';
 import { inviaEmail } from '../../email/invio.js';
 import { fontiDaCitazioni } from '../../generazione/catalogo.js';
 import { componiEmailRisposta } from '../../generazione/email.js';
+import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { nomeFileGenerato } from '../../generazione/generatore.js';
 import {
   nuovoIdPrivato,
@@ -856,35 +857,88 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       });
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
 
-      const u = await poolDb().query<{ nome: string; cognome: string; email: string; tenant_nome: string }>(
-        `select u.nome, u.cognome, u.email, t.nome as tenant_nome
-         from velia.utenti u join velia.tenant t on t.id = u.tenant_id
-         where u.id = $1 and u.tenant_id = $2`,
-        [utenteId, tenantId],
-      );
-      const utente = u.rows[0];
-      if (!utente) throw ErroreApi.nonTrovato('Utente inesistente.');
-
-      const a = esito.data.a === 'me' ? utente.email : esito.data.a;
-      const email = componiEmailRisposta({
-        titolo: conversazione.titolo,
-        testo: messaggio.testo,
-        fonti: fontiDaCitazioni(messaggio.citazioni),
-        daParteDi: { nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome },
-      });
-      const config = configurazione();
-      const { simulata } = await inviaEmail(
-        { a, ...email, rispondiA: utente.email },
+      return spedisci(
+        { tenantId, utenteId, a: esito.data.a, log: richiesta.log },
         {
-          apiKey: config.RESEND_API_KEY,
-          mittente: config.EMAIL_MITTENTE,
-          produzione: process.env['NODE_ENV'] === 'production',
-          log: richiesta.log,
+          titolo: conversazione.titolo,
+          testo: messaggio.testo,
+          fonti: fontiDaCitazioni(messaggio.citazioni),
         },
       );
-      return { a, simulata };
     },
   );
+
+  /**
+   * «Invia email» sulla **conversazione intera** (12/09/2026): domande e
+   * risposte in fila, con le fonti di tutte le risposte in coda. Stessa
+   * azione di quella sotto una risposta, altro perimetro: si manda la
+   * consulenza, non il suo ultimo giro.
+   */
+  app.post<{ Params: { id: string } }>(
+    '/api/conversazioni/:id/email',
+    async (richiesta): Promise<EsitoEmailRisposta> => {
+      const esito = schemaEmailRisposta.safeParse(richiesta.body ?? {});
+      if (!esito.success) throw ErroreApi.datiNonValidi('Indica «me» oppure un indirizzo email valido.');
+      if (!E_UUID.test(richiesta.params.id)) throw ErroreApi.nonTrovato('Conversazione inesistente.');
+      const { tenantId, utenteId } = richiesta.identita;
+
+      const { conversazione, messaggi } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+        const c = await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const m = await client.query<MessaggioDaTrascrivere & { autore: 'utente' | 'assistente' }>(
+          `select autore, testo, citazioni from velia.messaggi
+           where conversazione_id = $1 and tenant_id = $2
+           order by inviato_il, id`,
+          [richiesta.params.id, tenantId],
+        );
+        return { conversazione: c, messaggi: m.rows };
+      });
+
+      const { testo, fonti } = trascriviConversazione(messaggi);
+      if (!testo) throw ErroreApi.datiNonValidi('La conversazione non ha ancora niente da inviare.');
+
+      return spedisci(
+        { tenantId, utenteId, a: esito.data.a, log: richiesta.log },
+        { titolo: conversazione.titolo, testo, fonti },
+      );
+    },
+  );
+}
+
+/**
+ * Compone e spedisce l'email di una risposta o dell'intero filo: mittente di
+ * piattaforma, identità dell'agenzia, e in coda chi l'ha mandata. Le due
+ * rotte «Invia email» differiscono solo per che cosa ci mettono dentro.
+ */
+async function spedisci(
+  /** `a` è l'indirizzo, o `me` per quello dell'utente registrato. */
+  chi: { tenantId: string; utenteId: string; a: string; log: FastifyBaseLogger },
+  cosa: { titolo: string; testo: string; fonti: string[] },
+): Promise<EsitoEmailRisposta> {
+  const u = await poolDb().query<{ nome: string; cognome: string; email: string; tenant_nome: string }>(
+    `select u.nome, u.cognome, u.email, t.nome as tenant_nome
+     from velia.utenti u join velia.tenant t on t.id = u.tenant_id
+     where u.id = $1 and u.tenant_id = $2`,
+    [chi.utenteId, chi.tenantId],
+  );
+  const utente = u.rows[0];
+  if (!utente) throw ErroreApi.nonTrovato('Utente inesistente.');
+
+  const a = chi.a === 'me' ? utente.email : chi.a;
+  const email = componiEmailRisposta({
+    ...cosa,
+    daParteDi: { nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome },
+  });
+  const config = configurazione();
+  const { simulata } = await inviaEmail(
+    { a, ...email, rispondiA: utente.email },
+    {
+      apiKey: config.RESEND_API_KEY,
+      mittente: config.EMAIL_MITTENTE,
+      produzione: process.env['NODE_ENV'] === 'production',
+      log: chi.log,
+    },
+  );
+  return { a, simulata };
 }
 
 /** Lo stream vero e proprio: header, `inizio`, inoltro degli eventi, chiusura. */

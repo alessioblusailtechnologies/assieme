@@ -135,4 +135,32 @@ describe('la rotta prima del database', () => {
     });
     expect(r.statusCode).toBe(401);
   });
+
+  /* «Invia email» su tutto il filo (12/09/2026): stesse difese della rotta
+     della singola risposta, un segmento in meno nell'indirizzo. */
+  it('sulla conversazione intera: corpo senza destinatario → 400, id malformato → 404, senza token → 401', async () => {
+    const senza = await app.inject({
+      method: 'POST',
+      url: '/api/conversazioni/non-uuid/email',
+      headers: autenticato,
+      payload: {},
+    });
+    expect(senza.statusCode).toBe(400);
+
+    const malformato = await app.inject({
+      method: 'POST',
+      url: '/api/conversazioni/non-uuid/email',
+      headers: autenticato,
+      payload: { a: 'me' },
+    });
+    expect(malformato.statusCode).toBe(404);
+    expect(malformato.json()).toMatchObject({ codice: 'NON_TROVATO' });
+
+    const anonimo = await app.inject({
+      method: 'POST',
+      url: '/api/conversazioni/00000000-0000-4000-8000-000000000001/email',
+      payload: { a: 'me' },
+    });
+    expect(anonimo.statusCode).toBe(401);
+  });
 });

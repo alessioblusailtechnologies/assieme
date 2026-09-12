@@ -20,6 +20,7 @@ import {
   RiferimentoDocumento,
   StatoAllegato,
   ModelloRiferimento,
+  etichettaCitazione,
 } from '@core/models';
 import { TokenStore } from '@core/auth/token-store';
 import { ConversazioniApi } from '@core/api/conversazioni-api';
@@ -32,6 +33,16 @@ import {
   SceltaEsportazione,
   nomeFileEsportazione,
 } from '@shared/esportazione/scelte-esportazione';
+
+/**
+ * Su che cosa lavora un'azione della chat (12/09/2026).
+ *
+ * Copia, invio per email, esportazione e «Genera da modello» esistono in
+ * due perimetri: la risposta che si ha sotto gli occhi, e tutto il filo. È
+ * la stessa azione, e passa dagli stessi metodi: l'id di un messaggio, o
+ * `'conversazione'`.
+ */
+export type AmbitoAzione = Id | 'conversazione';
 
 /** Come sta la lettura di un documento appena allegato. */
 export interface StatoElaborazioneAllegato {
@@ -108,6 +119,16 @@ export interface MessaggioInStream extends Messaggio {
  */
 export interface OutputConversazione extends DocumentoGenerato {
   prodottoIl: IsoDateTime;
+  /**
+   * Vero finché la risposta che l'ha prodotto sta ancora scorrendo.
+   *
+   * Il file esiste già nello Storage quando il motore lo annuncia, ma il
+   * server lo serve leggendo l'elenco dal **messaggio**, e il messaggio si
+   * scrive solo a risposta completa: fino a quel momento scaricarlo
+   * risponde «documento inesistente». La riga si mostra lo stesso (è la
+   * cosa che si stava aspettando), ma aspetta il suo turno.
+   */
+  inPreparazione?: boolean;
 }
 
 /** La coppia domanda/risposta che sta attraversando lo stream. */
@@ -246,13 +267,44 @@ export class ChatStore {
     this.livelliAgenzia.ricarica();
   }
 
-  /** Esporta una risposta nel formato scelto e avvia il download, col titolo della conversazione come nome. */
-  esporta(messaggioId: Id, scelta: SceltaEsportazione): void {
+  /**
+   * Esporta nel formato scelto e avvia il download, col titolo della
+   * conversazione come nome del file.
+   *
+   * `ambito` è una risposta o tutto il filo (12/09/2026): le azioni sotto
+   * una bolla e quelle della barra sopra il composer sono le stesse, cambia
+   * solo su che cosa lavorano.
+   */
+  esporta(ambito: AmbitoAzione, scelta: SceltaEsportazione): void {
     const id = this.idAttiva();
     if (!id) return;
-    this.api.esporta(id, messaggioId, scelta.scelta).subscribe({
+    const richiesta =
+      ambito === 'conversazione'
+        ? this.api.esportaConversazione(id, scelta.scelta)
+        : this.api.esporta(id, ambito, scelta.scelta);
+    richiesta.subscribe({
       next: (blob) => scaricaBlob(blob, nomeFileEsportazione(this.attiva()?.titolo ?? 'risposta', scelta.formato)),
     });
+  }
+
+  /**
+   * La conversazione negli appunti: domande e risposte in fila, con le
+   * fonti per esteso. Lo stesso testo che esce dall'esportazione in testo
+   * semplice, ma senza passare dal server: sono i messaggi che si hanno già.
+   */
+  copiaConversazione(): Promise<void> {
+    const parti = this.messaggi()
+      .filter((m) => m.testo.trim())
+      .map((m) => {
+        const voce = m.autore === 'utente' ? '## Domanda' : '## Risposta';
+        const fonti = m.citazioni.length
+          ? `\n\nFonti:\n${m.citazioni.map((c) => `- ${etichettaCitazione(c)}`).join('\n')}`
+          : '';
+        return `${voce}\n\n${m.testo.trim()}${fonti}`;
+      });
+    const titolo = this.attiva()?.titolo;
+    const testo = `${titolo ? `# ${titolo}\n\n` : ''}${parti.join('\n\n---\n\n')}\n`;
+    return navigator.clipboard.writeText(testo);
   }
 
   // --- Invia email ----------------------------------------------------------
@@ -265,11 +317,15 @@ export class ChatStore {
    * dice già l'interceptor. Torna `true` a invio riuscito, per chiudere il
    * modulo.
    */
-  inviaEmail(messaggioId: Id, a: DestinatarioEmail, fatto?: () => void): void {
+  inviaEmail(ambito: AmbitoAzione, a: DestinatarioEmail, fatto?: () => void): void {
     const id = this.idAttiva();
     if (!id || this.emailInInvio()) return;
     this.emailInInvio.set(true);
-    this.api.inviaEmail(id, messaggioId, a).subscribe({
+    const richiesta =
+      ambito === 'conversazione'
+        ? this.api.inviaEmailConversazione(id, a)
+        : this.api.inviaEmail(id, ambito, a);
+    richiesta.subscribe({
       next: (esito) => {
         this.emailInInvio.set(false);
         this.notifiche.aggiungi({
@@ -355,11 +411,26 @@ export class ChatStore {
       for (const d of m.documenti ?? []) {
         if (visti.has(d.id)) continue;
         visti.add(d.id);
-        prodotti.push({ ...d, prodottoIl: m.inviatoIl });
+        prodotti.push({ ...d, prodottoIl: m.inviatoIl, ...(m.inCorso && { inPreparazione: true }) });
       }
     }
     return prodotti.reverse();
   });
+
+  /**
+   * I documenti annunciati ma non ancora consegnabili: quelli di una
+   * risposta che sta ancora scorrendo.
+   *
+   * Il motore annuncia il file appena l'ha caricato nello Storage, e il chip
+   * compare lì per lì, che è giusto: è la cosa che si stava aspettando. Ma
+   * la rotta che lo serve lo cerca nell'elenco del messaggio, e il messaggio
+   * si scrive a risposta completa — in mezzo c'è una finestra in cui il
+   * clic tornava «documento inesistente». Il chip resta, con l'attesa sopra,
+   * e diventa scaricabile quando lo è davvero.
+   */
+  readonly documentiInPreparazione = computed<ReadonlySet<Id>>(
+    () => new Set(this.output().filter((d) => d.inPreparazione).map((d) => d.id)),
+  );
 
   /** L'id del documento che sta scendendo: la sua riga aspetta, le altre no. */
   readonly documentoInScaricamento = signal<Id | undefined>(undefined);
@@ -371,6 +442,10 @@ export class ChatStore {
   scaricaDocumento(documento: DocumentoGenerato): void {
     const id = this.idAttiva();
     if (!id || this.documentoInScaricamento()) return;
+    /* Ultima rete: il pulsante è già fermo mentre il file non c'è, ma una
+       scorciatoia di tastiera o un doppio clic al momento sbagliato non
+       devono guadagnarsi un 404. */
+    if (this.documentiInPreparazione().has(documento.id)) return;
     this.documentoInScaricamento.set(documento.id);
     this.api.scaricaDocumento(id, documento.id).subscribe({
       next: (blob) => {
@@ -398,7 +473,7 @@ export class ChatStore {
    */
   apriCondivisione(documento: DocumentoGenerato): void {
     const id = this.idAttiva();
-    if (!id) return;
+    if (!id || this.documentiInPreparazione().has(documento.id)) return;
     this.condivisione.set({ documento, inCorso: true });
     this.api
       .linkDocumento(id, documento.id)
@@ -1047,7 +1122,16 @@ export class ChatStore {
         this.aggiornaAssistente((m) => ({ ...m, proposta: evento.proposta }));
         break;
       case 'errore':
-        this.aggiornaAssistente((m) => ({ ...m, inCorso: false, erroreStream: evento.messaggio }));
+        /* I documenti annunciati durante una risposta che non arriva in
+           fondo il server li cancella dallo Storage: il messaggio non li ha
+           mai elencati. Lasciarne il chip prometterebbe un file che non
+           esiste più. */
+        this.aggiornaAssistente((m) => ({
+          ...m,
+          inCorso: false,
+          documenti: undefined,
+          erroreStream: evento.messaggio,
+        }));
         break;
       case 'fine':
         this.concludiStream();
@@ -1172,7 +1256,9 @@ export class ChatStore {
       this.messaggiCaricati.update((caricati) => [
         ...(caricati ?? []),
         ...(stream.utente ? [stream.utente] : []),
-        { ...stream.assistente!, inCorso: false, interrotto: true },
+        /* Come per l'errore: quello che il motore aveva già prodotto il
+           server lo cancella, perché il messaggio non viene registrato. */
+        { ...stream.assistente!, inCorso: false, interrotto: true, documenti: undefined },
       ]);
     }
     this.streamAttivo.set(undefined);
