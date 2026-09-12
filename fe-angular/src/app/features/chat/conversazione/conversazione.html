@@ -122,54 +122,36 @@
                 (apriCitazione)="apriCitazione($event)"
               >
                 <!--
-                  RF-C-10: l'esportazione su template, accanto alla copia rapida.
+                  RF-C-10, rivisto il 12/09/2026: sotto la risposta restano
+                  due cose sole, la copia rapida (che sta nella bolla) e un
+                  raccoglitore. Ripetere quattro pulsanti etichettati sotto
+                  ogni risposta faceva della stessa fila il fondo di ogni
+                  bolla, e in una conversazione lunga era l'unica cosa che si
+                  vedeva scorrendo. Le azioni per esteso stanno sopra il
+                  composer, dove ce n'è una sola; qui sono a un clic.
+
                   Solo per le risposte consolidate: una risposta interrotta o
                   caduta a metà non è un documento da consegnare a un cliente.
                 -->
                 @if (!perCliente() && m.autore === 'assistente' && !m.interrotto && !m.erroreStream) {
-                  <!-- Un nodo solo alla radice dell'@if: è quello che finisce nello slot. -->
-                  <span azioni-extra class="azioni-esporta">
                   <button
+                    azioni-extra
                     type="button"
-                    class="azione-esporta"
-                    (click)="apriEmail($event, m.id)"
+                    class="azione-altre"
+                    (click)="apriAltre($event, m.id)"
                     aria-haspopup="menu"
-                    aria-label="Invia la risposta per email"
+                    aria-label="Altre azioni su questa risposta"
+                    title="Altre azioni"
                   >
-                    <ui-icon name="invia" [size]="13" />
-                    <span>Invia email</span>
+                    <ui-icon name="altre-azioni" [size]="14" />
                   </button>
-                  <button
-                    type="button"
-                    class="azione-esporta"
-                    (click)="apriEsporta($event, m.id)"
-                    aria-haspopup="menu"
-                    aria-label="Esporta la risposta come Word, PDF o testo"
-                  >
-                    <ui-icon name="esporta" [size]="13" />
-                    <span>Esporta come</span>
-                  </button>
-                  <!--
-                    Il motore documentale in sandbox: parte dal modello scelto,
-                    impagina, controlla e allega qui in chat. Ci mette un minuto o
-                    due: si chiede con un modulo, non con un clic.
-                  -->
-                  <button
-                    type="button"
-                    class="azione-esporta"
-                    (click)="apriModelli(m.id)"
-                    aria-label="Genera un documento da un modello dell'agenzia"
-                  >
-                    <ui-icon name="documento" [size]="13" />
-                    <span>Genera da modello</span>
-                  </button>
-                  </span>
                 }
               </app-bolla-messaggio>
             }
           </div>
-          <ui-menu-azioni #menuEsporta [voci]="vociEsporta" />
+          <ui-menu-azioni #menuEsporta [voci]="vociEsporta()" />
           <ui-menu-azioni #menuEmail [voci]="vociEmail()" />
+          <ui-menu-azioni #menuAltre [voci]="vociAltre()" />
         }
       </div>
 
@@ -178,53 +160,61 @@
           Le stesse azioni che stanno sotto ogni risposta, qui applicate a
           tutta la chat (12/09/2026). Una consulenza è fatta di più giri, e
           finora si poteva consegnarne uno solo: il resto andava ricomposto
-          a mano. La riga sta sopra il composer, dove si finisce di lavorare,
-          e dice il proprio perimetro prima di elencare i gesti - altrimenti
-          si leggerebbero come azioni sull'ultima risposta.
+          a mano.
+
+          Una pillola appoggiata sopra il composer, larga quanto il suo
+          contenuto: non è un secondo riquadro che compete col campo, ed è
+          chiusa in un bordo perché quattro parole sciolte sopra l'input si
+          leggevano come una didascalia. L'etichetta sta dentro, prima dei
+          gesti, e li qualifica: senza, si leggerebbero come azioni
+          sull'ultima risposta.
         -->
         @if (!perCliente() && haRisposte()) {
-          <div class="utility" role="group" aria-label="Azioni su tutta la conversazione">
-            <span class="mono utility__ambito">Tutta la chat</span>
-            <button
-              type="button"
-              class="azione-esporta"
-              (click)="copiaChat()"
-              [attr.aria-label]="
-                copiataChat() ? 'Conversazione copiata' : 'Copia tutta la conversazione'
-              "
-            >
-              <ui-icon [name]="copiataChat() ? 'pronto' : 'duplica'" [size]="13" />
-              <span>{{ copiataChat() ? 'Copiata' : 'Copia' }}</span>
-            </button>
-            <button
-              type="button"
-              class="azione-esporta"
-              (click)="apriEmail($event, 'conversazione')"
-              aria-haspopup="menu"
-              aria-label="Invia tutta la conversazione per email"
-            >
-              <ui-icon name="invia" [size]="13" />
-              <span>Invia email</span>
-            </button>
-            <button
-              type="button"
-              class="azione-esporta"
-              (click)="apriEsporta($event, 'conversazione')"
-              aria-haspopup="menu"
-              aria-label="Esporta tutta la conversazione come Word, PDF o testo"
-            >
-              <ui-icon name="esporta" [size]="13" />
-              <span>Esporta come</span>
-            </button>
-            <button
-              type="button"
-              class="azione-esporta"
-              (click)="apriModelli('conversazione')"
-              aria-label="Genera un documento da un modello dell'agenzia su tutta la conversazione"
-            >
-              <ui-icon name="documento" [size]="13" />
-              <span>Genera da modello</span>
-            </button>
+          <div class="utility">
+            <div class="utility__barra" role="group" aria-label="Azioni su tutta la conversazione">
+              <span class="mono utility__ambito">Tutta la chat</span>
+              <span class="utility__riga" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="azione-esporta"
+                (click)="copiaChat()"
+                [attr.aria-label]="
+                  copiataChat() ? 'Conversazione copiata' : 'Copia tutta la conversazione'
+                "
+              >
+                <ui-icon [name]="copiataChat() ? 'pronto' : 'duplica'" [size]="13" />
+                <span>{{ copiataChat() ? 'Copiata' : 'Copia' }}</span>
+              </button>
+              <button
+                type="button"
+                class="azione-esporta"
+                (click)="apriEmail($event, 'conversazione')"
+                aria-haspopup="menu"
+                aria-label="Invia tutta la conversazione per email"
+              >
+                <ui-icon name="invia" [size]="13" />
+                <span>Invia email</span>
+              </button>
+              <button
+                type="button"
+                class="azione-esporta"
+                (click)="apriEsporta($event, 'conversazione')"
+                aria-haspopup="menu"
+                aria-label="Esporta tutta la conversazione come Word, PDF o testo"
+              >
+                <ui-icon name="esporta" [size]="13" />
+                <span>Esporta come</span>
+              </button>
+              <button
+                type="button"
+                class="azione-esporta"
+                (click)="apriModelli('conversazione')"
+                aria-label="Genera un documento da un modello dell'agenzia su tutta la conversazione"
+              >
+                <ui-icon name="documento" [size]="13" />
+                <span>Genera da modello</span>
+              </button>
+            </div>
           </div>
         }
         <app-composer [giaInContesto]="idContesto()" />

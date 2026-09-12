@@ -302,47 +302,87 @@ export class Conversazione {
    */
   private readonly menuEsporta = viewChild<MenuAzioni>('menuEsporta');
   private readonly menuEmail = viewChild<MenuAzioni>('menuEmail');
+  private readonly menuAltre = viewChild<MenuAzioni>('menuAltre');
 
   /** Su che cosa è stata chiesta un'azione, finché il menu o il modulo è aperto. */
   private ambitoInAzione: AmbitoAzione = 'conversazione';
-
-  // «Esporta come»: Word, PDF, testo semplice - un download immediato.
-
-  protected readonly vociEsporta: VoceMenu[] = this.store.scelteEsportazione.map((scelta) => ({
-    etichetta: scelta.etichetta,
-    dettaglio: scelta.dettaglio,
-    azione: () => this.store.esporta(this.ambitoInAzione, scelta),
-  }));
-
-  protected apriEsporta(evento: Event, ambito: AmbitoAzione): void {
-    this.ambitoInAzione = ambito;
-    this.menuEsporta()?.apri(evento);
-  }
-
-  // «Invia email»: a me (l'indirizzo con cui sono registrato) o a un altro indirizzo.
 
   protected readonly emailAperta = signal(false);
   protected readonly emailDestinatario = signal('');
   protected readonly emailValida = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(this.emailDestinatario().trim()));
 
-  protected readonly vociEmail = computed<VoceMenu[]>(() => [
+  /**
+   * Tutte le azioni, in un elenco solo, raggruppate per famiglia.
+   *
+   * È la fonte unica delle due superfici: la barra ne pesca una famiglia
+   * per pulsante, il raccoglitore sotto una risposta le mostra tutte. Le
+   * voci erano scritte due volte, e due elenchi della stessa cosa
+   * divergono: si aggiunge un formato di qui e ci si accorge fra un mese
+   * che di là non c'era.
+   */
+  private readonly azioni = computed<VoceMenu[]>(() => [
     {
+      gruppo: 'Invia email',
       etichetta: 'A me',
       dettaglio: this.sessione.utente()?.email ?? '',
       azione: () => this.store.inviaEmail(this.ambitoInAzione, 'me'),
     },
     {
+      gruppo: 'Invia email',
       etichetta: 'A un altro indirizzo…',
       azione: () => {
         this.emailDestinatario.set('');
         this.emailAperta.set(true);
       },
     },
+    ...this.store.scelteEsportazione.map((scelta) => ({
+      gruppo: 'Esporta come',
+      etichetta: scelta.etichetta,
+      dettaglio: scelta.dettaglio,
+      azione: () => this.store.esporta(this.ambitoInAzione, scelta),
+    })),
+    {
+      gruppo: 'Documento',
+      etichetta: 'Genera da modello…',
+      azione: () => this.apriModelli(this.ambitoInAzione),
+    },
   ]);
+
+  /** Una famiglia sola, senza intestazione: il pulsante che la apre la nomina già. */
+  private soloGruppo(gruppo: string): VoceMenu[] {
+    return this.azioni()
+      .filter((v) => v.gruppo === gruppo)
+      .map((v) => ({ ...v, gruppo: undefined }));
+  }
+
+  // --- La barra sopra il composer: una famiglia per pulsante ---------------
+
+  protected readonly vociEsporta = computed(() => this.soloGruppo('Esporta come'));
+  protected readonly vociEmail = computed(() => this.soloGruppo('Invia email'));
+
+  protected apriEsporta(evento: Event, ambito: AmbitoAzione): void {
+    this.ambitoInAzione = ambito;
+    this.menuEsporta()?.apri(evento);
+  }
 
   protected apriEmail(evento: Event, ambito: AmbitoAzione): void {
     this.ambitoInAzione = ambito;
     this.menuEmail()?.apri(evento);
+  }
+
+  // --- Il raccoglitore sotto una risposta (12/09/2026) ---------------------
+
+  /*
+   * Tutto in un elenco piatto, non annidato: «Esporta come» e «Invia email»
+   * sono già menù, e aprirne uno dentro l'altro vorrebbe dire due clic per
+   * arrivare a «PDF». Le famiglie si riconoscono dalle intestazioni, e ogni
+   * voce è l'azione vera.
+   */
+  protected readonly vociAltre = this.azioni;
+
+  protected apriAltre(evento: Event, ambito: AmbitoAzione): void {
+    this.ambitoInAzione = ambito;
+    this.menuAltre()?.apri(evento);
   }
 
   protected inviaEmailAltro(evento: Event): void {

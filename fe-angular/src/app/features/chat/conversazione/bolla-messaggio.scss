@@ -458,10 +458,38 @@
 
 /* ---------- Azioni ---------- */
 
+/*
+ * Le azioni della risposta: la copia, e il raccoglitore con tutto il resto.
+ *
+ * Stanno sotto ogni bolla, quindi in una conversazione lunga sono la cosa
+ * che si ripete di più: a riposo si fanno da parte, e tornano piene quando
+ * il puntatore entra nella risposta o il fuoco ci arriva da tastiera. Non
+ * si nascondono - lo spazio resta occupato e niente sussulta - e dove il
+ * puntatore non c'è (telefono, tavoletta) sono sempre a piena luce.
+ */
 .azioni {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) var(--ease-brand);
+}
+
+.assistente:hover .azioni,
+.azioni:focus-within {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  .azioni {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .azioni {
+    transition: none;
+  }
 }
 
 .azione {
