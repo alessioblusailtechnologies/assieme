@@ -53,7 +53,9 @@ try {
     for (const rotta of rotte) {
       await page.goto(`${BASE}/${rotta}`, { waitUntil: 'networkidle2' });
       await new Promise((res) => setTimeout(res, 1500));
-      const nome = `scrivania-${larghezza}--${rotta.replace(/[/#]/g, '_')}.png`;
+      /* Anche `?` e `&`: una rotta con parametri di query è un posto come un
+         altro, ma su Windows non è un nome di file. */
+      const nome = `scrivania-${larghezza}--${rotta.replace(/[/#?&=]/g, '_')}.png`;
       await page.screenshot({ path: `${OUT}${nome}`, fullPage: false });
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

@@ -62,6 +62,12 @@ export const routes: Routes = [
         title: 'Conversazioni - Velia',
       },
       {
+        /* I clienti (12/09/2026, PIANO-CLIENTI.md): l'asse dell'Archivio
+           Privato, e la sezione da cui si guarda tutto ciò che li riguarda. */
+        path: 'clienti',
+        loadChildren: () => import('@features/clienti/clienti.routes').then((m) => m.CLIENTI_ROUTES),
+      },
+      {
         /* Fase 4 — costruita. */
         path: 'tabelle',
         loadChildren: () => import('@features/tabelle/tabelle.routes').then((m) => m.TABELLE_ROUTES),

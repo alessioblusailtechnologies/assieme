@@ -1,0 +1,431 @@
+/*
+ * La scheda di un cliente. Una colonna sola, con le tre schede in cima:
+ * la larghezza del modulo è limitata perché un campo di testo largo mille
+ * pixel non si legge, mentre l'elenco dei documenti prende tutto.
+ */
+
+:host {
+  display: block;
+  min-height: 100%;
+  padding: var(--sp-6);
+}
+
+.testata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-5);
+}
+
+.testata__riga {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.testata__icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-pieno);
+  background: var(--c-page-alt);
+  color: var(--c-text-3);
+}
+
+.titolo {
+  margin: 0;
+  font-size: var(--t-page-title);
+  font-weight: 400;
+  letter-spacing: var(--ls-tight);
+  color: var(--c-text);
+}
+
+.conteggio {
+  margin-left: auto;
+  color: var(--c-text-3);
+}
+
+/* ---------- Le schede ---------- */
+
+.schede {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  border-bottom: 1px solid var(--c-line);
+}
+
+.scheda {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-brand);
+}
+
+.scheda:hover {
+  color: var(--c-text);
+}
+
+.scheda.is-scelta {
+  border-bottom-color: var(--c-accent);
+  color: var(--c-text);
+}
+
+.scheda__quanti {
+  color: var(--c-text-mute);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Sezioni ---------- */
+
+.sezione {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.sezione__testa {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.sezione__testa .riquadro__nota {
+  flex: 1;
+  min-width: 14rem;
+}
+
+/* ---------- Il modulo dell'anagrafica ---------- */
+
+.modulo {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4);
+  max-width: 46rem;
+  padding: var(--sp-5);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+
+.campo--largo {
+  grid-column: 1 / -1;
+}
+
+.campo__nome {
+  color: var(--c-text-2);
+  font-size: var(--t-sm);
+}
+
+.campo input,
+.campo textarea {
+  width: 100%;
+}
+
+.modulo__avviso {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--c-warn);
+  font-size: var(--t-sm);
+}
+
+.modulo__azioni {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- Riquadri ---------- */
+
+.riquadro,
+.pericolo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-width: 46rem;
+  padding: var(--sp-5);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.riquadro__nome {
+  margin: 0;
+  color: var(--c-text-3);
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  font-weight: 400;
+  letter-spacing: var(--ls-mono);
+  text-transform: uppercase;
+}
+
+.riquadro__nota {
+  margin: 0;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+
+/* Quello che cancella sta in fondo e si vede che è diverso, senza urlare. */
+.pericolo {
+  border-color: var(--c-danger-soft, var(--c-line));
+}
+
+.pericolo__azioni {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+/* ---------- Etichette e alias ---------- */
+
+.etichette {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.etichetta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 10px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  color: var(--c-text-2);
+  font-size: var(--t-xs);
+}
+
+.etichetta__togli {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--c-text-mute);
+  cursor: pointer;
+}
+
+.etichetta__togli:hover {
+  color: var(--c-text);
+}
+
+.vuoto {
+  color: var(--c-text-mute);
+  font-size: var(--t-sm);
+}
+
+/* ---------- Scadenze e conversazioni ---------- */
+
+.scadenze,
+.conversazioni,
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scadenza,
+.conversazioni li {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--t-sm);
+}
+
+.scadenza a,
+.conversazioni a {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text);
+}
+
+.scadenza__polizza,
+.scadenza__data,
+.conversazioni li span {
+  flex: none;
+  color: var(--c-text-mute);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- I documenti del cliente ---------- */
+
+.documenti {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  overflow: hidden;
+}
+
+.doc {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-right: var(--sp-3);
+  border-bottom: 1px solid var(--c-line-soft);
+}
+
+.doc:last-child {
+  border-bottom: 0;
+}
+
+.doc:hover {
+  background: var(--c-surface-tint);
+}
+
+.doc__apri {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc__icona {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  color: var(--c-text-3);
+}
+
+.doc__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.doc__titolo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--c-text);
+  font-size: var(--t-body);
+}
+
+.doc__sotto {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--c-text-3);
+  font-size: var(--t-xs);
+}
+
+/* Il cliente proposto e non ancora confermato si vede: è una domanda
+   aperta, non un fatto. */
+.doc__proposta {
+  flex: none;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  background: var(--c-warn-soft, var(--c-page-alt));
+  color: var(--c-warn);
+}
+
+.doc__etichetta {
+  flex: none;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  border: 1px solid var(--c-line);
+}
+
+.doc__coda {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+.doc__data {
+  color: var(--c-text-mute);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Le chat ---------- */
+
+.chat .riga {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.chat .riga:hover {
+  background: var(--c-surface-tint);
+}
+
+.riga__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.riga__nome {
+  color: var(--c-text);
+  font-size: var(--t-body);
+}
+
+.riga__sotto {
+  color: var(--c-text-3);
+  font-size: var(--t-xs);
+}
+
+@media (max-width: 768px) {
+  :host {
+    padding: var(--sp-4);
+  }
+
+  /* Una colonna sola: due campi affiancati su un telefono non sono campi. */
+  .modulo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

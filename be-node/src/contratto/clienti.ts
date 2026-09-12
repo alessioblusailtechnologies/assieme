@@ -41,7 +41,14 @@ export interface Cliente {
   creatoIl: string;
 }
 
-/** La scheda: il cliente con ciò che gli sta intorno. */
+/**
+ * La scheda: il cliente con ciò che gli sta intorno.
+ *
+ * Non è il cliente più i suoi documenti — quelli si chiedono all'archivio
+ * con `?clienteId=`, che ha già faccette e paginazione — ma il cliente più
+ * ciò che di lui non si vede da nessun'altra parte: di che cosa si è
+ * parlato, quali canali sono aperti, che cosa sta per scadere.
+ */
 export interface SchedaCliente extends Cliente {
   /** Le conversazioni in cui si è parlato di lui, le più recenti prima. */
   conversazioni: Array<{ id: string; titolo: string; aggiornataIl: string }>;
@@ -105,6 +112,37 @@ export interface PaginaClienti {
   pagina: number;
   perPagina: number;
 }
+
+/**
+ * L'assegnazione in blocco: il gesto del giorno dopo l'importazione.
+ *
+ * `clienteId` assente = non toccare il cliente; `null` = toglierlo. Le
+ * etichette si aggiungono e si tolgono, non si sostituiscono: chi ne mette
+ * una su trenta documenti non sta dicendo di cancellare le altre.
+ */
+export const schemaAssegnazione = z
+  .object({
+    documenti: z.array(z.string().min(1).max(200)).min(1).max(500),
+    clienteId: z.string().uuid().nullable().optional(),
+    aggiungiEtichette: z.array(etichettaCliente).max(30).optional(),
+    togliEtichette: z.array(etichettaCliente).max(30).optional(),
+  })
+  .strict();
+
+export type Assegnazione = z.infer<typeof schemaAssegnazione>;
+
+/** Quanti documenti ha toccato davvero: il FE lo dice, e non è un dettaglio. */
+export interface EsitoAssegnazione {
+  toccati: number;
+}
+
+/**
+ * Rinominare un'etichetta, o fonderla in una che esiste già (che è la
+ * stessa operazione: il nome nuovo è quello di un'altra etichetta).
+ */
+export const schemaRinominaEtichetta = z
+  .object({ nome: etichettaCliente })
+  .strict();
 
 export const schemaFiltriClienti = z.object({
   q: z.string().optional(),

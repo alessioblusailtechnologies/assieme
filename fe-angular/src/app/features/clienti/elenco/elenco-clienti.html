@@ -1,0 +1,180 @@
+<!--
+  I clienti: si cerca in cima, si crea accanto, e l'elenco è una riga per
+  cliente. Niente tabella: le colonne che contano sono due, e una tabella da
+  due colonne è una lista scritta male.
+-->
+<header class="testata">
+  <ui-briciole [voci]="briciole" />
+
+  <div class="testata__riga">
+    <h1 class="titolo serif">Clienti</h1>
+    <span class="conteggio mono" role="status" aria-live="polite">
+      {{ totale() }} {{ totale() === 1 ? 'cliente' : 'clienti' }}
+    </span>
+    <div class="testata__azioni">
+      <button uiBottone variante="primario" type="button" (click)="apriCreazione()">
+        <ui-icon name="aggiungi" [size]="15" />
+        <span>Nuovo cliente</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="cerca">
+  <label class="ui-campo-icona cerca__campo">
+    <ui-icon name="cerca" [size]="16" />
+    <input
+      uiCampo
+      type="search"
+      [(ngModel)]="ricerca"
+      placeholder="Cerca per nome, come compare sui documenti, codice fiscale…"
+      aria-label="Cerca fra i clienti"
+    />
+  </label>
+
+  <ui-select
+    class="cerca__filtro"
+    [(valore)]="tipo"
+    [opzioni]="tipi"
+    campoEtichetta="etichetta"
+    campoValore="valore"
+    placeholder="Tutti"
+    [azzerabile]="true"
+    ariaLabel="Filtra per tipo"
+  />
+
+  @if (etichette().length) {
+    <ui-select
+      class="cerca__filtro"
+      [(valore)]="etichetta"
+      [opzioni]="etichette()"
+      campoEtichetta="nome"
+      campoValore="nome"
+      placeholder="Tutte le etichette"
+      [azzerabile]="true"
+      ariaLabel="Filtra per etichetta"
+    />
+  }
+
+  @if (filtriAttivi()) {
+    <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="azzeraFiltri()">
+      <ui-icon name="chiudi" [size]="14" />
+      <span>Azzera</span>
+    </button>
+  }
+</div>
+
+<!--
+  Il modulo di creazione sta nella pagina e non in una finestra: si vede
+  l'elenco mentre si scrive il nome, ed è così che ci si accorge che il
+  cliente c'era già.
+-->
+@if (inCreazione()) {
+  <form class="creazione" (submit)="$event.preventDefault(); crea()">
+    <label class="creazione__campo">
+      <span>Nome del cliente</span>
+      <input
+        uiCampo
+        type="text"
+        [(ngModel)]="nuovoNome"
+        name="nuovoNome"
+        placeholder="Rossi Mario, oppure Bar da Mario S.r.l."
+        aria-label="Nome del cliente nuovo"
+      />
+    </label>
+
+    @if (avviso(); as a) {
+      <p class="creazione__avviso">{{ a }}</p>
+    }
+
+    <div class="creazione__azioni">
+      <button uiBottone type="button" (click)="annullaCreazione()">Annulla</button>
+      <button
+        uiBottone
+        variante="primario"
+        type="submit"
+        [disabled]="!nuovoNome().trim() || salvataggio()"
+      >
+        {{ salvataggio() ? 'Creo…' : 'Crea' }}
+      </button>
+    </div>
+  </form>
+}
+
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare i clienti"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (inCaricamento() && !clienti().length) {
+  <div class="scheletri">
+    @for (i of [1, 2, 3, 4, 5]; track i) {
+      <ui-scheletro [numeroRighe]="1" />
+    }
+  </div>
+} @else if (!clienti().length) {
+  <ui-stato-vuoto
+    icona="utente"
+    [titolo]="filtriAttivi() ? 'Nessun cliente con questi criteri' : 'Nessun cliente'"
+    [descrizione]="
+      filtriAttivi()
+        ? 'Prova ad allargare la ricerca togliendo un filtro.'
+        : 'I clienti nascono da soli quando carichi i loro documenti. Puoi anche crearne uno a mano.'
+    "
+  >
+    @if (filtriAttivi()) {
+      <button uiBottone variante="primario" type="button" (click)="azzeraFiltri()">
+        <ui-icon name="chiudi" [size]="15" />
+        <span>Azzera i filtri</span>
+      </button>
+    } @else {
+      <button uiBottone variante="primario" type="button" (click)="apriCreazione()">
+        <ui-icon name="aggiungi" [size]="15" />
+        <span>Nuovo cliente</span>
+      </button>
+    }
+  </ui-stato-vuoto>
+} @else {
+  <ul class="clienti">
+    @for (c of clienti(); track c.id) {
+      <li>
+        <a class="riga" [routerLink]="['/clienti', c.id]">
+          <span class="riga__icona">
+            <ui-icon [name]="c.tipo === 'azienda' ? 'compagnia' : 'utente'" [size]="16" />
+          </span>
+
+          <span class="riga__corpo">
+            <span class="riga__nome">{{ c.nome }}</span>
+            <span class="riga__sotto">
+              @if (c.alias.length) {
+                <span class="riga__alias" [title]="c.alias.join(', ')">
+                  anche {{ c.alias[0] }}{{ c.alias.length > 1 ? ' +' + (c.alias.length - 1) : '' }}
+                </span>
+              }
+              @if (c.telefono) {
+                <span class="riga__recapito">{{ c.telefono }}</span>
+              } @else if (c.email) {
+                <span class="riga__recapito">{{ c.email }}</span>
+              }
+            </span>
+          </span>
+
+          <span class="riga__coda">
+            @for (e of c.etichette.slice(0, 2); track e) {
+              <ui-tag variante="accento">{{ e }}</ui-tag>
+            }
+            <span class="riga__documenti mono">
+              {{ c.documenti }} {{ c.documenti === 1 ? 'documento' : 'documenti' }}
+            </span>
+          </span>
+        </a>
+      </li>
+    }
+  </ul>
+}

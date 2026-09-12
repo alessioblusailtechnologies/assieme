@@ -6,7 +6,7 @@ Non è un rimescolamento di schermate, è un **cambio di asse portante**. Dalla 
 
 E si porta dietro una semplificazione vera. Sparisce il pezzo più fragile della Fase 10 — decidere in quale ramo di un albero libero collocare un documento (`archivio/collocazione.ts`, `convenzione.ts`, `albero.ts`, il tool `proponi_riordino`) — e resta la risoluzione del cliente (`archivio/clienti.ts`), che è la parte buona, già scritta e già collaudata: normalizzazione, alias, identificativi fiscali, candidati per somiglianza, e il modello solo sugli ambigui.
 
-**Stato**: **Fase 1 fatta** (12/09/2026), migrazione applicata online. Il resto da fare.
+**Stato**: **Fasi 1, 2 e 4 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono e la sezione Clienti si vede. Restano la 3 (ingestion e ricarica), la 5 (lavoro in blocco nell'archivio), la 6 (chat dalla scheda) e la 7 (motore).
 
 **Niente di tutto questo è in produzione**, e il committente può svuotare l'Archivio Privato (12/09/2026). Quindi non c'è nessuna migrazione di dati da progettare: le tabelle dell'albero si eliminano subito e il codice che le serve se ne va con loro, nella prima fase invece che nell'ultima. L'Archivio **Pubblico** non si tocca: i lotti trascritti (Zurich, HDI, Unipol, Allianz, AXA, Generali, Nobis…) non hanno niente a che vedere con le cartelle, che sono del tenant.
 
@@ -152,7 +152,7 @@ Il motore materializza i privati **per tipologia**, come prima della Fase 10, e 
 
 *Collaudato*: BE 313 test unità + 42 d'integrazione sulle rotte toccate (chat clienti, cono, archivio privato) verdi; FE 235 test, build di produzione e lint verdi. Restano rossi 4 test di `integrazione-agenti` sui limiti di concorrenza, che **fallivano già prima** di questa fase col worker di sviluppo acceso (verificato ripartendo da `HEAD`), e 3 errori di lint in `test/integrazione-conversazioni.spec.ts`, anch'essi precedenti.
 
-### Fase 2 · API dei clienti e dei documenti
+### ✅ Fase 2 · API dei clienti e dei documenti (12/09/2026)
 
 - `GET/POST/PATCH/DELETE /api/clienti`, `GET /api/clienti/:id` (scheda con conteggi e prossime scadenze), `GET /api/clienti/:id/documenti`, `POST /api/clienti/:id/fondi` (esiste), `GET /api/clienti/etichette`.
 - `GET /api/documenti-privati` guadagna i filtri per cliente e «senza cliente», perde `cartellaId`, `soloQui` e `daSistemare`.
@@ -160,7 +160,15 @@ Il motore materializza i privati **per tipologia**, come prima della Fase 10, e 
 - Assegnazione massiva: `POST /api/documenti-privati/assegna` (cliente ed etichette su una selezione).
 - Rinomina e fusione di un'etichetta su tutto il tenant.
 
-*Collaudo*: test d'integrazione sulle rotte nuove e sui filtri.
+Fatto come previsto, con tre precisazioni:
+
+- **`GET /api/clienti/:id/documenti` non esiste, ed è meglio così.** I documenti di un cliente si chiedono all'archivio con `?clienteId=`, che ha già ricerca, faccette, stato di elaborazione e paginazione. Una seconda rotta con meno capacità avrebbe reso la scheda del cliente più povera dell'archivio, e sarebbe stato un contratto in più da tenere allineato.
+- `GET /api/clienti/:id` è la **scheda**: il cliente più le sue conversazioni, il conteggio delle chat e le scadenze future dei suoi documenti. Solo quelle che devono ancora arrivare: uno scadenzario che comincia dal 2019 non è uno scadenzario.
+- `DELETE /api/clienti/:id?documenti=senza-cliente|elimina` dice sempre che fine fanno i documenti, e con `elimina` porta via anche i file dallo Storage, fuori dalla transazione (se i byte non se ne vanno resta qualche file muto, non una riga che punta al nulla).
+
+In più: `POST /api/documenti-privati/assegna` (cliente ed etichette su una selezione, con le etichette che si sommano invece di sostituirsi), `PATCH`/`DELETE /api/etichette/:nome` (rinominare ovunque, che è anche il modo di fondere due etichette) e `GET /api/clienti/etichette`.
+
+*Collaudato*: `test/integrazione-clienti.spec.ts`, 8 test sul giorno dopo l'importazione — creare col quasi-doppione, ritrovare per alias e codice fiscale, assegnare in blocco, rinominare e fondere un'etichetta, la scheda, la fusione di due clienti sdoppiati, l'eliminazione.
 
 ### Fase 3 · Ingestion
 
@@ -168,7 +176,7 @@ Il motore materializza i privati **per tipologia**, come prima della Fase 10, e 
 
 *Collaudo*: **è qui che si ricarica l'archivio svuotato**, ed è il collaudo migliore che ci sia: un lotto vero di documenti d'agenzia, con la percentuale di documenti che prendono il cliente giusto e le etichette che reggono.
 
-### Fase 4 · La sezione Clienti
+### ✅ Fase 4 · La sezione Clienti (12/09/2026)
 
 Rotta `/clienti`, voce in navigazione nel gruppo «Lavoro» (Chat, Clienti, Tabelle); «Chat per i clienti» esce da «Automazione».
 
@@ -178,7 +186,14 @@ Rotta `/clienti`, voce in navigazione nel gruppo «Lavoro» (Chat, Clienti, Tabe
   - **Documenti** — lo stesso elenco dell'archivio, filtrato sul cliente, con l'area di rilascio che assegna il cliente da sé.
   - **Chat** — le chat cliente di questo cliente (Fase 6).
 
-*Collaudo*: `tools/screenshot-desktop.mjs` e `tools/screenshot-mobile.mjs` (390/820), token da `styles/_tokens.scss`.
+Fatta con due aggiunte rispetto al piano:
+
+- **La scheda aperta sta nell'indirizzo** (`?scheda=documenti`), non in un signal: «guarda i documenti di Rossi» si manda a un collega con un link, e il tasto Indietro torna dov'era. È la stessa regola che l'archivio applicava alla cartella aperta.
+- **Caricare dalla scheda intesta da sé**: il file sale e il cliente si mette senza sceglierlo dopo. È il gesto per cui si è lì.
+
+Prima, una toppa dovuta: creare una chat cliente rispondeva 400 da quando `cliente_id` è obbligatorio. Ora la finestra di creazione chiede il cliente, e da lui riempie nome e cognome dell'ospite se sono vuoti.
+
+*Collaudato*: schermate a 1440 e a 390 (elenco, scheda, documenti): nessuno scorrimento orizzontale, una colonna sola sul telefono. `ng lint` e 235 test FE verdi.
 
 ### Fase 5 · L'Archivio Privato piatto
 

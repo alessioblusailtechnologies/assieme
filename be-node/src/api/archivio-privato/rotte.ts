@@ -3,6 +3,11 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type pg from 'pg';
 
+import {
+  schemaAssegnazione,
+  schemaRinominaEtichetta,
+  type EsitoAssegnazione,
+} from '../../contratto/clienti.js';
 import { type Compagnia, type Ramo, type TipologiaDocumento } from '../../contratto/documenti.js';
 import {
   schemaFiltriDocumentiPrivati,
@@ -595,6 +600,56 @@ export function registraRotteArchivioPrivato(
     });
   }
 
+  /**
+   * L'assegnazione in blocco (12/09/2026): il gesto del giorno dopo
+   * l'importazione, quando trenta documenti sono dello stesso cliente e
+   * farlo uno per uno vuol dire non farlo.
+   *
+   * Le etichette si aggiungono e si tolgono, non si sostituiscono: chi ne
+   * mette una su trenta documenti non sta dicendo di cancellare le altre.
+   * Intestare qui vale come intestare a mano, quindi spegne la proposta
+   * dell'ingestion.
+   */
+  app.post('/api/documenti-privati/assegna', async (richiesta) => {
+    const esito = schemaAssegnazione.safeParse(richiesta.body ?? {});
+    if (!esito.success) throw ErroreApi.datiNonValidi('Assegnazione non valida.');
+    const dati = esito.data;
+
+    return conIdentita(poolDb(), richiesta.identita, async (client): Promise<EsitoAssegnazione> => {
+      const { tenantId } = richiesta.identita;
+      const assegnazioni: string[] = [];
+      const parametri: unknown[] = [tenantId, dati.documenti];
+      const par = (v: unknown): string => {
+        parametri.push(v);
+        return `$${parametri.length}`;
+      };
+
+      if (dati.clienteId !== undefined) {
+        if (dati.clienteId !== null) await esisteCliente(client, dati.clienteId, tenantId);
+        assegnazioni.push(`cliente_id = ${par(dati.clienteId)}`, `cliente_da_confermare = false`);
+      }
+      const aggiungi = [...new Set(dati.aggiungiEtichette ?? [])];
+      const togli = [...new Set(dati.togliEtichette ?? [])];
+      if (aggiungi.length || togli.length) {
+        assegnazioni.push(
+          `etichette = (
+             select coalesce(array_agg(distinct e order by e), '{}')
+             from unnest(etichette || ${par(aggiungi)}::text[]) e
+             where e <> all(${par(togli)}::text[])
+           )`,
+        );
+      }
+      if (!assegnazioni.length) throw ErroreApi.datiNonValidi('Non è stato chiesto nessun cambiamento.');
+
+      const r = await client.query(
+        `update velia.documenti set ${assegnazioni.join(', ')}
+          where tenant_id = $1 and id = any($2) and archivio = 'privato'`,
+        parametri,
+      );
+      return { toccati: r.rowCount ?? 0 };
+    });
+  });
+
   /** RF-B-04: le etichette in uso, con quanti documenti le portano. */
   app.get('/api/etichette', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
@@ -607,6 +662,50 @@ export function registraRotteArchivioPrivato(
         [richiesta.identita.tenantId],
       );
       return righe.rows satisfies Etichetta[];
+    });
+  });
+
+  /**
+   * Rinominare un'etichetta su tutto l'archivio — che è anche il modo di
+   * **fonderne due**: basta dare a una il nome dell'altra.
+   *
+   * Senza questa rotta un'etichetta scritta male resta scritta male per
+   * sempre, perché correggerla documento per documento non lo fa nessuno:
+   * è la manutenzione che tiene in piedi l'archivio piatto.
+   */
+  app.patch<{ Params: { nome: string } }>('/api/etichette/:nome', async (richiesta) => {
+    const esito = schemaRinominaEtichetta.safeParse(richiesta.body ?? {});
+    if (!esito.success) throw ErroreApi.datiNonValidi('Il nome nuovo non è valido.');
+    const vecchia = decodeURIComponent(richiesta.params.nome);
+    const nuova = esito.data.nome;
+
+    return conIdentita(poolDb(), richiesta.identita, async (client) => {
+      if (vecchia === nuova) return { toccati: 0 };
+      /* `array_replace` più la deduplica: rinominare in un nome che il
+         documento ha già è una fusione, e deve lasciare una voce sola. */
+      const r = await client.query(
+        `update velia.documenti
+            set etichette = (
+              select coalesce(array_agg(distinct e order by e), '{}')
+              from unnest(array_replace(etichette, $2, $3)) e
+            )
+          where tenant_id = $1 and archivio = 'privato' and $2 = any(etichette)`,
+        [richiesta.identita.tenantId, vecchia, nuova],
+      );
+      return { toccati: r.rowCount ?? 0 };
+    });
+  });
+
+  /** Togliere un'etichetta da tutti i documenti che la portano. */
+  app.delete<{ Params: { nome: string } }>('/api/etichette/:nome', async (richiesta) => {
+    const nome = decodeURIComponent(richiesta.params.nome);
+    return conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const r = await client.query(
+        `update velia.documenti set etichette = array_remove(etichette, $2)
+          where tenant_id = $1 and archivio = 'privato' and $2 = any(etichette)`,
+        [richiesta.identita.tenantId, nome],
+      );
+      return { toccati: r.rowCount ?? 0 };
     });
   });
 

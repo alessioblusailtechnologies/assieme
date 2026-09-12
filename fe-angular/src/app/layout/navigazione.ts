@@ -31,6 +31,9 @@ export const NAVIGAZIONE: GruppoNavigazione[] = [
     etichetta: 'Lavoro',
     voci: [
       { percorso: '/chat', etichetta: 'Chat', icona: 'chat' },
+      /* I clienti stanno nel lavoro di tutti i giorni e non fra gli archivi:
+         un'agenzia non «consulta» i suoi clienti, ci lavora. */
+      { percorso: '/clienti', etichetta: 'Clienti', icona: 'utente' },
       { percorso: '/tabelle', etichetta: 'Tabelle di analisi', icona: 'tabelle' },
     ],
   },

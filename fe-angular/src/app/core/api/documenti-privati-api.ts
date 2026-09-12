@@ -14,12 +14,24 @@ export interface ModificheDocumento {
   riferimentoCliente?: string;
   etichette?: string[];
   /**
-   * Fase 10. Spostare a mano è definitivo: il server spegne
-   * `collocazioneDaConfermare` e nessun ricalcolo rimette il documento in
-   * discussione. `null` lo rimanda in «Da sistemare».
+   * Intestare a mano è definitivo: il server spegne `clienteDaConfermare` e
+   * nessuna rilavorazione rimette il documento in discussione. `null` lo
+   * rimanda fra quelli senza cliente.
    */
-  cartellaId?: Id | null;
   clienteId?: Id | null;
+}
+
+/**
+ * L'assegnazione in blocco: il gesto del giorno dopo l'importazione.
+ *
+ * Le etichette si aggiungono e si tolgono, non si sostituiscono: chi ne mette
+ * una su trenta documenti non sta dicendo di cancellare le altre.
+ */
+export interface Assegnazione {
+  documenti: Id[];
+  clienteId?: Id | null;
+  aggiungiEtichette?: string[];
+  togliEtichette?: string[];
 }
 
 /** Esito del caricamento: i documenti creati, già in coda di elaborazione. */
@@ -108,6 +120,26 @@ export class DocumentiPrivatiApi {
 
   elimina(id: Id): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
+  }
+
+  /** Cliente ed etichette su una selezione, in una richiesta sola. */
+  assegna(dati: Assegnazione): Observable<{ toccati: number }> {
+    return this.http.post<{ toccati: number }>(`${this.base}/assegna`, dati);
+  }
+
+  /** Rinominare un'etichetta ovunque; darle il nome di un'altra le fonde. */
+  rinominaEtichetta(vecchia: string, nome: string): Observable<{ toccati: number }> {
+    return this.http.patch<{ toccati: number }>(
+      `${environment.apiBase}/etichette/${encodeURIComponent(vecchia)}`,
+      { nome },
+    );
+  }
+
+  /** Togliere un'etichetta da tutti i documenti che la portano. */
+  eliminaEtichetta(nome: string): Observable<{ toccati: number }> {
+    return this.http.delete<{ toccati: number }>(
+      `${environment.apiBase}/etichette/${encodeURIComponent(nome)}`,
+    );
   }
 
   /**

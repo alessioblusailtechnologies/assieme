@@ -1,0 +1,386 @@
+<!--
+  La scheda di un cliente: chi è, cosa ha, con che canale gli si parla.
+  Le tre schede non sono una tassonomia, sono le tre cose che si fanno qui.
+-->
+@if (errore()) {
+  <ui-stato-vuoto
+    icona="errore"
+    titolo="Non siamo riusciti a caricare il cliente"
+    descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+  >
+    <button uiBottone variante="primario" type="button" (click)="riprova()">
+      <ui-icon name="riprova" [size]="15" />
+      <span>Riprova</span>
+    </button>
+  </ui-stato-vuoto>
+} @else if (!cliente()) {
+  <ui-scheletro [numeroRighe]="6" />
+} @else if (cliente(); as c) {
+  <header class="testata">
+    <ui-briciole [voci]="briciole()" />
+
+    <div class="testata__riga">
+      <span class="testata__icona">
+        <ui-icon [name]="c.tipo === 'azienda' ? 'compagnia' : 'utente'" [size]="20" />
+      </span>
+      <h1 class="titolo serif">{{ c.nome }}</h1>
+      @for (e of c.etichette; track e) {
+        <ui-tag variante="accento">{{ e }}</ui-tag>
+      }
+      <span class="conteggio mono">
+        {{ c.documenti }} {{ c.documenti === 1 ? 'documento' : 'documenti' }}
+      </span>
+    </div>
+
+    <!-- Le schede: un posto per ciascuna delle tre cose. -->
+    <nav class="schede" role="tablist" aria-label="Sezioni del cliente">
+      <button
+        type="button"
+        role="tab"
+        class="scheda"
+        [class.is-scelta]="scheda() === 'anagrafica'"
+        [attr.aria-selected]="scheda() === 'anagrafica'"
+        (click)="apri('anagrafica')"
+      >
+        Anagrafica
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="scheda"
+        [class.is-scelta]="scheda() === 'documenti'"
+        [attr.aria-selected]="scheda() === 'documenti'"
+        (click)="apri('documenti')"
+      >
+        Documenti
+        <span class="scheda__quanti mono">{{ c.documenti }}</span>
+      </button>
+      <button
+        type="button"
+        role="tab"
+        class="scheda"
+        [class.is-scelta]="scheda() === 'chat'"
+        [attr.aria-selected]="scheda() === 'chat'"
+        (click)="apri('chat')"
+      >
+        Chat
+        @if (c.chat.totale) {
+          <span class="scheda__quanti mono">{{ c.chat.totale }}</span>
+        }
+      </button>
+    </nav>
+  </header>
+
+  <!-- ---------- Anagrafica ---------- -->
+
+  @if (scheda() === 'anagrafica') {
+    <section class="sezione" aria-label="Anagrafica">
+      <form class="modulo" (submit)="$event.preventDefault(); salva()">
+        <label class="campo campo--largo">
+          <span class="campo__nome">Nome</span>
+          <input uiCampo type="text" [(ngModel)]="nome" name="nome" />
+        </label>
+
+        <div class="campo">
+          <span class="campo__nome">Tipo</span>
+          <ui-select
+            [(valore)]="tipo"
+            [opzioni]="tipi"
+            campoEtichetta="etichetta"
+            campoValore="valore"
+            ariaLabel="Persona o azienda"
+          />
+        </div>
+
+        @if (tipo() === 'persona') {
+          <label class="campo">
+            <span class="campo__nome">Codice fiscale</span>
+            <input uiCampo type="text" [(ngModel)]="codiceFiscale" name="codiceFiscale" />
+          </label>
+          <label class="campo">
+            <span class="campo__nome">Data di nascita</span>
+            <input uiCampo type="date" [(ngModel)]="natoIl" name="natoIl" />
+          </label>
+        } @else {
+          <label class="campo">
+            <span class="campo__nome">Partita IVA</span>
+            <input uiCampo type="text" [(ngModel)]="partitaIva" name="partitaIva" />
+          </label>
+          <label class="campo">
+            <span class="campo__nome">Codice fiscale</span>
+            <input uiCampo type="text" [(ngModel)]="codiceFiscale" name="codiceFiscale" />
+          </label>
+        }
+
+        <label class="campo">
+          <span class="campo__nome">Email</span>
+          <input uiCampo type="email" [(ngModel)]="email" name="email" />
+        </label>
+
+        <label class="campo">
+          <span class="campo__nome">Telefono</span>
+          <input uiCampo type="tel" [(ngModel)]="telefono" name="telefono" />
+        </label>
+
+        <label class="campo campo--largo">
+          <span class="campo__nome">Indirizzo</span>
+          <input uiCampo type="text" [(ngModel)]="indirizzo" name="indirizzo" />
+        </label>
+
+        <div class="campo campo--largo">
+          <span class="campo__nome">Etichette</span>
+          <div class="etichette">
+            @for (e of etichette(); track e) {
+              <span class="etichetta">
+                {{ e }}
+                <button
+                  type="button"
+                  class="etichetta__togli"
+                  [attr.aria-label]="'Togli ' + e"
+                  (click)="togliEtichetta(e)"
+                >
+                  <ui-icon name="chiudi" [size]="11" />
+                </button>
+              </span>
+            } @empty {
+              <span class="vuoto">Nessuna etichetta</span>
+            }
+          </div>
+          <input
+            uiCampo
+            type="text"
+            [(ngModel)]="nuovaEtichetta"
+            name="nuovaEtichetta"
+            placeholder="Aggiungi un'etichetta e premi Invio"
+            (keydown.enter)="$event.preventDefault(); aggiungiEtichetta()"
+          />
+        </div>
+
+        <label class="campo campo--largo">
+          <span class="campo__nome">Note</span>
+          <textarea uiCampo rows="4" [(ngModel)]="note" name="note"></textarea>
+        </label>
+
+        @if (avviso(); as a) {
+          <p class="modulo__avviso">{{ a }}</p>
+        }
+
+        @if (modificato()) {
+          <div class="modulo__azioni">
+            <button uiBottone variante="primario" type="submit" [disabled]="salvataggio()">
+              {{ salvataggio() ? 'Salvo…' : 'Salva' }}
+            </button>
+          </div>
+        }
+      </form>
+
+      <!--
+        Gli alias sono il motivo per cui l'ingestion riconosce un documento:
+        si imparano da soli, e qui si correggono. Stanno fuori dal modulo
+        perché si applicano subito, uno per volta.
+      -->
+      <div class="riquadro">
+        <h2 class="riquadro__nome">Come compare sui documenti</h2>
+        <p class="riquadro__nota">
+          Le forme con cui il suo nome arriva scritto: si imparano da sole quando
+          un documento viene riconosciuto, e servono a ritrovarlo la volta dopo.
+        </p>
+        <div class="etichette">
+          @for (a of c.alias; track a) {
+            <span class="etichetta">
+              {{ a }}
+              <button
+                type="button"
+                class="etichetta__togli"
+                [attr.aria-label]="'Togli ' + a"
+                (click)="togliAlias(a)"
+              >
+                <ui-icon name="chiudi" [size]="11" />
+              </button>
+            </span>
+          } @empty {
+            <span class="vuoto">Nessuna forma alternativa</span>
+          }
+        </div>
+        <input
+          uiCampo
+          type="text"
+          [(ngModel)]="nuovoAlias"
+          name="nuovoAlias"
+          placeholder="es. ROSSI M."
+          (keydown.enter)="$event.preventDefault(); aggiungiAlias()"
+        />
+      </div>
+
+      @if (c.scadenze.length) {
+        <div class="riquadro">
+          <h2 class="riquadro__nome">Prossime scadenze</h2>
+          <ul class="scadenze">
+            @for (s of c.scadenze; track s.documentoId) {
+              <li class="scadenza">
+                <a [routerLink]="['/archivio/privato', s.documentoId]">{{ s.titolo }}</a>
+                @if (s.numeroPolizza) {
+                  <span class="scadenza__polizza mono">{{ s.numeroPolizza }}</span>
+                }
+                <span class="scadenza__data mono">{{ s.scadenza | date: 'dd/MM/yyyy' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      @if (c.conversazioni.length) {
+        <div class="riquadro">
+          <h2 class="riquadro__nome">Se n'è parlato in chat</h2>
+          <ul class="conversazioni">
+            @for (v of c.conversazioni; track v.id) {
+              <li>
+                <a [routerLink]="['/chat', v.id]">{{ v.titolo }}</a>
+                <span class="mono">{{ v.aggiornataIl | date: 'dd/MM/yy' }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!--
+        L'eliminazione sta in fondo, staccata, e dice sempre che fine fanno i
+        documenti: portarseli via senza dirlo è il modo in cui si perde roba.
+      -->
+      <div class="pericolo">
+        <h2 class="riquadro__nome">Eliminare</h2>
+        <p class="riquadro__nota">
+          I suoi documenti restano in archivio, senza cliente. Le chat aperte con
+          lui, e i link che ha in mano, smettono di funzionare.
+        </p>
+        <div class="pericolo__azioni">
+          <button uiBottone type="button" (click)="elimina()">
+            <ui-icon name="elimina" [size]="15" />
+            <span>Elimina il cliente</span>
+          </button>
+          @if (c.documenti) {
+            <button uiBottone variante="testo" type="button" (click)="eliminaTutto()">
+              <span>Elimina anche i {{ c.documenti }} documenti</span>
+            </button>
+          }
+        </div>
+      </div>
+    </section>
+  }
+
+  <!-- ---------- Documenti ---------- -->
+
+  @if (scheda() === 'documenti') {
+    <ui-zona-caricamento
+      #zona
+      aspetto="trasparente"
+      [formati]="estensioni"
+      [descrizioneFormati]="formati"
+      (scelti)="carica($event)"
+    >
+      <section class="sezione" aria-label="Documenti del cliente">
+        <div class="sezione__testa">
+          <p class="riquadro__nota">
+            Quello che carichi qui è suo: il cliente si mette da sé, senza doverlo
+            scegliere dopo.
+          </p>
+          <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
+            <ui-icon name="carica" [size]="15" />
+            <span>Carica</span>
+          </button>
+        </div>
+
+        @if (!documenti().length) {
+          <ui-stato-vuoto
+            icona="archivio-privato"
+            titolo="Nessun documento"
+            descrizione="Trascina qui le sue polizze, i preventivi, le appendici: restano nell'archivio dell'agenzia, intestati a lui."
+          />
+        } @else {
+          <div class="documenti">
+            @for (d of documenti(); track d.id) {
+              <div class="doc">
+                <a class="doc__apri" [routerLink]="['/archivio/privato', d.id]">
+                  <span class="doc__icona"><ui-icon name="documento" [size]="17" /></span>
+                  <span class="doc__corpo">
+                    <span class="doc__titolo">{{ d.titolo }}</span>
+                    <span class="doc__sotto">
+                      @if (d.clienteDaConfermare) {
+                        <span class="doc__proposta">da confermare</span>
+                      }
+                      @for (e of d.etichette.slice(0, 3); track e) {
+                        <span class="doc__etichetta">{{ e }}</span>
+                      }
+                      @if (d.scadenza) {
+                        <span class="doc__scadenza">
+                          scade il {{ d.scadenza | date: 'dd/MM/yyyy' }}
+                        </span>
+                      }
+                    </span>
+                  </span>
+                  <span class="doc__coda">
+                    <app-cella-stato [documento]="d" />
+                    <span class="doc__data mono">{{ d.caricatoIl | date: 'dd/MM/yy' }}</span>
+                  </span>
+                </a>
+                <button
+                  uiBottone
+                  variante="testo"
+                  dimensione="piccolo"
+                  type="button"
+                  [attr.aria-label]="'Togli ' + d.titolo + ' da questo cliente'"
+                  (click)="staccaDocumento(d)"
+                >
+                  <span>Non è suo</span>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+    </ui-zona-caricamento>
+  }
+
+  <!-- ---------- Chat ---------- -->
+
+  @if (scheda() === 'chat') {
+    <section class="sezione" aria-label="Chat col cliente">
+      <p class="riquadro__nota">
+        Una chat è un link che il cliente apre dal telefono. L'assistente gli
+        risponde leggendo <strong>i suoi documenti</strong>, e nient'altro.
+      </p>
+
+      @if (!chat().length) {
+        <ui-stato-vuoto
+          icona="chat"
+          titolo="Nessuna chat con questo cliente"
+          descrizione="Aprine una dalla sezione «Chat per i clienti»: scegli lui, e il link è pronto."
+        >
+          <a uiBottone variante="primario" routerLink="/chat-clienti">
+            <ui-icon name="chat" [size]="15" />
+            <span>Vai alle chat</span>
+          </a>
+        </ui-stato-vuoto>
+      } @else {
+        <ul class="chat">
+          @for (k of chat(); track k.id) {
+            <li>
+              <a class="riga" [routerLink]="['/chat-clienti', k.id]">
+                <span class="riga__corpo">
+                  <span class="riga__nome">{{ k.titolo }}</span>
+                  <span class="riga__sotto">
+                    {{ k.ospite.nome }} {{ k.ospite.cognome }} ·
+                    {{ k.domandeFatte }} {{ k.domandeFatte === 1 ? 'domanda' : 'domande' }}
+                  </span>
+                </span>
+                <ui-tag [variante]="k.stato === 'attiva' ? 'positivo' : 'neutro'">
+                  {{ k.stato }}
+                </ui-tag>
+              </a>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+}

@@ -35,7 +35,6 @@ import FileExportIcon from '@hugeicons/core-free-icons/FileExportIcon';
 import FilterIcon from '@hugeicons/core-free-icons/FilterIcon';
 import Folder01Icon from '@hugeicons/core-free-icons/Folder01Icon';
 import FolderLibraryIcon from '@hugeicons/core-free-icons/FolderLibraryIcon';
-import FolderOpenIcon from '@hugeicons/core-free-icons/FolderOpenIcon';
 import HashtagIcon from '@hugeicons/core-free-icons/HashtagIcon';
 import Image01Icon from '@hugeicons/core-free-icons/Image01Icon';
 import AlignBottomIcon from '@hugeicons/core-free-icons/AlignBottomIcon';
@@ -64,7 +63,6 @@ import TextColorIcon from '@hugeicons/core-free-icons/TextColorIcon';
 import TextItalicIcon from '@hugeicons/core-free-icons/TextItalicIcon';
 import TextUnderlineIcon from '@hugeicons/core-free-icons/TextUnderlineIcon';
 import UndoIcon from '@hugeicons/core-free-icons/UndoIcon';
-import InboxIcon from '@hugeicons/core-free-icons/InboxIcon';
 import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon';
 import LibraryIcon from '@hugeicons/core-free-icons/LibraryIcon';
 import LinkSquare02Icon from '@hugeicons/core-free-icons/LinkSquare02Icon';
@@ -207,13 +205,6 @@ export const REGISTRO_ICONE = {
   'testo-a-meta': AlignBoxMiddleCenterIcon,
   'testo-in-basso': AlignBoxBottomCenterIcon,
   'adatta-al-testo': FitToScreenIcon,
-
-  // --- Cartelle dell'Archivio Privato (Fase 10) ---
-  cartella: Folder01Icon,
-  'cartella-aperta': FolderOpenIcon,
-  /* «Da sistemare» non è un errore: è la posta in arrivo dell'archivio, e
-     l'icona lo dice prima delle parole. */
-  'da-sistemare': InboxIcon,
 
   // --- Tema ---
   'tema-chiaro': Sun03Icon,

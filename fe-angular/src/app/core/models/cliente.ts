@@ -31,3 +31,16 @@ export interface Cliente {
   documenti: number;
   creatoIl: IsoDateTime;
 }
+
+/**
+ * La scheda: il cliente più ciò che di lui non si vede altrove.
+ *
+ * I suoi documenti non stanno qui — si chiedono all'archivio con
+ * `clienteId`, che sa già cercare e paginare — ma di che cosa si è parlato,
+ * quali canali sono aperti e che cosa sta per scadere sì.
+ */
+export interface SchedaCliente extends Cliente {
+  conversazioni: { id: Id; titolo: string; aggiornataIl: IsoDateTime }[];
+  chat: { totale: number; attive: number };
+  scadenze: { documentoId: Id; titolo: string; numeroPolizza?: string; scadenza: string }[];
+}

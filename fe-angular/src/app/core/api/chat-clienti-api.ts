@@ -30,12 +30,13 @@ export class ChatClientiApi {
     titolo: string;
     nome: string;
     cognome: string;
-    clienteId?: string;
+    /** Obbligatorio: è il cliente a fare il cono di lettura (12/09/2026). */
+    clienteId: string;
     istruzioni?: string;
     scadeIl?: string;
     tettoDomande?: number;
-    cartelle: string[];
-    documenti: string[];
+    aggiunti?: string[];
+    esclusi?: string[];
   }): Promise<LinkChatCliente> {
     return firstValueFrom(this.http.post<LinkChatCliente>(this.base, dati));
   }

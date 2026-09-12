@@ -3,6 +3,7 @@ import type pg from 'pg';
 
 import { cercaCandidati, creaCliente, fondiClienti } from '../../archivio/clienti.js';
 import {
+  schemaEliminaCliente,
   schemaFiltriClienti,
   schemaFusioneClienti,
   schemaModificheCliente,
@@ -10,10 +11,12 @@ import {
   type Cliente,
   type ModificheCliente,
   type PaginaClienti,
+  type SchedaCliente,
 } from '../../contratto/clienti.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { conIdentita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
+import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
 
 /**
  * I clienti (`PIANO-CLIENTI.md`, Fase 1).
@@ -78,7 +81,15 @@ const SQL_CLIENTI = `
   from velia.clienti c
   where c.tenant_id = $1`;
 
-export function registraRotteClienti(app: FastifyInstance): void {
+export interface OpzioniClienti {
+  /** Lo Storage, per portare via i file quando si elimina un cliente coi suoi documenti. */
+  archivio?: ArchivioFile;
+}
+
+export function registraRotteClienti(app: FastifyInstance, opzioni: OpzioniClienti = {}): void {
+  let archivioStorage: ArchivioFile | undefined;
+  const archivio = (): ArchivioFile => opzioni.archivio ?? (archivioStorage ??= new ArchivioStorage());
+
   app.get('/api/clienti', async (richiesta) => {
     const esito = schemaFiltriClienti.safeParse(richiesta.query);
     if (!esito.success) throw ErroreApi.datiNonValidi('Filtri non validi.');
@@ -126,11 +137,127 @@ export function registraRotteClienti(app: FastifyInstance): void {
     });
   });
 
+  /**
+   * La scheda: il cliente più ciò che di lui non si vede altrove.
+   *
+   * I suoi **documenti non stanno qui**: si chiedono all'archivio con
+   * `GET /api/documenti-privati?clienteId=`, che ha già ricerca, faccette e
+   * paginazione. Una seconda rotta che restituisse gli stessi documenti con
+   * meno capacità sarebbe un contratto in più da tenere allineato, e la
+   * schermata del cliente finirebbe per essere più povera dell'archivio.
+   */
   app.get<{ Params: { id: string } }>('/api/clienti/:id', async (richiesta) => {
-    return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const cliente = await clienteSingolo(client, richiesta.identita.tenantId, richiesta.params.id);
+    return conIdentita(poolDb(), richiesta.identita, async (client): Promise<SchedaCliente> => {
+      const { tenantId } = richiesta.identita;
+      const cliente = await clienteSingolo(client, tenantId, richiesta.params.id);
       if (!cliente) throw ErroreApi.nonTrovato('Cliente inesistente.');
-      return cliente;
+
+      const [conversazioni, chat, scadenze] = await Promise.all([
+        client.query<{ id: string; titolo: string; updated_at: Date }>(
+          `select id, titolo, updated_at from velia.conversazioni
+           where tenant_id = $1 and cliente_id = $2
+           order by updated_at desc limit 20`,
+          [tenantId, cliente.id],
+        ),
+        client.query<{ totale: number; attive: number }>(
+          `select count(*)::int as totale,
+                  count(*) filter (where stato = 'attiva')::int as attive
+             from velia.chat_clienti where tenant_id = $1 and cliente_id = $2`,
+          [tenantId, cliente.id],
+        ),
+        /* Solo quelle che devono ancora arrivare: uno scadenzario che
+           comincia dal 2019 non è uno scadenzario. */
+        client.query<{ id: string; titolo: string; numero_polizza: string | null; scadenza: string }>(
+          `select id, titolo, numero_polizza, to_char(scadenza, 'YYYY-MM-DD') as scadenza
+             from velia.documenti
+            where tenant_id = $1 and cliente_id = $2 and scadenza is not null
+              and scadenza >= current_date
+            order by scadenza limit 20`,
+          [tenantId, cliente.id],
+        ),
+      ]);
+
+      return {
+        ...cliente,
+        conversazioni: conversazioni.rows.map((c) => ({
+          id: c.id,
+          titolo: c.titolo,
+          aggiornataIl: new Date(c.updated_at).toISOString(),
+        })),
+        chat: {
+          totale: chat.rows[0]?.totale ?? 0,
+          attive: chat.rows[0]?.attive ?? 0,
+        },
+        scadenze: scadenze.rows.map((s) => ({
+          documentoId: s.id,
+          titolo: s.titolo,
+          ...(s.numero_polizza && { numeroPolizza: s.numero_polizza }),
+          scadenza: s.scadenza,
+        })),
+      };
+    });
+  });
+
+  /**
+   * L'eliminazione dice sempre che fine fanno i suoi documenti.
+   *
+   * Non c'è un default a caso: portarsi via i documenti senza dirlo è il
+   * modo in cui si perde roba, e lasciarli senza dirlo è il modo in cui si
+   * scopre un mese dopo che l'archivio è pieno di orfani. Le sue chat se ne
+   * vanno comunque (il `cascade` a database): una chat senza cliente non
+   * saprebbe più che cosa leggere.
+   */
+  app.delete<{ Params: { id: string } }>('/api/clienti/:id', async (richiesta, risposta) => {
+    const scelta = schemaEliminaCliente.safeParse(richiesta.query ?? {});
+    if (!scelta.success) throw ErroreApi.datiNonValidi('Dire che fine fanno i documenti.');
+
+    const daPulire = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const { tenantId } = richiesta.identita;
+      const esiste = await client.query(
+        `select 1 from velia.clienti where id = $1 and tenant_id = $2`,
+        [richiesta.params.id, tenantId],
+      );
+      if (!esiste.rowCount) throw ErroreApi.nonTrovato('Cliente inesistente.');
+
+      let percorsi: string[] = [];
+      if (scelta.data.documenti === 'elimina') {
+        const righe = await client.query<{ path_pdf: string | null; path_md: string | null }>(
+          `delete from velia.documenti
+            where tenant_id = $1 and cliente_id = $2 and archivio = 'privato'
+            returning path_pdf, path_md`,
+          [tenantId, richiesta.params.id],
+        );
+        percorsi = righe.rows.flatMap((r) => [r.path_pdf, r.path_md]).filter((p): p is string => Boolean(p));
+      }
+      await client.query(`delete from velia.clienti where id = $1 and tenant_id = $2`, [
+        richiesta.params.id,
+        tenantId,
+      ]);
+      return percorsi;
+    });
+
+    /* Lo Storage si svuota dopo la transazione: se i byte non se ne vanno
+       resta qualche file muto, non una riga che punta al nulla. */
+    if (daPulire.length) {
+      await archivio()
+        .elimina(daPulire)
+        .catch((e: unknown) => richiesta.log.warn({ err: e }, 'pulizia storage del cliente fallita'));
+    }
+    return risposta.code(204).send();
+  });
+
+  /** Le etichette dei clienti in uso, con quanti clienti le portano. */
+  app.get('/api/clienti/etichette', async (richiesta) => {
+    return conIdentita(poolDb(), richiesta.identita, async (client) => {
+      const righe = await client.query<{ nome: string; clienti: number }>(
+        `select e as nome, count(*)::int as clienti
+           from velia.clienti c cross join unnest(c.etichette) as e
+          where c.tenant_id = $1
+          group by e
+          order by count(*) desc, e collate "it-x-icu"`,
+        [richiesta.identita.tenantId],
+      );
+      return righe.rows;
     });
   });
 

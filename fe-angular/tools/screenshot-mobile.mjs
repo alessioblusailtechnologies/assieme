@@ -39,7 +39,7 @@ try {
         await page.click('button.menu').catch(() => undefined);
         await new Promise((res) => setTimeout(res, 500));
       }
-      const nome = `${vista.nome}--${rotta.replace(/[\/#]/g, '_')}.png`;
+      const nome = `${vista.nome}--${rotta.replace(/[/#?&=]/g, '_')}.png`;
       await page.screenshot({ path: `${OUT}${nome}`, fullPage: false });
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       console.log(`${nome}  overflow-x=${overflow}px`);

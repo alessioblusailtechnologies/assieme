@@ -7,7 +7,7 @@ import { poolDb } from '../db/pool.js';
 import { registraRotteAgenti, type OpzioniAgenti } from './agenti/rotte.js';
 import { registraRotteArchivioPrivato, type OpzioniArchivioPrivato } from './archivio-privato/rotte.js';
 import { registraRotteChatClienti, type OpzioniChatClienti } from './chat-clienti/rotte.js';
-import { registraRotteClienti } from './clienti/rotte.js';
+import { registraRotteClienti, type OpzioniClienti } from './clienti/rotte.js';
 import { registraRotteConversazioni, type OpzioniConversazioni } from './conversazioni/rotte.js';
 import { registraRotteDocumenti } from './documenti/rotte.js';
 import { registraRotteIntestazione, type OpzioniIntestazione } from './intestazione/rotte.js';
@@ -48,6 +48,7 @@ export interface OpzioniApp {
   sessione?: OpzioniSessione;
   /** Nei test: creazione dell'utenza ospite senza Supabase Auth, e link finto. */
   chatClienti?: OpzioniChatClienti;
+  clienti?: OpzioniClienti;
   /** Nei test: Storage finto e radice dei link delle pagine condivise. */
   pagine?: OpzioniPagine;
 }
@@ -101,7 +102,7 @@ export function creaApp(opzioni: OpzioniApp = {}): FastifyInstance {
   registraRotteDocumenti(app);
   registraRotteSegnalazioni(app);
   registraRotteArchivioPrivato(app, opzioni.archivioPrivato);
-  registraRotteClienti(app);
+  registraRotteClienti(app, opzioni.clienti);
   registraRotteChatClienti(app, opzioni.chatClienti);
   registraRotteConversazioni(app, opzioni.conversazioni);
   registraRottePagine(app, opzioni.pagine);

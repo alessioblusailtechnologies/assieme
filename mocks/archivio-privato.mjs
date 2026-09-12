@@ -295,7 +295,11 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
   const percorso = url.pathname;
   const base = '/api/documenti-privati';
 
-  if (!percorso.startsWith(base) && percorso !== '/api/etichette' && percorso !== '/api/spazio') {
+  if (
+    !percorso.startsWith(base) &&
+    !percorso.startsWith('/api/etichette') &&
+    percorso !== '/api/spazio'
+  ) {
     return false;
   }
 
@@ -328,6 +332,44 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
 
   if (percorso === base && req.method === 'GET') {
     inviaJson(res, 200, elenco(url, corrispondeTesto));
+    return true;
+  }
+
+  /* L'assegnazione in blocco (12/09/2026): cliente ed etichette su una
+     selezione. Le etichette si sommano e si tolgono, non si sostituiscono. */
+  if (percorso === `${base}/assegna` && req.method === 'POST') {
+    const dati = JSON.parse((await leggiCorpo(req)) || '{}');
+    const scelti = DOCUMENTI.filter((d) => (dati.documenti ?? []).includes(d.id));
+    for (const d of scelti) {
+      if (dati.clienteId !== undefined) {
+        if (dati.clienteId === null) delete d.clienteId;
+        else d.clienteId = dati.clienteId;
+        delete d.clienteDaConfermare;
+      }
+      const aggiunte = new Set([...(d.etichette ?? []), ...(dati.aggiungiEtichette ?? [])]);
+      for (const e of dati.togliEtichette ?? []) aggiunte.delete(e);
+      d.etichette = [...aggiunte].sort((a, b) => a.localeCompare(b, 'it'));
+    }
+    inviaJson(res, 200, { toccati: scelti.length });
+    return true;
+  }
+
+  /* Rinominare un'etichetta ovunque, che è anche il modo di fonderne due. */
+  const etichetta = percorso.match(/^\/api\/etichette\/(.+)$/);
+  if (etichetta && (req.method === 'PATCH' || req.method === 'DELETE')) {
+    const vecchia = decodeURIComponent(etichetta[1]);
+    const nuova =
+      req.method === 'PATCH' ? JSON.parse((await leggiCorpo(req)) || '{}').nome : undefined;
+    let toccati = 0;
+    for (const d of DOCUMENTI) {
+      if (!(d.etichette ?? []).includes(vecchia)) continue;
+      const senza = d.etichette.filter((e) => e !== vecchia);
+      d.etichette = nuova
+        ? [...new Set([...senza, nuova])].sort((a, b) => a.localeCompare(b, 'it'))
+        : senza;
+      toccati++;
+    }
+    inviaJson(res, 200, { toccati });
     return true;
   }
 

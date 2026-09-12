@@ -64,9 +64,45 @@ function completo(c, documenti) {
   return { ...c, documenti: documenti.filter((d) => d.clienteId === c.id).length };
 }
 
+/**
+ * La scheda: il cliente più ciò che di lui non si vede altrove. I suoi
+ * documenti non stanno qui — si chiedono all'archivio con `clienteId` — ma
+ * di che cosa si è parlato, quali canali sono aperti e cosa sta per
+ * scadere sì.
+ */
+function scheda(c, documenti) {
+  const suoi = documenti.filter((d) => d.clienteId === c.id);
+  const oggi = new Date().toISOString().slice(0, 10);
+  return {
+    ...completo(c, documenti),
+    conversazioni: [],
+    chat: { totale: 0, attive: 0 },
+    scadenze: suoi
+      .filter((d) => d.scadenza && d.scadenza >= oggi)
+      .sort((a, b) => a.scadenza.localeCompare(b.scadenza))
+      .map((d) => ({
+        documentoId: d.id,
+        titolo: d.titolo,
+        ...(d.numeroPolizza && { numeroPolizza: d.numeroPolizza }),
+        scadenza: d.scadenza,
+      })),
+  };
+}
+
 export function gestisci(req, res, url, { inviaJson, leggiCorpo }, documenti) {
   const percorso = url.pathname;
   if (!percorso.startsWith('/api/clienti')) return false;
+
+  /* Le etichette dei clienti: statica prima della parametrica, o
+     `/api/clienti/etichette` finirebbe per essere letto come un id. */
+  if (percorso === '/api/clienti/etichette' && req.method === 'GET') {
+    const conteggi = new Map();
+    for (const c of CLIENTI) {
+      for (const e of c.etichette ?? []) conteggi.set(e, (conteggi.get(e) ?? 0) + 1);
+    }
+    inviaJson(res, 200, [...conteggi].map(([nome, clienti]) => ({ nome, clienti })));
+    return true;
+  }
 
   if (percorso === '/api/clienti' && req.method === 'GET') {
     const q = (url.searchParams.get('q') ?? '').trim().toLowerCase();
@@ -121,13 +157,24 @@ export function gestisci(req, res, url, { inviaJson, leggiCorpo }, documenti) {
       return true;
     }
     if (req.method === 'GET') {
-      inviaJson(res, 200, completo(cliente, documenti));
+      inviaJson(res, 200, scheda(cliente, documenti));
+      return true;
+    }
+    if (req.method === 'DELETE') {
+      const come = url.searchParams.get('documenti') ?? 'senza-cliente';
+      for (let i = documenti.length - 1; i >= 0; i--) {
+        if (documenti[i].clienteId !== cliente.id) continue;
+        if (come === 'elimina') documenti.splice(i, 1);
+        else delete documenti[i].clienteId;
+      }
+      CLIENTI.splice(CLIENTI.indexOf(cliente), 1);
+      res.writeHead(204).end();
       return true;
     }
     if (req.method === 'PATCH') {
       return leggiCorpo(req).then((corpo) => {
         Object.assign(cliente, JSON.parse(corpo || '{}'));
-        inviaJson(res, 200, completo(cliente, documenti));
+        inviaJson(res, 200, scheda(cliente, documenti));
         return true;
       });
     }

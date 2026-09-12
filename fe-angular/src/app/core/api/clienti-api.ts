@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env';
-import { Cliente, Id, Paginato } from '@core/models';
+import { Cliente, Id, Paginato, SchedaCliente } from '@core/models';
 
 export interface NuovoCliente {
   nome: string;
@@ -66,7 +66,30 @@ export class ClientiApi {
   fondi(vincitore: Id, assorbito: Id): Observable<Cliente> {
     return this.http.post<Cliente>(`${this.base}/${vincitore}/fondi`, { assorbito });
   }
+
+  /**
+   * L'eliminazione dice sempre che fine fanno i documenti: portarseli via
+   * senza dirlo è il modo in cui si perde roba.
+   */
+  elimina(id: Id, documenti: DestinazioneDocumenti = 'senza-cliente'): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}?documenti=${documenti}`);
+  }
+
+  urlEtichette(): string {
+    return `${this.base}/etichette`;
+  }
+}
+
+/** Che fine fanno i documenti quando il cliente sparisce. */
+export type DestinazioneDocumenti = 'senza-cliente' | 'elimina';
+
+/** Un'etichetta dei clienti, con quanti la portano. */
+export interface EtichettaCliente {
+  nome: string;
+  clienti: number;
 }
 
 /** L'elenco clienti arriva paginato come gli altri elenchi. */
 export type PaginaClienti = Paginato<Cliente>;
+
+export type { SchedaCliente };

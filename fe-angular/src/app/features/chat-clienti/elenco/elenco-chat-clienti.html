@@ -28,6 +28,18 @@
 
 @if (inCreazione()) {
   <div class="creazione">
+    <div class="creazione__campo">
+      <span>Per quale cliente</span>
+      <ui-select
+        [valore]="clienteId()"
+        (valoreChange)="scegliCliente($any($event))"
+        [opzioni]="clienti()"
+        campoEtichetta="nome"
+        campoValore="id"
+        placeholder="Scegli un cliente"
+        ariaLabel="Il cliente di questa chat"
+      />
+    </div>
     <label class="creazione__campo">
       <span>Come si chiama questa chat</span>
       <input uiCampo [(ngModel)]="titolo" placeholder="Mario Rossi — polizza auto" />
@@ -43,8 +55,8 @@
       </label>
     </div>
     <p class="creazione__nota">
-      Il cono di lettura si compone subito dopo: finché è vuoto, la chat non
-      risponde nulla.
+      L'assistente leggerà i documenti di questo cliente, anche quelli che
+      caricherai più avanti. Nella scheda puoi aggiungerne altri o toglierne.
     </p>
     @if (erroreCreazione(); as e) {
       <p class="creazione__errore">{{ e }}</p>
