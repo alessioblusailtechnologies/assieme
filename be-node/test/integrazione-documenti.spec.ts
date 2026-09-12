@@ -58,8 +58,8 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 82 Unipol (14 prodotti: i 9 set auto ed. 05/2026 entrati il 12/09/2026, le due edizioni storiche di Km&Servizi Autovetture, Scudo Cyber in due edizioni, 3 Focus Commercio) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto) + 6 Generali (2 contratti base). */
-    expect(pagina.totale).toBe(274);
+    /* 82 Unipol (14 prodotti: i 9 set auto ed. 05/2026 entrati il 12/09/2026, le due edizioni storiche di Km&Servizi Autovetture, Scudo Cyber in due edizioni, 3 Focus Commercio) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto) + 6 Generali (2 contratti base) + 15 Groupama (5 set auto entrati il 13/09/2026). */
+    expect(pagina.totale).toBe(289);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;

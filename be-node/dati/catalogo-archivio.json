@@ -1113,6 +1113,276 @@
   "pathPdf": "archivio-pubblico/generali/auto/contratto-base-motoveicoli/ed-2026-01/originale.pdf"
  },
  {
+  "id": "doc-groupama-autocontrollo-altri-veicoli-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo 2.0 Altri Veicoli",
+  "titolo": "Condizioni Generali di Assicurazione — Groupama Autocontrollo 2.0 Altri Veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 54,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-autocontrollo-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-autocontrollo-altri-veicoli-ed-2026-01-dip",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo 2.0 Altri Veicoli",
+  "titolo": "DIP Danni — Groupama Autocontrollo 2.0 Altri Veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-autocontrollo-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-autocontrollo-altri-veicoli-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo 2.0 Altri Veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Groupama Autocontrollo 2.0 Altri Veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-autocontrollo-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-autocontrollo-autovetture-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo Autovetture 2022",
+  "titolo": "Condizioni Generali di Assicurazione — Groupama Autocontrollo Autovetture 2022",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 75,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-autocontrollo-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-autocontrollo-autovetture-ed-2026-06-dip",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo Autovetture 2022",
+  "titolo": "DIP Danni — Groupama Autocontrollo Autovetture 2022",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-autocontrollo-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-autocontrollo-autovetture-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Autocontrollo Autovetture 2022",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Groupama Autocontrollo Autovetture 2022",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-autocontrollo-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/autocontrollo-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-altri-veicoli-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Altri Veicoli",
+  "titolo": "Condizioni Generali di Assicurazione — Groupama Guidamica Altri Veicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 53,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-guidamica-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-altri-veicoli-ed-2026-01-dip",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Altri Veicoli",
+  "titolo": "DIP Danni — Groupama Guidamica Altri Veicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-guidamica-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-altri-veicoli-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Altri Veicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Groupama Guidamica Altri Veicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-guidamica-altri-veicoli-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-altri-veicoli/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-autovetture-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Autovetture 2022",
+  "titolo": "Condizioni Generali di Assicurazione — Groupama Guidamica Autovetture 2022",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 73,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-guidamica-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-autovetture-ed-2026-06-dip",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Autovetture 2022",
+  "titolo": "DIP Danni — Groupama Guidamica Autovetture 2022",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 2,
+  "edizione": {
+   "id": "edz-guidamica-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-autovetture-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Autovetture 2022",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Groupama Guidamica Autovetture 2022",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 4,
+  "edizione": {
+   "id": "edz-guidamica-autovetture-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-autovetture/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-motoveicoli-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Motoveicoli",
+  "titolo": "Condizioni Generali di Assicurazione — Groupama Guidamica Motoveicoli",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 51,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-guidamica-motoveicoli-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-motoveicoli-ed-2026-07-dip",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Motoveicoli",
+  "titolo": "DIP Danni — Groupama Guidamica Motoveicoli",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-guidamica-motoveicoli-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-groupama-guidamica-motoveicoli-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-groupama",
+  "ramoId": "ram-auto",
+  "prodotto": "Guidamica Motoveicoli",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Groupama Guidamica Motoveicoli",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-guidamica-motoveicoli-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/groupama/auto/guidamica-motoveicoli/ed-2026-07/originale.pdf"
+ },
+ {
   "id": "doc-hdi-auto-hdi-autovetture-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-hdi",
   "ramoId": "ram-auto",
