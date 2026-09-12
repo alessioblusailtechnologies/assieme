@@ -22,6 +22,11 @@ export class ChatClientiApi {
      backend. La base la decide `config.js`, senza ricompilare. */
   private readonly base = `${environment.apiBase}/chat-clienti`;
 
+  /** L'indirizzo dell'elenco, per chi lo legge con `httpResource`. */
+  urlElenco(): string {
+    return this.base;
+  }
+
   elenco(): Promise<ChatCliente[]> {
     return firstValueFrom(this.http.get<ChatCliente[]>(this.base));
   }
