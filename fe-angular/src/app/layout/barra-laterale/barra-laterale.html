@@ -99,7 +99,7 @@
                   </li>
                 } @else {
                   @for (c of conversazioniRecenti(); track c.id) {
-                    <li class="conversazioni__riga" (mouseleave)="disarma()">
+                    <li class="conversazioni__riga">
                       @if (inRinomina() === c.id) {
                         <input
                           class="conversazioni__rinomina"
@@ -142,14 +142,9 @@
                           <button
                             type="button"
                             class="conversazioni__azione"
-                            [class.is-armata]="eliminazioneArmata() === c.id"
-                            (click)="elimina(c.id)"
-                            [attr.aria-label]="
-                              eliminazioneArmata() === c.id
-                                ? 'Conferma l’eliminazione di «' + c.titolo + '»'
-                                : 'Elimina «' + c.titolo + '»'
-                            "
-                            [title]="eliminazioneArmata() === c.id ? 'Elimina davvero?' : 'Elimina'"
+                            (click)="elimina(c.id, c.titolo)"
+                            [attr.aria-label]="'Elimina «' + c.titolo + '»'"
+                            title="Elimina"
                           >
                             <ui-icon name="elimina" [size]="13" />
                           </button>

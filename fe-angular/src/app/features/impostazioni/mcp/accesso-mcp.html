@@ -76,15 +76,9 @@
               </td>
               <td class="col-azione">
                 @if (!credenziale.revocata) {
-                  @if (confermaRevoca() !== credenziale.id) {
-                    <button uiBottone dimensione="piccolo" type="button" (click)="revoca(credenziale)">
-                      <span>Revoca</span>
-                    </button>
-                  } @else {
-                    <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="revoca(credenziale)">
-                      <span>Revoca davvero</span>
-                    </button>
-                  }
+                  <button uiBottone dimensione="piccolo" type="button" (click)="revoca(credenziale)">
+                    <span>Revoca</span>
+                  </button>
                 }
               </td>
             </tr>

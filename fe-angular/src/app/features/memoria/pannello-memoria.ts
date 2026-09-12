@@ -7,6 +7,7 @@ import { Id, ModificheRicordo, Ricordo } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
 import { Icona } from '@shared/ui/icona/icona';
@@ -72,6 +73,7 @@ function leggiVista(): VistaMemoria {
 })
 export class PannelloMemoria {
   private readonly api = inject(MemoriaApi);
+  private readonly conferme = inject(ConfermeStore);
 
   protected readonly briciole: VoceBriciola[] = [
     { etichetta: 'Home', percorso: '/' },
@@ -153,16 +155,15 @@ export class PannelloMemoria {
     this.api.modifica(id, modifiche).subscribe({ next: () => this.risorsa.reload() });
   }
 
-  // --- Eliminazione (conferma a due passi, come ovunque) ------------------
+  // --- Eliminazione (la finestra di conferma, come ovunque) ----------------
 
-  protected readonly confermaEliminazione = signal<Id | undefined>(undefined);
-
-  protected elimina(ricordo: Ricordo): void {
-    if (this.confermaEliminazione() !== ricordo.id) {
-      this.confermaEliminazione.set(ricordo.id);
-      return;
-    }
-    this.confermaEliminazione.set(undefined);
+  protected async elimina(ricordo: Ricordo): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare «${ricordo.testo}»?`,
+      dettaglio:
+        'Il ricordo sparisce dalla memoria e smette di condizionare le risposte. Per tenerlo qui senza che valga, sospendilo.',
+    });
+    if (!conferma) return;
     this.api.elimina(ricordo.id).subscribe({ next: () => this.risorsa.reload() });
   }
 

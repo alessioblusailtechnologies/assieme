@@ -18,6 +18,7 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CellaValore } from './celle/cella-valore';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import {
   Citazione,
   CriterioPredefinito,
@@ -77,6 +78,7 @@ import { intestazioneDaCriterio } from '../costruttore/colonne';
 })
 export class DettaglioTabella {
   protected readonly store = inject(DettaglioTabellaStore);
+  private readonly conferme = inject(ConfermeStore);
   private readonly api = inject(TabelleApi);
   private readonly apiPubblici = inject(DocumentiApi);
   private readonly apiPrivati = inject(DocumentiPrivatiApi);
@@ -128,16 +130,14 @@ export class DettaglioTabella {
 
   // --- Eliminazione -------------------------------------------------------
 
-  /* Conferma a due passi, come per conversazioni e documenti: il primo clic
-     arma, il secondo esegue. */
-  protected readonly confermaEliminazione = signal(false);
-
-  protected elimina(): void {
-    if (!this.confermaEliminazione()) {
-      this.confermaEliminazione.set(true);
-      return;
-    }
-    this.store.elimina();
+  /* La finestra di conferma, come per conversazioni e documenti. */
+  protected async elimina(): Promise<void> {
+    const titolo = this.store.tabella()?.titolo;
+    const conferma = await this.conferme.chiedi({
+      titolo: titolo ? `Eliminare «${titolo}»?` : 'Eliminare la tabella?',
+      dettaglio: 'La tabella sparisce con le sue righe e le sue celle. Non si torna indietro.',
+    });
+    if (conferma) this.store.elimina();
   }
 
   // --- Citazioni (RF-C-05 dalla cella) ------------------------------------

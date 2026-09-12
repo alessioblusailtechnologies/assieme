@@ -272,12 +272,6 @@
   background: var(--c-line-soft);
 }
 
-/* Cestino armato: il secondo clic elimina davvero. */
-.conversazioni__azione.is-armata {
-  color: var(--c-neg);
-  background: var(--c-neg-soft);
-}
-
 .conversazioni__rinomina {
   flex: 1;
   min-width: 0;

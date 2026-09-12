@@ -22,6 +22,7 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { ComponenteStatoEsecuzione } from '../stato-esecuzione';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { DettaglioAgenteStore } from './dettaglio-agente-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
@@ -68,6 +69,7 @@ import { etichettaPianificazione } from '../pianificazione';
 })
 export class DettaglioAgente {
   protected readonly store = inject(DettaglioAgenteStore);
+  private readonly conferme = inject(ConfermeStore);
   private readonly api = inject(AgentiApi);
   private readonly notifiche = inject(NotificheStore);
 
@@ -168,16 +170,15 @@ export class DettaglioAgente {
     this.store.esegui(parametri);
   }
 
-  // --- Eliminazione (conferma a due passi, come ovunque) ------------------
+  // --- Eliminazione (la finestra di conferma, come ovunque) ----------------
 
-  protected readonly confermaEliminazione = signal(false);
-
-  protected elimina(): void {
-    if (!this.confermaEliminazione()) {
-      this.confermaEliminazione.set(true);
-      return;
-    }
-    this.store.elimina();
+  protected async elimina(nome: string): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare «${nome}»?`,
+      dettaglio:
+        'L’agente sparisce con la sua pianificazione e con lo storico delle esecuzioni. Non si torna indietro.',
+    });
+    if (conferma) this.store.elimina();
   }
 
   // --- Storico (RF-E-06) --------------------------------------------------

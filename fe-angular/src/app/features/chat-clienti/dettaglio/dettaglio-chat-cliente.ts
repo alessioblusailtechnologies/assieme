@@ -17,6 +17,7 @@ import type { AlberoCartelle, Cartella, DocumentoPubblico, Id, Paginato } from '
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatClientiStore } from '../chat-clienti-store';
 
@@ -46,6 +47,7 @@ export class DettaglioChatCliente {
   private readonly cartelleApi = inject(CartelleApi);
   private readonly documentiApi = inject(DocumentiApi);
   private readonly router = inject(Router);
+  private readonly conferme = inject(ConfermeStore);
 
   readonly id = input.required<string>();
 
@@ -211,11 +213,15 @@ export class DettaglioChatCliente {
     }
   }
 
-  protected readonly confermaEliminazione = signal(false);
-
   protected async elimina(): Promise<void> {
     const chat = this.chat();
     if (!chat) return;
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare la chat di ${chat.ospite.nome} ${chat.ospite.cognome}?`.trim(),
+      dettaglio:
+        'Sparisce tutto: l’accesso del cliente e le conversazioni che ci sono state. Non si torna indietro.',
+    });
+    if (!conferma) return;
     await this.store.elimina(chat.id);
     await this.router.navigate(['/chat-clienti']);
   }

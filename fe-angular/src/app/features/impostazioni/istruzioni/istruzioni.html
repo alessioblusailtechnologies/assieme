@@ -120,28 +120,16 @@
                 <ui-icon name="modifica" [size]="13" />
                 <span>Modifica</span>
               </button>
-              @if (confermaEliminazione() === regola.id) {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="pericolo"
-                  type="button"
-                  (click)="eliminaRegola(regola)"
-                >
-                  <span>Elimina davvero</span>
-                </button>
-              } @else {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="testo"
-                  type="button"
-                  (click)="eliminaRegola(regola)"
-                >
-                  <ui-icon name="elimina" [size]="13" />
-                  <span>Elimina</span>
-                </button>
-              }
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="testo"
+                type="button"
+                (click)="eliminaRegola(regola)"
+              >
+                <ui-icon name="elimina" [size]="13" />
+                <span>Elimina</span>
+              </button>
             }
           </div>
           <p class="voce__testo">{{ regola.testo }}</p>
@@ -214,28 +202,16 @@
                 />
                 <label [for]="'attivo-' + riferimento.id">attivo</label>
               </div>
-              @if (confermaEliminazione() === riferimento.id) {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="pericolo"
-                  type="button"
-                  (click)="eliminaRiferimento(riferimento)"
-                >
-                  <span>{{ riferimento.documentoPrivatoId ? 'Togli davvero' : 'Elimina davvero' }}</span>
-                </button>
-              } @else {
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="testo"
-                  type="button"
-                  (click)="eliminaRiferimento(riferimento)"
-                >
-                  <ui-icon name="elimina" [size]="13" />
-                  <span>{{ riferimento.documentoPrivatoId ? 'Togli il ruolo' : 'Elimina' }}</span>
-                </button>
-              }
+              <button
+                uiBottone
+                dimensione="piccolo"
+                variante="testo"
+                type="button"
+                (click)="eliminaRiferimento(riferimento)"
+              >
+                <ui-icon name="elimina" [size]="13" />
+                <span>{{ riferimento.documentoPrivatoId ? 'Togli il ruolo' : 'Elimina' }}</span>
+              </button>
             } @else {
               @if (riferimento.attivo) {
                 <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>

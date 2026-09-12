@@ -301,33 +301,13 @@
 
       <section class="riquadro riquadro--pericolo">
         <p class="mono">Elimina</p>
-        @if (!confermaEliminazione()) {
-          <button
-            uiBottone
-            type="button"
-            (click)="confermaEliminazione.set(true)"
-          >
-            <ui-icon name="elimina" [size]="15" />
-            <span>Elimina documento</span>
-          </button>
-        } @else {
-          <p class="riquadro__spiega">
-            L'eliminazione è definitiva. Le conversazioni che lo citano perderanno la fonte.
-          </p>
-          <div class="azioni">
-            <button uiBottone variante="pericolo" type="button" (click)="elimina()">
-              <span>Elimina davvero</span>
-            </button>
-            <button
-              uiBottone
-              variante="testo"
-              type="button"
-              (click)="confermaEliminazione.set(false)"
-            >
-              <span>Annulla</span>
-            </button>
-          </div>
-        }
+        <p class="riquadro__spiega">
+          L'eliminazione è definitiva. Le conversazioni che lo citano perderanno la fonte.
+        </p>
+        <button uiBottone type="button" (click)="elimina()">
+          <ui-icon name="elimina" [size]="15" />
+          <span>Elimina documento</span>
+        </button>
       </section>
     </aside>
   </div>

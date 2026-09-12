@@ -12,6 +12,7 @@ import {
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { Bottone } from '@shared/ui/bottone/bottone';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { GruppoNavigazione, NAVIGAZIONE } from '../navigazione';
 import { Icona } from '@shared/ui/icona/icona';
 import { SessioneStore } from '@core/auth/sessione-store';
@@ -48,6 +49,7 @@ const RECENTI_IN_BARRA = 20;
 export class BarraLaterale {
   private readonly sessione = inject(SessioneStore);
   private readonly router = inject(Router);
+  private readonly conferme = inject(ConfermeStore);
   protected readonly storico = inject(StoricoConversazioni);
 
   readonly compressa = model(false);
@@ -67,9 +69,6 @@ export class BarraLaterale {
   protected readonly inRinomina = signal<string | undefined>(undefined);
   protected readonly titoloBozza = signal('');
 
-  /** Conferma a due passi: il primo clic arma il cestino, il secondo esegue. */
-  protected readonly eliminazioneArmata = signal<string | undefined>(undefined);
-
   private readonly campoRinomina = viewChild<ElementRef<HTMLInputElement>>('campoRinomina');
 
   constructor() {
@@ -80,7 +79,6 @@ export class BarraLaterale {
   }
 
   protected avviaRinomina(id: string, titolo: string): void {
-    this.eliminazioneArmata.set(undefined);
     this.titoloBozza.set(titolo);
     this.inRinomina.set(id);
   }
@@ -92,22 +90,19 @@ export class BarraLaterale {
     this.inRinomina.set(undefined);
   }
 
-  protected elimina(id: string): void {
-    if (this.eliminazioneArmata() !== id) {
-      this.eliminazioneArmata.set(id);
-      return;
-    }
-    this.eliminazioneArmata.set(undefined);
+  protected async elimina(id: string, titolo: string): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare «${titolo}»?`,
+      dettaglio:
+        'La conversazione sparisce con i suoi messaggi e con i documenti che ha prodotto. Non si torna indietro.',
+    });
+    if (!conferma) return;
     this.storico.elimina(id).subscribe({
       next: () => {
         /* Se era la conversazione aperta, si torna alla schermata nuova. */
         if (this.router.url.startsWith(`/chat/${id}`)) void this.router.navigate(['/chat']);
       },
     });
-  }
-
-  protected disarma(): void {
-    this.eliminazioneArmata.set(undefined);
   }
 
   /**

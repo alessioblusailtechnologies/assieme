@@ -114,25 +114,10 @@
     @if (!store.soloLettura()) {
       <span class="azioni__spazio" aria-hidden="true"></span>
 
-      @if (!confermaEliminazione()) {
-        <button uiBottone dimensione="piccolo" type="button" (click)="elimina()">
-          <ui-icon name="elimina" [size]="14" />
-          <span>Elimina</span>
-        </button>
-      } @else {
-        <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina()">
-          <span>Elimina davvero</span>
-        </button>
-        <button
-          uiBottone
-          dimensione="piccolo"
-          variante="testo"
-          type="button"
-          (click)="confermaEliminazione.set(false)"
-        >
-          <span>Annulla</span>
-        </button>
-      }
+      <button uiBottone dimensione="piccolo" type="button" (click)="elimina()">
+        <ui-icon name="elimina" [size]="14" />
+        <span>Elimina</span>
+      </button>
     }
   </div>
 

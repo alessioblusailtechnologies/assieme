@@ -8,6 +8,7 @@ import { Avviso } from '@shared/ui/avviso/avviso';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { McpApi } from '@core/api/mcp-api';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
@@ -35,6 +36,7 @@ import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 })
 export class AccessoMcp {
   private readonly api = inject(McpApi);
+  private readonly conferme = inject(ConfermeStore);
   private readonly sessione = inject(SessioneStore);
 
   protected readonly puoGestire = computed(() => this.sessione.puo('mcp.credenziali'));
@@ -106,16 +108,16 @@ export class AccessoMcp {
     });
   }
 
-  // --- Revoca (definitiva, conferma a due passi) --------------------------
+  // --- Revoca (definitiva, con la finestra di conferma) -------------------
 
-  protected readonly confermaRevoca = signal<Id | undefined>(undefined);
-
-  protected revoca(credenziale: CredenzialeMcp): void {
-    if (this.confermaRevoca() !== credenziale.id) {
-      this.confermaRevoca.set(credenziale.id);
-      return;
-    }
-    this.confermaRevoca.set(undefined);
+  protected async revoca(credenziale: CredenzialeMcp): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Revocare «${credenziale.nome}»?`,
+      dettaglio:
+        'Il client che usa questa credenziale smette di collegarsi subito. La revoca è definitiva: per tornare a collegarlo servirà una credenziale nuova.',
+      conferma: 'Revoca',
+    });
+    if (!conferma) return;
     this.api.revoca(credenziale.id).subscribe({
       next: () => {
         this.risorsa.reload();

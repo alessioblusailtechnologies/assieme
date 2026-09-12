@@ -13,6 +13,7 @@ import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { CodaCaricamento, FileInCoda } from '@shared/caricamento/coda-caricamento';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { ErroreApi, FormatoModello, Id, ModelloRiferimento } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
@@ -67,6 +68,7 @@ const MS_ATTESA_ANTEPRIMA = 4000;
 })
 export class SchedaModelli {
   private readonly api = inject(ModelliRiferimentoApi);
+  private readonly conferme = inject(ConfermeStore);
   private readonly sessione = inject(SessioneStore);
 
   private readonly risorsa = httpResource<ModelloRiferimento[]>(() => this.api.urlElenco());
@@ -170,15 +172,17 @@ export class SchedaModelli {
         dettaglio: modello.formato,
         azione: () => this.scarica(modello),
       },
-      { etichetta: 'Elimina', azione: () => this.confermaEliminazione.set(modello.id) },
+      { etichetta: 'Elimina', azione: () => void this.elimina(modello) },
     ]);
     this.menu()?.apri(evento);
   }
 
-  protected readonly confermaEliminazione = signal<Id | undefined>(undefined);
-
-  protected elimina(modello: ModelloRiferimento): void {
-    this.confermaEliminazione.set(undefined);
+  protected async elimina(modello: ModelloRiferimento): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare «${modello.nome}»?`,
+      dettaglio: 'La chat non potrà più generare documenti su questo modello. Non si torna indietro.',
+    });
+    if (!conferma) return;
     this.api.elimina(modello.id).subscribe({ next: () => this.risorsa.reload() });
   }
 

@@ -7,11 +7,11 @@ import { Campo } from '@shared/ui/campo/campo';
 import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
 import { CodaCaricamento } from '@shared/caricamento/coda-caricamento';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import {
   DocumentoRiferimento,
   ESTENSIONI_DOCUMENTO,
   FORMATI_DOCUMENTO,
-  Id,
   RegolaIstruzione,
 } from '@core/models';
 import { Icona } from '@shared/ui/icona/icona';
@@ -66,6 +66,7 @@ type Scheda = 'regole' | 'riferimenti';
 })
 export class Istruzioni {
   protected readonly store = inject(IstruzioniStore);
+  private readonly conferme = inject(ConfermeStore);
 
   /* Gli stessi formati dell'archivio: un riferimento è un documento privato con un ruolo in più. */
   protected readonly estensioni = ESTENSIONI_DOCUMENTO;
@@ -141,31 +142,36 @@ export class Istruzioni {
     else this.store.creaRegola(dati, chiudi);
   }
 
-  // --- Eliminazioni a due passi -------------------------------------------
+  // --- Eliminazioni ---------------------------------------------------------
 
-  /** L'id armato per l'eliminazione, regola o riferimento che sia. */
-  protected readonly confermaEliminazione = signal<Id | undefined>(undefined);
-
-  protected eliminaRegola(regola: RegolaIstruzione): void {
-    if (this.confermaEliminazione() !== regola.id) {
-      this.confermaEliminazione.set(regola.id);
-      return;
-    }
-    this.store.eliminaRegola(regola.id);
-    this.confermaEliminazione.set(undefined);
+  protected async eliminaRegola(regola: RegolaIstruzione): Promise<void> {
+    const conferma = await this.conferme.chiedi({
+      titolo: `Eliminare «${regola.titolo}»?`,
+      dettaglio: 'La regola smette di valere su ogni risposta. Non si torna indietro.',
+    });
+    if (conferma) this.store.eliminaRegola(regola.id);
   }
 
-  protected eliminaRiferimento(riferimento: DocumentoRiferimento): void {
-    if (this.confermaEliminazione() !== riferimento.id) {
-      this.confermaEliminazione.set(riferimento.id);
-      return;
-    }
-    this.store.eliminaRiferimento(riferimento.id);
-    this.confermaEliminazione.set(undefined);
+  /**
+   * Un riferimento nato dall'Archivio Privato **si toglie**, non si elimina:
+   * il documento resta dov'è, perde solo il ruolo. Dirlo con la stessa
+   * parola dell'eliminazione farebbe rinunciare a un gesto innocuo.
+   */
+  protected async eliminaRiferimento(riferimento: DocumentoRiferimento): Promise<void> {
+    const dallArchivio = Boolean(riferimento.documentoPrivatoId);
+    const conferma = await this.conferme.chiedi({
+      titolo: dallArchivio
+        ? `Togliere il ruolo a «${riferimento.titolo}»?`
+        : `Eliminare «${riferimento.titolo}»?`,
+      dettaglio: dallArchivio
+        ? 'Il documento resta nell’Archivio Privato: smette soltanto di essere un riferimento permanente.'
+        : 'Il documento smette di accompagnare ogni risposta e sparisce dalle istruzioni. Non si torna indietro.',
+      conferma: dallArchivio ? 'Togli il ruolo' : 'Elimina',
+    });
+    if (conferma) this.store.eliminaRiferimento(riferimento.id);
   }
 
   protected cambiaScheda(scheda: Scheda): void {
     this.scheda.set(scheda);
-    this.confermaEliminazione.set(undefined);
   }
 }

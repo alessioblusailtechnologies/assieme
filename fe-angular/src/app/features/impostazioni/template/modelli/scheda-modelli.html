@@ -185,29 +185,6 @@
               </p>
             }
 
-            @if (confermaEliminazione() === m.id) {
-              <div class="modello__conferma" role="alert">
-                <span>Eliminare «{{ m.nome }}»? La chat non potrà più usarlo.</span>
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="pericolo"
-                  type="button"
-                  (click)="elimina(m)"
-                >
-                  Elimina
-                </button>
-                <button
-                  uiBottone
-                  dimensione="piccolo"
-                  variante="testo"
-                  type="button"
-                  (click)="confermaEliminazione.set(undefined)"
-                >
-                  Annulla
-                </button>
-              </div>
-            }
           </li>
         }
       </ul>

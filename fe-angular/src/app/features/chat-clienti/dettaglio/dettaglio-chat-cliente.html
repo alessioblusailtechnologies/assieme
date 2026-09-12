@@ -173,13 +173,7 @@
       Sparisce tutto: l'accesso del cliente e le conversazioni che ci sono
       state. Per chiudere la porta senza perdere niente, sospendi il link.
     </p>
-    @if (confermaEliminazione()) {
-      <button type="button" uiBottone variante="pericolo" (click)="elimina()">
-        Elimina davvero
-      </button>
-    } @else {
-      <button type="button" uiBottone (click)="confermaEliminazione.set(true)">Elimina</button>
-    }
+    <button type="button" uiBottone (click)="elimina()">Elimina</button>
   </ui-accordion>
 } @else {
   <p class="assente">Questa chat non esiste più.</p>

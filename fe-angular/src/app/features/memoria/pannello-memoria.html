@@ -201,63 +201,48 @@
 
                 <span class="ricordo__spazio" aria-hidden="true"></span>
 
-                @if (confermaEliminazione() !== ricordo.id) {
-                  <button
-                    type="button"
-                    class="azione"
-                    (click)="avviaModifica(ricordo)"
-                    uiSuggerimento="Correggi il testo"
-                    aria-label="Correggi il testo del ricordo"
-                  >
-                    <ui-icon name="modifica" [size]="14" />
-                  </button>
-                  <button
-                    type="button"
-                    class="azione"
-                    (click)="alternaAmbito(ricordo)"
-                    [uiSuggerimento]="
-                      ricordo.ambito === 'tenant'
-                        ? 'Rendi personale: smette di valere per i colleghi'
-                        : 'Condividi con l’agenzia: varrà per tutti'
-                    "
-                    [attr.aria-label]="
-                      ricordo.ambito === 'tenant' ? 'Rendi il ricordo personale' : 'Condividi il ricordo con l’agenzia'
-                    "
-                  >
-                    <ui-icon [name]="ricordo.ambito === 'tenant' ? 'utente' : 'condividi'" [size]="14" />
-                  </button>
-                  <button
-                    type="button"
-                    class="azione"
-                    (click)="alternaAttivo(ricordo)"
-                    [uiSuggerimento]="ricordo.attivo ? 'Sospendi: resta qui ma non condiziona più le risposte' : 'Riattiva'"
-                    [attr.aria-label]="ricordo.attivo ? 'Sospendi il ricordo' : 'Riattiva il ricordo'"
-                  >
-                    <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="14" />
-                  </button>
-                  <button
-                    type="button"
-                    class="azione"
-                    (click)="elimina(ricordo)"
-                    uiSuggerimento="Elimina"
-                    aria-label="Elimina il ricordo"
-                  >
-                    <ui-icon name="elimina" [size]="14" />
-                  </button>
-                } @else {
-                  <button uiBottone dimensione="piccolo" variante="pericolo" type="button" (click)="elimina(ricordo)">
-                    <span>Elimina davvero</span>
-                  </button>
-                  <button
-                    uiBottone
-                    dimensione="piccolo"
-                    variante="testo"
-                    type="button"
-                    (click)="confermaEliminazione.set(undefined)"
-                  >
-                    <span>Annulla</span>
-                  </button>
-                }
+                <button
+                  type="button"
+                  class="azione"
+                  (click)="avviaModifica(ricordo)"
+                  uiSuggerimento="Correggi il testo"
+                  aria-label="Correggi il testo del ricordo"
+                >
+                  <ui-icon name="modifica" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="azione"
+                  (click)="alternaAmbito(ricordo)"
+                  [uiSuggerimento]="
+                    ricordo.ambito === 'tenant'
+                      ? 'Rendi personale: smette di valere per i colleghi'
+                      : 'Condividi con l’agenzia: varrà per tutti'
+                  "
+                  [attr.aria-label]="
+                    ricordo.ambito === 'tenant' ? 'Rendi il ricordo personale' : 'Condividi il ricordo con l’agenzia'
+                  "
+                >
+                  <ui-icon [name]="ricordo.ambito === 'tenant' ? 'utente' : 'condividi'" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="azione"
+                  (click)="alternaAttivo(ricordo)"
+                  [uiSuggerimento]="ricordo.attivo ? 'Sospendi: resta qui ma non condiziona più le risposte' : 'Riattiva'"
+                  [attr.aria-label]="ricordo.attivo ? 'Sospendi il ricordo' : 'Riattiva il ricordo'"
+                >
+                  <ui-icon [name]="ricordo.attivo ? 'sospendi' : 'esegui'" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="azione"
+                  (click)="elimina(ricordo)"
+                  uiSuggerimento="Elimina"
+                  aria-label="Elimina il ricordo"
+                >
+                  <ui-icon name="elimina" [size]="14" />
+                </button>
               </footer>
             </li>
           }
