@@ -566,7 +566,11 @@
   border: 1px solid var(--c-line);
   border-bottom: 0;
   border-radius: var(--radius) var(--radius) 0 0;
-  background: var(--c-accent-soft);
+  /* L'accento morbido sarebbe ancora troppo: qui basta l'ombra di una
+     tinta, e il resto lo fa la carta su cui la fascia poggia. Sfumato
+     verso la superficie e non fissato a un colore nuovo, così segue il
+     tema: nel chiaro schiarisce, nello scuro si abbassa. */
+  background: color-mix(in srgb, var(--c-accent-soft) 60%, var(--c-surface));
 }
 
 /* Il campo sotto si accende scrivendo: il bordo della fascia lo segue, o
