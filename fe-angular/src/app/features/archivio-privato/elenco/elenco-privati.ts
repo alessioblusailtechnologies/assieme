@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ArchivioPrivatoStore } from '../archivio-privato-store';
+import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
@@ -58,6 +60,7 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
     CellaStato,
     Checkbox,
     DatePipe,
+    FormsModule,
     Icona,
     Paginazione,
     RouterLink,
@@ -72,6 +75,7 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
 })
 export class ElencoPrivati {
   protected readonly store = inject(ArchivioPrivatoStore);
+  private readonly conferme = inject(ConfermeStore);
 
   protected readonly stati = STATI;
   protected readonly estensioni = ESTENSIONI_DOCUMENTO;
@@ -113,16 +117,18 @@ export class ElencoPrivati {
 
   /**
    * Il titolo dice che cosa si sta guardando: tutto l'archivio, i documenti
-   * di un cliente, o quelli che un cliente non ce l'hanno.
+   * di un cliente, quelli che un cliente non ce l'hanno, o la coda delle
+   * proposte da confermare.
    */
   protected readonly titoloVista = computed(() => {
     if (this.store.senzaCliente()) return 'Senza cliente';
+    if (this.store.daConfermare()) return 'Da confermare';
     return this.store.clienteCorrente()?.nome ?? 'Archivio privato';
   });
 
   /** Fuori da ogni filtro di cliente: il conteggio è quello dell'archivio intero. */
   protected readonly suTutto = computed(
-    () => !this.store.cliente() && !this.store.senzaCliente(),
+    () => !this.store.cliente() && !this.store.senzaCliente() && !this.store.daConfermare(),
   );
 
   /** Le opzioni della tendina dei clienti, con «senza cliente» in coda. */
@@ -141,6 +147,69 @@ export class ElencoPrivati {
     else void this.store.apri(valore);
   }
 
+  // --- Il lavoro in blocco --------------------------------------------------
+
+  /**
+   * A chi intestare i selezionati. È un signal a parte e non il filtro: qui
+   * si scrive, là si guarda, e confonderli vorrebbe dire assegnare per
+   * sbaglio a chi si stava solo cercando.
+   */
+  protected readonly clienteDaAssegnare = signal<string | undefined>(undefined);
+  protected readonly etichettaDaAggiungere = signal('');
+
+  protected intestaSelezionati(): void {
+    const cliente = this.clienteDaAssegnare();
+    if (!cliente) return;
+    this.store.assegna({ clienteId: cliente });
+    this.clienteDaAssegnare.set(undefined);
+  }
+
+  protected etichettaSelezionati(): void {
+    const etichetta = this.etichettaDaAggiungere().trim();
+    if (!etichetta) return;
+    this.store.assegna({ aggiungiEtichette: [etichetta] });
+    this.etichettaDaAggiungere.set('');
+  }
+
+  protected confermaSelezionati(): void {
+    this.store.assegna({ confermaCliente: true });
+  }
+
+  // --- Le etichette come vocabolario ---------------------------------------
+
+  /*
+   * Rinominare ed eliminare un'etichetta si fanno **da dentro il filtro**:
+   * si è appena visto che cosa contiene, e si agisce lì. Una schermata di
+   * gestione a parte vorrebbe dire cambiare il nome di un'etichetta senza
+   * avere sotto gli occhi i documenti che la portano.
+   */
+  protected readonly rinominando = signal(false);
+  protected readonly nomeEtichetta = signal('');
+
+  protected apriRinomina(): void {
+    this.nomeEtichetta.set(this.store.etichetta() ?? '');
+    this.rinominando.set(true);
+  }
+
+  protected confermaRinomina(): void {
+    const vecchia = this.store.etichetta();
+    if (vecchia) this.store.rinominaEtichetta(vecchia, this.nomeEtichetta());
+    this.rinominando.set(false);
+  }
+
+  protected async eliminaEtichetta(): Promise<void> {
+    const nome = this.store.etichetta();
+    if (!nome) return;
+    const quanti = this.store.etichette().find((e) => e.nome === nome)?.documenti ?? 0;
+    const conferma = await this.conferme.chiedi({
+      titolo: `Togliere l'etichetta «${nome}»?`,
+      dettaglio: `Sparisce da ${quanti} ${quanti === 1 ? 'documento' : 'documenti'}. I documenti restano dove sono.`,
+      conferma: 'Togli',
+      tono: 'pericolo',
+    });
+    if (conferma) this.store.eliminaEtichetta(nome);
+  }
+
   protected readonly statoVuoto = computed(() => {
     if (this.store.filtriAttivi()) {
       return {
@@ -153,6 +222,13 @@ export class ElencoPrivati {
         titolo: 'Nessun documento senza cliente',
         descrizione:
           'Ogni documento dell’archivio è intestato a qualcuno. È il momento in cui questa vista serve di meno, ed è una buona notizia.',
+      };
+    }
+    if (this.store.daConfermare()) {
+      return {
+        titolo: 'Niente da confermare',
+        descrizione:
+          'Nessun cliente proposto aspetta una risposta: quello che l’ingestion ha intestato è già stato guardato.',
       };
     }
     if (this.store.clienteCorrente()) {
@@ -181,6 +257,7 @@ export class ElencoPrivati {
       (this.store.tipologia() ? 1 : 0) +
       (this.store.stato() ? 1 : 0) +
       (this.store.etichetta() ? 1 : 0) +
-      (this.store.soloRiferimenti() ? 1 : 0),
+      (this.store.soloRiferimenti() ? 1 : 0) +
+      (this.store.daConfermare() ? 1 : 0),
   );
 }

@@ -152,6 +152,33 @@ describe.skipIf(!pronto)('Clienti · l’anagrafica e il lavoro in blocco', () =
     expect(documenti[0]!.clienteDaConfermare).toBeUndefined();
   });
 
+  it('confermare in blocco spegne la domanda senza riassegnare', async () => {
+    /* È il gesto con cui si svuota la coda delle proposte dopo
+       un'importazione: «sì, quelli che hai proposto vanno bene». Senza,
+       bisognerebbe riassegnare uno per uno ciò che era già giusto. */
+    await pool().query(
+      `update velia.documenti set cliente_da_confermare = true where id = any($1)`,
+      [[DOC_A, DOC_B]],
+    );
+    const coda = await chiedi('GET', '/api/documenti-privati?daConfermare=true');
+    expect(coda.json<PaginaDocumentiPrivati>().elementi.map((d) => d.id).sort()).toEqual([
+      DOC_A,
+      DOC_B,
+    ]);
+
+    const esito = await chiedi('POST', '/api/documenti-privati/assegna', {
+      documenti: [DOC_A, DOC_B],
+      confermaCliente: true,
+    });
+    expect(esito.statusCode).toBe(200);
+
+    const dopo = await chiedi('GET', `/api/documenti-privati?clienteId=${rossi}`);
+    const documenti = dopo.json<PaginaDocumentiPrivati>().elementi;
+    /* Il cliente resta quello: confermare non riassegna. */
+    expect(documenti.every((d) => d.cliente?.id === rossi)).toBe(true);
+    expect(documenti.every((d) => !d.clienteDaConfermare)).toBe(true);
+  });
+
   it('«senza cliente» è una vista a sé', async () => {
     const senza = await chiedi('GET', '/api/documenti-privati?senzaCliente=true');
     const ids = senza.json<PaginaDocumentiPrivati>().elementi.map((d) => d.id);

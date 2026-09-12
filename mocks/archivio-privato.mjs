@@ -345,6 +345,9 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
         if (dati.clienteId === null) delete d.clienteId;
         else d.clienteId = dati.clienteId;
         delete d.clienteDaConfermare;
+      } else if (dati.confermaCliente) {
+        /* Confermare non riassegna: il cliente proposto è già quello giusto. */
+        delete d.clienteDaConfermare;
       }
       const aggiunte = new Set([...(d.etichette ?? []), ...(dati.aggiungiEtichette ?? [])]);
       for (const e of dati.togliEtichette ?? []) aggiunte.delete(e);

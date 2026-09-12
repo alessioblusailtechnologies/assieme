@@ -126,6 +126,13 @@ export const schemaAssegnazione = z
     clienteId: z.string().uuid().nullable().optional(),
     aggiungiEtichette: z.array(etichettaCliente).max(30).optional(),
     togliEtichette: z.array(etichettaCliente).max(30).optional(),
+    /**
+     * «Sì, quelli proposti vanno bene»: spegne `cliente_da_confermare` senza
+     * dire a chi, perché il cliente è già quello giusto. È il gesto con cui
+     * si svuota la coda delle proposte dopo un'importazione, e senza di
+     * questo si dovrebbe riassegnare uno per uno ciò che era già giusto.
+     */
+    confermaCliente: z.boolean().optional(),
   })
   .strict();
 

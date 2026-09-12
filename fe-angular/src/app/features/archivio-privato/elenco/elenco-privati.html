@@ -136,6 +136,70 @@
         <label for="solo-riferimenti">Solo documenti di riferimento</label>
       </div>
 
+      <!--
+        La coda delle proposte: quello che l'ingestion ha intestato e nessuno
+        ha ancora guardato. È lavoro da fare, non un filtro fra gli altri, ed
+        è il motivo per cui si apre questa schermata dopo un'importazione.
+      -->
+      <div class="filtri__interruttore">
+        <ui-checkbox
+          [valore]="store.daConfermare()"
+          (valoreChange)="$event ? store.apriDaConfermare() : store.apri(undefined)"
+          inputId="da-confermare"
+        />
+        <label for="da-confermare">Solo i clienti da confermare</label>
+      </div>
+
+      <!--
+        Rinominare ed eliminare un'etichetta si fanno da qui, mentre si
+        guardano i documenti che la portano: cambiare il nome di
+        un'etichetta senza averli sotto gli occhi è come rinominare una
+        cartella a occhi chiusi.
+      -->
+      @if (store.etichetta(); as scelta) {
+        @if (rinominando()) {
+          <div class="filtri__etichetta">
+            <input
+              uiCampo
+              type="text"
+              [(ngModel)]="nomeEtichetta"
+              name="nomeEtichetta"
+              [attr.aria-label]="'Nuovo nome per ' + scelta"
+              (keydown.enter)="$event.preventDefault(); confermaRinomina()"
+            />
+            <button uiBottone dimensione="piccolo" type="button" (click)="confermaRinomina()">
+              Rinomina
+            </button>
+            <button
+              uiBottone
+              variante="testo"
+              dimensione="piccolo"
+              type="button"
+              (click)="rinominando.set(false)"
+            >
+              Annulla
+            </button>
+          </div>
+        } @else {
+          <div class="filtri__etichetta">
+            <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="apriRinomina()">
+              <ui-icon name="modifica" [size]="13" />
+              <span>Rinomina «{{ scelta }}»</span>
+            </button>
+            <button
+              uiBottone
+              variante="testo"
+              dimensione="piccolo"
+              type="button"
+              (click)="eliminaEtichetta()"
+            >
+              <ui-icon name="elimina" [size]="13" />
+              <span>Togli da tutti</span>
+            </button>
+          </div>
+        }
+      }
+
       @if (store.filtriAttivi()) {
         <button
           uiBottone
@@ -177,13 +241,92 @@
     </p>
   }
 
+  <!--
+    Il lavoro in blocco: il gesto del giorno dopo l'importazione, quando
+    trenta documenti sono dello stesso cliente e farlo uno per uno vuol dire
+    non farlo. La barra compare solo con qualcosa di selezionato, e dice
+    quanti sono prima di dire cosa si può fargli.
+  -->
+  @if (store.selezionati(); as quanti) {
+    <section class="selezione" aria-label="Azioni sui documenti selezionati">
+      <span class="selezione__conta mono">
+        {{ quanti }} {{ quanti === 1 ? 'selezionato' : 'selezionati' }}
+      </span>
+
+      <ui-select
+        class="selezione__campo"
+        [valore]="clienteDaAssegnare()"
+        (valoreChange)="clienteDaAssegnare.set($any($event))"
+        [opzioni]="store.clienti()"
+        campoEtichetta="nome"
+        campoValore="id"
+        placeholder="Intesta a…"
+        [azzerabile]="true"
+        ariaLabel="Intesta i selezionati a un cliente"
+      />
+      <button
+        uiBottone
+        variante="primario"
+        dimensione="piccolo"
+        type="button"
+        [disabled]="!clienteDaAssegnare()"
+        (click)="intestaSelezionati()"
+      >
+        Intesta
+      </button>
+
+      <label class="ui-campo-icona selezione__campo">
+        <ui-icon name="aggiungi" [size]="14" />
+        <input
+          uiCampo
+          type="text"
+          [(ngModel)]="etichettaDaAggiungere"
+          name="etichettaDaAggiungere"
+          placeholder="Etichetta e Invio"
+          aria-label="Aggiungi un'etichetta ai selezionati"
+          (keydown.enter)="$event.preventDefault(); etichettaSelezionati()"
+        />
+      </label>
+
+      @if (store.selezioneConProposte()) {
+        <!-- Confermare non riassegna: il cliente proposto è già quello giusto. -->
+        <button uiBottone dimensione="piccolo" type="button" (click)="confermaSelezionati()">
+          <ui-icon name="pronto" [size]="14" />
+          <span>Conferma il cliente proposto</span>
+        </button>
+      }
+
+      <button
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
+        type="button"
+        class="selezione__annulla"
+        (click)="store.deseleziona()"
+      >
+        Deseleziona
+      </button>
+    </section>
+  }
+
   <!-- ---------- Documenti ---------- -->
 
   <section class="sezione sezione--documenti" aria-label="Documenti">
     <div class="sezione__testa">
       <h2 class="sezione__nome">Documenti</h2>
 
-      <!-- Elenco o griglia, come in un gestore di file. -->
+      @if (documenti().length) {
+        <div class="tutti">
+          <ui-checkbox
+            [valore]="store.tuttiSelezionati()"
+            (valoreChange)="store.commutaTutti()"
+            inputId="tutti-selezionati"
+          />
+          <label for="tutti-selezionati">Seleziona tutti</label>
+        </div>
+      }
+
+      <!-- Elenco o griglia: due modi di guardare lo stesso elenco. -->
       <div class="vista" role="group" aria-label="Modo di visualizzazione">
         <button
           type="button"
@@ -244,37 +387,51 @@
     } @else {
       <div class="documenti" [class.is-griglia]="modo() === 'griglia'">
         @for (doc of documenti(); track doc.id) {
-          <a class="doc" [routerLink]="['/archivio/privato', doc.id]">
-            <span class="doc__icona">
-              <ui-icon name="documento" [size]="modo() === 'griglia' ? 24 : 17" />
+          <div class="doc" [class.is-scelto]="store.selezionato(doc.id)">
+            <span class="doc__scelta">
+              <ui-checkbox
+                [valore]="store.selezionato(doc.id)"
+                (valoreChange)="store.commuta(doc.id)"
+                [inputId]="'scelto-' + doc.id"
+                [attr.aria-label]="'Seleziona ' + doc.titolo"
+              />
             </span>
 
-            <span class="doc__corpo">
-              <span class="doc__titolo" [title]="doc.titolo">{{ doc.titolo }}</span>
-              <span class="doc__sotto">
-                @if (doc.cliente) {
-                  <span class="doc__cliente">{{ doc.cliente.nome }}</span>
-                } @else if (doc.riferimentoCliente) {
-                  <span class="doc__cliente">{{ doc.riferimentoCliente }}</span>
-                }
-                @for (e of doc.etichette.slice(0, 2); track e) {
-                  <span class="doc__etichetta">{{ e }}</span>
-                }
+            <a class="doc__apri" [routerLink]="['/archivio/privato', doc.id]">
+              <span class="doc__icona">
+                <ui-icon name="documento" [size]="modo() === 'griglia' ? 24 : 17" />
               </span>
-            </span>
 
-            <span class="doc__coda">
-              @if (doc.documentoDiRiferimento) {
-                <ui-icon
-                  name="riferimenti"
-                  [size]="13"
-                  etichetta="Usato come documento di riferimento"
-                />
-              }
-              <app-cella-stato [documento]="doc" />
-              <span class="doc__data mono">{{ doc.caricatoIl | date: 'dd/MM/yy' }}</span>
-            </span>
-          </a>
+              <span class="doc__corpo">
+                <span class="doc__titolo" [title]="doc.titolo">{{ doc.titolo }}</span>
+                <span class="doc__sotto">
+                  @if (doc.cliente) {
+                    <span class="doc__cliente">{{ doc.cliente.nome }}</span>
+                    @if (doc.clienteDaConfermare) {
+                      <span class="doc__proposta">da confermare</span>
+                    }
+                  } @else if (doc.riferimentoCliente) {
+                    <span class="doc__cliente">{{ doc.riferimentoCliente }}</span>
+                  }
+                  @for (e of doc.etichette.slice(0, 2); track e) {
+                    <span class="doc__etichetta">{{ e }}</span>
+                  }
+                </span>
+              </span>
+
+              <span class="doc__coda">
+                @if (doc.documentoDiRiferimento) {
+                  <ui-icon
+                    name="riferimenti"
+                    [size]="13"
+                    etichetta="Usato come documento di riferimento"
+                  />
+                }
+                <app-cella-stato [documento]="doc" />
+                <span class="doc__data mono">{{ doc.caricatoIl | date: 'dd/MM/yy' }}</span>
+              </span>
+            </a>
+          </div>
         }
       </div>
 

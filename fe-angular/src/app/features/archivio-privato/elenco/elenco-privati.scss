@@ -249,12 +249,9 @@ ui-zona-caricamento {
 .doc {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
   min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
   border-bottom: 1px solid var(--c-line-soft);
   color: inherit;
-  text-decoration: none;
   transition: background var(--dur-fast) var(--ease-brand);
 }
 
@@ -412,6 +409,92 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
+/* ---------- Il lavoro in blocco ---------- */
+
+/*
+ * La barra compare solo con qualcosa di selezionato, e dice quanti sono
+ * prima di dire cosa si può fargli: il numero è la cosa che si controlla
+ * prima di scrivere su trenta documenti insieme.
+ */
+.selezione {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-accent);
+  border-radius: var(--radius);
+  background: var(--c-accent-soft);
+}
+
+.selezione__conta {
+  color: var(--c-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.selezione__campo {
+  min-width: 12rem;
+}
+
+.selezione__campo input {
+  width: 100%;
+}
+
+.selezione__annulla {
+  margin-left: auto;
+}
+
+.tutti {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-left: auto;
+  color: var(--c-text-3);
+  font-size: var(--t-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* La riga: la casella sta fuori dal collegamento, o selezionare aprirebbe
+   il documento. */
+.doc__scelta {
+  display: flex;
+  align-items: center;
+  padding-left: var(--sp-4);
+}
+
+.doc__apri {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  color: inherit;
+  text-decoration: none;
+}
+
+.doc.is-scelto {
+  background: var(--c-accent-soft);
+}
+
+/* Il cliente proposto e non ancora confermato si vede: è una domanda
+   aperta, non un fatto. */
+.doc__proposta {
+  flex: none;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-pieno);
+  background: var(--c-page-alt);
+  color: var(--c-warn);
+}
+
+.filtri__etichetta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-basis: 100%;
+}
+
 /* ---------- Schermi stretti ---------- */
 
 @media (max-width: 900px) {
@@ -434,8 +517,10 @@ ui-stato-vuoto {
   }
 
   /* Su schermo stretto la coda della riga scende sotto invece di stringere
-     il titolo fino a renderlo illeggibile. */
-  .doc {
+     il titolo fino a renderlo illeggibile. A mandare a capo è il
+     **collegamento**, non la riga: la casella di selezione sta fuori da lui
+     e deve restare dov'è. */
+  .doc__apri {
     flex-wrap: wrap;
   }
 
@@ -443,5 +528,16 @@ ui-stato-vuoto {
     width: 100%;
     padding-left: calc(2rem + var(--sp-3));
     justify-content: flex-start;
+  }
+
+  /* La barra del lavoro in blocco a colonna: tre campi affiancati su un
+     telefono non sono campi. */
+  .selezione {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selezione__annulla {
+    margin-left: 0;
   }
 }

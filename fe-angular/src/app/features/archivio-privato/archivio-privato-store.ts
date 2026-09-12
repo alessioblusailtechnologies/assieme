@@ -17,7 +17,7 @@ import {
   TipologiaDocumento,
 } from '@core/models';
 import { ClientiApi } from '@core/api/clienti-api';
-import { DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
+import { Assegnazione, DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
 
 /** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione. */
 const MS_INTERROGAZIONE = 2000;
@@ -67,6 +67,8 @@ export class ArchivioPrivatoStore {
 
   readonly cliente = computed<Id | undefined>(() => this.parametri()?.get('cliente') ?? undefined);
   readonly senzaCliente = computed(() => this.parametri()?.get('vista') === 'senza-cliente');
+  /** La coda di lavoro: le proposte dell'ingestion ancora da confermare. */
+  readonly daConfermare = computed(() => this.parametri()?.get('vista') === 'da-confermare');
 
   private readonly ricercaAttesa = toSignal(
     toObservable(this.ricerca).pipe(debounceTime(300), distinctUntilChanged()),
@@ -82,6 +84,7 @@ export class ArchivioPrivatoStore {
       this.ricercaAttesa(),
       this.cliente(),
       this.senzaCliente(),
+      this.daConfermare(),
     ],
     computation: () => 1,
   });
@@ -96,6 +99,7 @@ export class ArchivioPrivatoStore {
     soloRiferimenti: this.soloRiferimenti(),
     clienteId: this.senzaCliente() ? undefined : this.cliente(),
     senzaCliente: this.senzaCliente(),
+    daConfermare: this.daConfermare(),
     pagina: this.pagina(),
     perPagina: this.perPagina(),
   }));
@@ -280,6 +284,102 @@ export class ArchivioPrivatoStore {
       relativeTo: this.rotta,
       queryParams: { cliente: null, vista: 'senza-cliente' },
       queryParamsHandling: 'merge',
+    });
+  }
+
+  /** La coda delle proposte: quello che l'ingestion ha intestato e nessuno ha ancora guardato. */
+  apriDaConfermare(): Promise<boolean> {
+    return this.router.navigate([], {
+      relativeTo: this.rotta,
+      queryParams: { cliente: null, vista: 'da-confermare' },
+      queryParamsHandling: 'merge',
+    });
+  }
+
+  // --- La selezione -------------------------------------------------------
+
+  /**
+   * Quali documenti sono selezionati.
+   *
+   * Non sopravvive a un cambio di filtro, e **non deve**: «assegna i
+   * selezionati» dopo che la pagina è cambiata sotto vorrebbe dire scrivere
+   * su documenti che non si stanno più guardando.
+   */
+  readonly selezione = signal<ReadonlySet<Id>>(new Set());
+
+  readonly selezionati = computed(() => this.selezione().size);
+
+  readonly tuttiSelezionati = computed(
+    () => this.documenti().length > 0 && this.documenti().every((d) => this.selezione().has(d.id)),
+  );
+
+  /** Vero se fra i selezionati c'è almeno una proposta da confermare. */
+  readonly selezioneConProposte = computed(() =>
+    this.documenti().some((d) => this.selezione().has(d.id) && d.clienteDaConfermare),
+  );
+
+  commuta(id: Id): void {
+    const scelti = new Set(this.selezione());
+    if (scelti.has(id)) scelti.delete(id);
+    else scelti.add(id);
+    this.selezione.set(scelti);
+  }
+
+  selezionato(id: Id): boolean {
+    return this.selezione().has(id);
+  }
+
+  commutaTutti(): void {
+    this.selezione.set(
+      this.tuttiSelezionati() ? new Set() : new Set(this.documenti().map((d) => d.id)),
+    );
+  }
+
+  deseleziona(): void {
+    this.selezione.set(new Set());
+  }
+
+  /**
+   * Cliente ed etichette su tutta la selezione, in una richiesta sola.
+   *
+   * È il gesto del giorno dopo l'importazione: trenta documenti dello stesso
+   * cliente, e farlo uno per uno vuol dire non farlo.
+   */
+  assegna(dati: Omit<Assegnazione, 'documenti'>): void {
+    const documenti = [...this.selezione()];
+    if (!documenti.length) return;
+    this.api.assegna({ ...dati, documenti }).subscribe({
+      next: () => {
+        this.deseleziona();
+        this.ricaricaTutto();
+      },
+    });
+  }
+
+  // --- Le etichette come vocabolario --------------------------------------
+
+  /**
+   * Rinominare un'etichetta su tutto l'archivio, che è anche il modo di
+   * **fonderne due**: basta dare a una il nome dell'altra. Senza questo,
+   * un'etichetta scritta male resta scritta male per sempre, perché
+   * correggerla documento per documento non lo fa nessuno.
+   */
+  rinominaEtichetta(vecchia: string, nuova: string): void {
+    if (!nuova.trim() || nuova.trim() === vecchia) return;
+    this.api.rinominaEtichetta(vecchia, nuova.trim()).subscribe({
+      next: () => {
+        if (this.etichetta() === vecchia) this.etichetta.set(nuova.trim());
+        this.ricaricaTutto();
+      },
+    });
+  }
+
+  eliminaEtichetta(nome: string): void {
+    this.api.eliminaEtichetta(nome).subscribe({
+      next: () => {
+        if (this.etichetta() === nome) this.etichetta.set(undefined);
+        this.ricaricaTutto();
+      },
     });
   }
 

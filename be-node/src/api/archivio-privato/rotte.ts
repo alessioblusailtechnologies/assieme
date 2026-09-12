@@ -627,6 +627,10 @@ export function registraRotteArchivioPrivato(
       if (dati.clienteId !== undefined) {
         if (dati.clienteId !== null) await esisteCliente(client, dati.clienteId, tenantId);
         assegnazioni.push(`cliente_id = ${par(dati.clienteId)}`, `cliente_da_confermare = false`);
+      } else if (dati.confermaCliente) {
+        /* Confermare senza riassegnare: il cliente resta quello proposto, e
+           smette di essere una domanda aperta. */
+        assegnazioni.push(`cliente_da_confermare = false`);
       }
       const aggiungi = [...new Set(dati.aggiungiEtichette ?? [])];
       const togli = [...new Set(dati.togliEtichette ?? [])];

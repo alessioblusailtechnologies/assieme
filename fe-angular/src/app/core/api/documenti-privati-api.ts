@@ -32,6 +32,8 @@ export interface Assegnazione {
   clienteId?: Id | null;
   aggiungiEtichette?: string[];
   togliEtichette?: string[];
+  /** «Sì, quelli proposti vanno bene»: spegne la domanda senza riassegnare. */
+  confermaCliente?: boolean;
 }
 
 /** Esito del caricamento: i documenti creati, già in coda di elaborazione. */

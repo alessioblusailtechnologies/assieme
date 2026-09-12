@@ -6,7 +6,7 @@ Non è un rimescolamento di schermate, è un **cambio di asse portante**. Dalla 
 
 E si porta dietro una semplificazione vera. Sparisce il pezzo più fragile della Fase 10 — decidere in quale ramo di un albero libero collocare un documento (`archivio/collocazione.ts`, `convenzione.ts`, `albero.ts`, il tool `proponi_riordino`) — e resta la risoluzione del cliente (`archivio/clienti.ts`), che è la parte buona, già scritta e già collaudata: normalizzazione, alias, identificativi fiscali, candidati per somiglianza, e il modello solo sugli ambigui.
 
-**Stato**: **Fasi 1, 2, 3 e 4 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, e la sezione Clienti si vede. Restano la 5 (lavoro in blocco nell'archivio), la 6 (chat dalla scheda) e la 7 (motore).
+**Stato**: **Fasi 1, 2, 3, 4 e 5 fatte** (12/09/2026): l'albero è smontato, le API dei clienti ci sono, l'ingestion intesta ed etichetta da sé, la sezione Clienti si vede e l'archivio si lavora in blocco. Restano la 6 (chat dalla scheda) e la 7 (motore).
 
 **Niente di tutto questo è in produzione**, e il committente può svuotare l'Archivio Privato (12/09/2026). Quindi non c'è nessuna migrazione di dati da progettare: le tabelle dell'albero si eliminano subito e il codice che le serve se ne va con loro, nella prima fase invece che nell'ultima. L'Archivio **Pubblico** non si tocca: i lotti trascritti (Zurich, HDI, Unipol, Allianz, AXA, Generali, Nobis…) non hanno niente a che vedere con le cartelle, che sono del tenant.
 
@@ -204,11 +204,19 @@ Prima, una toppa dovuta: creare una chat cliente rispondeva 400 da quando `clien
 
 *Collaudato*: schermate a 1440 e a 390 (elenco, scheda, documenti): nessuno scorrimento orizzontale, una colonna sola sul telefono. `ng lint` e 235 test FE verdi.
 
-### Fase 5 · L'Archivio Privato piatto
+### ✅ Fase 5 · L'Archivio Privato piatto (12/09/2026)
 
-Metà è arrivata con la Fase 1 (via albero, briciole e schede delle cartelle; filtro per cliente e «Senza cliente»). Resta il lavoro in blocco, che è quello che serve il giorno dell'importazione: selezione multipla con assegnazione massiva di cliente ed etichette, barra delle etichette con rinomina e fusione, la coda dei documenti che aspettano una conferma di cliente, e il collegamento dalla riga alla scheda del cliente.
+Metà era arrivata con la Fase 1 (via albero e briciole; filtro per cliente e «Senza cliente»). Qui il **lavoro in blocco**, che è quello che serve il giorno dell'importazione: una casella su ogni riga, «Seleziona tutti», e una barra che compare solo con qualcosa di selezionato — quanti sono, a chi intestarli, che etichetta aggiungere.
 
-*Collaudo*: schermate desktop e mobile; ritrovare un documento noto in meno di tre gesti.
+Tre scelte che vale la pena ricordare:
+
+- **Confermare non riassegna.** `POST /api/documenti-privati/assegna` accetta `confermaCliente: true`: spegne la domanda lasciando il cliente che l'ingestion aveva proposto. È il gesto con cui si svuota la coda dopo un'importazione, e senza si dovrebbe riassegnare uno per uno ciò che era già giusto.
+- **Le etichette si rinominano da dentro il filtro.** Si filtra per un'etichetta, si vede che cosa contiene, e lì accanto la si rinomina o la si toglie da tutti. Una schermata di gestione a parte vorrebbe dire cambiare il nome di un'etichetta senza avere sotto gli occhi i documenti che la portano; e rinominarla nel nome di un'altra è come si fondono.
+- **La selezione non sopravvive a un cambio di filtro**, per costruzione: «assegna i selezionati» dopo che la pagina è cambiata sotto vorrebbe dire scrivere su documenti che non si stanno più guardando.
+
+La coda delle proposte («Solo i clienti da confermare») ha una porta nei filtri e un indirizzo suo (`?vista=da-confermare`): un filtro che esiste solo nell'URL non lo trova nessuno.
+
+*Collaudato*: 5 test nuovi sullo store (la selezione, l'assegnazione che svuota la selezione, il filtro che segue l'etichetta rinominata) e 1 d'integrazione sulla conferma in blocco; il giro completo provato in un Chrome vero — seleziona, scegli il cliente, «Intesta», e il documento esce dalla vista «senza cliente» (19 → 18) mentre la barra si chiude. **Difetto trovato guardando il telefono**: la riga era diventata un contenitore con dentro il collegamento, e la regola per schermi stretti mandava a capo il contenitore invece del collegamento — i titoli sparivano. Corretto, e riguardato.
 
 ### Fase 6 · Le chat cliente dentro il cliente
 
