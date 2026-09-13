@@ -33,10 +33,16 @@ quindi il modulo va assemblato PRIMA e le norme si copiano DOPO.
 
 Il giro completo su un set è più in basso, in «Il giro completo su un set».
 
-Il lotto Unipol lasciato a metà ha un piano suo:
-**PIANO-ARCHIVIO-UNIPOL.md**. Al 13/09/2026 quello viene prima di
-questo: ha tre set già trascritti per intero e mai caricati, che aprono
-tre rami nuovi per Unipol al solo costo dei controlli e dell'INDICE.
+**Il lotto Unipol è stato chiuso il 13/09/2026** fino al passo 3
+(**PIANO-ARCHIVIO-UNIPOL.md**): Unipol è passata da tre rami a otto e il
+catalogo da 317 a 373 documenti. Di quel piano resta solo il passo 4, le
+imprese.
+
+Le altre tre compagnie della demo, HDI, Nobis e Groupama, coprono **un
+ramo solo** (auto) e hanno un piano loro, censito lo stesso giorno:
+**PIANO-ARCHIVIO-HDI-NOBIS-GROUPAMA.md**. Quattro set a compagnia, circa
+180 pagine ciascuna per HDI e Nobis, aprono quattro rami nuovi a testa:
+per rami-per-token è il lavoro con la resa più alta che resta.
 
 ## Perché
 
@@ -161,11 +167,74 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 | 8 | Immagina Adesso Casa | casa | 28/06/2025 | 140 | **in archivio** (13/09) |
 | 9 | Immagina Adesso Salute e Benessere | salute | 11/07/2026 | 366 | **rimandato** (13/09): vedi «Da dove riprendere» |
 
-Lotto 2 (mobilità estesa): Altri Veicoli, Veicoli commerciali, Macchine
-agricole, Ruote da Collezione (con la 10/2026 che entra il 1° ottobre),
-GenMar, Sei in Sicurezza in Circolazione.
-Lotto 3 (imprese e professioni): ATTIVA Commercio, Imprese&Artigiani,
-Turismo, Cyber Lion, Professione Sanitaria e Liberale. Apre `ram-rc-prof`.
+## Lotto 2, mobilità: censito il 13/09/2026, pronto da procurare
+
+**Perché viene prima del resto.** La mobilità è l'unica linea di Generali
+visibilmente incompleta rispetto alle altre compagnie della demo: Unipol,
+Zurich, HDI e Nobis hanno tutte vetture, moto, autocarri, natanti e
+micromobilità, Generali in archivio ha solo vetture e moto. Non apre rami
+nuovi, chiude un buco su prodotti che si vendono davvero.
+
+I PDF **non sono ancora scaricati**: il lotto va procurato con
+`/procura-set generali auto`, oppure a mano dagli URL qui sotto. Prefisso
+comune: `https://www.generali.it/cmsassets/site/<uuid>/<nome>`.
+
+| # | Set | Pagine | Forma | Edizione | Pagina prodotto (sotto `generali.it`) |
+|---|---|---|---|---|---|
+| 1 | **ATTIVA Veicoli commerciali** (autocarri e furgoni) | 130 | set unico | Cond. 05/2025, DIP 05/25, DIPA 07/26 | `/assicurazione-autocarro-e-mezzi-agricoli/attiva-veicoli-commerciali-assicurazione-autocarro/` |
+| 2 | **ATTIVA Macchine agricole** (trattori e mezzi agricoli) | 96 | set unico | Cond. 01/10/2025, DIPA 23/07/26 | `/assicurazione-autocarro-e-mezzi-agricoli/macchine-agricole-assicurazione-mezzi-agricoli/` |
+| 3 | **Sei in Auto - Altri Veicoli** (autobus, macchine operatrici) | 74 | set unico | 01/2026 | `/assicurazione-autocarro-e-mezzi-agricoli/sei-in-auto-altri-veicoli-assicurazione-autobus-macchine-operatrici/` |
+| 4 | **Ruote da Collezione** (auto e moto storiche) | 64 | set unico | **10/2026**, Mod. 1550S.O26 | `/assicurazione-auto/ruote-da-collezione-assicurazione-auto-storiche/` |
+| 5 | **GenMar** (barche, natanti, fuoribordo) | 54 | set unico | Mod. 61501T23, Cond. 01/01/2019, DIPA 23/07/26 | `/assicurazione-barca/genmar-assicurazione-barca/` |
+| 6 | **Sei in Sicurezza in Circolazione - Veicoli** | 27 | **a pezzi: 3** | Mod. SC02/05, Cond. 01.06.2017, DIPA 10.02.2026 | `/assicurazione-auto/sei-in-sicurezza-in-circolazione-assicurazione-conducente/` |
+| 7 | **Sei in Sicurezza in Circolazione - Veicoli Regolabile Premio** | 23 | **a pezzi: 3** | Mod. SC03/04, Cond. 22.10.2016, DIPA 10.02.2026 | stessa pagina |
+| | **totale** | **468** | | | |
+
+**Tre appendici che costano quasi nulla** e completano set già in
+archivio o di questo lotto:
+
+| Appendice | Pagine | A quale set |
+|---|---|---|
+| Appendice Immagina Strade Nuove con Telematica Live Box Top e Next | 4 | Immagina Strade Nuove, **già in archivio**: va aggiunta come documento all'edizione esistente |
+| Appendice Monopattini Elettrici | 1 | Immagina Strade Nuove Passione Moto, **già in archivio** |
+| Appendice con Telematica | 4 | ATTIVA Veicoli commerciali, di questo lotto |
+
+Le prime due sono l'unica cosa che Generali pubblica su telematica e
+monopattini: nove pagine in tutto, e chiudono due domande che oggi in
+demo non hanno risposta.
+
+**Cose verificate, da non ricontrollare:**
+
+- **Ruote da Collezione: prendere la 10/2026.** È già online accanto alla
+  02/2021, etichettata «per contratti e preventivi con decorrenza dal 1°
+  ottobre 2026». La 02/2021 (50 pagine) resta scaricabile come storica ma
+  non serve.
+- **Sei in Sicurezza è in due varianti** («Veicoli» e «Veicoli Regolabile
+  Premio»), tre file ciascuna, da concatenare in due set separati
+  nell'ordine DIP → DIP aggiuntivo → Condizioni. Sono i documenti più
+  vecchi del lotto (condizioni 2016 e 2017) ma il DIP aggiuntivo è
+  aggiornato al 10.02.2026: sono vivi.
+- **Non esiste altro.** Le pagine di categoria auto, moto, autocarro e
+  barca elencano esattamente i prodotti qui sopra più quelli già in
+  archivio. A brand Cattolica esistono i paralleli «Active Veicoli
+  AUTOCARRI» e «Active Natanti», in un indice a parte: contano solo se
+  l'agenzia viene da Cattolica.
+- Il sito etichetta le Macchine agricole «Ed. O2025», con una O al posto
+  dello zero: l'edizione vera, dalla copertina, è 01/10/2025.
+
+**Quanto costa**: coi consumi misurati (13-16 mila token a pagina sui set
+grandi, 21-25 mila sugli spezzoni piccoli) il lotto vale **circa 9
+milioni di token**, cioè una sessione piena. Un set alla volta, un commit
+per set, come da «Il giro completo su un set».
+
+## Lotto 3, imprese e professioni: da censire
+
+ATTIVA Commercio (17 file), Imprese&Artigiani (9), Turismo (8),
+Agricoltura (9), Cyber Lion (file unico), Professione Sanitaria (2 set),
+Professione Liberale (**un set per professione**). Apre `ram-rc-prof`,
+che è vuoto per tutte e nove le compagnie. È il blocco più pesante e più
+frammentato del catalogo Generali: prima di attaccarlo serve un
+censimento suo, come quello fatto per la mobilità.
 
 ## Quanto costa, misurato
 

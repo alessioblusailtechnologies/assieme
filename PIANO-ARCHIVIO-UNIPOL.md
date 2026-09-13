@@ -46,6 +46,13 @@ condominio** di tre compagnie.
 
 Resta solo il **passo 4**, le imprese da zero: 792 pagine, cinque set.
 
+**Prima del passo 4 conviene guardare altrove.** Unipol copre ormai otto
+rami; le altre compagnie della demo no. Generali ha la linea mobilità
+incompleta (**PIANO-ARCHIVIO-GENERALI.md**, «Lotto 2, mobilità»), e HDI,
+Nobis e Groupama coprono **un ramo solo**
+(**PIANO-ARCHIVIO-HDI-NOBIS-GROUPAMA.md**): lì quattro set aprono quattro
+rami, qui 792 pagine aggiungono profondità a un ramo che Unipol ha già.
+
 ## Perché
 
 Va data in demo l'applicativo a un agente che lavora con **Generali,
