@@ -20,20 +20,19 @@ Stampa, set per set, quante pagine sono trascritte e **quali mancano**. È
 la verità sul disco: il conteggio qui sotto è una fotografia del 13/09, il
 censimento è sempre aggiornato.
 
-**Tre set sono già trascritti per intero e non sono mai stati caricati.**
-Sono il lavoro più economico che c'è: la trascrizione, che è l'80% del
-costo, è già pagata. Vanno solo assemblati, passati ai testimoni, al
-secondo sguardo sulle segnalate, dotati di INDICE e caricati.
+**Il passo 1 è FATTO** (13/09/2026). I tre set già trascritti e mai
+caricati sono in archivio, un commit per set:
 
-| Set | Ramo | Ed. | Pagine | Apre |
+| Set | Ramo | Ed. | Pagine | Commit |
 |---|---|---|---|---|
-| Unica Casa | `casa` | 01/10/2025 | 96 | `ram-casa` per Unipol |
-| Unica Infortuni | `infortuni` | 01/10/2025 | 110 | `ram-infortuni` per Unipol |
-| Tutela Legale Aziende | `tutela` | 01/03/2026 | 44 | `ram-tutela` per Unipol |
+| Tutela Legale Aziende | `tutela` | 01/03/2026 | 44 | `3cec00e` |
+| Unica Infortuni | `infortuni` | 01/10/2025 | 110 | `57d66a7` |
+| Unica Casa | `casa` | 01/10/2025 | 96 | `ebd9f75` |
 
-**Attenzione**: i tre set **non** sono assemblati in
-`archivio-pubblico/unipolsai/` (lì ci sono solo auto, cyber e imprese).
-L'assemblaggio è un comando, le trascrizioni ci sono tutte.
+Unipol passa da tre rami a sei: auto, imprese, cyber, **tutela**,
+**infortuni**, **casa**. Il catalogo va da 317 a 331 documenti.
+
+La prossima sessione riparte dal **passo 2**, i cinque parziali.
 
 ## Perché
 
@@ -42,10 +41,12 @@ Zurich, Nobis, Groupama, HDI e Unipol**. In demo l'archivio pubblico è
 condiviso: l'agente cerca i suoi prodotti, e dove non c'è nulla la
 risposta è «non lo so».
 
-Oggi Unipol in archivio è **solo auto, imprese e cyber**: chi chiede «la
-casa di Unipol», «gli infortuni», «la tutela legale» si sente rispondere
-«non lo so» su materiale che abbiamo già trascritto. È il buco più
-stupido del catalogo, ed è quello che si chiude prima.
+Fino al 13/09 Unipol in archivio era **solo auto, imprese e cyber**: chi
+chiedeva «la casa di Unipol», «gli infortuni», «la tutela legale» si
+sentiva rispondere «non lo so» su materiale già trascritto. Era il buco
+più stupido del catalogo, ed è stato il primo a chiudersi. **Restano
+scoperti**: salute, viaggi, animali e condominio (passo 3), e il grosso
+delle imprese (passo 4).
 
 ## Come siamo messi, set per set (13/09/2026)
 
@@ -68,12 +69,12 @@ Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 | Km&Servizi Monopattini elettrici | 21/56 | mancano 8-10 e 25-56 |
 | Navigare Unità da diporto | 23/72 | mancano 8-10, 20 e 28-72 |
 
-### Lotto casa e persona (8 set) - niente in archivio
+### Lotto casa e persona (8 set) - 2 in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
-| Unica Casa | 96/96 | **pronto da caricare** |
-| Unica Infortuni | 110/110 | **pronto da caricare** |
+| Unica Casa | 96/96 | **in archivio** |
+| Unica Infortuni | 110/110 | **in archivio** |
 | Unica Famiglia | 37/76 | mancano 29-30 e 40-76 |
 | Unica Mobilità | 14/88 | mancano 7-10 e 19-88 |
 | Condominio Più | 0/112 | da cominciare |
@@ -81,11 +82,11 @@ Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 | Unica Salute | 0/74 | da cominciare |
 | Unica Viaggio | 0/64 | da cominciare |
 
-### Lotto imprese (8 set) - niente in archivio
+### Lotto imprese (8 set) - 1 in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
-| Tutela Legale Aziende | 44/44 | **pronto da caricare** |
+| Tutela Legale Aziende | 44/44 | **in archivio** (ramo `tutela`) |
 | Tutela Legale Professionisti | 24/44 | mancano 23-30 e 33-44 |
 | Focus Impresa | 0/204 | da cominciare |
 | Agricoltura e Servizi | 0/204 | da cominciare |
@@ -99,9 +100,10 @@ Ufficio e Studi, Scudo Cyber in due edizioni.
 
 ## L'ordine di lavoro
 
-1. **I tre set pronti** (250 pagine, solo controlli e INDICE). Unipol
-   passa da tre rami a sei. È il passo con la resa più alta per token
-   speso di tutto il piano.
+1. ~~**I tre set pronti**~~ **FATTO il 13/09/2026** (250 pagine, solo
+   controlli e INDICE). Unipol è passato da tre rami a sei. Era il passo
+   con la resa più alta per token speso di tutto il piano, ed è costato
+   **2,3 M**.
 2. **I cinque parziali** (217 pagine da trascrivere): Monopattini 35,
    Navigare 49, Unica Famiglia 39, Unica Mobilità 74, Tutela Legale
    Professionisti 20. Chiudono cinque set con poco lavoro, e i primi due
@@ -131,7 +133,7 @@ disco di questa macchina e non nel repo.
 - `local-ingestion/lavorazione-visiva/ocr/<pdf>/` la lettura Mistral OCR
   di **tutte** le 3.034 pagine: **è già stata pagata**, non si richiede.
 - `local-ingestion/lavorazione-visiva/archivio-pubblico/unipolsai/` i set
-  assemblati (per ora solo auto, cyber, imprese).
+  assemblati (auto, cyber, imprese, e dal 13/09 tutela, infortuni, casa).
 - `local-ingestion/in-arrivo/unipol-censimento-2026-09-11.tsv` il
   censimento completo di unipol.it: 164 set, ~12.200 pagine, con uuid e
   pagina di origine. Serve se si vuole allargare la cernita oltre i 27.
@@ -193,7 +195,7 @@ Si committa solo `be-node/dati/catalogo-archivio.json`,
 `be-node/supabase/seed.sql` e i test toccati. Mai PDF né `.md`.
 
 Il test `integrazione-documenti.spec.ts` asserisce il **totale dei
-documenti a catalogo** (317 al 13/09/2026) con un commento che li spiega
+documenti a catalogo** (331 dal 13/09/2026) con un commento che li spiega
 compagnia per compagnia: va aggiornato a ogni caricamento, commento
 compreso.
 
@@ -209,11 +211,35 @@ token a pagina su un set di 122 pagine con un gemello già in archivio,
 25-30% del totale e non si comprime**: cresce con la complessità del
 prodotto, non con le pagine.
 
+**Il passo 1, misurato riga per riga** (13/09/2026, 250 pagine già
+trascritte):
+
+| Set | Pagine | Secondo sguardo | INDICE | Totale |
+|---|---|---|---|---|
+| Tutela Legale Aziende | 44 | 263 k (2 agenti, 14 pagine) | 172 k | ~470 k |
+| Unica Casa | 96 | 525 k (4 agenti, 28 pagine) | 255 k | ~800 k |
+| Unica Infortuni | 110 | 644 k (5 agenti, 34 pagine) | 274 k | ~940 k |
+| | 250 | 1,43 M | 0,70 M | **2,3 M** |
+
+Sono numeri da leggere così:
+
+- **Il secondo sguardo costa 18-19 mila token a pagina controllata**, più
+  del doppio dei 7.800 stimati sul lotto vecchio. La differenza è il
+  confronto parola per parola a tolleranza zero: ogni agente si costruisce
+  un diff meccanico contro il layer di testo prima di guardare. Vale la
+  spesa, ma va messa a preventivo per quello che è.
+- **Un INDICE costa 170-275 mila token, non 350-600 mila**, quando in
+  archivio c'è un gemello dello stesso ramo da cui copiare taglio e tono.
+  È il risparmio più grosso disponibile e cresce da solo: ogni ramo
+  aperto rende più economico il prossimo set di quel ramo.
+- Un set già trascritto costa **9-10 mila token a pagina**, contro i
+  15-20 mila di uno da trascrivere.
+
 Da qui il conto dei quattro passi dell'ordine di lavoro:
 
 | Passo | Pagine da trascrivere | Costo stimato |
 |---|---|---|
-| 1. I tre set pronti | 0 | ~1,5 M (solo controlli e INDICE) |
+| ~~1. I tre set pronti~~ | 0 | **2,3 M, misurati** (stima: 1,5 M) |
 | 2. I cinque parziali | 217 | ~4,5 M |
 | 3. Casa e persona da zero | 316 | ~6 M |
 | 4. Imprese da zero | 792 | ~14 M |
@@ -244,6 +270,19 @@ già stata pagata**.
   esplicitamente al secondo sguardo, è l'unico modo di riprenderli.
 - Il **secondo sguardo a campione** (una pagina ogni dieci fra le non
   segnalate) trova errori veri. Non è un passaggio di cortesia.
+- **L'INDICE si scrive col gemello accanto**: un INDICE già in archivio
+  dello stesso ramo (non della stessa compagnia) dimezza il costo e
+  uniforma il taglio. Al 13/09 ogni ramo Unipol che resta da aprire ha
+  già un gemello Zurich o Generali.
+- Quando due agenti danno un giudizio **opposto sulla stessa cosa** (qui:
+  la barra «INFORMATIVA PRIVACY» in testa alla prima pagina della
+  privacy, presente in Tutela e Infortuni e assente in Casa), la risposta
+  non è arbitrare a tavolino: si renderizzano le due pagine e si guardano
+  una accanto all'altra. Avevano ragione tutti e due.
+- I dubbi che un agente lascia aperti in fondo al resoconto **vanno letti
+  e chiusi**: quello dell'INDICE di Casa («quale scala è stampata in
+  calce, di 69 o di 70?») è costato una riga di `pdftotext` e ha
+  trasformato un'ambiguità in un'incoerenza documentata del set.
 
 ## DeepSeek Flash come trascrittore: proposta aperta
 
