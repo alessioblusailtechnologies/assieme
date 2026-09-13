@@ -3355,6 +3355,78 @@
   "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-condominio-piu-ed-2026-09-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Condominio Più",
+  "titolo": "Condizioni di Assicurazione — Unipol Condominio Più",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 87,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-condominio-piu-2026-09",
+   "etichetta": "ed. 09/2026",
+   "validaDal": "2026-09-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-condominio-piu-ed-2026-09-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Condominio Più",
+  "titolo": "DIP Danni — Unipol Condominio Più",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-condominio-piu-2026-09",
+   "etichetta": "ed. 09/2026",
+   "validaDal": "2026-09-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-condominio-piu-ed-2026-09-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Condominio Più",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Condominio Più",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-condominio-piu-2026-09",
+   "etichetta": "ed. 09/2026",
+   "validaDal": "2026-09-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-condominio-piu-ed-2026-09-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Condominio Più",
+  "titolo": "Informativa Privacy — Unipol Condominio Più",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 103,
+  "edizione": {
+   "id": "edz-condominio-piu-2026-09",
+   "etichetta": "ed. 09/2026",
+   "validaDal": "2026-09-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/condominio-piu/ed-2026-09/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-contratto-base-rca-autovetture-ed-2026-05-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
