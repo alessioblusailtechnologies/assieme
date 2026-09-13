@@ -1113,6 +1113,60 @@
   "pathPdf": "archivio-pubblico/generali/auto/contratto-base-motoveicoli/ed-2026-01/originale.pdf"
  },
  {
+  "id": "doc-generali-immagina-strade-nuove-ed-2025-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove",
+  "titolo": "Condizioni di Assicurazione — Generali Italia Immagina Strade Nuove",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 133,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-strade-nuove-ed-2025-07-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove",
+  "titolo": "DIP Danni — Generali Italia Immagina Strade Nuove",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/dip.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-strade-nuove-ed-2025-07-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Generali Italia Immagina Strade Nuove",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-2025-07",
+   "etichetta": "ed. 07/2025",
+   "validaDal": "2025-07-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/originale.pdf"
+ },
+ {
   "id": "doc-generali-sei-in-viaggio-ed-2015-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-generali",
   "ramoId": "ram-viaggi",
