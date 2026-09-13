@@ -6,10 +6,10 @@ la ricognizione.
 ## Da dove riprendere
 
 Stato al 13/09/2026, fine sessione. Dei 9 set del lotto 1 ne sono entrati
-**quattro**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa e
-Immagina Adesso Armonia. Restano Cucciolo (51 pagine), ViviCondominio
-(120), Immagina Strade Nuove Passione Moto (122) e Immagina Adesso Salute
-e Benessere (366, da fare in una sessione sua).
+**cinque**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa,
+Immagina Adesso Armonia e Immagina Adesso Cucciolo. Restano
+ViviCondominio (120 pagine), Immagina Strade Nuove Passione Moto (122) e
+Immagina Adesso Salute e Benessere (366, da fare in una sessione sua).
 
 I PDF sono già scaricati in `local-ingestion/in-arrivo/generali-auto/` e
 `local-ingestion/in-arrivo/generali-persona/` (cartelle gitignorate, con
@@ -40,19 +40,19 @@ lavoro che vale.
 | Nobis | auto (natanti, bici, conducente) | 8 | 60 | ~590 |
 | HDI | auto | 6 | 20 | ~270 |
 | Groupama | auto | 5 | 15 | ~340 |
-| **Generali** | auto, viaggi, casa, **tutela** | 6 | 22 | ~440 |
+| **Generali** | auto, viaggi, casa, **tutela** | 7 | 27 | ~490 |
 
 Fuori tabella: Allianz, AXA, Cattolica (gruppo Generali, AUTOPIÙ).
 
 I rami `ram-rc-prof` e `ram-vita` sono **vuoti per tutte le compagnie**;
 `ram-tutela` lo era fino al 13/09, quando ci è entrato Immagina Adesso
-Armonia. Il totale a catalogo è 305 documenti (il test
+Armonia. Il totale a catalogo è 310 documenti (il test
 `integrazione-documenti.spec.ts` asserisce quel numero: va aggiornato a
 ogni caricamento).
 
 Di Generali c'erano solo i due **Contratto Base** (autovetture 07/2025,
 motoveicoli 01/2026): la RCA minima di legge, che non vende nessuno. Dal
-13/09 ci sono anche **Sei in Viaggio**, **Immagina Strade Nuove** **Immagina Adesso Casa** e **Immagina Adesso Armonia** (vedi sotto).
+13/09 ci sono anche **Sei in Viaggio**, **Immagina Strade Nuove**, **Immagina Adesso Casa**, **Immagina Adesso Armonia** e **Immagina Adesso Cucciolo** (vedi sotto).
 
 ## Il catalogo Generali, per ramo
 
@@ -94,7 +94,7 @@ comuni, e da solo apre quattro rami.
 | CASA | `ram-casa` | 28/06/2025, **in archivio** |
 | ARMONIA (RC vita privata + tutela legale) | `ram-tutela` | 28/06/2025, **in archivio** |
 | SALUTE E BENESSERE | `ram-salute` | 11/07/2026 |
-| CUCCIOLO (cane, gatto) | `ram-casa` | 28/06/2025, agg. 11/07/2026 |
+| CUCCIOLO (cane, gatto) | `ram-casa` | 28/06/2025 agg. 11/07/2026, **in archivio** |
 | Norme comuni | trasversale | 28/06/2025 |
 
 Accanto: **ViviCondominio** (07/2026, esiste anche in inglese e tedesco),
@@ -138,7 +138,7 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 |---|---|---|---|---|---|
 | 1 | Generali Sei in Viaggio | viaggi | 25/07/2015 | 39 | **in archivio** (13/09) |
 | 2 | Immagina Strade Nuove (auto) | auto | 01/07/2025 | 144 | **in archivio** (13/09) |
-| 3 | Immagina Adesso Cucciolo | casa | 28/06/2025 | 51 | da fare |
+| 3 | Immagina Adesso Cucciolo | casa | 28/06/2025 | 51 | **in archivio** (13/09) |
 | 4 | Immagina Adesso Armonia | tutela | 28/06/2025 | 53 | **in archivio** (13/09) |
 | 5 | Immagina Adesso Norme comuni | (trasversale) | 28/06/2025 | 14 | **trascritte** (13/09), da replicare negli altri moduli |
 | 6 | ViviCondominio | casa | 11/07/2026 | 120 | da fare |
@@ -172,7 +172,7 @@ l'INDICE e i testimoni si spalmano, e con la cornice riconosciuta bene il
 testimone OCR ha segnalato 6 pagine su 140 invece di 18 su 39.
 
 **Circa 21.000 token a pagina sul set piccolo, 13.500 sul grande**, più l'orchestrazione, più 4 dollari ogni
-1.000 pagine di Mistral OCR (il testimone). Le 659 pagine che restano
+1.000 pagine di Mistral OCR (il testimone). Le 608 pagine che restano
 del lotto 1 valgono quindi **una dozzina di milioni di token**: più di una
 sessione. Si va un set alla volta, e il modulo Salute e Benessere (366
 pagine, 7-8 milioni) vuole una sessione sua.
@@ -183,7 +183,8 @@ Tre leve per abbassare il costo, non ancora provate:
    confrontato con gli scarti del testimone);
 2. stringere ancora il filtro della cornice nel testimone OCR (sul primo
    set segnalava 34 pagine su 39 per il solo piè di pagina; ora 18);
-3. tagliare i set a bassa resa per la demo (Cucciolo).
+3. tagliare i set a bassa resa per la demo (era il caso di Cucciolo,
+   fatto lo stesso: 51 pagine costano poco e il ramo animali era scoperto).
 
 Sul terzo set (Immagina Adesso Casa, 140 pagine più le 13 delle Norme
 comuni): 1.697.062 di trascrizione in 16 blocchi, 466.641 di secondo
@@ -196,7 +197,14 @@ trascrizione in 6 blocchi, 103.912 di secondo sguardo in una passata sola,
 250.394 di INDICE, **1.003.827 in tutto**, cioè **19.000 token a pagina**.
 Sui set piccoli l'INDICE pesa un quarto del totale e non si comprime.
 
-## Cosa ha insegnato la lavorazione dei primi quattro set
+Sul quinto set (Immagina Adesso Cucciolo, 51 pagine): 494.378 di
+trascrizione in 5 blocchi, 222.137 di secondo sguardo in due passate
+(9 pagine segnalate e 7 a campione), 303.010 di INDICE, **1.019.525 in
+tutto**, cioè **20.000 token a pagina**. Conferma la regola dei set
+piccoli: l'INDICE da solo è il 30% della spesa, e cresce con la
+complessità del prodotto, non con le pagine.
+
+## Cosa ha insegnato la lavorazione dei primi cinque set
 
 - I **richiami di nota a piè di pagina** fanno scattare il testimone su
   decine di pagine: il confronto vede un numero che i testimoni non
@@ -218,6 +226,17 @@ Sui set piccoli l'INDICE pesa un quarto del totale e non si comprime.
   illeggibili a video ma spesso sono grafica vettoriale: a 2400 dpi si
   leggono per intero, e vanno recuperate invece di lasciare
   `[!ATTENZIONE]`.
+- Nei moduli **Immagina Adesso** il piè di pagina delle Condizioni sembra
+  numerato per sezione, e non lo è: il numeratore è continuo, il solo
+  denominatore cambia da blocco a blocco ("Pagina 37 di 31" è questo, non
+  un errore da compensare). Su Cucciolo la regola è **pagina assoluta =
+  pagina stampata + 14**. Va ricavata guardando i piedi di quattro o
+  cinque pagine sparse, prima di scrivere l'INDICE.
+- Quando entra un modulo nuovo, gli INDICE dei **moduli gemelli già in
+  archivio** mentono: dicono che quel modulo non c'è. Vanno cercati i
+  rimandi (`grep` sul nome del modulo) e corretti, insieme alla profondità
+  dei percorsi relativi fra rami diversi (da `ed-AAAA-MM/` a un altro ramo
+  sono **tre** livelli, non due: l'INDICE di Armonia li aveva sbagliati).
 
 ## Decisioni prese, da non rimettere in discussione
 
