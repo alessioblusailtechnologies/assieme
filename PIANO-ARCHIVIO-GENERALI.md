@@ -3,6 +3,26 @@
 Stato al 13/09/2026. Da qui si riprende in una sessione nuova senza rifare
 la ricognizione.
 
+## Da dove riprendere
+
+Stato al 13/09/2026, fine sessione. Dei 9 set del lotto 1 ne sono entrati
+**quattro**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa e
+Immagina Adesso Armonia. Restano Cucciolo (51 pagine), ViviCondominio
+(120), Immagina Strade Nuove Passione Moto (122) e Immagina Adesso Salute
+e Benessere (366, da fare in una sessione sua).
+
+I PDF sono già scaricati in `local-ingestion/in-arrivo/generali-auto/` e
+`local-ingestion/in-arrivo/generali-persona/` (cartelle gitignorate, con
+LOTTO.json). Le **Norme comuni sono già trascritte**: le pagine stanno in
+`local-ingestion/lavorazione-visiva/pagine/Generali_Immagina_Adesso_Norme_Comuni_ed-2025-06/`
+e per innestarle in un modulo nuovo basta cambiare il campo `prodotto` nel
+manifesto `generali-immagina-adesso-norme-comuni-2025-06.json`, rilanciare
+`assembla-set.mjs` e copiare `norme-comuni.md` nella cartella del modulo.
+Attenzione all'ordine: l'assemblatore ripulisce la cartella dell'edizione,
+quindi il modulo va assemblato PRIMA e le norme si copiano DOPO.
+
+Il giro completo su un set è più in basso, in «Il giro completo su un set».
+
 ## Perché
 
 Va data in demo l'applicativo a un agente che lavora con **Generali,
@@ -175,6 +195,29 @@ Sul quarto set (Immagina Adesso Armonia, 53 pagine): 649.521 di
 trascrizione in 6 blocchi, 103.912 di secondo sguardo in una passata sola,
 250.394 di INDICE, **1.003.827 in tutto**, cioè **19.000 token a pagina**.
 Sui set piccoli l'INDICE pesa un quarto del totale e non si comprime.
+
+## Cosa ha insegnato la lavorazione dei primi quattro set
+
+- I **richiami di nota a piè di pagina** fanno scattare il testimone su
+  decine di pagine: il confronto vede un numero che i testimoni non
+  leggono. Vanno resi sempre come `<sup>N</sup>` attaccati alla parola (mai
+  `(N)`, che si legge come parte del riferimento normativo: «Codice
+  civile(10)»), e il secondo sguardo su quelle pagine va chiesto mirato,
+  altrimenti si spendono token per nulla.
+- Le **linguette verticali** col nome della sezione e i piè di pagina
+  multiriga restano il rumore di fondo dei due testimoni: sono spiegati,
+  non vanno inseguiti.
+- Il **secondo sguardo a campione** (una pagina ogni dieci, scelte fra
+  quelle NON segnalate) ha trovato errori veri che i testimoni non
+  vedevano: quattro parole colate da un punto all'altro, una frase intera
+  persa. Non è un passaggio di cortesia.
+- I trascrittori **normalizzano i refusi dello stampato** quasi sempre
+  («aereomobili», «contradistinte», «specialista»): il confronto parola per
+  parola col layer di testo è l'unico modo per riprenderli.
+- Le pagine dei **facsimili** (certificato, polizza, modulo C.A.I.) sembrano
+  illeggibili a video ma spesso sono grafica vettoriale: a 2400 dpi si
+  leggono per intero, e vanno recuperate invece di lasciare
+  `[!ATTENZIONE]`.
 
 ## Decisioni prese, da non rimettere in discussione
 
