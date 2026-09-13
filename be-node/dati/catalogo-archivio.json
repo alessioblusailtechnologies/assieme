@@ -4948,6 +4948,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/unica-autovetture/ed-2026-05/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-unica-cane-gatto-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Cane e Gatto",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Cane e Gatto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 42,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-cane-gatto-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-cane-gatto-ed-2025-10-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Cane e Gatto",
+  "titolo": "DIP Danni — Unipol Unica Cane e Gatto",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-cane-gatto-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-cane-gatto-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Cane e Gatto",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Cane e Gatto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-cane-gatto-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-cane-gatto-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Cane e Gatto",
+  "titolo": "Informativa Privacy — Unipol Unica Cane e Gatto",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 59,
+  "edizione": {
+   "id": "edz-unica-cane-gatto-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-cane-gatto-ed-2025-10-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Cane e Gatto",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Cane e Gatto",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 55,
+  "edizione": {
+   "id": "edz-unica-cane-gatto-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-cane-gatto/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-unica-casa-ed-2025-10-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-casa",
