@@ -1113,6 +1113,60 @@
   "pathPdf": "archivio-pubblico/generali/auto/contratto-base-motoveicoli/ed-2026-01/originale.pdf"
  },
  {
+  "id": "doc-generali-sei-in-viaggio-ed-2015-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Generali Sei in Viaggio",
+  "titolo": "Condizioni di Assicurazione — Generali Sei in Viaggio",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 34,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-sei-in-viaggio-2015-07",
+   "etichetta": "ed. 07/2015",
+   "validaDal": "2015-07-25",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-sei-in-viaggio-ed-2015-07-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Generali Sei in Viaggio",
+  "titolo": "DIP Danni — Generali Sei in Viaggio",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-sei-in-viaggio-2015-07",
+   "etichetta": "ed. 07/2015",
+   "validaDal": "2015-07-25",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/dip.md",
+  "pathPdf": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-sei-in-viaggio-ed-2015-07-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Generali Sei in Viaggio",
+  "titolo": "DIP Aggiuntivo Danni — Generali Sei in Viaggio",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-sei-in-viaggio-2015-07",
+   "etichetta": "ed. 07/2015",
+   "validaDal": "2015-07-25",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/originale.pdf"
+ },
+ {
   "id": "doc-groupama-autocontrollo-altri-veicoli-ed-2026-01-condizioni-di-assicurazione",
   "compagniaId": "cmp-groupama",
   "ramoId": "ram-auto",
