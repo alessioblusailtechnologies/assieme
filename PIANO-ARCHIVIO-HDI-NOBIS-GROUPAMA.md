@@ -50,7 +50,11 @@ Al 13/09/2026, lotto HDI in corso, un set per volta:
   Costato ~1,05 M di token contro gli ~800 mila stimati: il di più sta
   quasi tutto nell'INDICE (233 mila da solo) e nel secondo sguardo su
   sedici pagine.
-- [ ] Rischi Informatici HDI (cyber)
+- [x] **Rischi Informatici HDI** (ed. 06/2026, 32 pagine, 3 documenti): in
+  archivio il 14/09/2026, apre il ramo `cyber` per HDI, secondo prodotto
+  cyber del catalogo dopo Unipol Scudo Cyber. Catalogo a 379 documenti.
+  Costato ~0,97 M di token. Il secondo sguardo non ha corretto nulla: la
+  forma e quella dei set auto HDI, gia nota ai trascrittori.
 - [ ] Protezione Infortuni HDI (infortuni)
 - [ ] Globale Casa (casa)
 

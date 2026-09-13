@@ -2247,6 +2247,60 @@
   "pathPdf": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/originale.pdf"
  },
  {
+  "id": "doc-hdi-rischi-informatici-hdi-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-cyber",
+  "prodotto": "Rischi Informatici HDI",
+  "titolo": "Condizioni di Assicurazione — HDI Rischi Informatici HDI",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 26,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-rischi-informatici-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-rischi-informatici-hdi-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-cyber",
+  "prodotto": "Rischi Informatici HDI",
+  "titolo": "DIP Danni — HDI Rischi Informatici HDI",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-rischi-informatici-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-rischi-informatici-hdi-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-cyber",
+  "prodotto": "Rischi Informatici HDI",
+  "titolo": "DIP Aggiuntivo Danni — HDI Rischi Informatici HDI",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-rischi-informatici-hdi-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/cyber/rischi-informatici-hdi/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-hdi-viaggio-singolo-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-hdi",
   "ramoId": "ram-viaggi",
