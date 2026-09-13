@@ -19,6 +19,7 @@ import { ChatStore, MessaggioInStream } from '../chat-store';
 import { PropostaRiordino } from './proposta-riordino';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
+import { raggruppaRiferimenti } from '@shared/riferimenti/gruppi';
 
 /**
  * Quanti passi restano a vista mentre il motore lavora.
@@ -168,11 +169,20 @@ export class BollaMessaggio {
       .filter((p) => p.length > 0),
   );
 
+  /**
+   * I documenti referenziati, raggruppati come nel composer (13/09/2026): un
+   * prodotto scelto con «@» è un chip solo, col suo nome e l'edizione, anche
+   * se nel messaggio viaggiano gli id di tutti i documenti del set. Prima la
+   * bolla li elencava uno per uno, e la domanda inviata non somigliava più a
+   * quella scritta.
+   */
   protected readonly referenziati = computed(() => {
     const perId = new Map(this.contesto().map((d) => [d.id, d]));
-    return this.messaggio()
-      .documentiReferenziati.map((id) => perId.get(id))
-      .filter((d): d is RiferimentoDocumento => !!d);
+    return raggruppaRiferimenti(
+      this.messaggio()
+        .documentiReferenziati.map((id) => perId.get(id))
+        .filter((d): d is RiferimentoDocumento => !!d),
+    );
   });
 
   // --- I passi del motore ---------------------------------------------------

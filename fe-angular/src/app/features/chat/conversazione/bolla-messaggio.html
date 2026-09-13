@@ -10,10 +10,11 @@
             <span class="riferimento__titolo">{{ cliente.nome }}</span>
           </span>
         }
-        @for (doc of referenziati(); track doc.id) {
-          <span class="riferimento">
+        <!-- Un chip per gruppo: i documenti di un set sono il prodotto, come nel campo. -->
+        @for (g of referenziati(); track g.chiave) {
+          <span class="riferimento" [title]="g.titolo">
             <ui-icon name="documento" [size]="11" />
-            <span class="riferimento__titolo">{{ doc.titolo }}</span>
+            <span class="riferimento__titolo">{{ g.titolo }}</span>
           </span>
         }
         <span class="utente__parole">{{ m.testo }}</span>

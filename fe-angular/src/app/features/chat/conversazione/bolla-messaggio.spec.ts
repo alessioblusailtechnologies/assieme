@@ -307,3 +307,53 @@ describe('BollaMessaggio · il cliente della domanda', () => {
     expect(dom.querySelector('.riferimento--cliente')).toBeNull();
   });
 });
+
+/**
+ * I documenti referenziati nella domanda (13/09/2026).
+ *
+ * Un prodotto scelto con «@» porta nel contesto tutti i documenti del suo
+ * set, ma è un chip solo nel campo: nella bolla inviata deve restare così,
+ * invece di aprirsi in un chip per documento.
+ */
+describe('BollaMessaggio · i documenti referenziati', () => {
+  const set = {
+    chiave: 'cmp-zurich:Km&Servizi:ed-2026-04',
+    prodotto: 'Km&Servizi',
+    compagnia: 'Zurich',
+    edizione: 'ed. 04/2026',
+    corrente: true,
+  };
+  const contesto = [
+    { id: 'd1', titolo: 'DIP', archivio: 'pubblico', set },
+    { id: 'd2', titolo: 'DIP Aggiuntivo', archivio: 'pubblico', set },
+    { id: 'd3', titolo: 'Condizioni di Assicurazione', archivio: 'pubblico', set },
+    { id: 'p1', titolo: 'Polizza Rossi', archivio: 'privato' },
+  ];
+
+  it('un prodotto è un chip solo col suo nome, e un documento sciolto resta a sé', async () => {
+    await TestBed.configureTestingModule({
+      imports: [BollaMessaggio],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), ChatStore],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BollaMessaggio);
+    fixture.componentRef.setInput('messaggio', {
+      id: 'msg-u',
+      conversazioneId: 'cnv-1',
+      autore: 'utente',
+      testo: 'Cosa copre per la grandine?',
+      inviatoIl: '2026-09-13T21:50:00.000Z',
+      documentiReferenziati: ['d1', 'd2', 'd3', 'p1'],
+      citazioni: [],
+      provenienze: [],
+    });
+    fixture.componentRef.setInput('contesto', contesto);
+    fixture.detectChanges();
+
+    const dom = fixture.nativeElement as HTMLElement;
+    const chip = [...dom.querySelectorAll('.utente__testo .riferimento:not(.riferimento--cliente)')].map((c) =>
+      c.textContent?.trim(),
+    );
+    expect(chip).toEqual(['Km&Servizi, ed. 04/2026', 'Polizza Rossi']);
+  });
+});
