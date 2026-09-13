@@ -4444,6 +4444,78 @@
   "pathPdf": "archivio-pubblico/unipolsai/tutela/tutela-legale-aziende/ed-2026-03/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-tutela-legale-professionisti-ed-2026-03-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-tutela",
+  "prodotto": "Tutela Legale Professionisti",
+  "titolo": "Condizioni di Assicurazione — Unipol Tutela Legale Professionisti",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 24,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-tutela-legale-professionisti-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-tutela-legale-professionisti-ed-2026-03-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-tutela",
+  "prodotto": "Tutela Legale Professionisti",
+  "titolo": "DIP Danni — Unipol Tutela Legale Professionisti",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-tutela-legale-professionisti-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-tutela-legale-professionisti-ed-2026-03-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-tutela",
+  "prodotto": "Tutela Legale Professionisti",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Tutela Legale Professionisti",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-tutela-legale-professionisti-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-tutela-legale-professionisti-ed-2026-03-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-tutela",
+  "prodotto": "Tutela Legale Professionisti",
+  "titolo": "Informativa Privacy — Unipol Tutela Legale Professionisti",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 37,
+  "edizione": {
+   "id": "edz-tutela-legale-professionisti-2026-03",
+   "etichetta": "ed. 03/2026",
+   "validaDal": "2026-03-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/tutela/tutela-legale-professionisti/ed-2026-03/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-unica-2ruote-ed-2026-05-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
