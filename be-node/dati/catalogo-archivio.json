@@ -1293,6 +1293,96 @@
   "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-casa/ed-2025-06/originale.pdf"
  },
  {
+  "id": "doc-generali-immagina-adesso-cucciolo-ed-2025-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "Immagina Adesso Cucciolo",
+  "titolo": "Condizioni di Assicurazione — Generali Italia Immagina Adesso Cucciolo",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 37,
+  "paginaInizio": 15,
+  "edizione": {
+   "id": "edz-immagina-adesso-cucciolo-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-cucciolo-ed-2025-06-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "Immagina Adesso Cucciolo",
+  "titolo": "DIP Danni — Generali Italia Immagina Adesso Cucciolo",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-immagina-adesso-cucciolo-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/dip.md",
+  "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-cucciolo-ed-2025-06-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "Immagina Adesso Cucciolo",
+  "titolo": "DIP Aggiuntivo Danni — Generali Italia Immagina Adesso Cucciolo",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-immagina-adesso-cucciolo-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-cucciolo-ed-2025-06-indice-del-modulo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "Immagina Adesso Cucciolo",
+  "titolo": "Indice del Modulo CUCCIOLO — Generali Italia Immagina Adesso Cucciolo",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-immagina-adesso-cucciolo-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/indice-del-modulo.md",
+  "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-cucciolo-ed-2025-06-norme-comuni",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "Immagina Adesso Cucciolo",
+  "titolo": "Sezione Norme comuni del prodotto — Generali Italia Immagina Adesso Cucciolo",
+  "tipologia": "altro",
+  "numeroPagine": 13,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-immagina-adesso-cucciolo-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/norme-comuni.md",
+  "pathPdf": "archivio-pubblico/generali/casa/immagina-adesso-cucciolo/ed-2025-06/originale.pdf"
+ },
+ {
   "id": "doc-generali-immagina-strade-nuove-ed-2025-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-generali",
   "ramoId": "ram-auto",
