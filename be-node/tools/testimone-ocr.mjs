@@ -165,13 +165,15 @@ for (let n = 1; n <= totale; n++) {
   pagine.set(n, { ocr, pdfjs, claude });
 }
 
-// Cornice: righe di bordo (pdfjs), header e footer (OCR) che tornano su più
+// Cornice: righe di bordo (pdfjs: le prime 4 e le ultime 8, perché un piè
+// di pagina di quattro righe più la linguetta laterale della sezione non
+// stanno in due), header e footer (OCR) che tornano su più
 // pagine, con le cifre mascherate. Si toglie da tutte le letture.
 const quante = new Map();
 for (const p of pagine.values()) {
   const righe = p.pdfjs.righe;
   const candidate = new Set(
-    [...righe.slice(0, 2), ...righe.slice(-2), ...p.ocr.header.split('\n'), ...p.ocr.footer.split('\n')]
+    [...righe.slice(0, 4), ...righe.slice(-8), ...p.ocr.header.split('\n'), ...p.ocr.footer.split('\n')]
       .filter((r) => r.trim().length >= 3 && r.length < 200)
       .map(modelloDiRiga),
   );
@@ -191,7 +193,7 @@ for (const doc of set.documenti) {
     const p = pagine.get(n);
     const righe = p.pdfjs.righe;
     const candidate = new Set(
-      [...righe.slice(0, 2), ...righe.slice(-2), ...p.ocr.header.split('\n'), ...p.ocr.footer.split('\n')]
+      [...righe.slice(0, 4), ...righe.slice(-8), ...p.ocr.header.split('\n'), ...p.ocr.footer.split('\n')]
         .filter((r) => r.trim().length >= 3 && r.length < 200)
         .map(modelloDiRiga),
     );
