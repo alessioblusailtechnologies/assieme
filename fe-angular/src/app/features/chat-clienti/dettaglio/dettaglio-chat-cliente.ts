@@ -9,30 +9,31 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
 import type { DocumentoPrivato, DocumentoPubblico, Id, Paginato } from '@core/models';
 import { Accordion } from '@shared/ui/accordion/accordion';
 import { Bottone } from '@shared/ui/bottone/bottone';
+import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Icona } from '@shared/ui/icona/icona';
 import { ChatClientiStore } from '../chat-clienti-store';
 
 /**
- * La scheda di una chat cliente: il cono, le istruzioni, i limiti, il link.
+ * La scheda della chat di un cliente: che cosa legge, come deve rispondere,
+ * i limiti, il link.
  *
- * Il cono si compone **a mano**, cartella per cartella e documento per
- * documento (decisione del 07/09). Nessuna precompilazione da
- * `cliente_id`: è la scelta che sbaglia di meno, e su questa schermata
- * sbagliare vuol dire far leggere a un cliente la polizza di un altro.
+ * Il cono è il cliente (12/09/2026): i suoi documenti, calcolati dal server
+ * a ogni domanda, più quelli aggiunti a mano e meno quelli esclusi. Qui non
+ * si compone, si guarda e si corregge.
  */
 @Component({
   selector: 'app-dettaglio-chat-cliente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Accordion, Bottone, Campo, FormsModule, Icona, RouterLink],
+  imports: [Accordion, Bottone, Briciole, Campo, FormsModule, Icona],
   templateUrl: './dettaglio-chat-cliente.html',
   styleUrl: './dettaglio-chat-cliente.scss',
 })
@@ -45,6 +46,23 @@ export class DettaglioChatCliente {
   readonly id = input.required<string>();
 
   protected readonly chat = computed(() => this.store.perId(this.id()));
+
+  /**
+   * Si torna al cliente, e alla sua scheda Chat: dal 13/09/2026 una chat sta
+   * dentro la scheda del suo cliente, e l'elenco d'insieme che il vecchio
+   * «indietro» apriva non c'è più.
+   */
+  protected readonly briciole = computed<VoceBriciola[]>(() => {
+    const chat = this.chat();
+    return [
+      { etichetta: 'Home', percorso: '/' },
+      { etichetta: 'Clienti', percorso: '/clienti' },
+      ...(chat
+        ? [{ etichetta: chat.clienteNome, percorso: `/clienti/${chat.clienteId}`, parametri: { scheda: 'chat' } }]
+        : []),
+      { etichetta: 'Chat' },
+    ];
+  });
 
   /** Le scelte in corso: si salvano insieme, non una alla volta. */
   protected readonly documentiScelti = signal<Map<Id, string>>(new Map());
@@ -212,6 +230,8 @@ export class DettaglioChatCliente {
     });
     if (!conferma) return;
     await this.store.elimina(chat.id);
-    await this.router.navigate(['/chat-clienti']);
+    /* Si torna dove la chat si attiva: la scheda Chat del suo cliente, che
+       adesso offre di attivarne una nuova. */
+    await this.router.navigate(['/clienti', chat.clienteId], { queryParams: { scheda: 'chat' } });
   }
 }

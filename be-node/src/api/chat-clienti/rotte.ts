@@ -230,6 +230,10 @@ async function scriviCono(
 }
 
 
+/** Il rifiuto della seconda chat per lo stesso cliente: dice che cosa fare, non solo che non si può. */
+const MESSAGGIO_CHAT_GIA_ATTIVA =
+  'Questo cliente ha già la sua chat: aprila dalla sua scheda, e se serve rigenera il link.';
+
 export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniChatClienti = {}): void {
   const creaUtenza = opzioni.creaUtenzaOspite ?? creaUtenzaSuAuth;
   const baseLink = opzioni.baseLink ?? process.env['BASE_LINK_CHAT'] ?? 'https://app-dev.sonovelia.it';
@@ -275,6 +279,18 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
     if (!dati.success) {
       throw ErroreApi.datiNonValidi('Servono almeno un titolo e il nome del cliente.');
     }
+
+    /* Una chat per cliente (13/09/2026). Si controlla prima di creare
+       l'utenza su Auth, così il rifiuto non lascia niente da ripulire; il
+       vincolo vero è l'indice unico, e più sotto un inserimento che ci
+       sbatte contro diventa lo stesso 409. */
+    const giaSua = await conIdentita(poolDb(), richiesta.identita, (client) =>
+      client.query(`select 1 from velia.chat_clienti where tenant_id = $1 and cliente_id = $2`, [
+        richiesta.identita.tenantId,
+        dati.data.clienteId,
+      ]),
+    );
+    if (giaSua.rowCount) throw ErroreApi.conflitto('CHAT_GIA_ATTIVA', MESSAGGIO_CHAT_GIA_ATTIVA);
 
     const idOspite = randomUUID();
     const utenteAuth = await creaUtenza(emailOspite(idOspite));
@@ -339,6 +355,11 @@ export function registraRotteChatClienti(app: FastifyInstance, opzioni: OpzioniC
       await clientServizio()
         .auth.admin.deleteUser(utenteAuth)
         .catch(() => undefined);
+      /* Due attivazioni quasi insieme: la prima vince, la seconda sbatte
+         contro l'indice unico e diventa lo stesso 409 del controllo sopra. */
+      if ((errore as { constraint?: string }).constraint === 'chat_clienti_una_per_cliente') {
+        throw ErroreApi.conflitto('CHAT_GIA_ATTIVA', MESSAGGIO_CHAT_GIA_ATTIVA);
+      }
       throw errore;
     }
   });

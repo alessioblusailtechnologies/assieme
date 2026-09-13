@@ -50,8 +50,10 @@ export const NAVIGAZIONE: GruppoNavigazione[] = [
      * Le chat per i clienti non stanno più qui (13/09/2026): una chat è di
      * un cliente, e il posto dove la si apre e la si guarda è la sua
      * scheda. Una voce di menù a parte chiedeva di ricordarsi che esiste un
-     * secondo elenco delle stesse cose. Le rotte restano: `/chat-clienti`
-     * è ancora la vista d'insieme, e ci si arriva dalla scheda del cliente.
+     * secondo elenco delle stesse cose. Dal 13/09/2026 quell'elenco non c'è
+     * più nemmeno come rotta: resta la scheda della singola chat
+     * (`/chat-clienti/:id`), che si apre dal cliente, e ogni cliente ne ha
+     * al più una.
      */
     voci: [{ percorso: '/agenti', etichetta: 'Agenti', icona: 'agente' }],
   },

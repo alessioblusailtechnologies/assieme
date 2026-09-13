@@ -223,12 +223,43 @@ describe.skipIf(!pronto)('Chat cliente · il giro dell’agenzia', () => {
     expect(conNuovo.statusCode).toBe(200);
   });
 
+  it('un cliente ha una chat sola: la seconda è un 409, e non lascia utenze dietro', async () => {
+    /* Bianchi ha già la chat del test sulla rigenerazione. Due link per la
+       stessa persona sono due porte da tenere d'occhio (13/09/2026). */
+    const ospitiPrima = ospitiCreati.length;
+    const seconda = await comeAgenzia('POST', '/api/chat-clienti', {
+      titolo: 'Luigi Bianchi, di nuovo',
+      nome: 'Luigi',
+      cognome: 'Bianchi',
+      clienteId: clienteBianchi,
+    });
+    expect(seconda.statusCode).toBe(409);
+    expect(seconda.json<{ codice: string }>().codice).toBe('CHAT_GIA_ATTIVA');
+    /* Il rifiuto arriva prima dell'utenza ospite: niente da ripulire su Auth. */
+    expect(ospitiCreati.length).toBe(ospitiPrima);
+
+    /* E il vincolo sta nel database, non solo nell'API: due clic ravvicinati
+       passerebbero entrambi un controllo fatto prima dell'inserimento. */
+    await expect(
+      pool().query(
+        `insert into velia.chat_clienti (tenant_id, cliente_id, ospite_id, titolo, token_hash, creata_da)
+         select tenant_id, cliente_id, ospite_id, 'doppione', md5(random()::text), creata_da
+           from velia.chat_clienti where cliente_id = $1 limit 1`,
+        [clienteBianchi],
+      ),
+    ).rejects.toThrow(/chat_clienti_una_per_cliente/);
+  });
+
   it('sospendere chiude la porta senza cancellare niente', async () => {
+    const verdi = await pool().query<{ id: string }>(
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Verdi Anna', '') returning id`,
+      [TENANT],
+    );
     const creata = await comeAgenzia('POST', '/api/chat-clienti', {
       titolo: 'Da sospendere',
       nome: 'Anna',
       cognome: 'Verdi',
-      clienteId: clienteBianchi,
+      clienteId: verdi.rows[0]!.id,
     });
     const link = creata.json<LinkChatCliente>();
     await comeAgenzia('PATCH', `/api/chat-clienti/${link.chatId}`, { stato: 'sospesa' });

@@ -3,24 +3,23 @@ import { Routes } from '@angular/router';
 import { ChatClientiStore } from './chat-clienti-store';
 
 /**
- * Le chat per i clienti dell'agenzia (Fase 2 del piano).
+ * La scheda della chat di un cliente.
  *
- * Lo store sta sulla rotta padre: passando dall'elenco alla scheda e
- * viceversa non si ricarica tutto da capo, e soprattutto **il link appena
- * creato sopravvive al passaggio** — si vede una volta sola, e perderlo
- * navigando sarebbe il modo più stupido di doverlo rigenerare.
+ * L'elenco d'insieme delle chat non c'è più (13/09/2026): una chat è di un
+ * cliente, ce n'è al più una, e la si apre dalla sua scheda. Dal menù
+ * l'elenco non si raggiungeva già da un giorno, e ci si finiva solo dal
+ * link «indietro» della chat. Chi arriva a `/chat-clienti` senza id torna ai
+ * clienti.
+ *
+ * Lo store resta sulla rotta padre: è quello con cui la scheda della chat
+ * legge, modifica, sospende e rigenera il link.
  */
 export const CHAT_CLIENTI_ROUTES: Routes = [
   {
     path: '',
     providers: [ChatClientiStore],
     children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./elenco/elenco-chat-clienti').then((m) => m.ElencoChatClienti),
-        title: 'Chat per i clienti - Velia',
-      },
+      { path: '', pathMatch: 'full', redirectTo: '/clienti' },
       {
         path: ':id',
         loadComponent: () =>

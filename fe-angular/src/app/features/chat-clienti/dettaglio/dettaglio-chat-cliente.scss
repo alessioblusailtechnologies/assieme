@@ -8,18 +8,9 @@
   margin-bottom: var(--sp-5);
 }
 
-.testata__indietro {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--t-xs);
-  color: var(--c-text-3);
-  text-decoration: none;
+.testata ui-briciole {
+  display: block;
   margin-bottom: var(--sp-2);
-}
-
-.testata__indietro ui-icon {
-  transform: rotate(180deg);
 }
 
 .testata__titolo {

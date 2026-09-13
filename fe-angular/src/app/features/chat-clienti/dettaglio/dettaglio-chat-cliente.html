@@ -1,9 +1,7 @@
 @if (chat(); as c) {
   <header class="testata">
-    <a class="testata__indietro" routerLink="/chat-clienti">
-      <ui-icon name="espandi-destra" [size]="14" />
-      Chat per i clienti
-    </a>
+    <!-- Si torna al cliente: l'elenco d'insieme delle chat non c'è più (13/09/2026). -->
+    <ui-briciole [voci]="briciole()" />
     <h1 class="serif testata__titolo">{{ c.titolo }}</h1>
     <p class="testata__sotto">
       Entra come <strong>{{ c.ospite.nome }} {{ c.ospite.cognome }}</strong> ·

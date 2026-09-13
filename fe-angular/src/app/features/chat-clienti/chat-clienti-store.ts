@@ -1,15 +1,16 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { ChatClientiApi } from '@core/api/chat-clienti-api';
-import type { ChatCliente, Id, LinkChatCliente } from '@core/models';
+import type { ChatCliente, Id } from '@core/models';
 
 /**
- * Le chat per i clienti, dal lato dell'agenzia.
+ * Le chat per i clienti, dal lato dell'agenzia: quello che serve alla scheda
+ * di una chat per leggerla, modificarla, sospenderla e rigenerarne il link.
  *
  * Un negozio piccolo e senza `httpResource`: l'elenco cambia solo per
- * gesti dell'utente (crea, modifica, sospendi, elimina), non da solo, e
- * dopo ogni gesto si ricarica. Non c'è niente che arrivi dal server senza
- * che qualcuno l'abbia chiesto.
+ * gesti dell'utente, e dopo ogni gesto si ricarica. Attivarne una non passa
+ * più di qui (13/09/2026): si fa dalla scheda del cliente, che parla con
+ * l'API direttamente, e il link si rilegge dalla chat stessa.
  */
 @Injectable()
 export class ChatClientiStore {
@@ -18,16 +19,6 @@ export class ChatClientiStore {
   readonly chat = signal<ChatCliente[]>([]);
   readonly inCaricamento = signal(false);
   readonly errore = signal<string | undefined>(undefined);
-
-  /**
-   * Il link appena creato o rigenerato.
-   *
-   * Vive qui e non nell'elenco perché **si vede una volta sola**: il server
-   * ne conserva solo l'impronta, e ricaricando la pagina non c'è più nulla
-   * da mostrare. Tenerlo in una schermata che si può ricaricare farebbe
-   * credere il contrario.
-   */
-  readonly linkAppenaCreato = signal<LinkChatCliente | undefined>(undefined);
 
   readonly conta = computed(() => this.chat().length);
 
@@ -43,20 +34,14 @@ export class ChatClientiStore {
     }
   }
 
-  async crea(dati: Parameters<ChatClientiApi['crea']>[0]): Promise<LinkChatCliente> {
-    const link = await this.api.crea(dati);
-    this.linkAppenaCreato.set(link);
-    await this.ricarica();
-    return link;
-  }
-
   async modifica(id: Id, modifiche: Record<string, unknown>): Promise<void> {
     await this.api.modifica(id, modifiche);
     await this.ricarica();
   }
 
+  /** Il link precedente muore all'istante; quello nuovo si rilegge dalla chat. */
   async rigeneraLink(id: Id): Promise<void> {
-    this.linkAppenaCreato.set(await this.api.rigeneraLink(id));
+    await this.api.rigeneraLink(id);
     await this.ricarica();
   }
 

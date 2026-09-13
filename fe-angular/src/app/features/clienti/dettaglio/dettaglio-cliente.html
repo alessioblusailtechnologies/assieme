@@ -368,6 +368,12 @@
 
   <!-- ---------- Chat ---------- -->
 
+  <!--
+    Una chat per cliente (13/09/2026): se c'è la si apre, se non c'è la si
+    attiva da qui. Niente «apri un'altra chat»: due link per la stessa
+    persona sono due porte da tenere d'occhio, e per ricominciare si
+    rigenera il link di quella che c'è.
+  -->
   @if (scheda() === 'chat') {
     <section class="sezione" aria-label="Chat col cliente">
       <p class="riquadro__nota">
@@ -381,45 +387,35 @@
           (creata)="apriChat($event)"
           (annullata)="inCreazioneChat.set(false)"
         />
-      } @else if (!chat().length) {
+      } @else if (chat()[0]; as k) {
+        <ul class="chat">
+          <li>
+            <a class="riga" [routerLink]="['/chat-clienti', k.id]">
+              <span class="riga__corpo">
+                <span class="riga__nome">{{ k.titolo }}</span>
+                <span class="riga__sotto">
+                  {{ k.ospite.nome }} {{ k.ospite.cognome }} ·
+                  {{ k.domandeFatte }} {{ k.domandeFatte === 1 ? 'domanda' : 'domande' }}
+                </span>
+              </span>
+              <ui-tag [variante]="k.stato === 'attiva' ? 'positivo' : 'neutro'">
+                {{ k.stato }}
+              </ui-tag>
+              <ui-icon name="espandi-destra" [size]="14" />
+            </a>
+          </li>
+        </ul>
+      } @else {
         <ui-stato-vuoto
           icona="chat"
-          titolo="Nessuna chat con questo cliente"
-          descrizione="Aprine una: il link è pronto subito, e l'assistente risponderà sui suoi documenti."
+          titolo="La chat non è ancora attiva"
+          descrizione="Attivala: il link è pronto subito, e l'assistente risponderà al cliente sui suoi documenti."
         >
           <button uiBottone variante="primario" type="button" (click)="inCreazioneChat.set(true)">
             <ui-icon name="chat" [size]="15" />
-            <span>Apri una chat</span>
+            <span>Attiva chat per cliente</span>
           </button>
         </ui-stato-vuoto>
-      } @else {
-        <ul class="chat">
-          @for (k of chat(); track k.id) {
-            <li>
-              <a class="riga" [routerLink]="['/chat-clienti', k.id]">
-                <span class="riga__corpo">
-                  <span class="riga__nome">{{ k.titolo }}</span>
-                  <span class="riga__sotto">
-                    {{ k.ospite.nome }} {{ k.ospite.cognome }} ·
-                    {{ k.domandeFatte }} {{ k.domandeFatte === 1 ? 'domanda' : 'domande' }}
-                  </span>
-                </span>
-                <ui-tag [variante]="k.stato === 'attiva' ? 'positivo' : 'neutro'">
-                  {{ k.stato }}
-                </ui-tag>
-              </a>
-            </li>
-          }
-        </ul>
-
-        @if (!inCreazioneChat()) {
-          <div class="azioni-chat">
-            <button uiBottone type="button" (click)="inCreazioneChat.set(true)">
-              <ui-icon name="aggiungi" [size]="15" />
-              <span>Apri un'altra chat</span>
-            </button>
-          </div>
-        }
       }
     </section>
   }
