@@ -5398,6 +5398,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/unica-protezione-veicolo/ed-2026-05/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-unica-salute-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-salute",
+  "prodotto": "Unica Salute",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Salute",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 50,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-salute-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-salute-ed-2025-10-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-salute",
+  "prodotto": "Unica Salute",
+  "titolo": "DIP Danni — Unipol Unica Salute",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-salute-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-salute-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-salute",
+  "prodotto": "Unica Salute",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Salute",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-salute-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-salute-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-salute",
+  "prodotto": "Unica Salute",
+  "titolo": "Informativa Privacy — Unipol Unica Salute",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 67,
+  "edizione": {
+   "id": "edz-unica-salute-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-salute-ed-2025-10-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-salute",
+  "prodotto": "Unica Salute",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Salute",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 63,
+  "edizione": {
+   "id": "edz-unica-salute-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/salute/unica-salute/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-unica-servizi-telematici-ed-2026-05-scatola-nera-condizioni-generali",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
