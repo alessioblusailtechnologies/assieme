@@ -115,6 +115,9 @@ interface RigaMessaggio {
   passi: Passo[];
   /** Il riordino proposto in questa risposta, se c'è stato (04/09/2026). */
   proposta: PropostaArchivio | null;
+  /** Il cliente con cui è partita la domanda (13/09/2026), col nome per il chip. */
+  cliente_id: string | null;
+  cliente_nome: string | null;
 }
 
 /** Gli id dei documenti generati sono uuid: un id malformato è un 404, non un errore SQL. */
@@ -162,7 +165,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.post('/api/conversazioni', async (richiesta, risposta) => {
     const esito = schemaNuovaConversazione.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Conversazione non valida.');
-    const { titolo, documentiInContesto = [] } = esito.data;
+    const { titolo, documentiInContesto = [], clienteId } = esito.data;
 
     /*
      * La chat da cui nasce, quando chi scrive è un cliente.
@@ -187,9 +190,22 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<Conversazione> => {
       // Il contesto si valida PRIMA che la conversazione nasca (mock).
       const contesto = await contestoValidato(client, richiesta.identita, [], documentiInContesto);
+      /* Il cliente menzionato nella schermata iniziale: la conversazione
+         nasce sua (13/09/2026). Il FE lo mandava già, e qui si buttava via:
+         il motore rispondeva di non sapere di chi si parlasse. Come nella
+         PATCH dev'essere di questo tenant, e chi scrive da una chat cliente
+         non sceglie di chi è la conversazione. */
+      const cliente = richiesta.identita.ruolo === 'ospite' ? undefined : clienteId;
+      if (cliente) {
+        const suo = await client.query(`select 1 from velia.clienti where id = $1 and tenant_id = $2`, [
+          cliente,
+          richiesta.identita.tenantId,
+        ]);
+        if (!suo.rowCount) throw ErroreApi.datiNonValidi('Cliente inesistente.');
+      }
       const r = await client.query<RigaConversazione>(
-        `insert into velia.conversazioni (tenant_id, autore_id, titolo, documenti_in_contesto, chat_cliente_id)
-         values ($1, $2, $3, $4, $5)
+        `insert into velia.conversazioni (tenant_id, autore_id, titolo, documenti_in_contesto, chat_cliente_id, cliente_id)
+         values ($1, $2, $3, $4, $5, $6)
          returning id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id`,
         [
           richiesta.identita.tenantId,
@@ -197,6 +213,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
           titolo ?? TITOLO_NUOVA,
           contesto,
           chatCliente ?? null,
+          cliente ?? null,
         ],
       );
       void risposta.code(201);
@@ -534,8 +551,10 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
          ricarica la pagina ritrova la scelta ancora aperta, o già presa. */
       const righe = await client.query<RigaMessaggio>(
         `select m.id, m.conversazione_id, m.autore, m.testo, m.inviato_il, m.documenti_referenziati,
-                m.citazioni, m.provenienze, m.non_supportato, m.documenti, m.passi, p.proposta
+                m.citazioni, m.provenienze, m.non_supportato, m.documenti, m.passi, p.proposta,
+                m.cliente_id, cl.nome as cliente_nome
          from velia.messaggi m
+         left join velia.clienti cl on cl.id = m.cliente_id
          left join lateral (
            select jsonb_strip_nulls(jsonb_build_object(
                     'id', pa.id, 'operazioni', pa.operazioni, 'stato', pa.stato,
@@ -680,11 +699,14 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
          where id = $1`,
         [esistente.id, contesto, titolo],
       );
+      /* Il cliente con cui parte la domanda si copia dalla conversazione
+         (13/09/2026): è lo stesso che il motore leggerà, e il chip nella
+         bolla non può dire altro. */
       const m = await client.query<{ id: string }>(
         `insert into velia.messaggi
-           (conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati)
-         values ($1, $2, 'utente', $3, $4, $5) returning id`,
-        [esistente.id, tenantId, utenteId, testo, documentiReferenziati],
+           (conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati, cliente_id)
+         values ($1, $2, 'utente', $3, $4, $5, $6) returning id`,
+        [esistente.id, tenantId, utenteId, testo, documentiReferenziati, esistente.cliente_id],
       );
       return { messaggioUtenteId: m.rows[0]!.id, titoloProvvisorio: derivato ? titolo : undefined };
     });
@@ -1229,5 +1251,8 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
     ...(r.documenti?.length && { documenti: r.documenti }),
     ...(r.passi?.length && { passi: r.passi }),
     ...(r.proposta && { proposta: r.proposta }),
+    /* Un cliente eliminato, o fuori dalla vista di chi legge, non lascia un
+       chip senza nome: il messaggio torna com'era prima della menzione. */
+    ...(r.cliente_id && r.cliente_nome && { cliente: { id: r.cliente_id, nome: r.cliente_nome } }),
   };
 }

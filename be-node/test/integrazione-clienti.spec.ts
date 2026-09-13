@@ -213,6 +213,38 @@ describe.skipIf(!pronto)('Clienti · l’anagrafica e il lavoro in blocco', () =
     expect(dati).not.toHaveProperty('elementi');
   });
 
+  it('una conversazione nata da una menzione è del cliente, e il cliente dev’essere dell’agenzia', async () => {
+    /* La schermata iniziale: si menziona il cliente con «@», si invia, e la
+       conversazione nasce in quel momento col cliente addosso. Fino al
+       13/09/2026 il server lo scartava, e il motore non sapeva di chi si
+       parlasse. */
+    const nata = await chiedi('POST', '/api/conversazioni', { clienteId: rossi });
+    expect(nata.statusCode).toBe(201);
+    const conversazione = nata.json<{ id: string; cliente?: { id: string; nome: string } }>();
+    try {
+      expect(conversazione.cliente?.id).toBe(rossi);
+      const riletta = await chiedi('GET', `/api/conversazioni/${conversazione.id}`);
+      expect(riletta.json<{ cliente?: { id: string } }>().cliente?.id).toBe(rossi);
+
+      /* La bolla: una domanda ricorda il cliente con cui è partita, col nome. */
+      await pool().query(
+        `insert into velia.messaggi (conversazione_id, tenant_id, autore, testo, cliente_id)
+         values ($1, $2, 'utente', 'Cosa sai su di lui?', $3)`,
+        [conversazione.id, TENANT, rossi],
+      );
+      const filo = await chiedi('GET', `/api/conversazioni/${conversazione.id}/messaggi`);
+      expect(filo.json<Array<{ cliente?: { id: string; nome: string } }>>()[0]?.cliente?.id).toBe(rossi);
+
+      const altrui = await chiedi('POST', '/api/conversazioni', {
+        clienteId: '00000000-0000-4000-8000-000000000000',
+      });
+      expect(altrui.statusCode).toBe(400);
+      expect(altrui.json<CorpoErroreApi>().codice).toBe('DATI_NON_VALIDI');
+    } finally {
+      await pool().query(`delete from velia.conversazioni where id = $1`, [conversazione.id]);
+    }
+  });
+
   it('fonde due clienti sdoppiati, e i documenti seguono il vincitore', async () => {
     const doppione = await chiedi('POST', '/api/clienti', { nome: 'Rossi Mario Giuseppe' });
     rossiDoppione = doppione.json<Cliente>().id;

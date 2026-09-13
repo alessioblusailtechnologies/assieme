@@ -550,6 +550,9 @@ export class ChatStore {
     this.idAttiva.set(id);
     /* Il livello scelto in chat valeva per quella chat. */
     this.livelloDellaChat.set(undefined);
+    /* E il cliente menzionato prima di inviare valeva per la conversazione
+       che stava per nascere, non per quella in cui si entra. */
+    this.clienteBozza.set(undefined);
     this.messaggiCaricati.set(undefined);
     this.erroreMessaggi.set(undefined);
     if (id) {
@@ -754,8 +757,18 @@ export class ChatStore {
    */
   readonly clienteBozza = signal<{ id: Id; nome: string } | undefined>(undefined);
 
-  /** Quello agganciato davvero, o quello che lo sarà appena si invia. */
-  readonly cliente = computed(() => this.attiva()?.cliente ?? this.clienteBozza());
+  /**
+   * Quello agganciato davvero, o quello che lo sarà appena si invia.
+   *
+   * Finché la conversazione appena nata non è arrivata nello storico vale
+   * quello in bozza: prima la bozza si azzerava alla creazione, e il chip
+   * spariva dal composer nel tratto fra la risposta e il ricaricamento. Da
+   * lì in poi comanda la conversazione, anche quando un cliente non ce l'ha.
+   */
+  readonly cliente = computed(() => {
+    const attiva = this.attiva();
+    return attiva ? attiva.cliente : this.clienteBozza();
+  });
 
   /**
    * Menzionare un cliente: la conversazione diventa sua.
@@ -998,7 +1011,9 @@ export class ChatStore {
     const cliente = this.clienteBozza();
     this.api.crea(cliente ? { clienteId: cliente.id } : {}).subscribe({
       next: (conversazione) => {
-        this.clienteBozza.set(undefined);
+        /* Il cliente in bozza non si azzera qui: resta a fare da chip finché
+           la conversazione non arriva nello storico (vedi `cliente`), e se ne
+           va da solo quando si apre un'altra conversazione. */
         /* L'id si imposta prima di navigare: così `apri()` riconosce la
            conversazione come già aperta e non ricarica nulla. */
         this.idAttiva.set(conversazione.id);
@@ -1048,6 +1063,9 @@ export class ChatStore {
         documentiReferenziati: riferimenti.map((r) => r.id),
         citazioni: [],
         provenienze: [],
+        /* Il chip del cliente c'è già nella bolla appena inviata: il server
+           scrive lo stesso, copiandolo dalla conversazione. */
+        ...(this.cliente() && { cliente: this.cliente() }),
       },
       riferimenti,
     };

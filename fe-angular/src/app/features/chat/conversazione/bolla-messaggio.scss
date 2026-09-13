@@ -56,6 +56,14 @@
   white-space: nowrap;
 }
 
+/* Il cliente si distingue dai documenti come nel campo del messaggio: non è
+   una cosa da leggere, è di chi si parlava. */
+.riferimento--cliente {
+  border-color: transparent;
+  background: var(--c-accent-soft);
+  color: var(--c-accent);
+}
+
 /* ---------- Risposta ---------- */
 
 /*

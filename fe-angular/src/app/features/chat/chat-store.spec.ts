@@ -328,6 +328,34 @@ describe('ChatStore', () => {
     expect(store.inRisposta()).toBe(false);
   });
 
+  it('il cliente menzionato prima di inviare viaggia con la creazione, e il chip non sparisce nel mezzo', async () => {
+    await avvia();
+    const rossi = { id: 'cl-1', nome: 'Rossi Mario' };
+    store.agganciaCliente(rossi);
+    store.bozza.set('Cosa sai su di lui?');
+    store.invia();
+
+    const crea = http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni');
+    expect(crea.request.body).toEqual({ clienteId: 'cl-1' });
+    crea.flush({ ...conversazione('cnv-1'), cliente: rossi }, { status: 201, statusText: 'Created' });
+    await microtask();
+
+    /* Lo storico non è ancora tornato: è il tratto in cui il chip spariva. */
+    expect(store.cliente()).toEqual(rossi);
+    /* E la bolla della domanda appena partita porta già il suo chip. */
+    expect(store.messaggi().find((m) => m.autore === 'utente')?.cliente).toEqual(rossi);
+
+    http.match('/api/conversazioni').forEach((r) =>
+      r.flush({ elementi: [{ ...conversazione('cnv-1'), cliente: rossi }], totale: 1, pagina: 1, perPagina: 50 }),
+    );
+    await microtask();
+    expect(store.cliente()).toEqual(rossi);
+
+    /* Tornando alla schermata nuova il cliente di prima non la segue. */
+    store.apri(undefined);
+    expect(store.cliente()).toBeUndefined();
+  });
+
   it('se l invio fallisce la bozza torna al composer', async () => {
     await avvia();
     store.bozza.set('Domanda importante');

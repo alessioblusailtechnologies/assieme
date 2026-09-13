@@ -260,3 +260,50 @@ describe('BollaMessaggio · il documento generato', () => {
     expect((dom.querySelector('.documento__condividi') as HTMLButtonElement).disabled).toBe(false);
   });
 });
+
+/**
+ * Il chip del cliente nella domanda (13/09/2026).
+ *
+ * Chi menziona un cliente con «@» lo vede come chip mentre scrive: inviata la
+ * domanda, il chip resta nella bolla, per primo, com'era nel campo.
+ */
+describe('BollaMessaggio · il cliente della domanda', () => {
+  function domanda(cliente?: { id: string; nome: string }): MessaggioInStream {
+    return {
+      id: 'msg-u',
+      conversazioneId: 'cnv-1',
+      autore: 'utente',
+      testo: 'Cosa sai su di lui?',
+      inviatoIl: '2026-09-13T20:22:00.000Z',
+      documentiReferenziati: [],
+      citazioni: [],
+      provenienze: [],
+      ...(cliente && { cliente }),
+    };
+  }
+
+  async function monta(m: MessaggioInStream): Promise<HTMLElement> {
+    await TestBed.configureTestingModule({
+      imports: [BollaMessaggio],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), ChatStore],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(BollaMessaggio);
+    fixture.componentRef.setInput('messaggio', m);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('la domanda partita con un cliente porta il suo chip, prima del testo', async () => {
+    const dom = await monta(domanda({ id: 'cl-1', nome: 'De Vincentis Alessio' }));
+
+    const chip = dom.querySelector('.utente__testo .riferimento--cliente');
+    expect(chip?.textContent?.trim()).toBe('De Vincentis Alessio');
+    expect(dom.querySelector('.utente__testo')?.firstElementChild).toBe(chip);
+  });
+
+  it('senza cliente la domanda non ha chip', async () => {
+    const dom = await monta(domanda());
+    expect(dom.querySelector('.riferimento--cliente')).toBeNull();
+  });
+});

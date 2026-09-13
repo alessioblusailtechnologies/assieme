@@ -157,6 +157,8 @@ export interface Messaggio {
   proposta?: PropostaArchivio;
   /** Come ci è arrivato: i passi del motore in ordine (07/09/2026). Vuoto sui messaggi dell'utente. */
   passi?: Passo[];
+  /** Il cliente di cui si parlava quando la domanda è partita: il chip nella bolla (13/09/2026). */
+  cliente?: { id: string; nome: string };
 }
 
 /**
@@ -318,6 +320,8 @@ export function titoloDaMessaggio(testo: string): string {
 export const schemaNuovaConversazione = z.object({
   titolo: z.string().trim().min(1).max(200).optional(),
   documentiInContesto: z.array(z.string().min(1)).max(100).optional(),
+  /** Il cliente menzionato prima che la conversazione esistesse: nasce sua. */
+  clienteId: z.string().uuid().optional(),
 });
 
 export const schemaModificheConversazione = z

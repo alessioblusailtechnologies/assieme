@@ -3,6 +3,13 @@
     <div class="utente">
       <!-- I documenti referenziati stanno nel messaggio, in linea col testo: sono parte di ciò che si è chiesto. -->
       <div class="utente__testo">
+        <!-- Il cliente per primo, come nel campo: è di chi si parlava, prima di che cosa si guardava. -->
+        @if (m.cliente; as cliente) {
+          <span class="riferimento riferimento--cliente">
+            <ui-icon name="utente" [size]="11" />
+            <span class="riferimento__titolo">{{ cliente.nome }}</span>
+          </span>
+        }
         @for (doc of referenziati(); track doc.id) {
           <span class="riferimento">
             <ui-icon name="documento" [size]="11" />

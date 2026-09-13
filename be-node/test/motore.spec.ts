@@ -548,4 +548,25 @@ describe('workspace e sessione, le parti pure', () => {
     const nudo = promptRipresa({ documenti: [], mancanti: [], domanda: 'E per i cristalli?' });
     expect(nudo).toBe('Domanda dell’utente:\nE per i cristalli?');
   });
+
+  it('il cliente agganciato si nomina nel prompt, con la sua scheda, anche in ripresa', () => {
+    /* «Cosa sai su di lui?» dopo una menzione: senza questa riga il modello
+       vedeva la domanda nuda e non sapeva di chi si parlasse. */
+    const cliente = {
+      nome: 'De Vincentis Alessio',
+      scheda: 'tenant/clienti/de-vincentis-alessio--cl-1/SCHEDA.md',
+    };
+    const utente = promptUtente({ documenti: [], mancanti: [], storia: [], domanda: 'Cosa sai su di lui?', cliente });
+    expect(utente).toContain('riguarda il cliente De Vincentis Alessio');
+    expect(utente).toContain('`tenant/clienti/de-vincentis-alessio--cl-1/SCHEDA.md`');
+    expect(utente.indexOf('De Vincentis Alessio')).toBeLessThan(utente.indexOf('Cosa sai su di lui?'));
+
+    const ripresa = promptRipresa({ documenti: [], mancanti: [], domanda: 'E le scadenze?', cliente });
+    expect(ripresa).toContain('riguarda il cliente De Vincentis Alessio');
+    expect(ripresa.trimEnd().endsWith('E le scadenze?')).toBe(true);
+
+    expect(promptUtente({ documenti: [], mancanti: [], storia: [], domanda: 'x' })).not.toContain(
+      'riguarda il cliente',
+    );
+  });
 });

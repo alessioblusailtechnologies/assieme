@@ -403,6 +403,10 @@ async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
     documentiReferenziati: nuovoMessaggio.documentiReferenziati ?? [],
     citazioni: [],
     provenienze: [],
+    /* Come il backend (13/09/2026): la domanda ricorda il cliente della
+       conversazione nel momento in cui parte. */
+    ...(conversazione.clienteId &&
+      clientePerId(conversazione.clienteId) && { cliente: clientePerId(conversazione.clienteId) }),
   };
   MESSAGGI.push(messaggioUtente);
   conversazione.aggiornataIl = adesso;

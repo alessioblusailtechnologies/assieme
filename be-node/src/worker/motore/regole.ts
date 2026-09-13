@@ -417,6 +417,20 @@ export interface ContestoPrompt {
   /** I messaggi precedenti della conversazione, dal più vecchio. */
   storia: MessaggioStoria[];
   domanda: string;
+  /** Il cliente agganciato alla conversazione, con il path della sua scheda. */
+  cliente?: { nome: string; scheda: string };
+}
+
+/**
+ * Di chi si parla (13/09/2026). Chi menziona un cliente con «@» e poi chiede
+ * «cosa sai su di lui?» non ripete il nome: senza questa riga il modello
+ * vedeva la domanda nuda, e rispondeva di non sapere a chi ci si riferisse.
+ */
+function rigaCliente(cliente: { nome: string; scheda: string }): string {
+  return (
+    `La conversazione riguarda il cliente ${cliente.nome}: quando l’utente non nomina nessuno («lui», «lei», «il cliente», «la società») parla di lui. ` +
+    `Parti dalla sua scheda \`${cliente.scheda}\`, e dalla sua cartella per i documenti.`
+  );
 }
 
 /**
@@ -436,6 +450,9 @@ export function promptRipresa(c: Omit<ContestoPrompt, 'storia'>): string {
     for (const m of c.mancanti) parti.push(`- ${m.titolo}: ${m.motivo}`);
     parti.push('Dillo all’utente se incide sulla risposta.');
   }
+  /* Anche in ripresa: il cliente può essere stato agganciato dopo il primo
+     messaggio, e la sessione non lo sa. */
+  if (c.cliente) parti.push(`${parti.length ? '\n' : ''}${rigaCliente(c.cliente)}`);
   parti.push(`${parti.length ? '\n' : ''}Domanda dell’utente:\n${c.domanda}`);
   return parti.join('\n');
 }
@@ -453,6 +470,7 @@ export function promptUtente(c: ContestoPrompt): string {
       'La conversazione non ha documenti nel contesto: cerca negli archivi della workspace ciò che serve e, se trovi documenti pertinenti, proponili all’utente.',
     );
   }
+  if (c.cliente) parti.push(`\n${rigaCliente(c.cliente)}`);
   if (c.mancanti.length) {
     parti.push('\nAttenzione, questi documenti del contesto NON sono disponibili:');
     for (const m of c.mancanti) parti.push(`- ${m.titolo}: ${m.motivo}`);

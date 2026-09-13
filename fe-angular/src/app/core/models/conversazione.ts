@@ -136,6 +136,12 @@ export interface Messaggio {
    * col messaggio, quindi ci sono anche riaprendo la conversazione domani.
    */
   passi?: Passo[];
+  /**
+   * Il cliente di cui si parlava quando la domanda è partita (13/09/2026):
+   * il chip nella bolla. È quello di *allora*, non quello di oggi della
+   * conversazione, che nel frattempo si può staccare o cambiare.
+   */
+  cliente?: { id: Id; nome: string };
   /** Vero mentre lo streaming è in corso: il testo cresce, i pulsanti aspettano. */
   inCorso?: boolean;
 }

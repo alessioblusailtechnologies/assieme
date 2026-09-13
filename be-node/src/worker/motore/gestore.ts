@@ -35,7 +35,7 @@ import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreTitolo } from './titolista.js';
 import { avvisiEsposizione, avvisiRimandi, ErroreValidazione, haRimandi, separaBlocco, validaBlocco } from './validazione.js';
-import { materializzaWorkspace, type Workspace } from './workspace.js';
+import { cartellaCliente, materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
  * Il job `interrogazione` — il §4.3 del piano per intero: workspace
@@ -454,10 +454,29 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         }),
       });
 
+      /* Il cliente agganciato si nomina nel prompt, con la sua scheda: chi lo
+         ha menzionato con «@» e poi chiede «cosa sai su di lui?» non ripete
+         il nome, e la sola SCHEDA.md su disco non diceva al modello quale
+         delle cartelle fosse quella giusta (13/09/2026). */
+      const agganciato =
+        conversazione.cliente_id && !conversazione.chat_cliente_id
+          ? (
+              await db.query<{ id: string; nome: string }>(
+                `select id, nome from velia.clienti where id = $1 and tenant_id = $2`,
+                [conversazione.cliente_id, tenantId],
+              )
+            ).rows[0]
+          : undefined;
       const contestoPrompt = {
         documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
         mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
         domanda: payload.testo,
+        ...(agganciato && {
+          cliente: {
+            nome: agganciato.nome,
+            scheda: `tenant/clienti/${cartellaCliente(agganciato.nome, agganciato.id)}/SCHEDA.md`,
+          },
+        }),
       };
       /*
        * In una chat cliente cambiano tre cose insieme, e vanno insieme:
