@@ -20,19 +20,19 @@ lavoro che vale.
 | Nobis | auto (natanti, bici, conducente) | 8 | 60 | ~590 |
 | HDI | auto | 6 | 20 | ~270 |
 | Groupama | auto | 5 | 15 | ~340 |
-| **Generali** | auto, viaggi, casa | 5 | 17 | ~370 |
+| **Generali** | auto, viaggi, casa, **tutela** | 6 | 22 | ~440 |
 
 Fuori tabella: Allianz, AXA, Cattolica (gruppo Generali, AUTOPIÙ).
 
-I rami `ram-rc-prof`, `ram-tutela` e `ram-vita` sono **vuoti per tutte le
-compagnie**. Il totale a catalogo è 300 documenti (il test
+I rami `ram-rc-prof` e `ram-vita` sono **vuoti per tutte le compagnie**;
+`ram-tutela` lo era fino al 13/09, quando ci è entrato Immagina Adesso
+Armonia. Il totale a catalogo è 305 documenti (il test
 `integrazione-documenti.spec.ts` asserisce quel numero: va aggiornato a
 ogni caricamento).
 
 Di Generali c'erano solo i due **Contratto Base** (autovetture 07/2025,
 motoveicoli 01/2026): la RCA minima di legge, che non vende nessuno. Dal
-13/09 ci sono anche **Sei in Viaggio**, **Immagina Strade Nuove** e
-**Immagina Adesso Casa** (vedi sotto).
+13/09 ci sono anche **Sei in Viaggio**, **Immagina Strade Nuove** **Immagina Adesso Casa** e **Immagina Adesso Armonia** (vedi sotto).
 
 ## Il catalogo Generali, per ramo
 
@@ -72,7 +72,7 @@ comuni, e da solo apre quattro rami.
 | Modulo | Ramo | Edizione |
 |---|---|---|
 | CASA | `ram-casa` | 28/06/2025, **in archivio** |
-| ARMONIA (RC vita privata + tutela legale) | `ram-tutela` | 28/06/2025, agg. 11/07/2026 |
+| ARMONIA (RC vita privata + tutela legale) | `ram-tutela` | 28/06/2025, **in archivio** |
 | SALUTE E BENESSERE | `ram-salute` | 11/07/2026 |
 | CUCCIOLO (cane, gatto) | `ram-casa` | 28/06/2025, agg. 11/07/2026 |
 | Norme comuni | trasversale | 28/06/2025 |
@@ -119,7 +119,7 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 | 1 | Generali Sei in Viaggio | viaggi | 25/07/2015 | 39 | **in archivio** (13/09) |
 | 2 | Immagina Strade Nuove (auto) | auto | 01/07/2025 | 144 | **in archivio** (13/09) |
 | 3 | Immagina Adesso Cucciolo | casa | 28/06/2025 | 51 | da fare |
-| 4 | Immagina Adesso Armonia | tutela | 28/06/2025 | 53 | da fare |
+| 4 | Immagina Adesso Armonia | tutela | 28/06/2025 | 53 | **in archivio** (13/09) |
 | 5 | Immagina Adesso Norme comuni | (trasversale) | 28/06/2025 | 14 | **trascritte** (13/09), da replicare negli altri moduli |
 | 6 | ViviCondominio | casa | 11/07/2026 | 120 | da fare |
 | 7 | Immagina Strade Nuove Passione Moto | auto | 01/2026 | 122 | da fare |
@@ -152,7 +152,7 @@ l'INDICE e i testimoni si spalmano, e con la cornice riconosciuta bene il
 testimone OCR ha segnalato 6 pagine su 140 invece di 18 su 39.
 
 **Circa 21.000 token a pagina sul set piccolo, 13.500 sul grande**, più l'orchestrazione, più 4 dollari ogni
-1.000 pagine di Mistral OCR (il testimone). Le 712 pagine che restano
+1.000 pagine di Mistral OCR (il testimone). Le 659 pagine che restano
 del lotto 1 valgono quindi **una dozzina di milioni di token**: più di una
 sessione. Si va un set alla volta, e il modulo Salute e Benessere (366
 pagine, 7-8 milioni) vuole una sessione sua.
@@ -170,6 +170,11 @@ comuni): 1.697.062 di trascrizione in 16 blocchi, 466.641 di secondo
 sguardo in quattro passate, 371.934 di INDICE, **2.535.637 in tutto**,
 cioè **16.500 token a pagina**. Le Norme comuni sono trascritte una volta
 sola e si replicano negli altri tre moduli: quel costo non si ripete.
+
+Sul quarto set (Immagina Adesso Armonia, 53 pagine): 649.521 di
+trascrizione in 6 blocchi, 103.912 di secondo sguardo in una passata sola,
+250.394 di INDICE, **1.003.827 in tutto**, cioè **19.000 token a pagina**.
+Sui set piccoli l'INDICE pesa un quarto del totale e non si comprime.
 
 ## Decisioni prese, da non rimettere in discussione
 
