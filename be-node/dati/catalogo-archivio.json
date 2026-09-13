@@ -2247,6 +2247,60 @@
   "pathPdf": "archivio-pubblico/hdi/auto/natanti-hdi/ed-2026-06/originale.pdf"
  },
  {
+  "id": "doc-hdi-viaggio-singolo-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-viaggi",
+  "prodotto": "# Viaggio Singolo",
+  "titolo": "Condizioni di Assicurazione — HDI # Viaggio Singolo",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 30,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-viaggio-singolo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-viaggio-singolo-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-viaggi",
+  "prodotto": "# Viaggio Singolo",
+  "titolo": "DIP Danni — HDI # Viaggio Singolo",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-viaggio-singolo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-viaggio-singolo-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-viaggi",
+  "prodotto": "# Viaggio Singolo",
+  "titolo": "DIP Aggiuntivo Danni — HDI # Viaggio Singolo",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-viaggio-singolo-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/viaggi/viaggio-singolo/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-nobis-filo-diretto-car-ed-2023-10-condizioni-di-assicurazione",
   "compagniaId": "cmp-nobis",
   "ramoId": "ram-auto",
