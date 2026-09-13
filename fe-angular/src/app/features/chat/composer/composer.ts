@@ -40,8 +40,8 @@ import {
   scriviDopoChip,
   sostituisciIntervallo,
   testoEditor,
-} from './editor-testo';
-import { menzioneAlCursore } from './menzione';
+} from '@shared/ui/barra-richiesta/editor-testo';
+import { menzioneAlCursore } from '@shared/ui/barra-richiesta/menzione';
 
 /**
  * Composizione del messaggio: testo, referenziazione `@`, invio.

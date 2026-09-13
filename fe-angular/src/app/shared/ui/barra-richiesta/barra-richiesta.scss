@@ -1,0 +1,26 @@
+@use 'campo-chip';
+
+:host {
+  display: block;
+}
+
+.barra {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Una richiesta è più lunga di un messaggio: il campo parte da qualche riga
+   e cresce di più prima di scorrere. */
+.campo__testo {
+  min-height: 4.5em;
+  max-height: 320px;
+}
+
+.campo__proprie {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: auto;
+}

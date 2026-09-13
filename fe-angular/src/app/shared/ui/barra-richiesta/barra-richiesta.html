@@ -1,0 +1,53 @@
+<div class="barra">
+  @if (selettoreAperto()) {
+    <ui-selettore-documenti
+      class="selettore"
+      [query]="menzione()?.query ?? ''"
+      [esclusi]="esclusi()"
+      granularita="prodotto"
+      [conClienti]="conClienti()"
+      (scelto)="referenzia($event)"
+      (sceltiInsieme)="referenziaInsieme($event)"
+      (clienteScelto)="aggancia($event)"
+      (chiuso)="chiudiSelettore()"
+    />
+  }
+
+  <div class="campo">
+    <!--
+      L'editor: testo e, tra le parole, i chip. Il contenuto lo governa il
+      componente (editor-testo.ts, riferimenti-in-linea.ts), non il template.
+    -->
+    <div
+      #area
+      class="campo__testo"
+      contenteditable="true"
+      spellcheck="true"
+      [attr.aria-label]="ariaLabel()"
+      aria-multiline="true"
+      [attr.data-placeholder]="placeholder()"
+      (input)="aggiorna()"
+      (keydown)="suTasto($event)"
+      (keyup)="aggiornaCursore()"
+      (click)="aggiornaCursore()"
+      (paste)="incolla($event)"
+      (drop)="$event.preventDefault()"
+    ></div>
+
+    <div class="campo__azioni">
+      <button
+        type="button"
+        class="campo__allega"
+        (click)="apriDaPulsante()"
+        aria-label="Referenzia un documento, un prodotto o un cliente"
+        title="Referenzia un documento, un prodotto o un cliente (@)"
+      >
+        <ui-icon name="referenzia" [size]="17" />
+      </button>
+      <!-- I pulsanti di chi la usa, spinti a destra. -->
+      <span class="campo__proprie">
+        <ng-content select="[barraAzioni]" />
+      </span>
+    </div>
+  </div>
+</div>
