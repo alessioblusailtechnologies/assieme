@@ -4876,6 +4876,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/casa/unica-casa/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-unica-famiglia-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Famiglia",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Famiglia",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 53,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-famiglia-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-famiglia-ed-2025-10-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Famiglia",
+  "titolo": "DIP Danni — Unipol Unica Famiglia",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-famiglia-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-famiglia-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Famiglia",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Famiglia",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-famiglia-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-famiglia-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Famiglia",
+  "titolo": "Informativa Privacy — Unipol Unica Famiglia",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 69,
+  "edizione": {
+   "id": "edz-unica-famiglia-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-famiglia-ed-2025-10-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-casa",
+  "prodotto": "Unica Famiglia",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Famiglia",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 66,
+  "edizione": {
+   "id": "edz-unica-famiglia-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/casa/unica-famiglia/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-unica-infortuni-ed-2025-10-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-infortuni",
