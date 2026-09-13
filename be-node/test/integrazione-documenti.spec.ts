@@ -58,8 +58,8 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     const r = await richiedi('/api/documenti?perPagina=100', tokenAdmin);
     expect(r.statusCode).toBe(200);
     const pagina = r.json<PaginaDocumenti>();
-    /* 110 Unipol (20 prodotti: i 9 set auto ed. 05/2026 entrati il 12/09/2026, le due edizioni storiche di Km&Servizi Autovetture, Scudo Cyber in due edizioni, 3 Focus Commercio, i 3 set già trascritti entrati il 13/09/2026: Tutela Legale Aziende ed. 03/2026, Unica Infortuni e Unica Casa ed. 10/2025, piu Tutela Legale Professionisti ed. 03/2026 , Unica Famiglia e Unica Mobilita ed. 10/2025) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto) + 34 Generali (9 set: 2 contratti base, Sei in Viaggio, Immagina Strade Nuove e Passione Moto, ViviCondomìnio e i tre moduli di Immagina Adesso - Casa, Armonia e Cucciolo, ognuno con le Norme comuni replicate) + 15 Groupama (5 set auto entrati il 13/09/2026). */
-    expect(pagina.totale).toBe(345);
+    /* 115 Unipol (21 prodotti: i 9 set auto ed. 05/2026 entrati il 12/09/2026, le due edizioni storiche di Km&Servizi Autovetture, Scudo Cyber in due edizioni, 3 Focus Commercio, i 3 set già trascritti entrati il 13/09/2026: Tutela Legale Aziende ed. 03/2026, Unica Infortuni e Unica Casa ed. 10/2025, piu Tutela Legale Professionisti ed. 03/2026 , Unica Famiglia e Unica Mobilita ed. 10/2025) + 3 Cattolica AUTOPIÙ (ed. 07/2025) + 60 Nobis (8 prodotti, 15 edizioni) + 30 Allianz (5 prodotti, 10 edizioni) + 22 AXA (6 set) + 51 Zurich (16 prodotti, 17 edizioni: auto, casa, infortuni, salute, viaggi) + 20 HDI (6 set auto) + 34 Generali (9 set: 2 contratti base, Sei in Viaggio, Immagina Strade Nuove e Passione Moto, ViviCondomìnio e i tre moduli di Immagina Adesso - Casa, Armonia e Cucciolo, ognuno con le Norme comuni replicate) + 15 Groupama (5 set auto entrati il 13/09/2026). */
+    expect(pagina.totale).toBe(350);
     expect(pagina.elementi).toHaveLength(100); // perPagina è tappato a 100
     expect(pagina.pagina).toBe(1);
     const primo = pagina.elementi[0]!;
@@ -78,19 +78,25 @@ describe.skipIf(!pronto)('archivio pubblico col progetto Supabase', () => {
     }
   });
 
-  it('filtri combinati: compagnia + ramo + solo correnti = i 52 documenti ed. 05/2026', async () => {
+  it('filtri combinati: compagnia + ramo + solo correnti = i 57 documenti auto di Unipol', async () => {
     const r = await richiedi(
-      '/api/documenti?compagniaId=cmp-unipolsai&ramoId=ram-auto&soloCorrenti=true',
+      '/api/documenti?compagniaId=cmp-unipolsai&ramoId=ram-auto&soloCorrenti=true&perPagina=100',
       tokenAdmin,
     );
     const pagina = r.json<PaginaDocumenti>();
-    /* I nove set auto entrati il 12/09/2026 portano tutti la stessa data. */
-    expect(pagina.totale).toBe(52);
+    /* I nove set entrati il 12/09/2026 portano tutti «ed. 05/2026». Fino al
+       12/09 il filtro tornava una data sola, ma era un caso: dal 13/09
+       Km&Servizi Monopattini entra con «ed. 07/2026», quindi qui si verifica
+       che il filtro selezioni le correnti del ramo, non che siano coetanee. */
+    expect(pagina.totale).toBe(57);
+    expect(pagina.elementi).toHaveLength(57); // tutte in una pagina sola, altrimenti il giro sotto ne vede 20
+    const etichette = new Set<string>();
     for (const d of pagina.elementi) {
       expect(d.compagnia.id).toBe('cmp-unipolsai');
       expect(d.edizione.corrente).toBe(true);
-      expect(d.edizione.etichetta).toBe('ed. 05/2026');
+      etichette.add(d.edizione.etichetta);
     }
+    expect([...etichette].sort()).toEqual(['ed. 05/2026', 'ed. 07/2026']);
   });
 
   it('dettaglio di un DIP: le tre edizioni vere, dalla più recente', async () => {

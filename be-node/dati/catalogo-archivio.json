@@ -4224,6 +4224,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-autovetture/ed-2026-05/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-km-servizi-monopattini-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Monopattini elettrici",
+  "titolo": "Condizioni di Assicurazione — Unipol Km&Servizi Monopattini elettrici",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 32,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-km-servizi-monopattini-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-16",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-monopattini-ed-2026-07-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Monopattini elettrici",
+  "titolo": "DIP Danni — Unipol Km&Servizi Monopattini elettrici",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-km-servizi-monopattini-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-16",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-monopattini-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Monopattini elettrici",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Km&Servizi Monopattini elettrici",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 2,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-km-servizi-monopattini-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-16",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-monopattini-ed-2026-07-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Monopattini elettrici",
+  "titolo": "Informativa Privacy — Unipol Km&Servizi Monopattini elettrici",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 47,
+  "edizione": {
+   "id": "edz-km-servizi-monopattini-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-16",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-km-servizi-monopattini-ed-2026-07-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Km&Servizi Monopattini elettrici",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Km&Servizi Monopattini elettrici",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 43,
+  "edizione": {
+   "id": "edz-km-servizi-monopattini-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-16",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-scudo-cyber-ed-2024-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-cyber",
