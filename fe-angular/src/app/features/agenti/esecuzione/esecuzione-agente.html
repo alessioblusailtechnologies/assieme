@@ -37,17 +37,6 @@
     }
   </p>
 
-  @if (parametriMostrati().length) {
-    <section class="scheda" aria-labelledby="titolo-parametri">
-      <p class="mono" id="titolo-parametri">Parametri dell'avvio</p>
-      <ul class="parametri">
-        @for (parametro of parametriMostrati(); track parametro.etichetta) {
-          <li><span class="parametri__etichetta">{{ parametro.etichetta }}:</span> {{ parametro.valore }}</li>
-        }
-      </ul>
-    </section>
-  }
-
   <!-- L'esito consultabile (RF-E-07), con le citazioni che lo reggono (RF-E-08). -->
   @if (esecuzione.stato === 'fallita') {
     <section class="scheda fallimento" aria-labelledby="titolo-fallimento">
@@ -80,14 +69,6 @@
       }
 
       <div class="esito__azioni">
-        <!-- Il campo dice che il documento c'è; il file lo chiede il client,
-             perché la rotta vuole il token. -->
-        @if (esecuzione.documentoGeneratoUrl) {
-          <button uiBottone type="button" (click)="scaricaDocumento()">
-            <ui-icon name="scarica" [size]="15" />
-            <span>Scarica il documento generato</span>
-          </button>
-        }
         <button uiBottone type="button" (click)="approfondisciInChat()">
           <ui-icon name="chat" [size]="15" />
           <span>Approfondisci in chat</span>

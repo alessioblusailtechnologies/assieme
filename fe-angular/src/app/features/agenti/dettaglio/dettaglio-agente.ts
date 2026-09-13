@@ -1,49 +1,36 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
-import {
-  EsecuzioneRiepilogo,
-  ParametroAgente,
-  RiferimentoDocumento,
-} from '@core/models';
-import { AgentiApi } from '@core/api/agenti-api';
+import { EsecuzioneRiepilogo, RiferimentoRichiesta } from '@core/models';
 import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
-import { Campo } from '@shared/ui/campo/campo';
-import { Cassetto } from '@shared/ui/cassetto/cassetto';
 import { ComponenteStatoEsecuzione } from '../stato-esecuzione';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { DettaglioAgenteStore } from './dettaglio-agente-store';
 import { Icona } from '@shared/ui/icona/icona';
-import { NotificheStore } from '@core/notifiche/notifiche-store';
-import { nomeDocumentoEsecuzione } from '../nome-documento';
-import { scaricaBlob } from '@shared/esportazione/scarica-blob';
+import type { NomeIcona } from '@shared/ui/icona/registro-icone';
+import { PianoAgenteScheda } from './piano-agente';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
-import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
+import { segmenti } from '@shared/ui/barra-richiesta/riferimenti-in-linea';
 import { etichettaPianificazione } from '../pianificazione';
+
+/** Un pezzo della richiesta come si mostra: parole, o un riferimento risolto (o sparito). */
+type ParteRichiesta =
+  | { tipo: 'testo'; testo: string }
+  | { tipo: 'riferimento'; riferimento: RiferimentoRichiesta | undefined };
 
 /**
  * Un agente (RF-E-01…E-06).
  *
- * Sopra la definizione — istruzioni, fonti, output, pianificazione — e sotto
- * lo storico delle esecuzioni, che è il motivo per cui si apre la pagina.
- * Un'esecuzione avviata compare subito in cima con il suo stato e la pagina
- * la segue da sola; al termine arriva la notifica (RF-E-07).
- *
- * «Esegui ora» chiede i parametri in un cassetto quando l'agente li dichiara
- * (RF-E-05); altrimenti parte e basta.
+ * In alto il piano, perché è la cosa da confermare; sotto la richiesta com'è
+ * stata scritta, coi riferimenti al loro posto, e quando corre. Accanto lo
+ * storico delle esecuzioni, che è il motivo per cui si torna sulla pagina.
+ * «Esegui ora» parte solo col piano confermato; un'esecuzione avviata
+ * compare subito in cima e la pagina la segue da sola (RF-E-07).
  */
 @Component({
   selector: 'app-dettaglio-agente',
@@ -52,14 +39,12 @@ import { etichettaPianificazione } from '../pianificazione';
     Badge,
     Bottone,
     Briciole,
-    Campo,
-    Cassetto,
     ComponenteStatoEsecuzione,
     DatePipe,
     Icona,
+    PianoAgenteScheda,
     RouterLink,
     Scheletro,
-    SelettoreDocumenti,
     StatoVuoto,
     Suggerimento,
   ],
@@ -70,28 +55,9 @@ import { etichettaPianificazione } from '../pianificazione';
 export class DettaglioAgente {
   protected readonly store = inject(DettaglioAgenteStore);
   private readonly conferme = inject(ConfermeStore);
-  private readonly api = inject(AgentiApi);
-  private readonly notifiche = inject(NotificheStore);
 
   /** Dalla rotta `/agenti/:id`. */
   readonly id = input.required<string>();
-
-  /**
-   * RF-E-13: il documento generato si chiede all'API e si consegna da qui.
-   * Non è un link: la rotta vuole il Bearer, che un `<a href>` non manda.
-   */
-  protected scaricaDocumento(esecuzione: EsecuzioneRiepilogo): void {
-    this.api.scaricaDocumento(this.id(), esecuzione.id).subscribe({
-      next: (blob) =>
-        scaricaBlob(blob, nomeDocumentoEsecuzione(this.store.agente()?.nome, esecuzione.id, blob)),
-      error: () =>
-        this.notifiche.aggiungi({
-          gravita: 'errore',
-          titolo: 'Il documento generato non è arrivato',
-          dettaglio: 'Riprova fra poco.',
-        }),
-    });
-  }
 
   constructor() {
     effect(() => this.store.apri(this.id()));
@@ -105,69 +71,25 @@ export class DettaglioAgente {
 
   protected readonly etichettaPianificazione = etichettaPianificazione;
 
-  // --- Esecuzione manuale (RF-E-03/05) ------------------------------------
+  /** La richiesta com'è stata scritta, coi riferimenti al loro posto. */
+  protected readonly parti = computed<ParteRichiesta[]>(() => {
+    const agente = this.store.agente();
+    if (!agente) return [];
+    return segmenti(agente.richiesta).map(
+      (s): ParteRichiesta =>
+        'tipo' in s
+          ? {
+              tipo: 'riferimento',
+              riferimento: agente.riferimenti.find((r) => r.tipo === s.tipo && r.chiave === s.chiave),
+            }
+          : { tipo: 'testo', testo: s.testo },
+    );
+  });
 
-  protected readonly cassettoAvvio = signal(false);
-  protected readonly valoriTesto = signal<Record<string, string>>({});
-  protected readonly documentiScelti = signal<Record<string, RiferimentoDocumento>>({});
-  /** La chiave del parametro-documento la cui ricerca è aperta. */
-  protected readonly parametroInRicerca = signal<string | undefined>(undefined);
-
-  protected readonly parametri = computed(() => this.store.agente()?.parametri ?? []);
-
-  protected avvia(): void {
-    if (!this.parametri().length) {
-      this.store.esegui();
-      return;
-    }
-    this.valoriTesto.set({});
-    this.documentiScelti.set({});
-    this.parametroInRicerca.set(undefined);
-    this.cassettoAvvio.set(true);
-  }
-
-  protected aggiornaTesto(chiave: string, valore: string): void {
-    this.valoriTesto.update((v) => ({ ...v, [chiave]: valore }));
-  }
-
-  protected apriRicerca(chiave: string): void {
-    this.parametroInRicerca.set(chiave);
-  }
-
-  protected scegliDocumento(documento: RiferimentoDocumento): void {
-    const chiave = this.parametroInRicerca();
-    if (!chiave) return;
-    this.documentiScelti.update((d) => ({ ...d, [chiave]: documento }));
-    this.parametroInRicerca.set(undefined);
-  }
-
-  protected togliDocumento(chiave: string): void {
-    this.documentiScelti.update((d) => {
-      const resto = { ...d };
-      delete resto[chiave];
-      return resto;
-    });
-  }
-
-  protected readonly avvioPronto = computed(() =>
-    this.parametri().every((p) => !p.obbligatorio || !!this.valoreDi(p)),
-  );
-
-  private valoreDi(parametro: ParametroAgente): string | undefined {
-    return parametro.tipo === 'documento'
-      ? this.documentiScelti()[parametro.chiave]?.id
-      : this.valoriTesto()[parametro.chiave]?.trim() || undefined;
-  }
-
-  protected confermaAvvio(): void {
-    if (!this.avvioPronto()) return;
-    const parametri: Record<string, string> = {};
-    for (const parametro of this.parametri()) {
-      const valore = this.valoreDi(parametro);
-      if (valore) parametri[parametro.chiave] = valore;
-    }
-    this.cassettoAvvio.set(false);
-    this.store.esegui(parametri);
+  protected icona(riferimento: RiferimentoRichiesta): NomeIcona {
+    if (riferimento.tipo === 'cliente') return 'utente';
+    if (riferimento.tipo === 'prodotto') return 'archivio-pubblico';
+    return riferimento.archivio === 'pubblico' ? 'archivio-pubblico' : 'documento';
   }
 
   // --- Eliminazione (la finestra di conferma, come ovunque) ----------------

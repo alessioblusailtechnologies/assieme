@@ -1,0 +1,139 @@
+@let a = agente();
+@let p = piano();
+
+<section class="piano" aria-labelledby="titolo-piano">
+  <header class="piano__testa">
+    <p class="mono" id="titolo-piano">Piano</p>
+    <span [class]="'piano__stato is-' + stato()">{{ etichettaStato() }}</span>
+    @if (stato() === 'confermato' && a.pianoConfermatoIl) {
+      <span class="piano__quando">il {{ a.pianoConfermatoIl | date: 'dd/MM/yyyy' }}</span>
+    }
+  </header>
+
+  @if (a.pianoErrore) {
+    <p class="piano__errore">
+      <ui-icon name="avviso" [size]="14" />
+      <span>{{ a.pianoErrore }}</span>
+    </p>
+  }
+
+  @if (p) {
+    <p class="piano__obiettivo">{{ p.obiettivo }}</p>
+
+    <ol class="passi" aria-label="Passi">
+      @for (passo of p.passi; track $index) {
+        <li class="passo">
+          <span class="passo__numero mono">{{ $index + 1 }}</span>
+          <ui-icon class="passo__icona" [name]="iconaPasso(passo)" [size]="14" />
+          <span class="passo__testo">
+            <span class="passo__titolo">{{ passo.titolo }}</span>
+            @if (passo.dettaglio) {
+              <span class="passo__dettaglio">{{ passo.dettaglio }}</span>
+            }
+          </span>
+        </li>
+      }
+    </ol>
+
+    @if (p.letture.length) {
+      <p class="piano__etichetta">Legge</p>
+      <ul class="voci">
+        @for (lettura of p.letture; track $index) {
+          <li class="voce">
+            <ui-icon [name]="iconaLettura(lettura)" [size]="13" />
+            <span>{{ lettura.etichetta }}</span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (p.file.length) {
+      <p class="piano__etichetta">Prepara</p>
+      <ul class="voci">
+        @for (file of p.file; track $index) {
+          <li class="voce">
+            <ui-icon name="documento" [size]="13" />
+            <span class="mono voce__formato">{{ file.formato }}</span>
+            <span>{{ file.descrizione }}</span>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (p.email.length) {
+      <p class="piano__etichetta">Manda email</p>
+      <ul class="email">
+        @for (email of p.email; track $index) {
+          @let mancante = nonRisolto(email);
+          <li class="email__voce" [class.is-mancante]="!!mancante">
+            <span class="email__a">
+              <ui-icon [name]="mancante ? 'errore' : 'email'" [size]="13" />
+              <span>A {{ destinatario(email) }}</span>
+            </span>
+            @if (mancante) {
+              <span class="email__motivo">{{ mancante.motivo }}</span>
+            }
+            @if (email.oggetto) {
+              <span class="email__dettaglio">Oggetto: {{ email.oggetto }}</span>
+            }
+            <span class="email__dettaglio">{{ email.contenuto }}</span>
+            @if (email.allegati.length) {
+              <span class="email__dettaglio">Allegati: {{ email.allegati.join(', ') }}</span>
+            }
+          </li>
+        }
+      </ul>
+      <p class="piano__nota">L'agente scrive solo a questi destinatari.</p>
+    }
+
+    @if (p.dubbi.length) {
+      <p class="piano__etichetta">Da chiarire</p>
+      <ul class="voci">
+        @for (dubbio of p.dubbi; track $index) {
+          <li class="voce voce--dubbio">
+            <ui-icon name="informazione" [size]="13" />
+            <span>{{ dubbio }}</span>
+          </li>
+        }
+      </ul>
+      <p class="piano__nota">Se serve, correggi la richiesta: il piano si rilegge.</p>
+    }
+  } @else if (!a.pianoErrore) {
+    <p class="piano__vuoto">Il piano non è ancora stato scritto.</p>
+  }
+
+  <div class="piano__azioni">
+    @if (stato() === 'da-confermare') {
+      <button
+        uiBottone
+        variante="primario"
+        dimensione="piccolo"
+        type="button"
+        [disabled]="!!a.bloccoConferma || inConferma()"
+        (click)="conferma.emit()"
+      >
+        <ui-icon name="pronto" [size]="14" />
+        <span>{{ inConferma() ? 'Confermo…' : 'Conferma e attiva' }}</span>
+      </button>
+    }
+    <button
+      uiBottone
+      dimensione="piccolo"
+      [variante]="stato() === 'non-letto' ? 'primario' : 'testo'"
+      type="button"
+      [disabled]="inLettura()"
+      (click)="rileggi.emit()"
+    >
+      <ui-icon name="riprova" [size]="14" />
+      <span>
+        {{ inLettura() ? 'Leggo la richiesta…' : stato() === 'non-letto' ? 'Leggi la richiesta' : 'Rileggi la richiesta' }}
+      </span>
+    </button>
+  </div>
+
+  @if (stato() === 'da-confermare') {
+    <p class="piano__nota" [class.is-bloccata]="!!a.bloccoConferma">
+      {{ a.bloccoConferma ?? 'L’agente non parte, nemmeno se è pianificato, finché non confermi il piano.' }}
+    </p>
+  }
+</section>

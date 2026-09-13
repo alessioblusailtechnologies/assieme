@@ -24,7 +24,7 @@ const MS_INTERROGAZIONE = 1500;
  * richiede a intervalli, e il polling **si ferma da solo**.
  *
  * RF-E-07 (notifiche in applicazione): l'assestarsi di un'esecuzione
- * osservata — da in corso a completata o fallita — produce una notifica.
+ * osservata - da in corso a completata o fallita - produce una notifica.
  * È il polling stesso a vederla passare di stato, non un canale in più.
  */
 @Injectable()
@@ -112,13 +112,54 @@ export class DettaglioAgenteStore {
     this.risorsa.set(agente);
   };
 
-  // --- Esecuzione (RF-E-03/05) --------------------------------------------
+  // --- Il piano -----------------------------------------------------------
+
+  readonly inConferma = signal(false);
+  readonly inLettura = signal(false);
+
+  /** «Conferma e attiva»: da qui l'agente può partire, anche da solo. */
+  conferma(): void {
+    const id = this.id();
+    if (!id || this.inConferma()) return;
+    this.inConferma.set(true);
+    this.api.conferma(id).subscribe({
+      next: (agente) => {
+        this.inConferma.set(false);
+        this.applica(agente);
+        this.notifiche.aggiungi({
+          gravita: 'successo',
+          titolo: `${agente.nome}: piano confermato`,
+          dettaglio:
+            agente.pianificazione && !agente.pianificazione.sospesa
+              ? 'L’agente è attivo e partirà da solo quando è pianificato.'
+              : 'L’agente è attivo: puoi eseguirlo quando vuoi.',
+        });
+      },
+      error: () => this.inConferma.set(false),
+    });
+  }
+
+  /** «Rileggi la richiesta»: Velia riscrive il piano, da confermare. */
+  rileggi(): void {
+    const id = this.id();
+    if (!id || this.inLettura()) return;
+    this.inLettura.set(true);
+    this.api.rileggiPiano(id).subscribe({
+      next: (agente) => {
+        this.inLettura.set(false);
+        this.applica(agente);
+      },
+      error: () => this.inLettura.set(false),
+    });
+  }
+
+  // --- Esecuzione (RF-E-03) -----------------------------------------------
 
   /** L'esecuzione appare subito in cima allo storico; il polling fa il resto. */
-  esegui(parametri?: Record<string, string>): void {
+  esegui(): void {
     const id = this.id();
     if (!id) return;
-    this.api.esegui(id, parametri && Object.keys(parametri).length ? { parametri } : {}).subscribe({
+    this.api.esegui(id).subscribe({
       next: () => this.risorsaEsecuzioni.reload(),
     });
   }

@@ -44,7 +44,7 @@
   <ui-stato-vuoto
     icona="agente"
     titolo="Ancora nessun agente"
-    descrizione="Definisci un task una volta - istruzioni, fonti, output - ed eseguilo quando serve o su pianificazione. Puoi partire da zero o da un agente della libreria qui sotto."
+    descrizione="Scrivi una volta che cosa deve fare, come lo chiederesti in chat, e fallo partire quando serve o su pianificazione. Puoi partire da zero o da un agente della libreria qui sotto."
   >
     <a uiBottone variante="primario" routerLink="/agenti/nuovo">
       <ui-icon name="aggiungi" [size]="15" />
@@ -69,7 +69,7 @@
             <td>
               <span class="agente">
                 <span class="agente__nome">{{ a.nome }}</span>
-                <span class="agente__spiega">{{ a.descrizione }}</span>
+                <span class="agente__spiega">{{ a.obiettivo ?? 'Piano ancora da leggere' }}</span>
               </span>
             </td>
             <td class="col-pianificazione">
@@ -98,7 +98,10 @@
             <td class="col-stato">
               <!-- La stessa etichetta di stato di archivio ed esecuzioni:
                    attivo è verde col segno del via, disattivo tace in neutro. -->
-              @if (a.attivo) {
+              @if (a.pianoStato !== 'confermato') {
+                <!-- Un piano da confermare non parte: è la prima cosa da sapere. -->
+                <ui-etichetta-stato tono="corso" icona="attesa">piano da confermare</ui-etichetta-stato>
+              } @else if (a.attivo) {
                 <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>
               } @else {
                 <ui-etichetta-stato icona="sospendi">disattivo</ui-etichetta-stato>

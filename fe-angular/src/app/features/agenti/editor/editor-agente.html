@@ -7,256 +7,39 @@
 </header>
 
 <div class="corpo">
-  <!-- 1 · Identità -->
-  <section class="passo" aria-labelledby="passo-identita">
-    <p class="mono" id="passo-identita">1 · Nome e descrizione</p>
+  <!-- 1 · Nome -->
+  <section class="passo" aria-labelledby="passo-nome">
+    <p class="mono" id="passo-nome">1 · Nome</p>
     <input
       uiCampo
       type="text"
       [value]="nome()"
       (input)="nome.set($any($event.target).value)"
-      placeholder="es. Monitoraggio nuove edizioni auto"
+      placeholder="es. Scadenze della settimana"
       aria-label="Nome dell'agente"
     />
-    <input
-      uiCampo
-      type="text"
-      [value]="descrizione()"
-      (input)="descrizione.set($any($event.target).value)"
-      placeholder="A cosa serve, in una riga - la leggeranno i colleghi nell'elenco."
-      aria-label="Descrizione dell'agente"
+  </section>
+
+  <!-- 2 · La richiesta: la stessa barra della chat -->
+  <section class="passo" aria-labelledby="passo-richiesta">
+    <p class="mono" id="passo-richiesta">2 · Che cosa deve fare</p>
+    <p class="passo__spiega">
+      Scrivilo come lo chiederesti in chat. Con «@» referenzi documenti, prodotti e clienti; scrivi
+      anche quali file preparare e a chi mandare le email. Al salvataggio Velia legge la richiesta e
+      ti mostra il piano da confermare.
+    </p>
+    <ui-barra-richiesta
+      class="richiesta"
+      [(testo)]="richiesta"
+      [(riferimenti)]="riferimenti"
+      placeholder="es. Cerca i clienti con una polizza in scadenza nei prossimi 30 giorni, preparami una tabella in Excel e mandamela per email"
+      ariaLabel="Che cosa deve fare l'agente"
     />
   </section>
 
-  <!-- 2 · Istruzioni (RF-E-02) -->
-  <section class="passo" aria-labelledby="passo-istruzioni">
-    <p class="mono" id="passo-istruzioni">2 · Istruzioni del task</p>
-    <p class="passo__spiega">
-      In linguaggio naturale, come le spiegheresti a un collega. Le regole del tenant e l'obbligo
-      di citazione valgono comunque, come in chat.
-    </p>
-    <textarea
-      uiCampo
-      rows="5"
-      [value]="istruzioni()"
-      (input)="istruzioni.set($any($event.target).value)"
-      placeholder="es. Confronta le edizioni presenti in archivio con quelle note al giorno precedente…"
-      aria-label="Istruzioni del task"
-    ></textarea>
-  </section>
-
-  <!-- 3 · Fonti (RF-E-02) -->
-  <section class="passo" aria-labelledby="passo-fonti">
-    <p class="mono" id="passo-fonti">3 · Fonti documentali</p>
-    <p class="passo__spiega">
-      Singoli documenti, porzioni di archivio o i documenti di riferimento dell'agenzia. Una
-      porzione è un insieme vivo: i documenti che entrano in archivio domani ne fanno parte.
-    </p>
-
-    <!-- Lo stesso selettore della chat, barra di ricerca compresa. -->
-    <div class="cerca">
-      <button
-        uiBottone
-        type="button"
-        (mousedown)="$event.preventDefault()"
-        (click)="pannelloAperto.set(!pannelloAperto())"
-        [attr.aria-expanded]="pannelloAperto()"
-        aria-controls="selettore-documenti"
-      >
-        <ui-icon name="aggiungi" [size]="14" />
-        <span>Aggiungi documenti</span>
-      </button>
-
-      @if (pannelloAperto()) {
-        <ui-selettore-documenti
-          class="cerca__pannello"
-          [esclusi]="idDocumentiScelti()"
-          (scelto)="aggiungiDocumento($event)"
-          (chiuso)="chiudiPannello()"
-        />
-      }
-    </div>
-
-    <div class="porzione">
-      <ui-select
-        [opzioni]="opzioniArchivio"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [valore]="selArchivio()"
-        (valoreChange)="selArchivio.set($any($event))"
-        ariaLabel="Archivio della porzione"
-      />
-      <ui-select
-        [opzioni]="compagnie()"
-        campoEtichetta="nome"
-        campoValore="id"
-        placeholder="Qualsiasi compagnia"
-        [azzerabile]="true"
-        [valore]="selCompagnia()"
-        (valoreChange)="selCompagnia.set($any($event))"
-        ariaLabel="Compagnia della porzione"
-      />
-      <ui-select
-        [opzioni]="rami()"
-        campoEtichetta="nome"
-        campoValore="id"
-        placeholder="Qualsiasi ramo"
-        [azzerabile]="true"
-        [valore]="selRamo()"
-        (valoreChange)="selRamo.set($any($event))"
-        ariaLabel="Ramo della porzione"
-      />
-      @if (selArchivio() === 'pubblico') {
-        <label class="porzione__preferiti" for="porzione-preferiti">
-          <ui-checkbox
-            [valore]="selPreferiti()"
-            (valoreChange)="selPreferiti.set($event)"
-            inputId="porzione-preferiti"
-          />
-          <span>solo preferiti</span>
-        </label>
-      }
-      <button uiBottone type="button" (click)="aggiungiSelezione()">
-        <ui-icon name="aggiungi" [size]="14" />
-        <span>Aggiungi porzione</span>
-      </button>
-    </div>
-
-    <label class="riferimenti" for="fonte-riferimenti">
-      <ui-checkbox
-        [valore]="haRiferimenti()"
-        (valoreChange)="alternaRiferimenti($event)"
-        inputId="fonte-riferimenti"
-      />
-      <span>Includi i documenti di riferimento dell'agenzia (RF-D-14)</span>
-    </label>
-
-    @if (fonti().length) {
-      <ul class="scelti" aria-label="Fonti scelte">
-        @for (fonte of fonti(); track fonte.etichetta) {
-          <li class="scelto">
-            <ui-icon
-              [name]="
-                fonte.tipo === 'documenti-riferimento'
-                  ? 'riferimenti'
-                  : fonte.tipo === 'selezione'
-                    ? fonte.archivio === 'pubblico'
-                      ? 'archivio-pubblico'
-                      : 'archivio-privato'
-                    : 'documento'
-              "
-              [size]="14"
-            />
-            <span class="scelto__titolo">{{ fonte.etichetta }}</span>
-            <button
-              type="button"
-              class="scelto__togli"
-              (click)="rimuoviFonte(fonte)"
-              [attr.aria-label]="'Togli la fonte ' + fonte.etichetta"
-            >
-              <ui-icon name="chiudi" [size]="12" />
-            </button>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="passo__vuoto">Nessuna fonte scelta: serve almeno una.</p>
-    }
-  </section>
-
-  <!-- 4 · Output (RF-E-02, RF-E-13) -->
-  <section class="passo" aria-labelledby="passo-output">
-    <p class="mono" id="passo-output">4 · Output</p>
-    <div class="output">
-      <ui-select
-        [opzioni]="opzioniFormato"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [valore]="formatoOutput()"
-        (valoreChange)="formatoOutput.set($any($event))"
-        ariaLabel="Formato dell'output"
-      />
-    </div>
-    <p class="passo__vuoto">
-      Col formato documento, ogni esecuzione produce anche un PDF col layout di VELIA e
-      l'intestazione dell'agenzia, scaricabile dallo storico.
-    </p>
-  </section>
-
-  <!-- 5 · Parametri (RF-E-05) -->
-  <section class="passo" aria-labelledby="passo-parametri">
-    <p class="mono" id="passo-parametri">5 · Parametri all'avvio - facoltativi</p>
-    <p class="passo__spiega">
-      Ciò che cambia a ogni esecuzione manuale, come il documento su cui operare quella volta.
-    </p>
-
-    @if (parametri().length) {
-      <ul class="scelti" aria-label="Parametri definiti">
-        @for (parametro of parametri(); track parametro.chiave) {
-          <li class="scelto">
-            <ui-icon [name]="parametro.tipo === 'documento' ? 'documento' : 'modifica'" [size]="13" />
-            <span class="scelto__titolo">
-              {{ parametro.etichetta }}
-              <span class="scelto__nota">
-                {{ parametro.tipo === 'documento' ? 'documento' : 'testo' }}{{
-                  parametro.obbligatorio ? ', obbligatorio' : ''
-                }}
-              </span>
-            </span>
-            <button
-              type="button"
-              class="scelto__togli"
-              (click)="rimuoviParametro(parametro.chiave)"
-              [attr.aria-label]="'Togli il parametro ' + parametro.etichetta"
-            >
-              <ui-icon name="chiudi" [size]="12" />
-            </button>
-          </li>
-        }
-      </ul>
-    }
-
-    <div class="parametro">
-      <input
-        uiCampo
-        type="text"
-        [value]="bozzaParametro()"
-        (input)="bozzaParametro.set($any($event.target).value)"
-        (keydown.enter)="aggiungiParametro()"
-        placeholder="es. Preventivo da verificare"
-        aria-label="Etichetta del nuovo parametro"
-      />
-      <ui-select
-        [opzioni]="opzioniTipoParametro"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        [valore]="bozzaTipoParametro()"
-        (valoreChange)="bozzaTipoParametro.set($any($event))"
-        ariaLabel="Tipo del nuovo parametro"
-      />
-      <label class="parametro__obbligatorio" for="parametro-obbligatorio">
-        <ui-checkbox
-          [valore]="bozzaObbligatorio()"
-          (valoreChange)="bozzaObbligatorio.set($event)"
-          inputId="parametro-obbligatorio"
-        />
-        <span>obbligatorio</span>
-      </label>
-      <button
-        uiBottone
-        type="button"
-        (click)="aggiungiParametro()"
-        [disabled]="!bozzaParametro().trim()"
-      >
-        <ui-icon name="aggiungi" [size]="14" />
-        <span>Aggiungi parametro</span>
-      </button>
-    </div>
-  </section>
-
-  <!-- 6 · Pianificazione (RF-E-04) -->
+  <!-- 3 · Quando (RF-E-04) -->
   <section class="passo" aria-labelledby="passo-pianificazione">
-    <p class="mono" id="passo-pianificazione">6 · Pianificazione - facoltativa</p>
+    <p class="mono" id="passo-pianificazione">3 · Quando - facoltativo</p>
 
     <label class="pianifica" for="pianificazione-attiva">
       <ui-checkbox
@@ -315,6 +98,12 @@
     }
   </section>
 
+  @if (inModifica()) {
+    <p class="avviso-conferma">
+      Se cambi la richiesta o quando corre, il piano torna da confermare prima che l'agente riparta.
+    </p>
+  }
+
   <footer class="azioni">
     <button
       uiBottone
@@ -325,7 +114,7 @@
     >
       <ui-icon name="agente" [size]="15" />
       <span>
-        {{ inSalvataggio() ? 'Salvataggio…' : inModifica() ? 'Salva le modifiche' : 'Crea l’agente' }}
+        {{ inSalvataggio() ? 'Leggo la richiesta…' : inModifica() ? 'Salva le modifiche' : 'Crea l’agente' }}
       </span>
     </button>
 
@@ -333,5 +122,8 @@
       <span>Annulla</span>
     </a>
 
+    @if (inSalvataggio()) {
+      <span class="azioni__nota" role="status">Velia sta scrivendo il piano: ci vuole qualche secondo.</span>
+    }
   </footer>
 </div>

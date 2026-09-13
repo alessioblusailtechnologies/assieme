@@ -1,56 +1,56 @@
-import type { FastifyInstance } from 'fastify';
+import type { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import type pg from 'pg';
 
+import { idrataRiferimenti } from '../../agenti/riferimenti.js';
 import {
-  schemaAvvioEsecuzione,
   schemaModificheAgente,
   schemaNuovoAgente,
+  testoLeggibile,
   type Agente,
+  type AgentePredefinito,
   type AgenteRiepilogo,
   type EsecuzioneAgente,
   type EsecuzioneRiepilogo,
-  type FonteAgente,
   type LimitiAgenti,
-  type NuovaFonteAgente,
-  type ParametroAgente,
+  type PianoAgente,
   type Pianificazione,
   type RigaLog,
+  type StatoPiano,
 } from '../../contratto/agenti.js';
 import type { Citazione } from '../../contratto/conversazioni.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { leggiDatoDiPiattaforma } from '../../dati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
 import { poolDb } from '../../db/pool.js';
-import { fasceDelTenant } from '../../generazione/catalogo.js';
-import { generaDocumento } from '../../generazione/generatore.js';
 import { accoda } from '../../worker/coda.js';
-import { ArchivioStorage, type ArchivioFile } from '../../worker/ingestion/archivio-file.js';
-import { fontiDaCitazioni } from '../template/rotte.js';
+import { interpreteDallaConfigurazione, type InterpretePiano } from './interprete.js';
+import { bloccoConferma, componiPiano } from './piano.js';
 
 /**
  * Gli agenti (RF-E-01…E-13): le rotte che il FE chiama da
- * `core/api/agenti-api.ts`, col comportamento fissato da `mocks/agenti.mjs`.
+ * `core/api/agenti-api.ts`.
  *
- * Qui vive la definizione e il suo governo; l'esecuzione è del worker (job
- * `agente`) e si segue col polling dello storico — la notifica in-app del FE
- * nasce dal polling che vede la transizione, nessun canale in più. La
- * pianificazione non tocca l'API: il tick di pg_cron accoda da sé ciò che
- * `prossima_esecuzione` dice scaduto.
+ * Dal 14/09/2026 (PIANO-AGENTI.md, fase 3) la definizione è un nome, una
+ * frequenza e una richiesta. Salvare una richiesta nuova la fa leggere a un
+ * modello, che ne scrive il piano; il piano si conferma con
+ * `POST /:id/conferma`, e solo un piano confermato parte, a mano o dal tick.
+ * Cambiare la richiesta rimette il piano da leggere; cambiare quando corre
+ * lo rimette da confermare.
  *
- * I limiti (RF-E-09) si applicano due volte: esposti da `GET /api/agenti/
- * limiti` perché il FE li dica prima, imposti qui perché l'interfaccia non
- * è una garanzia — 409 sull'attivazione oltre soglia, 429 con
+ * L'esecuzione è del worker (job `agente`) e si segue col polling dello
+ * storico. I limiti (RF-E-09) si applicano qui, perché l'interfaccia non è
+ * una garanzia: 409 sull'attivazione oltre soglia, 429 con
  * `ritentaTraSecondi` sulle esecuzioni concorrenti.
  */
 
 interface RigaAgente {
   id: string;
   nome: string;
-  descrizione: string;
-  istruzioni: string;
-  fonti: NuovaFonteAgente[];
-  formato_output: Agente['formatoOutput'];
-  parametri: ParametroAgente[];
+  richiesta: string;
+  piano: PianoAgente | null;
+  piano_stato: StatoPiano;
+  piano_errore: string | null;
+  piano_confermato_il: Date | null;
   pian_frequenza: Pianificazione['frequenza'] | null;
   pian_orario: string | null;
   pian_giorno_settimana: number | null;
@@ -68,54 +68,120 @@ interface RigaEsecuzione {
   conclusa_il: Date | null;
   modalita: 'manuale' | 'pianificata';
   stato: EsecuzioneAgente['stato'];
-  parametri: Record<string, string> | null;
   tentativi: number;
   output: string | null;
   citazioni: Citazione[];
-  /** Quello dell'agente: con `documento`, l'esito si scarica come PDF. */
-  formato_output: Agente['formatoOutput'];
   log: RigaLog[];
   errore: string | null;
 }
 
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const agenteNonTrovato = (): ErroreApi => ErroreApi.nonTrovato('Agente inesistente.');
+const limiteAgenti = (massimo: number): ErroreApi =>
+  ErroreApi.conflitto(
+    'LIMITE_AGENTI',
+    `Il piano consente ${massimo} agenti attivi: disattivane uno per attivarne un altro.`,
+  );
 
 const SQL_AGENTE = `
-  select id, nome, descrizione, istruzioni, fonti, formato_output,
-         parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
+  select id, nome, richiesta, piano, piano_stato, piano_errore, piano_confermato_il,
+         pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
          pian_sospesa, attivo, creato_da, updated_at
   from velia.agenti`;
 
 const SQL_ESECUZIONE = `
-  select id, agente_id, avviata_il, conclusa_il, modalita, stato, parametri, tentativi,
-         output, citazioni, log, errore,
-         (select a.formato_output from velia.agenti a where a.id = agente_id) as formato_output
+  select id, agente_id, avviata_il, conclusa_il, modalita, stato, tentativi, output, citazioni, log, errore
   from velia.agenti_esecuzioni`;
 
-/** La libreria dei predefiniti (RF-E-10): dato di piattaforma, già idratato. */
-let predefiniti: unknown[] | undefined;
-function libreriaPredefiniti(): unknown[] {
-  predefiniti ??= JSON.parse(leggiDatoDiPiattaforma('agenti-predefiniti.json')) as unknown[];
+/** La libreria dei predefiniti (RF-E-10): dato di piattaforma. */
+let predefiniti: AgentePredefinito[] | undefined;
+function libreriaPredefiniti(): AgentePredefinito[] {
+  predefiniti ??= JSON.parse(leggiDatoDiPiattaforma('agenti-predefiniti.json')) as AgentePredefinito[];
   return predefiniti;
 }
 
 export interface OpzioniAgenti {
-  /** Nei test: un archivio finto al posto dello Storage (per il documento dell’esecuzione). */
-  archivio?: ArchivioFile;
+  /** Nei test: chi legge la richiesta al posto del modello. */
+  interprete?: InterpretePiano;
 }
 
 export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti = {}): void {
-  let archivioStorage: ArchivioFile | undefined;
-  const archivio = (): ArchivioFile => opzioni.archivio ?? (archivioStorage ??= new ArchivioStorage());
+  /* Il lettore vero si costruisce al primo uso: senza chiave resta assente,
+     e il piano dice che la lettura non è disponibile. */
+  let lettoreProprio: InterpretePiano | null | undefined;
+  const interprete = (): InterpretePiano | undefined => {
+    if (opzioni.interprete) return opzioni.interprete;
+    lettoreProprio ??= interpreteDallaConfigurazione() ?? null;
+    return lettoreProprio ?? undefined;
+  };
+
+  /**
+   * La lettura della richiesta: fuori da ogni transazione, perché il modello
+   * ci mette qualche secondo e una transazione aperta per tutto quel tempo
+   * non serve a nessuno. Si scrive solo se la richiesta è ancora quella
+   * letta: una correzione arrivata nel frattempo ha chiesto la sua lettura.
+   * Se la lettura non riesce il piano di prima resta, con l'errore accanto.
+   */
+  async function leggiPiano(identita: Identita, id: string, log: FastifyBaseLogger): Promise<void> {
+    const dati = await conIdentita(poolDb(), identita, async (client) => {
+      const riga = await righeAgente(client, identita.tenantId, id);
+      if (!riga) return undefined;
+      const tenant = await client.query<{ nome: string }>(`select nome from velia.tenant where id = $1`, [
+        identita.tenantId,
+      ]);
+      return {
+        riga,
+        agenzia: tenant.rows[0]?.nome ?? '',
+        riferimenti: await idrataRiferimenti(client, identita.tenantId, riga.richiesta),
+      };
+    });
+    if (!dati) return;
+    const { riga, agenzia, riferimenti } = dati;
+
+    const scrivi = (assegnazioni: string, valori: unknown[]) =>
+      conIdentita(poolDb(), identita, (client) =>
+        client.query(
+          `update velia.agenti set ${assegnazioni} where id = $1 and tenant_id = $2 and richiesta = $3`,
+          [id, identita.tenantId, riga.richiesta, ...valori],
+        ),
+      );
+
+    const lettore = interprete();
+    if (!lettore) {
+      await scrivi('piano_errore = $4', ['La lettura della richiesta non è disponibile su questo ambiente.']);
+      return;
+    }
+    try {
+      const pianificazione = versoPianificazione(riga);
+      const grezzo = await lettore.interpreta({
+        agenzia,
+        nome: riga.nome,
+        richiesta: testoLeggibile(riga.richiesta, riferimenti, { marcatori: true }),
+        riferimenti: riferimenti.map(({ tipo, chiave, titolo }) => ({ tipo, chiave, titolo })),
+        quando: pianificazione ? descriviPianificazione(pianificazione) : undefined,
+      });
+      const piano = await componiPiano(
+        poolDb(),
+        { tenantId: identita.tenantId, utenteId: identita.utenteId },
+        grezzo,
+        riferimenti,
+      );
+      await scrivi(
+        `piano = $4::jsonb, piano_stato = 'da-confermare', piano_errore = null,
+         piano_confermato_da = null, piano_confermato_il = null, prossima_esecuzione = null`,
+        [JSON.stringify(piano)],
+      );
+    } catch (errore) {
+      log.warn({ err: errore, agenteId: id }, 'lettura del piano dell’agente non riuscita');
+      await scrivi('piano_errore = $4', ['Non sono riuscito a leggere la richiesta: riprova fra poco.']);
+    }
+  }
 
   /** L'elenco è la plancia: attivi prima, poi per nome. */
   app.get('/api/agenti', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const righe = await client.query<RigaAgente & { numero_fonti: number }>(
-        `${SQL_AGENTE.replace('from velia.agenti', ', jsonb_array_length(fonti) as numero_fonti\n  from velia.agenti')}
-         where tenant_id = $1
-         order by attivo desc, nome collate "it-x-icu"`,
+      const righe = await client.query<RigaAgente>(
+        `${SQL_AGENTE} where tenant_id = $1 order by attivo desc, nome collate "it-x-icu"`,
         [richiesta.identita.tenantId],
       );
       const elementi: AgenteRiepilogo[] = [];
@@ -124,14 +190,14 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
           `${SQL_ESECUZIONE} where agente_id = $1 order by avviata_il desc limit 1`,
           [riga.id],
         );
+        const pianificazione = versoPianificazione(riga);
         elementi.push({
           id: riga.id,
           nome: riga.nome,
-          descrizione: riga.descrizione,
+          ...(riga.piano?.obiettivo && { obiettivo: riga.piano.obiettivo }),
           attivo: riga.attivo,
-          formatoOutput: riga.formato_output,
-          ...(versoPianificazione(riga) && { pianificazione: versoPianificazione(riga)! }),
-          numeroFonti: riga.numero_fonti,
+          pianoStato: riga.piano_stato,
+          ...(pianificazione && { pianificazione }),
           ...(ultima.rows[0] && { ultimaEsecuzione: versoRiepilogoEsecuzione(ultima.rows[0]) }),
         });
       }
@@ -148,59 +214,48 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
     );
   });
 
-  /** Creazione (RF-E-01/02). Il limite si applica subito: l'agente nasce attivo. */
+  /**
+   * Creazione (RF-E-01/02): l'agente nasce attivo ma col piano da leggere;
+   * la risposta arriva col piano già scritto, o con il motivo per cui non c'è.
+   */
   app.post('/api/agenti', async (richiesta, risposta) => {
     const esito = schemaNuovoAgente.safeParse(richiesta.body ?? {});
     if (!esito.success) {
-      throw new ErroreApi(
-        400,
-        'AGENTE_INCOMPLETO',
-        'Servono almeno un nome, le istruzioni del task e una fonte documentale.',
-      );
+      throw new ErroreApi(400, 'AGENTE_INCOMPLETO', 'Servono un nome e la richiesta.');
     }
     const nuovo = esito.data;
+    const { identita } = richiesta;
 
-    const agente = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const limiti = await limitiDelTenant(client, richiesta.identita.tenantId);
-      if (limiti.agentiAttivi >= limiti.agentiAttiviMax) {
-        throw ErroreApi.conflitto(
-          'LIMITE_AGENTI',
-          `Il piano consente ${limiti.agentiAttiviMax} agenti attivi: disattivane uno per attivarne un altro.`,
-        );
-      }
+    const id = await conIdentita(poolDb(), identita, async (client) => {
+      const limiti = await limitiDelTenant(client, identita.tenantId);
+      if (limiti.agentiAttivi >= limiti.agentiAttiviMax) throw limiteAgenti(limiti.agentiAttiviMax);
       if (nuovo.pianificazione) verificaFrequenza(nuovo.pianificazione.frequenza, limiti.frequenzaMinima);
 
       const p = nuovo.pianificazione;
       const r = await client.query<{ id: string }>(
         `insert into velia.agenti
-           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output,
-            parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
-            pian_sospesa, prossima_esecuzione, creato_da)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
-                 case when $8::text is not null and not $12
-                   then velia.prossimo_tick($8, $9, $10, $11) end,
-                 $13)
+           (tenant_id, nome, richiesta, pian_frequenza, pian_orario, pian_giorno_settimana,
+            pian_giorno_mese, pian_sospesa, creato_da)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          returning id`,
         [
-          richiesta.identita.tenantId,
+          identita.tenantId,
           nuovo.nome,
-          nuovo.descrizione,
-          nuovo.istruzioni,
-          JSON.stringify(nuovo.fonti),
-          nuovo.formatoOutput,
-          JSON.stringify(nuovo.parametri),
+          nuovo.richiesta,
           p?.frequenza ?? null,
           p?.orario ?? null,
           p?.giornoSettimana ?? null,
           p?.giornoMese ?? null,
           p?.sospesa ?? false,
-          richiesta.identita.utenteId,
+          identita.utenteId,
         ],
       );
-      return (await agenteCompleto(client, richiesta.identita.tenantId, r.rows[0]!.id))!;
+      return r.rows[0]!.id;
     });
+
+    await leggiPiano(identita, id, richiesta.log);
     void risposta.code(201);
-    return agente;
+    return conIdentita(poolDb(), identita, async (client) => (await agenteCompleto(client, identita.tenantId, id))!);
   });
 
   app.get<{ Params: { id: string } }>('/api/agenti/:id', async (richiesta) => {
@@ -211,37 +266,55 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
     });
   });
 
-  /** RF-E-01 (modifica, attiva/disattiva) e RF-E-04 (sospensione pianificazione). */
+  /**
+   * RF-E-01 (modifica, attiva/disattiva) e RF-E-04 (sospensione). Una
+   * richiesta diversa si rilegge e rimette il piano da confermare; una
+   * cadenza diversa lo rimette da confermare senza rileggerlo, perché quando
+   * corre fa parte di ciò che si conferma. Sospendere e riprendere no.
+   */
   app.patch<{ Params: { id: string } }>('/api/agenti/:id', async (richiesta) => {
     const esito = schemaModificheAgente.safeParse(richiesta.body ?? {});
     if (!esito.success) throw ErroreApi.datiNonValidi('Modifiche all’agente non valide.');
     const m = esito.data;
+    const { identita } = richiesta;
 
-    return conIdentita(poolDb(), richiesta.identita, async (client) => {
-      const esistente = await righeAgente(client, richiesta.identita.tenantId, controllaId(richiesta.params.id));
+    const { id, daRileggere } = await conIdentita(poolDb(), identita, async (client) => {
+      const esistente = await righeAgente(client, identita.tenantId, controllaId(richiesta.params.id));
       if (!esistente) throw agenteNonTrovato();
 
-      const limiti = await limitiDelTenant(client, richiesta.identita.tenantId);
+      const limiti = await limitiDelTenant(client, identita.tenantId);
       if (m.attivo === true && !esistente.attivo && limiti.agentiAttivi >= limiti.agentiAttiviMax) {
-        throw ErroreApi.conflitto(
-          'LIMITE_AGENTI',
-          `Il piano consente ${limiti.agentiAttiviMax} agenti attivi: disattivane uno per attivarne un altro.`,
-        );
+        throw limiteAgenti(limiti.agentiAttiviMax);
       }
       if (m.pianificazione) verificaFrequenza(m.pianificazione.frequenza, limiti.frequenzaMinima);
 
+      const nuovaRichiesta = m.richiesta !== undefined && m.richiesta !== esistente.richiesta;
+      const nuovaCadenza =
+        m.pianificazione !== undefined && !stessaCadenza(versoPianificazione(esistente), m.pianificazione);
+
       const assegnazioni: string[] = ['updated_at = now()'];
-      const parametri: unknown[] = [esistente.id, richiesta.identita.tenantId];
+      const parametri: unknown[] = [esistente.id, identita.tenantId];
       const par = (v: unknown): string => {
         parametri.push(v);
         return `$${parametri.length}`;
       };
       if (m.nome !== undefined) assegnazioni.push(`nome = ${par(m.nome)}`);
-      if (m.descrizione !== undefined) assegnazioni.push(`descrizione = ${par(m.descrizione)}`);
-      if (m.istruzioni !== undefined) assegnazioni.push(`istruzioni = ${par(m.istruzioni)}`);
-      if (m.fonti !== undefined) assegnazioni.push(`fonti = ${par(JSON.stringify(m.fonti))}::jsonb`);
-      if (m.formatoOutput !== undefined) assegnazioni.push(`formato_output = ${par(m.formatoOutput)}`);
-      if (m.parametri !== undefined) assegnazioni.push(`parametri = ${par(JSON.stringify(m.parametri))}::jsonb`);
+      if (nuovaRichiesta) {
+        assegnazioni.push(
+          `richiesta = ${par(m.richiesta)}`,
+          'piano = null',
+          `piano_stato = 'non-letto'`,
+          'piano_errore = null',
+          'piano_confermato_da = null',
+          'piano_confermato_il = null',
+        );
+      } else if (nuovaCadenza) {
+        assegnazioni.push(
+          `piano_stato = case when piano_stato = 'confermato' then 'da-confermare' else piano_stato end`,
+          'piano_confermato_da = null',
+          'piano_confermato_il = null',
+        );
+      }
       if (m.pianificazione !== undefined) {
         const p = m.pianificazione;
         assegnazioni.push(
@@ -258,18 +331,56 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
         `update velia.agenti set ${assegnazioni.join(', ')} where id = $1 and tenant_id = $2`,
         parametri,
       );
-      /* La prossima occorrenza segue SEMPRE lo stato dopo la modifica:
-         sospendere o disattivare la azzera, riattivare la ricalcola. */
+      await aggiornaProssima(client, esistente.id, identita.tenantId);
+      return { id: esistente.id, daRileggere: nuovaRichiesta };
+    });
+
+    if (daRileggere) await leggiPiano(identita, id, richiesta.log);
+    return conIdentita(poolDb(), identita, async (client) => (await agenteCompleto(client, identita.tenantId, id))!);
+  });
+
+  /** «Rileggi la richiesta»: un piano nuovo, da confermare di nuovo. */
+  app.post<{ Params: { id: string } }>('/api/agenti/:id/piano', async (richiesta) => {
+    const id = controllaId(richiesta.params.id);
+    const { identita } = richiesta;
+    const esiste = await conIdentita(poolDb(), identita, (client) => righeAgente(client, identita.tenantId, id));
+    if (!esiste) throw agenteNonTrovato();
+    await leggiPiano(identita, id, richiesta.log);
+    return conIdentita(poolDb(), identita, async (client) => (await agenteCompleto(client, identita.tenantId, id))!);
+  });
+
+  /**
+   * «Conferma e attiva»: da qui l'agente può partire, a mano e dal tick. Si
+   * conferma solo un piano letto e con ogni destinatario risolto; confermare
+   * attiva, e l'attivazione rispetta il limite del piano commerciale.
+   */
+  app.post<{ Params: { id: string } }>('/api/agenti/:id/conferma', async (richiesta) => {
+    const id = controllaId(richiesta.params.id);
+    const { identita } = richiesta;
+    return conIdentita(poolDb(), identita, async (client) => {
+      const agente = await righeAgente(client, identita.tenantId, id);
+      if (!agente) throw agenteNonTrovato();
+      if (agente.piano_stato === 'confermato') {
+        throw ErroreApi.conflitto('PIANO_GIA_CONFERMATO', 'Il piano è già confermato.');
+      }
+      if (agente.piano_stato !== 'da-confermare' || !agente.piano) {
+        throw ErroreApi.conflitto('PIANO_NON_LETTO', 'Il piano non è ancora pronto: prima leggi la richiesta.');
+      }
+      const blocco = bloccoConferma(agente.piano);
+      if (blocco) throw ErroreApi.conflitto('PIANO_BLOCCATO', blocco);
+      if (!agente.attivo) {
+        const limiti = await limitiDelTenant(client, identita.tenantId);
+        if (limiti.agentiAttivi >= limiti.agentiAttiviMax) throw limiteAgenti(limiti.agentiAttiviMax);
+      }
+
       await client.query(
         `update velia.agenti
-         set prossima_esecuzione = case
-           when attivo and not pian_sospesa and pian_frequenza is not null
-             then velia.prossimo_tick(pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese)
-           end
-         where id = $1 and tenant_id = $2`,
-        [esistente.id, richiesta.identita.tenantId],
+            set piano_stato = 'confermato', piano_confermato_da = $3, piano_confermato_il = now(), attivo = true
+          where id = $1 and tenant_id = $2`,
+        [agente.id, identita.tenantId, identita.utenteId],
       );
-      return (await agenteCompleto(client, richiesta.identita.tenantId, esistente.id))!;
+      await aggiornaProssima(client, agente.id, identita.tenantId);
+      return (await agenteCompleto(client, identita.tenantId, agente.id))!;
     });
   });
 
@@ -284,19 +395,21 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
     return risposta.code(204).send();
   });
 
-  /** La copia nasce disattiva e con la pianificazione sospesa: duplicare non raddoppia le esecuzioni di nascosto. */
+  /**
+   * La copia nasce disattiva, con la pianificazione sospesa e il piano da
+   * confermare: duplicare non raddoppia le esecuzioni, né le email, di nascosto.
+   */
   app.post<{ Params: { id: string } }>('/api/agenti/:id/duplica', async (richiesta, risposta) => {
     const copia = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const originale = await righeAgente(client, richiesta.identita.tenantId, controllaId(richiesta.params.id));
       if (!originale) throw agenteNonTrovato();
       const r = await client.query<{ id: string }>(
         `insert into velia.agenti
-           (tenant_id, nome, descrizione, istruzioni, fonti, formato_output,
-            parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
-            pian_sospesa, prossima_esecuzione, attivo, creato_da)
-         select tenant_id, $3, descrizione, istruzioni, fonti, formato_output,
-                parametri, pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese,
-                true, null, false, $4
+           (tenant_id, nome, richiesta, piano, piano_stato, pian_frequenza, pian_orario,
+            pian_giorno_settimana, pian_giorno_mese, pian_sospesa, prossima_esecuzione, attivo, creato_da)
+         select tenant_id, $3, richiesta, piano,
+                case when piano is null then 'non-letto' else 'da-confermare' end,
+                pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese, true, null, false, $4
          from velia.agenti where id = $1 and tenant_id = $2
          returning id`,
         [originale.id, richiesta.identita.tenantId, `Copia di ${originale.nome}`, richiesta.identita.utenteId],
@@ -321,16 +434,19 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
     });
   });
 
-  /** Esecuzione manuale (RF-E-03/05): nasce in coda, si segue col polling. */
+  /** Esecuzione manuale (RF-E-03): solo col piano confermato; nasce in coda, si segue col polling. */
   app.post<{ Params: { id: string } }>('/api/agenti/:id/esecuzioni', async (richiesta, risposta) => {
-    const corpo = schemaAvvioEsecuzione.safeParse(richiesta.body ?? {});
-    if (!corpo.success) throw ErroreApi.datiNonValidi('Parametri di avvio non validi.');
-
     const esecuzione = await conIdentita(poolDb(), richiesta.identita, async (client) => {
       const agente = await righeAgente(client, richiesta.identita.tenantId, controllaId(richiesta.params.id));
       if (!agente) throw agenteNonTrovato();
       if (!agente.attivo) {
         throw ErroreApi.conflitto('AGENTE_DISATTIVO', 'L’agente è disattivato: riattivalo per poterlo eseguire.');
+      }
+      if (agente.piano_stato !== 'confermato') {
+        throw ErroreApi.conflitto(
+          'PIANO_DA_CONFERMARE',
+          'Il piano dell’agente non è confermato: confermalo prima di eseguirlo.',
+        );
       }
       const limiti = await limitiDelTenant(client, richiesta.identita.tenantId);
       if (limiti.esecuzioniInCorso >= limiti.esecuzioniConcorrentiMax) {
@@ -342,40 +458,14 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
         );
       }
 
-      const parametri: Record<string, string> = {};
-      for (const parametro of agente.parametri) {
-        const valore = corpo.data.parametri?.[parametro.chiave];
-        if (valore) {
-          if (parametro.tipo === 'documento') {
-            const doc = await client.query(`select 1 from velia.documenti where id = $1`, [valore]);
-            if (!doc.rowCount) {
-              throw new ErroreApi(
-                400,
-                'PARAMETRO_NON_VALIDO',
-                `Il documento indicato per «${parametro.etichetta}» non esiste negli archivi.`,
-              );
-            }
-          }
-          parametri[parametro.chiave] = valore;
-        } else if (parametro.obbligatorio) {
-          throw new ErroreApi(
-            400,
-            'PARAMETRI_MANCANTI',
-            `Manca il parametro obbligatorio «${parametro.etichetta}».`,
-          );
-        }
-      }
-
       const r = await client.query<RigaEsecuzione>(
-        `insert into velia.agenti_esecuzioni (agente_id, tenant_id, modalita, parametri, log)
-         values ($1, $2, 'manuale', $3, $4)
-         returning id, agente_id, avviata_il, conclusa_il, modalita, stato, parametri, tentativi,
-                   output, citazioni, log, errore,
-                   (select a.formato_output from velia.agenti a where a.id = agente_id) as formato_output`,
+        `insert into velia.agenti_esecuzioni (agente_id, tenant_id, modalita, log)
+         values ($1, $2, 'manuale', $3)
+         returning id, agente_id, avviata_il, conclusa_il, modalita, stato, tentativi,
+                   output, citazioni, log, errore`,
         [
           agente.id,
           richiesta.identita.tenantId,
-          Object.keys(parametri).length ? JSON.stringify(parametri) : null,
           JSON.stringify([
             { istante: new Date().toISOString(), livello: 'info', messaggio: 'Esecuzione accodata.' },
           ]),
@@ -411,51 +501,6 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
       return versoEsecuzione(esecuzione);
     });
   });
-
-  /**
-   * Il documento dell'esecuzione (RF-E-13), scaricabile dallo storico,
-   * per gli agenti col formato `documento`. Dall'11/09/2026 è un PDF col
-   * layout di VELIA e l'intestazione dell'agenzia: gli agenti non scelgono
-   * più un template.
-   */
-  app.get<{ Params: { id: string; eid: string } }>(
-    '/api/agenti/:id/esecuzioni/:eid/documento',
-    async (richiesta, risposta) => {
-      const { esecuzione, agente } = await conIdentita(poolDb(), richiesta.identita, async (client) => {
-        const esecuzione = await esecuzionePerId(client, richiesta.identita, richiesta.params.id, richiesta.params.eid);
-        return {
-          esecuzione,
-          agente: (await righeAgente(client, richiesta.identita.tenantId, richiesta.params.id))!,
-        };
-      });
-      if (!documentoUrl(esecuzione) || !esecuzione.output) {
-        throw ErroreApi.nonTrovato('Questa esecuzione non ha prodotto un documento.');
-      }
-      const formato = 'pdf';
-      const titolo = `${agente.nome} - esito`;
-      const fasce = await conIdentita(poolDb(), richiesta.identita, (client) =>
-        fasceDelTenant(client, archivio(), richiesta.identita.tenantId, titolo),
-      );
-      const file = await generaDocumento({
-        formato,
-        nome: titolo,
-        titolo,
-        testo: esecuzione.output,
-        fonti: fontiDaCitazioni(esecuzione.citazioni),
-        fasce,
-      });
-
-      const slug = agente.nome
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-      return risposta
-        .header('Content-Type', file.contentType)
-        .header('Content-Length', file.byte.length)
-        .header('Content-Disposition', `attachment; filename="${slug}-${esecuzione.id}.${formato}"`)
-        .send(file.byte);
-    },
-  );
 }
 
 // ---------------------------------------------------------------------------
@@ -487,41 +532,53 @@ function versoPianificazione(r: RigaAgente): Pianificazione | undefined {
   };
 }
 
-/** Le fonti escono idratate con l'etichetta pronta, come il contesto della chat. */
-async function idrataFonti(
-  client: pg.ClientBase,
-  fonti: NuovaFonteAgente[],
-): Promise<FonteAgente[]> {
-  const idratate: FonteAgente[] = [];
-  for (const fonte of fonti) {
-    if (fonte.tipo === 'documenti-riferimento') {
-      idratate.push({ ...fonte, etichetta: 'Documenti di riferimento dell’agenzia' });
-    } else if (fonte.tipo === 'documento') {
-      const r = await client.query<{ titolo: string }>(`select titolo from velia.documenti where id = $1`, [
-        fonte.documentoId,
-      ]);
-      idratate.push({
-        ...fonte,
-        etichetta: r.rows[0]?.titolo ?? `Documento ${fonte.documentoId} (non più disponibile)`,
-      });
-    } else {
-      const dettagli: string[] = [];
-      if (fonte.compagniaId) {
-        const r = await client.query<{ nome: string }>(`select nome from velia.compagnie where id = $1`, [
-          fonte.compagniaId,
-        ]);
-        if (r.rows[0]) dettagli.push(r.rows[0].nome);
-      }
-      if (fonte.ramoId) {
-        const r = await client.query<{ nome: string }>(`select nome from velia.rami where id = $1`, [fonte.ramoId]);
-        if (r.rows[0]) dettagli.push(r.rows[0].nome);
-      }
-      if (fonte.soloPreferiti) dettagli.push('solo preferiti');
-      const radice = fonte.archivio === 'pubblico' ? 'Archivio Pubblico' : 'Archivio Privato';
-      idratate.push({ ...fonte, etichetta: dettagli.length ? `${radice} - ${dettagli.join(', ')}` : `${radice} - tutto` });
-    }
+/** Quando corre, lasciando fuori la sospensione: sospendere non cambia il patto. */
+function stessaCadenza(
+  prima: Pianificazione | undefined,
+  dopo: {
+    frequenza: Pianificazione['frequenza'];
+    orario: string;
+    giornoSettimana?: number | undefined;
+    giornoMese?: number | undefined;
+  } | null,
+): boolean {
+  if (!prima || !dopo) return !prima && !dopo;
+  return (
+    prima.frequenza === dopo.frequenza &&
+    prima.orario === dopo.orario &&
+    (prima.giornoSettimana ?? null) === (dopo.giornoSettimana ?? null) &&
+    (prima.giornoMese ?? null) === (dopo.giornoMese ?? null)
+  );
+}
+
+const GIORNI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+
+/** Quando corre, a parole: per il lettore del piano. */
+function descriviPianificazione(p: Pianificazione): string {
+  switch (p.frequenza) {
+    case 'giornaliera':
+      return `ogni giorno alle ${p.orario}`;
+    case 'settimanale':
+      return `ogni ${GIORNI[(p.giornoSettimana ?? 1) - 1]} alle ${p.orario}`;
+    case 'mensile':
+      return `il giorno ${p.giornoMese ?? 1} di ogni mese alle ${p.orario}`;
   }
-  return idratate;
+}
+
+/**
+ * La prossima occorrenza segue SEMPRE lo stato dopo la scrittura: c'è solo
+ * per un agente attivo, non sospeso, pianificato e col piano confermato.
+ */
+async function aggiornaProssima(client: pg.ClientBase, id: string, tenantId: string): Promise<void> {
+  await client.query(
+    `update velia.agenti
+        set prossima_esecuzione = case
+          when attivo and not pian_sospesa and pian_frequenza is not null and piano_stato = 'confermato'
+            then velia.prossimo_tick(pian_frequenza, pian_orario, pian_giorno_settimana, pian_giorno_mese)
+          end
+      where id = $1 and tenant_id = $2`,
+    [id, tenantId],
+  );
 }
 
 async function agenteCompleto(
@@ -531,25 +588,23 @@ async function agenteCompleto(
 ): Promise<Agente | undefined> {
   const riga = await righeAgente(client, tenantId, id);
   if (!riga) return undefined;
+  const pianificazione = versoPianificazione(riga);
+  const blocco = riga.piano_stato === 'da-confermare' ? bloccoConferma(riga.piano) : undefined;
   return {
     id: riga.id,
     nome: riga.nome,
-    descrizione: riga.descrizione,
-    istruzioni: riga.istruzioni,
-    fonti: await idrataFonti(client, riga.fonti),
-    formatoOutput: riga.formato_output,
-    parametri: riga.parametri,
-    ...(versoPianificazione(riga) && { pianificazione: versoPianificazione(riga)! }),
+    richiesta: riga.richiesta,
+    riferimenti: await idrataRiferimenti(client, tenantId, riga.richiesta),
+    ...(riga.piano && { piano: riga.piano }),
+    pianoStato: riga.piano_stato,
+    ...(riga.piano_errore && { pianoErrore: riga.piano_errore }),
+    ...(riga.piano_confermato_il && { pianoConfermatoIl: riga.piano_confermato_il.toISOString() }),
+    ...(blocco && { bloccoConferma: blocco }),
+    ...(pianificazione && { pianificazione }),
     attivo: riga.attivo,
     creatoDa: riga.creato_da ?? '',
     aggiornatoIl: riga.updated_at.toISOString(),
   };
-}
-
-function documentoUrl(r: RigaEsecuzione): string | undefined {
-  return r.stato === 'completata' && r.formato_output === 'documento' && r.output
-    ? `/api/agenti/${r.agente_id}/esecuzioni/${r.id}/documento`
-    : undefined;
 }
 
 function versoRiepilogoEsecuzione(r: RigaEsecuzione): EsecuzioneRiepilogo {
@@ -561,7 +616,6 @@ function versoRiepilogoEsecuzione(r: RigaEsecuzione): EsecuzioneRiepilogo {
     modalita: r.modalita,
     stato: r.stato,
     tentativi: r.tentativi,
-    ...(documentoUrl(r) && { documentoGeneratoUrl: documentoUrl(r)! }),
     ...(r.errore && { errore: r.errore }),
   };
 }
@@ -569,7 +623,6 @@ function versoRiepilogoEsecuzione(r: RigaEsecuzione): EsecuzioneRiepilogo {
 function versoEsecuzione(r: RigaEsecuzione): EsecuzioneAgente {
   return {
     ...versoRiepilogoEsecuzione(r),
-    ...(r.parametri && Object.keys(r.parametri).length && { parametri: r.parametri }),
     ...(r.output !== null && { output: r.output }),
     citazioni: r.citazioni,
     log: r.log,

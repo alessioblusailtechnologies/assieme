@@ -6,6 +6,7 @@ import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { creaApp } from '../src/api/app.js';
+import type { InterpretePiano, PianoGrezzo, RichiestaPiano } from '../src/api/agenti/interprete.js';
 import { configurazione, type Configurazione } from '../src/config.js';
 import type {
   Agente,
@@ -14,6 +15,7 @@ import type {
   EsecuzioneRiepilogo,
   LimitiAgenti,
 } from '../src/contratto/agenti.js';
+import type { CorpoErroreApi } from '../src/contratto/errori.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { creaGestoreAgenti } from '../src/worker/agenti/gestore.js';
@@ -28,12 +30,15 @@ import type {
 } from '../src/worker/motore/sessione.js';
 
 /**
- * Gli agenti per intero, contro il progetto vero (tenant di collaudo,
- * motore finto): CRUD con fonti idratate, limiti applicati davvero (409 e
- * 429), esecuzione manuale con parametri → job → esito con citazioni
- * validate e log che racconta, RF-E-08 (citazione non verificabile = fallita),
- * retry raccontato fino al fallimento persistente, il tick della
- * pianificazione che accoda, il documento in PDF dallo storico.
+ * Gli agenti per intero, contro il progetto vero (tenant di collaudo, lettore
+ * del piano e motore finti).
+ *
+ * Dal 14/09/2026: la richiesta coi riferimenti idratati, il piano scritto al
+ * salvataggio coi destinatari risolti, la conferma che attiva e che un
+ * destinatario sconosciuto blocca, nessuna esecuzione senza conferma, la
+ * richiesta corretta che rimette il piano da confermare; e poi quello che
+ * c'era: limiti (409 e 429), esito con citazioni validate, RF-E-08, retry
+ * raccontato, il tick che accoda, la copia che non esegue.
  */
 let config: Configurazione | undefined;
 try {
@@ -43,14 +48,14 @@ try {
 }
 
 const pronto = Boolean(
-  config?.SUPABASE_JWT_SECRET &&
-    config.DATABASE_URL &&
-    !config.DATABASE_URL.includes('PASSWORD_MANCANTE'),
+  config?.SUPABASE_JWT_SECRET && config.DATABASE_URL && !config.DATABASE_URL.includes('PASSWORD_MANCANTE'),
 );
 
 const PASSWORD_DEMO = 'velia-demo-2026!';
 const TENANT_COLLAUDO = '22222222-2222-4222-8222-222222222222';
+const EMAIL_ADMIN = 't.uno@collaudo.sonovelia.it';
 const DOC_FONTE = 'doc-priv-agt00000001';
+const RICHIESTA = `Controlla le scadenze di @[documento:${DOC_FONTE}] e mandami l'esito per email.`;
 
 class ArchivioFinto implements ArchivioFile {
   readonly file = new Map<string, Buffer>();
@@ -68,23 +73,45 @@ class ArchivioFinto implements ArchivioFile {
   }
 }
 
+/** Il lettore del piano a copione: legge la legenda dei riferimenti e manda l'esito «a me». */
+class InterpreteFinto implements InterpretePiano {
+  richieste: RichiestaPiano[] = [];
+  risposta: (r: RichiestaPiano) => PianoGrezzo = (r) => ({
+    obiettivo: `Tenere d’occhio ${r.nome}`,
+    passi: [
+      { tipo: 'leggi', titolo: 'Legge la polizza della flotta' },
+      { tipo: 'invia-email', titolo: 'Manda l’esito per email' },
+    ],
+    letture: r.riferimenti.map((x) => ({
+      tipo: 'documento' as const,
+      etichetta: x.titolo,
+      riferimento: `@[${x.tipo}:${x.chiave}]`,
+    })),
+    file: [],
+    email: [{ a: 'me', contenuto: 'L’esito del controllo.', allegati: [] }],
+    dubbi: [],
+  });
+
+  interpreta(r: RichiestaPiano): Promise<PianoGrezzo> {
+    this.richieste.push(r);
+    return Promise.resolve(this.risposta(r));
+  }
+}
+
 /** Un motore a copione: legge dal prompt il path della prima fonte e risponde citandolo. */
 class MotoreFinto implements Motore {
   richieste: RichiestaMotore[] = [];
-  copione: (r: RichiestaMotore) => Partial<EsitoSessione> & { testo: string } = (r) => {
-    const path = /- `([^`]+)` —/.exec(r.promptUtente)?.[1] ?? '';
-    return {
-      testo:
-        'Nessuna scadenza critica: la polizza in fonte è regolare.\n\n' +
-        '```velia-citazioni\n' +
-        JSON.stringify({
-          citazioni: [{ file: path, pagina: 1, estratto: 'La polizza è in regola.' }],
-          provenienze: [],
-          nonSupportato: false,
-        }) +
-        '\n```',
-    };
-  };
+  copione: (r: RichiestaMotore) => Partial<EsitoSessione> & { testo: string } = (r) => ({
+    testo:
+      'Nessuna scadenza critica: la polizza in fonte è regolare.\n\n' +
+      '```velia-citazioni\n' +
+      JSON.stringify({
+        citazioni: [{ file: pathFonte(r), pagina: 1, estratto: 'La polizza è in regola.' }],
+        provenienze: [],
+        nonSupportato: false,
+      }) +
+      '\n```',
+  });
 
   interroga(r: RichiestaMotore, _o: OsservatoreSessione): Promise<EsitoSessione> {
     this.richieste.push(r);
@@ -102,10 +129,13 @@ class MotoreFinto implements Motore {
   }
 }
 
-describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
+const pathFonte = (r: RichiestaMotore): string => /- `([^`]+)` —/.exec(r.promptUtente)?.[1] ?? '';
+
+describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)', () => {
   const pool = () => poolDb();
   const archivio = new ArchivioFinto();
   const motore = new MotoreFinto();
+  const interprete = new InterpreteFinto();
   let app: FastifyInstance;
   let radice: string;
   let tokenAdmin: string;
@@ -113,15 +143,18 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
   let agenteId: string;
   let limitiOriginali: { limite_agenti_attivi: number; limite_esecuzioni_concorrenti: number };
 
-  const richiedi = (
-    metodo: 'GET' | 'POST' | 'PATCH' | 'DELETE',
-    url: string,
-    payload?: Record<string, unknown>,
-  ) =>
-    app.inject({ method: metodo, url, headers: { authorization: `Bearer ${tokenAdmin}` }, ...(payload && { payload }) });
+  const richiedi = (metodo: 'GET' | 'POST' | 'PATCH' | 'DELETE', url: string, payload?: Record<string, unknown>) =>
+    app.inject({
+      method: metodo,
+      url,
+      headers: { authorization: `Bearer ${tokenAdmin}` },
+      ...(payload && { payload }),
+    });
 
+  /* Il ritento aspetta di norma due secondi: qui no, o il ciclo si fermerebbe
+     prima di vedere il secondo tentativo. */
   async function lavoraTutto(visibilitaSecondi = 30): Promise<void> {
-    while (await lavoraUno(pool(), { visibilitaSecondi })) {
+    while (await lavoraUno(pool(), { visibilitaSecondi, ritentaTraSecondi: 0 })) {
       /* ancora */
     }
   }
@@ -138,6 +171,14 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     throw new Error(`job per l'esecuzione ${esecuzioneId} mai accodato`);
   }
 
+  const prossima = async (id: string): Promise<Date | null> =>
+    (
+      await pool().query<{ prossima_esecuzione: Date | null }>(
+        `select prossima_esecuzione from velia.agenti where id = $1`,
+        [id],
+      )
+    ).rows[0]!.prossima_esecuzione;
+
   const pulizia = async (): Promise<void> => {
     await pool().query(`delete from velia.agenti where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.jobs where tipo = 'agente' and tenant_id = $1`, [TENANT_COLLAUDO]);
@@ -147,13 +188,13 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
 
   beforeAll(async () => {
     radice = await mkdtemp(join(tmpdir(), 'velia-agenti-'));
-    app = creaApp({ logger: false, agenti: { archivio } });
+    app = creaApp({ logger: false, agenti: { interprete } });
     await pulizia();
 
     const accesso = await app.inject({
       method: 'POST',
       url: '/api/sessione/accesso',
-      payload: { email: 't.uno@collaudo.sonovelia.it', password: PASSWORD_DEMO },
+      payload: { email: EMAIL_ADMIN, password: PASSWORD_DEMO },
     });
     tokenAdmin = accesso.json<EsitoAccesso>().tokenAccesso;
     idAdmin = accesso.json<EsitoAccesso>().sessione.utente.id;
@@ -189,62 +230,83 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     await rm(radice, { recursive: true, force: true });
   });
 
-  it('l’agente nasce con fonti idratate, pianificazione e prossima occorrenza calcolata', async () => {
+  it('l’agente nasce con la richiesta idratata e il piano da confermare, e non parte finché non è confermato', async () => {
     const r = await richiedi('POST', '/api/agenti', {
       nome: 'Controllo scadenze flotta',
-      descrizione: 'Controlla le scadenze delle polizze della flotta.',
-      istruzioni: 'Controlla le scadenze e segnala ciò che scade entro 60 giorni.',
-      fonti: [{ tipo: 'selezione', archivio: 'privato' }],
-      formatoOutput: 'documento',
-      parametri: [
-        { chiave: 'polizza', etichetta: 'Polizza da controllare', tipo: 'documento', obbligatorio: true },
-      ],
+      richiesta: RICHIESTA,
       pianificazione: { frequenza: 'giornaliera', orario: '07:30' },
     });
     expect(r.statusCode).toBe(201);
     const agente = r.json<Agente>();
     agenteId = agente.id;
-    expect(agente.fonti[0]).toMatchObject({ tipo: 'selezione', etichetta: 'Archivio Privato — tutto' });
-    expect(agente.pianificazione).toMatchObject({ frequenza: 'giornaliera', orario: '07:30', sospesa: false });
+
+    expect(agente.riferimenti).toEqual([
+      { tipo: 'documento', chiave: DOC_FONTE, titolo: 'Polizza flotta aziendale', archivio: 'privato' },
+    ]);
+    expect(agente.pianoStato).toBe('da-confermare');
+    expect(agente.bloccoConferma).toBeUndefined();
+    expect(agente.piano?.letture[0]?.riferimento).toEqual({ tipo: 'documento', chiave: DOC_FONTE });
+    expect(agente.piano?.email[0]?.destinatario).toMatchObject({ tipo: 'utente', id: idAdmin, a: EMAIL_ADMIN });
     expect(agente.creatoDa).toBe(idAdmin);
 
-    const prossima = await pool().query<{ prossima_esecuzione: Date | null }>(
-      `select prossima_esecuzione from velia.agenti where id = $1`,
-      [agenteId],
+    /* Il lettore ha visto il titolo col suo marcatore, e quando corre. */
+    const letta = interprete.richieste.at(-1)!;
+    expect(letta.richiesta).toContain(`«Polizza flotta aziendale» @[documento:${DOC_FONTE}]`);
+    expect(letta.quando).toBe('ogni giorno alle 07:30');
+
+    expect(await prossima(agenteId)).toBeNull();
+    const negata = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
+    expect(negata.statusCode).toBe(409);
+    expect(negata.json<CorpoErroreApi>().codice).toBe('PIANO_DA_CONFERMARE');
+  });
+
+  it('confermare attiva e calcola la prossima occorrenza; confermare di nuovo è un conflitto', async () => {
+    const r = await richiedi('POST', `/api/agenti/${agenteId}/conferma`);
+    expect(r.statusCode).toBe(200);
+    const agente = r.json<Agente>();
+    expect(agente).toMatchObject({ pianoStato: 'confermato', attivo: true });
+    expect(Date.parse(agente.pianoConfermatoIl ?? '')).not.toBeNaN();
+    expect(await prossima(agenteId)).not.toBeNull();
+
+    const ancora = await richiedi('POST', `/api/agenti/${agenteId}/conferma`);
+    expect(ancora.statusCode).toBe(409);
+    expect(ancora.json<CorpoErroreApi>().codice).toBe('PIANO_GIA_CONFERMATO');
+  });
+
+  it('una lettura che non riesce lo dice; un destinatario che non si risolve blocca la conferma', async () => {
+    const risposta = interprete.risposta;
+    interprete.risposta = () => {
+      throw new Error('modello non raggiungibile');
+    };
+    const nato = await richiedi('POST', '/api/agenti', { nome: 'Avvisi ai clienti', richiesta: 'Scrivi ai clienti.' });
+    expect(nato.statusCode).toBe(201);
+    const agente = nato.json<Agente>();
+    expect(agente.pianoStato).toBe('non-letto');
+    expect(agente.pianoErrore).toContain('Non sono riuscito a leggere la richiesta');
+    expect((await richiedi('POST', `/api/agenti/${agente.id}/conferma`)).json<CorpoErroreApi>().codice).toBe(
+      'PIANO_NON_LETTO',
     );
-    expect(prossima.rows[0]!.prossima_esecuzione).not.toBeNull();
+
+    interprete.risposta = (r) => ({ ...risposta(r), email: [{ a: 'Zzyzx Qwerty Inesistente', contenuto: 'x', allegati: [] }] });
+    const riletto = await richiedi('POST', `/api/agenti/${agente.id}/piano`);
+    expect(riletto.json<Agente>()).toMatchObject({ pianoStato: 'da-confermare' });
+    expect(riletto.json<Agente>().pianoErrore).toBeUndefined();
+    expect(riletto.json<Agente>().piano?.email[0]?.destinatario).toMatchObject({
+      tipo: 'non-risolto',
+      richiesto: 'Zzyzx Qwerty Inesistente',
+    });
+    expect(riletto.json<Agente>().bloccoConferma).toContain('«Zzyzx Qwerty Inesistente»');
+
+    const bloccata = await richiedi('POST', `/api/agenti/${agente.id}/conferma`);
+    expect(bloccata.statusCode).toBe(409);
+    expect(bloccata.json<CorpoErroreApi>().codice).toBe('PIANO_BLOCCATO');
+
+    interprete.risposta = risposta;
+    expect((await richiedi('DELETE', `/api/agenti/${agente.id}`)).statusCode).toBe(204);
   });
 
-  it('i limiti si applicano davvero: 409 oltre la soglia di agenti attivi', async () => {
-    await pool().query(`update velia.tenant set limite_agenti_attivi = 1 where id = $1`, [TENANT_COLLAUDO]);
-    const negato = await richiedi('POST', '/api/agenti', {
-      nome: 'Secondo agente',
-      istruzioni: 'X.',
-      fonti: [{ tipo: 'documenti-riferimento' }],
-    });
-    expect(negato.statusCode).toBe(409);
-    expect(negato.json()).toMatchObject({ codice: 'LIMITE_AGENTI' });
-
-    const limiti = await richiedi('GET', '/api/agenti/limiti');
-    expect(limiti.json<LimitiAgenti>()).toMatchObject({ agentiAttiviMax: 1, agentiAttivi: 1 });
-  });
-
-  it('l’avvio valida i parametri: obbligatorio mancante → 400, documento inesistente → 400', async () => {
-    const mancante = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {});
-    expect(mancante.statusCode).toBe(400);
-    expect(mancante.json()).toMatchObject({ codice: 'PARAMETRI_MANCANTI' });
-
-    const ignoto = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {
-      parametri: { polizza: 'doc-priv-mai-visto' },
-    });
-    expect(ignoto.statusCode).toBe(400);
-    expect(ignoto.json()).toMatchObject({ codice: 'PARAMETRO_NON_VALIDO' });
-  });
-
-  it('esecuzione manuale: job → esito con citazioni validate, log che racconta, documento in PDF', async () => {
-    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {
-      parametri: { polizza: DOC_FONTE },
-    });
+  it('esecuzione manuale: job → esito con citazioni validate e un log che racconta', async () => {
+    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
     expect(avvio.statusCode).toBe(201);
     const esecuzione = avvio.json<EsecuzioneAgente>();
     expect(esecuzione.stato).toBe('in-coda');
@@ -264,63 +326,59 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     });
     const messaggi = finita.log.map((l) => l.messaggio).join(' | ');
     expect(messaggi).toContain('Esecuzione manuale avviata da Tea Collaudo.');
-    expect(messaggi).toContain('Parametro polizza = «Polizza flotta aziendale».');
-    expect(messaggi).toContain('Raccolte le fonti');
-    expect(messaggi).toContain('Documento pronto da scaricare');
-    expect(finita.documentoGeneratoUrl).toBe(`/api/agenti/${agenteId}/esecuzioni/${esecuzione.id}/documento`);
-    // Il prompt portava il parametro e la fonte risolta, e i consumi sono origine 'agente'.
-    expect(motore.richieste[0]!.promptUtente).toContain('il documento «Polizza flotta aziendale»');
-    const consumi = await pool().query<{ origine: string }>(
-      `select origine from velia.consumi where tenant_id = $1`,
-      [TENANT_COLLAUDO],
-    );
-    expect(consumi.rows).toEqual([{ origine: 'agente' }]);
+    expect(messaggi).toContain('Raccolti i documenti della richiesta: 1 documento.');
 
-    const documento = await richiedi('GET', finita.documentoGeneratoUrl!);
-    expect(documento.statusCode).toBe(200);
-    expect(documento.headers['content-type']).toBe('application/pdf');
-    expect(documento.rawPayload.subarray(0, 5).toString()).toBe('%PDF-');
+    /* Il prompt portava la richiesta leggibile e i passi del piano confermato. */
+    const prompt = motore.richieste.at(-1)!.promptUtente;
+    expect(prompt).toContain('Richiesta:\nControlla le scadenze di «Polizza flotta aziendale»');
+    expect(prompt).toContain('1. Legge la polizza della flotta');
+    expect(prompt).toContain('non puoi ancora produrre file né inviare email');
+
+    const consumi = await pool().query<{ origine: string }>(`select origine from velia.consumi where tenant_id = $1`, [
+      TENANT_COLLAUDO,
+    ]);
+    expect(consumi.rows).toEqual([{ origine: 'agente' }]);
 
     const elenco = await richiedi('GET', '/api/agenti');
     const riepilogo = elenco.json<{ elementi: AgenteRiepilogo[] }>().elementi.find((a) => a.id === agenteId)!;
-    expect(riepilogo.ultimaEsecuzione).toMatchObject({ stato: 'completata', documentoGeneratoUrl: finita.documentoGeneratoUrl });
+    expect(riepilogo).toMatchObject({
+      obiettivo: 'Tenere d’occhio Controllo scadenze flotta',
+      pianoStato: 'confermato',
+      ultimaEsecuzione: { stato: 'completata' },
+    });
   });
 
   it('RF-E-08: un esito che cita passaggi non verificabili è un’esecuzione fallita', async () => {
-    motore.copione = (r) => {
-      const path = /- `([^`]+)` —/.exec(r.promptUtente)?.[1] ?? '';
-      return {
-        testo: `Inventato.\n\n\`\`\`velia-citazioni\n${JSON.stringify({
-          citazioni: [{ file: path, pagina: 99, estratto: 'x' }],
-          provenienze: [],
-          nonSupportato: false,
-        })}\n\`\`\``,
-      };
-    };
-    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {
-      parametri: { polizza: DOC_FONTE },
+    const copione = motore.copione;
+    motore.copione = (r) => ({
+      testo: `Inventato.\n\n\`\`\`velia-citazioni\n${JSON.stringify({
+        citazioni: [{ file: pathFonte(r), pagina: 99, estratto: 'x' }],
+        provenienze: [],
+        nonSupportato: false,
+      })}\n\`\`\``,
     });
+    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
     await aspettaJob(avvio.json<EsecuzioneAgente>().id);
     await lavoraTutto();
+    motore.copione = copione;
 
     const r = await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni/${avvio.json<EsecuzioneAgente>().id}`);
     const fallita = r.json<EsecuzioneAgente>();
     expect(fallita.stato).toBe('fallita');
     expect(fallita.tentativi).toBe(1); // un'allucinazione non si ritenta
     expect(fallita.errore).toContain('verifica delle fonti');
-    expect(fallita.documentoGeneratoUrl).toBeUndefined();
   });
 
   it('il retry si racconta: tre tentativi loggati, poi fallimento persistente (RF-E-11)', async () => {
+    const copione = motore.copione;
     motore.copione = () => {
       throw new Error('provider non raggiungibile');
     };
-    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, {
-      parametri: { polizza: DOC_FONTE },
-    });
+    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
     const esecuzioneId = avvio.json<EsecuzioneAgente>().id;
     await aspettaJob(esecuzioneId);
     await lavoraTutto(0); // visibilità zero: i tre tentativi si consumano subito
+    motore.copione = copione;
 
     const r = await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni/${esecuzioneId}`);
     const fallita = r.json<EsecuzioneAgente>();
@@ -329,35 +387,24 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     expect(fallita.errore).toContain('per tre tentativi consecutivi');
     const avvisi = fallita.log.filter((l) => l.livello === 'avviso').map((l) => l.messaggio);
     expect(avvisi).toEqual(['Nuovo tentativo (2 di 3).', 'Nuovo tentativo (3 di 3).']);
-
-    motore.copione = (richiesta) => {
-      const path = /- `([^`]+)` —/.exec(richiesta.promptUtente)?.[1] ?? '';
-      return {
-        testo: `Ok.\n\n\`\`\`velia-citazioni\n${JSON.stringify({
-          citazioni: [{ file: path, pagina: 1, estratto: 'ok' }],
-          provenienze: [],
-          nonSupportato: false,
-        })}\n\`\`\``,
-      };
-    };
   });
 
-  it('il tick della pianificazione accoda da sé, e l’esecuzione si dichiara pianificata', async () => {
+  it('il tick accoda da sé i piani confermati, e l’esecuzione si dichiara pianificata', async () => {
     await pool().query(`update velia.agenti set prossima_esecuzione = now() - interval '1 minute' where id = $1`, [
       agenteId,
     ]);
-    const tick = await pool().query<{ accodate: number }>(`select velia.accoda_agenti_pianificati() as accodate`);
-    expect(tick.rows[0]!.accodate).toBe(1);
-
-    const prossima = await pool().query<{ prossima_esecuzione: Date }>(
-      `select prossima_esecuzione from velia.agenti where id = $1`,
-      [agenteId],
+    const tick = await pool().query<{ accodate: number }>(
+      `select velia.accoda_agenti_pianificati($1, $2::uuid) as accodate`,
+      [config!.CODA_LAVORI, TENANT_COLLAUDO],
     );
-    expect(prossima.rows[0]!.prossima_esecuzione.getTime()).toBeGreaterThan(Date.now());
+    expect(tick.rows[0]!.accodate).toBe(1);
+    expect((await prossima(agenteId))!.getTime()).toBeGreaterThan(Date.now());
 
     await lavoraTutto();
     const storico = await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni`);
-    const pianificata = storico.json<{ elementi: EsecuzioneRiepilogo[] }>().elementi.find((e) => e.modalita === 'pianificata')!;
+    const pianificata = storico
+      .json<{ elementi: EsecuzioneRiepilogo[] }>()
+      .elementi.find((e) => e.modalita === 'pianificata')!;
     expect(pianificata.stato).toBe('completata');
 
     const piena = await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni/${pianificata.id}`);
@@ -366,30 +413,70 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (motore finto)', () => {
     );
   });
 
+  it('sospendere non tocca la conferma; cambiare quando corre la rimette; cambiare la richiesta la fa rileggere', async () => {
+    const sospesa = await richiedi('PATCH', `/api/agenti/${agenteId}`, {
+      pianificazione: { frequenza: 'giornaliera', orario: '07:30', sospesa: true },
+    });
+    expect(sospesa.json<Agente>()).toMatchObject({ pianoStato: 'confermato', pianificazione: { sospesa: true } });
+    expect(await prossima(agenteId)).toBeNull();
+
+    const settimanale = await richiedi('PATCH', `/api/agenti/${agenteId}`, {
+      pianificazione: { frequenza: 'settimanale', orario: '07:30' },
+    });
+    expect(settimanale.json<Agente>()).toMatchObject({ pianoStato: 'da-confermare' });
+    expect(settimanale.json<Agente>().piano?.obiettivo).toBe('Tenere d’occhio Controllo scadenze flotta');
+    expect(await prossima(agenteId)).toBeNull();
+    expect((await richiedi('POST', `/api/agenti/${agenteId}/conferma`)).statusCode).toBe(200);
+
+    const letture = interprete.richieste.length;
+    const nuova = await richiedi('PATCH', `/api/agenti/${agenteId}`, {
+      richiesta: `Riassumi @[documento:${DOC_FONTE}] e mandamelo.`,
+    });
+    expect(interprete.richieste.length).toBe(letture + 1);
+    expect(nuova.json<Agente>()).toMatchObject({ pianoStato: 'da-confermare' });
+    expect(nuova.json<Agente>().pianoConfermatoIl).toBeUndefined();
+    expect(interprete.richieste.at(-1)!.quando).toBe('ogni lunedì alle 07:30');
+
+    /* Salvare la stessa richiesta non rilegge niente. */
+    await richiedi('PATCH', `/api/agenti/${agenteId}`, { richiesta: `Riassumi @[documento:${DOC_FONTE}] e mandamelo.` });
+    expect(interprete.richieste.length).toBe(letture + 1);
+    expect((await richiedi('POST', `/api/agenti/${agenteId}/conferma`)).statusCode).toBe(200);
+  });
+
+  it('i limiti si applicano davvero: 409 oltre la soglia di agenti attivi', async () => {
+    await pool().query(`update velia.tenant set limite_agenti_attivi = 1 where id = $1`, [TENANT_COLLAUDO]);
+    const negato = await richiedi('POST', '/api/agenti', { nome: 'Secondo agente', richiesta: 'X.' });
+    expect(negato.statusCode).toBe(409);
+    expect(negato.json<CorpoErroreApi>().codice).toBe('LIMITE_AGENTI');
+
+    const limiti = await richiedi('GET', '/api/agenti/limiti');
+    expect(limiti.json<LimitiAgenti>()).toMatchObject({ agentiAttiviMax: 1, agentiAttivi: 1 });
+  });
+
   it('esecuzioni concorrenti oltre il piano → 429 con ritentaTraSecondi', async () => {
     await pool().query(`update velia.tenant set limite_esecuzioni_concorrenti = 1 where id = $1`, [TENANT_COLLAUDO]);
-    const prima = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, { parametri: { polizza: DOC_FONTE } });
+    const prima = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
     expect(prima.statusCode).toBe(201);
-    const seconda = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`, { parametri: { polizza: DOC_FONTE } });
+    const seconda = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
     expect(seconda.statusCode).toBe(429);
     expect(seconda.json()).toMatchObject({ codice: 'LIMITE_ESECUZIONI', ritentaTraSecondi: 20 });
     await aspettaJob(prima.json<EsecuzioneAgente>().id);
     await lavoraTutto();
   });
 
-  it('duplica: la copia nasce disattiva, con la pianificazione sospesa, e non esegue', async () => {
+  it('duplica: la copia nasce disattiva, sospesa e col piano da confermare, e non esegue', async () => {
     const r = await richiedi('POST', `/api/agenti/${agenteId}/duplica`);
     expect(r.statusCode).toBe(201);
     const copia = r.json<Agente>();
-    expect(copia).toMatchObject({ nome: 'Copia di Controllo scadenze flotta', attivo: false });
+    expect(copia).toMatchObject({ nome: 'Copia di Controllo scadenze flotta', attivo: false, pianoStato: 'da-confermare' });
     expect(copia.pianificazione?.sospesa).toBe(true);
 
-    const negata = await richiedi('POST', `/api/agenti/${copia.id}/esecuzioni`, { parametri: { polizza: DOC_FONTE } });
+    const negata = await richiedi('POST', `/api/agenti/${copia.id}/esecuzioni`);
     expect(negata.statusCode).toBe(409);
-    expect(negata.json()).toMatchObject({ codice: 'AGENTE_DISATTIVO' });
+    expect(negata.json<CorpoErroreApi>().codice).toBe('AGENTE_DISATTIVO');
 
     const storicoCopia = await richiedi('GET', `/api/agenti/${copia.id}/esecuzioni`);
-    expect(storicoCopia.json<{ elementi: unknown[] }>().elementi).toEqual([]); // senza storico
+    expect(storicoCopia.json<{ elementi: unknown[] }>().elementi).toEqual([]);
 
     expect((await richiedi('DELETE', `/api/agenti/${copia.id}`)).statusCode).toBe(204);
   });

@@ -40,7 +40,7 @@ export interface OpzioniApp {
   tabelle?: OpzioniTabelle;
   /** Nei test: Storage finto per i documenti di riferimento. */
   istruzioni?: OpzioniIstruzioni;
-  /** Nei test: Storage finto per il documento su template degli agenti. */
+  /** Nei test: chi legge la richiesta degli agenti al posto del modello. */
   agenti?: OpzioniAgenti;
   /** Nei test: le origini CORS senza passare dalla configurazione. */
   corsOrigini?: string;

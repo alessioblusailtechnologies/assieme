@@ -1,6 +1,13 @@
 import type pg from 'pg';
 
-import type { NuovaFonteAgente, ParametroAgente, RigaLog } from '../../contratto/agenti.js';
+import { documentiDeiRiferimenti, idrataRiferimenti } from '../../agenti/riferimenti.js';
+import {
+  testoLeggibile,
+  type PianoAgente,
+  type RigaLog,
+  type RiferimentoRichiesta,
+  type StatoPiano,
+} from '../../contratto/agenti.js';
 import { modelloDelTenant } from '../../contratto/modelli.js';
 import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
@@ -13,10 +20,14 @@ import { materializzaWorkspace, type Workspace } from '../motore/workspace.js';
 
 /**
  * Il job `agente` (RF-E-02…E-13): la stessa interrogazione della chat con un
- * ingresso diverso — le istruzioni scritte una volta nell'agente, le fonti
- * risolte AL MOMENTO dell'esecuzione (insiemi vivi: «tutto il ramo auto» è
- * l'archivio di oggi, non quello di quando l'agente fu creato — RF-E-10), i
- * parametri dell'avvio manuale nel prompt.
+ * ingresso diverso.
+ *
+ * Dal 14/09/2026 l'ingresso è la richiesta dell'agente, coi riferimenti
+ * risolti AL MOMENTO dell'esecuzione (un documento eliminato non c'è più,
+ * un prodotto porta i documenti della sua edizione), e i passi del piano
+ * confermato. Un piano non confermato non parte. È un ponte: nella fase 4
+ * di PIANO-AGENTI.md l'esecuzione diventa una conversazione lavorata dal
+ * motore della chat, con i suoi file e le sue email.
  *
  * L'esecuzione si racconta da sola (RF-E-06/11): il log cresce passo per
  * passo sulla riga che il FE interroga, i tentativi si contano, il
@@ -35,15 +46,13 @@ interface RigaLavoro {
   esecuzione_id: string;
   stato: string;
   modalita: 'manuale' | 'pianificata';
-  parametri_avvio: Record<string, string> | null;
   log: RigaLog[];
   agente_id: string;
   tenant_id: string;
   nome: string;
-  istruzioni: string;
-  fonti: NuovaFonteAgente[];
-  formato_output: 'testo' | 'tabella' | 'documento';
-  parametri: ParametroAgente[];
+  richiesta: string;
+  piano: PianoAgente | null;
+  piano_stato: StatoPiano;
   creato_da: string | null;
   modello_motore: string | null;
 }
@@ -65,9 +74,9 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
     }
 
     const r = await db.query<RigaLavoro>(
-      `select e.id as esecuzione_id, e.stato, e.modalita, e.parametri as parametri_avvio, e.log,
-              a.id as agente_id, a.tenant_id, a.nome, a.istruzioni, a.fonti, a.formato_output,
-              a.parametri, a.creato_da, t.modello_motore
+      `select e.id as esecuzione_id, e.stato, e.modalita, e.log,
+              a.id as agente_id, a.tenant_id, a.nome, a.richiesta, a.piano, a.piano_stato,
+              a.creato_da, t.modello_motore
        from velia.agenti_esecuzioni e
        join velia.agenti a on a.id = e.agente_id
        join velia.tenant t on t.id = a.tenant_id
@@ -88,6 +97,17 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
       ]);
     };
 
+    /* Un piano non confermato non parte. API e tick lo impediscono già: qui
+       arriva solo un'esecuzione accodata prima che la richiesta cambiasse. */
+    if (lavoro.piano_stato !== 'confermato') {
+      await annota('errore', 'Il piano dell’agente non è confermato: esecuzione non avviata.');
+      await db.query(
+        `update velia.agenti_esecuzioni set stato = 'fallita', conclusa_il = now(), errore = $2 where id = $1`,
+        [esecuzioneId, 'Il piano dell’agente non è confermato: confermalo e riprova.'],
+      );
+      return;
+    }
+
     let workspace: Workspace | undefined;
     try {
       await db.query(
@@ -100,20 +120,20 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         await annota('info', await frasePartenza(db, lavoro, job));
       }
 
-      for (const parametro of lavoro.parametri) {
-        const valore = lavoro.parametri_avvio?.[parametro.chiave];
-        if (!valore) continue;
-        const testo =
-          parametro.tipo === 'documento' ? `«${await titoloDocumento(db, valore)}»` : `«${valore}»`;
-        await annota('info', `Parametro ${parametro.chiave} = ${testo}.`);
+      const client = await db.connect();
+      let riferimenti: RiferimentoRichiesta[];
+      try {
+        riferimenti = await idrataRiferimenti(client, lavoro.tenant_id, lavoro.richiesta);
+      } finally {
+        client.release();
       }
-
-      const risolti = await risolviFonti(db, lavoro.tenant_id, lavoro.fonti, lavoro.creato_da);
+      const risolti = await documentiPronti(db, lavoro.tenant_id, documentiDeiRiferimenti(riferimenti));
+      const clienti = riferimenti.filter((x) => x.tipo === 'cliente');
       await annota(
         'info',
-        `Raccolte le fonti: ${risolti.length === 1 ? '1 documento' : `${risolti.length} documenti`} da ${
-          lavoro.fonti.length === 1 ? '1 fonte configurata' : `${lavoro.fonti.length} fonti configurate`
-        }.`,
+        risolti.length
+          ? `Raccolti i documenti della richiesta: ${risolti.length === 1 ? '1 documento' : `${risolti.length} documenti`}.`
+          : 'La richiesta non indica documenti: l’agente li cerca negli archivi.',
       );
 
       workspace = await materializzaWorkspace({
@@ -123,6 +143,8 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         radice: dip.radice,
         jobId: job.id,
         contestoIds: risolti.map((d) => d.id),
+        /* Un cliente solo è quello di cui si parla: la sua scheda va su disco. */
+        ...(clienti.length === 1 && { clienteId: clienti[0]!.chiave }),
       });
 
       const fontiPrompt = risolti
@@ -143,10 +165,10 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
           ...(modelloTenant && { modello: modelloTenant }),
           promptSistema: promptSistema(dna, { catalogo: catalogoArchivioPubblico(workspace.perPath) }),
           promptUtente: promptAgente({
-            istruzioni: lavoro.istruzioni,
-            formato: lavoro.formato_output,
+            richiesta: testoLeggibile(lavoro.richiesta, riferimenti),
+            piano: lavoro.piano,
             fonti: fontiPrompt,
-            parametri: await valoriParametri(db, lavoro),
+            clienti: clienti.map((c) => c.titolo),
           }),
         },
         { passo: () => Promise.resolve(), annullato: () => Promise.resolve(false) },
@@ -177,10 +199,6 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
           throw new ErroreNonRitentabile(`l'esito citava passaggi non verificabili: ${dettagli}`);
         }
         output = visibile;
-      }
-
-      if (lavoro.formato_output === 'documento') {
-        await annota('info', 'Documento pronto da scaricare, in PDF con l’intestazione dell’agenzia.');
       }
 
       await annota(
@@ -234,21 +252,24 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
 // Le parti pure e le letture
 // ---------------------------------------------------------------------------
 
-/** Il prompt dell'esecuzione: istruzioni, fonti risolte, parametri, formato. */
+/** Il prompt dell'esecuzione: la richiesta, i passi del piano confermato, le fonti risolte. */
 export function promptAgente(r: {
-  istruzioni: string;
-  formato: 'testo' | 'tabella' | 'documento';
+  richiesta: string;
+  piano: PianoAgente | null;
   fonti: Array<{ path: string; titolo: string }>;
-  parametri: Array<{ etichetta: string; valore: string }>;
+  clienti: string[];
 }): string {
   const parti = [
-    'Esegui questo task, definito una volta e ripetuto nel tempo (sei un agente, non una conversazione: nessuna domanda di ritorno — se un dato manca, dichiaralo nell’esito).',
+    'Esegui questa richiesta, definita una volta e ripetuta nel tempo (sei un agente, non una conversazione: nessuna domanda di ritorno — se un dato manca, dichiaralo nell’esito).',
     '',
-    `Istruzioni del task:\n${r.istruzioni}`,
+    `Richiesta:\n${r.richiesta}`,
   ];
-  if (r.parametri.length) {
-    parti.push('', 'Parametri di questa esecuzione:');
-    for (const p of r.parametri) parti.push(`- ${p.etichetta}: ${p.valore}`);
+  if (r.piano?.passi.length) {
+    parti.push('', 'Il piano confermato dall’agenzia, da seguire:');
+    r.piano.passi.forEach((p, i) => parti.push(`${i + 1}. ${p.titolo}${p.dettaglio ? `: ${p.dettaglio}` : ''}`));
+  }
+  if (r.clienti.length) {
+    parti.push('', `Clienti referenziati: ${r.clienti.join(', ')} (le loro schede sono in \`tenant/clienti/\`).`);
   }
   if (r.fonti.length) {
     const elenco = r.fonti.slice(0, 30);
@@ -259,79 +280,28 @@ export function promptAgente(r: {
     }
     parti.push('Lavora su queste fonti; il resto della workspace è contesto consultabile se il task lo richiede.');
   } else {
-    parti.push('', 'Le fonti configurate non hanno prodotto documenti: dichiaralo nell’esito.');
+    parti.push('', 'La richiesta non referenzia documenti: cercali negli archivi della workspace, partendo dagli `INDICE.md`.');
   }
-  if (r.formato === 'tabella') {
-    parti.push('', 'Formato dell’esito: una tabella Markdown (più righe di sintesi attorno se servono).');
+  if (r.piano && (r.piano.file.length || r.piano.email.length)) {
+    parti.push(
+      '',
+      'In questa esecuzione non puoi ancora produrre file né inviare email: scrivi nell’esito il contenuto che avrebbero avuto, e dichiaralo.',
+    );
   }
   return parti.join('\n');
 }
 
-/** Le fonti dell'agente risolte ADESSO: è qui che l'insieme è vivo (RF-E-10). */
-export async function risolviFonti(
-  db: pg.Pool,
-  tenantId: string,
-  fonti: NuovaFonteAgente[],
-  creatoDa: string | null,
-): Promise<DocumentoRisolto[]> {
-  const visti = new Set<string>();
-  const risolti: DocumentoRisolto[] = [];
-  const aggiungi = (righe: DocumentoRisolto[]): void => {
-    for (const d of righe) {
-      if (!visti.has(d.id)) {
-        visti.add(d.id);
-        risolti.push(d);
-      }
-    }
-  };
-
-  for (const fonte of fonti) {
-    if (fonte.tipo === 'documento') {
-      const r = await db.query<DocumentoRisolto>(
-        `select id, titolo from velia.documenti
-         where id = $1 and path_md is not null
-           and (archivio = 'pubblico' or (tenant_id = $2 and stato = 'pronto'))`,
-        [fonte.documentoId, tenantId],
-      );
-      aggiungi(r.rows);
-    } else if (fonte.tipo === 'selezione') {
-      const condizioni = [`d.path_md is not null`];
-      const parametri: unknown[] = [];
-      const par = (v: unknown): string => {
-        parametri.push(v);
-        return `$${parametri.length}`;
-      };
-      condizioni.push(
-        fonte.archivio === 'pubblico'
-          ? `d.archivio = 'pubblico'`
-          : `d.archivio = 'privato' and d.tenant_id = ${par(tenantId)} and d.stato = 'pronto'`,
-      );
-      if (fonte.ramoId) condizioni.push(`d.ramo_id = ${par(fonte.ramoId)}`);
-      if (fonte.compagniaId) condizioni.push(`d.compagnia_id = ${par(fonte.compagniaId)}`);
-      /* I preferiti sono per utente: per un agente valgono quelli di chi
-         l'ha creato — è la sua selezione che l'agente monitora. */
-      if (fonte.soloPreferiti) {
-        condizioni.push(
-          `exists (select 1 from velia.preferiti p where p.documento_id = d.id and p.utente_id = ${par(creatoDa)})`,
-        );
-      }
-      const r = await db.query<DocumentoRisolto>(
-        `select d.id, d.titolo from velia.documenti d where ${condizioni.join(' and ')} order by d.id`,
-        parametri,
-      );
-      aggiungi(r.rows);
-    } else {
-      const r = await db.query<DocumentoRisolto>(
-        `select d.id, d.titolo from velia.riferimenti rf
-         join velia.documenti d on d.id = rf.documento_id
-         where rf.tenant_id = $1 and rf.attivo and d.stato = 'pronto' and d.path_md is not null
-         order by rf.created_at`,
-        [tenantId],
-      );
-      aggiungi(r.rows);
-    }
-  }
-  return risolti;
+/** I documenti dei riferimenti che si possono leggere adesso, nell'ordine in cui sono citati. */
+async function documentiPronti(db: pg.Pool, tenantId: string, ids: string[]): Promise<DocumentoRisolto[]> {
+  if (!ids.length) return [];
+  const r = await db.query<DocumentoRisolto>(
+    `select id, titolo from velia.documenti
+      where id = any($1) and path_md is not null
+        and (archivio = 'pubblico' or (tenant_id = $2 and stato = 'pronto'))
+      order by array_position($1::text[], id)`,
+    [ids, tenantId],
+  );
+  return r.rows;
 }
 
 async function frasePartenza(db: pg.Pool, lavoro: RigaLavoro, job: Job): Promise<string> {
@@ -345,27 +315,6 @@ async function frasePartenza(db: pg.Pool, lavoro: RigaLavoro, job: Job): Promise
     if (r.rows[0]) return `Esecuzione manuale avviata da ${r.rows[0].nome} ${r.rows[0].cognome}.`;
   }
   return 'Esecuzione manuale avviata.';
-}
-
-async function titoloDocumento(db: pg.Pool, id: string): Promise<string> {
-  const r = await db.query<{ titolo: string }>(`select titolo from velia.documenti where id = $1`, [id]);
-  return r.rows[0]?.titolo ?? id;
-}
-
-async function valoriParametri(
-  db: pg.Pool,
-  lavoro: RigaLavoro,
-): Promise<Array<{ etichetta: string; valore: string }>> {
-  const valori: Array<{ etichetta: string; valore: string }> = [];
-  for (const parametro of lavoro.parametri) {
-    const grezzo = lavoro.parametri_avvio?.[parametro.chiave];
-    if (!grezzo) continue;
-    valori.push({
-      etichetta: parametro.etichetta,
-      valore: parametro.tipo === 'documento' ? `il documento «${await titoloDocumento(db, grezzo)}»` : grezzo,
-    });
-  }
-  return valori;
 }
 
 async function ambitiDeiDocumenti(

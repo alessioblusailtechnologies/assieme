@@ -13,63 +13,47 @@ import { httpResource } from '@angular/common/http';
 import {
   Agente,
   AgentePredefinito,
-  Compagnia,
-  FonteAgente,
-  FormatoOutputAgente,
   FrequenzaPianificazione,
   Id,
   LimitiAgenti,
-  NuovaFonteAgente,
-  ParametroAgente,
   Pianificazione,
-  Ramo,
-  RiferimentoDocumento,
 } from '@core/models';
 import { AgentiApi } from '@core/api/agenti-api';
+import { BarraRichiesta } from '@shared/ui/barra-richiesta/barra-richiesta';
+import type { RiferimentoBarra } from '@shared/ui/barra-richiesta/riferimenti-in-linea';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
-import { DocumentiApi } from '@core/api/documenti-api';
 import { Icona } from '@shared/ui/icona/icona';
 import { Select } from '@shared/ui/select/select';
-import { SelettoreDocumenti } from '@shared/ui/selettore-documenti/selettore-documenti';
 import { GIORNI_SETTIMANA, frequenzeAmmesse } from '../pianificazione';
 
 /**
  * Editor dell'agente (RF-E-01/02): serve la creazione e la modifica, e la
- * creazione può partire già compilata da un predefinito della libreria
- * (RF-E-10, `?predefinito=`).
+ * creazione può partire da un predefinito della libreria (RF-E-10,
+ * `?predefinito=`).
  *
- * I passi seguono l'ordine in cui si ragiona: cosa fa (istruzioni), su cosa
- * lavora (fonti), cosa produce (output e template), cosa gli si può passare
- * all'avvio (parametri, RF-E-05), quando corre da solo (pianificazione,
- * RF-E-04 — con le frequenze che il piano ammette, RF-E-09).
+ * Dal 14/09/2026 i campi sono tre: il nome, la richiesta scritta con la
+ * stessa barra della chat («@» per documenti, prodotti e clienti) e quando
+ * corre. Tutto il resto, che cosa leggere, quali file preparare, a chi
+ * mandare le email, si scrive nella richiesta: al salvataggio Velia la legge
+ * e ne scrive il piano, che si conferma nella pagina dell'agente.
  */
 @Component({
   selector: 'app-editor-agente',
-  imports: [
-    Bottone,
-    Briciole,
-    Campo,
-    Checkbox,
-    Icona,
-    RouterLink,
-    Select,
-    SelettoreDocumenti,
-  ],
+  imports: [BarraRichiesta, Bottone, Briciole, Campo, Checkbox, Icona, RouterLink, Select],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './editor-agente.html',
   styleUrl: './editor-agente.scss',
 })
 export class EditorAgente {
   private readonly api = inject(AgentiApi);
-  private readonly apiDocumenti = inject(DocumentiApi);
   private readonly router = inject(Router);
 
   /** Dalla rotta `/agenti/:id/modifica`; assente in creazione. */
   readonly id = input<Id | undefined>(undefined);
-  /** Da `?predefinito=`: la definizione della libreria da cui partire. */
+  /** Da `?predefinito=`: la richiesta della libreria da cui partire. */
   readonly predefinito = input<Id | undefined>(undefined);
 
   protected readonly inModifica = computed(() => !!this.id());
@@ -96,24 +80,12 @@ export class EditorAgente {
     this.risorsaLimiti.hasValue() ? this.risorsaLimiti.value() : undefined,
   );
 
-  private readonly risorsaCompagnie = httpResource<Compagnia[]>(() =>
-    this.apiDocumenti.urlCompagnie(),
-  );
-  protected readonly compagnie = computed(() =>
-    this.risorsaCompagnie.hasValue() ? this.risorsaCompagnie.value() : [],
-  );
-
-  private readonly risorsaRami = httpResource<Ramo[]>(() => this.apiDocumenti.urlRami());
-  protected readonly rami = computed(() => (this.risorsaRami.hasValue() ? this.risorsaRami.value() : []));
-
   // --- Il modulo ----------------------------------------------------------
 
   protected readonly nome = signal('');
-  protected readonly descrizione = signal('');
-  protected readonly istruzioni = signal('');
-  protected readonly fonti = signal<FonteAgente[]>([]);
-  protected readonly formatoOutput = signal<FormatoOutputAgente>('testo');
-  protected readonly parametri = signal<ParametroAgente[]>([]);
+  /** Il testo coi riferimenti come marcatori: è quello che si salva. */
+  protected readonly richiesta = signal('');
+  protected readonly riferimenti = signal<RiferimentoBarra[]>([]);
 
   protected readonly pianificata = signal(false);
   protected readonly frequenza = signal<FrequenzaPianificazione>('giornaliera');
@@ -147,15 +119,12 @@ export class EditorAgente {
   private compila(base: Agente | AgentePredefinito): void {
     this.inizializzato = true;
     this.nome.set(base.nome);
-    this.descrizione.set(base.descrizione);
-    this.istruzioni.set(base.istruzioni);
-    this.fonti.set(base.fonti);
-    this.formatoOutput.set(base.formatoOutput);
-    this.parametri.set(base.parametri);
+    /* Prima i riferimenti, poi il testo: la barra ricostruisce i chip dal
+       testo e li vuole già risolti. */
+    this.riferimenti.set('riferimenti' in base ? base.riferimenti : []);
+    this.richiesta.set(base.richiesta);
 
-
-    const pianificazione =
-      'creatoDa' in base ? base.pianificazione : base.pianificazioneSuggerita;
+    const pianificazione = 'creatoDa' in base ? base.pianificazione : base.pianificazioneSuggerita;
     if (pianificazione) {
       this.pianificata.set(true);
       this.frequenza.set(pianificazione.frequenza);
@@ -165,145 +134,6 @@ export class EditorAgente {
       /* La suggerita non ha `sospesa` (è un suggerimento, non uno stato). */
       this.sospesa.set((pianificazione as Partial<Pianificazione>).sospesa ?? false);
     }
-  }
-
-  // --- Fonti (RF-E-02) ----------------------------------------------------
-
-  protected readonly pannelloAperto = signal(false);
-
-  protected readonly idDocumentiScelti = computed(() =>
-    this.fonti()
-      .filter((f) => f.tipo === 'documento')
-      .map((f) => f.documentoId),
-  );
-
-  protected chiudiPannello(): void {
-    this.pannelloAperto.set(false);
-  }
-
-  protected aggiungiDocumento(documento: RiferimentoDocumento): void {
-    /* Il selettore propone solo gli archivi: un allegato di conversazione
-       non può diventare fonte di un agente. La guardia restringe il tipo. */
-    if (documento.archivio === 'conversazione') return;
-    const archivio = documento.archivio;
-    this.fonti.update((fonti) =>
-      fonti.some((f) => f.tipo === 'documento' && f.documentoId === documento.id)
-        ? fonti
-        : [
-            ...fonti,
-            {
-              tipo: 'documento',
-              documentoId: documento.id,
-              archivio,
-              etichetta: documento.titolo,
-            },
-          ],
-    );
-  }
-
-  /* La porzione di archivio in costruzione (RF-E-02: insiemi che cambiano da
-     soli nel tempo, come «tutti i preferiti del ramo auto»). */
-  protected readonly selArchivio = signal<'pubblico' | 'privato'>('pubblico');
-  protected readonly selCompagnia = signal<Id | undefined>(undefined);
-  protected readonly selRamo = signal<Id | undefined>(undefined);
-  protected readonly selPreferiti = signal(false);
-
-  protected readonly opzioniArchivio = [
-    { valore: 'pubblico', etichetta: 'Archivio Pubblico' },
-    { valore: 'privato', etichetta: 'Archivio Privato' },
-  ];
-
-  protected aggiungiSelezione(): void {
-    const archivio = this.selArchivio();
-    const compagniaId = this.selCompagnia();
-    const ramoId = this.selRamo();
-    const soloPreferiti = archivio === 'pubblico' && this.selPreferiti();
-
-    const dettagli = [
-      this.compagnie().find((c) => c.id === compagniaId)?.nome,
-      this.rami().find((r) => r.id === ramoId)?.nome,
-      soloPreferiti ? 'solo preferiti' : undefined,
-    ].filter(Boolean);
-    const etichetta = `${archivio === 'pubblico' ? 'Archivio Pubblico' : 'Archivio Privato'} - ${
-      dettagli.length ? dettagli.join(', ') : 'tutto'
-    }`;
-
-    const fonte: FonteAgente = {
-      tipo: 'selezione',
-      archivio,
-      ...(ramoId ? { ramoId } : {}),
-      ...(compagniaId ? { compagniaId } : {}),
-      ...(soloPreferiti ? { soloPreferiti } : {}),
-      etichetta,
-    };
-    this.fonti.update((fonti) =>
-      fonti.some((f) => f.etichetta === etichetta) ? fonti : [...fonti, fonte],
-    );
-    this.selCompagnia.set(undefined);
-    this.selRamo.set(undefined);
-    this.selPreferiti.set(false);
-  }
-
-  protected readonly haRiferimenti = computed(() =>
-    this.fonti().some((f) => f.tipo === 'documenti-riferimento'),
-  );
-
-  protected alternaRiferimenti(attivi: boolean): void {
-    this.fonti.update((fonti) => {
-      const senza = fonti.filter((f) => f.tipo !== 'documenti-riferimento');
-      return attivi
-        ? [...senza, { tipo: 'documenti-riferimento', etichetta: 'Documenti di riferimento dell’agenzia' }]
-        : senza;
-    });
-  }
-
-  protected rimuoviFonte(fonte: FonteAgente): void {
-    this.fonti.update((fonti) => fonti.filter((f) => f !== fonte));
-  }
-
-  // --- Output (RF-E-02, RF-E-13) ------------------------------------------
-
-  protected readonly opzioniFormato: { valore: FormatoOutputAgente; etichetta: string }[] = [
-    { valore: 'testo', etichetta: 'Testo - risposta discorsiva con citazioni' },
-    { valore: 'tabella', etichetta: 'Tabella - estrazione strutturata con citazioni' },
-    { valore: 'documento', etichetta: 'Documento - PDF con l’intestazione dell’agenzia' },
-  ];
-
-  // --- Parametri (RF-E-05) ------------------------------------------------
-
-  protected readonly bozzaParametro = signal('');
-  protected readonly bozzaTipoParametro = signal<'testo' | 'documento'>('documento');
-  protected readonly bozzaObbligatorio = signal(true);
-
-  protected readonly opzioniTipoParametro = [
-    { valore: 'documento', etichetta: 'Documento dagli archivi' },
-    { valore: 'testo', etichetta: 'Testo libero' },
-  ];
-
-  protected aggiungiParametro(): void {
-    const etichetta = this.bozzaParametro().replace(/\s+/g, ' ').trim();
-    if (!etichetta) return;
-    const chiave = etichetta
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    if (!chiave || this.parametri().some((p) => p.chiave === chiave)) return;
-    this.parametri.update((p) => [
-      ...p,
-      {
-        chiave,
-        etichetta,
-        tipo: this.bozzaTipoParametro(),
-        obbligatorio: this.bozzaObbligatorio(),
-      },
-    ]);
-    this.bozzaParametro.set('');
-  }
-
-  protected rimuoviParametro(chiave: string): void {
-    this.parametri.update((p) => p.filter((x) => x.chiave !== chiave));
   }
 
   // --- Pianificazione (RF-E-04, limiti RF-E-09) ---------------------------
@@ -323,12 +153,7 @@ export class EditorAgente {
 
   protected readonly inSalvataggio = signal(false);
 
-  protected readonly pronto = computed(
-    () =>
-      !!this.nome().trim() &&
-      !!this.istruzioni().trim() &&
-      this.fonti().length >= 1,
-  );
+  protected readonly pronto = computed(() => !!this.nome().trim() && !!this.richiesta().trim());
 
   private componiPianificazione(): Pianificazione | undefined {
     if (!this.pianificata()) return undefined;
@@ -342,50 +167,21 @@ export class EditorAgente {
     };
   }
 
-  /** Le fonti come le vuole il contratto di richiesta: senza etichetta. */
-  private componiFonti(): NuovaFonteAgente[] {
-    return this.fonti().map((fonte): NuovaFonteAgente => {
-      switch (fonte.tipo) {
-        case 'documento':
-          return { tipo: 'documento', documentoId: fonte.documentoId, archivio: fonte.archivio };
-        case 'selezione':
-          return {
-            tipo: 'selezione',
-            archivio: fonte.archivio,
-            ...(fonte.ramoId ? { ramoId: fonte.ramoId } : {}),
-            ...(fonte.compagniaId ? { compagniaId: fonte.compagniaId } : {}),
-            ...(fonte.soloPreferiti ? { soloPreferiti: true } : {}),
-          };
-        default:
-          return { tipo: 'documenti-riferimento' };
-      }
-    });
-  }
-
+  /**
+   * Salva e aspetta il piano: la risposta arriva quando Velia ha letto la
+   * richiesta, e la pagina dell'agente lo mostra da confermare.
+   */
   protected salva(): void {
     if (!this.pronto() || this.inSalvataggio()) return;
     this.inSalvataggio.set(true);
 
     const pianificazione = this.componiPianificazione();
-    const comune = {
-      nome: this.nome().trim(),
-      descrizione: this.descrizione().trim(),
-      istruzioni: this.istruzioni().trim(),
-      fonti: this.componiFonti(),
-      formatoOutput: this.formatoOutput(),
-      parametri: this.parametri(),
-    };
+    const comune = { nome: this.nome().trim(), richiesta: this.richiesta().trim() };
 
     const id = this.id();
     const richiesta = id
-      ? this.api.modifica(id, {
-          ...comune,
-          pianificazione: pianificazione ?? null,
-        })
-      : this.api.crea({
-          ...comune,
-          ...(pianificazione ? { pianificazione } : {}),
-        });
+      ? this.api.modifica(id, { ...comune, pianificazione: pianificazione ?? null })
+      : this.api.crea({ ...comune, ...(pianificazione ? { pianificazione } : {}) });
 
     richiesta.subscribe({
       next: (agente) => void this.router.navigate(['/agenti', agente.id]),

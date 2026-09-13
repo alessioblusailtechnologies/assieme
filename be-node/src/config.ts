@@ -102,6 +102,13 @@ const schemaAmbiente = z.object({
    * Sonnet basta e costa poco.
    */
   MODELLO_PROMPT: z.string().default('claude-sonnet-5'),
+  /**
+   * Chi legge la richiesta di un agente e ne scrive il piano (14/09/2026):
+   * una chiamata a ogni salvataggio, con uno strumento a schema fisso.
+   * Sonnet basta: il piano lo rilegge comunque una persona prima di
+   * confermarlo.
+   */
+  MODELLO_PIANO: z.string().default('claude-sonnet-5'),
   SUGGERIMENTI_ORE_VALIDITA: z.coerce.number().positive().default(24),
   /** `no` spegne la generazione (i test la tengono spenta): restano gli esempi del FE. */
   SUGGERIMENTI_GENERAZIONE: z.enum(['si', 'no']).default('si'),

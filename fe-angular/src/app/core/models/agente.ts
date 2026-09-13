@@ -1,28 +1,46 @@
 import { Citazione } from './citazione';
-import { Archivio } from './documento';
 import { Id, IsoDateTime } from './comune';
+import type { DestinatarioBozza, RiferimentoDocumento } from './conversazione';
 
 /**
  * Agenti (Modulo E): task AI definiti una volta ed eseguibili su richiesta o
  * su pianificazione. È ciò che estende VELIA da strumento interrogativo a
  * strumento operativo.
+ *
+ * Dal 14/09/2026 un agente si definisce come una domanda in chat: un nome,
+ * quando corre, e una **richiesta** scritta con la stessa barra, coi
+ * riferimenti al loro posto. Da quella richiesta Velia scrive il **piano**,
+ * che si legge e si conferma prima che l'agente possa partire.
  */
+
+export type StatoPiano = 'non-letto' | 'da-confermare' | 'confermato';
+
+export type TipoRiferimentoRichiesta = 'documento' | 'prodotto' | 'cliente';
+
+/** Un riferimento della richiesta, risolto oggi dal server: il chip, col suo titolo. */
+export type RiferimentoRichiesta =
+  | { tipo: 'documento'; chiave: Id; titolo: string; archivio: 'pubblico' | 'privato' }
+  | { tipo: 'prodotto'; chiave: string; titolo: string; documenti: RiferimentoDocumento[] }
+  | { tipo: 'cliente'; chiave: Id; titolo: string };
 
 export interface Agente {
   id: Id;
   nome: string;
-  descrizione: string;
-  /** Il task in linguaggio naturale (RF-E-02). */
-  istruzioni: string;
-  fonti: FonteAgente[];
-  formatoOutput: FormatoOutputAgente;
-  /** RF-E-05: gli input variabili che l'esecuzione manuale può fornire. */
-  parametri: ParametroAgente[];
+  /** Il testo coi riferimenti come marcatori `@[tipo:chiave]`, com'è stato scritto. */
+  richiesta: string;
+  /** I riferimenti risolti; quelli che non esistono più mancano, e il chip lo dice. */
+  riferimenti: RiferimentoRichiesta[];
+  piano?: PianoAgente;
+  pianoStato: StatoPiano;
+  /** Perché il piano manca o non è aggiornato: la lettura non è riuscita. */
+  pianoErrore?: string;
+  pianoConfermatoIl?: IsoDateTime;
+  /** Perché il piano non si può confermare così com'è. */
+  bloccoConferma?: string;
   pianificazione?: Pianificazione;
   /**
    * RF-E-01: un agente disattivato resta definito e consultabile, ma non
-   * esegue — né a mano né su pianificazione. È il modo reversibile di
-   * spegnerlo; l'eliminazione è per gli agenti che non servono più.
+   * esegue, né a mano né su pianificazione.
    */
   attivo: boolean;
   creatoDa: Id;
@@ -30,58 +48,64 @@ export interface Agente {
 }
 
 /**
- * L'esito consultabile di ogni esecuzione (RF-E-02): una risposta discorsiva
- * o un'estrazione tabellare — in entrambi i casi testo con citazioni. Col
- * `documento` ogni esecuzione produce anche un PDF col layout di VELIA e
- * l'intestazione dell'agenzia (RF-E-13, dall'11/09/2026 senza template).
+ * Il piano: come Velia ha capito la richiesta. È il patto che si conferma:
+ * che cosa legge, che cosa prepara, a chi scrive.
  */
-export type FormatoOutputAgente = 'testo' | 'tabella' | 'documento';
+export interface PianoAgente {
+  obiettivo: string;
+  passi: PassoPiano[];
+  letture: LetturaPiano[];
+  file: FilePiano[];
+  email: EmailPiano[];
+  /** Ciò che la richiesta lascia aperto: domande, non blocchi. */
+  dubbi: string[];
+}
+
+export interface PassoPiano {
+  tipo: 'leggi' | 'cerca' | 'confronta' | 'genera-file' | 'invia-email' | 'altro';
+  titolo: string;
+  dettaglio?: string;
+}
+
+export interface LetturaPiano {
+  tipo: 'documento' | 'prodotto' | 'cliente' | 'archivio';
+  etichetta: string;
+  riferimento?: { tipo: TipoRiferimentoRichiesta; chiave: string };
+}
+
+export interface FilePiano {
+  formato: string;
+  descrizione: string;
+}
+
+/** Un'email del piano: il destinatario è fissato, e l'agente scrive solo a lui. */
+export interface EmailPiano {
+  destinatario: DestinatarioBozza | DestinatarioNonRisolto;
+  oggetto?: string;
+  contenuto: string;
+  allegati: string[];
+}
+
+export interface DestinatarioNonRisolto {
+  tipo: 'non-risolto';
+  richiesto: string;
+  motivo: string;
+}
 
 /**
- * La riga dell'elenco: quanto basta a capire lo stato della flotta senza
- * trascinarsi dietro istruzioni e storico. `ultimaEsecuzione` risponde alla
- * domanda con cui si apre la sezione — «è andata, l'ultima volta?».
+ * La riga dell'elenco: quanto basta a capire lo stato della flotta.
+ * `ultimaEsecuzione` risponde alla domanda con cui si apre la sezione,
+ * «è andata, l'ultima volta?».
  */
 export interface AgenteRiepilogo {
   id: Id;
   nome: string;
-  descrizione: string;
+  /** L'obiettivo del piano, quando c'è. */
+  obiettivo?: string;
   attivo: boolean;
-  formatoOutput: FormatoOutputAgente;
+  pianoStato: StatoPiano;
   pianificazione?: Pianificazione;
-  numeroFonti: number;
   ultimaEsecuzione?: EsecuzioneRiepilogo;
-}
-
-/**
- * Fonte documentale, **idratata** dal server: `etichetta` è già pronta per
- * l'interfaccia, come il contesto della conversazione (Fase 3). Nei corpi di
- * richiesta viaggia la forma nuda, `NuovaFonteAgente`.
- *
- * RF-E-02 ammette sia singoli documenti sia intere porzioni di archivio. La
- * differenza è sostanziale: un agente puntato su "tutti i documenti del ramo
- * auto" lavora su un insieme che cambia da solo nel tempo — che è esattamente
- * il punto dell'agente di monitoraggio delle nuove edizioni (RF-E-10).
- */
-export type FonteAgente = NuovaFonteAgente & { etichetta: string };
-
-export type NuovaFonteAgente =
-  | { tipo: 'documento'; documentoId: Id; archivio: Archivio }
-  | { tipo: 'selezione'; archivio: Archivio; ramoId?: Id; compagniaId?: Id; soloPreferiti?: boolean }
-  | { tipo: 'documenti-riferimento' };
-
-/**
- * Input variabile dell'esecuzione manuale (RF-E-05), es. il documento su cui
- * operare quella volta. I valori viaggiano in `AvvioEsecuzione.parametri`,
- * per chiave; per il tipo `documento` il valore è l'id del documento.
- */
-export interface ParametroAgente {
-  chiave: string;
-  etichetta: string;
-  tipo: 'testo' | 'documento';
-  obbligatorio: boolean;
-  /** Aiuto sotto il campo, es. «la targa del veicolo». */
-  suggerimento?: string;
 }
 
 export interface Pianificazione {
@@ -109,20 +133,15 @@ export interface EsecuzioneAgente {
   conclusaIl?: IsoDateTime;
   modalita: ModalitaEsecuzione;
   stato: StatoEsecuzione;
-  /** RF-E-05: i valori forniti all'avvio, per chiave del parametro. */
-  parametri?: Record<string, string>;
   /**
    * RF-E-11: quanti tentativi ha richiesto. Vale 1 nel caso normale; di più
-   * quando la politica di retry è intervenuta — un fallimento con 3 tentativi
-   * è un fallimento persistente, e l'interfaccia lo dice.
+   * quando la politica di retry è intervenuta.
    */
   tentativi: number;
   /** Contenuto consultabile in piattaforma (RF-E-07), markdown minimo. */
   output?: string;
   /** RF-E-08: le esecuzioni rispettano gli stessi vincoli di citazione della chat. */
   citazioni: Citazione[];
-  /** RF-E-13: documento generato sul template, scaricabile dallo storico. */
-  documentoGeneratoUrl?: string;
   /** Log sintetico (RF-E-06): passi svolti, non traccia di debug. */
   log: RigaLog[];
   errore?: string;
@@ -137,7 +156,6 @@ export interface EsecuzioneRiepilogo {
   modalita: ModalitaEsecuzione;
   stato: StatoEsecuzione;
   tentativi: number;
-  documentoGeneratoUrl?: string;
   errore?: string;
 }
 
@@ -148,28 +166,22 @@ export interface RigaLog {
 }
 
 /**
- * Agente predefinito della libreria (RF-E-10): una definizione completa da
- * cui partire. «Attivarlo» significa aprirne una copia nel modulo di
- * creazione e personalizzarla — l'agente che ne nasce è del tenant, e della
- * libreria non sa più nulla.
+ * Agente predefinito della libreria (RF-E-10): una richiesta da cui partire.
+ * «Parti da questo» apre la creazione già scritta; l'agente che ne nasce è
+ * del tenant, e della libreria non sa più nulla.
  */
 export interface AgentePredefinito {
   id: Id;
   nome: string;
   descrizione: string;
-  istruzioni: string;
-  fonti: FonteAgente[];
-  formatoOutput: FormatoOutputAgente;
-  parametri: ParametroAgente[];
+  richiesta: string;
   /** Senza `sospesa`: è un suggerimento, non uno stato. */
   pianificazioneSuggerita?: Omit<Pianificazione, 'sospesa'>;
 }
 
 /**
  * RF-E-09: i limiti del piano commerciale, con i consumi correnti. Il server
- * li applica comunque (409 sull'attivazione oltre soglia, 429 sulle
- * esecuzioni concorrenti); il front-end li mostra prima, perché un limite
- * scoperto al momento dell'errore è un limite comunicato male.
+ * li applica comunque; il front-end li mostra prima.
  */
 export interface LimitiAgenti {
   agentiAttiviMax: number;
@@ -180,30 +192,17 @@ export interface LimitiAgenti {
   frequenzaMinima: FrequenzaPianificazione;
 }
 
-/** Corpo di creazione (RF-E-01/02); id e firma li mette il server. */
+/** Corpo di creazione: il piano lo scrive il server. */
 export interface NuovoAgente {
   nome: string;
-  descrizione: string;
-  istruzioni: string;
-  fonti: NuovaFonteAgente[];
-  formatoOutput: FormatoOutputAgente;
-  parametri?: ParametroAgente[];
+  richiesta: string;
   pianificazione?: Pianificazione;
 }
 
-/** Corpo del PATCH: ogni campo è indipendente; `null` toglie ciò che c'era. */
+/** Corpo del PATCH: ogni campo è indipendente; `null` toglie la pianificazione. */
 export interface ModificheAgente {
   nome?: string;
-  descrizione?: string;
-  istruzioni?: string;
-  fonti?: NuovaFonteAgente[];
-  formatoOutput?: FormatoOutputAgente;
-  parametri?: ParametroAgente[];
+  richiesta?: string;
   pianificazione?: Pianificazione | null;
   attivo?: boolean;
-}
-
-/** Corpo dell'esecuzione manuale (RF-E-03, RF-E-05). */
-export interface AvvioEsecuzione {
-  parametri?: Record<string, string>;
 }

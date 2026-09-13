@@ -92,9 +92,15 @@ interface PianoAgente {
 
 ### Fase 3 · La definizione dell'agente
 
-- Migrazione: `richiesta`, `piano`, `piano_stato`, conferma; conversione degli agenti esistenti (istruzioni e fonti in una richiesta con i riferimenti, piano da confermare); libreria predefinita riscritta.
-- Interprete del piano (API, modello configurabile) e rotte: crea e modifica rigenerano il piano; `POST /api/agenti/:id/conferma`.
-- FE: editor con nome, frequenza e barra; pagina dell'agente col piano visivo, «Conferma e attiva», «Modifica»; elenco con lo stato del piano.
+**Fatta il 14/09/2026** (migrazione `20260914130000_agenti_richiesta.sql` applicata online; `20260914140000_agenti_via_i_campi.sql` da applicare a rilascio fatto).
+
+- Migrazione in due tempi: la prima aggiunge `richiesta`, `piano`, `piano_stato` (`non-letto | da-confermare | confermato`), `piano_errore`, la conferma, converte gli agenti esistenti (istruzioni, documenti come riferimenti, porzioni, formato e parametri come frasi) e lascia i campi vecchi senza vincoli, perché il codice in esercizio li legge ancora; la seconda li toglie. Il tick accoda solo i piani confermati e prende coda e tenant come parametri facoltativi, per i test.
+- Lettore del piano (`api/agenti/interprete.ts`, `MODELLO_PIANO`, default Sonnet): uno strumento a schema fisso, i destinatari ancora a parole; `piano.ts` li risolve con `email/destinatari.ts` e un destinatario non risolto blocca la conferma col motivo. I riferimenti si idratano a ogni lettura (`src/agenti/riferimenti.ts`, condiviso con il worker).
+- Rotte: creare e cambiare la richiesta la fanno leggere (fuori transazione, si scrive solo se la richiesta non è cambiata nel frattempo; una lettura fallita lascia il piano di prima con l'errore); cambiare quando corre rimette da confermare, sospendere no; `POST /:id/piano` rilegge, `POST /:id/conferma` conferma e attiva; senza conferma niente esecuzione (409 `PIANO_DA_CONFERMARE`). Via parametri all'avvio e documento dell'esecuzione.
+- L'esecuzione di prima resta in piedi fino alla Fase 4: legge la richiesta coi riferimenti risolti e i passi del piano, e dichiara che file ed email non li produce ancora.
+- Libreria predefinita riscritta come richieste, con le parti da completare fra parentesi quadre.
+- FE: editor con nome, barra (`ui-barra-richiesta`) e quando; pagina dell'agente con la scheda del piano (`piano-agente.ts`), la richiesta coi chip e lo storico; elenco con «piano da confermare».
+- Collaudo col lettore vero: prodotto referenziato con «@», piano con passi, file ed email «a me» risolta, conferma, chip ritrovato in modifica. Per «una tabella» il lettore ha scelto da sé un PDF: da tenere d'occhio.
 
 ### Fase 4 · L'esecuzione come conversazione
 
@@ -112,3 +118,5 @@ interface PianoAgente {
 
 - Le variabili email (`RESEND_API_KEY`, `EMAIL_MITTENTE`) sul worker servono dalla Fase 4 e vanno messe anche su Render: `render.yaml` ha modifiche locali del committente non ancora committate.
 - La produzione (progetto Supabase nuovo) riceverà queste migrazioni al primo avvio.
+- `20260914140000_agenti_via_i_campi.sql` va applicata quando il codice della Fase 3 è in esercizio su Render.
+- I mock del front-end (`mocks/agenti.mjs`, `mocks/data/agenti*.json`) hanno ancora la forma di prima: gli agenti in sviluppo passano dal backend vero.

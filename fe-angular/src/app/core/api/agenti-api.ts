@@ -3,14 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '@env';
-import {
-  Agente,
-  AvvioEsecuzione,
-  EsecuzioneAgente,
-  Id,
-  ModificheAgente,
-  NuovoAgente,
-} from '@core/models';
+import { Agente, EsecuzioneAgente, Id, ModificheAgente, NuovoAgente } from '@core/models';
 
 /**
  * Accesso agli agenti (RF-E-01…E-13).
@@ -19,7 +12,7 @@ import {
  * le letture espongono URL per `httpResource`, i comandi sono metodi.
  *
  * Il ritmo è quello già collaudato di documenti e tabelle: un'esecuzione
- * avviata si segue con il polling dello storico finché non si assesta —
+ * avviata si segue con il polling dello storico finché non si assesta -
  * niente streaming, un'esecuzione che dura minuti non è una risposta di chat.
  */
 @Injectable({ providedIn: 'root' })
@@ -44,19 +37,6 @@ export class AgentiApi {
     return `${this.base}/${id}/esecuzioni/${esecuzioneId}`;
   }
 
-  /**
-   * RF-E-13: il documento generato sul template dell'agenzia.
-   *
-   * Arriva come blob e non come indirizzo da mettere in un `<a>`: la rotta
-   * vuole il Bearer, che un tag `<a>` non manda, e in produzione l'API sta
-   * su un altro host — dove `download` non varrebbe comunque.
-   */
-  scaricaDocumento(id: Id, esecuzioneId: Id): Observable<Blob> {
-    return this.http.get(`${this.urlEsecuzione(id, esecuzioneId)}/documento`, {
-      responseType: 'blob',
-    });
-  }
-
   /** La libreria degli agenti predefiniti (RF-E-10). */
   urlPredefiniti(): string {
     return `${this.base}/predefiniti`;
@@ -67,30 +47,44 @@ export class AgentiApi {
     return `${this.base}/limiti`;
   }
 
+  /**
+   * La risposta arriva col piano già scritto: il server legge la richiesta
+   * prima di rispondere, e ci mette qualche secondo.
+   */
   crea(nuovo: NuovoAgente): Observable<Agente> {
     return this.http.post<Agente>(this.base, nuovo);
   }
 
-  /** RF-E-01 (modifica, attiva/disattiva) e RF-E-04 (sospensione pianificazione). */
+  /** Una richiesta diversa si rilegge; quando corre, cambiato, rimette il piano da confermare. */
   modifica(id: Id, modifiche: ModificheAgente): Observable<Agente> {
     return this.http.patch<Agente>(`${this.base}/${id}`, modifiche);
+  }
+
+  /** «Rileggi la richiesta»: un piano nuovo, da confermare. */
+  rileggiPiano(id: Id): Observable<Agente> {
+    return this.http.post<Agente>(`${this.base}/${id}/piano`, {});
+  }
+
+  /** «Conferma e attiva»: da qui l'agente può partire, anche da solo. */
+  conferma(id: Id): Observable<Agente> {
+    return this.http.post<Agente>(`${this.base}/${id}/conferma`, {});
   }
 
   elimina(id: Id): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}`);
   }
 
-  /** RF-E-01: la copia nasce disattiva e senza storico, pronta da ritoccare. */
+  /** RF-E-01: la copia nasce disattiva, senza storico e col piano da confermare. */
   duplica(id: Id): Observable<Agente> {
     return this.http.post<Agente>(`${this.base}/${id}/duplica`, {});
   }
 
   /**
-   * RF-E-03: esecuzione manuale, con gli eventuali parametri variabili
-   * (RF-E-05). La risposta è l'esecuzione appena nata, in coda: il suo
-   * avanzamento si segue interrogando lo storico.
+   * RF-E-03: esecuzione manuale, solo col piano confermato. La risposta è
+   * l'esecuzione appena nata, in coda: il suo avanzamento si segue
+   * interrogando lo storico.
    */
-  esegui(id: Id, avvio: AvvioEsecuzione = {}): Observable<EsecuzioneAgente> {
-    return this.http.post<EsecuzioneAgente>(`${this.base}/${id}/esecuzioni`, avvio);
+  esegui(id: Id): Observable<EsecuzioneAgente> {
+    return this.http.post<EsecuzioneAgente>(`${this.base}/${id}/esecuzioni`, {});
   }
 }

@@ -1,5 +1,4 @@
-/* Stessa impalcatura del costruttore delle tabelle: colonna stretta di
-   passi, si legge dall'alto in basso. */
+/* Tre passi in colonna, come il costruttore delle tabelle: si legge dall'alto in basso. */
 :host {
   display: block;
   height: 100%;
@@ -35,6 +34,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  max-width: 880px;
 }
 
 .passo {
@@ -57,36 +57,8 @@
   color: var(--c-text-mute);
 }
 
-/* ---------- Ricerca documenti ---------- */
+/* ---------- Pianificazione ---------- */
 
-.cerca {
-  position: relative;
-}
-
-.cerca__pannello {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: var(--z-overlay);
-}
-
-/* ---------- Porzioni di archivio ---------- */
-
-.porzione {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-
-.porzione ui-select {
-  min-width: 180px;
-}
-
-.porzione__preferiti,
-.riferimenti,
-.parametro__obbligatorio,
 .pianifica {
   display: inline-flex;
   align-items: center;
@@ -95,89 +67,6 @@
   cursor: pointer;
   user-select: none;
 }
-
-/* ---------- Fonti e parametri scelti ---------- */
-
-.scelti {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.scelto {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line-soft);
-  border-radius: var(--radius-sm);
-  background: var(--c-page);
-  color: var(--c-text-3);
-}
-
-.scelto__titolo {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-sm);
-  color: var(--c-text);
-}
-
-.scelto__nota {
-  margin-left: var(--sp-2);
-  font-size: var(--t-xs);
-  color: var(--c-text-3);
-}
-
-.scelto__togli {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--sp-1);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--c-text-3);
-  cursor: pointer;
-}
-
-.scelto__togli:hover {
-  background: var(--c-page-alt);
-  color: var(--c-text);
-}
-
-/* ---------- Output ---------- */
-
-.output {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-
-.output ui-select {
-  min-width: 280px;
-}
-
-/* ---------- Parametri ---------- */
-
-.parametro {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-
-.parametro input {
-  flex: 1;
-  min-width: 220px;
-}
-
-.parametro ui-select {
-  min-width: 200px;
-}
-
-/* ---------- Pianificazione ---------- */
 
 .pianificazione {
   display: flex;
@@ -194,11 +83,17 @@
   width: 110px;
 }
 
+.avviso-conferma {
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
 /* ---------- Azioni ---------- */
 
 .azioni {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--sp-3);
 }
 

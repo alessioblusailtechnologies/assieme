@@ -58,9 +58,16 @@
 
 .colonne {
   display: grid;
-  grid-template-columns: minmax(280px, 380px) 1fr;
+  grid-template-columns: minmax(320px, 480px) 1fr;
   gap: var(--sp-4);
   align-items: start;
+}
+
+.colonna {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  min-width: 0;
 }
 
 .scheda {
@@ -73,7 +80,46 @@
   border-radius: var(--radius);
 }
 
-/* ---------- Definizione ---------- */
+/* ---------- Richiesta ---------- */
+
+.richiesta {
+  font-size: var(--t-sm);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Gli stessi chip della barra, fermi: qui si legge, non si scrive. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+  margin: 0 2px;
+  padding: 0 var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  background: var(--c-page);
+  font-size: var(--t-xs);
+  line-height: 1.6;
+  white-space: nowrap;
+  vertical-align: baseline;
+  color: var(--c-text);
+
+  ui-icon {
+    color: var(--c-text-3);
+  }
+}
+
+.chip--cliente {
+  border-color: transparent;
+  background: var(--c-surface-soft);
+}
+
+.chip--sparito {
+  border-style: dashed;
+  color: var(--c-text-mute);
+}
 
 .definizione__etichetta {
   margin-top: var(--sp-2);
@@ -84,42 +130,9 @@
   color: var(--c-text-3);
 }
 
-.definizione__istruzioni {
-  font-size: var(--t-sm);
-  white-space: pre-line;
-}
-
 .definizione__nota {
   font-size: var(--t-xs);
   color: var(--c-text-3);
-}
-
-.fonti {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
-}
-
-.fonte {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-size: var(--t-sm);
-}
-
-.fonte ui-icon {
-  color: var(--c-text-3);
-  flex: none;
-}
-
-.fonte__collegamento {
-  color: inherit;
-  text-decoration: none;
-}
-
-.fonte__collegamento:hover {
-  color: var(--c-accent);
-  text-decoration: underline;
 }
 
 /* ---------- Storico ---------- */
@@ -159,103 +172,8 @@
   text-align: right;
 }
 
-.col-documento {
-  width: 48px;
-  text-align: center;
-}
-
-/* È un bottone e non un link: il file lo chiede il client col token. */
-.scarica {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--sp-1);
-  border: 0;
-  background: transparent;
-  color: var(--c-text-3);
-  cursor: pointer;
-}
-
-.scarica:hover {
-  color: var(--c-accent);
-}
-
 .col-azione {
   width: 110px;
-}
-
-/* ---------- Cassetto di avvio (RF-E-05) ---------- */
-
-.avvio {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-
-.avvio__spiega {
-  font-size: var(--t-sm);
-  color: var(--c-text-3);
-}
-
-.avvio__campo {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.avvio__campo input {
-  width: 100%;
-}
-
-.avvio__etichetta {
-  font-size: var(--t-sm);
-  font-weight: 500;
-}
-
-.avvio__nota {
-  font-size: var(--t-xs);
-  color: var(--c-text-3);
-  font-weight: 400;
-}
-
-.avvio__scelto {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--c-line-soft);
-  border-radius: var(--radius-sm);
-  background: var(--c-page);
-}
-
-.avvio__titolo {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-sm);
-}
-
-.avvio__togli {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--sp-1);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--c-text-3);
-  cursor: pointer;
-}
-
-.avvio__togli:hover {
-  background: var(--c-page-alt);
-  color: var(--c-text);
-}
-
-.avvio__azioni {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
 }
 
 @media (max-width: 900px) {

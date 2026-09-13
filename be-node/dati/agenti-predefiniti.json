@@ -1,68 +1,29 @@
 [
   {
     "id": "pre-001",
-    "nome": "Monitoraggio nuove edizioni dei preferiti",
-    "descrizione": "Ogni mattina controlla i set informativi dei prodotti segnati come preferiti e segnala edizioni nuove o aggiornate.",
-    "istruzioni": "Confronta le edizioni presenti nell'Archivio Pubblico con quelle note al giorno precedente, limitandoti ai documenti dei prodotti segnati come preferiti. Per ogni novità indica compagnia, prodotto, tipologia del documento e data di validità, e riassumi in due righe cosa cambia rispetto all'edizione precedente. Se non ci sono novità, dillo esplicitamente.",
-    "fonti": [
-      {
-        "tipo": "selezione",
-        "archivio": "pubblico",
-        "soloPreferiti": true,
-        "etichetta": "Archivio Pubblico — solo preferiti"
-      }
-    ],
-    "formatoOutput": "testo",
-    "parametri": [],
-    "pianificazioneSuggerita": { "frequenza": "giornaliera", "orario": "07:30" }
+    "nome": "Scadenze della settimana",
+    "descrizione": "Ogni lunedì elenca i clienti con una polizza in scadenza nei trenta giorni successivi e te lo manda per email.",
+    "richiesta": "Cerca fra i clienti quelli che hanno una polizza in scadenza nei prossimi trenta giorni. Preparami una tabella con cliente, compagnia, numero di polizza e data di scadenza, ordinata dalla più vicina, e mandamela per email con la tabella anche in Excel.",
+    "pianificazioneSuggerita": { "frequenza": "settimanale", "orario": "08:00", "giornoSettimana": 1 }
   },
   {
     "id": "pre-002",
-    "nome": "Riepilogo settimanale dell'Archivio Privato",
-    "descrizione": "Ogni lunedì riassume i documenti caricati nella settimana, con stato di elaborazione ed errori da sistemare.",
-    "istruzioni": "Elenca i documenti caricati nell'Archivio Privato negli ultimi sette giorni raggruppandoli per tipologia. Per ciascuno indica chi lo ha caricato e lo stato di elaborazione; segnala a parte i documenti in errore, che vanno ricaricati. Chiudi con il totale dello spazio occupato.",
-    "fonti": [{ "tipo": "selezione", "archivio": "privato", "etichetta": "Archivio Privato — tutto" }],
-    "formatoOutput": "testo",
-    "parametri": [],
-    "pianificazioneSuggerita": { "frequenza": "settimanale", "orario": "08:00", "giornoSettimana": 1 }
+    "nome": "Nuove edizioni dei prodotti che segui",
+    "descrizione": "Ogni mattina controlla se i prodotti che indichi hanno un'edizione nuova in archivio e ti dice che cosa cambia.",
+    "richiesta": "Controlla se nell'Archivio Pubblico c'è un'edizione più recente di [scrivi @ e scegli i prodotti da seguire]. Per ogni novità dimmi compagnia, prodotto e data di validità, e in due righe che cosa cambia rispetto all'edizione precedente. Se non ci sono novità, dillo.",
+    "pianificazioneSuggerita": { "frequenza": "giornaliera", "orario": "07:30" }
   },
   {
     "id": "pre-003",
     "nome": "Verifica di un preventivo",
-    "descrizione": "Su richiesta, confronta un preventivo con un prodotto di riferimento garanzia per garanzia, applicando i criteri dell'agenzia.",
-    "istruzioni": "Confronta il preventivo indicato all'avvio con il prodotto di riferimento, garanzia per garanzia: massimali, franchigie e scoperti, assistenza, garanzie presenti in una sola delle due offerte. Applica i criteri di valutazione dell'agenzia e cita sempre articolo e pagina. Se una garanzia non compare in un documento, dichiaralo invece di dedurre.",
-    "fonti": [
-      {
-        "tipo": "documenti-riferimento",
-        "etichetta": "Documenti di riferimento dell'agenzia"
-      }
-    ],
-    "formatoOutput": "testo",
-    "parametri": [
-      {
-        "chiave": "preventivo",
-        "etichetta": "Preventivo da verificare",
-        "tipo": "documento",
-        "obbligatorio": true,
-        "suggerimento": "Il preventivo caricato nell'Archivio Privato su cui fare il confronto."
-      },
-      {
-        "chiave": "riferimento",
-        "etichetta": "Prodotto di confronto",
-        "tipo": "documento",
-        "obbligatorio": true,
-        "suggerimento": "Le condizioni del prodotto con cui confrontare, dall'Archivio Pubblico."
-      }
-    ]
+    "descrizione": "Su richiesta, confronta un preventivo con un prodotto di riferimento garanzia per garanzia.",
+    "richiesta": "Confronta il preventivo [scrivi @ e scegli il documento] con le condizioni di [scrivi @ e scegli il prodotto], garanzia per garanzia: massimali, franchigie e scoperti, assistenza, garanzie presenti in una sola delle due offerte. Cita articolo e pagina; se una garanzia non compare in un documento, dillo invece di dedurla. Preparami il confronto anche in PDF."
   },
   {
     "id": "pre-004",
-    "nome": "Controllo scadenze e rinnovi",
-    "descrizione": "A inizio mese passa in rassegna polizze e convenzioni dell'agenzia e segnala le scadenze dei sessanta giorni successivi.",
-    "istruzioni": "Leggi i documenti dell'Archivio Privato e individua le date di scadenza di polizze e convenzioni. Segnala quelle che scadono entro sessanta giorni, con il riferimento al passaggio del documento in cui la scadenza è indicata, ordinate dalla più vicina.",
-    "fonti": [{ "tipo": "selezione", "archivio": "privato", "etichetta": "Archivio Privato — tutto" }],
-    "formatoOutput": "testo",
-    "parametri": [],
+    "nome": "Rinnovi del mese",
+    "descrizione": "A inizio mese prepara l'elenco dei rinnovi dei sessanta giorni successivi, in PDF, e te lo manda.",
+    "richiesta": "Elenca i clienti con polizze in scadenza nei sessanta giorni successivi, dalla più vicina, con la data di scadenza e il documento da cui risulta. Preparami l'elenco in un PDF e mandamelo per email.",
     "pianificazioneSuggerita": { "frequenza": "mensile", "orario": "09:00", "giornoMese": 1 }
   }
 ]

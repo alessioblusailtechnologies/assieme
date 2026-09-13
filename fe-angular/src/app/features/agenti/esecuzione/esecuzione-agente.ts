@@ -26,8 +26,6 @@ import { Icona } from '@shared/ui/icona/icona';
 import { NotificheStore } from '@core/notifiche/notifiche-store';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
-import { nomeDocumentoEsecuzione } from '../nome-documento';
-import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
 import { htmlRisposta } from '@shared/testi/testo-risposta';
@@ -101,25 +99,6 @@ export class EsecuzioneAgentePagina {
     return stato === 'in-coda' || stato === 'in-corso';
   });
 
-  /**
-   * RF-E-13: il documento generato si chiede all'API e si consegna da qui.
-   * Non è un link: la rotta vuole il Bearer, che un `<a href>` non manda.
-   */
-  protected scaricaDocumento(): void {
-    const esecuzione = this.esecuzione();
-    if (!esecuzione) return;
-    this.api.scaricaDocumento(this.id(), esecuzione.id).subscribe({
-      next: (blob) =>
-        scaricaBlob(blob, nomeDocumentoEsecuzione(this.agente()?.nome, esecuzione.id, blob)),
-      error: () =>
-        this.notifiche.aggiungi({
-          gravita: 'errore',
-          titolo: 'Il documento generato non è arrivato',
-          dettaglio: 'Riprova fra poco.',
-        }),
-    });
-  }
-
   /** L'ultimo stato visto, per notificare l'assestamento (RF-E-07). */
   private statoVisto: StatoEsecuzione | undefined;
 
@@ -179,17 +158,6 @@ export class EsecuzioneAgentePagina {
     if (citazione) this.citazioneAperta.set(citazione);
   }
 
-  /** I parametri dell'avvio, con l'etichetta dichiarata dall'agente (RF-E-05). */
-  protected readonly parametriMostrati = computed(() => {
-    const valori = this.esecuzione()?.parametri;
-    if (!valori) return [];
-    const definiti = this.agente()?.parametri ?? [];
-    return Object.entries(valori).map(([chiave, valore]) => ({
-      etichetta: definiti.find((p) => p.chiave === chiave)?.etichetta ?? chiave,
-      valore,
-    }));
-  });
-
   protected durata(): string {
     const esecuzione = this.esecuzione();
     if (!esecuzione?.conclusaIl) return '';
@@ -213,13 +181,12 @@ export class EsecuzioneAgentePagina {
 
   protected readonly inAvvio = signal(false);
 
-  /** Una nuova esecuzione con gli stessi parametri; si naviga al suo esito. */
+  /** Una nuova esecuzione; si naviga al suo esito. */
   protected riesegui(): void {
-    const esecuzione = this.esecuzione();
-    if (!esecuzione || this.inAvvio()) return;
+    if (!this.esecuzione() || this.inAvvio()) return;
     this.inAvvio.set(true);
     this.api
-      .esegui(this.id(), esecuzione.parametri ? { parametri: esecuzione.parametri } : {})
+      .esegui(this.id())
       .subscribe({
         next: (nuova) => {
           this.inAvvio.set(false);
@@ -230,8 +197,8 @@ export class EsecuzioneAgentePagina {
   }
 
   /**
-   * RF-E-12: nasce una conversazione con i documenti dell'esito in contesto —
-   * quelli citati, più le fonti puntuali dell'agente.
+   * RF-E-12: nasce una conversazione con i documenti dell'esito in contesto:
+   * quelli citati, più i documenti e i prodotti referenziati nella richiesta.
    */
   protected approfondisciInChat(): void {
     const agente = this.agente();
@@ -240,8 +207,9 @@ export class EsecuzioneAgentePagina {
 
     const documenti = new Set<string>();
     for (const citazione of esecuzione.citazioni) documenti.add(citazione.documentoId);
-    for (const fonte of agente.fonti) {
-      if (fonte.tipo === 'documento') documenti.add(fonte.documentoId);
+    for (const riferimento of agente.riferimenti) {
+      if (riferimento.tipo === 'documento') documenti.add(riferimento.chiave);
+      else if (riferimento.tipo === 'prodotto') for (const d of riferimento.documenti) documenti.add(d.id);
     }
 
     this.conversazioni
