@@ -8,9 +8,18 @@ la ricognizione.
 Stato al 13/09/2026, fine sessione. Dei 9 set del lotto 1 ne sono entrati
 **sette**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa,
 Immagina Adesso Armonia, Immagina Adesso Cucciolo, ViviCondomìnio e
-Immagina Strade Nuove Passione Moto. Resta **solo Immagina Adesso Salute
-e Benessere** (366 pagine, da fare in una sessione sua), e poi il lotto 1
-è chiuso.
+Immagina Strade Nuove Passione Moto.
+
+**Immagina Adesso Salute e Benessere è rimandato, di proposito.** È il
+set più pesante del lotto (366 pagine, 5-6 milioni di token e 37 blocchi
+di trascrizione: una sessione intera per un solo set) ed è l'unico buco
+del lotto 1. Va recuperato, ma dopo: prima conviene allargare la
+copertura su più rami e più prodotti, che in demo vale di più di un
+singolo modulo salute fatto benissimo. Quando si riprende: il PDF è già
+in `local-ingestion/in-arrivo/generali-persona/`, il giro è quello dei
+tre moduli gemelli già in archivio (Casa, Armonia, Cucciolo), le Norme
+comuni si replicano come sotto, e il ramo `ram-salute` di Generali resta
+vuoto fino ad allora.
 
 I PDF sono già scaricati in `local-ingestion/in-arrivo/generali-auto/` e
 `local-ingestion/in-arrivo/generali-persona/` (cartelle gitignorate, con
@@ -145,7 +154,7 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 | 6 | ViviCondomìnio | casa | 11/07/2026 | 120 | **in archivio** (13/09) |
 | 7 | Immagina Strade Nuove Passione Moto | auto | 01/01/2026 | 122 | **in archivio** (13/09) |
 | 8 | Immagina Adesso Casa | casa | 28/06/2025 | 140 | **in archivio** (13/09) |
-| 9 | Immagina Adesso Salute e Benessere | salute | 11/07/2026 | 366 | da fare |
+| 9 | Immagina Adesso Salute e Benessere | salute | 11/07/2026 | 366 | **rimandato** (13/09): vedi «Da dove riprendere» |
 
 Lotto 2 (mobilità estesa): Altri Veicoli, Veicoli commerciali, Macchine
 agricole, Ruote da Collezione (con la 10/2026 che entra il 1° ottobre),
