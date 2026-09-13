@@ -1113,6 +1113,96 @@
   "pathPdf": "archivio-pubblico/generali/auto/contratto-base-motoveicoli/ed-2026-01/originale.pdf"
  },
  {
+  "id": "doc-generali-immagina-adesso-armonia-ed-2025-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-tutela",
+  "prodotto": "Immagina Adesso Armonia",
+  "titolo": "Condizioni di Assicurazione — Generali Italia Immagina Adesso Armonia",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 40,
+  "paginaInizio": 14,
+  "edizione": {
+   "id": "edz-immagina-adesso-armonia-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-armonia-ed-2025-06-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-tutela",
+  "prodotto": "Immagina Adesso Armonia",
+  "titolo": "DIP Danni — Generali Italia Immagina Adesso Armonia",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-immagina-adesso-armonia-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/dip.md",
+  "pathPdf": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-armonia-ed-2025-06-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-tutela",
+  "prodotto": "Immagina Adesso Armonia",
+  "titolo": "DIP Aggiuntivo Danni — Generali Italia Immagina Adesso Armonia",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-immagina-adesso-armonia-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-armonia-ed-2025-06-indice-del-modulo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-tutela",
+  "prodotto": "Immagina Adesso Armonia",
+  "titolo": "Indice del Modulo ARMONIA — Generali Italia Immagina Adesso Armonia",
+  "tipologia": "altro",
+  "numeroPagine": 5,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-immagina-adesso-armonia-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/indice-del-modulo.md",
+  "pathPdf": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-adesso-armonia-ed-2025-06-norme-comuni",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-tutela",
+  "prodotto": "Immagina Adesso Armonia",
+  "titolo": "Sezione Norme comuni del prodotto — Generali Italia Immagina Adesso Armonia",
+  "tipologia": "altro",
+  "numeroPagine": 13,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-immagina-adesso-armonia-2025-06",
+   "etichetta": "ed. 06/2025",
+   "validaDal": "2025-06-28",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/norme-comuni.md",
+  "pathPdf": "archivio-pubblico/generali/tutela/immagina-adesso-armonia/ed-2025-06/originale.pdf"
+ },
+ {
   "id": "doc-generali-immagina-adesso-casa-ed-2025-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-generali",
   "ramoId": "ram-casa",
