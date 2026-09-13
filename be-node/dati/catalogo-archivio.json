@@ -5596,6 +5596,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/unica-servizi-telematici/ed-2026-05/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-unica-viaggio-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Unica Viaggio",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Viaggio",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 41,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-viaggio-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-viaggio-ed-2025-10-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Unica Viaggio",
+  "titolo": "DIP Danni — Unipol Unica Viaggio",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-viaggio-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-viaggio-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Unica Viaggio",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Viaggio",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-viaggio-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-viaggio-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Unica Viaggio",
+  "titolo": "Informativa Privacy — Unipol Unica Viaggio",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 57,
+  "edizione": {
+   "id": "edz-unica-viaggio-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-viaggio-ed-2025-10-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Unica Viaggio",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Viaggio",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 54,
+  "edizione": {
+   "id": "edz-unica-viaggio-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/viaggi/unica-viaggio/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-zurich-for-family-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-zurich",
   "ramoId": "ram-casa",
