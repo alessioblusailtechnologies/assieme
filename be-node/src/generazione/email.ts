@@ -117,3 +117,35 @@ export function componiEmailRisposta(r: RichiestaEmailRisposta): EmailComposta {
 
   return { oggetto, testo, html };
 }
+
+/**
+ * Un'email scritta per chi la riceve (14/09/2026): la bozza che l'assistente
+ * prepara in chat e l'utente invia. Non è una risposta girata a qualcuno:
+ * niente titolo della conversazione in testa, niente elenco di fonti in coda
+ * (se servono, stanno nel testo), e la firma è di chi la manda, col nome
+ * dell'agenzia.
+ */
+export interface RichiestaEmailLibera {
+  oggetto: string;
+  /** Markdown leggero, com'è nella bozza. */
+  corpo: string;
+  daParteDi: { nome: string; agenzia: string };
+}
+
+export function componiEmailLibera(r: RichiestaEmailLibera): EmailComposta {
+  const oggetto = r.oggetto.trim() || r.daParteDi.agenzia;
+  const firma = [r.daParteDi.nome, r.daParteDi.agenzia].map((x) => x.trim()).filter(Boolean);
+  const html =
+    `<div style="max-width:640px;margin:0 auto;padding:24px;font-family:Helvetica,Arial,sans-serif;background:#ffffff;">` +
+    `<div style="border-top:4px solid ${ACCENTO};padding-top:12px;margin-bottom:20px;">` +
+    `<p style="${STILE_P}margin:0;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;color:#6f6a5e;">${scappa(r.daParteDi.agenzia)}</p>` +
+    `</div>` +
+    htmlDaBlocchi(analizzaMarkdown(r.corpo)) +
+    `<div style="margin-top:28px;padding-top:16px;border-top:1px solid #e3e0d6;">` +
+    `<p style="${STILE_P}margin:0;font-size:14px;color:#4a463d;">${firma.map(scappa).join('<br>')}</p>` +
+    `</div></div>`;
+
+  const testo = `${testoSemplice(r.corpo, [])}\n${firma.join('\n')}\n`;
+
+  return { oggetto, testo, html };
+}

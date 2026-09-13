@@ -534,6 +534,15 @@ describe('workspace e sessione, le parti pure', () => {
     expect(conChat).toContain('Intestare ed etichettare');
   });
 
+  it('le email si raccontano solo dove lo strumento c’è, e senza promettere l’invio', () => {
+    const dna: DnaAgenzia = { istruzioni: [], riferimenti: [], ricordi: [] };
+    expect(promptSistema(dna)).not.toContain('prepara_email');
+    const conChat = promptSistema(dna, { conEmail: true });
+    expect(conChat).toContain('prepara_email');
+    /* La bozza parte solo dal clic dell'utente: il modello non deve dire il contrario. */
+    expect(conChat).toContain('non dire mai che l’hai inviata');
+  });
+
   it('il prompt di ripresa: niente storia (è già nel contesto della sessione), contesto e domanda sì', () => {
     const conDocumenti = promptRipresa({
       documenti: [{ path: 'tenant/documenti/p/a.md', titolo: 'A', archivio: 'privato' }],

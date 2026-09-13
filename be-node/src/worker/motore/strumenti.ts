@@ -7,10 +7,13 @@ import { z } from 'zod';
 import {
   percorsoDocumentoGenerato,
   urlDocumentoGenerato,
+  type AllegatoBozza,
+  type BozzaEmail,
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
 import { consegnabile } from '../../contratto/formati.js';
 import { FORMATI_GENERAZIONE } from '../../contratto/template.js';
+import { risolviDestinatario } from '../../email/destinatari.js';
 import { fasceDelTenant, modelliDelTenant, modelloChiesto, scegliModello } from '../../generazione/catalogo.js';
 import { generaDocumento, MIME } from '../../generazione/generatore.js';
 import { risolviProposta, type OperazioneChiesta } from '../../archivio/proposta.js';
@@ -42,6 +45,7 @@ export const NOME_TOOL_PROPONI_ASSEGNAZIONE = `mcp__${NOME_SERVER}__proponi_asse
 export const NOME_TOOL_CONDIVIDI_LINK = `mcp__${NOME_SERVER}__condividi_link`;
 export const NOME_TOOL_CERCA_CLIENTI = `mcp__${NOME_SERVER}__cerca_clienti`;
 export const NOME_TOOL_SCHEDA_CLIENTE = `mcp__${NOME_SERVER}__scheda_cliente`;
+export const NOME_TOOL_PREPARA_EMAIL = `mcp__${NOME_SERVER}__prepara_email`;
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
@@ -95,10 +99,23 @@ export interface ContestoStrumenti {
    * tenant — il contesto ce l'ha già.
    */
   clienti?: boolean;
+  /**
+   * Le email (14/09/2026): il modello **prepara**, l'utente invia. `suBozza`
+   * deposita la bozza e la racconta al FE; `utenteId` è chi scrive, per
+   * risolvere «me». Assente = lo strumento `prepara_email` non c'è.
+   */
+  email?: {
+    utenteId: string;
+    suBozza: (bozza: Omit<BozzaEmail, 'id' | 'stato'>) => Promise<BozzaEmail>;
+  };
 }
+
+type DefinizioniStrumenti = NonNullable<Parameters<typeof createSdkMcpServer>[0]['tools']>;
 
 export interface StrumentiMotore {
   server: McpSdkServerConfigWithInstance;
+  /** Gli strumenti montati: il server li serve al motore, i test li chiamano direttamente. */
+  definizioni: DefinizioniStrumenti;
   nomi: string[];
   /** I documenti generati finora, nell'ordine: il gestore li salva col messaggio. */
   generati: DocumentoGenerato[];
@@ -109,6 +126,18 @@ export interface StrumentiMotore {
 export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotore {
   const generati: DocumentoGenerato[] = [];
   const percorsi: string[] = [];
+
+  /** I documenti generati nella conversazione, dal più vecchio: quelli già salvati e quelli di questa risposta. */
+  const documentiDellaConversazione = async (): Promise<DocumentoGenerato[]> => {
+    const precedenti = await contesto.db.query<{ documento: DocumentoGenerato }>(
+      `select d as documento
+         from velia.messaggi m, jsonb_array_elements(m.documenti) d
+        where m.conversazione_id = $1
+        order by m.inviato_il`,
+      [contesto.conversazioneId],
+    );
+    return [...precedenti.rows.map((r) => r.documento), ...generati];
+  };
 
   const esportaSubito = tool(
     'esporta_subito',
@@ -294,14 +323,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       }
       const client = await contesto.db.connect();
       try {
-        const precedenti = await client.query<{ documento: DocumentoGenerato }>(
-          `select d as documento
-             from velia.messaggi m, jsonb_array_elements(m.documenti) d
-            where m.conversazione_id = $1
-            order by m.inviato_il`,
-          [contesto.conversazioneId],
-        );
-        const tutti = [...precedenti.rows.map((r) => r.documento), ...generati];
+        const tutti = await documentiDellaConversazione();
         const cercato = args.documento?.trim().toLowerCase();
         const candidati = cercato ? tutti.filter((d) => d.nome.toLowerCase().includes(cercato)) : tutti;
         const documento = candidati.at(-1);
@@ -600,24 +622,108 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  /**
+   * L'email si **prepara**, non si spedisce (14/09/2026). Lo stesso patto del
+   * riordino: il motore deposita una bozza, l'utente la vede sotto la
+   * risposta, la corregge se vuole e la invia lui, con la sua identità.
+   * L'indirizzo non lo sceglie il modello: viene dall'anagrafica o dalle
+   * parole dell'utente (`risolviDestinatario`).
+   */
+  const preparaEmail = tool(
+    'prepara_email',
+    [
+      'Prepara un’email che l’utente rivede e invia lui: compare sotto la risposta con Modifica e Invia, e non parte finché non la invia. Non dire mai che l’hai inviata.',
+      'Usalo quando l’utente chiede di scrivere, mandare o girare un’email: a sé, a un collega o a un cliente. Mai di tua iniziativa.',
+      '`a` è «me» per l’utente, un indirizzo email che l’utente ti ha dato, oppure il nome di un collega o di un cliente dell’anagrafica («Rossi Mario»): l’indirizzo lo risolvo io.',
+      'Scrivi `corpo` per chi la riceve, in Markdown leggero: niente rimandi [n], niente blocco delle citazioni, niente firma (nome e agenzia li aggiungo io).',
+      'Per allegare un file prima generalo con gli strumenti dei documenti, poi passane il nome in `allegati`.',
+      'Una email per destinatario. Dopo l’esito, di’ in UNA riga che la bozza è pronta sotto la risposta, da rivedere e inviare.',
+    ].join(' '),
+    {
+      a: z.string().min(1).max(200).describe('«me», un indirizzo email, o il nome di un collega o di un cliente.'),
+      oggetto: z.string().min(1).max(200).describe('L’oggetto dell’email.'),
+      corpo: z.string().min(1).max(20_000).describe('Il testo dell’email in Markdown leggero, per chi la riceve.'),
+      allegati: z
+        .array(z.string().min(1).max(200))
+        .max(10)
+        .optional()
+        .describe('I nomi dei documenti generati in questa conversazione da allegare, anche solo una parte del nome.'),
+    },
+    async (args) => {
+      if (!contesto.email) {
+        return { content: [{ type: 'text', text: 'Qui non posso preparare email: dillo all’utente.' }], isError: true };
+      }
+      const esito = await risolviDestinatario(
+        contesto.db,
+        { tenantId: contesto.tenantId, utenteId: contesto.email.utenteId },
+        args.a,
+      );
+      if (esito.esito === 'non-trovato') {
+        return { content: [{ type: 'text', text: `Bozza non preparata. ${esito.motivo}` }], isError: true };
+      }
+
+      const allegati: AllegatoBozza[] = [];
+      if (args.allegati?.length) {
+        const tutti = await documentiDellaConversazione();
+        for (const cercato of args.allegati) {
+          const chiave = cercato.trim().toLowerCase();
+          const documento = tutti.filter((d) => d.nome.toLowerCase().includes(chiave)).at(-1);
+          if (!documento) {
+            const elenco = tutti.map((d) => `«${d.nome}»`).join(', ');
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: elenco
+                    ? `Bozza non preparata: nessun documento generato si chiama «${cercato}». Ci sono: ${elenco}.`
+                    : 'Bozza non preparata: in questa conversazione non c’è ancora nessun documento generato da allegare. Prima generalo, poi prepara l’email.',
+                },
+              ],
+              isError: true,
+            };
+          }
+          if (!allegati.some((a) => a.id === documento.id)) {
+            allegati.push({ id: documento.id, nome: documento.nome, formato: documento.formato });
+          }
+        }
+      }
+
+      const { destinatario } = esito;
+      const bozza = await contesto.email.suBozza({ destinatario, oggetto: args.oggetto, corpo: args.corpo, allegati });
+      const chi = destinatario.nome ? `${destinatario.nome} <${destinatario.a}>` : destinatario.a;
+      const conAllegati = bozza.allegati.length
+        ? `, con ${bozza.allegati.length === 1 ? 'l’allegato' : 'gli allegati'} ${bozza.allegati.map((a) => `«${a.nome}»`).join(', ')}`
+        : '';
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Bozza pronta per ${chi}${conAllegati}. L’utente la trova sotto la risposta, la rivede e la invia lui: non è ancora partita.`,
+          },
+        ],
+      };
+    },
+  );
+
+  const definizioni: DefinizioniStrumenti = [
+    esportaSubito,
+    ...(contesto.elaborata ? [esportazioneElaborata] : []),
+    ...(contesto.pagine ? [condividiLink] : []),
+    ...(contesto.suProposta ? [proponiAssegnazione] : []),
+    ...(contesto.clienti ? [cercaClientiTool, schedaClienteTool] : []),
+    ...(contesto.email ? [preparaEmail] : []),
+  ];
+
   return {
-    server: createSdkMcpServer({
-      name: NOME_SERVER,
-      version: '1.0.0',
-      tools: [
-        esportaSubito,
-        ...(contesto.elaborata ? [esportazioneElaborata] : []),
-        ...(contesto.pagine ? [condividiLink] : []),
-        ...(contesto.suProposta ? [proponiAssegnazione] : []),
-        ...(contesto.clienti ? [cercaClientiTool, schedaClienteTool] : []),
-      ],
-    }),
+    server: createSdkMcpServer({ name: NOME_SERVER, version: '1.0.0', tools: definizioni }),
+    definizioni,
     nomi: [
       NOME_TOOL_ESPORTA_SUBITO,
       ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
       ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
       ...(contesto.suProposta ? [NOME_TOOL_PROPONI_ASSEGNAZIONE] : []),
       ...(contesto.clienti ? [NOME_TOOL_CERCA_CLIENTI, NOME_TOOL_SCHEDA_CLIENTE] : []),
+      ...(contesto.email ? [NOME_TOOL_PREPARA_EMAIL] : []),
     ],
     generati,
     percorsi,

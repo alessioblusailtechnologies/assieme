@@ -477,6 +477,11 @@ export function etichettaAttivita(
       return 'Esportazione elaborata in corso';
     case 'mcp__velia__condividi_link':
       return 'Preparo il link per il cliente';
+    case 'mcp__velia__prepara_email': {
+      const a = typeof input['a'] === 'string' ? input['a'].trim() : '';
+      if (!a || /^(me|a me|io|me stess[oa])$/i.test(a)) return 'Preparo l’email';
+      return `Preparo l’email per «${accorcia(a, 60)}»`;
+    }
     case 'mcp__velia__esegui':
     case 'mcp__velia__scrivi_file':
     case 'mcp__velia__leggi_file':

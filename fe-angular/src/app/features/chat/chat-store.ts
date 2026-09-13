@@ -1,9 +1,10 @@
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription, concat, of, switchMap } from 'rxjs';
+import { Observable, Subscription, concat, of, switchMap } from 'rxjs';
 
 import {
+  BozzaEmail,
   DestinatarioEmail,
   DocumentoGenerato,
   ErroreApi,
@@ -13,6 +14,7 @@ import {
   IsoDateTime,
   LinkDocumento,
   Messaggio,
+  ModificheBozzaEmail,
   ModoAllegato,
   Passo,
   PropostaArchivio,
@@ -390,6 +392,83 @@ export class ChatStore {
     const stream = this.streamAttivo();
     if (stream?.assistente?.proposta?.id === proposta.id) {
       this.aggiornaAssistente((m) => ({ ...m, proposta }));
+    }
+  }
+
+  // --- Email preparate in chat --------------------------------------------
+
+  /** Le bozze con una richiesta in volo: la loro scheda tiene fermi i pulsanti. */
+  private readonly bozzeInLavoro = signal<ReadonlySet<Id>>(new Set());
+
+  bozzaInLavoro(emailId: Id): boolean {
+    return this.bozzeInLavoro().has(emailId);
+  }
+
+  /** Corregge una bozza; `fatto` chiude il modulo solo se il server l'ha presa. */
+  modificaBozza(bozza: BozzaEmail, modifiche: ModificheBozzaEmail, fatto?: () => void): void {
+    this.lavoraBozza(bozza, (id) => this.api.modificaBozzaEmail(id, bozza.id, modifiche), fatto);
+  }
+
+  /**
+   * Invia l'email preparata. È l'unico punto da cui parte: l'assistente l'ha
+   * scritta, ma fino a questo clic non è uscito niente.
+   */
+  inviaBozza(bozza: BozzaEmail): void {
+    this.lavoraBozza(
+      bozza,
+      (id) => this.api.inviaBozzaEmail(id, bozza.id),
+      (inviata) =>
+        this.notifiche.aggiungi({
+          gravita: 'successo',
+          titolo: inviata.simulata ? 'Email simulata' : 'Email inviata',
+          dettaglio: inviata.simulata
+            ? `A ${inviata.destinatario.a}: su questo ambiente l'invio non è configurato.`
+            : `A ${inviata.destinatario.a}.`,
+        }),
+    );
+  }
+
+  annullaBozza(bozza: BozzaEmail): void {
+    this.lavoraBozza(bozza, (id) => this.api.annullaBozzaEmail(id, bozza.id));
+  }
+
+  private lavoraBozza(
+    bozza: BozzaEmail,
+    chiamata: (conversazioneId: Id) => Observable<BozzaEmail>,
+    fatto?: (aggiornata: BozzaEmail) => void,
+  ): void {
+    const id = this.idAttiva();
+    if (!id || bozza.stato !== 'bozza' || this.bozzaInLavoro(bozza.id)) return;
+    this.bozzeInLavoro.update((b) => new Set(b).add(bozza.id));
+
+    const finito = (): void =>
+      this.bozzeInLavoro.update((b) => {
+        const senza = new Set(b);
+        senza.delete(bozza.id);
+        return senza;
+      });
+
+    chiamata(id).subscribe({
+      next: (aggiornata) => {
+        finito();
+        this.segnaBozza(aggiornata);
+        fatto?.(aggiornata);
+      },
+      error: () => finito(),
+    });
+  }
+
+  /** La bozza aggiornata si scrive dove vive il messaggio: caricato o ancora in streaming. */
+  private segnaBozza(bozza: BozzaEmail): void {
+    const sostituite = (email: BozzaEmail[] | undefined): BozzaEmail[] | undefined =>
+      email?.map((e) => (e.id === bozza.id ? bozza : e));
+    this.messaggiCaricati.update((caricati) =>
+      (caricati ?? []).map((m) =>
+        m.email?.some((e) => e.id === bozza.id) ? { ...m, email: sostituite(m.email) } : m,
+      ),
+    );
+    if (this.streamAttivo()?.assistente?.email?.some((e) => e.id === bozza.id)) {
+      this.aggiornaAssistente((m) => ({ ...m, email: sostituite(m.email) }));
     }
   }
 
@@ -1182,15 +1261,24 @@ export class ChatStore {
       case 'proposta':
         this.aggiornaAssistente((m) => ({ ...m, proposta: evento.proposta }));
         break;
+      case 'email':
+        /* Una bozza già vista (il replay dopo un ricaricamento) si sostituisce, non si accoda. */
+        this.aggiornaAssistente((m) => ({
+          ...m,
+          email: [...(m.email ?? []).filter((e) => e.id !== evento.email.id), evento.email],
+        }));
+        break;
       case 'errore':
         /* I documenti annunciati durante una risposta che non arriva in
            fondo il server li cancella dallo Storage: il messaggio non li ha
            mai elencati. Lasciarne il chip prometterebbe un file che non
-           esiste più. */
+           esiste più. Lo stesso per le email preparate: senza la risposta
+           il server le butta, e una scheda con Invia non deve restare. */
         this.aggiornaAssistente((m) => ({
           ...m,
           inCorso: false,
           documenti: undefined,
+          email: undefined,
           erroreStream: evento.messaggio,
         }));
         break;

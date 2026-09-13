@@ -155,6 +155,8 @@ export interface Messaggio {
   documenti?: DocumentoGenerato[];
   /** Il riordino dell'archivio proposto durante la risposta (04/09/2026). */
   proposta?: PropostaArchivio;
+  /** Le email preparate durante la risposta, da rivedere e inviare (14/09/2026). */
+  email?: BozzaEmail[];
   /** Come ci è arrivato: i passi del motore in ordine (07/09/2026). Vuoto sui messaggi dell'utente. */
   passi?: Passo[];
   /** Il cliente di cui si parlava quando la domanda è partita: il chip nella bolla (13/09/2026). */
@@ -249,6 +251,66 @@ export interface EsitoProposta {
 }
 
 /**
+ * Un'email che l'assistente **prepara**, e che parte solo quando l'utente la
+ * invia (14/09/2026).
+ *
+ * Lo stesso principio del riordino proposto: il motore non spedisce niente.
+ * Deposita una bozza, il front-end la mostra sotto la risposta con Modifica,
+ * Invia e Annulla, e l'invio lo fa l'API con l'identità di chi clicca. La
+ * bozza viaggia col messaggio e sopravvive a un ricaricamento; decisa, resta
+ * a raccontare che cosa è partito e a chi.
+ */
+export interface BozzaEmail {
+  id: string;
+  destinatario: DestinatarioBozza;
+  oggetto: string;
+  /** Markdown leggero, scritto per chi riceve. */
+  corpo: string;
+  allegati: AllegatoBozza[];
+  stato: 'bozza' | 'inviata' | 'annullata';
+  /** Sulle inviate: l'ambiente non ha un provider, e l'invio è stato simulato. */
+  simulata?: boolean;
+  /** Quando è stata inviata o annullata. */
+  decisaIl?: string;
+}
+
+/**
+ * A chi: un indirizzo scritto, un utente dell'agenzia (anche chi scrive) o un
+ * cliente dell'anagrafica. `a` è l'indirizzo risolto quando la bozza è nata:
+ * se l'anagrafica cambia dopo, la bozza non la segue.
+ */
+export interface DestinatarioBozza {
+  tipo: 'indirizzo' | 'utente' | 'cliente';
+  /** L'utente o il cliente; assente su un indirizzo scritto a mano. */
+  id?: string;
+  nome?: string;
+  a: string;
+}
+
+/** Un documento generato nella conversazione, allegato alla bozza. */
+export interface AllegatoBozza {
+  id: string;
+  nome: string;
+  formato: string;
+}
+
+/**
+ * Le correzioni a una bozza: `PATCH /api/conversazioni/:id/email/:eid`. Gli
+ * allegati si tolgono soltanto: si passano gli id di quelli da tenere.
+ * Cambiare l'indirizzo ne fa un indirizzo scritto a mano, non più il cliente.
+ */
+export const schemaModificheBozzaEmail = z
+  .object({
+    a: z.string().trim().email().optional(),
+    oggetto: z.string().trim().min(1).max(200).optional(),
+    corpo: z.string().trim().min(1).max(20_000).optional(),
+    allegati: z.array(z.string().min(1)).max(20).optional(),
+  })
+  .refine((m) => Object.values(m).some((v) => v !== undefined), { message: 'Niente da modificare.' });
+
+export type ModificheBozzaEmail = z.infer<typeof schemaModificheBozzaEmail>;
+
+/**
  * Un documento generato in chat su richiesta dell'utente: col layout di
  * VELIA («Esporta come») o dalla sandbox su un modello di riferimento. Il
  * file sta nello Storage, `url` è la rotta che lo serve.
@@ -287,6 +349,8 @@ export type EventoStream =
   | { tipo: 'documento'; documento: DocumentoGenerato }
   /** Un riordino proposto: il FE lo mostra sotto la risposta con Approva e Annulla. */
   | { tipo: 'proposta'; proposta: PropostaArchivio }
+  /** Un'email preparata: il FE la mostra sotto la risposta con Modifica, Invia e Annulla. */
+  | { tipo: 'email'; email: BozzaEmail }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
 

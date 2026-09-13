@@ -246,6 +246,14 @@
         <app-proposta-riordino class="proposta" [proposta]="m.proposta" />
       }
 
+      @for (e of m.email ?? []; track e.id) {
+        <!--
+          Le email che l'assistente ha preparato: si leggono per intero, e
+          partono solo da Invia, con l'identità di chi clicca.
+        -->
+        <app-email-pronta [email]="e" [inArrivo]="m.inCorso === true" />
+      }
+
       @if (altreFonti().length) {
         <!--
           Col testo che porta i rimandi, in coda resta solo ciò che il motore

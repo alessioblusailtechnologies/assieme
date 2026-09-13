@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { creaApp, type OpzioniApp } from '../src/api/app.js';
-import { schemaEmailRisposta } from '../src/contratto/conversazioni.js';
-import { inviaEmail } from '../src/email/invio.js';
-import { componiEmailRisposta, testoSemplice } from '../src/generazione/email.js';
+import { schemaEmailRisposta, schemaModificheBozzaEmail } from '../src/contratto/conversazioni.js';
+import { inviaEmail, LIMITE_ALLEGATI_BYTE, nomeAllegato } from '../src/email/invio.js';
+import { componiEmailLibera, componiEmailRisposta, testoSemplice } from '../src/generazione/email.js';
 
 /**
  * «Invia email» ed «Esporta come TXT» senza database né provider: la
@@ -39,6 +39,47 @@ describe('il contratto', () => {
     expect(schemaEmailRisposta.parse({ a: '  M.Rossi@Agenzia.it ' })).toEqual({ a: 'M.Rossi@Agenzia.it' });
     expect(schemaEmailRisposta.safeParse({ a: 'non-una-email' }).success).toBe(false);
     expect(schemaEmailRisposta.safeParse({}).success).toBe(false);
+  });
+
+  it('le correzioni a una bozza: almeno un campo, e un indirizzo vero', () => {
+    expect(schemaModificheBozzaEmail.safeParse({}).success).toBe(false);
+    expect(schemaModificheBozzaEmail.safeParse({ a: 'non-una-email' }).success).toBe(false);
+    expect(schemaModificheBozzaEmail.parse({ oggetto: '  Il rinnovo  ' })).toEqual({ oggetto: 'Il rinnovo' });
+    /* Togliere tutti gli allegati è una correzione, non un corpo vuoto. */
+    expect(schemaModificheBozzaEmail.safeParse({ allegati: [] }).success).toBe(true);
+  });
+});
+
+describe("l'email scritta per chi la riceve", () => {
+  const email = componiEmailLibera({
+    oggetto: 'Il rinnovo della sua RC Auto',
+    corpo: 'Gentile signor Rossi,\n\nle **confermo** il rinnovo.\n\n- Premio: 480 €\n\nAttenzione a <script>.',
+    daParteDi: { nome: 'Marta Ferrero', agenzia: 'Assicurazioni Meridiana S.r.l.' },
+  });
+
+  it("l'oggetto è il suo, e in testa c'è l'agenzia, non il titolo di una conversazione", () => {
+    expect(email.oggetto).toBe('Il rinnovo della sua RC Auto');
+    expect(email.html).not.toContain('<h1');
+    expect(email.html).toContain('Assicurazioni Meridiana S.r.l.');
+  });
+
+  it('firma chi la manda, e non parla di Velia', () => {
+    expect(email.html).toContain('Marta Ferrero<br>Assicurazioni Meridiana S.r.l.');
+    expect(email.testo.trimEnd().endsWith('Marta Ferrero\nAssicurazioni Meridiana S.r.l.')).toBe(true);
+    expect(email.html).not.toContain('Velia');
+  });
+
+  it('il corpo tiene grassetti ed elenchi, e scappa ciò che non è suo', () => {
+    expect(email.html).toContain('<strong>confermo</strong>');
+    expect(email.html).toContain('<ul style=');
+    expect(email.html).toContain('&lt;script&gt;');
+    expect(email.html).not.toContain('<script>');
+  });
+
+  it('gli allegati arrivano col loro titolo, senza i caratteri che un file non accetta', () => {
+    expect(nomeAllegato('Proposta: rinnovo RC "Rossi"', 'pdf')).toBe('Proposta rinnovo RC Rossi.pdf');
+    expect(nomeAllegato('Polizza più sicura', 'docx')).toBe('Polizza più sicura.docx');
+    expect(nomeAllegato(' / ', 'xlsx')).toBe('documento.xlsx');
   });
 });
 
@@ -103,6 +144,46 @@ describe("l'invio", () => {
       codice: 'EMAIL_NON_CONFIGURATA',
     });
   });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('con la chiave ma EMAIL_INVIO=simulato, fuori produzione, non chiama nessuno', async () => {
+    const fetchFinto = vi.fn();
+    vi.stubGlobal('fetch', fetchFinto);
+    await expect(
+      inviaEmail(email, { apiKey: 'chiave-di-prova', simula: true, mittente: 'Velia <noreply@sonovelia.it>', produzione: false, log }),
+    ).resolves.toEqual({ simulata: true });
+    expect(fetchFinto).not.toHaveBeenCalled();
+  });
+
+  it('in produzione la simulazione non vale, e gli allegati partono in base64', async () => {
+    const fetchFinto = vi.fn().mockResolvedValue(new Response('{"id":"e-1"}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchFinto);
+    const pdf = Buffer.from('%PDF-1.7 prova');
+    await expect(
+      inviaEmail(
+        { ...email, allegati: [{ nome: 'Proposta.pdf', contenuto: pdf }] },
+        { apiKey: 'chiave-di-prova', simula: true, mittente: 'Velia <noreply@sonovelia.it>', produzione: true, log },
+      ),
+    ).resolves.toEqual({ simulata: false });
+    const [, init] = fetchFinto.mock.calls[0] as [string, RequestInit];
+    const corpo = JSON.parse(init.body as string) as { attachments: unknown };
+    expect(corpo.attachments).toEqual([{ filename: 'Proposta.pdf', content: pdf.toString('base64') }]);
+  });
+
+  it('allegati oltre il limite: un 413, prima di chiamare chiunque', async () => {
+    const fetchFinto = vi.fn();
+    vi.stubGlobal('fetch', fetchFinto);
+    await expect(
+      inviaEmail(
+        { ...email, allegati: [{ nome: 'grande.zip', contenuto: Buffer.alloc(LIMITE_ALLEGATI_BYTE + 1) }] },
+        { apiKey: 'chiave-di-prova', mittente: 'Velia <noreply@sonovelia.it>', produzione: true, log },
+      ),
+    ).rejects.toMatchObject({ codice: 'ALLEGATI_TROPPO_GRANDI' });
+    expect(fetchFinto).not.toHaveBeenCalled();
+  });
 });
 
 describe('la rotta prima del database', () => {
@@ -160,6 +241,34 @@ describe('la rotta prima del database', () => {
       method: 'POST',
       url: '/api/conversazioni/00000000-0000-4000-8000-000000000001/email',
       payload: { a: 'me' },
+    });
+    expect(anonimo.statusCode).toBe(401);
+  });
+
+  /* Le bozze preparate dall'assistente (14/09/2026): stesse difese, prima del database. */
+  it('sulle bozze: correzione vuota → 400, id malformati → 404, senza token → 401', async () => {
+    const vuota = await app.inject({
+      method: 'PATCH',
+      url: '/api/conversazioni/non-uuid/email/pure-no',
+      headers: autenticato,
+      payload: {},
+    });
+    expect(vuota.statusCode).toBe(400);
+
+    const malformate = [
+      { method: 'PATCH' as const, url: '/api/conversazioni/non-uuid/email/pure-no', payload: { oggetto: 'Nuovo' } },
+      { method: 'POST' as const, url: '/api/conversazioni/non-uuid/email/pure-no/invio', payload: {} },
+      { method: 'POST' as const, url: '/api/conversazioni/non-uuid/email/pure-no/annulla', payload: {} },
+    ];
+    for (const { method, url, payload } of malformate) {
+      const r = await app.inject({ method, url, headers: autenticato, payload });
+      expect(r.statusCode, url).toBe(404);
+    }
+
+    const anonimo = await app.inject({
+      method: 'POST',
+      url: '/api/conversazioni/00000000-0000-4000-8000-000000000001/email/00000000-0000-4000-8000-000000000002/invio',
+      payload: {},
     });
     expect(anonimo.statusCode).toBe(401);
   });

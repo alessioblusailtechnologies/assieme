@@ -6,6 +6,7 @@ import type pg from 'pg';
 import {
   schemaDecisioneProposta,
   schemaEmailRisposta,
+  schemaModificheBozzaEmail,
   schemaModificheConversazione,
   schemaNuovaConversazione,
   schemaNuovoMessaggio,
@@ -13,8 +14,11 @@ import {
   titoloDaMessaggio,
   TITOLO_NUOVA,
   percorsoDocumentoGenerato,
+  type AllegatoBozza,
+  type BozzaEmail,
   type Citazione,
   type Conversazione,
+  type DestinatarioBozza,
   type DocumentoGenerato,
   type EsitoEmailRisposta,
   type EsitoProposta,
@@ -37,9 +41,9 @@ import { ErroreApi } from '../../contratto/errori.js';
 import { mimeDi } from '../../contratto/formati.js';
 import { applicaProposta } from '../../archivio/proposta.js';
 import { configurazione } from '../../config.js';
-import { inviaEmail } from '../../email/invio.js';
+import { inviaEmail, nomeAllegato, type AllegatoEmail } from '../../email/invio.js';
 import { fontiDaCitazioni } from '../../generazione/catalogo.js';
-import { componiEmailRisposta } from '../../generazione/email.js';
+import { componiEmailLibera, componiEmailRisposta, type EmailComposta } from '../../generazione/email.js';
 import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { nomeFileGenerato } from '../../generazione/generatore.js';
 import {
@@ -115,6 +119,8 @@ interface RigaMessaggio {
   passi: Passo[];
   /** Il riordino proposto in questa risposta, se c'è stato (04/09/2026). */
   proposta: PropostaArchivio | null;
+  /** Le email preparate in questa risposta (14/09/2026), righe intere via `to_jsonb`. */
+  email: RigaBozza[] | null;
   /** Il cliente con cui è partita la domanda (13/09/2026), col nome per il chip. */
   cliente_id: string | null;
   cliente_nome: string | null;
@@ -547,11 +553,12 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.get<{ Params: { id: string } }>('/api/conversazioni/:id/messaggi', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<Messaggio[]> => {
       await conversazionePerId(client, richiesta.identita, richiesta.params.id);
-      /* La proposta di riordino viaggia col messaggio che l'ha fatta: chi
-         ricarica la pagina ritrova la scelta ancora aperta, o già presa. */
+      /* La proposta di riordino e le email preparate viaggiano col messaggio
+         che le ha fatte: chi ricarica la pagina ritrova la scelta ancora
+         aperta, o già presa. */
       const righe = await client.query<RigaMessaggio>(
         `select m.id, m.conversazione_id, m.autore, m.testo, m.inviato_il, m.documenti_referenziati,
-                m.citazioni, m.provenienze, m.non_supportato, m.documenti, m.passi, p.proposta,
+                m.citazioni, m.provenienze, m.non_supportato, m.documenti, m.passi, p.proposta, e.email,
                 m.cliente_id, cl.nome as cliente_nome
          from velia.messaggi m
          left join velia.clienti cl on cl.id = m.cliente_id
@@ -564,6 +571,11 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
            where pa.messaggio_id = m.id
            order by pa.created_at desc limit 1
          ) p on true
+         left join lateral (
+           select jsonb_agg(to_jsonb(eb) order by eb.created_at) as email
+           from velia.email_bozze eb
+           where eb.messaggio_id = m.id
+         ) e on true
          where m.conversazione_id = $1 order by m.inviato_il, m.id`,
         [richiesta.params.id],
       );
@@ -893,13 +905,12 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       });
       if (!messaggio) throw ErroreApi.nonTrovato('Messaggio inesistente.');
 
+      const { titolo } = conversazione;
+      const fonti = fontiDaCitazioni(messaggio.citazioni);
       return spedisci(
         { tenantId, utenteId, a: esito.data.a, log: richiesta.log },
-        {
-          titolo: conversazione.titolo,
-          testo: messaggio.testo,
-          fonti: fontiDaCitazioni(messaggio.citazioni),
-        },
+        (daParteDi) => componiEmailRisposta({ titolo, testo: messaggio.testo, fonti, daParteDi }),
+        { origine: 'risposta', conversazioneId: richiesta.params.id },
       );
     },
   );
@@ -932,23 +943,141 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
       const { testo, fonti } = trascriviConversazione(messaggi);
       if (!testo) throw ErroreApi.datiNonValidi('La conversazione non ha ancora niente da inviare.');
 
+      const { titolo } = conversazione;
       return spedisci(
         { tenantId, utenteId, a: esito.data.a, log: richiesta.log },
-        { titolo: conversazione.titolo, testo, fonti },
+        (daParteDi) => componiEmailRisposta({ titolo, testo, fonti, daParteDi }),
+        { origine: 'conversazione', conversazioneId: richiesta.params.id },
       );
+    },
+  );
+
+  /**
+   * Le email preparate in chat (14/09/2026): si correggono, si inviano, si
+   * annullano. L'invio è l'unica porta da cui una bozza esce, con l'identità
+   * di chi clicca; decisa una volta, la bozza smette di chiedere.
+   */
+  app.patch<{ Params: { id: string; eid: string } }>(
+    '/api/conversazioni/:id/email/:eid',
+    async (richiesta): Promise<BozzaEmail> => {
+      const esito = schemaModificheBozzaEmail.safeParse(richiesta.body ?? {});
+      if (!esito.success) throw ErroreApi.datiNonValidi(esito.error.issues[0]?.message ?? 'Modifiche non valide.');
+      idBozzaValidi(richiesta.params);
+      const modifiche = esito.data;
+
+      return conIdentita(poolDb(), richiesta.identita, async (client) => {
+        await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const bozza = await bozzaDaDecidere(client, richiesta.params.id, richiesta.params.eid);
+        /* Un indirizzo cambiato non è più quello del cliente o del collega:
+           la bozza dice a chi va davvero, non a chi andava. */
+        const altroIndirizzo = modifiche.a !== undefined && modifiche.a.toLowerCase() !== bozza.a.toLowerCase();
+        const tenuti = modifiche.allegati;
+        const r = await client.query<RigaBozza>(
+          `update velia.email_bozze
+              set destinatario_tipo = $3, destinatario_id = $4, destinatario_nome = $5, a = $6,
+                  oggetto = $7, corpo = $8, allegati = $9::jsonb
+            where id = $1 and conversazione_id = $2
+            returning ${COLONNE_BOZZA}`,
+          [
+            bozza.id,
+            richiesta.params.id,
+            altroIndirizzo ? 'indirizzo' : bozza.destinatario_tipo,
+            altroIndirizzo ? null : bozza.destinatario_id,
+            altroIndirizzo ? null : bozza.destinatario_nome,
+            altroIndirizzo ? modifiche.a : bozza.a,
+            modifiche.oggetto ?? bozza.oggetto,
+            modifiche.corpo ?? bozza.corpo,
+            JSON.stringify(tenuti ? bozza.allegati.filter((a) => tenuti.includes(a.id)) : bozza.allegati),
+          ],
+        );
+        return versoBozza(r.rows[0]!);
+      });
+    },
+  );
+
+  app.post<{ Params: { id: string; eid: string } }>(
+    '/api/conversazioni/:id/email/:eid/invio',
+    async (richiesta): Promise<BozzaEmail> => {
+      idBozzaValidi(richiesta.params);
+      const { tenantId, utenteId } = richiesta.identita;
+
+      /*
+       * Tutto in una transazione, con la bozza bloccata: due clic ravvicinati,
+       * o la stessa chat in due schede, non spediscono due volte. Il secondo
+       * aspetta il primo e trova la bozza già inviata. `for no key update` e
+       * non `for update`: il registro, scritto da un'altra connessione, punta
+       * alla bozza con una chiave esterna, e un blocco pieno lo farebbe
+       * aspettare questa transazione, che aspetta lui.
+       */
+      return conIdentita(poolDb(), richiesta.identita, async (client) => {
+        await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const bozza = await bozzaDaDecidere(client, richiesta.params.id, richiesta.params.eid, true);
+        const salvata = await client.query(`select 1 from velia.messaggi where id = $1`, [bozza.messaggio_id]);
+        if (!salvata.rowCount) {
+          throw ErroreApi.conflitto('RISPOSTA_IN_CORSO', 'La risposta non è ancora completa: aspetta che finisca, poi invia.');
+        }
+
+        const allegati: AllegatoEmail[] = await Promise.all(
+          bozza.allegati.map(async (x) => ({
+            nome: nomeAllegato(x.nome, x.formato),
+            contenuto: await archivio()
+              .scarica(percorsoDocumentoGenerato(tenantId, x.id, x.formato))
+              .catch(() => {
+                throw ErroreApi.conflitto('ALLEGATO_SPARITO', `L'allegato «${x.nome}» non c'è più: toglilo dalla bozza e riprova.`);
+              }),
+          })),
+        );
+
+        const { simulata } = await spedisci(
+          { tenantId, utenteId, a: bozza.a, log: richiesta.log },
+          (daParteDi) => componiEmailLibera({ oggetto: bozza.oggetto, corpo: bozza.corpo, daParteDi }),
+          { origine: 'bozza', conversazioneId: richiesta.params.id, bozzaId: bozza.id },
+          allegati,
+        );
+        const r = await client.query<RigaBozza>(
+          `update velia.email_bozze
+              set stato = 'inviata', simulata = $2, deciso_da = $3, deciso_il = now()
+            where id = $1
+            returning ${COLONNE_BOZZA}`,
+          [bozza.id, simulata, utenteId],
+        );
+        return versoBozza(r.rows[0]!);
+      });
+    },
+  );
+
+  app.post<{ Params: { id: string; eid: string } }>(
+    '/api/conversazioni/:id/email/:eid/annulla',
+    async (richiesta): Promise<BozzaEmail> => {
+      idBozzaValidi(richiesta.params);
+      return conIdentita(poolDb(), richiesta.identita, async (client) => {
+        await conversazionePerId(client, richiesta.identita, richiesta.params.id);
+        const bozza = await bozzaDaDecidere(client, richiesta.params.id, richiesta.params.eid, true);
+        const r = await client.query<RigaBozza>(
+          `update velia.email_bozze
+              set stato = 'annullata', deciso_da = $2, deciso_il = now()
+            where id = $1
+            returning ${COLONNE_BOZZA}`,
+          [bozza.id, richiesta.identita.utenteId],
+        );
+        return versoBozza(r.rows[0]!);
+      });
     },
   );
 }
 
 /**
- * Compone e spedisce l'email di una risposta o dell'intero filo: mittente di
- * piattaforma, identità dell'agenzia, e in coda chi l'ha mandata. Le due
- * rotte «Invia email» differiscono solo per che cosa ci mettono dentro.
+ * Compone e spedisce un'email a nome dell'agenzia: mittente di piattaforma,
+ * le risposte a chi l'ha mandata, e una riga nel registro. Le rotte
+ * differiscono solo per che cosa ci mettono dentro: una risposta, il filo
+ * intero, una bozza preparata dall'assistente.
  */
 async function spedisci(
   /** `a` è l'indirizzo, o `me` per quello dell'utente registrato. */
   chi: { tenantId: string; utenteId: string; a: string; log: FastifyBaseLogger },
-  cosa: { titolo: string; testo: string; fonti: string[] },
+  componi: (daParteDi: { nome: string; agenzia: string }) => EmailComposta,
+  registro: { origine: 'risposta' | 'conversazione' | 'bozza'; conversazioneId: string; bozzaId?: string },
+  allegati: AllegatoEmail[] = [],
 ): Promise<EsitoEmailRisposta> {
   const u = await poolDb().query<{ nome: string; cognome: string; email: string; tenant_nome: string }>(
     `select u.nome, u.cognome, u.email, t.nome as tenant_nome
@@ -960,20 +1089,39 @@ async function spedisci(
   if (!utente) throw ErroreApi.nonTrovato('Utente inesistente.');
 
   const a = chi.a === 'me' ? utente.email : chi.a;
-  const email = componiEmailRisposta({
-    ...cosa,
-    daParteDi: { nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome },
-  });
+  const email = componi({ nome: `${utente.nome} ${utente.cognome}`.trim(), agenzia: utente.tenant_nome });
   const config = configurazione();
   const { simulata } = await inviaEmail(
-    { a, ...email, rispondiA: utente.email },
+    { a, ...email, rispondiA: utente.email, allegati },
     {
       apiKey: config.RESEND_API_KEY,
       mittente: config.EMAIL_MITTENTE,
       produzione: process.env['NODE_ENV'] === 'production',
+      simula: config.EMAIL_INVIO === 'simulato',
       log: chi.log,
     },
   );
+  /* Il registro: ogni email partita a nome dell'agenzia si ritrova. Se la
+     riga non si scrive l'email è partita lo stesso, e dirlo con un errore
+     farebbe soltanto premere Invia una seconda volta. */
+  await poolDb()
+    .query(
+      `insert into velia.email_inviate
+         (tenant_id, utente_id, origine, conversazione_id, bozza_id, a, oggetto, allegati, simulata)
+       values ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)`,
+      [
+        chi.tenantId,
+        chi.utenteId,
+        registro.origine,
+        registro.conversazioneId,
+        registro.bozzaId ?? null,
+        a,
+        email.oggetto,
+        JSON.stringify(allegati.map((x) => x.nome)),
+        simulata,
+      ],
+    )
+    .catch((errore: unknown) => chi.log.warn({ errore }, 'registro delle email non scritto'));
   return { a, simulata };
 }
 
@@ -1251,8 +1399,79 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
     ...(r.documenti?.length && { documenti: r.documenti }),
     ...(r.passi?.length && { passi: r.passi }),
     ...(r.proposta && { proposta: r.proposta }),
+    ...(r.email?.length && { email: r.email.map(versoBozza) }),
     /* Un cliente eliminato, o fuori dalla vista di chi legge, non lascia un
        chip senza nome: il messaggio torna com'era prima della menzione. */
     ...(r.cliente_id && r.cliente_nome && { cliente: { id: r.cliente_id, nome: r.cliente_nome } }),
   };
+}
+
+/** Una bozza di email com'è in tabella: dalla query diretta, o da `to_jsonb` nell'elenco dei messaggi. */
+interface RigaBozza {
+  id: string;
+  messaggio_id: string;
+  destinatario_tipo: DestinatarioBozza['tipo'];
+  destinatario_id: string | null;
+  destinatario_nome: string | null;
+  a: string;
+  oggetto: string;
+  corpo: string;
+  allegati: AllegatoBozza[];
+  stato: BozzaEmail['stato'];
+  simulata: boolean | null;
+  /** Una data dalla query diretta, una stringa ISO da `to_jsonb`. */
+  deciso_il: Date | string | null;
+}
+
+const COLONNE_BOZZA =
+  'id, messaggio_id, destinatario_tipo, destinatario_id, destinatario_nome, a, oggetto, corpo, allegati, stato, simulata, deciso_il';
+
+function versoBozza(r: RigaBozza): BozzaEmail {
+  return {
+    id: r.id,
+    destinatario: {
+      tipo: r.destinatario_tipo,
+      ...(r.destinatario_id && { id: r.destinatario_id }),
+      ...(r.destinatario_nome && { nome: r.destinatario_nome }),
+      a: r.a,
+    },
+    oggetto: r.oggetto,
+    corpo: r.corpo,
+    allegati: r.allegati ?? [],
+    stato: r.stato,
+    ...(r.stato === 'inviata' && r.simulata !== null && { simulata: r.simulata }),
+    ...(r.deciso_il && { decisaIl: new Date(r.deciso_il).toISOString() }),
+  };
+}
+
+/** Gli id sono uuid: uno malformato è un 404, non un errore SQL. */
+function idBozzaValidi(params: { id: string; eid: string }): void {
+  if (!E_UUID.test(params.id) || !E_UUID.test(params.eid)) throw ErroreApi.nonTrovato('Email inesistente.');
+}
+
+/**
+ * La bozza, se c'è ed è ancora da decidere. `blocca` la tiene ferma fino a
+ * fine transazione: chi la invia o la annulla non deve incrociare un altro
+ * che fa lo stesso.
+ */
+async function bozzaDaDecidere(
+  client: pg.ClientBase,
+  conversazioneId: string,
+  id: string,
+  blocca = false,
+): Promise<RigaBozza> {
+  const r = await client.query<RigaBozza>(
+    `select ${COLONNE_BOZZA} from velia.email_bozze
+      where id = $1 and conversazione_id = $2${blocca ? ' for no key update' : ''}`,
+    [id, conversazioneId],
+  );
+  const bozza = r.rows[0];
+  if (!bozza) throw ErroreApi.nonTrovato('Email inesistente.');
+  if (bozza.stato !== 'bozza') {
+    throw ErroreApi.conflitto(
+      'EMAIL_GIA_DECISA',
+      bozza.stato === 'inviata' ? 'Questa email è già stata inviata.' : 'Questa email era stata annullata.',
+    );
+  }
+  return bozza;
 }

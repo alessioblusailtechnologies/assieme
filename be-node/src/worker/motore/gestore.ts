@@ -1,6 +1,7 @@
 import type pg from 'pg';
 
 import type {
+  BozzaEmail,
   Citazione,
   EsportazioneElaborata,
   EventoStream,
@@ -428,6 +429,40 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           await emetti({ tipo: 'proposta', proposta });
           return proposta;
         },
+        /*
+         * L'email si prepara, non si spedisce (14/09/2026): la bozza nasce
+         * `bozza`, e parte solo se l'utente clicca Invia, dall'API e con la
+         * sua identità.
+         */
+        email: {
+          utenteId: payload.utenteId,
+          suBozza: async (b) => {
+            const oggetto = senzaTrattiniLunghi(b.oggetto);
+            const corpo = senzaTrattiniLunghi(b.corpo);
+            const r = await db.query<{ id: string }>(
+              `insert into velia.email_bozze
+                 (tenant_id, conversazione_id, messaggio_id, destinatario_tipo, destinatario_id,
+                  destinatario_nome, a, oggetto, corpo, allegati)
+               values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+               returning id`,
+              [
+                tenantId,
+                payload.conversazioneId,
+                payload.messaggioAssistenteId,
+                b.destinatario.tipo,
+                b.destinatario.id ?? null,
+                b.destinatario.nome ?? null,
+                b.destinatario.a,
+                oggetto,
+                corpo,
+                JSON.stringify(b.allegati),
+              ],
+            );
+            const bozza: BozzaEmail = { id: r.rows[0]!.id, ...b, oggetto, corpo, stato: 'bozza' };
+            await emetti({ tipo: 'email', email: bozza });
+            return bozza;
+          },
+        },
         richieste: {
           utente: [...storia.rows.filter((m) => m.autore === 'utente').map((m) => m.testo), payload.testo],
           agenzia: [...dna.istruzioni.map((i) => `${i.titolo} ${i.testo}`), ...dna.ricordi.map((r) => r.testo)],
@@ -502,6 +537,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
               modelli: modelliAgenzia.rows,
               conAssegnazione: true,
               conClienti: true,
+              conEmail: true,
               catalogo: catalogoArchivioPubblico(workspace.perPath),
             }),
         ...(perCliente
@@ -757,6 +793,15 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     } finally {
       if (!documentiSalvati && strumentiChat?.percorsi.length) {
         await dip.archivio.elimina(strumentiChat.percorsi).catch(() => undefined);
+      }
+      /* Nemmeno bozze di email orfane: senza la risposta non hanno dove
+         stare, e i loro allegati sono appena stati cancellati. */
+      if (!documentiSalvati) {
+        await db
+          .query(`delete from velia.email_bozze where messaggio_id = $1 and stato = 'bozza'`, [
+            payload.messaggioAssistenteId,
+          ])
+          .catch(() => undefined);
       }
       await workspace?.rimuovi().catch(() => undefined);
     }

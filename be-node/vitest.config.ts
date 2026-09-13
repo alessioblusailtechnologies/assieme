@@ -10,6 +10,7 @@ export default defineConfig({
     testTimeout: 30_000,
     // Ogni accesso nei test di integrazione chiamerebbe il modello per i
     // saluti della home: spenta qui, la provano i test col generatore finto.
-    env: { SALUTI_GENERAZIONE: 'no', SUGGERIMENTI_GENERAZIONE: 'no' },
+    // E nessuna email vera: il `.env` locale ha la chiave di Resend.
+    env: { SALUTI_GENERAZIONE: 'no', SUGGERIMENTI_GENERAZIONE: 'no', EMAIL_INVIO: 'simulato' },
   },
 });

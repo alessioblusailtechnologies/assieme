@@ -248,11 +248,9 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
        pagina un prodotto referenziato in chat tornerebbe a essere quattro
        chip, uno per documento. */
     const inContesto = conv.documentiInContesto[0]!;
-    expect(inContesto.set).toMatchObject({
-      chiave: expect.stringContaining(':'),
-      prodotto: expect.any(String),
-      compagnia: expect.any(String),
-    });
+    expect(inContesto.set?.chiave).toContain(':');
+    expect(typeof inContesto.set?.prodotto).toBe('string');
+    expect(typeof inContesto.set?.compagnia).toBe('string');
 
     const ignoto = await richiedi('POST', '/api/conversazioni', tokenAdmin, { documentiInContesto: ['doc-inesistente'] });
     expect(ignoto.statusCode).toBe(404);

@@ -1,0 +1,204 @@
+/* L'email preparata: una scheda ferma, come il riordino proposto. Chiede, e dice per intero che cosa partirebbe. */
+
+:host {
+  display: block;
+}
+
+.email {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+/* Decisa, la scheda smette di chiedere: resta come nota di ciò che è stato. */
+:host(.is-decisa) .email {
+  border-color: var(--c-line-soft);
+  background: var(--c-surface-soft);
+  color: var(--c-text-3);
+}
+
+.email__testa {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--c-text-2);
+}
+
+.email__titolo {
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--c-text);
+}
+
+:host(.is-decisa) .email__titolo {
+  color: var(--c-text-2);
+  font-weight: 400;
+}
+
+.email__quando {
+  margin-left: auto;
+  font-size: var(--t-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--c-text-mute);
+}
+
+.email__intestazione {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  margin: 0;
+}
+
+.email__riga {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+
+  dt {
+    color: var(--c-text-3);
+  }
+
+  dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--c-text);
+  }
+}
+
+:host(.is-decisa) .email__riga dd {
+  color: var(--c-text-2);
+}
+
+/* Il testo com'è scritto per chi lo riceve, su un fondo appena diverso: è la lettera, non la chat. */
+.email__corpo {
+  padding: var(--sp-3);
+  border-radius: var(--radius-sm);
+  background: var(--c-page-alt);
+  font-size: var(--t-sm);
+  line-height: 1.55;
+  color: var(--c-text-2);
+  overflow-wrap: anywhere;
+
+  /* Il contenuto arriva da `innerHTML`: gli stili del componente lo raggiungono solo così. */
+  ::ng-deep :is(p, ul, ol, table) {
+    margin: 0 0 var(--sp-2);
+  }
+
+  ::ng-deep :is(p, ul, ol, table):last-child {
+    margin-bottom: 0;
+  }
+}
+
+.email__corpo.is-chiusa {
+  max-height: 10em;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+.email__espandi {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.email__allegati {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.allegato {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+  padding: 2px var(--sp-2);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  font-size: var(--t-xs);
+  color: var(--c-text-2);
+}
+
+.allegato__nome {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.allegato__formato {
+  font-size: var(--t-mono);
+  text-transform: uppercase;
+  color: var(--c-text-mute);
+}
+
+.email__azioni {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.email__nota {
+  margin-left: var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-mute);
+}
+
+/* ---------- Il modulo nel cassetto ---------- */
+
+.modulo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.modulo__spiega {
+  margin: calc(var(--sp-2) * -1) 0 0;
+  font-size: var(--t-sm);
+  color: var(--c-text-3);
+}
+
+.modulo__campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.modulo__gruppo {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.modulo__nome {
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
+.modulo__allegato {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--t-sm);
+  color: var(--c-text-2);
+}
+
+.modulo__azioni {
+  display: flex;
+  gap: var(--sp-2);
+}

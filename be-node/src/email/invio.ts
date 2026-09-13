@@ -7,7 +7,16 @@ import { ErroreApi } from '../contratto/errori.js';
  * un'agenzia. Senza chiave, fuori produzione l'email si scrive nel log e
  * l'invio si dichiara simulato (il flusso si prova lo stesso); in produzione
  * si risponde 503, chiaro e senza fingere.
+ *
+ * Dal 14/09/2026 porta anche allegati: i documenti generati in chat, dentro
+ * l'email che l'assistente ha preparato e l'utente ha deciso di inviare.
  */
+
+export interface AllegatoEmail {
+  /** Il nome con cui arriva, estensione compresa. */
+  nome: string;
+  contenuto: Buffer;
+}
 
 export interface EmailDaInviare {
   a: string;
@@ -16,6 +25,7 @@ export interface EmailDaInviare {
   html: string;
   /** A chi arriva una risposta: l'utente che ha inviato, non la casella di piattaforma. */
   rispondiA?: string | undefined;
+  allegati?: AllegatoEmail[] | undefined;
 }
 
 export interface OpzioniInvio {
@@ -23,6 +33,12 @@ export interface OpzioniInvio {
   /** «Nome <indirizzo>», il mittente verificato sul provider. */
   mittente: string;
   produzione: boolean;
+  /**
+   * Simula anche con la chiave (`EMAIL_INVIO=simulato`): nei test il `.env`
+   * locale la chiave ce l'ha, e una suite non deve spedire posta vera. In
+   * produzione non vale.
+   */
+  simula?: boolean | undefined;
   log: { info: (obj: object, msg: string) => void; warn: (obj: object, msg: string) => void };
 }
 
@@ -32,12 +48,44 @@ export interface EsitoInvio {
 
 const ENDPOINT_RESEND = 'https://api.resend.com/emails';
 
+/**
+ * Il nome con cui un documento generato arriva nella casella di chi lo
+ * riceve: il suo titolo, leggibile e con gli accenti, senza i caratteri che
+ * un sistema operativo rifiuta in un nome di file.
+ */
+export function nomeAllegato(nome: string, formato: string): string {
+  const pulito = nome
+    .replace(/[\\/:*?"<>|]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120)
+    .trim();
+  return `${pulito || 'documento'}.${formato}`;
+}
+
+/**
+ * Resend accetta fino a 40 MB per email **dopo** la codifica base64, che
+ * gonfia di un terzo: 25 MB di file lasciano margine al corpo.
+ */
+export const LIMITE_ALLEGATI_BYTE = 25 * 1024 * 1024;
+
 export async function inviaEmail(email: EmailDaInviare, opzioni: OpzioniInvio): Promise<EsitoInvio> {
-  if (!opzioni.apiKey) {
-    if (opzioni.produzione) {
-      throw new ErroreApi(503, 'EMAIL_NON_CONFIGURATA', "L'invio email non è configurato su questo ambiente.");
-    }
-    opzioni.log.info({ a: email.a, oggetto: email.oggetto, testo: email.testo }, 'email simulata: RESEND_API_KEY assente');
+  const allegati = email.allegati ?? [];
+  if (allegati.reduce((somma, a) => somma + a.contenuto.length, 0) > LIMITE_ALLEGATI_BYTE) {
+    throw new ErroreApi(
+      413,
+      'ALLEGATI_TROPPO_GRANDI',
+      "Gli allegati superano i 25 MB e l'email non può partire così: togline qualcuno, o manda il link del documento.",
+    );
+  }
+  if (!opzioni.apiKey && opzioni.produzione) {
+    throw new ErroreApi(503, 'EMAIL_NON_CONFIGURATA', "L'invio email non è configurato su questo ambiente.");
+  }
+  if (!opzioni.produzione && (!opzioni.apiKey || opzioni.simula)) {
+    opzioni.log.info(
+      { a: email.a, oggetto: email.oggetto, testo: email.testo, allegati: allegati.map((a) => a.nome) },
+      opzioni.apiKey ? 'email simulata: EMAIL_INVIO=simulato' : 'email simulata: RESEND_API_KEY assente',
+    );
     return { simulata: true };
   }
 
@@ -51,6 +99,9 @@ export async function inviaEmail(email: EmailDaInviare, opzioni: OpzioniInvio): 
       text: email.testo,
       html: email.html,
       ...(email.rispondiA && { reply_to: email.rispondiA }),
+      ...(allegati.length && {
+        attachments: allegati.map((a) => ({ filename: a.nome, content: a.contenuto.toString('base64') })),
+      }),
     }),
   });
   if (!risposta.ok) {

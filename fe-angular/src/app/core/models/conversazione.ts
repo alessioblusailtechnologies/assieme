@@ -132,6 +132,12 @@ export interface Messaggio {
    */
   proposta?: PropostaArchivio;
   /**
+   * Le email che l'assistente ha preparato in questa risposta (14/09/2026):
+   * sotto il testo, una scheda per email con Modifica, Invia e Annulla.
+   * Finché nessuno la invia, non è partito niente.
+   */
+  email?: BozzaEmail[];
+  /**
    * Come ci è arrivato: i passi del motore in ordine cronologico. Restano
    * col messaggio, quindi ci sono anche riaprendo la conversazione domani.
    */
@@ -217,6 +223,51 @@ export interface EsitoProposta {
   mancate: string[];
 }
 
+/**
+ * Un'email **preparata**, mai inviata da sola.
+ *
+ * L'assistente la scrive e si ferma: la scheda sotto la risposta dice a chi
+ * va, con che oggetto, che cosa dice e che cosa allega, e parte solo da
+ * Invia, con l'identità di chi clicca. Uno stato diverso da `bozza` è una
+ * decisione già presa: la scheda resta a raccontarla, senza più pulsanti.
+ */
+export interface BozzaEmail {
+  id: Id;
+  destinatario: DestinatarioBozza;
+  oggetto: string;
+  /** Markdown leggero, scritto per chi riceve. */
+  corpo: string;
+  allegati: AllegatoBozza[];
+  stato: 'bozza' | 'inviata' | 'annullata';
+  /** Sulle inviate: l'ambiente non ha un servizio di posta, e l'invio è stato simulato. */
+  simulata?: boolean;
+  decisaIl?: IsoDateTime;
+}
+
+/** A chi: un indirizzo scritto, un utente dell'agenzia o un cliente dell'anagrafica. */
+export interface DestinatarioBozza {
+  tipo: 'indirizzo' | 'utente' | 'cliente';
+  id?: Id;
+  /** Come lo si riconosce: «Rossi Mario». Assente su un indirizzo scritto a mano. */
+  nome?: string;
+  a: string;
+}
+
+/** Un documento generato nella conversazione, allegato alla bozza. */
+export interface AllegatoBozza {
+  id: Id;
+  nome: string;
+  formato: string;
+}
+
+/** Le correzioni a una bozza. Gli allegati si tolgono soltanto: si mandano quelli da tenere. */
+export interface ModificheBozzaEmail {
+  a?: string;
+  oggetto?: string;
+  corpo?: string;
+  allegati?: Id[];
+}
+
 /** Un documento generato dal motore in chat: `url` è la rotta che lo serve. */
 export interface DocumentoGenerato {
   id: Id;
@@ -272,6 +323,8 @@ export type EventoStream =
   | { tipo: 'documento'; documento: DocumentoGenerato }
   /** Un riordino dell'archivio proposto durante la risposta: la scheda con Approva e Annulla. */
   | { tipo: 'proposta'; proposta: PropostaArchivio }
+  /** Un'email preparata durante la risposta: la scheda con Modifica, Invia e Annulla. */
+  | { tipo: 'email'; email: BozzaEmail }
   | { tipo: 'fine' }
   | { tipo: 'errore'; messaggio: string };
 

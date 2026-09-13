@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 
 import { environment } from '@env';
 import {
+  BozzaEmail,
   Conversazione,
   DestinatarioEmail,
   EsitoEmailRisposta,
@@ -18,6 +19,7 @@ import {
   Id,
   LinkDocumento,
   Messaggio,
+  ModificheBozzaEmail,
   NuovoMessaggio,
   ModoAllegato,
   RiferimentoDocumento,
@@ -319,6 +321,23 @@ export class ConversazioniApi {
       `${this.base}/${conversazioneId}/proposte/${propostaId}`,
       { decisione },
     );
+  }
+
+  /** Le correzioni a un'email preparata dall'assistente, prima di inviarla. */
+  modificaBozzaEmail(conversazioneId: Id, emailId: Id, modifiche: ModificheBozzaEmail): Observable<BozzaEmail> {
+    return this.http.patch<BozzaEmail>(`${this.base}/${conversazioneId}/email/${emailId}`, modifiche);
+  }
+
+  /**
+   * L'invio di un'email preparata: qui, e solo qui, la bozza parte, con
+   * l'identità di chi clicca.
+   */
+  inviaBozzaEmail(conversazioneId: Id, emailId: Id): Observable<BozzaEmail> {
+    return this.http.post<BozzaEmail>(`${this.base}/${conversazioneId}/email/${emailId}/invio`, {});
+  }
+
+  annullaBozzaEmail(conversazioneId: Id, emailId: Id): Observable<BozzaEmail> {
+    return this.http.post<BozzaEmail>(`${this.base}/${conversazioneId}/email/${emailId}/annulla`, {});
   }
 }
 

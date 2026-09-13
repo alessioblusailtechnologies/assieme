@@ -16,6 +16,7 @@ import { ChipCitazione } from '@shared/ui/citazione/chip-citazione';
 import { Icona } from '@shared/ui/icona/icona';
 import type { NomeIcona } from '@shared/ui/icona/registro-icone';
 import { ChatStore, MessaggioInStream } from '../chat-store';
+import { EmailPronta } from './email-pronta';
 import { PropostaRiordino } from './proposta-riordino';
 import { Suggerimento } from '@shared/ui/suggerimento/suggerimento';
 import { htmlRisposta, testoConFontiPerEsteso, type RimandiRisposta } from '@shared/testi/testo-risposta';
@@ -55,7 +56,7 @@ function durataBreve(ms: number): string {
  */
 @Component({
   selector: 'app-bolla-messaggio',
-  imports: [Accordion, ChipCitazione, Icona, PropostaRiordino, RouterLink, Suggerimento],
+  imports: [Accordion, ChipCitazione, EmailPronta, Icona, PropostaRiordino, RouterLink, Suggerimento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './bolla-messaggio.html',
   styleUrl: './bolla-messaggio.scss',

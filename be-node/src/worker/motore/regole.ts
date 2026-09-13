@@ -333,12 +333,14 @@ export interface ContestoPromptSistema {
   conAssegnazione?: boolean;
   /** Presente quando la chat ha gli strumenti sui clienti (mai in una chat cliente). */
   conClienti?: boolean;
+  /** Presente quando la chat può preparare email da inviare (mai in una chat cliente). */
+  conEmail?: boolean;
   /** Da `catalogoArchivioPubblico()`: stabile per tenant, quindi va in cache. */
   catalogo?: string;
 }
 
 export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema = {}): string {
-  const { modelli, conAssegnazione = false, conClienti = false, catalogo } = contesto;
+  const { modelli, conAssegnazione = false, conClienti = false, conEmail = false, catalogo } = contesto;
   const parti = [REGOLE_MOTORE];
   if (catalogo) parti.push(catalogo);
   if (conAssegnazione) {
@@ -351,6 +353,12 @@ export function promptSistema(dna: DnaAgenzia, contesto: ContestoPromptSistema =
     parti.push('\n\n## I clienti\n');
     parti.push(
       "Hai due strumenti che leggono l’anagrafica, e servono per le domande a cui i file non sanno rispondere. `cerca_clienti` trova i clienti per nome, etichetta, tipo, compagnia, ramo o finestra di scadenza, e per ciascuno dice la cartella dei suoi documenti: è quello per «chi ha l’RC auto in scadenza a marzo», «quali clienti hanno una polizza Unipol», «chi non ha ancora documenti in archivio». `scheda_cliente` dà recapiti, codice fiscale, note dell’agenzia e l’elenco delle sue polizze con numero e date. Per **leggere** i documenti di un cliente apri invece la sua cartella in `tenant/clienti/`: gli strumenti servono a trovare, i file a leggere. Quello che ti tornano non si cita nel blocco finale - sono dati dell’agenzia, non documenti con le loro pagine - e un cliente che non esiste non si inventa: lo dici, e basta.",
+    );
+  }
+  if (conEmail) {
+    parti.push('\n\n## Email\n');
+    parti.push(
+      'Con `prepara_email` prepari un’email che l’utente rivede e invia lui: compare sotto la risposta con Modifica e Invia, e finché non la invia non parte niente, quindi non dire mai che l’hai inviata. Usala quando l’utente chiede di scrivere, mandare o girare un’email, mai di tua iniziativa. Il destinatario è «me» per l’utente, un indirizzo che l’utente ti ha dato, oppure il nome di un collega o di un cliente dell’anagrafica: l’indirizzo lo risolve lo strumento, e se un cliente non ce l’ha lo chiedi all’utente invece di cercarlo nei documenti. Il corpo lo scrivi per chi lo riceve, in Markdown leggero, senza rimandi [n], senza il blocco delle citazioni e senza firma (nome e agenzia li aggiunge lo strumento); quello che affermi su polizze e garanzie deve reggersi sui documenti come in chat, con titolo e pagina scritti per esteso quando servono. Per allegare un file prima lo generi con gli strumenti dei documenti, poi ne passi il nome. Una email per destinatario. In chat basta una riga che dice che la bozza è pronta sotto la risposta.',
     );
   }
   if (modelli) {

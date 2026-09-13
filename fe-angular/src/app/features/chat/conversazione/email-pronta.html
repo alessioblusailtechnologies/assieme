@@ -1,0 +1,137 @@
+@let e = email();
+
+<section class="email" [attr.aria-label]="titolo()">
+  <header class="email__testa">
+    <ui-icon [name]="e.stato === 'inviata' ? 'pronto' : 'email'" [size]="14" />
+    <span class="email__titolo">{{ titolo() }}</span>
+    @if (quando()) {
+      <span class="mono email__quando">{{ quando() }}</span>
+    }
+  </header>
+
+  <!-- A chi e con che oggetto: quello su cui si decide, per intero. -->
+  <dl class="email__intestazione">
+    <div class="email__riga">
+      <dt>A</dt>
+      <dd>{{ destinatario() }}</dd>
+    </div>
+    <div class="email__riga">
+      <dt>Oggetto</dt>
+      <dd>{{ e.oggetto }}</dd>
+    </div>
+  </dl>
+
+  <div class="email__corpo" [class.is-chiusa]="lunga() && !espansa()" [innerHTML]="corpoHtml()"></div>
+  @if (lunga()) {
+    <button type="button" class="email__espandi" (click)="espansa.set(!espansa())">
+      {{ espansa() ? 'Mostra meno' : 'Mostra tutto il testo' }}
+    </button>
+  }
+
+  @if (e.allegati.length) {
+    <ul class="email__allegati" aria-label="Allegati">
+      @for (x of e.allegati; track x.id) {
+        <li class="allegato">
+          <ui-icon name="documento" [size]="13" />
+          <span class="allegato__nome">{{ x.nome }}</span>
+          <span class="mono allegato__formato">{{ x.formato }}</span>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (daDecidere()) {
+    <div class="email__azioni">
+      <button
+        type="button"
+        uiBottone
+        variante="primario"
+        dimensione="piccolo"
+        [disabled]="fermi()"
+        (click)="invia()"
+      >
+        <ui-icon name="invia" [size]="14" />
+        <span>{{ inCorso() ? 'Invio…' : 'Invia' }}</span>
+      </button>
+      <button
+        type="button"
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
+        [disabled]="fermi()"
+        (click)="apriModifica()"
+      >
+        Modifica
+      </button>
+      <button
+        type="button"
+        uiBottone
+        variante="testo"
+        dimensione="piccolo"
+        [disabled]="fermi()"
+        (click)="annulla()"
+      >
+        Annulla
+      </button>
+      <span class="email__nota">
+        {{ inArrivo() ? 'Si potrà inviare a risposta completa.' : 'Parte solo quando premi Invia.' }}
+      </span>
+    </div>
+  }
+</section>
+
+<ui-cassetto [aperto]="inModifica()" (apertoChange)="inModifica.set($event)" titolo="Modifica email">
+  <form class="modulo" (submit)="salva($event)">
+    <label class="modulo__campo">
+      <span class="modulo__nome">A</span>
+      <input
+        uiCampo
+        type="email"
+        name="a"
+        autocomplete="email"
+        [value]="a()"
+        (input)="a.set($any($event.target).value)"
+      />
+    </label>
+    @if (lasciaAnagrafica()) {
+      <p class="modulo__spiega">
+        Non andrà più all'indirizzo di {{ e.destinatario.nome }} in anagrafica, ma a quello scritto qui.
+      </p>
+    }
+
+    <label class="modulo__campo">
+      <span class="modulo__nome">Oggetto</span>
+      <input uiCampo type="text" name="oggetto" [value]="oggetto()" (input)="oggetto.set($any($event.target).value)" />
+    </label>
+
+    <label class="modulo__campo">
+      <span class="modulo__nome">Testo</span>
+      <textarea
+        uiCampo
+        name="corpo"
+        rows="14"
+        [value]="corpo()"
+        (input)="corpo.set($any($event.target).value)"
+      ></textarea>
+    </label>
+
+    @if (e.allegati.length) {
+      <fieldset class="modulo__campo modulo__gruppo">
+        <legend class="modulo__nome">Allegati</legend>
+        @for (x of e.allegati; track x.id) {
+          <label class="modulo__allegato">
+            <input type="checkbox" [checked]="tenuti().has(x.id)" (change)="alternaAllegato(x.id)" />
+            <span>{{ x.nome }}.{{ x.formato }}</span>
+          </label>
+        }
+      </fieldset>
+    }
+
+    <div class="modulo__azioni">
+      <button uiBottone variante="primario" type="submit" [disabled]="!valida() || inCorso()">
+        {{ inCorso() ? 'Salvo…' : 'Salva' }}
+      </button>
+      <button uiBottone variante="testo" type="button" (click)="inModifica.set(false)">Lascia com'è</button>
+    </div>
+  </form>
+</ui-cassetto>

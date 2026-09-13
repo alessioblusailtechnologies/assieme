@@ -146,6 +146,12 @@ const schemaAmbiente = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_MITTENTE: z.string().default('Velia <noreply@sonovelia.it>'),
   /**
+   * `simulato` simula l'invio anche con la chiave (14/09/2026): i test lo
+   * accendono, perché nel `.env` locale la chiave c'è e una suite non deve
+   * spedire posta vera. In produzione non vale: lì non si finge.
+   */
+  EMAIL_INVIO: z.enum(['vero', 'simulato']).default('vero'),
+  /**
    * La dettatura nel composer (29/08/2026): Voxtral di Mistral (dati in
    * UE, 0,003 $/min). Senza chiave il microfono dice che non è configurato.
    * `voxtral-mini-latest` è Voxtral Mini Transcribe 2.
