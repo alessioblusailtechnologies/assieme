@@ -6,10 +6,11 @@ la ricognizione.
 ## Da dove riprendere
 
 Stato al 13/09/2026, fine sessione. Dei 9 set del lotto 1 ne sono entrati
-**cinque**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa,
-Immagina Adesso Armonia e Immagina Adesso Cucciolo. Restano
-ViviCondominio (120 pagine), Immagina Strade Nuove Passione Moto (122) e
-Immagina Adesso Salute e Benessere (366, da fare in una sessione sua).
+**sette**: Sei in Viaggio, Immagina Strade Nuove, Immagina Adesso Casa,
+Immagina Adesso Armonia, Immagina Adesso Cucciolo, ViviCondomìnio e
+Immagina Strade Nuove Passione Moto. Resta **solo Immagina Adesso Salute
+e Benessere** (366 pagine, da fare in una sessione sua), e poi il lotto 1
+è chiuso.
 
 I PDF sono già scaricati in `local-ingestion/in-arrivo/generali-auto/` e
 `local-ingestion/in-arrivo/generali-persona/` (cartelle gitignorate, con
@@ -40,13 +41,13 @@ lavoro che vale.
 | Nobis | auto (natanti, bici, conducente) | 8 | 60 | ~590 |
 | HDI | auto | 6 | 20 | ~270 |
 | Groupama | auto | 5 | 15 | ~340 |
-| **Generali** | auto, viaggi, casa, **tutela** | 7 | 27 | ~490 |
+| **Generali** | auto, viaggi, casa, **tutela** | 9 | 34 | ~730 |
 
 Fuori tabella: Allianz, AXA, Cattolica (gruppo Generali, AUTOPIÙ).
 
 I rami `ram-rc-prof` e `ram-vita` sono **vuoti per tutte le compagnie**;
 `ram-tutela` lo era fino al 13/09, quando ci è entrato Immagina Adesso
-Armonia. Il totale a catalogo è 310 documenti (il test
+Armonia. Il totale a catalogo è 317 documenti (il test
 `integrazione-documenti.spec.ts` asserisce quel numero: va aggiornato a
 ogni caricamento).
 
@@ -75,7 +76,7 @@ Tre forme di pubblicazione, e cambiano il lavoro:
 | Prodotto | Copre | Edizione |
 |---|---|---|
 | Immagina Strade Nuove | autovetture, il prodotto di punta | 07/2025, **in archivio** |
-| Immagina Strade Nuove Passione Moto | moto e scooter (+ appendice monopattini) | 01/2026 |
+| Immagina Strade Nuove Passione Moto | moto e scooter (+ appendice monopattini) | 01/2026, **in archivio** |
 | Generali Sei in Auto - Altri Veicoli | autobus, macchine operatrici | 01/2026 |
 | ATTIVA Veicoli commerciali | autocarri e furgoni (+ appendice telematica) | 05/2025 |
 | ATTIVA Macchine agricole | trattori e mezzi agricoli | 10/2025 |
@@ -97,7 +98,7 @@ comuni, e da solo apre quattro rami.
 | CUCCIOLO (cane, gatto) | `ram-casa` | 28/06/2025 agg. 11/07/2026, **in archivio** |
 | Norme comuni | trasversale | 28/06/2025 |
 
-Accanto: **ViviCondominio** (07/2026, esiste anche in inglese e tedesco),
+Accanto: **ViviCondomìnio** (07/2026, **in archivio**; esiste anche in inglese e tedesco),
 **Generali Sei in Viaggio** (fatto), **Obiettivo Salute** in due varianti
 (italiani all'estero, stranieri in Italia, 3 pezzi ciascuna), **RC Cavalli**
 (3 pezzi), **ARTE Generali Private** (documenti non esposti sulla pagina,
@@ -141,8 +142,8 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 | 3 | Immagina Adesso Cucciolo | casa | 28/06/2025 | 51 | **in archivio** (13/09) |
 | 4 | Immagina Adesso Armonia | tutela | 28/06/2025 | 53 | **in archivio** (13/09) |
 | 5 | Immagina Adesso Norme comuni | (trasversale) | 28/06/2025 | 14 | **trascritte** (13/09), da replicare negli altri moduli |
-| 6 | ViviCondominio | casa | 11/07/2026 | 120 | da fare |
-| 7 | Immagina Strade Nuove Passione Moto | auto | 01/2026 | 122 | da fare |
+| 6 | ViviCondomìnio | casa | 11/07/2026 | 120 | **in archivio** (13/09) |
+| 7 | Immagina Strade Nuove Passione Moto | auto | 01/01/2026 | 122 | **in archivio** (13/09) |
 | 8 | Immagina Adesso Casa | casa | 28/06/2025 | 140 | **in archivio** (13/09) |
 | 9 | Immagina Adesso Salute e Benessere | salute | 11/07/2026 | 366 | da fare |
 
@@ -172,7 +173,7 @@ l'INDICE e i testimoni si spalmano, e con la cornice riconosciuta bene il
 testimone OCR ha segnalato 6 pagine su 140 invece di 18 su 39.
 
 **Circa 21.000 token a pagina sul set piccolo, 13.500 sul grande**, più l'orchestrazione, più 4 dollari ogni
-1.000 pagine di Mistral OCR (il testimone). Le 608 pagine che restano
+1.000 pagine di Mistral OCR (il testimone). Le 366 pagine che restano
 del lotto 1 valgono quindi **una dozzina di milioni di token**: più di una
 sessione. Si va un set alla volta, e il modulo Salute e Benessere (366
 pagine, 7-8 milioni) vuole una sessione sua.
@@ -204,7 +205,29 @@ tutto**, cioè **20.000 token a pagina**. Conferma la regola dei set
 piccoli: l'INDICE da solo è il 30% della spesa, e cresce con la
 complessità del prodotto, non con le pagine.
 
-## Cosa ha insegnato la lavorazione dei primi cinque set
+Sesto e settimo set lavorati **insieme**, 242 pagine in tutto:
+
+| | ViviCondomìnio (120 pag.) | Passione Moto (122 pag.) |
+|---|---|---|
+| Trascrizione (12 blocchi l'uno) | 1.410.573 | 1.281.730 |
+| Secondo sguardo | 449.458 (19 pagine segnalate, 12 a campione) | 303.398 (7 segnalate, 12 a campione) |
+| INDICE | 472.710 | 316.093 |
+| **Totale** | **2.332.741** | **1.901.221** |
+| **A pagina** | **19.400** | **15.600** |
+
+I due set insieme: **4.233.962 token**, cioè 17.500 a pagina. Passione
+Moto costa meno perché ha il gemello auto già in archivio (l'INDICE si
+scrive per differenza) e perché i testimoni hanno segnalato 3 pagine su
+122; ViviCondomìnio ne aveva 25 su 120, quasi tutte per i richiami di
+nota e per il «Mod. 136» del piè di pagina.
+
+**I due set in parallelo stanno dentro il limite di 20 subagenti
+contemporanei**, ma non di più: 12 blocchi + 12 blocchi fanno 24, e gli
+ultimi quattro sono partiti solo mano a mano che si liberavano gli slot.
+Due set da 120 pagine sono quindi il massimo lavorabile insieme senza
+spezzare la trascrizione in due ondate.
+
+## Cosa ha insegnato la lavorazione dei primi sette set
 
 - I **richiami di nota a piè di pagina** fanno scattare il testimone su
   decine di pagine: il confronto vede un numero che i testimoni non
@@ -237,6 +260,21 @@ complessità del prodotto, non con le pagine.
   rimandi (`grep` sul nome del modulo) e corretti, insieme alla profondità
   dei percorsi relativi fra rami diversi (da `ed-AAAA-MM/` a un altro ramo
   sono **tre** livelli, non due: l'INDICE di Armonia li aveva sbagliati).
+- I **facsimili con i bollini rossi numerati** (Certificato, Polizza,
+  Modulo C.A.I.) sembrano avere parole coperte, e non le hanno: i bollini
+  sono vettori disegnati sopra il disegno del modulo. Si converte la
+  pagina in SVG (`pdftocairo -svg`), si tolgono i cerchi e le cifre, si
+  ri-renderizza a 800-1200 dpi e **sotto c'è tutto**. Su Passione Moto
+  questo ha tolto l'unico `[!ATTENZIONE]` del set.
+- Il trascrittore che **normalizza i refusi** non è un difetto raro: su
+  ViviCondomìnio il secondo sguardo ha ripreso «comunque» diventato
+  «impugnare», «indennizabile» diventato «indennizzabile», «del 8%»
+  diventato «dell'8%», «esite» diventato «esiste», «estesa» diventato
+  «estese». Il confronto parola per parola col layer di testo è l'unico
+  modo di vederli: i testimoni non li segnalano, perché la parola c'è.
+- Attenzione ai **tag HTML che si infilano nelle trascrizioni** (`<u>`):
+  non sono nelle convenzioni, e il testimone pdfjs li segnala come parole
+  comparse. Dove la pagina sottolinea si usa il grassetto.
 
 ## Decisioni prese, da non rimettere in discussione
 
