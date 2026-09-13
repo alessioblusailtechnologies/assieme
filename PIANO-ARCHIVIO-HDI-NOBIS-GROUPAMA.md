@@ -40,6 +40,20 @@ espone il conteggio: sono calibrate sui set auto già in archivio (HDI
 22-65 pagine a set, Nobis ~13,5 KB per pagina dal `Content-Length`,
 Groupama 57-81 a set). Errore atteso ±25%.
 
+## Stato
+
+Al 13/09/2026, lotto HDI in corso, un set per volta:
+
+- [x] **# Viaggio Singolo** (ed. 06/2026, 36 pagine, 3 documenti): in
+  archivio, apre il ramo `viaggi` per HDI. Catalogo a 376 documenti.
+  Convenzioni del lotto in `lavorazione-visiva/convenzioni-hdi-viaggi.md`.
+  Costato ~1,05 M di token contro gli ~800 mila stimati: il di più sta
+  quasi tutto nell'INDICE (233 mila da solo) e nel secondo sguardo su
+  sedici pagine.
+- [ ] Rischi Informatici HDI (cyber)
+- [ ] Protezione Infortuni HDI (infortuni)
+- [ ] Globale Casa (casa)
+
 ## Il primo lotto, compagnia per compagnia
 
 Il criterio è uno solo: **quanti rami nuovi si aprono per token speso**.
