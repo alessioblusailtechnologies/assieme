@@ -1,27 +1,36 @@
 <!--
-  I clienti: si cerca in cima, si crea accanto, e l'elenco è una riga per
-  cliente. Niente tabella: le colonne che contano sono due, e una tabella da
-  due colonne è una lista scritta male.
+  I clienti con l'impalcatura degli altri elenchi (13/09/2026): testata su
+  una riga, filtri in un riquadro, tabella con la paginazione attaccata
+  sotto. Prima era una lista a righe libere, l'unico elenco dell'app fatto a
+  modo suo, e di un cliente si leggevano il nome e un recapito solo.
 -->
 <header class="testata">
+  <h1 class="visually-hidden">Clienti</h1>
+
   <ui-briciole [voci]="briciole" />
 
-  <div class="testata__riga">
-    <h1 class="titolo serif">Clienti</h1>
-    <span class="conteggio mono" role="status" aria-live="polite">
+  <span class="testata__stacco" aria-hidden="true"></span>
+
+  <p class="testata__spiega">
+    L'anagrafica dell'agenzia: chi sono, come raggiungerli, quanti documenti hanno in archivio.
+  </p>
+
+  <span class="testata__conteggio mono" role="status" aria-live="polite">
+    @if (inCaricamento() && !clienti().length) {
+      caricamento…
+    } @else if (!errore()) {
       {{ totale() }} {{ totale() === 1 ? 'cliente' : 'clienti' }}
-    </span>
-    <div class="testata__azioni">
-      <button uiBottone variante="primario" type="button" (click)="apriCreazione()">
-        <ui-icon name="aggiungi" [size]="15" />
-        <span>Nuovo cliente</span>
-      </button>
-    </div>
-  </div>
+    }
+  </span>
+
+  <button uiBottone variante="primario" type="button" (click)="apriCreazione()">
+    <ui-icon name="aggiungi" [size]="15" />
+    <span>Nuovo cliente</span>
+  </button>
 </header>
 
-<div class="cerca">
-  <label class="ui-campo-icona cerca__campo">
+<section class="filtri" aria-label="Filtri dei clienti">
+  <label class="ui-campo-icona filtri__ricerca">
     <ui-icon name="cerca" [size]="16" />
     <input
       uiCampo
@@ -33,19 +42,19 @@
   </label>
 
   <ui-select
-    class="cerca__filtro"
+    class="filtri__campo"
     [(valore)]="tipo"
     [opzioni]="tipi"
     campoEtichetta="etichetta"
     campoValore="valore"
-    placeholder="Tutti"
+    placeholder="Persone e aziende"
     [azzerabile]="true"
     ariaLabel="Filtra per tipo"
   />
 
   @if (etichette().length) {
     <ui-select
-      class="cerca__filtro"
+      class="filtri__campo"
       [(valore)]="etichetta"
       [opzioni]="etichette()"
       campoEtichetta="nome"
@@ -62,7 +71,7 @@
       <span>Azzera</span>
     </button>
   }
-</div>
+</section>
 
 <!--
   Il modulo di creazione sta nella pagina e non in una finestra: si vede
@@ -114,7 +123,7 @@
   </ui-stato-vuoto>
 } @else if (inCaricamento() && !clienti().length) {
   <div class="scheletri">
-    @for (i of [1, 2, 3, 4, 5]; track i) {
+    @for (i of [1, 2, 3, 4, 5, 6]; track i) {
       <ui-scheletro [numeroRighe]="1" />
     }
   </div>
@@ -141,40 +150,91 @@
     }
   </ui-stato-vuoto>
 } @else {
-  <ul class="clienti">
-    @for (c of clienti(); track c.id) {
-      <li>
-        <a class="riga" [routerLink]="['/clienti', c.id]">
-          <span class="riga__icona">
-            <ui-icon [name]="c.tipo === 'azienda' ? 'compagnia' : 'utente'" [size]="16" />
-          </span>
-
-          <span class="riga__corpo">
-            <span class="riga__nome">{{ c.nome }}</span>
-            <span class="riga__sotto">
-              @if (c.alias.length) {
-                <span class="riga__alias" [title]="c.alias.join(', ')">
-                  anche {{ c.alias[0] }}{{ c.alias.length > 1 ? ' +' + (c.alias.length - 1) : '' }}
+  <div class="risultati">
+    <div class="ui-tabella-contenitore griglia">
+      <table class="ui-tabella">
+        <thead>
+          <tr>
+            <th class="col-nome">Nome</th>
+            <th class="col-tipo">Tipo</th>
+            <th class="col-email">Email</th>
+            <th class="col-telefono">Telefono</th>
+            <th class="col-etichette">Etichette</th>
+            <th class="col-documenti">Documenti</th>
+            <th class="col-azione"><span class="visually-hidden">Apri</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of clienti(); track c.id) {
+            <tr class="cliente" (click)="apri(c)">
+              <td class="col-nome">
+                <span class="nome">
+                  <span class="nome__icona">
+                    <ui-icon [name]="c.tipo === 'azienda' ? 'compagnia' : 'utente'" [size]="14" />
+                  </span>
+                  <span class="nome__testo">
+                    <span class="nome__principale">{{ c.nome }}</span>
+                    <!-- Gli alias sono il motivo per cui la ricerca trova: dirlo li rende una cosa che si corregge, invece di magia. -->
+                    @if (c.alias.length) {
+                      <span class="nome__alias" [title]="c.alias.join(', ')">
+                        anche {{ c.alias[0] }}{{ c.alias.length > 1 ? ' +' + (c.alias.length - 1) : '' }}
+                      </span>
+                    }
+                  </span>
                 </span>
-              }
-              @if (c.telefono) {
-                <span class="riga__recapito">{{ c.telefono }}</span>
-              } @else if (c.email) {
-                <span class="riga__recapito">{{ c.email }}</span>
-              }
-            </span>
-          </span>
+              </td>
+              <td class="col-tipo">{{ c.tipo === 'azienda' ? 'Azienda' : 'Persona' }}</td>
+              <td class="col-email">
+                @if (c.email) {
+                  <a class="recapito" [href]="'mailto:' + c.email" (click)="$event.stopPropagation()">{{ c.email }}</a>
+                } @else {
+                  <span class="muto">-</span>
+                }
+              </td>
+              <td class="col-telefono">
+                @if (c.telefono) {
+                  <a class="recapito" [href]="'tel:' + c.telefono" (click)="$event.stopPropagation()">{{ c.telefono }}</a>
+                } @else {
+                  <span class="muto">-</span>
+                }
+              </td>
+              <td class="col-etichette">
+                <span class="etichette">
+                  @for (e of c.etichette.slice(0, 2); track e) {
+                    <ui-tag variante="accento">{{ e }}</ui-tag>
+                  }
+                  @if (c.etichette.length > 2) {
+                    <span class="muto" [title]="c.etichette.slice(2).join(', ')">+{{ c.etichette.length - 2 }}</span>
+                  }
+                </span>
+              </td>
+              <td class="col-documenti">{{ c.documenti }}</td>
+              <td class="col-azione">
+                <a
+                  uiBottone
+                  dimensione="piccolo"
+                  class="apri"
+                  [routerLink]="['/clienti', c.id]"
+                  [attr.aria-label]="'Apri ' + c.nome"
+                  (click)="$event.stopPropagation()"
+                >
+                  <span>Apri</span>
+                  <ui-icon name="espandi-destra" [size]="14" />
+                </a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
-          <span class="riga__coda">
-            @for (e of c.etichette.slice(0, 2); track e) {
-              <ui-tag variante="accento">{{ e }}</ui-tag>
-            }
-            <span class="riga__documenti mono">
-              {{ c.documenti }} {{ c.documenti === 1 ? 'documento' : 'documenti' }}
-            </span>
-          </span>
-        </a>
-      </li>
+    @if (totale() > perPagina) {
+      <ui-paginazione
+        [pagina]="pagina()"
+        [perPagina]="perPagina"
+        [totale]="totale()"
+        (cambiaPagina)="pagina.set($event)"
+      />
     }
-  </ul>
+  </div>
 }

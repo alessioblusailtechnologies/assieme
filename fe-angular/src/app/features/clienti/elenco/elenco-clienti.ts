@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 import { ClientiApi, EtichettaCliente } from '@core/api/clienti-api';
 import type { Cliente, ErroreApi, Paginato } from '@core/models';
@@ -9,10 +11,14 @@ import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { Icona } from '@shared/ui/icona/icona';
+import { Paginazione } from '@shared/ui/paginazione/paginazione';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { Tag } from '@shared/ui/tag/tag';
+
+/** Quanti clienti per pagina: lo stesso numero che il server dà di suo. */
+const PER_PAGINA = 50;
 
 /**
  * I clienti dell'agenzia.
@@ -22,10 +28,10 @@ import { Tag } from '@shared/ui/tag/tag';
  * **crearlo** quando non c'è. Tutto il resto — cosa ha, cosa gli si è
  * detto, quali chat sono aperte — sta nella sua scheda, che è un posto solo.
  *
- * La riga dice il nome e quanti documenti ha: il conteggio non è un
- * dettaglio, è il modo in cui si vede a colpo d'occhio chi è stato importato
- * male (zero documenti su un cliente vecchio vuol dire che qualcosa non ha
- * trovato il suo posto).
+ * Dal 13/09/2026 è una tabella come gli altri elenchi: tipo, email e
+ * telefono sono proprio le cose per cui si apre un'anagrafica, e in una
+ * riga libera se ne vedeva una sola. Il conteggio dei documenti resta: è il
+ * modo in cui si vede a colpo d'occhio chi è stato importato male.
  */
 @Component({
   selector: 'app-elenco-clienti',
@@ -36,6 +42,7 @@ import { Tag } from '@shared/ui/tag/tag';
     Campo,
     FormsModule,
     Icona,
+    Paginazione,
     RouterLink,
     Scheletro,
     Select,
@@ -65,11 +72,27 @@ export class ElencoClienti {
     { valore: 'azienda', etichetta: 'Aziende' },
   ];
 
+  /* Come negli archivi: la ricerca parte quando si smette di scrivere, non
+     a ogni tasto. */
+  private readonly ricercaAttesa = toSignal(
+    toObservable(this.ricerca).pipe(debounceTime(300), distinctUntilChanged()),
+    { initialValue: '' },
+  );
+
+  /** A ogni cambio di filtro si riparte dalla prima pagina: la terza di un'altra ricerca non esiste. */
+  protected readonly pagina = linkedSignal<unknown[], number>({
+    source: () => [this.ricercaAttesa(), this.etichetta(), this.tipo()],
+    computation: () => 1,
+  });
+  protected readonly perPagina = PER_PAGINA;
+
   private readonly risorsa = httpResource<Paginato<Cliente>>(() =>
     this.api.url({
-      q: this.ricerca(),
+      q: this.ricercaAttesa(),
       ...(this.etichetta() && { etichetta: this.etichetta()! }),
       ...(this.tipo() && { tipo: this.tipo()! }),
+      pagina: this.pagina(),
+      perPagina: PER_PAGINA,
     }),
   );
 
@@ -97,6 +120,11 @@ export class ElencoClienti {
     this.ricerca.set('');
     this.etichetta.set(undefined);
     this.tipo.set(undefined);
+  }
+
+  /** Tutta la riga apre la scheda: mirare al solo pulsante in fondo è mira di precisione. */
+  protected apri(cliente: Cliente): void {
+    void this.router.navigate(['/clienti', cliente.id]);
   }
 
   // --- Creazione ------------------------------------------------------------

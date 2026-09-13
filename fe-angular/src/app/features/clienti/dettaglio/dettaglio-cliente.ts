@@ -16,7 +16,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { ChatClientiApi } from '@core/api/chat-clienti-api';
-import { ClientiApi, DestinazioneDocumenti } from '@core/api/clienti-api';
+import { ClientiApi, DestinazioneDocumenti, EtichettaCliente } from '@core/api/clienti-api';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
 import type {
@@ -36,6 +36,7 @@ import { CreazioneChat } from '@features/chat-clienti/creazione/creazione-chat';
 import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { Icona } from '@shared/ui/icona/icona';
 import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
+import { SceltaEtichette } from '@shared/ui/scelta-etichette/scelta-etichette';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -92,6 +93,7 @@ interface FileInSalita {
     Icona,
     MenuAzioni,
     RouterLink,
+    SceltaEtichette,
     Scheletro,
     Select,
     StatoVuoto,
@@ -174,10 +176,19 @@ export class DettaglioCliente {
   protected readonly natoIl = signal('');
   protected readonly note = signal('');
   protected readonly etichette = signal<string[]>([]);
-  protected readonly nuovaEtichetta = signal('');
   protected readonly nuovoAlias = signal('');
   protected readonly salvataggio = signal(false);
   protected readonly avviso = signal<string | undefined>(undefined);
+
+  /**
+   * Il vocabolario delle etichette dei clienti, per la tendina: solo quelle
+   * dei clienti, non quelle dei documenti, che sono un'altra classificazione.
+   */
+  private readonly risorsaEtichette = httpResource<EtichettaCliente[]>(() => this.api.urlEtichette());
+
+  protected readonly vocabolarioEtichette = computed(() =>
+    this.risorsaEtichette.hasValue() ? this.risorsaEtichette.value().map((e) => e.nome) : [],
+  );
 
   private idCaricato = '';
 
@@ -239,20 +250,9 @@ export class DettaglioCliente {
       this.indirizzo().trim() !== (c.indirizzo ?? '') ||
       this.natoIl().trim() !== (c.natoIl ?? '') ||
       this.note().trim() !== (c.note ?? '') ||
-      this.etichette().join('\u0000') !== c.etichette.join('\u0000')
+      JSON.stringify(this.etichette()) !== JSON.stringify(c.etichette)
     );
   });
-
-  protected aggiungiEtichetta(): void {
-    const e = this.nuovaEtichetta().trim();
-    if (!e || this.etichette().includes(e)) return;
-    this.etichette.update((tutte) => [...tutte, e]);
-    this.nuovaEtichetta.set('');
-  }
-
-  protected togliEtichetta(e: string): void {
-    this.etichette.update((tutte) => tutte.filter((x) => x !== e));
-  }
 
   /**
    * Un alias è una forma con cui il cliente compare **sui documenti**: si
@@ -301,6 +301,9 @@ export class DettaglioCliente {
           this.salvataggio.set(false);
           this.idCaricato = '';
           this.risorsa.reload();
+          /* Un'etichetta creata qui entra nel vocabolario: al prossimo
+             cliente la si trova nella tendina. */
+          this.risorsaEtichette.reload();
         },
         error: (err: HttpErrorResponse) => {
           this.salvataggio.set(false);

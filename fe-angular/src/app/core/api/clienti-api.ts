@@ -27,6 +27,9 @@ export interface FiltriClienti {
   etichetta?: string;
   tipo?: 'persona' | 'azienda';
   stato?: 'attivo' | 'archiviato';
+  /** In base 1, come il contratto; il server ne dà 50 per pagina se non si chiede altro. */
+  pagina?: number;
+  perPagina?: number;
 }
 
 /**
@@ -46,6 +49,8 @@ export class ClientiApi {
     if (filtri.etichetta) parametri = parametri.set('etichetta', filtri.etichetta);
     if (filtri.tipo) parametri = parametri.set('tipo', filtri.tipo);
     if (filtri.stato) parametri = parametri.set('stato', filtri.stato);
+    if (filtri.pagina && filtri.pagina > 1) parametri = parametri.set('pagina', String(filtri.pagina));
+    if (filtri.perPagina) parametri = parametri.set('perPagina', String(filtri.perPagina));
     const query = parametri.toString();
     return query ? `${this.base}?${query}` : this.base;
   }

@@ -127,32 +127,17 @@
           <input uiCampo type="text" [(ngModel)]="indirizzo" name="indirizzo" />
         </label>
 
+        <!--
+          Le etichette si scelgono fra quelle dei clienti, e se manca quella
+          giusta si crea dalla stessa tendina: scritte a mano diventavano «in
+          rinnovo», «In rinnovo» e «rinnovo», e il filtro smetteva di servire.
+        -->
         <div class="campo campo--largo">
           <span class="campo__nome">Etichette</span>
-          <div class="etichette">
-            @for (e of etichette(); track e) {
-              <span class="etichetta">
-                {{ e }}
-                <button
-                  type="button"
-                  class="etichetta__togli"
-                  [attr.aria-label]="'Togli ' + e"
-                  (click)="togliEtichetta(e)"
-                >
-                  <ui-icon name="chiudi" [size]="11" />
-                </button>
-              </span>
-            } @empty {
-              <span class="vuoto">Nessuna etichetta</span>
-            }
-          </div>
-          <input
-            uiCampo
-            type="text"
-            [(ngModel)]="nuovaEtichetta"
-            name="nuovaEtichetta"
-            placeholder="Aggiungi un'etichetta e premi Invio"
-            (keydown.enter)="$event.preventDefault(); aggiungiEtichetta()"
+          <ui-scelta-etichette
+            [(scelte)]="etichette"
+            [opzioni]="vocabolarioEtichette()"
+            ariaLabel="Etichette del cliente"
           />
         </div>
 
