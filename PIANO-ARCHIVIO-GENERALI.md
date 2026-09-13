@@ -31,7 +31,8 @@ ogni caricamento).
 
 Di Generali c'erano solo i due **Contratto Base** (autovetture 07/2025,
 motoveicoli 01/2026): la RCA minima di legge, che non vende nessuno. Dal
-13/09 c'è anche **Sei in Viaggio** (vedi sotto).
+13/09 ci sono anche **Sei in Viaggio** e **Immagina Strade Nuove** (vedi
+sotto).
 
 ## Il catalogo Generali, per ramo
 
