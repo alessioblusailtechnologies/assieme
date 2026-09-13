@@ -174,6 +174,21 @@
     </p>
     <button type="button" uiBottone (click)="elimina()">Elimina</button>
   </ui-accordion>
+} @else if (verificata() !== id()) {
+  <!--
+    Non trovata non vuol dire che non esista: finché il server non ha
+    risposto per questo id è una chat che si sta caricando, magari appena
+    attivata dalla scheda del cliente.
+  -->
+  <ui-scheletro [numeroRighe]="6" />
+} @else if (store.errore(); as errore) {
+  <div class="assente">
+    <p>{{ errore }}</p>
+    <a uiBottone routerLink="/clienti">Torna ai clienti</a>
+  </div>
 } @else {
-  <p class="assente">Questa chat non esiste più.</p>
+  <div class="assente">
+    <p>Questa chat non esiste più.</p>
+    <a uiBottone routerLink="/clienti">Torna ai clienti</a>
+  </div>
 }

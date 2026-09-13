@@ -218,8 +218,17 @@
 }
 
 .assente {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
   font-size: var(--t-sm);
   color: var(--c-text-3);
+}
+
+.assente a,
+.assente a:hover {
+  text-decoration: none;
 }
 
 /* ---------- Quello che il cliente legge davvero ---------- */

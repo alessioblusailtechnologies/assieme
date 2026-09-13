@@ -7,9 +7,10 @@ import {
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { DocumentiApi } from '@core/api/documenti-api';
 import { DocumentiPrivatiApi } from '@core/api/documenti-privati-api';
@@ -20,6 +21,7 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Icona } from '@shared/ui/icona/icona';
+import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { ChatClientiStore } from '../chat-clienti-store';
 
 /**
@@ -33,7 +35,7 @@ import { ChatClientiStore } from '../chat-clienti-store';
 @Component({
   selector: 'app-dettaglio-chat-cliente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Accordion, Bottone, Briciole, Campo, FormsModule, Icona],
+  imports: [Accordion, Bottone, Briciole, Campo, FormsModule, Icona, RouterLink, Scheletro],
   templateUrl: './dettaglio-chat-cliente.html',
   styleUrl: './dettaglio-chat-cliente.scss',
 })
@@ -46,6 +48,18 @@ export class DettaglioChatCliente {
   readonly id = input.required<string>();
 
   protected readonly chat = computed(() => this.store.perId(this.id()));
+
+  /**
+   * L'id per cui l'elenco è già stato riletto dal server. Finché non lo è,
+   * una chat che non si trova è una chat **non ancora caricata**, e dirle
+   * «non esiste più» è falso.
+   */
+  protected readonly verificata = signal<string | undefined>(undefined);
+
+  /* Un campo e non un signal: fa da chiavistello anche nel tratto fra la fine
+     della ricarica e il giro successivo dell'effetto, dove un signal non
+     ancora propagato lascerebbe partire una seconda ricarica. */
+  private inVerificaPer: string | undefined;
 
   /**
    * Si torna al cliente, e alla sua scheda Chat: dal 13/09/2026 una chat sta
@@ -126,15 +140,29 @@ export class DettaglioChatCliente {
 
   constructor() {
     /*
-     * L'elenco e il riempimento del modulo stanno in un effetto e non nel
-     * costruttore: `id` è un input legato alla rotta, e nel costruttore non
-     * c'è ancora — Angular lo dice con un NG0950 secco. L'effetto parte
-     * dopo, quando l'input esiste davvero.
+     * Lo store vive sulla rotta, e una rotta tiene i suoi provider per tutta
+     * la sessione: aperta una chat, l'elenco resta in memoria anche uscendo.
+     * Prima si rileggeva solo se era vuoto, e la chat attivata dopo dalla
+     * scheda del cliente lì dentro non c'era: la schermata diceva «non esiste
+     * più» a una chat appena nata (13/09/2026). Ora si rilegge ogni volta che
+     * l'id cercato manca, una volta per id.
+     *
+     * Sta in un effetto e non nel costruttore: `id` è un input legato alla
+     * rotta, e nel costruttore non c'è ancora (NG0950).
      */
     effect(() => {
-      if (!this.store.conta() && !this.store.inCaricamento()) void this.store.ricarica();
+      const id = this.id();
+      if (!this.store.perId(id) && this.inVerificaPer !== id) {
+        untracked(() => void this.verifica(id));
+      }
       this.riempiDaChat();
     });
+  }
+
+  private async verifica(id: string): Promise<void> {
+    this.inVerificaPer = id;
+    await this.store.ricarica();
+    this.verificata.set(id);
   }
 
   /**
@@ -229,6 +257,8 @@ export class DettaglioChatCliente {
         'Sparisce tutto: l’accesso del cliente e le conversazioni che ci sono state. Non si torna indietro.',
     });
     if (!conferma) return;
+    /* La chat sparisce dall'elenco mentre si esce: non va cercata di nuovo. */
+    this.inVerificaPer = chat.id;
     await this.store.elimina(chat.id);
     /* Si torna dove la chat si attiva: la scheda Chat del suo cliente, che
        adesso offre di attivarne una nuova. */
