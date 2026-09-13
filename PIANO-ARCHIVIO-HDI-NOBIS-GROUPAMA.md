@@ -55,7 +55,13 @@ Al 13/09/2026, lotto HDI in corso, un set per volta:
   cyber del catalogo dopo Unipol Scudo Cyber. Catalogo a 379 documenti.
   Costato ~0,97 M di token. Il secondo sguardo non ha corretto nulla: la
   forma e quella dei set auto HDI, gia nota ai trascrittori.
-- [ ] Protezione Infortuni HDI (infortuni)
+- [x] **Protezione Infortuni HDI** (ed. 06/2026, **54** pagine contro le ~40
+  stimate, 3 documenti): in archivio il 14/09/2026, apre il ramo
+  `infortuni` per HDI. Catalogo a 382 documenti. Costato ~1,9 M di token.
+  E il set piu ricco dei tre: quattro sezioni (Assistenza, Infortuni,
+  Invalidita Permanente da Malattia, Tutela Legale), 17 garanzie in una
+  matrice di composizione alle pagg. 9-10, sei franchigie e cinque tabelle
+  di valutazione.
 - [ ] Globale Casa (casa)
 
 ## Il primo lotto, compagnia per compagnia
