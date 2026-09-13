@@ -33,6 +33,11 @@ quindi il modulo va assemblato PRIMA e le norme si copiano DOPO.
 
 Il giro completo su un set è più in basso, in «Il giro completo su un set».
 
+Il lotto Unipol lasciato a metà ha un piano suo:
+**PIANO-ARCHIVIO-UNIPOL.md**. Al 13/09/2026 quello viene prima di
+questo: ha tre set già trascritti per intero e mai caricati, che aprono
+tre rami nuovi per Unipol al solo costo dei controlli e dell'INDICE.
+
 ## Perché
 
 Va data in demo l'applicativo a un agente che lavora con **Generali,
