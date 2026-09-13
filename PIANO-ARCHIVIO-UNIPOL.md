@@ -20,19 +20,25 @@ Stampa, set per set, quante pagine sono trascritte e **quali mancano**. È
 la verità sul disco: il conteggio qui sotto è una fotografia del 13/09, il
 censimento è sempre aggiornato.
 
-**Il passo 1 è FATTO** (13/09/2026). I tre set già trascritti e mai
-caricati sono in archivio, un commit per set:
+**I passi 1 e 2 sono FATTI** (13/09/2026), un commit per set:
 
-| Set | Ramo | Ed. | Pagine | Commit |
-|---|---|---|---|---|
-| Tutela Legale Aziende | `tutela` | 01/03/2026 | 44 | `3cec00e` |
-| Unica Infortuni | `infortuni` | 01/10/2025 | 110 | `57d66a7` |
-| Unica Casa | `casa` | 01/10/2025 | 96 | `ebd9f75` |
+| Passo | Set | Ramo | Ed. | Pagine | Commit |
+|---|---|---|---|---|---|
+| 1 | Tutela Legale Aziende | `tutela` | 01/03/2026 | 44 | `3cec00e` |
+| 1 | Unica Infortuni | `infortuni` | 01/10/2025 | 110 | `57d66a7` |
+| 1 | Unica Casa | `casa` | 01/10/2025 | 96 | `ebd9f75` |
+| 2 | Tutela Legale Professionisti | `tutela` | 01/03/2026 | 44 | `3f9ad8c` |
+| 2 | Unica Famiglia | `casa` | 01/10/2025 | 76 | `d4b7069` |
+| 2 | Unica Mobilità | `infortuni` | 01/10/2025 | 88 | `c35fe91` |
+| 2 | Km&Servizi Monopattini | `auto` | 16/07/2026 | 56 | `fa21c30` |
+| 2 | Navigare Unità da diporto | `auto` | 01/08/2025 | 72 | `d5739fd` |
 
-Unipol passa da tre rami a sei: auto, imprese, cyber, **tutela**,
-**infortuni**, **casa**. Il catalogo va da 317 a 331 documenti.
+Unipol passa da tre rami a sei (auto, imprese, cyber, **tutela**,
+**infortuni**, **casa**), il catalogo da 317 a **354 documenti**, le
+pagine trascritte da 1.635 a **1.852 su 3.034**. **Il lotto auto è
+completo, 11 set su 11.**
 
-La prossima sessione riparte dal **passo 2**, i cinque parziali.
+La prossima sessione riparte dal **passo 3**, casa e persona da zero.
 
 ## Perché
 
@@ -53,7 +59,7 @@ delle imprese (passo 4).
 Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 è scritto che è in archivio).
 
-### Lotto auto (11 set) - 9 in archivio dal 12/09
+### Lotto auto (11 set) - COMPLETO, tutti in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
@@ -66,28 +72,28 @@ Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 | Km&Servizi Autocarri | 188/188 | **in archivio** |
 | Contratto Base R.C.A. Autovetture | 34/34 | **in archivio** |
 | Contratto Base R.C.A. Ciclomotori e Motocicli | 30/30 | **in archivio** |
-| Km&Servizi Monopattini elettrici | 21/56 | mancano 8-10 e 25-56 |
-| Navigare Unità da diporto | 23/72 | mancano 8-10, 20 e 28-72 |
+| Km&Servizi Monopattini elettrici | 56/56 | **in archivio** (dal 13/09) |
+| Navigare Unità da diporto | 72/72 | **in archivio** (dal 13/09) |
 
-### Lotto casa e persona (8 set) - 2 in archivio dal 13/09
+### Lotto casa e persona (8 set) - 4 in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
 | Unica Casa | 96/96 | **in archivio** |
 | Unica Infortuni | 110/110 | **in archivio** |
-| Unica Famiglia | 37/76 | mancano 29-30 e 40-76 |
-| Unica Mobilità | 14/88 | mancano 7-10 e 19-88 |
+| Unica Famiglia | 76/76 | **in archivio** (dal 13/09) |
+| Unica Mobilità | 88/88 | **in archivio** (dal 13/09, ramo `infortuni`) |
 | Condominio Più | 0/112 | da cominciare |
 | Unica Cane e Gatto | 0/66 | da cominciare |
 | Unica Salute | 0/74 | da cominciare |
 | Unica Viaggio | 0/64 | da cominciare |
 
-### Lotto imprese (8 set) - 1 in archivio dal 13/09
+### Lotto imprese (8 set) - 2 in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
 | Tutela Legale Aziende | 44/44 | **in archivio** (ramo `tutela`) |
-| Tutela Legale Professionisti | 24/44 | mancano 23-30 e 33-44 |
+| Tutela Legale Professionisti | 44/44 | **in archivio** (dal 13/09, ramo `tutela`) |
 | Focus Impresa | 0/204 | da cominciare |
 | Agricoltura e Servizi | 0/204 | da cominciare |
 | Focus Impresa Artigiano | 0/180 | da cominciare |
@@ -104,10 +110,11 @@ Ufficio e Studi, Scudo Cyber in due edizioni.
    controlli e INDICE). Unipol è passato da tre rami a sei. Era il passo
    con la resa più alta per token speso di tutto il piano, ed è costato
    **2,3 M**.
-2. **I cinque parziali** (217 pagine da trascrivere): Monopattini 35,
-   Navigare 49, Unica Famiglia 39, Unica Mobilità 74, Tutela Legale
-   Professionisti 20. Chiudono cinque set con poco lavoro, e i primi due
-   completano il lotto auto.
+2. ~~**I cinque parziali**~~ **FATTO il 13/09/2026** (217 pagine
+   trascritte: Monopattini 35, Navigare 49, Unica Famiglia 39, Unica
+   Mobilità 74, Tutela Legale Professionisti 20). Il lotto auto è
+   completo. Costo **~6,8 M** contro i 4,5 M stimati: vedi «Quanto
+   costa».
 3. **Casa e persona da zero** (316 pagine): Condominio Più, Unica Salute,
    Unica Viaggio, Unica Cane e Gatto. Aprono `ram-salute` e `ram-viaggi`
    per Unipol, e danno un secondo prodotto condominio accanto a
@@ -133,7 +140,8 @@ disco di questa macchina e non nel repo.
 - `local-ingestion/lavorazione-visiva/ocr/<pdf>/` la lettura Mistral OCR
   di **tutte** le 3.034 pagine: **è già stata pagata**, non si richiede.
 - `local-ingestion/lavorazione-visiva/archivio-pubblico/unipolsai/` i set
-  assemblati (auto, cyber, imprese, e dal 13/09 tutela, infortuni, casa).
+  assemblati: tutto il lotto auto, piu cyber, imprese, e dal 13/09 anche
+  tutela, infortuni e casa.
 - `local-ingestion/in-arrivo/unipol-censimento-2026-09-11.tsv` il
   censimento completo di unipol.it: 164 set, ~12.200 pagine, con uuid e
   pagina di origine. Serve se si vuole allargare la cernita oltre i 27.
@@ -195,7 +203,7 @@ Si committa solo `be-node/dati/catalogo-archivio.json`,
 `be-node/supabase/seed.sql` e i test toccati. Mai PDF né `.md`.
 
 Il test `integrazione-documenti.spec.ts` asserisce il **totale dei
-documenti a catalogo** (331 dal 13/09/2026) con un commento che li spiega
+documenti a catalogo** (354 dal 13/09/2026) con un commento che li spiega
 compagnia per compagnia: va aggiornato a ogni caricamento, commento
 compreso.
 
@@ -235,12 +243,43 @@ Sono numeri da leggere così:
 - Un set già trascritto costa **9-10 mila token a pagina**, contro i
   15-20 mila di uno da trascrivere.
 
+**Il passo 2, misurato** (13/09/2026, 217 pagine da trascrivere su cinque
+set): **~6,8 M** contro i 4,5 M stimati.
+
+| Voce | Token |
+|---|---|
+| Trascrizione, 5 coordinatori e 31 blocchi, 217 pagine | ~3,1 M (stimati al tasso del lotto: i trascrittori annidati non sono contati a parte) |
+| Secondo sguardo, 14 agenti, 93 pagine | 1,90 M |
+| INDICE, 5 agenti | 1,21 M |
+| Coordinatori (il loro contesto, senza i trascrittori) | 0,37 M |
+| Orchestrazione | ~0,20 M |
+
+**Attenzione a come si leggono questi numeri.** La cifra che l'armatura
+riporta per ogni subagente, e che è quella usata in tutte le tabelle qui
+sopra, **non è il consumo cumulato**: somma i transcript dei subagenti
+sopravvissuti in `tasks/` dà ~43 M di token letti e scritti, per la
+gran parte riletture di cache (che si pagano il 10%). La cifra
+dell'armatura si comporta come la dimensione del contesto raggiunto, non
+come il totale fatturato. Serve per confrontare un passo con l'altro, non
+per stimare una bolletta.
+
+Due cose spiegano lo sforamento sul preventivo:
+
+- **La trascrizione dei parziali non gode dello sconto del blocco pieno.**
+  Trentuno blocchi per 217 pagine sono in media 7 pagine a blocco invece
+  di 10, e il costo fisso di un trascrittore (leggere istruzioni,
+  convenzioni e regole) si spalma su meno pagine.
+- **Il secondo sguardo è cresciuto di nuovo**: 20 mila token a pagina
+  controllata. Gli agenti ora si costruiscono un diff meccanico, leggono
+  i font col comando qui sotto e misurano i bounding box. È il motivo per
+  cui questo passo ha trovato ventuno numeri inventati.
+
 Da qui il conto dei quattro passi dell'ordine di lavoro:
 
 | Passo | Pagine da trascrivere | Costo stimato |
 |---|---|---|
 | ~~1. I tre set pronti~~ | 0 | **2,3 M, misurati** (stima: 1,5 M) |
-| 2. I cinque parziali | 217 | ~4,5 M |
+| ~~2. I cinque parziali~~ | 217 | **~6,8 M, misurati** (stima: 4,5 M) |
 | 3. Casa e persona da zero | 316 | ~6 M |
 | 4. Imprese da zero | 792 | ~14 M |
 
@@ -282,7 +321,46 @@ già stata pagata**.
 - I dubbi che un agente lascia aperti in fondo al resoconto **vanno letti
   e chiusi**: quello dell'INDICE di Casa («quale scala è stampata in
   calce, di 69 o di 70?») è costato una riga di `pdftotext` e ha
-  trasformato un'ambiguità in un'incoerenza documentata del set.
+  trasformato un'ambiguità in un'incoerenza documentata del set. Lo stesso
+  dubbio, e la stessa riga, sono tornati su Unica Famiglia.
+- **Il grassetto non si giudica a occhio, si misura.** Un agente a 400 dpi
+  ha tolto il grassetto a due righe di Tutela Legale Aziende; un altro,
+  sulla stessa riga del set gemello, ha letto la famiglia di font e ha
+  visto che è `ApexNew-Medium`, cioè il grassetto del documento. Aveva
+  ragione il secondo, e il set era già in archivio: è stato ricaricato.
+  Il comando è `pdftohtml -xml -fontfullname -f N -l N -stdout <pdf>`:
+  `ApexNew-Book` è il tondo, `ApexNew-Medium` il grassetto, e le
+  clausole limitative **evidenziate in azzurro** sono Book, quindi non si
+  marcano (è l'errore che Mistral OCR fa di continuo).
+- **Il testimone di fedeltà segnala anche i «numeri comparsi»**, cioè
+  cifre presenti nella trascrizione e in nessun testimone: sono il
+  sintomo di numeri inventati, e vanno girati al secondo sguardo come
+  domanda esplicita. Su Unica Mobilità ne sono usciti ventuno, nelle
+  tabelle INAIL: dove la percentuale è stampata una volta sola a cavallo
+  delle colonne Destro e Sinistro, il trascrittore l'aveva scritta in
+  tutte e due.
+- **Le barre di sezione in testa alla pagina si perdono facilmente.** Tre
+  set su otto avevano omesso «INFORMATIVA PRIVACY» o «PRINCIPALI NORME DI
+  LEGGE», sempre ragionando per analogia con un set dove quella barra non
+  c'è (Unica Casa è l'eccezione: lì la barra non è stampata). Il controllo
+  meccanico è confrontare la prima riga del layer di testo col primo
+  titolo del file-pagina, ma **è uno screening, non un verdetto**: su
+  Unica Casa segnala un falso positivo, perché «INFORMATIVA PRIVACY» è
+  presente nel layer come testo invisibile coperto da un'altra barra. Ogni
+  segnalazione va guardata su un rendering.
+- **Il gemello non fa solo risparmiare, fa trovare.** L'INDICE di Tutela
+  Legale Professionisti è stato scritto con quello di Tutela Legale
+  Aziende accanto, e il diff riga per riga ha tirato fuori differenze che
+  una lettura isolata non avrebbe visto: nelle Condizioni aggiuntive 2 e 4
+  qui manca l'inciso «Ad eccezione dei Legali rappresentanti».
+- **Le mappe delle sezioni nei piani di trascrizione non sono affidabili.**
+  Quella di `navigare-diporto` saltava del tutto due Sezioni su cinque.
+  L'assetto vero si ricava dalle barre di sezione stampate, con un giro di
+  `pdftotext -layout` sulla prima riga di ogni pagina.
+- **Trascrivere solo le pagine mancanti**, e non il blocco intero che le
+  contiene, è una deroga alle istruzioni dell'orchestratore che va detta
+  esplicitamente nel prompt del coordinatore: senza, ritrascrive pagine
+  che ci sono già.
 
 ## DeepSeek Flash come trascrittore: proposta aperta
 
