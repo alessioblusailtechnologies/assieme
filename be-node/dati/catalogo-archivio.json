@@ -5056,6 +5056,96 @@
   "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-infortuni/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-unica-mobilita-ed-2025-10-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Unica Mobilità",
+  "titolo": "Condizioni di Assicurazione — Unipol Unica Mobilità",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 64,
+  "paginaInizio": 13,
+  "edizione": {
+   "id": "edz-unica-mobilita-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-mobilita-ed-2025-10-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Unica Mobilità",
+  "titolo": "DIP Danni — Unipol Unica Mobilità",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-unica-mobilita-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-mobilita-ed-2025-10-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Unica Mobilità",
+  "titolo": "DIP Aggiuntivo Danni — Unipol Unica Mobilità",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-unica-mobilita-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-mobilita-ed-2025-10-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Unica Mobilità",
+  "titolo": "Informativa Privacy — Unipol Unica Mobilità",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 81,
+  "edizione": {
+   "id": "edz-unica-mobilita-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-unica-mobilita-ed-2025-10-riferimenti-utili",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-infortuni",
+  "prodotto": "Unica Mobilità",
+  "titolo": "Numeri e Riferimenti Utili — Unipol Unica Mobilità",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 77,
+  "edizione": {
+   "id": "edz-unica-mobilita-2025-10",
+   "etichetta": "ed. 10/2025",
+   "validaDal": "2025-10-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/riferimenti-utili.md",
+  "pathPdf": "archivio-pubblico/unipolsai/infortuni/unica-mobilita/ed-2025-10/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-unica-protezione-veicolo-ed-2026-05-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-auto",
