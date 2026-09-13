@@ -1437,6 +1437,60 @@
   "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove/ed-2025-07/originale.pdf"
  },
  {
+  "id": "doc-generali-immagina-strade-nuove-passione-moto-ed-2026-01-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove Passione Moto",
+  "titolo": "Condizioni di Assicurazione — Generali Italia Immagina Strade Nuove Passione Moto",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 111,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-passione-moto-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-strade-nuove-passione-moto-ed-2026-01-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove Passione Moto",
+  "titolo": "DIP Danni — Generali Italia Immagina Strade Nuove Passione Moto",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-passione-moto-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/dip.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/originale.pdf"
+ },
+ {
+  "id": "doc-generali-immagina-strade-nuove-passione-moto-ed-2026-01-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-auto",
+  "prodotto": "Immagina Strade Nuove Passione Moto",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Generali Italia Immagina Strade Nuove Passione Moto",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-immagina-strade-nuove-passione-moto-2026-01",
+   "etichetta": "ed. 01/2026",
+   "validaDal": "2026-01-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/auto/immagina-strade-nuove-passione-moto/ed-2026-01/originale.pdf"
+ },
+ {
   "id": "doc-generali-sei-in-viaggio-ed-2015-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-generali",
   "ramoId": "ram-viaggi",
@@ -1489,6 +1543,78 @@
   },
   "pathMd": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/dip-aggiuntivo.md",
   "pathPdf": "archivio-pubblico/generali/viaggi/sei-in-viaggio/ed-2015-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-vivicondominio-ed-2026-07-condizioni-di-assicurazione",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "ViviCondomìnio",
+  "titolo": "Condizioni di Assicurazione — Generali Italia ViviCondomìnio",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 102,
+  "paginaInizio": 18,
+  "edizione": {
+   "id": "edz-vivicondominio-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-11",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-vivicondominio-ed-2026-07-dip",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "ViviCondomìnio",
+  "titolo": "DIP Danni — Generali Italia ViviCondomìnio",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-vivicondominio-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-11",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/dip.md",
+  "pathPdf": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-vivicondominio-ed-2026-07-dip-aggiuntivo",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "ViviCondomìnio",
+  "titolo": "DIP Aggiuntivo Danni — Generali Italia ViviCondomìnio",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 5,
+  "paginaInizio": 5,
+  "edizione": {
+   "id": "edz-vivicondominio-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-11",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/originale.pdf"
+ },
+ {
+  "id": "doc-generali-vivicondominio-ed-2026-07-indice-del-prodotto",
+  "compagniaId": "cmp-generali",
+  "ramoId": "ram-casa",
+  "prodotto": "ViviCondomìnio",
+  "titolo": "Indice del prodotto — Generali Italia ViviCondomìnio",
+  "tipologia": "altro",
+  "numeroPagine": 8,
+  "paginaInizio": 10,
+  "edizione": {
+   "id": "edz-vivicondominio-2026-07",
+   "etichetta": "ed. 07/2026",
+   "validaDal": "2026-07-11",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/indice-del-prodotto.md",
+  "pathPdf": "archivio-pubblico/generali/casa/vivicondominio/ed-2026-07/originale.pdf"
  },
  {
   "id": "doc-groupama-autocontrollo-altri-veicoli-ed-2026-01-condizioni-di-assicurazione",
