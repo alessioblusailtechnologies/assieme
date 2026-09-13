@@ -20,12 +20,12 @@ lavoro che vale.
 | Nobis | auto (natanti, bici, conducente) | 8 | 60 | ~590 |
 | HDI | auto | 6 | 20 | ~270 |
 | Groupama | auto | 5 | 15 | ~340 |
-| **Generali** | auto, **viaggi** | 3 | 9 | ~80 |
+| **Generali** | auto, viaggi | 4 | 12 | ~220 |
 
 Fuori tabella: Allianz, AXA, Cattolica (gruppo Generali, AUTOPIÙ).
 
 I rami `ram-rc-prof`, `ram-tutela` e `ram-vita` sono **vuoti per tutte le
-compagnie**. Il totale a catalogo è 292 documenti (il test
+compagnie**. Il totale a catalogo è 295 documenti (il test
 `integrazione-documenti.spec.ts` asserisce quel numero: va aggiornato a
 ogni caricamento).
 
@@ -53,7 +53,7 @@ Tre forme di pubblicazione, e cambiano il lavoro:
 
 | Prodotto | Copre | Edizione |
 |---|---|---|
-| Immagina Strade Nuove | autovetture, il prodotto di punta | 07/2025 |
+| Immagina Strade Nuove | autovetture, il prodotto di punta | 07/2025, **in archivio** |
 | Immagina Strade Nuove Passione Moto | moto e scooter (+ appendice monopattini) | 01/2026 |
 | Generali Sei in Auto - Altri Veicoli | autobus, macchine operatrici | 01/2026 |
 | ATTIVA Veicoli commerciali | autocarri e furgoni (+ appendice telematica) | 05/2025 |
@@ -116,7 +116,7 @@ PDF già scaricati, con `LOTTO.json` scritto, in
 | # | Set | Ramo | Ed. | Pagine | Stato |
 |---|---|---|---|---|---|
 | 1 | Generali Sei in Viaggio | viaggi | 25/07/2015 | 39 | **in archivio** (13/09) |
-| 2 | Immagina Strade Nuove (auto) | auto | 07/2025 | 144 | **in lavorazione** |
+| 2 | Immagina Strade Nuove (auto) | auto | 01/07/2025 | 144 | **in archivio** (13/09) |
 | 3 | Immagina Adesso Cucciolo | casa | 28/06/2025 | 51 | da fare |
 | 4 | Immagina Adesso Armonia | tutela | 28/06/2025 | 53 | da fare |
 | 5 | Immagina Adesso Norme comuni | (trasversale) | 28/06/2025 | 14 | da fare |
@@ -143,9 +143,16 @@ Sul primo set (39 pagine), token di subagenti:
 | Scrittura dell'INDICE | 184.321 |
 | **Totale** | **830.617** |
 
-**Circa 21.000 token a pagina**, più l'orchestrazione, più 4 dollari ogni
-1.000 pagine di Mistral OCR (il testimone). Le 1.010 pagine che restano
-del lotto 1 valgono quindi **una ventina di milioni di token**: più di una
+Sul secondo set (Immagina Strade Nuove, 144 pagine): 1.305.684 di
+trascrizione in 15 blocchi, 363.687 di secondo sguardo (6 pagine segnalate
+più 14 a campione), 276.645 di INDICE, **1.946.016 in tutto**, cioè
+**13.500 token a pagina**. Il set grande costa meno a pagina del piccolo:
+l'INDICE e i testimoni si spalmano, e con la cornice riconosciuta bene il
+testimone OCR ha segnalato 6 pagine su 140 invece di 18 su 39.
+
+**Circa 21.000 token a pagina sul set piccolo, 13.500 sul grande**, più l'orchestrazione, più 4 dollari ogni
+1.000 pagine di Mistral OCR (il testimone). Le 866 pagine che restano
+del lotto 1 valgono quindi **una dozzina di milioni di token**: più di una
 sessione. Si va un set alla volta, e il modulo Salute e Benessere (366
 pagine, 7-8 milioni) vuole una sessione sua.
 
