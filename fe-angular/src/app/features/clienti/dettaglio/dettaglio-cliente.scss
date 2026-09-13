@@ -383,6 +383,46 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Le azioni su un documento stanno dietro un menù in fondo alla riga, fuori
+   dal link: scritte per esteso accanto alle etichette si leggevano come
+   un'etichetta. Le righe senza menù tengono lo stesso spazio, perché stato
+   e data restino in colonna. */
+.doc__altro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+button.doc__altro:hover,
+button.doc__altro:focus-visible {
+  background: var(--c-page-alt);
+  color: var(--c-text);
+}
+
+/* Un file che sta salendo non è ancora un documento: non si apre, e non
+   reagisce al passaggio del puntatore come se si aprisse. */
+.doc--in-salita:hover {
+  background: none;
+}
+
+.doc--in-salita .doc__icona {
+  color: var(--c-text-mute);
+}
+
+.doc__sotto--errore {
+  white-space: normal;
+  color: var(--c-warn);
+}
+
 /* ---------- Le chat ---------- */
 
 .chat .riga {

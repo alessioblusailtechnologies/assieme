@@ -380,12 +380,22 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
   if (percorso === base && req.method === 'POST') {
     const corpo = await leggiCorpo(req);
     const file = leggiMultipart(corpo, req.headers['content-type']);
+    /* Chi carica dalla scheda di un cliente manda `clienteId` prima dei file
+       (13/09/2026): i documenti nascono intestati a lui. */
+    const clienteId = /name="clienteId"\r\n\r\n([^\r\n]*)\r\n/.exec(
+      Buffer.from(corpo).toString('latin1'),
+    )?.[1];
 
     if (!file.length) {
       inviaJson(res, 400, {
         codice: 'NESSUN_FILE',
         messaggio: 'La richiesta non contiene file.',
       });
+      return true;
+    }
+
+    if (clienteId && !clientePerId(clienteId)) {
+      inviaJson(res, 400, { codice: 'DATI_NON_VALIDI', messaggio: 'Cliente inesistente.' });
       return true;
     }
 
@@ -437,6 +447,7 @@ export async function gestisci(req, res, url, { inviaJson, leggiCorpo, corrispon
            come proposta da controllare invece che come dato acquisito. */
         classificazioneDaConfermare: true,
         ...classifica(f.nome),
+        ...(clienteId && { clienteId }),
       };
       DOCUMENTI.unshift(documento);
       programma(documento, MS_IN_CODA);

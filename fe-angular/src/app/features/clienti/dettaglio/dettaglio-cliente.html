@@ -290,7 +290,7 @@
           </button>
         </div>
 
-        @if (!documenti().length) {
+        @if (!documenti().length && !inSalita().length) {
           <ui-stato-vuoto
             icona="archivio-privato"
             titolo="Nessun documento"
@@ -298,6 +298,46 @@
           />
         } @else {
           <div class="documenti">
+            <!--
+              I file che stanno salendo hanno la loro riga dal momento della
+              scelta, prima che il server risponda, e la cedono a quella vera
+              appena l'elenco la contiene.
+            -->
+            @for (v of inSalita(); track v.chiave) {
+              <div class="doc doc--in-salita">
+                <span class="doc__apri">
+                  <span class="doc__icona"><ui-icon name="carica" [size]="17" /></span>
+                  <span class="doc__corpo">
+                    <span class="doc__titolo">{{ v.nome }}</span>
+                    <span class="doc__sotto" [class.doc__sotto--errore]="!!v.errore">
+                      {{ v.errore ?? 'in caricamento' }}
+                    </span>
+                  </span>
+                  <span class="doc__coda">
+                    @if (v.errore) {
+                      <ui-etichetta-stato tono="errore" icona="errore">non caricato</ui-etichetta-stato>
+                    } @else {
+                      <ui-etichetta-stato tono="corso" icona="in-corso" [girante]="true">
+                        {{ statoSalita(v) }}
+                      </ui-etichetta-stato>
+                    }
+                  </span>
+                </span>
+                @if (v.errore) {
+                  <button
+                    type="button"
+                    class="doc__altro"
+                    aria-label="Togli dall'elenco"
+                    (click)="togliDallaSalita(v)"
+                  >
+                    <ui-icon name="chiudi" [size]="15" />
+                  </button>
+                } @else {
+                  <span class="doc__altro" aria-hidden="true"></span>
+                }
+              </div>
+            }
+
             @for (d of documenti(); track d.id) {
               <div class="doc">
                 <a class="doc__apri" [routerLink]="['/archivio/privato', d.id]">
@@ -324,14 +364,12 @@
                   </span>
                 </a>
                 <button
-                  uiBottone
-                  variante="testo"
-                  dimensione="piccolo"
                   type="button"
-                  [attr.aria-label]="'Togli ' + d.titolo + ' da questo cliente'"
-                  (click)="staccaDocumento(d)"
+                  class="doc__altro"
+                  [attr.aria-label]="'Altre azioni su ' + d.titolo"
+                  (click)="apriMenu($event, d)"
                 >
-                  <span>Non è suo</span>
+                  <ui-icon name="altre-azioni" [size]="16" />
                 </button>
               </div>
             }
@@ -339,6 +377,8 @@
         }
       </section>
     </ui-zona-caricamento>
+
+    <ui-menu-azioni #menuDocumento [voci]="vociMenu()" />
   }
 
   <!-- ---------- Chat ---------- -->

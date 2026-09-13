@@ -1,5 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse, httpResource } from '@angular/common/http';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  signal,
+  untracked,
+  viewChild,
+} from '@angular/core';
+import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -14,6 +24,7 @@ import type {
   Cliente,
   DocumentoPrivato,
   ErroreApi,
+  Id,
   Paginato,
   SchedaCliente,
 } from '@core/models';
@@ -22,7 +33,9 @@ import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
 import { CellaStato } from '@features/archivio-privato/elenco/celle/cella-stato';
 import { CreazioneChat } from '@features/chat-clienti/creazione/creazione-chat';
+import { EtichettaStato } from '@shared/ui/etichetta-stato/etichetta-stato';
 import { Icona } from '@shared/ui/icona/icona';
+import { MenuAzioni, VoceMenu } from '@shared/ui/menu-azioni/menu-azioni';
 import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { Select } from '@shared/ui/select/select';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
@@ -32,6 +45,24 @@ import { ESTENSIONI_DOCUMENTO, FORMATI_DOCUMENTO } from '@core/models';
 
 /** Le tre schede: dove sta tutto quello che riguarda un cliente. */
 type Scheda = 'anagrafica' | 'documenti' | 'chat';
+
+/** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione: come nell'archivio. */
+const MS_INTERROGAZIONE = 2000;
+
+/**
+ * Un file che sta salendo. La riga compare **alla scelta**, non alla
+ * risposta del server: fra le due passano il trasferimento e il
+ * salvataggio, e un elenco che in quel tempo resta fermo sembra non aver
+ * sentito il gesto.
+ */
+interface FileInSalita {
+  chiave: number;
+  nome: string;
+  percentuale: number;
+  errore?: string;
+  /** I documenti che il caricamento ha creato, quando il server ha risposto. */
+  creati?: Id[];
+}
 
 /**
  * La scheda di un cliente.
@@ -56,8 +87,10 @@ type Scheda = 'anagrafica' | 'documenti' | 'chat';
     CellaStato,
     CreazioneChat,
     DatePipe,
+    EtichettaStato,
     FormsModule,
     Icona,
+    MenuAzioni,
     RouterLink,
     Scheletro,
     Select,
@@ -169,6 +202,28 @@ export class DettaglioCliente {
       this.note.set(c.note ?? '');
       this.etichette.set([...c.etichette]);
     });
+
+    /*
+     * RF-B-05 anche qui: lo stato di elaborazione si aggiorna da solo finché
+     * qualcosa è in lavorazione, e l'interrogazione si ferma quando tutto è
+     * assestato. Senza, un documento pronto in venti secondi restava
+     * «elaborazione» a video finché non si ricaricava la pagina.
+     */
+    effect((pulizia) => {
+      if (this.scheda() !== 'documenti' || !this.inTransito()) return;
+      const battito = setInterval(() => this.risorsaDocumenti.reload(), MS_INTERROGAZIONE);
+      pulizia(() => clearInterval(battito));
+    });
+
+    /* Quando l'ultimo documento si assesta si rilegge la scheda: la
+       classificazione può aver trovato una scadenza da mostrare
+       nell'anagrafica. */
+    let eraInTransito = false;
+    effect(() => {
+      const ora = this.inTransito();
+      if (eraInTransito && !ora) untracked(() => this.risorsa.reload());
+      eraInTransito = ora;
+    });
   }
 
   protected readonly modificato = computed(() => {
@@ -256,28 +311,107 @@ export class DettaglioCliente {
 
   // --- I documenti ----------------------------------------------------------
 
-  /** Caricare dalla scheda intesta da sé: è il gesto per cui si è qui. */
+  /**
+   * Vero finché almeno un documento non si è assestato. È un booleano e non
+   * l'elenco dei documenti in transito, come nell'archivio: un elenco
+   * sarebbe un array nuovo a ogni risposta, e farebbe ripartire
+   * l'interrogazione anche quando non è cambiato nulla.
+   */
+  protected readonly inTransito = computed(() =>
+    this.documenti().some((d) => d.stato === 'in-coda' || d.stato === 'in-elaborazione'),
+  );
+
+  private progressivo = 0;
+  private readonly vociInSalita = signal<FileInSalita[]>([]);
+
+  /**
+   * Le righe provvisorie da mostrare: una sparisce quando l'elenco contiene
+   * i documenti che il suo caricamento ha creato, così quella vera prende il
+   * suo posto senza un momento di vuoto in mezzo.
+   */
+  protected readonly inSalita = computed(() => {
+    const presenti = new Set(this.documenti().map((d) => d.id));
+    return this.vociInSalita().filter((v) => !v.creati?.every((id) => presenti.has(id)));
+  });
+
+  /**
+   * Caricare dalla scheda intesta da sé: è il gesto per cui si è qui. Il
+   * cliente viaggia insieme ai file e i documenti nascono già suoi.
+   * Intestarli dopo, con una seconda richiesta, lasciava all'ingestion il
+   * tempo di leggerli senza cliente e di cercarne uno per conto suo.
+   */
   protected carica(file: File[]): void {
     if (!file.length) return;
-    this.apiDocumenti.carica(file).subscribe({
+    const lotto = file.map((f) => ({ chiave: ++this.progressivo, nome: f.name, percentuale: 0 }));
+    const chiavi = new Set(lotto.map((v) => v.chiave));
+    const aggiorna = (modifica: (v: FileInSalita) => FileInSalita) =>
+      this.vociInSalita.update((voci) => voci.map((v) => (chiavi.has(v.chiave) ? modifica(v) : v)));
+
+    /* Le righe dei caricamenti di prima che hanno già ceduto il posto si
+       tolgono qui, invece di accumularsi. */
+    const ancoraVisibili = new Set(this.inSalita());
+    this.vociInSalita.update((voci) => [...lotto, ...voci.filter((v) => ancoraVisibili.has(v))]);
+
+    this.apiDocumenti.carica(file, { clienteId: this.id() }).subscribe({
       next: (evento) => {
-        if (typeof evento === 'object' && 'body' in evento && evento.body) {
-          const creati = (evento.body as { creati: DocumentoPrivato[] }).creati ?? [];
-          if (!creati.length) return;
-          this.apiDocumenti
-            .assegna({ documenti: creati.map((d) => d.id), clienteId: this.id() })
-            .subscribe({
-              next: () => {
-                this.risorsaDocumenti.reload();
-                this.risorsa.reload();
-              },
-            });
+        if (evento.type === HttpEventType.UploadProgress && evento.total) {
+          const percentuale = Math.round((evento.loaded / evento.total) * 100);
+          aggiorna((v) => ({ ...v, percentuale }));
         }
+        if (evento.type === HttpEventType.Response) {
+          const creati = (evento.body?.creati ?? []).map((d) => d.id);
+          aggiorna((v) => ({ ...v, percentuale: 100, creati }));
+          this.risorsaDocumenti.reload();
+          this.risorsa.reload();
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        const errore = (err.error as ErroreApi | null)?.messaggio ?? 'Caricamento non riuscito.';
+        aggiorna((v) => ({ ...v, errore }));
       },
     });
   }
 
-  protected staccaDocumento(documento: DocumentoPrivato): void {
+  /** La riga di un caricamento rifiutato si toglie a mano: il motivo va letto, non deve sparire da solo. */
+  protected togliDallaSalita(voce: FileInSalita): void {
+    this.vociInSalita.update((voci) => voci.filter((v) => v.chiave !== voce.chiave));
+  }
+
+  /** Finché i byte salgono si dice quanto manca; dopo, il server sta salvando. */
+  protected statoSalita(voce: FileInSalita): string {
+    return voce.percentuale < 100 ? `${voce.percentuale}%` : 'in arrivo';
+  }
+
+  /*
+   * Le azioni su un documento stanno dietro un menù: un «Non è suo» scritto
+   * sulla riga, accanto alle etichette, si leggeva come un'etichetta. Un
+   * menù per la schermata, non uno per riga.
+   */
+  private readonly menu = viewChild<MenuAzioni>('menuDocumento');
+  protected readonly vociMenu = signal<VoceMenu[]>([]);
+
+  protected apriMenu(evento: Event, documento: DocumentoPrivato): void {
+    const nome = this.cliente()?.nome ?? 'questo cliente';
+    this.vociMenu.set([
+      /* Una proposta dell'ingestion si conferma da dove la si sta guardando. */
+      ...(documento.clienteDaConfermare
+        ? [{ etichetta: `Confermalo a ${nome}`, azione: () => this.confermaDocumento(documento) }]
+        : []),
+      /* Senza dettaglio a destra: accanto a un nome lungo mandava la voce a
+         capo e il menù contro il bordo dello schermo. «Togli da» basta a non
+         confonderla con un'eliminazione. */
+      { etichetta: `Togli da ${nome}`, azione: () => this.staccaDocumento(documento) },
+    ]);
+    this.menu()?.apri(evento);
+  }
+
+  private confermaDocumento(documento: DocumentoPrivato): void {
+    this.apiDocumenti.assegna({ documenti: [documento.id], confermaCliente: true }).subscribe({
+      next: () => this.risorsaDocumenti.reload(),
+    });
+  }
+
+  private staccaDocumento(documento: DocumentoPrivato): void {
     this.apiDocumenti.modifica(documento.id, { clienteId: null }).subscribe({
       next: () => {
         this.risorsaDocumenti.reload();

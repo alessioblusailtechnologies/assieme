@@ -71,13 +71,18 @@ async function pdfDiProva(pagine = 2, testo = 'Preventivo RC Auto'): Promise<Buf
   return Buffer.from(await documento.save());
 }
 
-/** Il corpo multipart che manda il FE: campo `file` ripetuto, un filename per parte. */
-function multipart(file: Array<{ nome: string; contenuto: Buffer; tipo?: string }>): {
-  corpo: Buffer;
-  contentType: string;
-} {
+/** Il corpo multipart che manda il FE: i campi prima, poi `file` ripetuto, un filename per parte. */
+function multipart(
+  file: Array<{ nome: string; contenuto: Buffer; tipo?: string }>,
+  campi: Record<string, string> = {},
+): { corpo: Buffer; contentType: string } {
   const confine = `----velia-${Math.random().toString(16).slice(2)}`;
   const pezzi: Buffer[] = [];
+  for (const [nome, valore] of Object.entries(campi)) {
+    pezzi.push(
+      Buffer.from(`--${confine}\r\nContent-Disposition: form-data; name="${nome}"\r\n\r\n${valore}\r\n`),
+    );
+  }
   for (const f of file) {
     pezzi.push(
       Buffer.from(
@@ -147,8 +152,8 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
       ...(payload && { payload }),
     });
 
-  const carica = (token: string, file: Parameters<typeof multipart>[0]) => {
-    const { corpo, contentType } = multipart(file);
+  const carica = (token: string, file: Parameters<typeof multipart>[0], campi?: Record<string, string>) => {
+    const { corpo, contentType } = multipart(file, campi);
     return app.inject({
       method: 'POST',
       url: '/api/documenti-privati',
@@ -273,6 +278,45 @@ describe.skipIf(!pronto)('archivio privato col progetto Supabase', () => {
        si porta via ciò che ha creato. */
     await pool().query(`delete from velia.jobs where payload->>'documentoId' = $1`, [documento.id]);
     await pool().query(`delete from velia.documenti where id = $1`, [documento.id]);
+  });
+
+  it('upload dalla scheda di un cliente: i documenti nascono suoi; un cliente che non c’è è un 400 senza byte orfani', async () => {
+    const riga = await pool().query<{ id: string }>(
+      `insert into velia.clienti (tenant_id, nome, nome_normalizzato) values ($1, 'Rossi Caricamento', '') returning id`,
+      [TENANT_COLLAUDO],
+    );
+    const clienteId = riga.rows[0]!.id;
+    const nati: string[] = [];
+    try {
+      const r = await carica(tokenAdmin, [{ nome: 'polizza-rossi.pdf', contenuto: await pdfDiProva(1) }], {
+        clienteId,
+      });
+      expect(r.statusCode).toBe(201);
+      const documento = r.json<EsitoCaricamento>().creati[0]!;
+      nati.push(documento.id);
+      /* Suo per parola di chi carica, non una proposta: niente da
+         confermare, e l'ingestion lo trova già intestato. */
+      expect(documento.cliente).toEqual({ id: clienteId, nome: 'Rossi Caricamento' });
+      expect(documento.clienteDaConfermare).toBeUndefined();
+
+      const filePrima = archivio.file.size;
+      const inesistente = await carica(
+        tokenAdmin,
+        [{ nome: 'di-nessuno.pdf', contenuto: await pdfDiProva(1) }],
+        { clienteId: '00000000-0000-4000-8000-000000000000' },
+      );
+      expect(inesistente.statusCode).toBe(400);
+      expect(inesistente.json<CorpoErroreApi>().codice).toBe('DATI_NON_VALIDI');
+      const malformato = await carica(tokenAdmin, [{ nome: 'x.pdf', contenuto: await pdfDiProva(1) }], {
+        clienteId: 'rossi',
+      });
+      expect(malformato.statusCode).toBe(400);
+      expect(archivio.file.size).toBe(filePrima);
+    } finally {
+      await pool().query(`delete from velia.jobs where payload->>'documentoId' = any($1)`, [nati]);
+      await pool().query(`delete from velia.documenti where id = any($1)`, [nati]);
+      await pool().query(`delete from velia.clienti where id = $1`, [clienteId]);
+    }
   });
 
   it('upload multiplo → 201 {creati}: in coda, titolo dal nome, proposta da confermare, job accodati', async () => {

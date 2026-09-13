@@ -10,6 +10,7 @@ import {
 } from '../../contratto/clienti.js';
 import { type Compagnia, type Ramo, type TipologiaDocumento } from '../../contratto/documenti.js';
 import {
+  schemaClienteCaricamento,
   schemaFiltriDocumentiPrivati,
   schemaModificheDocumento,
   type DocumentoPrivato,
@@ -256,10 +257,19 @@ export function registraRotteArchivioPrivato(
        misto (qualche file sciolto, qualche cartella). */
     const ricevuti: FileConPercorso[] = [];
     let percorsoInAttesa: string | undefined;
+    /* Chi carica dalla scheda di un cliente manda `clienteId` prima dei
+       file (13/09/2026): i documenti nascono intestati a lui, per sua parola
+       e non come proposta. Intestarli con una seconda richiesta lasciava
+       all'ingestion il tempo di leggere la riga ancora senza cliente e di
+       cercarne, o crearne, uno per conto suo. */
+    let clienteRichiesto: string | undefined;
     for await (const parte of richiesta.parts()) {
       if (parte.type === 'field') {
         if (parte.fieldname === 'percorso' && typeof parte.value === 'string') {
           percorsoInAttesa = normalizzaPercorso(parte.value) ?? undefined;
+        }
+        if (parte.fieldname === 'clienteId' && typeof parte.value === 'string') {
+          clienteRichiesto = parte.value;
         }
         continue;
       }
@@ -289,11 +299,20 @@ export function registraRotteArchivioPrivato(
     if (!ricevuti.length) {
       throw new ErroreApi(400, 'NESSUN_FILE', 'La richiesta non contiene file.');
     }
+    let clienteId: string | undefined;
+    if (clienteRichiesto !== undefined) {
+      const esito = schemaClienteCaricamento.safeParse(clienteRichiesto);
+      if (!esito.success) throw ErroreApi.datiNonValidi('Cliente non valido.');
+      clienteId = esito.data;
+    }
 
     const { tenantId, utenteId } = richiesta.identita;
-    const spazio = await conIdentita(poolDb(), richiesta.identita, (client) =>
-      spazioDelTenant(client, tenantId),
-    );
+    const spazio = await conIdentita(poolDb(), richiesta.identita, async (client) => {
+      /* Il cliente si verifica prima di toccare lo Storage: un id che non è
+         del tenant non deve lasciare byte orfani. */
+      if (clienteId) await esisteCliente(client, clienteId, tenantId);
+      return spazioDelTenant(client, tenantId);
+    });
 
     for (const f of ricevuti) {
       if (f.troncato || f.contenuto.length > spazio.limiteFileByte) {
@@ -369,8 +388,8 @@ export function registraRotteArchivioPrivato(
             `insert into velia.documenti
                (id, archivio, tenant_id, titolo, tipologia, stato, formato, path_originale,
                 path_pdf, nome_file, caricato_da, caricato_il, dimensione_byte,
-                classificazione_da_confermare, percorso_origine)
-             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true, $10)`,
+                classificazione_da_confermare, percorso_origine, cliente_id, cliente_da_confermare)
+             values ($1, 'privato', $2, $3, 'altro', 'in-coda', $4, $5, $6, $7, $8, now(), $9, true, $10, $11, false)`,
             [
               f.id,
               tenantId,
@@ -386,6 +405,7 @@ export function registraRotteArchivioPrivato(
                  caricamento, e dalla Fase 3 è da lì che nascono le
                  etichette di un'importazione. */
               f.percorsoOrigine ?? null,
+              clienteId ?? null,
             ],
           );
           esiti.push((await documentoPerId(client, tenantId, f.id))!);

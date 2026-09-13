@@ -136,6 +136,13 @@ export const schemaModificheDocumento = z
 export type ModificheDocumento = z.infer<typeof schemaModificheDocumento>;
 
 /**
+ * Il campo `clienteId` del caricamento multipart (13/09/2026): chi carica
+ * dalla scheda di un cliente lo manda prima dei file, e i documenti nascono
+ * intestati a lui, senza proposta da confermare.
+ */
+export const schemaClienteCaricamento = z.string().uuid();
+
+/**
  * Come un documento è entrato in archivio (01/09/2026), cioè come lo si
  * legge: è la **famiglia** del file, non la sua estensione.
  *

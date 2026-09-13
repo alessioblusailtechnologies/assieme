@@ -96,8 +96,12 @@ export class DocumentiPrivatiApi {
    * Su un preventivo da 300 KB non serve, su una scansione da 15 MB su
    * connessione d'agenzia sì — ed è il secondo caso a definire l'esperienza.
    */
-  carica(file: File[]): Observable<HttpEvent<EsitoCaricamento>> {
+  carica(file: File[], opzioni: { clienteId?: Id } = {}): Observable<HttpEvent<EsitoCaricamento>> {
     const corpo = new FormData();
+    /* Il cliente, quando si carica dalla sua scheda, va PRIMA dei file: il
+       server legge le parti in ordine, e i documenti nascono già intestati
+       invece di passare un momento senza cliente. */
+    if (opzioni.clienteId) corpo.append('clienteId', opzioni.clienteId);
     for (const f of file) {
       /* Il percorso di origine viaggia in un campo che PRECEDE il file a cui
          appartiene: nel `filename` i browser mettono solo il nome base, e
