@@ -32,13 +32,19 @@ censimento è sempre aggiornato.
 | 2 | Unica Mobilità | `infortuni` | 01/10/2025 | 88 | `c35fe91` |
 | 2 | Km&Servizi Monopattini | `auto` | 16/07/2026 | 56 | `fa21c30` |
 | 2 | Navigare Unità da diporto | `auto` | 01/08/2025 | 72 | `d5739fd` |
+| 3 | Unica Salute | `salute` | 01/10/2025 | 74 | `11b8ab6` |
+| 3 | Unica Viaggio | `viaggi` | 01/10/2025 | 64 | `187d276` |
+| 3 | Unica Cane e Gatto | `casa` | 01/10/2025 | 66 | `bb7fd6c` |
+| 3 | Condominio Più | `casa` | 01/09/2026 | 112 | `d570cfe` |
 
-Unipol passa da tre rami a sei (auto, imprese, cyber, **tutela**,
-**infortuni**, **casa**), il catalogo da 317 a **354 documenti**, le
-pagine trascritte da 1.635 a **1.852 su 3.034**. **Il lotto auto è
-completo, 11 set su 11.**
+Unipol passa da tre rami a otto (auto, imprese, cyber, **tutela**,
+**infortuni**, **casa**, **salute**, **viaggi**), il catalogo da 317 a
+**373 documenti**, le pagine trascritte da 1.635 a **2.168 su 3.034**.
+**Il lotto auto è completo, 11 set su 11**, e il lotto casa e persona
+pure, **8 su 8**. Con Condominio Più il catalogo ha **tre prodotti
+condominio** di tre compagnie.
 
-La prossima sessione riparte dal **passo 3**, casa e persona da zero.
+Resta solo il **passo 4**, le imprese da zero: 792 pagine, cinque set.
 
 ## Perché
 
@@ -75,7 +81,7 @@ Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 | Km&Servizi Monopattini elettrici | 56/56 | **in archivio** (dal 13/09) |
 | Navigare Unità da diporto | 72/72 | **in archivio** (dal 13/09) |
 
-### Lotto casa e persona (8 set) - 4 in archivio dal 13/09
+### Lotto casa e persona (8 set) - COMPLETO, tutti in archivio dal 13/09
 
 | Set | Pagine | Stato |
 |---|---|---|
@@ -83,10 +89,10 @@ Dal censimento. `COMPLETO` vuol dire trascritto, non caricato (salvo dove
 | Unica Infortuni | 110/110 | **in archivio** |
 | Unica Famiglia | 76/76 | **in archivio** (dal 13/09) |
 | Unica Mobilità | 88/88 | **in archivio** (dal 13/09, ramo `infortuni`) |
-| Condominio Più | 0/112 | da cominciare |
-| Unica Cane e Gatto | 0/66 | da cominciare |
-| Unica Salute | 0/74 | da cominciare |
-| Unica Viaggio | 0/64 | da cominciare |
+| Condominio Più | 112/112 | **in archivio** (dal 13/09) |
+| Unica Cane e Gatto | 66/66 | **in archivio** (dal 13/09) |
+| Unica Salute | 74/74 | **in archivio** (dal 13/09, ramo `salute`) |
+| Unica Viaggio | 64/64 | **in archivio** (dal 13/09, ramo `viaggi`) |
 
 ### Lotto imprese (8 set) - 2 in archivio dal 13/09
 
@@ -115,10 +121,11 @@ Ufficio e Studi, Scudo Cyber in due edizioni.
    Mobilità 74, Tutela Legale Professionisti 20). Il lotto auto è
    completo. Costo **~6,8 M** contro i 4,5 M stimati: vedi «Quanto
    costa».
-3. **Casa e persona da zero** (316 pagine): Condominio Più, Unica Salute,
-   Unica Viaggio, Unica Cane e Gatto. Aprono `ram-salute` e `ram-viaggi`
-   per Unipol, e danno un secondo prodotto condominio accanto a
-   ViviCondomìnio di Generali e a quello di Zurich.
+3. ~~**Casa e persona da zero**~~ **FATTO il 13/09/2026** (316 pagine).
+   Hanno aperto `ram-salute` e `ram-viaggi` per Unipol, e Condominio Più
+   è il terzo prodotto condominio del catalogo accanto a ViviCondomìnio
+   di Generali e a quello di Zurich. Costo **~7,7 M** contro i 6 M
+   stimati.
 4. **Imprese da zero** (792 pagine, cinque set): è il blocco più pesante e
    il meno urgente per la demo, perché Unipol imprese ha già Focus
    Commercio e Focus Ufficio e Studi in archivio.
@@ -203,7 +210,7 @@ Si committa solo `be-node/dati/catalogo-archivio.json`,
 `be-node/supabase/seed.sql` e i test toccati. Mai PDF né `.md`.
 
 Il test `integrazione-documenti.spec.ts` asserisce il **totale dei
-documenti a catalogo** (354 dal 13/09/2026) con un commento che li spiega
+documenti a catalogo** (373 dal 13/09/2026) con un commento che li spiega
 compagnia per compagnia: va aggiornato a ogni caricamento, commento
 compreso.
 
@@ -274,13 +281,33 @@ Due cose spiegano lo sforamento sul preventivo:
   i font col comando qui sotto e misurano i bounding box. È il motivo per
   cui questo passo ha trovato ventuno numeri inventati.
 
+**Il passo 3, misurato** (13/09/2026, 316 pagine trascritte da zero su
+quattro set): **~7,7 M** contro i 6 M stimati.
+
+| Voce | Token |
+|---|---|
+| Trascrizione, 4 coordinatori e 34 blocchi, 316 pagine | ~4,6 M (stimati al tasso del lotto) |
+| Secondo sguardo, 14 agenti, 101 pagine | 1,98 M |
+| INDICE, 4 agenti | 1,10 M |
+| Coordinatori (il loro contesto, senza i trascrittori) | 0,33 M |
+| Orchestrazione | ~0,15 M |
+
+Lo scarto rispetto alla stima è quasi tutto nella trascrizione, e la
+ragione è semplice: **316 pagine da zero costano più di 217 pagine
+sparse**, ma il costo unitario scende. Blocchi pieni da 10 pagine invece
+dei 7 medi del passo 2, e trentaquattro blocchi chiusi tutti al primo
+colpo, senza un solo secondo tentativo. **L'INDICE è sceso a 275 mila
+token a set** (contro i 240-410 mila del passo 2) perché per la prima
+volta ogni set aveva un gemello, e per tre su quattro era della stessa
+compagnia.
+
 Da qui il conto dei quattro passi dell'ordine di lavoro:
 
 | Passo | Pagine da trascrivere | Costo stimato |
 |---|---|---|
 | ~~1. I tre set pronti~~ | 0 | **2,3 M, misurati** (stima: 1,5 M) |
 | ~~2. I cinque parziali~~ | 217 | **~6,8 M, misurati** (stima: 4,5 M) |
-| 3. Casa e persona da zero | 316 | ~6 M |
+| ~~3. Casa e persona da zero~~ | 316 | **~7,7 M, misurati** (stima: 6 M) |
 | 4. Imprese da zero | 792 | ~14 M |
 
 Più 4 dollari ogni 1.000 pagine di Mistral OCR, **che per questi set è
@@ -361,6 +388,28 @@ già stata pagata**.
   contiene, è una deroga alle istruzioni dell'orchestratore che va detta
   esplicitamente nel prompt del coordinatore: senza, ritrascrive pagine
   che ci sono già.
+- **Un errore trovato una volta si previene, non si ricorregge.** L'avviso
+  sulle celle unite («la percentuale stampata una volta sola a cavallo di
+  Destro/Sinistro va nella prima cella, la seconda resta vuota»), messo
+  nel prompt dei coordinatori del passo 3, ha fatto sì che nella tabella
+  INAIL di Unica Viaggio i trentacinque valori a cella unica fossero letti
+  bene al primo colpo. Nel passo 2 lo stesso errore era costato ventuno
+  correzioni a valle. Vale la pena passare al coordinatore un elenco corto
+  degli errori già visti.
+- **Passare al secondo sguardo quello che si è già verificato** evita che
+  lo rifaccia: nei prompt del passo 3 c'erano la mappa corretta delle
+  sezioni, i refusi già confermati e le domande puntuali sui punti
+  sospetti. Le domande puntuali servono anche quando la risposta è «va
+  bene così»: su Cane e Gatto ne sono state chiuse due in positivo, e
+  senza chiederle sarebbero rimaste dubbi.
+- **L'INDICE è anche un controllo sul manifesto.** Chi lo scriveva su
+  Unica Viaggio si è accorto che l'informativa privacy dichiarava otto
+  pagine dove il piede stampato ne numera sei: il manifesto includeva per
+  errore la pagina bianca e il retro di copertina. Nessun altro passaggio
+  del giro se ne sarebbe accorto.
+- **La barra di sezione omessa è il difetto più frequente del lotto**:
+  quattro set su dieci. I trascrittori la prendono per cornice ragionando
+  per analogia con Unica Casa, che è l'unico set dove non è stampata.
 
 ## DeepSeek Flash come trascrittore: proposta aperta
 
