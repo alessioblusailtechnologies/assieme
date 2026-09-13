@@ -4314,6 +4314,78 @@
   "pathPdf": "archivio-pubblico/unipolsai/auto/km-servizi-monopattini/ed-2026-07/originale.pdf"
  },
  {
+  "id": "doc-unipolsai-navigare-diporto-ed-2025-08-condizioni-di-assicurazione",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Navigare Unità da diporto e motori amovibili",
+  "titolo": "Condizioni di Assicurazione — Unipol Navigare Unità da diporto e motori amovibili",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 52,
+  "paginaInizio": 11,
+  "edizione": {
+   "id": "edz-navigare-diporto-2025-08",
+   "etichetta": "ed. 08/2025",
+   "validaDal": "2025-08-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-navigare-diporto-ed-2025-08-dip",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Navigare Unità da diporto e motori amovibili",
+  "titolo": "DIP Danni — Unipol Navigare Unità da diporto e motori amovibili",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-navigare-diporto-2025-08",
+   "etichetta": "ed. 08/2025",
+   "validaDal": "2025-08-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/dip.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-navigare-diporto-ed-2025-08-dip-aggiuntivo",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Navigare Unità da diporto e motori amovibili",
+  "titolo": "DIP Aggiuntivo R.C. Auto — Unipol Navigare Unità da diporto e motori amovibili",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-navigare-diporto-2025-08",
+   "etichetta": "ed. 08/2025",
+   "validaDal": "2025-08-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/originale.pdf"
+ },
+ {
+  "id": "doc-unipolsai-navigare-diporto-ed-2025-08-informativa-privacy",
+  "compagniaId": "cmp-unipolsai",
+  "ramoId": "ram-auto",
+  "prodotto": "Navigare Unità da diporto e motori amovibili",
+  "titolo": "Informativa Privacy — Unipol Navigare Unità da diporto e motori amovibili",
+  "tipologia": "altro",
+  "numeroPagine": 6,
+  "paginaInizio": 65,
+  "edizione": {
+   "id": "edz-navigare-diporto-2025-08",
+   "etichetta": "ed. 08/2025",
+   "validaDal": "2025-08-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/informativa-privacy.md",
+  "pathPdf": "archivio-pubblico/unipolsai/auto/navigare-diporto/ed-2025-08/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-scudo-cyber-ed-2024-07-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-cyber",
