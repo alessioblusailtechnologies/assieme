@@ -17,7 +17,7 @@ import {
   TipologiaDocumento,
 } from '@core/models';
 import { ClientiApi } from '@core/api/clienti-api';
-import { Assegnazione, DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
+import { DocumentiPrivatiApi, ModificheDocumento } from '@core/api/documenti-privati-api';
 
 /** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione. */
 const MS_INTERROGAZIONE = 2000;
@@ -293,66 +293,6 @@ export class ArchivioPrivatoStore {
       relativeTo: this.rotta,
       queryParams: { cliente: null, vista: 'da-confermare' },
       queryParamsHandling: 'merge',
-    });
-  }
-
-  // --- La selezione -------------------------------------------------------
-
-  /**
-   * Quali documenti sono selezionati.
-   *
-   * Non sopravvive a un cambio di filtro, e **non deve**: «assegna i
-   * selezionati» dopo che la pagina è cambiata sotto vorrebbe dire scrivere
-   * su documenti che non si stanno più guardando.
-   */
-  readonly selezione = signal<ReadonlySet<Id>>(new Set());
-
-  readonly selezionati = computed(() => this.selezione().size);
-
-  readonly tuttiSelezionati = computed(
-    () => this.documenti().length > 0 && this.documenti().every((d) => this.selezione().has(d.id)),
-  );
-
-  /** Vero se fra i selezionati c'è almeno una proposta da confermare. */
-  readonly selezioneConProposte = computed(() =>
-    this.documenti().some((d) => this.selezione().has(d.id) && d.clienteDaConfermare),
-  );
-
-  commuta(id: Id): void {
-    const scelti = new Set(this.selezione());
-    if (scelti.has(id)) scelti.delete(id);
-    else scelti.add(id);
-    this.selezione.set(scelti);
-  }
-
-  selezionato(id: Id): boolean {
-    return this.selezione().has(id);
-  }
-
-  commutaTutti(): void {
-    this.selezione.set(
-      this.tuttiSelezionati() ? new Set() : new Set(this.documenti().map((d) => d.id)),
-    );
-  }
-
-  deseleziona(): void {
-    this.selezione.set(new Set());
-  }
-
-  /**
-   * Cliente ed etichette su tutta la selezione, in una richiesta sola.
-   *
-   * È il gesto del giorno dopo l'importazione: trenta documenti dello stesso
-   * cliente, e farlo uno per uno vuol dire non farlo.
-   */
-  assegna(dati: Omit<Assegnazione, 'documenti'>): void {
-    const documenti = [...this.selezione()];
-    if (!documenti.length) return;
-    this.api.assegna({ ...dati, documenti }).subscribe({
-      next: () => {
-        this.deseleziona();
-        this.ricaricaTutto();
-      },
     });
   }
 

@@ -1,12 +1,12 @@
 <!--
-  L'Archivio Privato è un elenco solo, con le sue faccette: cliente,
-  tipologia, etichette, stato. La schermata dice questo — che cosa stai
-  guardando, l'azione principale accanto, la ricerca, poi i documenti.
+  L'Archivio Privato con l'impalcatura degli altri elenchi (14/09/2026):
+  testata su una riga, filtri in un riquadro, tabella con la paginazione
+  attaccata sotto. Prima era una lista a righe libere con la sua vista a
+  griglia e le caselle di selezione, l'ultimo elenco dell'app fatto a modo
+  suo.
 
-  Tutta l'area di lavoro è zona di rilascio (`aspetto="trasparente"`): il
-  riquadro tratteggiato compare mentre trascini e sparisce subito dopo,
-  invece di occupare trecento pixel tutto il giorno per un gesto che si fa
-  ogni tanto.
+  Tutta l'area di lavoro resta zona di rilascio (`aspetto="trasparente"`): il
+  riquadro tratteggiato compare mentre trascini e sparisce subito dopo.
 -->
 <ui-zona-caricamento
   #zona
@@ -17,17 +17,25 @@
   (scelti)="store.carica($event)"
 >
   <header class="testata">
+    <h1 class="visually-hidden">{{ titoloVista() }}</h1>
+
     <ui-briciole [voci]="briciole" />
 
-    <div class="testata__riga">
-      <h1 class="titolo serif">{{ titoloVista() }}</h1>
+    <span class="testata__stacco" aria-hidden="true"></span>
 
-      <span
-        class="conteggio mono"
-        [class.is-esaurimento]="spazio()?.inEsaurimento"
-        role="status"
-        aria-live="polite"
-      >
+    <p class="testata__spiega">
+      I documenti dell'agenzia: polizze, preventivi, appendici. Trascinali qui per caricarli.
+    </p>
+
+    <span
+      class="testata__conteggio mono"
+      [class.is-esaurimento]="spazio()?.inEsaurimento"
+      role="status"
+      aria-live="polite"
+    >
+      @if (store.inCaricamento() && !documenti().length) {
+        caricamento…
+      } @else if (!store.errore()) {
         {{ store.totale() }} {{ store.totale() === 1 ? 'documento' : 'documenti' }}
         <!--
           Il peso è quello dell'archivio intero e si scrive solo dove il
@@ -37,22 +45,17 @@
         @if (suTutto() && spazio(); as s) {
           · {{ s.usato }}
         }
-      </span>
+      }
+    </span>
 
-      <div class="testata__azioni">
-        <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
-          <ui-icon name="carica" [size]="15" />
-          <span>Carica</span>
-        </button>
-
-      </div>
-    </div>
-
+    <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
+      <ui-icon name="carica" [size]="15" />
+      <span>Carica</span>
+    </button>
   </header>
 
-  <!-- La ricerca è larga e in cima: è il gesto con cui si comincia. -->
-  <div class="cerca">
-    <label class="ui-campo-icona cerca__campo">
+  <section class="filtri" aria-label="Filtri dell'archivio">
+    <label class="ui-campo-icona filtri__ricerca">
       <ui-icon name="cerca" [size]="16" />
       <input
         uiCampo
@@ -64,62 +67,47 @@
       />
     </label>
 
-    <button uiBottone type="button" (click)="filtriAperti.set(!filtriAperti())">
-      <ui-icon name="filtra" [size]="15" />
-      <span>Filtri</span>
-      @if (quantiFiltri()) {
-        <span class="pastiglia">{{ quantiFiltri() }}</span>
-      }
-    </button>
-  </div>
+    <!--
+      Il cliente è una faccetta come le altre, ma sta per prima: è l'asse
+      su cui gira l'archivio, e «Senza cliente» è in coda alla stessa
+      tendina perché è la stessa domanda, non una vista a parte da cercare
+      altrove.
+    -->
+    <ui-select
+      class="filtri__campo"
+      [valore]="clienteScelto()"
+      (valoreChange)="scegliCliente($any($event))"
+      [opzioni]="opzioniCliente()"
+      campoEtichetta="etichetta"
+      campoValore="valore"
+      placeholder="Tutti i clienti"
+      [azzerabile]="true"
+      ariaLabel="Filtra per cliente"
+    />
 
-  <!--
-    I filtri non stanno sempre aperti: nel lavoro di tutti i giorni si cerca
-    per nome, e tre tendine ferme sotto la ricerca sono spazio tolto ai
-    documenti per un gesto che si fa una volta ogni tanto.
-  -->
-  @if (filtriAperti()) {
-    <section class="filtri" aria-label="Filtri dell'archivio">
-      <!--
-        Il cliente è una faccetta come le altre, ma sta per prima: è l'asse
-        su cui gira l'archivio, e «Senza cliente» è in coda alla stessa
-        tendina perché è la stessa domanda, non una vista a parte da
-        cercare altrove.
-      -->
-      <ui-select
-        class="filtri__campo"
-        [valore]="clienteScelto()"
-        (valoreChange)="scegliCliente($any($event))"
-        [opzioni]="opzioniCliente()"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        placeholder="Tutti i clienti"
-        [azzerabile]="true"
-        ariaLabel="Filtra per cliente"
-      />
+    <ui-select
+      class="filtri__campo"
+      [(valore)]="store.tipologia"
+      [opzioni]="tipologie"
+      campoEtichetta="etichetta"
+      campoValore="valore"
+      placeholder="Tutte le tipologie"
+      [azzerabile]="true"
+      ariaLabel="Filtra per tipologia"
+    />
 
-      <ui-select
-        class="filtri__campo"
-        [(valore)]="store.tipologia"
-        [opzioni]="tipologie"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        placeholder="Tutte le tipologie"
-        [azzerabile]="true"
-        ariaLabel="Filtra per tipologia"
-      />
+    <ui-select
+      class="filtri__campo"
+      [(valore)]="store.stato"
+      [opzioni]="stati"
+      campoEtichetta="etichetta"
+      campoValore="valore"
+      placeholder="Tutti gli stati"
+      [azzerabile]="true"
+      ariaLabel="Filtra per stato di elaborazione"
+    />
 
-      <ui-select
-        class="filtri__campo"
-        [(valore)]="store.stato"
-        [opzioni]="stati"
-        campoEtichetta="etichetta"
-        campoValore="valore"
-        placeholder="Tutti gli stati"
-        [azzerabile]="true"
-        ariaLabel="Filtra per stato di elaborazione"
-      />
-
+    @if (store.etichette().length) {
       <ui-select
         class="filtri__campo"
         [(valore)]="store.etichetta"
@@ -130,90 +118,75 @@
         [azzerabile]="true"
         ariaLabel="Filtra per etichetta"
       />
+    }
 
-      <div class="filtri__interruttore">
-        <ui-checkbox [(valore)]="store.soloRiferimenti" inputId="solo-riferimenti" />
-        <label for="solo-riferimenti">Solo documenti di riferimento</label>
-      </div>
+    <div class="filtri__interruttore">
+      <ui-checkbox [(valore)]="store.soloRiferimenti" inputId="solo-riferimenti" />
+      <label for="solo-riferimenti">Solo documenti di riferimento</label>
+    </div>
 
-      <!--
-        La coda delle proposte: quello che l'ingestion ha intestato e nessuno
-        ha ancora guardato. È lavoro da fare, non un filtro fra gli altri, ed
-        è il motivo per cui si apre questa schermata dopo un'importazione.
-      -->
-      <div class="filtri__interruttore">
-        <ui-checkbox
-          [valore]="store.daConfermare()"
-          (valoreChange)="$event ? store.apriDaConfermare() : store.apri(undefined)"
-          inputId="da-confermare"
-        />
-        <label for="da-confermare">Solo i clienti da confermare</label>
-      </div>
+    <!--
+      La coda delle proposte: quello che l'ingestion ha intestato e nessuno
+      ha ancora guardato. Si conferma dalla scheda del documento.
+    -->
+    <div class="filtri__interruttore">
+      <ui-checkbox
+        [valore]="store.daConfermare()"
+        (valoreChange)="$event ? store.apriDaConfermare() : store.apri(undefined)"
+        inputId="da-confermare"
+      />
+      <label for="da-confermare">Solo clienti da confermare</label>
+    </div>
 
-      <!--
-        Rinominare ed eliminare un'etichetta si fanno da qui, mentre si
-        guardano i documenti che la portano: cambiare il nome di
-        un'etichetta senza averli sotto gli occhi è come rinominare una
-        cartella a occhi chiusi.
-      -->
-      @if (store.etichetta(); as scelta) {
+    @if (store.filtriAttivi()) {
+      <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="store.azzeraFiltri()">
+        <ui-icon name="chiudi" [size]="14" />
+        <span>Azzera</span>
+      </button>
+    }
+
+    <!--
+      Rinominare ed eliminare un'etichetta si fanno da qui, mentre si
+      guardano i documenti che la portano: cambiare il nome di un'etichetta
+      senza averli sotto gli occhi è come rinominare una cartella a occhi
+      chiusi.
+    -->
+    @if (store.etichetta(); as scelta) {
+      <div class="filtri__etichetta">
         @if (rinominando()) {
-          <div class="filtri__etichetta">
-            <input
-              uiCampo
-              type="text"
-              [(ngModel)]="nomeEtichetta"
-              name="nomeEtichetta"
-              [attr.aria-label]="'Nuovo nome per ' + scelta"
-              (keydown.enter)="$event.preventDefault(); confermaRinomina()"
-            />
-            <button uiBottone dimensione="piccolo" type="button" (click)="confermaRinomina()">
-              Rinomina
-            </button>
-            <button
-              uiBottone
-              variante="testo"
-              dimensione="piccolo"
-              type="button"
-              (click)="rinominando.set(false)"
-            >
-              Annulla
-            </button>
-          </div>
+          <input
+            uiCampo
+            type="text"
+            [(ngModel)]="nomeEtichetta"
+            name="nomeEtichetta"
+            [attr.aria-label]="'Nuovo nome per ' + scelta"
+            (keydown.enter)="$event.preventDefault(); confermaRinomina()"
+          />
+          <button uiBottone dimensione="piccolo" type="button" (click)="confermaRinomina()">
+            Rinomina
+          </button>
+          <button
+            uiBottone
+            variante="testo"
+            dimensione="piccolo"
+            type="button"
+            (click)="rinominando.set(false)"
+          >
+            Annulla
+          </button>
         } @else {
-          <div class="filtri__etichetta">
-            <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="apriRinomina()">
-              <ui-icon name="modifica" [size]="13" />
-              <span>Rinomina «{{ scelta }}»</span>
-            </button>
-            <button
-              uiBottone
-              variante="testo"
-              dimensione="piccolo"
-              type="button"
-              (click)="eliminaEtichetta()"
-            >
-              <ui-icon name="elimina" [size]="13" />
-              <span>Togli da tutti</span>
-            </button>
-          </div>
+          <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="apriRinomina()">
+            <ui-icon name="modifica" [size]="13" />
+            <span>Rinomina «{{ scelta }}»</span>
+          </button>
+          <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="eliminaEtichetta()">
+            <ui-icon name="elimina" [size]="13" />
+            <span>Togli da tutti</span>
+          </button>
         }
-      }
-
-      @if (store.filtriAttivi()) {
-        <button
-          uiBottone
-          variante="testo"
-          dimensione="piccolo"
-          type="button"
-          (click)="store.azzeraFiltri()"
-        >
-          <ui-icon name="chiudi" [size]="14" />
-          <span>Azzera</span>
-        </button>
-      }
-    </section>
-  }
+      </div>
+    }
+  </section>
 
   @if (caricamento(); as c) {
     <p class="servizio mono" role="status" aria-live="polite">
@@ -229,210 +202,115 @@
         sappiamo leggere e {{ quanti === 1 ? 'è stato saltato' : 'sono stati saltati' }}:
         {{ store.ignorati().slice(0, 3).join(', ') }}{{ quanti > 3 ? '…' : '' }}
       </span>
-      <button
-        uiBottone
-        variante="testo"
-        dimensione="piccolo"
-        type="button"
-        (click)="store.svuotaCoda()"
-      >
+      <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="store.svuotaCoda()">
         <span>Ho capito</span>
       </button>
     </p>
   }
 
-  <!--
-    Il lavoro in blocco: il gesto del giorno dopo l'importazione, quando
-    trenta documenti sono dello stesso cliente e farlo uno per uno vuol dire
-    non farlo. La barra compare solo con qualcosa di selezionato, e dice
-    quanti sono prima di dire cosa si può fargli.
-  -->
-  @if (store.selezionati(); as quanti) {
-    <section class="selezione" aria-label="Azioni sui documenti selezionati">
-      <span class="selezione__conta mono">
-        {{ quanti }} {{ quanti === 1 ? 'selezionato' : 'selezionati' }}
-      </span>
-
-      <ui-select
-        class="selezione__campo"
-        [valore]="clienteDaAssegnare()"
-        (valoreChange)="clienteDaAssegnare.set($any($event))"
-        [opzioni]="store.clienti()"
-        campoEtichetta="nome"
-        campoValore="id"
-        placeholder="Intesta a…"
-        [azzerabile]="true"
-        ariaLabel="Intesta i selezionati a un cliente"
-      />
-      <button
-        uiBottone
-        variante="primario"
-        dimensione="piccolo"
-        type="button"
-        [disabled]="!clienteDaAssegnare()"
-        (click)="intestaSelezionati()"
-      >
-        Intesta
+  @if (store.errore()) {
+    <ui-stato-vuoto
+      icona="errore"
+      titolo="Non siamo riusciti a caricare l'archivio"
+      descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
+    >
+      <button uiBottone variante="primario" type="button" (click)="store.riprova()">
+        <ui-icon name="riprova" [size]="15" />
+        <span>Riprova</span>
       </button>
-
-      <label class="ui-campo-icona selezione__campo">
-        <ui-icon name="aggiungi" [size]="14" />
-        <input
-          uiCampo
-          type="text"
-          [(ngModel)]="etichettaDaAggiungere"
-          name="etichettaDaAggiungere"
-          placeholder="Etichetta e Invio"
-          aria-label="Aggiungi un'etichetta ai selezionati"
-          (keydown.enter)="$event.preventDefault(); etichettaSelezionati()"
-        />
-      </label>
-
-      @if (store.selezioneConProposte()) {
-        <!-- Confermare non riassegna: il cliente proposto è già quello giusto. -->
-        <button uiBottone dimensione="piccolo" type="button" (click)="confermaSelezionati()">
-          <ui-icon name="pronto" [size]="14" />
-          <span>Conferma il cliente proposto</span>
-        </button>
+    </ui-stato-vuoto>
+  } @else if (store.inCaricamento() && !documenti().length) {
+    <div class="scheletri">
+      @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+        <ui-scheletro [numeroRighe]="1" />
       }
-
-      <button
-        uiBottone
-        variante="testo"
-        dimensione="piccolo"
-        type="button"
-        class="selezione__annulla"
-        (click)="store.deseleziona()"
-      >
-        Deseleziona
-      </button>
-    </section>
-  }
-
-  <!-- ---------- Documenti ---------- -->
-
-  <section class="sezione sezione--documenti" aria-label="Documenti">
-    <div class="sezione__testa">
-      <h2 class="sezione__nome">Documenti</h2>
-
-      @if (documenti().length) {
-        <div class="tutti">
-          <ui-checkbox
-            [valore]="store.tuttiSelezionati()"
-            (valoreChange)="store.commutaTutti()"
-            inputId="tutti-selezionati"
-          />
-          <label for="tutti-selezionati">Seleziona tutti</label>
-        </div>
-      }
-
-      <!-- Elenco o griglia: due modi di guardare lo stesso elenco. -->
-      <div class="vista" role="group" aria-label="Modo di visualizzazione">
-        <button
-          type="button"
-          class="vista__scelta"
-          [class.is-scelta]="modo() === 'elenco'"
-          aria-label="Vedi come elenco"
-          (click)="modo.set('elenco')"
-        >
-          <ui-icon name="elenco" [size]="15" />
-        </button>
-        <button
-          type="button"
-          class="vista__scelta"
-          [class.is-scelta]="modo() === 'griglia'"
-          aria-label="Vedi come griglia"
-          (click)="modo.set('griglia')"
-        >
-          <ui-icon name="menu" [size]="15" />
-        </button>
-      </div>
     </div>
-
-    @if (store.errore()) {
-      <ui-stato-vuoto
-        icona="errore"
-        titolo="Non siamo riusciti a caricare l'archivio"
-        descrizione="La richiesta non è andata a buon fine. Il problema può essere temporaneo."
-      >
-        <button uiBottone variante="primario" type="button" (click)="store.riprova()">
-          <ui-icon name="riprova" [size]="15" />
-          <span>Riprova</span>
+  } @else if (!documenti().length) {
+    <ui-stato-vuoto
+      [icona]="store.senzaCliente() ? 'pronto' : 'archivio-privato'"
+      [titolo]="statoVuoto().titolo"
+      [descrizione]="statoVuoto().descrizione"
+    >
+      @if (store.filtriAttivi()) {
+        <button uiBottone variante="primario" type="button" (click)="store.azzeraFiltri()">
+          <ui-icon name="chiudi" [size]="15" />
+          <span>Azzera i filtri</span>
         </button>
-      </ui-stato-vuoto>
-    } @else if (store.inCaricamento() && !documenti().length) {
-      <div class="scheletri">
-        @for (i of [1, 2, 3, 4, 5]; track i) {
-          <ui-scheletro [numeroRighe]="1" />
-        }
-      </div>
-    } @else if (!documenti().length) {
-      <ui-stato-vuoto
-        [icona]="store.senzaCliente() ? 'pronto' : 'archivio-privato'"
-        [titolo]="statoVuoto().titolo"
-        [descrizione]="statoVuoto().descrizione"
-      >
-        @if (store.filtriAttivi()) {
-          <button uiBottone variante="primario" type="button" (click)="store.azzeraFiltri()">
-            <ui-icon name="chiudi" [size]="15" />
-            <span>Azzera i filtri</span>
-          </button>
-        } @else {
-          <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
-            <ui-icon name="carica" [size]="15" />
-            <span>Carica documenti</span>
-          </button>
-        }
-      </ui-stato-vuoto>
-    } @else {
-      <div class="documenti" [class.is-griglia]="modo() === 'griglia'">
-        @for (doc of documenti(); track doc.id) {
-          <div class="doc" [class.is-scelto]="store.selezionato(doc.id)">
-            <span class="doc__scelta">
-              <ui-checkbox
-                [valore]="store.selezionato(doc.id)"
-                (valoreChange)="store.commuta(doc.id)"
-                [inputId]="'scelto-' + doc.id"
-                [attr.aria-label]="'Seleziona ' + doc.titolo"
-              />
-            </span>
-
-            <a class="doc__apri" [routerLink]="['/archivio/privato', doc.id]">
-              <span class="doc__icona">
-                <ui-icon name="documento" [size]="modo() === 'griglia' ? 24 : 17" />
-              </span>
-
-              <span class="doc__corpo">
-                <span class="doc__titolo" [title]="doc.titolo">{{ doc.titolo }}</span>
-                <span class="doc__sotto">
-                  @if (doc.cliente) {
-                    <span class="doc__cliente">{{ doc.cliente.nome }}</span>
-                    @if (doc.clienteDaConfermare) {
-                      <span class="doc__proposta">da confermare</span>
+      } @else {
+        <button uiBottone variante="primario" type="button" (click)="zona.apriFinestra()">
+          <ui-icon name="carica" [size]="15" />
+          <span>Carica documenti</span>
+        </button>
+      }
+    </ui-stato-vuoto>
+  } @else {
+    <div class="risultati">
+      <div class="ui-tabella-contenitore griglia">
+        <table class="ui-tabella">
+          <thead>
+            <tr>
+              <th class="col-titolo">Documento</th>
+              <th class="col-cliente">Cliente</th>
+              <th class="col-tipologia">Tipologia</th>
+              <th class="col-etichette">Etichette</th>
+              <th class="col-stato">Stato</th>
+              <th class="col-data">Caricato</th>
+              <th class="col-azione"><span class="visually-hidden">Apri</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of documenti(); track doc.id) {
+              <tr class="documento" (click)="apri(doc.id)">
+                <td class="col-titolo">
+                  <span class="titolo">
+                    <span class="titolo__testo" [title]="doc.titolo">{{ doc.titolo }}</span>
+                    <!-- Il ruolo si dice con una parola, non con un'icona da decifrare. -->
+                    @if (doc.documentoDiRiferimento) {
+                      <ui-tag variante="accento" title="L'AI lo consulta sempre, senza che tu lo citi">
+                        riferimento
+                      </ui-tag>
                     }
+                  </span>
+                </td>
+                <td class="col-cliente">
+                  @if (doc.cliente) {
+                    <span class="cliente">
+                      <span class="cliente__nome" [title]="doc.cliente.nome">{{ doc.cliente.nome }}</span>
+                      <!-- Il cliente proposto e non ancora confermato è una domanda aperta, non un fatto. -->
+                      @if (doc.clienteDaConfermare) {
+                        <ui-tag variante="attenzione">da confermare</ui-tag>
+                      }
+                    </span>
                   } @else if (doc.riferimentoCliente) {
-                    <span class="doc__cliente">{{ doc.riferimentoCliente }}</span>
+                    <span
+                      class="cliente__letto"
+                      [title]="'Come compare sul documento, non intestato a nessuno: ' + doc.riferimentoCliente"
+                    >{{ doc.riferimentoCliente }}</span>
+                  } @else {
+                    <span class="muto">-</span>
                   }
-                  @for (e of doc.etichette.slice(0, 2); track e) {
-                    <span class="doc__etichetta">{{ e }}</span>
-                  }
-                </span>
-              </span>
-
-              <span class="doc__coda">
-                @if (doc.documentoDiRiferimento) {
-                  <ui-icon
-                    name="riferimenti"
-                    [size]="13"
-                    etichetta="Usato come documento di riferimento"
-                  />
-                }
-                <app-cella-stato [documento]="doc" />
-                <span class="doc__data mono">{{ doc.caricatoIl | date: 'dd/MM/yy' }}</span>
-              </span>
-            </a>
-          </div>
-        }
+                </td>
+                <td class="col-tipologia">{{ etichettaTipologia(doc.tipologia) }}</td>
+                <td class="col-etichette">
+                  <!-- Una e il conto delle altre: due affiancate non ci stanno, e impilate facevano righe alte il triplo. -->
+                  <span class="etichette" [title]="doc.etichette.join(', ')">
+                    @if (doc.etichette[0]; as prima) {
+                      <ui-tag variante="accento">{{ prima }}</ui-tag>
+                    }
+                    @if (doc.etichette.length > 1) {
+                      <span class="muto">+{{ doc.etichette.length - 1 }}</span>
+                    }
+                  </span>
+                </td>
+                <td class="col-stato"><app-cella-stato [documento]="doc" /></td>
+                <td class="col-data mono">{{ doc.caricatoIl | date: 'dd/MM/yy' }}</td>
+                <td class="col-azione">
+                  <app-cella-apri base="/archivio/privato" [documento]="doc" (click)="$event.stopPropagation()" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
 
       @if (store.totale() > store.perPagina()) {
@@ -443,6 +321,6 @@
           (cambiaPagina)="store.pagina.set($event)"
         />
       }
-    }
-  </section>
+    </div>
+  }
 </ui-zona-caricamento>

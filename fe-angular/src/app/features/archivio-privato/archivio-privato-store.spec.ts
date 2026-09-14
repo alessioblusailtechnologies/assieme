@@ -251,51 +251,7 @@ describe('ArchivioPrivatoStore', () => {
   });
 
 
-  // --- Il lavoro in blocco --------------------------------------------------
-
-  it('la selezione si commuta, si inverte tutta e si azzera', async () => {
-    await avvia([documento('a', 'pronto'), documento('b', 'pronto')]);
-
-    store.commuta('a');
-    expect(store.selezionati()).toBe(1);
-    expect(store.selezionato('a')).toBe(true);
-    expect(store.tuttiSelezionati()).toBe(false);
-
-    store.commutaTutti();
-    expect(store.selezionati()).toBe(2);
-    expect(store.tuttiSelezionati()).toBe(true);
-
-    /* Con tutti selezionati, «seleziona tutti» diventa «deseleziona tutti»:
-       è lo stesso gesto, e un secondo pulsante sarebbe uno in più da capire. */
-    store.commutaTutti();
-    expect(store.selezionati()).toBe(0);
-  });
-
-  it('assegna in blocco e poi lascia la selezione vuota', async () => {
-    await avvia([documento('a', 'pronto'), documento('b', 'pronto')]);
-    store.commutaTutti();
-
-    store.assegna({ clienteId: 'cl1', aggiungiEtichette: ['2026'] });
-    const richiesta = http.expectOne(
-      (r) => r.method === 'POST' && r.url === '/api/documenti-privati/assegna',
-    );
-    expect(richiesta.request.body).toEqual({
-      clienteId: 'cl1',
-      aggiungiEtichette: ['2026'],
-      documenti: ['a', 'b'],
-    });
-    richiesta.flush({ toccati: 2 });
-
-    /* Dopo la scrittura la selezione si svuota: lasciarla piena invita a
-       fare due volte lo stesso gesto su trenta documenti. */
-    expect(store.selezionati()).toBe(0);
-  });
-
-  it('senza niente selezionato non scrive niente', async () => {
-    await avvia([documento('a', 'pronto')]);
-    store.assegna({ clienteId: 'cl1' });
-    http.expectNone((r) => r.url === '/api/documenti-privati/assegna');
-  });
+  // --- Le etichette come vocabolario ----------------------------------------
 
   it('rinominare l’etichetta filtrata sposta anche il filtro', async () => {
     await avvia([documento('a', 'pronto')]);

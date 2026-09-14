@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ArchivioPrivatoStore } from '../archivio-privato-store';
 import { ConfermeStore } from '@core/conferme/conferme-store';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Briciole, VoceBriciola } from '@shared/ui/briciole/briciole';
 import { Campo } from '@shared/ui/campo/campo';
+import { CellaApri } from '@shared/griglia/cella-apri';
 import { CellaStato } from './celle/cella-stato';
 import { Checkbox } from '@shared/ui/checkbox/checkbox';
 import { Icona } from '@shared/ui/icona/icona';
@@ -17,12 +18,15 @@ import { Select } from '@shared/ui/select/select';
 import {
   ESTENSIONI_DOCUMENTO,
   FORMATI_DOCUMENTO,
+  Id,
   StatoElaborazione,
   TipologiaDocumento,
 } from '@core/models';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
+import { Tag } from '@shared/ui/tag/tag';
 import { ZonaCaricamento } from '@shared/caricamento/zona-caricamento';
 import { dimensioneLeggibile } from '@shared/testi/misura';
+import { etichettaTipologia } from '@shared/testi/etichette';
 
 const STATI: { valore: StatoElaborazione; etichetta: string }[] = [
   { valore: 'pronto', etichetta: 'Pronti' },
@@ -47,6 +51,10 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
  * delle cartelle non c'è, e l'archivio è **un elenco solo** con le sue
  * faccette — cliente, tipologia, etichette, stato. Si cerca, non si naviga.
  *
+ * Dal 14/09/2026 è una tabella come gli altri elenchi, con i filtri sempre
+ * in vista. Via la vista a griglia e le caselle di selezione con il lavoro
+ * in blocco: il cliente proposto si conferma dalla scheda del documento.
+ *
  * La differenza rispetto all'archivio pubblico resta quella di sempre: qui
  * si scrive. Ne discendono lo stato di elaborazione su ogni riga (RF-B-05) e
  * il fatto che tutta la pagina sia area di rilascio.
@@ -57,16 +65,17 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
     Bottone,
     Briciole,
     Campo,
+    CellaApri,
     CellaStato,
     Checkbox,
     DatePipe,
     FormsModule,
     Icona,
     Paginazione,
-    RouterLink,
     Scheletro,
     Select,
     StatoVuoto,
+    Tag,
     ZonaCaricamento,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,11 +85,13 @@ const TIPOLOGIE_PRIVATE: { valore: TipologiaDocumento; etichetta: string }[] = [
 export class ElencoPrivati {
   protected readonly store = inject(ArchivioPrivatoStore);
   private readonly conferme = inject(ConfermeStore);
+  private readonly router = inject(Router);
 
   protected readonly stati = STATI;
   protected readonly estensioni = ESTENSIONI_DOCUMENTO;
   protected readonly formati = FORMATI_DOCUMENTO;
   protected readonly tipologie = TIPOLOGIE_PRIVATE;
+  protected readonly etichettaTipologia = etichettaTipologia;
 
   protected readonly documenti = computed(() => this.store.documenti());
 
@@ -116,9 +127,9 @@ export class ElencoPrivati {
   ];
 
   /**
-   * Il titolo dice che cosa si sta guardando: tutto l'archivio, i documenti
-   * di un cliente, quelli che un cliente non ce l'hanno, o la coda delle
-   * proposte da confermare.
+   * Il titolo (nascosto, per chi naviga per intestazioni) dice che cosa si
+   * sta guardando: tutto l'archivio, i documenti di un cliente, quelli che
+   * un cliente non ce l'hanno, o la coda delle proposte da confermare.
    */
   protected readonly titoloVista = computed(() => {
     if (this.store.senzaCliente()) return 'Senza cliente';
@@ -134,7 +145,7 @@ export class ElencoPrivati {
   /** Le opzioni della tendina dei clienti, con «senza cliente» in coda. */
   protected readonly opzioniCliente = computed(() => [
     ...this.store.clienti().map((c) => ({ valore: c.id, etichetta: c.nome })),
-    { valore: 'senza-cliente', etichetta: '— Senza cliente' },
+    { valore: 'senza-cliente', etichetta: 'Senza cliente' },
   ]);
 
   /** Quello che la tendina mostra come scelto: il cliente, o la vista. */
@@ -147,32 +158,9 @@ export class ElencoPrivati {
     else void this.store.apri(valore);
   }
 
-  // --- Il lavoro in blocco --------------------------------------------------
-
-  /**
-   * A chi intestare i selezionati. È un signal a parte e non il filtro: qui
-   * si scrive, là si guarda, e confonderli vorrebbe dire assegnare per
-   * sbaglio a chi si stava solo cercando.
-   */
-  protected readonly clienteDaAssegnare = signal<string | undefined>(undefined);
-  protected readonly etichettaDaAggiungere = signal('');
-
-  protected intestaSelezionati(): void {
-    const cliente = this.clienteDaAssegnare();
-    if (!cliente) return;
-    this.store.assegna({ clienteId: cliente });
-    this.clienteDaAssegnare.set(undefined);
-  }
-
-  protected etichettaSelezionati(): void {
-    const etichetta = this.etichettaDaAggiungere().trim();
-    if (!etichetta) return;
-    this.store.assegna({ aggiungiEtichette: [etichetta] });
-    this.etichettaDaAggiungere.set('');
-  }
-
-  protected confermaSelezionati(): void {
-    this.store.assegna({ confermaCliente: true });
+  /** Tutta la riga apre il documento: mirare al solo pulsante in fondo è mira di precisione. */
+  protected apri(id: Id): void {
+    void this.router.navigate(['/archivio/privato', id]);
   }
 
   // --- Le etichette come vocabolario ---------------------------------------
@@ -243,21 +231,4 @@ export class ElencoPrivati {
         'Trascina qui i primi documenti. Puoi portare la cartella intera dell’agenzia, o uno zip: i percorsi si conservano, e da lì nascono cliente ed etichette.',
     };
   });
-
-  // --- Modo di visualizzazione e filtri -------------------------------------
-
-  protected readonly modo = signal<'elenco' | 'griglia'>('elenco');
-
-  /* I filtri stanno chiusi finché non servono: nel lavoro di tutti i giorni
-     si cerca per nome, e il numero accanto dice quanti ne sono attivi senza
-     bisogno di aprirli. */
-  protected readonly filtriAperti = signal(false);
-  protected readonly quantiFiltri = computed(
-    () =>
-      (this.store.tipologia() ? 1 : 0) +
-      (this.store.stato() ? 1 : 0) +
-      (this.store.etichetta() ? 1 : 0) +
-      (this.store.soloRiferimenti() ? 1 : 0) +
-      (this.store.daConfermare() ? 1 : 0),
-  );
 }

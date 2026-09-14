@@ -1,149 +1,111 @@
 /*
- * Archivio Privato: un elenco solo, con le sue faccette.
+ * L'Archivio Privato con l'impalcatura degli altri elenchi (14/09/2026), la
+ * stessa dei Clienti e dell'Archivio Pubblico: testata su una riga, filtri
+ * in un riquadro, e la tabella che si prende lo spazio che avanza, con la
+ * paginazione sotto.
  *
- * La schermata è una colonna di sezioni — che cosa stai guardando, la
- * ricerca, i documenti — e non una testata con una tabella sotto. Niente
- * riquadro di caricamento fisso: tutta l'area è zona di rilascio e il
- * tratteggio compare solo mentre si trascina.
- *
- * Non c'è nessuna tabella, e con lei se ne vanno i problemi che aveva: le
- * colonne che non cedono, il pulsante che finisce fuori, le larghezze da
- * bilanciare a ogni misura di schermo.
+ * L'unica differenza è la zona di rilascio che avvolge tutto: è lei, e non
+ * l'host, a fare da colonna flessibile.
  */
-
 :host {
   display: block;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   padding: var(--sp-6);
 }
 
 ui-zona-caricamento {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-5);
-  min-height: calc(100vh - var(--topbar-h) - var(--sp-6) * 2);
+  gap: var(--sp-4);
+  height: 100%;
+  min-height: 0;
 }
 
-/* ---------- Dove sei ---------- */
+/* ---------- Testata ---------- */
 
 .testata {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-
-.testata__riga {
-  display: flex;
-  align-items: baseline;
+  align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-3);
+  flex: none;
 }
 
-.titolo {
-  margin: 0;
-  font-size: var(--t-page-title);
-  font-weight: 400;
-  letter-spacing: var(--ls-tight);
-  color: var(--c-text);
+.testata__stacco {
+  width: 1px;
+  height: 16px;
+  background: var(--c-line);
 }
 
-.conteggio {
+.testata__spiega {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-sm);
   color: var(--c-text-3);
 }
 
-.conteggio.is-esaurimento {
+.testata__conteggio {
+  margin-left: auto;
+  min-width: 11ch;
+  text-align: right;
+}
+
+.testata__conteggio.is-esaurimento {
   color: var(--c-warn);
 }
 
-/* Le azioni vanno a destra e restano lì: l'azione primaria della schermata
-   si cerca sempre nello stesso posto. */
-.testata__azioni {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-left: auto;
-}
-
-.descrizione {
-  margin: 0;
-  max-width: 60ch;
-  color: var(--c-text-3);
-  font-size: var(--t-sm);
-  line-height: 1.6;
-}
-
-.riga-modulo,
-.conferma {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  margin: 0;
-  font-size: var(--t-sm);
-}
-
-.conferma {
-  padding: var(--sp-3);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-}
-
-/* ---------- Ricerca e filtri ---------- */
-
-.cerca {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.cerca__campo {
-  flex: 1;
-  min-width: 0;
-}
-
-.cerca__campo input {
-  width: 100%;
-}
-
-/* Quanti filtri sono attivi, senza doverli aprire per scoprirlo. */
-.pastiglia {
-  min-width: 1.125rem;
-  padding: 0 var(--sp-1);
-  border-radius: var(--radius-pieno);
-  background: var(--c-accent-soft);
-  color: var(--c-accent);
-  font-size: var(--t-xs);
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
+/* ---------- Filtri ---------- */
 
 .filtri {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-3);
+  flex: none;
   padding: var(--sp-4);
   border: 1px solid var(--c-line);
   border-radius: var(--radius);
   background: var(--c-surface);
 }
 
+.filtri__ricerca {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.filtri__ricerca input {
+  width: 100%;
+}
+
 .filtri__campo {
-  min-width: 180px;
+  min-width: 190px;
 }
 
 .filtri__interruttore {
   display: flex;
   align-items: center;
   gap: var(--sp-2);
-  color: var(--c-text-2);
   font-size: var(--t-sm);
+  color: var(--c-text-2);
 }
 
 .filtri__interruttore label {
   cursor: pointer;
   user-select: none;
+}
+
+/* Rinomina e «Togli da tutti» vanno a capo sotto i filtri: agiscono
+   sull'etichetta scelta, non sono un filtro in più. */
+.filtri__etichetta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  flex-basis: 100%;
 }
 
 /* ---------- Righe di servizio ---------- */
@@ -154,6 +116,7 @@ ui-zona-caricamento {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--sp-2);
+  flex: none;
   margin: 0;
   color: var(--c-text-3);
   font-size: var(--t-sm);
@@ -172,232 +135,16 @@ ui-zona-caricamento {
   min-width: 12rem;
 }
 
-/* ---------- Sezioni ---------- */
-
-.sezione {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-3);
-}
-
-.sezione--documenti {
-  flex: 1;
-  min-height: 0;
-}
-
-.sezione__testa {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.sezione__nome {
-  margin: 0;
-  color: var(--c-text-3);
-  font-family: var(--f-mono);
-  font-size: var(--t-mono);
-  font-weight: 400;
-  letter-spacing: var(--ls-mono);
-  text-transform: uppercase;
-}
-
-/* ---------- L'interruttore elenco/griglia ---------- */
-
-.vista {
-  display: flex;
-  margin-left: auto;
-  padding: 2px;
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius-sm);
-  background: var(--c-surface);
-}
-
-.vista__scelta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: 1.5rem;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: none;
-  color: var(--c-text-3);
-  cursor: pointer;
-}
-
-.vista__scelta:hover {
-  color: var(--c-text);
-}
-
-.vista__scelta.is-scelta {
-  background: var(--c-page-alt);
-  color: var(--c-text);
-}
-
-/* ---------- I documenti ---------- */
-
-.documenti {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-  overflow: hidden;
-}
-
-.doc {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  border-bottom: 1px solid var(--c-line-soft);
-  color: inherit;
-  transition: background var(--dur-fast) var(--ease-brand);
-}
-
-.doc:last-child {
-  border-bottom: 0;
-}
-
-.doc:hover {
-  background: var(--c-surface-tint);
-}
-
-.doc__icona {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 2rem;
-  height: 2rem;
-  border-radius: var(--radius-sm);
-  background: var(--c-page-alt);
-  color: var(--c-text-3);
-}
-
-.doc__corpo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-  line-height: 1.35;
-}
-
-/*
- * Il titolo di un documento privato è spesso il nome del file, e il nome del
- * file è quasi sempre brutto: la riga sotto — il cliente — è ciò che fa
- * riconoscere davvero il documento. Il titolo resta primo perché è quello
- * che si cerca, ma il cliente non è un dettaglio in grigio chiaro.
- */
-.doc__titolo {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--c-text);
-  font-size: var(--t-body);
-}
-
-.doc__sotto {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  font-size: var(--t-xs);
-}
-
-.doc__cliente {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: var(--c-text-2);
-}
-
-.doc__etichetta {
-  flex: none;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pieno);
-  border: 1px solid var(--c-line);
-  color: var(--c-text-3);
-}
-
-.doc__coda {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex: none;
-}
-
-.doc__coda > ui-icon {
-  color: var(--c-prov-riferimento);
-}
-
-.doc__data {
-  color: var(--c-text-mute);
-  font-size: var(--t-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-/* ---------- I documenti in griglia ---------- */
-
-/*
- * L'altra vista dell'elenco. Utile a colpo d'occhio su poche decine di
- * documenti; l'elenco resta il modo predefinito perché su un archivio
- * vero è il cliente a distinguere le righe, e in una piastrella il cliente
- * non ci sta.
- */
-.documenti.is-griglia {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-  border: 0;
-  background: none;
-  overflow: visible;
-}
-
-.is-griglia .doc {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--sp-2);
-  padding: var(--sp-4);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
-  background: var(--c-surface);
-}
-
-.is-griglia .doc__icona {
-  width: 2.75rem;
-  height: 2.75rem;
-}
-
-.is-griglia .doc__corpo {
-  width: 100%;
-}
-
-.is-griglia .doc__titolo {
-  white-space: normal;
-  /* Due righe e poi basta: le piastrelle devono restare alte uguali. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.is-griglia .doc__coda {
-  width: 100%;
-  justify-content: space-between;
-}
-
-/* ---------- Attese e vuoti ---------- */
+/* ---------- Stati ---------- */
 
 .scheletri {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  flex: 1;
+  min-height: 0;
   padding: var(--sp-4);
+  overflow: hidden;
   border: 1px solid var(--c-line);
   border-radius: var(--radius);
   background: var(--c-surface);
@@ -409,102 +156,146 @@ ui-stato-vuoto {
   min-height: 0;
 }
 
-/* ---------- Il lavoro in blocco ---------- */
+/* ---------- Tabella e paginazione ---------- */
 
-/*
- * La barra compare solo con qualcosa di selezionato, e dice quanti sono
- * prima di dire cosa si può fargli: il numero è la cosa che si controlla
- * prima di scrivere su trenta documenti insieme.
- */
-.selezione {
+.risultati {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--c-accent);
-  border-radius: var(--radius);
-  background: var(--c-accent-soft);
+  flex-direction: column;
+  flex: 1;
+  min-height: 240px;
 }
 
-.selezione__conta {
-  color: var(--c-accent);
+.griglia {
+  flex: 1;
+  min-height: 0;
+}
+
+.risultati ui-paginazione {
+  flex: none;
+}
+
+tr.documento {
+  cursor: pointer;
+}
+
+/*
+ * Titolo e cliente sono le due colonne che cedono.
+ *
+ * `max-width: 0` toglie al loro contenuto il diritto di allargare la
+ * tabella, e la percentuale divide fra loro lo spazio che le colonne fisse
+ * lasciano. Il nome di un file, o il cliente letto sul documento (che si
+ * porta dietro numero di preventivo e targa), si tronca con i puntini invece
+ * di spingere fuori lo stato e il pulsante «Apri»: alla prima stesura, con
+ * un tetto in `ch`, la tabella chiedeva 1407px in 1150 di spazio.
+ */
+.col-titolo,
+.col-cliente {
+  max-width: 0;
+}
+
+.col-titolo {
+  width: 60%;
+}
+
+.col-cliente {
+  width: 40%;
+}
+
+.titolo,
+.cliente {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.titolo ui-tag,
+.cliente ui-tag {
+  flex: none;
+}
+
+/* Il testo intero sta nel suggerimento. */
+.titolo__testo,
+.cliente__nome,
+.cliente__letto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titolo__testo {
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+.cliente__nome {
+  color: var(--c-text-2);
+}
+
+/* Il nome letto sul documento non è un'intestazione: si distingue da un
+   cliente vero come gli alias nell'elenco dei clienti. */
+.cliente__letto {
+  display: block;
+  font-size: var(--t-xs);
+  font-style: italic;
+  color: var(--c-text-3);
+}
+
+.muto {
+  font-size: var(--t-xs);
+  color: var(--c-text-mute);
+}
+
+.etichette {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  white-space: nowrap;
+}
+
+.col-tipologia {
+  width: 110px;
+  white-space: nowrap;
+}
+
+.col-etichette {
+  width: 180px;
+}
+
+.col-stato {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.col-data {
+  width: 96px;
+  white-space: nowrap;
+  color: var(--c-text-3);
   font-variant-numeric: tabular-nums;
 }
 
-.selezione__campo {
-  min-width: 12rem;
+.col-azione {
+  width: 96px;
 }
 
-.selezione__campo input {
-  width: 100%;
+/* Sotto i 1280px, con la barra laterale aperta, la data è la prima a
+   cedere: lo spazio torna a titolo e cliente, che senza si riducevano a
+   poche lettere. La data resta nella scheda del documento. */
+@media (max-width: 1280px) {
+  .col-data {
+    display: none;
+  }
 }
-
-.selezione__annulla {
-  margin-left: auto;
-}
-
-.tutti {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-left: auto;
-  color: var(--c-text-3);
-  font-size: var(--t-sm);
-  cursor: pointer;
-  user-select: none;
-}
-
-/* La riga: la casella sta fuori dal collegamento, o selezionare aprirebbe
-   il documento. */
-.doc__scelta {
-  display: flex;
-  align-items: center;
-  padding-left: var(--sp-4);
-}
-
-.doc__apri {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  flex: 1;
-  min-width: 0;
-  padding: var(--sp-3) var(--sp-4);
-  color: inherit;
-  text-decoration: none;
-}
-
-.doc.is-scelto {
-  background: var(--c-accent-soft);
-}
-
-/* Il cliente proposto e non ancora confermato si vede: è una domanda
-   aperta, non un fatto. */
-.doc__proposta {
-  flex: none;
-  padding: 0 var(--sp-2);
-  border-radius: var(--radius-pieno);
-  background: var(--c-page-alt);
-  color: var(--c-warn);
-}
-
-.filtri__etichetta {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  flex-basis: 100%;
-}
-
-/* ---------- Schermi stretti ---------- */
 
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
   }
 
-  .testata__azioni {
-    margin-left: 0;
-    width: 100%;
+  .testata__spiega,
+  .testata__stacco {
+    display: none;
   }
 
   .filtri {
@@ -512,32 +303,26 @@ ui-stato-vuoto {
     align-items: stretch;
   }
 
+  .filtri__ricerca {
+    flex: none;
+    min-width: 0;
+  }
+
   .filtri__campo {
     width: 100%;
   }
 
-  /* Su schermo stretto la coda della riga scende sotto invece di stringere
-     il titolo fino a renderlo illeggibile. A mandare a capo è il
-     **collegamento**, non la riga: la casella di selezione sta fuori da lui
-     e deve restare dov'è. */
-  .doc__apri {
-    flex-wrap: wrap;
+  /* Sul telefono restano che cosa è, di chi è e se è pronto: tipologia,
+     etichette e data si leggono nella scheda. */
+  .col-tipologia,
+  .col-etichette,
+  .col-data {
+    display: none;
   }
 
-  .doc__coda {
-    width: 100%;
-    padding-left: calc(2rem + var(--sp-3));
-    justify-content: flex-start;
-  }
-
-  /* La barra del lavoro in blocco a colonna: tre campi affiancati su un
-     telefono non sono campi. */
-  .selezione {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .selezione__annulla {
-    margin-left: 0;
+  /* Sotto i 900px la tabella torna a scorrere di lato come le altre: senza
+     un minimo, titolo e cliente cederebbero fino a tre puntini. */
+  .ui-tabella {
+    min-width: 640px;
   }
 }
