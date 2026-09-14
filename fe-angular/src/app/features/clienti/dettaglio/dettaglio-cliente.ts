@@ -9,12 +9,13 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { HttpErrorResponse, HttpEventType, httpResource } from '@angular/common/http';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
+import { CaricamentiInCorso, type FileInSalita } from '@core/caricamenti/caricamenti-in-corso';
 import { ChatClientiApi } from '@core/api/chat-clienti-api';
 import { ClientiApi, DestinazioneDocumenti, EtichettaCliente } from '@core/api/clienti-api';
 import { ConfermeStore } from '@core/conferme/conferme-store';
@@ -24,7 +25,6 @@ import type {
   Cliente,
   DocumentoPrivato,
   ErroreApi,
-  Id,
   Paginato,
   SchedaCliente,
 } from '@core/models';
@@ -49,21 +49,6 @@ type Scheda = 'anagrafica' | 'documenti' | 'chat';
 
 /** Ogni quanto si richiede lo stato dei documenti ancora in lavorazione: come nell'archivio. */
 const MS_INTERROGAZIONE = 2000;
-
-/**
- * Un file che sta salendo. La riga compare **alla scelta**, non alla
- * risposta del server: fra le due passano il trasferimento e il
- * salvataggio, e un elenco che in quel tempo resta fermo sembra non aver
- * sentito il gesto.
- */
-interface FileInSalita {
-  chiave: number;
-  nome: string;
-  percentuale: number;
-  errore?: string;
-  /** I documenti che il caricamento ha creato, quando il server ha risposto. */
-  creati?: Id[];
-}
 
 /**
  * La scheda di un cliente.
@@ -107,6 +92,7 @@ export class DettaglioCliente {
   private readonly api = inject(ClientiApi);
   private readonly apiChat = inject(ChatClientiApi);
   private readonly apiDocumenti = inject(DocumentiPrivatiApi);
+  private readonly caricamenti = inject(CaricamentiInCorso);
   private readonly conferme = inject(ConfermeStore);
   private readonly router = inject(Router);
   private readonly rotta = inject(ActivatedRoute);
@@ -235,6 +221,20 @@ export class DettaglioCliente {
       if (eraInTransito && !ora) untracked(() => this.risorsa.reload());
       eraInTransito = ora;
     });
+
+    /* Un caricamento concluso si rilegge da qui, anche quando l'ha avviato
+       una scheda che nel frattempo si è chiusa: fino a quel momento il
+       server non ha righe da dare, e nient'altro farebbe ripartire l'elenco. */
+    let conclusiVisti = untracked(this.caricamenti.conclusi);
+    effect(() => {
+      const conclusi = this.caricamenti.conclusi();
+      if (conclusi === conclusiVisti) return;
+      conclusiVisti = conclusi;
+      untracked(() => {
+        this.risorsaDocumenti.reload();
+        this.risorsa.reload();
+      });
+    });
   }
 
   protected readonly modificato = computed(() => {
@@ -324,8 +324,13 @@ export class DettaglioCliente {
     this.documenti().some((d) => d.stato === 'in-coda' || d.stato === 'in-elaborazione'),
   );
 
-  private progressivo = 0;
-  private readonly vociInSalita = signal<FileInSalita[]>([]);
+  /**
+   * I caricamenti verso questo cliente. Vivono in `CaricamentiInCorso` e non
+   * qui: chi esce dalla scheda mentre i file salgono, al ritorno li ritrova.
+   */
+  private readonly vociInSalita = computed(() =>
+    this.caricamenti.voci().filter((v) => v.clienteId === this.id()),
+  );
 
   /**
    * Le righe provvisorie da mostrare: una sparisce quando l'elenco contiene
@@ -345,39 +350,20 @@ export class DettaglioCliente {
    */
   protected carica(file: File[]): void {
     if (!file.length) return;
-    const lotto = file.map((f) => ({ chiave: ++this.progressivo, nome: f.name, percentuale: 0 }));
-    const chiavi = new Set(lotto.map((v) => v.chiave));
-    const aggiorna = (modifica: (v: FileInSalita) => FileInSalita) =>
-      this.vociInSalita.update((voci) => voci.map((v) => (chiavi.has(v.chiave) ? modifica(v) : v)));
-
     /* Le righe dei caricamenti di prima che hanno già ceduto il posto si
        tolgono qui, invece di accumularsi. */
     const ancoraVisibili = new Set(this.inSalita());
-    this.vociInSalita.update((voci) => [...lotto, ...voci.filter((v) => ancoraVisibili.has(v))]);
-
-    this.apiDocumenti.carica(file, { clienteId: this.id() }).subscribe({
-      next: (evento) => {
-        if (evento.type === HttpEventType.UploadProgress && evento.total) {
-          const percentuale = Math.round((evento.loaded / evento.total) * 100);
-          aggiorna((v) => ({ ...v, percentuale }));
-        }
-        if (evento.type === HttpEventType.Response) {
-          const creati = (evento.body?.creati ?? []).map((d) => d.id);
-          aggiorna((v) => ({ ...v, percentuale: 100, creati }));
-          this.risorsaDocumenti.reload();
-          this.risorsa.reload();
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        const errore = (err.error as ErroreApi | null)?.messaggio ?? 'Caricamento non riuscito.';
-        aggiorna((v) => ({ ...v, errore }));
-      },
-    });
+    this.caricamenti.dimentica(
+      this.vociInSalita()
+        .filter((v) => !ancoraVisibili.has(v))
+        .map((v) => v.chiave),
+    );
+    this.caricamenti.carica(file, { clienteId: this.id() });
   }
 
   /** La riga di un caricamento rifiutato si toglie a mano: il motivo va letto, non deve sparire da solo. */
   protected togliDallaSalita(voce: FileInSalita): void {
-    this.vociInSalita.update((voci) => voci.filter((v) => v.chiave !== voce.chiave));
+    this.caricamenti.dimentica([voce.chiave]);
   }
 
   /** Finché i byte salgono si dice quanto manca; dopo, il server sta salvando. */

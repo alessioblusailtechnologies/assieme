@@ -1,4 +1,4 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
@@ -36,30 +36,34 @@ const pagina = (elementi: DocumentoPrivato[]): Paginato<DocumentoPrivato> => ({
 const unGiro = () => new Promise((r) => setTimeout(r, 0));
 
 describe('DettaglioCliente, documenti', () => {
+  let fixture: ComponentFixture<DettaglioCliente>;
   let componente: DettaglioCliente;
   let http: HttpTestingController;
+
+  const elenco = (elementi: DocumentoPrivato[]) =>
+    http
+      .match((r) => r.method === 'GET' && r.url.startsWith('/api/documenti-privati'))
+      .forEach((r) => r.flush(pagina(elementi)));
+
+  async function apriScheda(): Promise<ComponentFixture<DettaglioCliente>> {
+    const scheda = TestBed.createComponent(DettaglioCliente);
+    scheda.componentRef.setInput('id', ID_CLIENTE);
+    scheda.detectChanges();
+    await unGiro();
+    elenco([]);
+    await unGiro();
+    return scheda;
+  }
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
       imports: [DettaglioCliente],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     });
-    const fixture = TestBed.createComponent(DettaglioCliente);
-    fixture.componentRef.setInput('id', ID_CLIENTE);
-    componente = fixture.componentInstance;
     http = TestBed.inject(HttpTestingController);
-    fixture.detectChanges();
-    await unGiro();
-    http
-      .match((r) => r.method === 'GET' && r.url.startsWith('/api/documenti-privati'))
-      .forEach((r) => r.flush(pagina([])));
-    await unGiro();
+    fixture = await apriScheda();
+    componente = fixture.componentInstance;
   });
-
-  const elenco = (elementi: DocumentoPrivato[]) =>
-    http
-      .match((r) => r.method === 'GET' && r.url.startsWith('/api/documenti-privati'))
-      .forEach((r) => r.flush(pagina(elementi)));
 
   it('la riga del file compare alla scelta, e il cliente viaggia col caricamento', () => {
     componente['carica']([new File(['contenuto'], 'polizza.pdf', { type: 'application/pdf' })]);
@@ -80,6 +84,7 @@ describe('DettaglioCliente, documenti', () => {
   it('la riga provvisoria cede il posto al documento vero, senza vuoto in mezzo', async () => {
     componente['carica']([new File(['x'], 'polizza.pdf')]);
     http.expectOne((r) => r.method === 'POST').flush({ creati: [documento('nuovo', 'in-coda')] });
+    TestBed.tick();
 
     /* Il server ha risposto ma l'elenco non è ancora tornato: la riga resta. */
     expect(componente['inSalita']()).toHaveLength(1);
@@ -102,5 +107,37 @@ describe('DettaglioCliente, documenti', () => {
 
     const [riga] = componente['inSalita']();
     expect(riga?.errore).toContain('supera il limite');
+  });
+
+  it('uscire e rientrare durante la salita: le righe restano e l elenco si rilegge alla fine', async () => {
+    /* 14/09/2026: dieci file caricati, indietro e di nuovo nella scheda, e la
+       scheda restava vuota fino al refresh. */
+    componente['carica']([new File(['x'], 'a.pdf'), new File(['y'], 'b.pdf')]);
+    const invio = http.expectOne((r) => r.method === 'POST');
+
+    /* Si esce: la scheda muore, il caricamento no. Si rientra, e il server
+       non ha ancora nessuna riga, perché il lotto le crea tutte alla fine. */
+    fixture.destroy();
+    const rientro = (await apriScheda()).componentInstance;
+    expect(rientro['inSalita']().map((v) => v.nome)).toEqual(['a.pdf', 'b.pdf']);
+
+    invio.flush({ creati: [documento('a', 'in-coda'), documento('b', 'in-coda')] });
+    TestBed.tick();
+    await unGiro();
+    elenco([documento('a', 'in-coda'), documento('b', 'in-coda')]);
+    await unGiro();
+
+    expect(rientro['documenti']().map((d) => d.id)).toEqual(['a', 'b']);
+    expect(rientro['inSalita']()).toHaveLength(0);
+  });
+
+  it('le righe di un altro cliente non entrano nella scheda', async () => {
+    fixture.componentRef.setInput('id', 'altro-cliente');
+    componente['carica']([new File(['x'], 'di-un-altro.pdf')]);
+
+    fixture.destroy();
+    const rientro = (await apriScheda()).componentInstance;
+
+    expect(rientro['inSalita']()).toHaveLength(0);
   });
 });
