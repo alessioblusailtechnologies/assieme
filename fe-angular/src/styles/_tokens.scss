@@ -91,16 +91,11 @@
 
   /* ---------- La scena scura di marca ----------
    * Non è «il tema scuro»: è l'inchiostro del marchio, e resta lo stesso
-   * nei due temi — la schermata di accesso e il pannello di sviluppo sono
-   * scuri anche quando l'applicazione è chiara, e restano tali quando è
-   * scura. Il testo che ci sta sopra è la famiglia `--c-text-onink-*`.
+   * nei due temi — il pannello di sviluppo è scuro anche quando
+   * l'applicazione è chiara, e resta tale quando è scura. Il testo che ci
+   * sta sopra è la famiglia `--c-text-onink-*`.
    */
   --c-ink: var(--n-950);
-  /* La carta posata sulla scena: la scheda di accesso. Nel chiaro è bianca
-     sull'inchiostro; nello scuro non può esserlo — dentro ci vivono campi e
-     testo del tema — e diventa il gradino sollevato, che dal cielo si
-     stacca lo stesso. */
-  --c-surface-onink: var(--n-0);
   --c-ink-raise: var(--n-900);
   --c-ink-raise-2: var(--n-800);
   --c-ink-hatch: var(--n-900);
@@ -313,8 +308,6 @@
    */
   --c-inverse: var(--s-900);
   --c-text-oninverse: var(--s-0);
-
-  --c-surface-onink: var(--s-200);
 
   /* ---------- Bordi ---------- */
   --c-line: var(--s-300);

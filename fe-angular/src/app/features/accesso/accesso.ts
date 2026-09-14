@@ -8,7 +8,7 @@ import { TokenStore } from '@core/auth/token-store';
 import { ErroreApi } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
 import { Campo } from '@shared/ui/campo/campo';
-import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
+import { Icona } from '@shared/ui/icona/icona';
 
 /**
  * La schermata di accesso — l'unica rotta fuori dalla shell.
@@ -21,7 +21,7 @@ import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
 @Component({
   selector: 'app-accesso',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, Bottone, Campo, GrafoMemoria],
+  imports: [FormsModule, Bottone, Campo, Icona],
   templateUrl: './accesso.html',
   styleUrl: './accesso.scss',
 })

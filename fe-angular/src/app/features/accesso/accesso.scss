@@ -1,160 +1,241 @@
 /*
- * La scena: tutta la pagina è l'inchiostro caldo del sito, il grafo della
- * memoria viva è un cielo che deriva lentamente, e la porta è una scheda
- * sola al centro. Nessun confine: solo profondità — il cielo dietro, la
- * scheda davanti, il marchio e la voce agli angoli.
+ * La porta, chiara come l'applicazione che c'è dietro (14/09/2026): il
+ * marchio in alto, a sinistra la voce di Velia, a destra la scheda con i
+ * campi e una fascia in fondo. Riprende la struttura del riferimento che il
+ * committente ha portato; i colori sono i semantici del tema, quindi nello
+ * scuro la schermata segue da sé.
  */
 .accesso {
-  position: relative;
-  overflow: hidden;
   min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: var(--c-ink);
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-5) var(--sp-6) var(--sp-10);
+  background: var(--c-surface);
+  color: var(--c-text);
 }
 
-/* ------------------------------------------------------------------ cielo */
+/* ---------------------------------------------------------------- marchio */
 
-.accesso__grafo {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
+.accesso__testata {
+  display: flex;
+  align-items: center;
 }
-
-/* Due movimenti sovrapposti: i nodi respirano dentro il canvas (30 fps,
-   gestito dal componente), l'intera figura deriva su un giro lungo 80
-   secondi. Con `prefers-reduced-motion` si fermano entrambi: il componente
-   disegna un fotogramma solo, e qui la deriva non parte. */
-.accesso__grafo app-grafo-memoria {
-  width: min(115vmin, 1000px);
-  opacity: 0.85;
-  animation: accesso-deriva 80s ease-in-out infinite;
-}
-
-@keyframes accesso-deriva {
-  0% {
-    transform: translate(-5%, -3%) scale(1);
-  }
-  33% {
-    transform: translate(4%, 1%) scale(1.06);
-  }
-  66% {
-    transform: translate(-1%, 4%) scale(0.98);
-  }
-  100% {
-    transform: translate(-5%, -3%) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .accesso__grafo app-grafo-memoria {
-    animation: none;
-  }
-}
-
-/* --------------------------------------------------------------- cornice */
 
 .accesso__marchio {
-  position: absolute;
-  top: 40px;
-  left: 48px;
-  z-index: 1;
-  font-family: var(--f-serif);
-  font-size: 14px;
-  letter-spacing: 0.22em;
-  color: var(--c-text-onink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
   margin: 0;
 }
 
-.accesso__voce {
-  position: absolute;
-  bottom: 40px;
-  left: 48px;
-  z-index: 1;
-  max-width: 26rem;
+.accesso__segno {
+  display: block;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+}
+
+/* Il wordmark parla col Medium, come nella barra laterale: il 600 non è
+   fra i tagli caricati del serif. */
+.accesso__nome {
+  font-family: var(--f-serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+/* ------------------------------------------------------------------ scena */
+
+/* `align-content` e non solo `align-items`: con una colonna sola le righe
+   sono due, e senza stringerle al centro la griglia le distribuisce su
+   tutta l'altezza, con un vuoto fra la voce e la scheda. */
+.accesso__scena {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 30rem) minmax(0, 25rem);
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  column-gap: clamp(3rem, 9vw, 8rem);
+  padding-block: var(--sp-10);
+}
+
+/* ------------------------------------------------------------------- voce */
+
+.accesso__pillola {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-8);
+  padding: var(--sp-3) var(--sp-6);
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  font-size: var(--t-mono);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-text);
+}
+
+.accesso__pillola ui-icon {
+  color: var(--c-accent);
 }
 
 .accesso__claim {
   font-family: var(--f-serif);
-  font-size: clamp(22px, 2.2vw, 30px);
-  line-height: 1.2;
-  color: var(--c-text-onink);
-  margin: 0 0 8px;
+  font-size: clamp(2rem, 3.4vw, 2.875rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: var(--ls-tight);
+  text-wrap: balance;
+  margin: 0 0 var(--sp-8);
 }
 
-.accesso__sotto-claim {
-  font-family: var(--f-lettura);
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--c-text-onink-3);
-  margin: 0;
+.accesso__testo {
+  max-width: 28rem;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--c-text-2);
+  margin: 0 0 var(--sp-4);
+}
+
+.accesso__testo:last-child {
+  margin-bottom: 0;
 }
 
 /* ----------------------------------------------------------------- scheda */
 
 .accesso__scheda {
-  position: relative;
-  z-index: 2;
-  width: min(380px, 100%);
-  background: var(--c-surface-onink);
-  border: 1px solid var(--c-line);
-  border-radius: 8px;
-  padding: 36px 32px;
-  /* Sul fondo scuro l'ombra è ciò che stacca la scheda dal cielo. */
-  box-shadow:
-    0 24px 70px rgb(0 0 0 / 0.4),
-    0 4px 18px rgb(0 0 0 / 0.25);
+  background: var(--c-page);
+  border: 1px solid var(--c-line-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 1px 3px var(--c-ombra-lieve);
+}
+
+.accesso__corpo {
+  display: grid;
+  justify-items: center;
+  padding: var(--sp-8);
+  text-align: center;
+}
+
+.accesso__segno--scheda {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--sp-4);
+  border-radius: var(--radius);
 }
 
 .accesso__titolo {
   font-family: var(--f-serif);
-  font-size: 22px;
-  margin: 0 0 4px;
+  font-size: var(--t-page-title);
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0 0 var(--sp-2);
 }
 
 .accesso__sottotitolo {
+  max-width: 22rem;
+  font-size: var(--t-sm);
+  line-height: 1.5;
   color: var(--c-text-3);
-  font-size: 14px;
-  margin: 0 0 28px;
+  margin: 0 0 var(--sp-6);
 }
 
 .accesso__form {
+  width: 100%;
   display: grid;
-  gap: 8px;
+  gap: var(--sp-2);
+  text-align: left;
 }
 
 .accesso__etichetta {
-  font-family: var(--f-sans);
-  font-size: 13px;
-  color: var(--c-text-2);
-  margin-top: 8px;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--c-text);
+  margin-top: var(--sp-3);
+}
+
+.accesso__etichetta:first-child {
+  margin-top: 0;
 }
 
 .accesso__errore {
   color: var(--c-neg);
-  font-size: 13px;
-  margin: 8px 0 0;
+  font-size: var(--t-sm);
+  margin: var(--sp-2) 0 0;
 }
 
 .accesso__form [uiBottone] {
-  margin-top: 20px;
   justify-self: stretch;
+  margin-top: var(--sp-5);
+  padding-block: 0.625rem;
+}
+
+.accesso__piede {
+  margin: 0;
+  padding: var(--sp-4);
+  background: var(--c-surface-tint);
+  border-top: 1px solid var(--c-line-soft);
+  text-align: center;
+  font-size: var(--t-body);
+  color: var(--c-text-3);
+}
+
+.accesso__piede strong {
+  font-weight: 600;
+  color: var(--c-text);
 }
 
 /* ------------------------------------------------------------- responsive */
 
 @media (max-width: 900px) {
-  /* Il cielo resta, la voce si ritira: su schermi piccoli la scheda è la
-     scena, e il claim sotto di essa diventerebbe solo testo da scrollare. */
+  /* Una colonna: la voce si stringe sopra la scheda, i paragrafi si ritirano
+     perché la scheda dice già le stesse cose. */
+  .accesso__scena {
+    grid-template-columns: minmax(0, 25rem);
+    row-gap: var(--sp-8);
+  }
+
+  .accesso__voce {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .accesso__pillola {
+    margin-bottom: var(--sp-5);
+  }
+
+  .accesso__claim {
+    font-size: clamp(1.75rem, 5vw, 2.25rem);
+    margin-bottom: 0;
+  }
+
+  .accesso__testo {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Sul telefono la scena è la scheda. */
+  .accesso {
+    padding: var(--sp-4) var(--sp-4) var(--sp-8);
+  }
+
+  .accesso__scena {
+    padding-block: var(--sp-6);
+  }
+
   .accesso__voce {
     display: none;
   }
 
-  .accesso__marchio {
-    top: 24px;
-    left: 24px;
+  .accesso__corpo {
+    padding: var(--sp-6) var(--sp-5);
   }
 }

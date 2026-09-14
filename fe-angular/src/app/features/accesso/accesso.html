@@ -1,62 +1,110 @@
 <main class="accesso">
-  <!-- Il cielo: il grafo della memoria viva, grande, che deriva lentamente
-       dietro la scheda. Due movimenti sovrapposti: i nodi respirano dentro
-       il canvas, e l'intera figura si sposta con una deriva di 80 secondi. -->
-  <div class="accesso__grafo" aria-hidden="true">
-    <app-grafo-memoria />
-  </div>
-
-  <p class="accesso__marchio">VELIA</p>
-
-  <div class="accesso__voce" aria-hidden="true">
-    <p class="accesso__claim">La memoria viva della tua agenzia.</p>
-    <p class="accesso__sotto-claim">
-      Documenti, regole e casistica risolta: tutto ciò che l’agenzia sa, in un posto che non
-      dimentica.
+  <header class="accesso__testata">
+    <!-- Lo stesso segno della barra laterale: SVG e non una lettera in una
+         scatola CSS, perché `dominant-baseline` centra sul glifo. -->
+    <p class="accesso__marchio">
+      <svg class="accesso__segno" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+        <rect width="28" height="28" fill="var(--c-marchio)" />
+        <text
+          x="14"
+          y="14"
+          text-anchor="middle"
+          dominant-baseline="central"
+          font-family="Georgia, serif"
+          font-size="18"
+          fill="var(--c-marchio-segno)"
+        >
+          V
+        </text>
+      </svg>
+      <span class="accesso__nome">Velia.</span>
     </p>
+  </header>
+
+  <div class="accesso__scena">
+    <!-- La voce: chi è Velia e cosa serve per entrare. -->
+    <section class="accesso__voce" aria-label="Velia">
+      <p class="accesso__pillola">
+        <ui-icon name="bacchetta" [size]="16" />
+        La memoria viva della tua agenzia
+      </p>
+      <p class="accesso__claim">L'AI che impara come lavora la tua agenzia. E non lo dimentica.</p>
+      <p class="accesso__testo">Per usare Velia serve un account della tua agenzia.</p>
+      <p class="accesso__testo">
+        Accedi con la tua email e la password. Se non hai ancora un account, te lo crea
+        l'amministratore della tua agenzia.
+      </p>
+    </section>
+
+    <!-- La porta. -->
+    <section class="accesso__scheda" aria-labelledby="titolo-accesso">
+      <div class="accesso__corpo">
+        <svg class="accesso__segno accesso__segno--scheda" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
+          <rect width="28" height="28" fill="var(--c-marchio)" />
+          <text
+            x="14"
+            y="14"
+            text-anchor="middle"
+            dominant-baseline="central"
+            font-family="Georgia, serif"
+            font-size="18"
+            fill="var(--c-marchio-segno)"
+          >
+            V
+          </text>
+        </svg>
+
+        <h1 id="titolo-accesso" class="accesso__titolo">Accedi</h1>
+        <p class="accesso__sottotitolo">
+          Per usare Velia serve un account. Accedi qui sotto con l'email e la password della tua
+          agenzia.
+        </p>
+
+        <form class="accesso__form" (ngSubmit)="invia()">
+          <label class="accesso__etichetta" for="email">Indirizzo email</label>
+          <input
+            uiCampo
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="Inserisci l'indirizzo email"
+            required
+            [ngModel]="email()"
+            (ngModelChange)="email.set($event)"
+          />
+
+          <label class="accesso__etichetta" for="password">Password</label>
+          <input
+            uiCampo
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Inserisci la password"
+            required
+            [ngModel]="password()"
+            (ngModelChange)="password.set($event)"
+          />
+
+          @if (errore(); as messaggio) {
+            <p class="accesso__errore" role="alert">{{ messaggio }}</p>
+          }
+
+          <button uiBottone variante="primario" type="submit" [disabled]="inCorso()">
+            @if (inCorso()) {
+              Accesso in corso…
+            } @else {
+              Entra
+              <ui-icon name="espandi-destra" [size]="14" />
+            }
+          </button>
+        </form>
+      </div>
+
+      <p class="accesso__piede">
+        Non hai un account? <strong>Chiedi all'amministratore</strong>
+      </p>
+    </section>
   </div>
-
-  <!-- La porta: una scheda sola, al centro della scena. -->
-  <section class="accesso__scheda" aria-labelledby="titolo-accesso">
-    <h1 id="titolo-accesso" class="accesso__titolo">Accedi</h1>
-    <p class="accesso__sottotitolo">Entra con le credenziali della tua agenzia.</p>
-
-    <form class="accesso__form" (ngSubmit)="invia()">
-      <label class="accesso__etichetta" for="email">Email</label>
-      <input
-        uiCampo
-        id="email"
-        name="email"
-        type="email"
-        autocomplete="email"
-        required
-        [ngModel]="email()"
-        (ngModelChange)="email.set($event)"
-      />
-
-      <label class="accesso__etichetta" for="password">Password</label>
-      <input
-        uiCampo
-        id="password"
-        name="password"
-        type="password"
-        autocomplete="current-password"
-        required
-        [ngModel]="password()"
-        (ngModelChange)="password.set($event)"
-      />
-
-      @if (errore(); as messaggio) {
-        <p class="accesso__errore" role="alert">{{ messaggio }}</p>
-      }
-
-      <button uiBottone variante="primario" type="submit" [disabled]="inCorso()">
-        @if (inCorso()) {
-          Accesso in corso…
-        } @else {
-          Entra
-        }
-      </button>
-    </form>
-  </section>
 </main>
