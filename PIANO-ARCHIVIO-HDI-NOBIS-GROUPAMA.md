@@ -10,7 +10,7 @@ Zurich, Nobis, Groupama, HDI e Unipol**. L'archivio pubblico è condiviso:
 l'agente cerca i suoi prodotti, e dove non c'è nulla la risposta è «non
 lo so».
 
-Al 14/09/2026, chiuso il lotto HDI:
+Al 14/09/2026, chiuso il lotto HDI e aperto quello Nobis:
 
 | Compagnia | Rami | Prodotti | Doc | Pagine |
 |---|---|---|---|---|
@@ -18,20 +18,19 @@ Al 14/09/2026, chiuso il lotto HDI:
 | Zurich | 5 | 16 | 51 | 1.124 |
 | Generali | 4 | 9 | 34 | 730 |
 | **HDI** | **5** | 10 | 33 | 445 |
-| **Nobis** | **1** (auto) | 8 | 60 | 591 |
+| **Nobis** | **2** | 9 | 64 | 645 |
 | Allianz | 1 (auto) | 5 | 30 | 688 |
 | AXA | 1 (auto) | 6 | 22 | 542 |
 | **Groupama** | **1** (auto) | 5 | 15 | 336 |
 | Cattolica | 1 (auto) | 1 | 3 | 140 |
 
-Totale: **386 documenti, 7.423 pagine**.
+Totale: **390 documenti, 7.477 pagine, 68 INDICE**.
 
-Delle tre compagnie a un ramo solo, **HDI è uscita dal gruppo** il
-14/09/2026: ha cinque rami (auto, viaggi, cyber, infortuni, casa) ed è la
-terza dell'archivio per copertura. Restano Nobis e Groupama, che
-rispondono ancora **solo sull'auto**. Di Nobis, leader di mercato sul
-viaggio, in archivio non c'è una sola polizza viaggio. Generali ha il suo
-piano a parte, **PIANO-ARCHIVIO-GENERALI.md**.
+Delle tre compagnie a un ramo solo, due sono uscite dal gruppo: **HDI** il
+14/09 con quattro set in un giorno (cinque rami, terza dell'archivio per
+copertura), e **Nobis** lo stesso giorno col primo set del suo lotto, che
+le apre i viaggi. Resta **Groupama**, che risponde ancora solo sull'auto.
+Generali ha il suo piano a parte, **PIANO-ARCHIVIO-GENERALI.md**.
 
 ## Il quadro, dopo il censimento
 
@@ -51,9 +50,11 @@ del 2% in aggregato** (180 stimate contro 177 vere).
 
 ## Stato
 
-**Lotto HDI: chiuso il 14/09/2026.** Quattro set, quattro rami nuovi, un
-commit per set. 177 pagine, ~6,0 milioni di token, catalogo da 373 a 386
-documenti.
+Al 14/09/2026: **catalogo a 390 documenti, 7.477 pagine, 68 INDICE**, e
+cinque set nuovi entrati in giornata, uno per commit.
+
+**Lotto HDI: chiuso.** Quattro set, quattro rami nuovi, 177 pagine,
+~6,0 M di token.
 
 | Set | Ramo aperto | Pagine (stimate → vere) | Token | Correzioni del secondo sguardo |
 |---|---|---|---|---|
@@ -62,37 +63,42 @@ documenti.
 | **Protezione Infortuni HDI** | `infortuni` | 40 → **54** | ~1,95 M | 6 |
 | **Globale Casa** | `casa` | 75 → **55** | ~1,95 M | 4 |
 
-Convenzioni del lotto in `lavorazione-visiva/convenzioni-hdi.md` (esteso
-il 14/09) e `convenzioni-hdi-viaggi.md`.
+Convenzioni in `lavorazione-visiva/convenzioni-hdi.md` (esteso il 14/09) e
+`convenzioni-hdi-viaggi.md`.
 
-Fuori piano, nella stessa sessione: **riparati gli otto INDICE
-dell'archivio che erano rimasti senza la sezione `## Garanzie e rischi
-trattati`** (i due Scudo Cyber, i tre Focus, i due Contratto Base di
-Generali, Unica Servizi Telematici). Da 2,6-3,2 KB a 20-89 KB, 717 voci
-di garanzia aggiunte, ~2,0 M di token. Ora tutti e 66 gli INDICE hanno
-quella sezione. Restano da decidere una decina di correzioni al testo
-preesistente di quegli indici, segnalate e non applicate: vedi
-«Correzioni in sospeso» in fondo.
+**Lotto Nobis: aperto, un set su quattro.** I quattro PDF sono già
+scaricati in `local-ingestion/in-arrivo/nobis-lotto1/` col loro
+`LOTTO.json`; convenzioni in `lavorazione-visiva/convenzioni-nobis.md`.
 
-### Prossimi lotti
+| Set | Ramo aperto | Pagine (stimate → vere) | Token | Correzioni del secondo sguardo |
+|---|---|---|---|---|
+| **Nobis Viaggio Easy Completa** | `viaggi` | 45 → **59** | ~1,90 M | 1 |
 
-- [ ] **Nobis, primo lotto**, in corso dal 14/09/2026. I quattro PDF sono
-  gia scaricati in `local-ingestion/in-arrivo/nobis-lotto1/`: **227 pagine
-  vere** contro le ~180 stimate, quindi ~7,7 M al costo misurato.
-  Convenzioni in `lavorazione-visiva/convenzioni-nobis.md`.
-  - [x] **Nobis Viaggio Easy Completa** (ed. 05/2026, 59 pagine, 4
-    documenti): in archivio, apre il ramo `viaggi` per Nobis. Catalogo a
-    390 documenti.
-  - [ ] Filo diretto Tutela (`tutela`, 32 pagine)
-  - [ ] Commercio su Misura (`imprese`, 44 pagine)
-  - [ ] Nobis Casa & Noi (`casa`, **92** pagine contro le ~60 stimate)
+**Fuori piano, nella stessa sessione**: riparati gli **otto INDICE**
+dell'archivio rimasti senza la sezione `## Garanzie e rischi trattati` (i
+due Scudo Cyber, i tre Focus, i due Contratto Base di Generali, Unica
+Servizi Telematici). Da 2,6-3,2 KB a 20-89 KB, **717 voci di garanzia
+aggiunte**, ~2,0 M di token: ora tutti gli INDICE hanno quella sezione.
+Restano una decina di correzioni al testo preesistente di quegli indici,
+segnalate e non applicate: vedi «Correzioni in sospeso» in fondo.
+
+Corretto anche `be-node/tools/assembla-set.mjs`, che accorciando
+«Nobis Compagnia di Assicurazioni S.p.A.» lasciava appesa la preposizione
+e intestava i file «Nobis Compagnia di Nobis Viaggio Easy Completa».
+
+### Che cosa resta
+
+- [ ] **Nobis, tre set su quattro**: Filo diretto Tutela (`tutela`, 32
+  pagine), Commercio su Misura (`imprese`, 44), Nobis Casa & Noi (`casa`,
+  **92** contro le ~60 stimate). **168 pagine, ~5,8 M.**
 - [ ] **Groupama, primo lotto a costo minimo**: Casa Senza Confini
   (`casa`), Groupama Benessere InSalute (`salute`), Groupama Protezione
   Infortuni (`infortuni`), Tutela Legale Famiglia (`tutela`). ~280 pagine
-  stimate, **~9,5 M**.
+  stimate, **~9,5 M**. Scaricare i PDF e contare le pagine prima di
+  impegnarsi: sul lotto Nobis la stima ha sbagliato del 26%.
 - [ ] **Groupama, Agrirama e DinamicaBusiness 360**: ~280 pagine, **~9,5 M**.
-  Apre `agricoltura`, ramo nuovo per l'intero archivio: va deciso se
-  serve alla demo.
+  Apre `agricoltura`, ramo nuovo per l'intero archivio: va deciso se serve
+  alla demo.
 
 ## Il primo lotto, compagnia per compagnia
 
@@ -128,23 +134,45 @@ Che cosa hanno portato dentro, oltre al ramo:
   differenza dalle 32 esclusioni. **Nessuna copertura catastrofale in
   nessuna forma**, a differenza di Unipol e Generali nello stesso ramo.
 
-### Nobis - quattro rami in ~180 pagine
+### Nobis - IN CORSO dal 14/09/2026, 227 pagine (non 180)
 
-| Set | Ramo che apre | Pagine | Pagina prodotto (sotto `nobis.it/assicurazioni/`) |
+I quattro PDF sono già scaricati in `local-ingestion/in-arrivo/nobis-lotto1/`
+con il loro `LOTTO.json`: **il censimento aveva sottostimato di un quarto.**
+
+| Set | Ramo che apre | Pagine: stimate → vere | Stato |
 |---|---|---|---|
-| **Filo diretto Tutela** | `tutela` | ~30 | `privati/casa/filo-diretto-tutela/` |
-| **Nobis Viaggio Easy Completa** | `viaggi` | ~45 | `privati/viaggi/nobis-viaggio-easy/set-informativi/` |
-| **Commercio su Misura** | `imprese` | ~45 | `business/casa-e-varie/commercio-su-misura/` |
-| **Nobis Casa & Noi** | `casa` | ~60 | `privati/casa/nobis-casa-e-noi/` |
+| **Nobis Viaggio Easy Completa** | `viaggi` | 45 → **59** | **in archivio** (ed. 05/2026) |
+| **Filo diretto Tutela** | `tutela` | 30 → **32** | da fare |
+| **Commercio su Misura** | `imprese` | 45 → **44** | da fare |
+| **Nobis Casa & Noi** | `casa` | 60 → **92** | da fare |
 
-**Viaggio Easy è il set più importante dei tre lotti.** Nobis è leader di
-mercato sul viaggio e ha una gamma di sei varianti (Completa,
-Annullamento, Incoming, Schengen, Spese Mediche, Gruppi) più Più Viaggi
-annuale: nessun'altra compagnia dell'archivio ha una gamma viaggio vera.
-Se dopo il primo lotto si vuole profondità da qualche parte, è lì.
+Al costo misurato il lotto completo viene **~7,7 M**, non i ~6 stimati:
+lo sforamento è quasi tutto di Casa & Noi, che è la metà più grande di
+quanto si credesse.
+
+Pagine prodotto sotto `nobis.it/assicurazioni/`: `privati/viaggi/nobis-viaggio-easy/set-informativi/`,
+`privati/casa/filo-diretto-tutela/`, `business/casa-e-varie/commercio-su-misura/`,
+`privati/casa/nobis-casa-e-noi/`.
+
+**Viaggio Easy era il set più importante dei tre lotti, ed è entrato per
+primo apposta.** Nobis è leader di mercato sul viaggio e ha una gamma di
+sei varianti (Completa, Annullamento, Incoming, Schengen, Spese Mediche,
+Gruppi) più Più Viaggi annuale, tutte sulla stessa pagina: **in archivio
+c'è solo la Completa**, e l'INDICE lo dice esplicitamente perché un agente
+che cerca «Nobis viaggio annullamento» non si illuda. Se si vuole
+profondità da qualche parte, è lì.
+
+Che cosa ha portato dentro, oltre al ramo: è **l'unico set viaggi
+dell'archivio che copre il Covid-19 per nome** (due garanzie dedicate, tre
+prestazioni di assistenza, una deroga esplicita all'esclusione pandemie),
+l'unico che ha insieme infortuni, tutela legale e responsabilità civile, e
+l'unico che definisce i Paesi esclusi **per rinvio a una watchlist
+commerciale esterna**: il perimetro della copertura può cambiare senza che
+il contratto cambi.
 
 Commercio su Misura ha lo stesso taglio di Focus Commercio di Unipol, già
-in archivio: si confrontano.
+in archivio: si confrontano. E ora il confronto è alla pari, perché
+l'INDICE di Focus Commercio è stato rifatto il 14/09.
 
 ### Groupama - quattro rami in ~280 pagine (o ~470 per il taglio ricco)
 
@@ -175,64 +203,70 @@ si sostituiscono gli ultimi due con **Agrirama** (~130) e
 ## L'ordine consigliato
 
 1. ~~**HDI, primo lotto**~~ **fatto il 14/09/2026** (177 pagine, 6,0 M).
-2. **Nobis, primo lotto** (~180 pagine, ~6 M). Porta in archivio la gamma
-   viaggio che manca a tutti, ed è la compagnia più economica da ingerire
-   delle tre: set unico, un PDF per prodotto, nessuna concatenazione.
-3. **Groupama, primo lotto a costo minimo** (~280 pagine, ~9,5 M).
+2. **Nobis, primo lotto**, in corso: fatto Viaggio Easy (59 pagine, 1,9 M),
+   **restano 168 pagine e ~5,8 M** per Filo diretto Tutela, Commercio su
+   Misura e Casa & Noi.
+3. **Groupama, primo lotto a costo minimo** (~280 pagine stimate, ~9,5 M).
+   Prima di cominciare, scaricare i quattro PDF e contare le pagine vere:
+   sul lotto Nobis la stima ha sbagliato del 26%.
 4. **Groupama, Agrirama e DinamicaBusiness 360** (~280 pagine, ~9,5 M).
-   Da qui in poi si sta aprendo `agricoltura`, ramo nuovo per l'intero
-   archivio: va deciso se serve alla demo.
+   Da qui in poi si apre `agricoltura`, ramo nuovo per l'intero archivio:
+   va deciso se serve alla demo.
 
-Coi passi 2 e 3, **~460 pagine e circa 15,5 milioni di token**, anche
-Nobis e Groupama passano da un ramo a cinque.
+Finiti i passi 2 e 3, anche Nobis e Groupama passano da un ramo a cinque,
+e tutte e sei le compagnie dell'agente rispondono su almeno quattro rami.
 
 ## Quanto costa, e su che base
 
-**Numeri rifatti il 14/09/2026 sul lotto HDI**, che è il primo lotto
-misurato per intero set per set. I vecchi numeri, presi dal lotto Unipol,
-sottostimavano del 70%.
+**Numeri rifatti il 14/09/2026 su cinque set misurati per intero**, i
+quattro del lotto HDI più il primo del lotto Nobis. I vecchi numeri,
+presi dal lotto Unipol, sottostimavano del 70%.
 
 | Set | Pagine | Trascrizione | Secondo sguardo | INDICE | Totale | Token a pagina |
 |---|---|---|---|---|---|---|
-| # Viaggio Singolo | 36 | 465 mila | 303 mila | 233 mila | ~1,05 M | 29 mila |
-| Rischi Informatici | 32 | 645 mila | 117 mila | 239 mila | ~1,04 M | 32 mila |
-| Protezione Infortuni | 54 | 1,25 M | 351 mila | 310 mila | ~1,95 M | 36 mila |
-| Globale Casa | 55 | 1,24 M | 330 mila | 342 mila | ~1,95 M | 35 mila |
+| HDI # Viaggio Singolo | 36 | 465 mila | 303 mila | 233 mila | ~1,05 M | 29 mila |
+| HDI Rischi Informatici | 32 | 645 mila | 117 mila | 239 mila | ~1,04 M | 32 mila |
+| HDI Protezione Infortuni | 54 | 1,25 M | 351 mila | 310 mila | ~1,95 M | 36 mila |
+| HDI Globale Casa | 55 | 1,24 M | 330 mila | 342 mila | ~1,95 M | 35 mila |
+| Nobis Viaggio Easy Completa | 59 | 1,18 M | 236 mila | 289 mila | ~1,90 M | 32 mila |
 
-La regola pratica diventa **pagine × 34 mila token**, con un pavimento di
+La regola pratica è **pagine × 34 mila token**, con un pavimento di
 **~1 milione a set**. Sotto le ~40 pagine il costo per pagina non scende
 più, perché l'INDICE pesa un quarto del totale e non si comprime.
 
 Perché il triplo della stima vecchia:
 
-- **il grassetto si misura**. In questi PDF il grassetto è **sintetico**:
+- **il grassetto si misura**. Nei PDF HDI il grassetto è **sintetico**:
   nessun font Bold incorporato, quindi né `pdftohtml` né il nome del font
   lo distinguono, e va misurato sullo spessore delle aste su un rendering
   a 400-800 dpi. Farlo blocco per blocco ha portato la trascrizione da
-  ~13 a ~23 mila token a pagina. Toglierlo farebbe risparmiare un terzo
-  del lotto, ma il primo set ha mostrato sei celle marcate in grassetto
-  che erano solo sottolineate;
+  ~13 a ~23 mila token a pagina. Toglierlo farebbe risparmiare un terzo,
+  ma il primo set ha mostrato sei celle marcate in grassetto che erano
+  solo sottolineate;
 - **l'INDICE è cresciuto di standard**. La mediana d'archivio è 46 KB;
-  quelli di questo lotto vanno da 54 a 115 KB. Costano 230-340 mila token
-  l'uno e non si comprimono;
+  quelli di questi cinque set vanno da 54 a 115 KB. Costano 230-340 mila
+  token l'uno e non si comprimono;
 - **il secondo sguardo costa poco quando la trascrizione è buona**
   (117 mila sul set cyber, zero correzioni) e caro quando c'è da guardare
   (351 mila sul set infortuni). È il costo giusto da pagare: su quel set
   ha trovato una frase riformulata invece che copiata.
 
 Il costo scende se in archivio c'è già un **gemello dello stesso ramo** da
-cui copiare taglio e tono dell'INDICE. Per i due lotti che restano il
-gemello c'è quasi sempre: `viaggi` ha ora quattro prodotti, `casa` sette,
-`tutela` due, `imprese` tre, `salute` due, `infortuni` quattro. L'unico
-senza gemello è **agricoltura**.
+cui copiare taglio e tono dell'INDICE. Per il resto dei due lotti il
+gemello c'è sempre: `viaggi` ha ora cinque prodotti, `casa` sette,
+`tutela` due, `imprese` tre, `salute` due, `infortuni` quattro, `cyber`
+due. L'unico senza gemello è **agricoltura**, che si aprirebbe solo con
+Agrirama di Groupama.
 
 Più 4 dollari ogni 1.000 pagine di Mistral OCR, che è il testimone.
 
-**Le stime di pagine del censimento sbagliano parecchio sul singolo set**
-(Protezione Infortuni 40 stimate contro 54 vere, Globale Casa 75 contro
-55), ma tengono in aggregato: 180 stimate contro 177 vere sul lotto. Per
-decidere se fare un set, va bene la stima; per dire quanto costa, il
-numero vero si sa solo dopo aver scaricato i pezzi.
+**Le stime di pagine del censimento sbagliano parecchio.** Sul lotto HDI
+hanno sbagliato fino al 35% sul singolo set ma solo del 2% in aggregato
+(180 contro 177). Sul lotto Nobis hanno sbagliato **del 26% in aggregato**
+(180 contro 227), perché Casa & Noi è 92 pagine invece di 60. Per decidere
+se fare un set la stima basta; per dire quanto costa, il numero vero si sa
+solo dopo aver scaricato i pezzi, e **conviene scaricare tutto il lotto
+prima di cominciare**, come è stato fatto per Nobis.
 
 ## Come pubblicano, e dove sono le trappole
 
@@ -288,6 +322,31 @@ numero vero si sa solo dopo aver scaricato i pezzi.
   Filodiretto Casa, Casa Serena, Soluzione Condominio e altri), PDF
   2020-2021 da 2-3 MB, quasi certamente scansioni: ingestione cara e
   valore basso. E i prodotti con la sola scheda POG e nessun set.
+- **Il PDF ha due strati di testo sovrapposti**, uno renderizzato e uno
+  fantasma con **cifre diverse**. Sul set Viaggio Easy i numeri della
+  Centrale Operativa escono `800.894.147` e `+39.039.9890.720` a video, ma
+  il layer nascosto dice `800.894148` e `+39.039.9890721`, e `pdftotext
+  -layout` li interlaccia in `800.894.114487`. Stessa cosa con la firma,
+  che esiste come `dott. Pietro Cazzola` e come `dr. Pietro Cazzola`.
+  Conseguenza: **su questi set `verifica-fedelta.mjs` e il testimone OCR
+  segnalano numeri e parole che non sono mai stati in pagina.** Quando
+  segnalano uno scarto su una cifra, l'unico giudice è un ritaglio a 600
+  dpi, e nove volte su dieci la trascrizione a occhio ha ragione. La firma
+  del problema si riconosce: cifre interlacciate o doppie varianti della
+  stessa parola.
+- **Le stime di pagine del censimento sono le peggiori dei tre siti**: il
+  lotto è risultato di 227 pagine contro le 180 stimate dal
+  `Content-Length`, con Casa & Noi a 92 invece di 60. Scaricare prima,
+  contare, e poi decidere.
+- Struttura del set: copertina, pagina dei contatti utili coi numeri H24,
+  DIP (3 pagine), DIP Aggiuntivo (3), indice, Condizioni con glossario,
+  articoli di legge e informativa privacy, poi pagine «Notes» a righe
+  vuote, una bianca e il retro. **Le «Notes» e il retro restano fuori dai
+  documenti**; copertina e contatti no, perché i numeri dell'assistenza
+  servono.
+- Nelle Condizioni le fasce di sezione e le etichette in fascia vanno a
+  `###`; i `##` restano ai riquadri dei DIP e alle sezioni principali del
+  libretto. Sul primo set cinque pagine erano uscite a `##`.
 - **Nobis Vita** (`nobisvita.it`) è una compagnia sorella: fuori perimetro.
 
 ### Groupama
@@ -352,14 +411,14 @@ sezione «Cosa ha insegnato questo lotto». Le tre che pesano di più:
 - **un errore trovato una volta si previene**, mettendolo nel prompt del
   coordinatore, invece di ricorreggerlo a valle.
 
-## Cosa ha insegnato il lotto HDI
+## Cosa hanno insegnato i lotti HDI e Nobis
 
 Da mettere nel prompt dei coordinatori dei prossimi lotti, perché un
 errore trovato una volta si previene invece di ricorreggerlo a valle.
 
 - **I trascrittori normalizzano i refusi senza accorgersene.** Sul primo
-  set hanno scritto «franchigie» dove la pagina stampa «franchie», «subito»
-  dove stampa «subìto», «originariamente previsto» dove stampa
+  set HDI hanno scritto «franchigie» dove la pagina stampa «franchie»,
+  «subito» dove stampa «subìto», «originariamente previsto» dove stampa
   «originariamente Assicurato». Va detto esplicitamente nel prompt che i
   refusi si copiano, accenti e parentesi spaiate comprese. Detto così, dal
   secondo set in poi i trascrittori hanno cominciato a **segnalarli da
@@ -370,28 +429,41 @@ errore trovato una volta si previene invece di ricorreggerlo a valle.
   perse e una comparsa: quel profilo - **parole perse e comparse insieme
   nella stessa pagina** - è il sintomo da girare sempre al secondo sguardo
   come domanda esplicita.
+- **Ma i testimoni sbagliano anche loro, e in due modi diversi.** Nei PDF
+  HDI il grassetto è sintetico e `pdftohtml` non lo vede; nei PDF Nobis
+  c'è un **secondo strato di testo, invisibile e con cifre diverse**, che
+  i testimoni leggono al posto di quello stampato. Un testimone che
+  segnala uno scarto non ha sempre ragione: **la domanda al secondo
+  sguardo va posta come domanda, non come correzione da applicare.** Su
+  sedici pagine segnalate in questi due lotti, sei erano falsi allarmi.
 - **Il grassetto sintetico va misurato, e la misura va chiesta nel
-  prompt.** `pdftohtml -xml -fontfullname` qui non serve: non c'è un font
-  Bold. Si misura lo spessore delle aste su un rendering a 400-800 dpi
+  prompt.** Si misura lo spessore delle aste su un rendering a 400-800 dpi
   (regolare ~9 px a 800 dpi, grassetto 12-14). Senza questa istruzione il
   primo set ha marcato in grassetto sei celle che erano sottolineate.
 - **I confini dei documenti li decidono i pezzi scaricati, non i piè di
-  pagina.** `mappa-set.mjs` ha sbagliato su tre set su quattro, mettendo
-  la copertina delle Condizioni dentro il DIP Aggiuntivo, perché la
-  copertina non porta piè. Siccome HDI pubblica sempre a pezzi, il numero
-  di pagine di ogni PDF scaricato è la verità: DIP 2, DIP Aggiuntivo 4,
-  il resto è il libretto.
+  pagina.** `mappa-set.mjs` ha sbagliato su tre set HDI su quattro,
+  mettendo la copertina delle Condizioni dentro il DIP Aggiuntivo, perché
+  la copertina non porta piè. Dove la compagnia pubblica a pezzi, il
+  numero di pagine di ogni PDF scaricato è la verità; dove pubblica in set
+  unico (Nobis), i confini si leggono col layer di testo su una decina di
+  pagine, che costa pochissimo.
 - **Le tabelle riepilogative possono essere immagini raster.** Nel set
-  viaggi la tabella dei tre livelli (pagg. 35-36) e le tre del DIP
-  Aggiuntivo non hanno layer di testo: `verifica-fedelta.mjs` le segnala
-  sempre come «numeri comparsi» e non può dire nulla. Lì l'unico giudice è
-  l'occhio su ritagli a 500 dpi o più, cella per cella.
+  viaggi HDI la tabella dei tre livelli e le tre del DIP Aggiuntivo non
+  hanno layer di testo: `verifica-fedelta.mjs` le segnala sempre come
+  «numeri comparsi» e non può dire nulla. Lì l'unico giudice è l'occhio su
+  ritagli a 500 dpi o più, cella per cella.
 - **Un set vale anche per quello che non ha.** Le cose più utili
-  all'agente, in questo lotto, sono assenze: Globale Casa non ha
+  all'agente, in questi due lotti, sono assenze: Globale Casa non ha
   copertura catastrofale, # Viaggio Singolo non ha garanzia infortuni,
   Rischi Informatici non ha tutela legale né un solo importo nelle
-  Condizioni. Vanno scritte nell'INDICE in una sezione apposita, o il
+  Condizioni, Focus Ufficio e Studi non copre la responsabilità
+  professionale. Vanno scritte nell'INDICE in una sezione apposita, o il
   motore le deduce sbagliate.
+- **I subagenti dell'INDICE trovano difetti che i testimoni non vedono.**
+  Quello di Viaggio Easy ha notato che l'intestazione dei file assemblati
+  diceva «Nobis Compagnia di Nobis Viaggio Easy Completa»: un difetto di
+  `assembla-set.mjs`, corretto il 14/09. Conviene chiedere sempre, in
+  coda al prompt dell'INDICE, di segnalare quello che non torna.
 
 ## Correzioni in sospeso sugli otto INDICE riparati
 
