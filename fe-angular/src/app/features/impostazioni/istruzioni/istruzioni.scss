@@ -39,6 +39,10 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
 }
 
 /* ---------- Schede ---------- */
@@ -77,9 +81,11 @@
   color: var(--c-text-3);
 }
 
-.azioni-scheda {
+/* La scheda dei riferimenti, quando è zona di rilascio: la colonna la fa lei. */
+.corpo-scheda {
   display: flex;
-  justify-content: flex-start;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
 
 /* ---------- Contesto permanente (RF-D-16) ---------- */
@@ -92,82 +98,137 @@
   color: var(--c-text-3);
 }
 
-/* ---------- Voci (regole e riferimenti) ---------- */
+/* ---------- Filtri ---------- */
 
-.voci {
+/* Lo stesso riquadro degli elenchi (Clienti, archivi): ricerca che cresce,
+   tendine a misura fissa, e l'azione della scheda in fondo a destra. */
+.filtri {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: var(--sp-3);
+  padding: var(--sp-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+
+.filtri__ricerca {
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.filtri__ricerca input {
+  width: 100%;
+}
+
+.filtri__campo {
+  min-width: 190px;
+}
+
+.filtri__azione {
+  margin-left: auto;
+}
+
+ui-stato-vuoto {
+  justify-content: center;
+}
+
+/* ---------- Tabelle ---------- */
+
+tr.is-apribile {
+  cursor: pointer;
+}
+
+/* Sospesa si legge nella colonna Stato; la riga attenuata lo dice prima. */
+tr.riga-spenta td {
+  opacity: 0.6;
+}
+
+/*
+ * La prima colonna è l'unica che cede: `max-width: 0` toglie al titolo (e al
+ * testo della regola, che può essere un paragrafo) il diritto di allargare
+ * la tabella, e `width: 100%` le dà tutto lo spazio che le altre, strette
+ * sul loro contenuto, lasciano.
+ */
+.col-voce {
+  max-width: 0;
+  width: 100%;
 }
 
 .voce {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
-  padding: var(--sp-4);
-  background: var(--c-surface);
-  border: 1px solid var(--c-line);
-  border-radius: var(--radius);
+  min-width: 0;
+  line-height: 1.35;
 }
 
-.voce.is-sospesa {
-  opacity: 0.7;
-}
-
-.voce__testa {
-  display: flex;
+.voce--in-riga {
+  flex-direction: row;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--sp-2);
+}
+
+.voce--in-riga ui-tag {
+  flex: none;
+}
+
+/* Il testo intero sta nel suggerimento, e nel cassetto per chi modifica. */
+.voce__titolo,
+.voce__testo {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .voce__titolo {
-  font-size: var(--t-body);
+  color: var(--c-text);
   font-weight: 500;
-  min-width: 0;
-}
-
-.voce__origine {
-  font-size: var(--t-xs);
-  color: var(--c-accent);
-}
-
-.voce__spazio {
-  flex: 1;
-}
-
-.voce__interruttore {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-1);
-  font-size: var(--t-sm);
-  color: var(--c-text-2);
-}
-
-.voce__interruttore label {
-  cursor: pointer;
-  user-select: none;
 }
 
 .voce__testo {
-  font-family: var(--f-lettura);
   font-size: var(--t-sm);
-  color: var(--c-text-2);
-  max-width: 76ch;
-}
-
-.voce__meta {
   color: var(--c-text-3);
 }
 
-.voce__dettagli {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
+.col-ambito,
+.col-stato,
+.col-peso,
+.col-data {
+  white-space: nowrap;
 }
 
-.voce__ambito {
-  min-width: 240px;
+.col-peso,
+.col-data {
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-altro {
+  width: 48px;
+  text-align: right;
+}
+
+/* I tre puntini: le azioni di riga stanno nel menù, non in fila su ogni voce. */
+.altro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--c-text-3);
+  cursor: pointer;
+}
+
+.altro:hover,
+.altro:focus-visible {
+  background: var(--c-page-alt);
+  color: var(--c-text);
 }
 
 .garanzia {
@@ -225,12 +286,19 @@
   color: var(--c-text-mute);
 }
 
-/* ---------- Form regola ---------- */
+/* ---------- Cassetti ---------- */
 
 .form-regola {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+}
+
+/* Di quale documento si sta cambiando l'ambito: il cassetto copre la riga. */
+.form-regola__oggetto {
+  color: var(--c-text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
 }
 
 .campo {
@@ -262,16 +330,48 @@
   gap: var(--sp-2);
 }
 
+/* ---------- Schermi stretti ---------- */
+
+/* Con la barra laterale e l'indice delle impostazioni aperti, sotto i
+   1280px peso e data sono i primi a cedere: si leggono nel resto della
+   riga o nell'Archivio Privato. */
+@media (max-width: 1280px) {
+  .col-peso,
+  .col-data {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   :host {
     padding: var(--sp-4);
   }
 
-  .storico__voce {
-    flex-wrap: wrap;
+  .filtri {
+    flex-direction: column;
+    align-items: stretch;
   }
 
-  .voce__dettagli {
+  .filtri__ricerca {
+    flex: none;
+    min-width: 0;
+  }
+
+  .filtri__campo {
+    width: 100%;
+  }
+
+  .filtri__azione {
+    margin-left: 0;
+  }
+
+  /* Sotto i 900px la tabella scorre di lato come le altre: senza un minimo
+     il titolo cederebbe fino a tre puntini. */
+  .ui-tabella {
+    min-width: 520px;
+  }
+
+  .storico__voce {
     flex-wrap: wrap;
   }
 }

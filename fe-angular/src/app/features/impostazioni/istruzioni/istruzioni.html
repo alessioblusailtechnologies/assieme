@@ -61,20 +61,12 @@
   </ui-stato-vuoto>
 } @else if (store.inCaricamento() && !store.regole().length && !store.riferimenti().length) {
   <div class="scheletri">
-    <ui-scheletro [numeroRighe]="2" />
-    <ui-scheletro [numeroRighe]="2" />
+    @for (i of [1, 2, 3]; track i) {
+      <ui-scheletro [numeroRighe]="1" />
+    }
   </div>
 } @else if (scheda() === 'regole') {
   <!-- ================= Regole (RF-D-04/06) ================= -->
-
-  @if (store.puoGestire()) {
-    <div class="azioni-scheda">
-      <button uiBottone variante="primario" type="button" (click)="apriNuovaRegola()">
-        <ui-icon name="aggiungi" [size]="15" />
-        <span>Nuova regola</span>
-      </button>
-    </div>
-  }
 
   @if (!store.regole().length) {
     <ui-stato-vuoto
@@ -90,53 +82,83 @@
       }
     </ui-stato-vuoto>
   } @else {
-    <ul class="voci">
-      @for (regola of store.regole(); track regola.id) {
-        <li class="voce" [class.is-sospesa]="!regola.attiva">
-          <div class="voce__testa">
-            <h2 class="voce__titolo">{{ regola.titolo }}</h2>
-            <ui-tag>{{ ambito(regola) }}</ui-tag>
-            @if (!regola.attiva) {
-              <ui-etichetta-stato icona="sospendi">sospesa</ui-etichetta-stato>
-            }
-
-            @if (store.puoGestire()) {
-              <span class="voce__spazio" aria-hidden="true"></span>
-              <div class="voce__interruttore">
-                <ui-checkbox
-                  [valore]="regola.attiva"
-                  (valoreChange)="store.modificaRegola(regola.id, { attiva: $event })"
-                  [inputId]="'attiva-' + regola.id"
-                />
-                <label [for]="'attiva-' + regola.id">attiva</label>
-              </div>
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                type="button"
-                (click)="apriModificaRegola(regola)"
-              >
-                <ui-icon name="modifica" [size]="13" />
-                <span>Modifica</span>
-              </button>
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                type="button"
-                (click)="eliminaRegola(regola)"
-              >
-                <ui-icon name="elimina" [size]="13" />
-                <span>Elimina</span>
-              </button>
-            }
-          </div>
-          <p class="voce__testo">{{ regola.testo }}</p>
-          <p class="mono voce__meta">aggiornata il {{ regola.aggiornataIl | date: 'dd/MM/yyyy' }}</p>
-        </li>
+    <section class="filtri" aria-label="Filtri delle regole">
+      <ng-container
+        *ngTemplateOutlet="campiFiltro; context: { segnaposto: 'Cerca nel titolo o nel testo della regola…' }"
+      />
+      @if (store.puoGestire()) {
+        <button uiBottone variante="primario" type="button" class="filtri__azione" (click)="apriNuovaRegola()">
+          <ui-icon name="aggiungi" [size]="15" />
+          <span>Nuova regola</span>
+        </button>
       }
-    </ul>
+    </section>
+
+    @if (!regoleFiltrate().length) {
+      <ui-stato-vuoto
+        icona="cerca"
+        titolo="Nessuna regola con questi criteri"
+        descrizione="Prova ad allargare la ricerca togliendo un filtro."
+      >
+        <button uiBottone variante="primario" type="button" (click)="azzeraFiltri()">
+          <ui-icon name="chiudi" [size]="15" />
+          <span>Azzera i filtri</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else {
+      <div class="ui-tabella-contenitore">
+        <table class="ui-tabella">
+          <thead>
+            <tr>
+              <th class="col-voce">Regola</th>
+              <th class="col-ambito">Ambito</th>
+              <th class="col-stato">Stato</th>
+              <th class="col-data">Aggiornata</th>
+              @if (store.puoGestire()) {
+                <th class="col-altro"><span class="visually-hidden">Azioni</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (regola of regoleFiltrate(); track regola.id) {
+              <tr
+                [class.riga-spenta]="!regola.attiva"
+                [class.is-apribile]="store.puoGestire()"
+                (click)="apriRigaRegola(regola)"
+              >
+                <td class="col-voce">
+                  <span class="voce">
+                    <span class="voce__titolo" [title]="regola.titolo">{{ regola.titolo }}</span>
+                    <span class="voce__testo" [title]="regola.testo">{{ regola.testo }}</span>
+                  </span>
+                </td>
+                <td class="col-ambito"><ui-tag>{{ ambito(regola) }}</ui-tag></td>
+                <td class="col-stato">
+                  @if (regola.attiva) {
+                    <ui-etichetta-stato tono="pronto" icona="esegui">attiva</ui-etichetta-stato>
+                  } @else {
+                    <ui-etichetta-stato icona="sospendi">sospesa</ui-etichetta-stato>
+                  }
+                </td>
+                <td class="col-data mono">{{ regola.aggiornataIl | date: 'dd/MM/yy' }}</td>
+                @if (store.puoGestire()) {
+                  <td class="col-altro">
+                    <button
+                      type="button"
+                      class="altro"
+                      [attr.aria-label]="'Altre azioni su ' + regola.titolo"
+                      (click)="apriMenuRegola($event, regola)"
+                    >
+                      <ui-icon name="altre-azioni" [size]="16" />
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
 
     <p class="garanzia">
       <ui-icon name="informazione" [size]="13" />
@@ -148,8 +170,30 @@
   <!-- ============ Documenti di riferimento (RF-D-14/15/16) ============ -->
 
   <!--
+    Per chi li gestisce tutta la scheda è zona di rilascio, come l'Archivio
+    Privato: il riquadro tratteggiato compare solo mentre si trascina, e
+    «Carica» sta accanto ai filtri. Chi legge soltanto non ha niente da
+    lasciare, e la scheda non glielo offre.
+  -->
+  @if (store.puoGestire()) {
+    <ui-zona-caricamento
+      class="corpo-scheda"
+      aspetto="trasparente"
+      [formati]="estensioni"
+      [descrizioneFormati]="formati"
+      (scelti)="store.carica($event)"
+    >
+      <ng-container *ngTemplateOutlet="riferimenti" />
+    </ui-zona-caricamento>
+  } @else {
+    <ng-container *ngTemplateOutlet="riferimenti" />
+  }
+}
+
+<ng-template #riferimenti>
+  <!--
     RF-D-16: il contesto permanente si paga a ogni interrogazione. Il conto
-    sta sopra l'elenco, e l'interruttore attivo/sospeso è igiene ordinaria.
+    sta sopra l'elenco, e sospendere è igiene ordinaria.
   -->
   <ui-avviso icona="riferimenti" titolo="Contesto permanente" role="status">
     {{ store.contesto().testo }}
@@ -159,15 +203,8 @@
     </span>
   </ui-avviso>
 
-  @if (store.puoGestire()) {
-    <ui-zona-caricamento
-      [formati]="estensioni"
-      [descrizioneFormati]="formati"
-      (scelti)="store.carica($event)"
-    />
-    @if (store.coda().length) {
-      <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
-    }
+  @if (store.coda().length) {
+    <ui-coda-caricamento [file]="store.coda()" (chiudi)="store.svuotaCoda()" />
   }
 
   @if (!store.riferimenti().length) {
@@ -175,78 +212,145 @@
       icona="riferimenti"
       titolo="Nessun documento di riferimento"
       descrizione="Convenzioni, note tecniche, casistiche, testi tipo: caricali qui o promuovili dall'Archivio Privato - l'AI li consulterà da sola, e potrà citarli."
-    />
-  } @else {
-    <ul class="voci">
-      @for (riferimento of store.riferimenti(); track riferimento.id) {
-        <li class="voce" [class.is-sospesa]="!riferimento.attivo">
-          <div class="voce__testa">
-            <h2 class="voce__titolo">{{ riferimento.titolo }}</h2>
-            @if (riferimento.documentoPrivatoId) {
-              <a
-                class="voce__origine"
-                [routerLink]="['/archivio/privato', riferimento.documentoPrivatoId]"
-              >
-                dall'Archivio Privato
-              </a>
-            }
-
-            <span class="voce__spazio" aria-hidden="true"></span>
-
-            @if (store.puoGestire()) {
-              <div class="voce__interruttore">
-                <ui-checkbox
-                  [valore]="riferimento.attivo"
-                  (valoreChange)="store.modificaRiferimento(riferimento.id, { attivo: $event })"
-                  [inputId]="'attivo-' + riferimento.id"
-                />
-                <label [for]="'attivo-' + riferimento.id">attivo</label>
-              </div>
-              <button
-                uiBottone
-                dimensione="piccolo"
-                variante="testo"
-                type="button"
-                (click)="eliminaRiferimento(riferimento)"
-              >
-                <ui-icon name="elimina" [size]="13" />
-                <span>{{ riferimento.documentoPrivatoId ? 'Togli il ruolo' : 'Elimina' }}</span>
-              </button>
-            } @else {
-              @if (riferimento.attivo) {
-                <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>
-              } @else {
-                <ui-etichetta-stato icona="sospendi">sospeso</ui-etichetta-stato>
-              }
-            }
-          </div>
-
-          <div class="voce__dettagli">
-            @if (store.puoGestire()) {
-              <ui-select
-                class="voce__ambito"
-                [valore]="ambitoCodificato(riferimento)"
-                (valoreChange)="cambiaAmbito(riferimento, $event)"
-                [opzioni]="opzioni()"
-                campoEtichetta="etichetta"
-                campoValore="valore"
-                ariaLabel="Ambito di validità del documento"
-              />
-            } @else {
-              <ui-tag>{{ ambito(riferimento) }}</ui-tag>
-            }
-            <span class="mono voce__meta">
-              {{ misura(riferimento.dimensioneByte) }}
-              @if (riferimento.numeroPagine) {
-                · {{ riferimento.numeroPagine }} pagine
-              }
-            </span>
-          </div>
-        </li>
+    >
+      @if (store.puoGestire()) {
+        <button uiBottone variante="primario" type="button" (click)="apriCaricamento()">
+          <ui-icon name="carica" [size]="15" />
+          <span>Carica documenti</span>
+        </button>
       }
-    </ul>
+    </ui-stato-vuoto>
+  } @else {
+    <section class="filtri" aria-label="Filtri dei documenti di riferimento">
+      <ng-container *ngTemplateOutlet="campiFiltro; context: { segnaposto: 'Cerca per titolo…' }" />
+      @if (store.puoGestire()) {
+        <button uiBottone variante="primario" type="button" class="filtri__azione" (click)="apriCaricamento()">
+          <ui-icon name="carica" [size]="15" />
+          <span>Carica</span>
+        </button>
+      }
+    </section>
+
+    @if (!riferimentiFiltrati().length) {
+      <ui-stato-vuoto
+        icona="cerca"
+        titolo="Nessun documento con questi criteri"
+        descrizione="Prova ad allargare la ricerca togliendo un filtro."
+      >
+        <button uiBottone variante="primario" type="button" (click)="azzeraFiltri()">
+          <ui-icon name="chiudi" [size]="15" />
+          <span>Azzera i filtri</span>
+        </button>
+      </ui-stato-vuoto>
+    } @else {
+      <div class="ui-tabella-contenitore">
+        <table class="ui-tabella">
+          <thead>
+            <tr>
+              <th class="col-voce">Documento</th>
+              <th class="col-ambito">Ambito</th>
+              <th class="col-peso">Peso</th>
+              <th class="col-stato">Stato</th>
+              <th class="col-data">Aggiornato</th>
+              @if (store.puoGestire()) {
+                <th class="col-altro"><span class="visually-hidden">Azioni</span></th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (riferimento of riferimentiFiltrati(); track riferimento.id) {
+              <tr [class.riga-spenta]="!riferimento.attivo">
+                <td class="col-voce">
+                  <span class="voce voce--in-riga">
+                    <span class="voce__titolo" [title]="riferimento.titolo">{{ riferimento.titolo }}</span>
+                    <!-- Da dove viene si dice con una parola: il collegamento sta nel menù della riga. -->
+                    @if (riferimento.documentoPrivatoId) {
+                      <ui-tag>archivio privato</ui-tag>
+                    }
+                  </span>
+                </td>
+                <td class="col-ambito"><ui-tag>{{ ambito(riferimento) }}</ui-tag></td>
+                <td class="col-peso mono">
+                  {{ misura(riferimento.dimensioneByte) }}
+                  @if (riferimento.numeroPagine) {
+                    · {{ riferimento.numeroPagine }} pag.
+                  }
+                </td>
+                <td class="col-stato">
+                  @if (riferimento.attivo) {
+                    <ui-etichetta-stato tono="pronto" icona="esegui">attivo</ui-etichetta-stato>
+                  } @else {
+                    <ui-etichetta-stato icona="sospendi">sospeso</ui-etichetta-stato>
+                  }
+                </td>
+                <td class="col-data mono">{{ riferimento.aggiornatoIl | date: 'dd/MM/yy' }}</td>
+                @if (store.puoGestire()) {
+                  <td class="col-altro">
+                    <button
+                      type="button"
+                      class="altro"
+                      [attr.aria-label]="'Altre azioni su ' + riferimento.titolo"
+                      (click)="apriMenuRiferimento($event, riferimento)"
+                    >
+                      <ui-icon name="altre-azioni" [size]="16" />
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   }
-}
+</ng-template>
+
+<!-- I campi di filtro, uguali nelle due schede; cambia solo il segnaposto della ricerca. -->
+<ng-template #campiFiltro let-segnaposto="segnaposto">
+  <label class="ui-campo-icona filtri__ricerca">
+    <ui-icon name="cerca" [size]="16" />
+    <input
+      uiCampo
+      type="search"
+      [value]="ricerca()"
+      (input)="ricerca.set($any($event.target).value)"
+      [placeholder]="segnaposto"
+      [attr.aria-label]="segnaposto"
+    />
+  </label>
+
+  <!-- Con un ambito solo in uso la tendina non sceglierebbe niente. -->
+  @if (opzioniAmbitoFiltro().length > 1) {
+    <ui-select
+      class="filtri__campo"
+      [(valore)]="filtroAmbito"
+      [opzioni]="opzioniAmbitoFiltro()"
+      campoEtichetta="etichetta"
+      campoValore="valore"
+      placeholder="Tutti gli ambiti"
+      [azzerabile]="true"
+      ariaLabel="Filtra per ambito"
+    />
+  }
+
+  <ui-select
+    class="filtri__campo"
+    [(valore)]="filtroStato"
+    [opzioni]="opzioniStato()"
+    campoEtichetta="etichetta"
+    campoValore="valore"
+    placeholder="Tutti gli stati"
+    [azzerabile]="true"
+    ariaLabel="Filtra per stato"
+  />
+
+  @if (filtriAttivi()) {
+    <button uiBottone variante="testo" dimensione="piccolo" type="button" (click)="azzeraFiltri()">
+      <ui-icon name="chiudi" [size]="14" />
+      <span>Azzera</span>
+    </button>
+  }
+</ng-template>
 
 <!-- Storico comune alle due schede (RF-D-07) -->
 <section class="storico" aria-label="Storico delle modifiche alle istruzioni">
@@ -265,6 +369,8 @@
     <p class="storico__vuoto">Nessuna modifica registrata.</p>
   }
 </section>
+
+<ui-menu-azioni #menu [voci]="vociMenu()" />
 
 <!-- Cassetto del form regola: creazione e modifica, uno solo -->
 <ui-cassetto
@@ -322,6 +428,39 @@
           <span>{{ inSalvataggio() ? 'Salvataggio…' : 'Salva la regola' }}</span>
         </button>
         <button uiBottone variante="testo" type="button" (click)="cassettoRegola.set(false)">
+          <span>Annulla</span>
+        </button>
+      </div>
+    </div>
+  }
+</ui-cassetto>
+
+<!-- Cassetto dell'ambito di un documento di riferimento -->
+<ui-cassetto [(aperto)]="cassettoRiferimento" titolo="Ambito del documento" larghezza="min(440px, 94vw)">
+  @if (cassettoRiferimento() && riferimentoInModifica(); as riferimento) {
+    <div class="form-regola">
+      <p class="form-regola__oggetto">{{ riferimento.titolo }}</p>
+
+      <div class="campo">
+        <span class="campo__nome">Ambito di validità</span>
+        <ui-select
+          [(valore)]="bozzaAmbitoRiferimento"
+          [opzioni]="opzioni()"
+          campoEtichetta="etichetta"
+          campoValore="valore"
+          ariaLabel="Ambito di validità del documento"
+        />
+        <p class="campo__aiuto">
+          Come per le regole: legare il documento a un ramo o a una compagnia evita che pesi su
+          ogni domanda.
+        </p>
+      </div>
+
+      <div class="form-regola__azioni">
+        <button uiBottone variante="primario" type="button" (click)="salvaAmbitoRiferimento()">
+          <span>Salva l'ambito</span>
+        </button>
+        <button uiBottone variante="testo" type="button" (click)="cassettoRiferimento.set(false)">
           <span>Annulla</span>
         </button>
       </div>
