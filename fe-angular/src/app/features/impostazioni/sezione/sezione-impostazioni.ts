@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { Permesso } from '@core/models';
 import { SessioneStore } from '@core/auth/sessione-store';
+import { Tag } from '@shared/ui/tag/tag';
 
 interface VoceSezione {
   percorso: string;
@@ -10,6 +11,12 @@ interface VoceSezione {
   spiega: string;
   /** Se presente, la voce compare solo a chi ha il permesso (RF-D-01). */
   permesso?: Permesso;
+  /**
+   * La sottosezione non si apre dal menu: la voce resta visibile col tag
+   * «work in progress» e non è un collegamento (14/09/2026, per le demo).
+   * La rotta resta in piedi.
+   */
+  inLavorazione?: boolean;
 }
 
 const VOCI: VoceSezione[] = [
@@ -32,18 +39,21 @@ const VOCI: VoceSezione[] = [
     percorso: 'canali',
     etichetta: 'Canali',
     spiega: 'WhatsApp e posta dell’agenzia, oltre alla chat',
+    inLavorazione: true,
   },
   {
     percorso: 'utenti',
     etichetta: 'Utenti',
     spiega: 'Chi accede e con quale ruolo',
     permesso: 'utenti.gestisci',
+    inLavorazione: true,
   },
   {
     percorso: 'mcp',
     etichetta: 'Accesso MCP',
     spiega: 'VELIA come strumento nei client AI esterni',
     permesso: 'mcp.credenziali',
+    inLavorazione: true,
   },
   {
     percorso: 'aspetto',
@@ -60,7 +70,7 @@ const VOCI: VoceSezione[] = [
  */
 @Component({
   selector: 'app-sezione-impostazioni',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet, Tag],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav class="indice" aria-label="Sottosezioni delle impostazioni">
@@ -68,10 +78,20 @@ const VOCI: VoceSezione[] = [
       <ul>
         @for (voce of voci(); track voce.percorso) {
           <li>
-            <a class="voce" [routerLink]="voce.percorso" routerLinkActive="is-attiva">
-              <span class="voce__etichetta">{{ voce.etichetta }}</span>
-              <span class="voce__spiega">{{ voce.spiega }}</span>
-            </a>
+            @if (voce.inLavorazione) {
+              <span class="voce is-in-lavorazione" aria-disabled="true">
+                <span class="voce__testa">
+                  <span class="voce__etichetta">{{ voce.etichetta }}</span>
+                  <ui-tag>work in progress</ui-tag>
+                </span>
+                <span class="voce__spiega">{{ voce.spiega }}</span>
+              </span>
+            } @else {
+              <a class="voce" [routerLink]="voce.percorso" routerLinkActive="is-attiva">
+                <span class="voce__etichetta">{{ voce.etichetta }}</span>
+                <span class="voce__spiega">{{ voce.spiega }}</span>
+              </a>
+            }
           </li>
         }
       </ul>
@@ -135,6 +155,25 @@ const VOCI: VoceSezione[] = [
 
     .voce.is-attiva .voce__etichetta {
       color: var(--c-accent);
+    }
+
+    .voce.is-in-lavorazione {
+      cursor: not-allowed;
+    }
+
+    .voce.is-in-lavorazione:hover {
+      background: none;
+    }
+
+    .voce.is-in-lavorazione .voce__etichetta {
+      color: var(--c-text-3);
+    }
+
+    .voce__testa {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 2px var(--sp-2);
     }
 
     .voce__spiega {
