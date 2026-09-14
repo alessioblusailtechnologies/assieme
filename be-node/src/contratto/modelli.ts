@@ -116,7 +116,7 @@ export const LIVELLI: Livello[] = [
     nome: 'Medio',
     sdk: 'claude-sonnet-5',
     descrizione:
-      'Circa metà dei tempi e dei costi di Boost, con qualità leggermente inferiore sulle analisi lunghe. Buon equilibrio fra qualità e tempi di risposta.',
+      'Il livello di base: risposte chiare e rapide alle domande di tutti i giorni sui documenti.',
     adeguatezzaDocumentale: 'alta',
     disponibile: true,
   },
@@ -127,7 +127,7 @@ export const LIVELLI: Livello[] = [
        a `deepseek-v4-flash-0731-284b`, che resta nel banco. */
     sdk: 'deepseek-flash',
     descrizione:
-      'Circa un decimo dei costi di Boost, con risposte più sintetiche e meno citazioni. Adatto alle domande puntuali, meno alle analisi lunghe.',
+      'Un passo in più: più approfondimento per le domande articolate e i confronti fra documenti.',
     adeguatezzaDocumentale: 'media',
     disponibile: true,
   },
@@ -136,7 +136,7 @@ export const LIVELLI: Livello[] = [
     nome: 'Boost',
     sdk: 'claude-opus-5',
     descrizione:
-      'La qualità più alta: letture più accurate sui documenti lunghi e citazioni più complete. Il riferimento per analisi e confronti fra più documenti.',
+      'Il massimo di VELIA: la lettura più accurata e le citazioni più complete, per le analisi più complesse.',
     adeguatezzaDocumentale: 'alta',
     disponibile: true,
   },
