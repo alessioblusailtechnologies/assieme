@@ -3589,6 +3589,78 @@
   "pathPdf": "archivio-pubblico/nobis/auto/nobis-truck/ed-2025-10/originale.pdf"
  },
  {
+  "id": "doc-nobis-nobis-viaggio-easy-completa-ed-2026-05-condizioni-di-assicurazione",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Nobis Viaggio Easy Completa",
+  "titolo": "Condizioni di Assicurazione — Nobis Viaggio Easy Completa",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 46,
+  "paginaInizio": 9,
+  "edizione": {
+   "id": "edz-nobis-viaggio-easy-completa-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-viaggio-easy-completa-ed-2026-05-contatti-utili",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Nobis Viaggio Easy Completa",
+  "titolo": "Copertina e Contatti utili — Nobis Viaggio Easy Completa",
+  "tipologia": "altro",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-nobis-viaggio-easy-completa-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/contatti-utili.md",
+  "pathPdf": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-viaggio-easy-completa-ed-2026-05-dip",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Nobis Viaggio Easy Completa",
+  "titolo": "DIP Danni — Nobis Viaggio Easy Completa",
+  "tipologia": "dip",
+  "numeroPagine": 3,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-nobis-viaggio-easy-completa-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/dip.md",
+  "pathPdf": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/originale.pdf"
+ },
+ {
+  "id": "doc-nobis-nobis-viaggio-easy-completa-ed-2026-05-dip-aggiuntivo",
+  "compagniaId": "cmp-nobis",
+  "ramoId": "ram-viaggi",
+  "prodotto": "Nobis Viaggio Easy Completa",
+  "titolo": "DIP Aggiuntivo Danni — Nobis Viaggio Easy Completa",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 3,
+  "paginaInizio": 6,
+  "edizione": {
+   "id": "edz-nobis-viaggio-easy-completa-2026-05",
+   "etichetta": "ed. 05/2026",
+   "validaDal": "2026-05-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/nobis/viaggi/nobis-viaggio-easy-completa/ed-2026-05/originale.pdf"
+ },
+ {
   "id": "doc-unipolsai-condominio-piu-ed-2026-09-condizioni-di-assicurazione",
   "compagniaId": "cmp-unipolsai",
   "ramoId": "ram-casa",

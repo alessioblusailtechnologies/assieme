@@ -76,10 +76,16 @@ preesistente di quegli indici, segnalate e non applicate: vedi
 
 ### Prossimi lotti
 
-- [ ] **Nobis, primo lotto**: Filo diretto Tutela (`tutela`), Nobis
-  Viaggio Easy Completa (`viaggi`), Commercio su Misura (`imprese`),
-  Nobis Casa & Noi (`casa`). ~180 pagine stimate, **~6 M** al costo
-  misurato.
+- [ ] **Nobis, primo lotto**, in corso dal 14/09/2026. I quattro PDF sono
+  gia scaricati in `local-ingestion/in-arrivo/nobis-lotto1/`: **227 pagine
+  vere** contro le ~180 stimate, quindi ~7,7 M al costo misurato.
+  Convenzioni in `lavorazione-visiva/convenzioni-nobis.md`.
+  - [x] **Nobis Viaggio Easy Completa** (ed. 05/2026, 59 pagine, 4
+    documenti): in archivio, apre il ramo `viaggi` per Nobis. Catalogo a
+    390 documenti.
+  - [ ] Filo diretto Tutela (`tutela`, 32 pagine)
+  - [ ] Commercio su Misura (`imprese`, 44 pagine)
+  - [ ] Nobis Casa & Noi (`casa`, **92** pagine contro le ~60 stimate)
 - [ ] **Groupama, primo lotto a costo minimo**: Casa Senza Confini
   (`casa`), Groupama Benessere InSalute (`salute`), Groupama Protezione
   Infortuni (`infortuni`), Tutela Legale Famiglia (`tutela`). ~280 pagine

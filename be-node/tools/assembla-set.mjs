@@ -142,7 +142,19 @@ if (attenzioni.length) console.log(`Pagine con [!ATTENZIONE] da riferire: ${atte
 else console.log('Nessuna porzione segnalata come illeggibile.');
 
 function nomeCorto(set) {
-  return `${set.compagnia.replace(/\s+(S\.p\.A\.|Assicurazioni S\.p\.A\.|Mutua).*$/i, '')} ${set.prodotto}`;
+  // Accorcia la ragione sociale per il titolo. Tolta la forma societaria puo'
+  // restare appesa una preposizione: «Nobis Compagnia di Assicurazioni S.p.A.»
+  // diventava «Nobis Compagnia di», e il titolo «Nobis Compagnia di Nobis
+  // Viaggio Easy Completa». Si toglie anche quella coda.
+  const corto = set.compagnia
+    .replace(/\s+(S\.p\.A\.|Assicurazioni S\.p\.A\.|Mutua).*$/i, '')
+    .replace(/\s+(Compagnia\s+di|Compagnia|Societ[aà]'?\s+di|Gruppo)$/i, '')
+    .replace(/\s+(di|de|del|della|dei|delle)$/i, '')
+    .trim();
+  // Se il prodotto porta gia' il nome della compagnia («Nobis Viaggio Easy
+  // Completa»), non lo si ripete: il titolo sarebbe «Nobis Nobis Viaggio…».
+  const gia = new RegExp(`^${corto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  return gia.test(set.prodotto) ? set.prodotto : `${corto} ${set.prodotto}`;
 }
 
 function meseDiEdizione(edizione) {
