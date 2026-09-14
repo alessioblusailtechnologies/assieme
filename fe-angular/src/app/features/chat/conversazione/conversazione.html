@@ -264,6 +264,28 @@
             <ui-icon name="comprimi-barra" [size]="14" class="contesto__freccia" />
           </button>
         </div>
+        <!--
+          Il cliente della conversazione (14/09/2026). Nel campo del messaggio
+          il suo chip vale per la domanda e se ne va all'invio; qui resta
+          finché la conversazione è sua, e staccarlo è un gesto a sé.
+        -->
+        @if (store.clienteConversazione(); as cliente) {
+          <ul class="contesto__elenco contesto__elenco--cliente">
+            <li class="contesto__doc">
+              <ui-icon name="utente" [size]="14" />
+              <a class="contesto__titolo" [routerLink]="['/clienti', cliente.id]">{{ cliente.nome }}</a>
+              <button
+                type="button"
+                class="contesto__togli"
+                (click)="store.staccaClienteDallaConversazione()"
+                [attr.aria-label]="'Stacca ' + cliente.nome + ' dalla conversazione'"
+                title="Stacca dalla conversazione"
+              >
+                <ui-icon name="chiudi" [size]="12" />
+              </button>
+            </li>
+          </ul>
+        }
         @if (contesto().length) {
         <!--
           Una riga per gruppo: un documento, o il prodotto coi documenti del

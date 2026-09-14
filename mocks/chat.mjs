@@ -393,6 +393,11 @@ function riaggancia(res, volo) {
 
 async function streamingRisposta(req, res, conversazione, nuovoMessaggio) {
   const adesso = new Date().toISOString();
+  /* Come il backend (14/09/2026): il cliente menzionato nella domanda
+     aggancia la conversazione prima che la risposta parta. */
+  if (nuovoMessaggio.clienteId && clientePerId(nuovoMessaggio.clienteId)) {
+    conversazione.clienteId = nuovoMessaggio.clienteId;
+  }
 
   const messaggioUtente = {
     id: `msg-${prossimoMessaggio++}`,

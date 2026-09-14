@@ -367,6 +367,8 @@ export interface NuovoMessaggio {
   esportazione?: EsportazioneElaborata;
   /** Il livello scelto nel composer, solo per questo messaggio; assente = quello dell'agenzia. */
   livello?: Id;
+  /** Il cliente menzionato in questa domanda: aggancia la conversazione. Assente = resta il suo. */
+  clienteId?: Id;
 }
 
 /**

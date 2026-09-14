@@ -328,32 +328,83 @@ describe('ChatStore', () => {
     expect(store.inRisposta()).toBe(false);
   });
 
-  it('il cliente menzionato prima di inviare viaggia con la creazione, e il chip non sparisce nel mezzo', async () => {
+  it('il cliente menzionato parte con la domanda, resta nella bolla e lascia il campo', async () => {
     await avvia();
     const rossi = { id: 'cl-1', nome: 'Rossi Mario' };
-    store.agganciaCliente(rossi);
+    store.menzionaCliente(rossi);
     store.bozza.set('Cosa sai su di lui?');
     store.invia();
+
+    /* 14/09/2026: il chip restava nel campo, e toglierlo per ripulire
+       staccava il cliente. Ora se ne va con la bozza. */
+    expect(store.clienteBozza()).toBeUndefined();
 
     const crea = http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni');
     expect(crea.request.body).toEqual({ clienteId: 'cl-1' });
     crea.flush({ ...conversazione('cnv-1'), cliente: rossi }, { status: 201, statusText: 'Created' });
     await microtask();
 
-    /* Lo storico non è ancora tornato: è il tratto in cui il chip spariva. */
-    expect(store.cliente()).toEqual(rossi);
-    /* E la bolla della domanda appena partita porta già il suo chip. */
+    const domanda = http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/cnv-1/messaggi');
+    expect(domanda.request.body).toMatchObject({ testo: 'Cosa sai su di lui?', clienteId: 'cl-1' });
+    /* La bolla della domanda appena partita porta il suo chip. */
     expect(store.messaggi().find((m) => m.autore === 'utente')?.cliente).toEqual(rossi);
+  });
 
-    http.match('/api/conversazioni').forEach((r) =>
-      r.flush({ elementi: [{ ...conversazione('cnv-1'), cliente: rossi }], totale: 1, pagina: 1, perPagina: 50 }),
-    );
+  it('in una conversazione aperta il cliente menzionato viaggia col messaggio, senza chiamate prima', async () => {
+    await avvia([conversazione('cnv-1')]);
+    store.apri('cnv-1');
+    const rossi = { id: 'cl-1', nome: 'Rossi Mario' };
+    store.menzionaCliente(rossi);
+    expect(http.match((r) => r.method === 'PATCH')).toHaveLength(0);
+
+    store.bozza.set('E le sue scadenze?');
+    store.invia();
+
+    const domanda = http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/cnv-1/messaggi');
+    expect(domanda.request.body).toMatchObject({ clienteId: 'cl-1' });
+    expect(store.clienteBozza()).toBeUndefined();
+
+    /* All'`inizio` il server l'ha già agganciato: il contesto non aspetta la fine della risposta. */
+    http.match('/api/conversazioni').forEach((r) => r.flush({ elementi: [], totale: 0, pagina: 1, perPagina: 50 }));
+    const inizio = blocco({ tipo: 'inizio', messaggioId: 'msg-2', messaggioUtenteId: 'msg-1' });
+    domanda.event({
+      type: HttpEventType.DownloadProgress,
+      loaded: inizio.length,
+      partialText: inizio,
+    } as HttpDownloadProgressEvent);
     await microtask();
-    expect(store.cliente()).toEqual(rossi);
+    expect(http.match('/api/conversazioni')).toHaveLength(1);
+  });
 
-    /* Tornando alla schermata nuova il cliente di prima non la segue. */
-    store.apri(undefined);
-    expect(store.cliente()).toBeUndefined();
+  it('togliere il chip dal campo non stacca il cliente; staccarlo è un gesto a sé', async () => {
+    const rossi = { id: 'cl-1', nome: 'Rossi Mario' };
+    await avvia([{ ...conversazione('cnv-1'), cliente: rossi }]);
+    store.apri('cnv-1');
+    expect(store.clienteConversazione()).toEqual(rossi);
+
+    store.menzionaCliente(rossi);
+    store.togliClienteMenzionato();
+    expect(http.match((r) => r.method === 'PATCH')).toHaveLength(0);
+    expect(store.clienteConversazione()).toEqual(rossi);
+
+    store.staccaClienteDallaConversazione();
+    const stacca = http.expectOne((r) => r.method === 'PATCH' && r.url === '/api/conversazioni/cnv-1');
+    expect(stacca.request.body).toEqual({ clienteId: null });
+  });
+
+  it('se l invio fallisce anche il cliente menzionato torna nel campo', async () => {
+    await avvia();
+    const rossi = { id: 'cl-1', nome: 'Rossi Mario' };
+    store.menzionaCliente(rossi);
+    store.bozza.set('Cosa sai su di lui?');
+    store.invia();
+
+    http
+      .expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni')
+      .flush({ codice: 'ERRORE_INTERNO', messaggio: 'Non disponibile.' }, { status: 500, statusText: 'Server Error' });
+
+    expect(store.bozza()).toBe('Cosa sai su di lui?');
+    expect(store.clienteBozza()).toEqual(rossi);
   });
 
   it('se l invio fallisce la bozza torna al composer', async () => {

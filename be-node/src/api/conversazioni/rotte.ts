@@ -708,19 +708,35 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
          su domanda e risposta — a meno che l'utente non rinomini prima. */
       const derivato = esistente.titolo === TITOLO_NUOVA;
       const titolo = derivato ? titoloDaMessaggio(testo) : esistente.titolo;
+      /* Il cliente menzionato in questa domanda (14/09/2026) aggancia la
+         conversazione qui, prima che il job parta: il motore lo legge
+         all'avvio, e così lo trova di sicuro. Prima l'aggancio era una PATCH
+         a parte al momento della menzione e il chip restava nel campo:
+         toglierlo con la × per ripulire staccava il cliente, e la domanda
+         dopo partiva senza. Chi scrive da una chat cliente non sceglie di chi
+         è la conversazione. */
+      const menzionato = richiesta.identita.ruolo === 'ospite' ? undefined : esito.data.clienteId;
+      if (menzionato) {
+        const suo = await client.query(`select 1 from velia.clienti where id = $1 and tenant_id = $2`, [
+          menzionato,
+          tenantId,
+        ]);
+        if (!suo.rowCount) throw ErroreApi.datiNonValidi('Cliente inesistente.');
+      }
+      const cliente = menzionato ?? esistente.cliente_id;
       await client.query(
-        `update velia.conversazioni set documenti_in_contesto = $2, titolo = $3, updated_at = now()
+        `update velia.conversazioni set documenti_in_contesto = $2, titolo = $3, cliente_id = $4, updated_at = now()
          where id = $1`,
-        [esistente.id, contesto, titolo],
+        [esistente.id, contesto, titolo, cliente],
       );
-      /* Il cliente con cui parte la domanda si copia dalla conversazione
-         (13/09/2026): è lo stesso che il motore leggerà, e il chip nella
-         bolla non può dire altro. */
+      /* Il cliente con cui parte la domanda è quello della conversazione
+         dopo l'aggancio (13/09/2026): lo stesso che il motore leggerà, e il
+         chip nella bolla non può dire altro. */
       const m = await client.query<{ id: string }>(
         `insert into velia.messaggi
            (conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati, cliente_id)
          values ($1, $2, 'utente', $3, $4, $5, $6) returning id`,
-        [esistente.id, tenantId, utenteId, testo, documentiReferenziati, esistente.cliente_id],
+        [esistente.id, tenantId, utenteId, testo, documentiReferenziati, cliente],
       );
       return { messaggioUtenteId: m.rows[0]!.id, titoloProvvisorio: derivato ? titolo : undefined };
     });

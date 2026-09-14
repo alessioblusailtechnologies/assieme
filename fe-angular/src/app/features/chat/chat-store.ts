@@ -830,51 +830,43 @@ export class ChatStore {
   // --- Il cliente di cui si parla -----------------------------------------
 
   /**
-   * Il cliente menzionato **prima** che la conversazione esista.
+   * Il cliente menzionato con «@» nella bozza.
    *
-   * Come i riferimenti della bozza: si può menzionare qualcuno nella
-   * schermata iniziale, dove non c'è ancora niente a cui agganciarlo, e
-   * l'aggancio vero avviene alla creazione.
+   * È parte della domanda, come i documenti referenziati (14/09/2026):
+   * parte col messaggio, aggancia la conversazione sul server, e il campo si
+   * svuota. Prima restava nel campo per tutta la conversazione, e toglierlo
+   * con la × per ripulire staccava il cliente: la domanda dopo partiva
+   * senza, e il motore rispondeva di non sapere di chi si parlasse.
    */
   readonly clienteBozza = signal<{ id: Id; nome: string } | undefined>(undefined);
 
-  /**
-   * Quello agganciato davvero, o quello che lo sarà appena si invia.
-   *
-   * Finché la conversazione appena nata non è arrivata nello storico vale
-   * quello in bozza: prima la bozza si azzerava alla creazione, e il chip
-   * spariva dal composer nel tratto fra la risposta e il ricaricamento. Da
-   * lì in poi comanda la conversazione, anche quando un cliente non ce l'ha.
-   */
-  readonly cliente = computed(() => {
-    const attiva = this.attiva();
-    return attiva ? attiva.cliente : this.clienteBozza();
-  });
+  /** Il cliente della conversazione aperta: si vede nel contesto, e da lì si stacca. */
+  readonly clienteConversazione = computed(() => this.attiva()?.cliente);
 
   /**
-   * Menzionare un cliente: la conversazione diventa sua.
+   * Menzionare un cliente.
    *
    * Non porta documenti nel contesto — duecento documenti non sarebbero un
    * contesto, sarebbero un archivio — ma dice al motore di chi si parla: la
    * sua scheda entra nella workspace, e la conversazione compare nella sua
-   * pagina.
+   * pagina. L'aggancio avviene all'invio, insieme alla domanda.
    */
-  agganciaCliente(cliente: { id: Id; nome: string }): void {
+  menzionaCliente(cliente: { id: Id; nome: string }): void {
+    this.clienteBozza.set(cliente);
+  }
+
+  /** Il chip tolto dal campo: la domanda non lo porta, la conversazione resta com'è. */
+  togliClienteMenzionato(): void {
+    this.clienteBozza.set(undefined);
+  }
+
+  /** Staccare il cliente dalla conversazione è un gesto a sé, dal contesto. */
+  staccaClienteDallaConversazione(): void {
     const id = this.idAttiva();
-    if (!id) {
-      this.clienteBozza.set(cliente);
-      return;
-    }
+    if (!id) return;
     /* Si ricarica l'elenco invece di rattoppare la riga: il cliente si
        vede da lì (la conversazione attiva è una voce dello storico), e una
        copia locale che diverge è il modo in cui il nome resta indietro. */
-    this.api.aggancia(id, cliente.id).subscribe({ next: () => this.storico.ricarica() });
-  }
-
-  staccaCliente(): void {
-    const id = this.idAttiva();
-    this.clienteBozza.set(undefined);
-    if (!id) return;
     this.api.aggancia(id, null).subscribe({ next: () => this.storico.ricarica() });
   }
 
@@ -1080,21 +1072,20 @@ export class ChatStore {
     if (!testo || this.inRisposta()) return;
 
     const riferimenti = this.riferimentiBozza();
+    /* Il cliente menzionato è della domanda: parte con lei e lascia il campo. */
+    const cliente = this.clienteBozza();
     this.bozza.set('');
     this.riferimentiBozza.set([]);
+    this.clienteBozza.set(undefined);
 
     const id = this.idAttiva();
     if (id) {
-      this.avviaStream(id, testo, riferimenti);
+      this.avviaStream(id, testo, riferimenti, undefined, cliente);
       return;
     }
 
-    const cliente = this.clienteBozza();
     this.api.crea(cliente ? { clienteId: cliente.id } : {}).subscribe({
       next: (conversazione) => {
-        /* Il cliente in bozza non si azzera qui: resta a fare da chip finché
-           la conversazione non arriva nello storico (vedi `cliente`), e se ne
-           va da solo quando si apre un'altra conversazione. */
         /* L'id si imposta prima di navigare: così `apri()` riconosce la
            conversazione come già aperta e non ricarica nulla. */
         this.idAttiva.set(conversazione.id);
@@ -1109,9 +1100,9 @@ export class ChatStore {
         if (!this.token.tokenOspite()) {
           void this.router.navigate(['/chat', conversazione.id]);
         }
-        this.avviaStream(conversazione.id, testo, riferimenti);
+        this.avviaStream(conversazione.id, testo, riferimenti, undefined, cliente);
       },
-      error: () => this.ripristinaBozza(testo, riferimenti),
+      error: () => this.ripristinaBozza(testo, riferimenti, cliente),
     });
   }
 
@@ -1132,7 +1123,13 @@ export class ChatStore {
     testo: string,
     riferimenti: RiferimentoDocumento[],
     esportazione?: EsportazioneElaborata,
+    /** Il cliente menzionato in questa domanda: aggancia la conversazione sul server. */
+    menzionato?: { id: Id; nome: string },
   ): void {
+    /* Il chip nella bolla appena inviata: quello menzionato, o quello che la
+       conversazione ha già. Il server scrive lo stesso sul messaggio. */
+    const cliente = menzionato ?? this.clienteConversazione();
+    const cambiaCliente = !!menzionato && menzionato.id !== this.clienteConversazione()?.id;
     const stream: StreamAttivo = {
       conversazioneId: id,
       utente: {
@@ -1144,9 +1141,7 @@ export class ChatStore {
         documentiReferenziati: riferimenti.map((r) => r.id),
         citazioni: [],
         provenienze: [],
-        /* Il chip del cliente c'è già nella bolla appena inviata: il server
-           scrive lo stesso, copiandolo dalla conversazione. */
-        ...(this.cliente() && { cliente: this.cliente() }),
+        ...(cliente && { cliente }),
       },
       riferimenti,
     };
@@ -1160,16 +1155,23 @@ export class ChatStore {
         documentiReferenziati: riferimenti.map((r) => r.id),
         ...(esportazione && { esportazione }),
         ...(livello && { livello }),
+        ...(menzionato && { clienteId: menzionato.id }),
       })
       .subscribe({
-        next: (evento) => this.applica(evento),
+        next: (evento) => {
+          /* Un cliente nuovo per la conversazione: all'`inizio` il server l'ha
+             già agganciato, e il contesto lo mostra subito invece che a
+             risposta finita. */
+          if (evento.tipo === 'inizio' && cambiaCliente) this.storico.ricarica();
+          this.applica(evento);
+        },
         error: () => {
           /* Errore prima che lo stream partisse (validazione, rete): il
              messaggio non è mai arrivato al server. La bozza torna al
              composer; ad avvisare ci ha già pensato l'interceptor. */
           this.streamAttivo.set(undefined);
           this.storico.segnalaRisposta(id, false);
-          this.ripristinaBozza(testo, riferimenti);
+          this.ripristinaBozza(testo, riferimenti, menzionato);
         },
       });
   }
@@ -1415,9 +1417,14 @@ export class ChatStore {
     this.streamAttivo.set(undefined);
   }
 
-  private ripristinaBozza(testo: string, riferimenti: RiferimentoDocumento[]): void {
+  private ripristinaBozza(
+    testo: string,
+    riferimenti: RiferimentoDocumento[],
+    cliente?: { id: Id; nome: string },
+  ): void {
     if (!this.bozza()) this.bozza.set(testo);
     if (!this.riferimentiBozza().length) this.riferimentiBozza.set(riferimenti);
+    if (cliente && !this.clienteBozza()) this.clienteBozza.set(cliente);
   }
 
   // --- Azioni sulla conversazione ----------------------------------------

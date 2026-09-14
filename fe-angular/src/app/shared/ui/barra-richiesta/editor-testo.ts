@@ -291,7 +291,7 @@ export function creaChipCliente(
   chip.setAttribute(ATTR_CLIENTE, cliente.id);
   chip.classList.add('riferimento--cliente');
   chip.append(creaSvgIcona('utente', 12), titolo(cliente.nome));
-  chip.append(bottoneTogli(`Stacca ${cliente.nome} dalla conversazione`, togli));
+  chip.append(bottoneTogli(`Togli ${cliente.nome} dalla domanda`, togli));
   return chip;
 }
 

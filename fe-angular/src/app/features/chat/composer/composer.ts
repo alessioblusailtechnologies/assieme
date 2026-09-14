@@ -147,7 +147,7 @@ export class Composer {
       /* Letto qui perché l'effect lo segua: il chip di un allegato cambia
          faccia quando il server finisce di leggerlo, o quando fallisce. */
       const elaborazioni = this.store.elaborazioni();
-      const cliente = this.store.cliente();
+      const cliente = this.store.clienteBozza();
       untracked(() => this.sincronizzaEditor(testo, riferimenti, allegati, elaborazioni, cliente));
     });
   }
@@ -169,9 +169,9 @@ export class Composer {
       // Un chip tolto con Backspace: il riferimento se ne va con lui.
       this.store.riferimentiBozza.update((r) => r.filter((d) => presenti.has(chiaveGruppo(d))));
     }
-    /* Anche il cliente: cancellare il suo chip è il modo naturale di dire
-       «non è di lui che parlo», e deve valere quanto la ×. */
-    if (this.store.cliente() && !idChipCliente(editor)) this.store.staccaCliente();
+    /* Anche il cliente: cancellare il suo chip lo toglie dalla domanda, come
+       la ×. Dalla conversazione no: quello è un gesto a sé, dal contesto. */
+    if (this.store.clienteBozza() && !idChipCliente(editor)) this.store.togliClienteMenzionato();
     this.aggiornaCursore();
   }
 
@@ -257,14 +257,13 @@ export class Composer {
   }
 
   /**
-   * Un cliente menzionato: la `@query` diventa il suo chip, lì dove stava,
-   * e la conversazione diventa sua.
+   * Un cliente menzionato: la `@query` diventa il suo chip, lì dove stava.
    *
    * Il chip è quello dei documenti con l'icona di una persona, perché il
-   * gesto è lo stesso e chi scrive deve vedere subito che cosa ha scelto.
-   * A differenza di un documento, però, non se ne va con la bozza: il
-   * cliente è della conversazione, e il chip resta finché non lo si toglie
-   * con la ×.
+   * gesto è lo stesso e chi scrive deve vedere subito che cosa ha scelto. E
+   * come un documento se ne va con la bozza (14/09/2026): all'invio il
+   * cliente aggancia la conversazione e il campo torna vuoto. Restava nel
+   * campo, e toglierlo per ripulire staccava il cliente dalla conversazione.
    */
   protected aggancia(cliente: { id: string; nome: string }): void {
     this.inScelta = true;
@@ -275,15 +274,15 @@ export class Composer {
     const da = menzione ? menzione.inizio : this.cursore();
     sostituisciIntervallo(editor, da, this.cursore(), chip);
     scriviDopoChip(editor, chip, ' ');
-    this.store.agganciaCliente(cliente);
+    this.store.menzionaCliente(cliente);
     this.aggiorna();
     this.inScelta = false;
   }
 
-  /** Il chip del cliente: toglierlo lo stacca dalla conversazione. */
+  /** Il chip del cliente: toglierlo lo toglie dalla domanda, non dalla conversazione. */
   private nuovoChipCliente(cliente: { id: string; nome: string }): HTMLElement {
     return creaChipCliente(cliente, () => {
-      this.store.staccaCliente();
+      this.store.togliClienteMenzionato();
       this.editor.focus();
       this.aggiorna();
     });

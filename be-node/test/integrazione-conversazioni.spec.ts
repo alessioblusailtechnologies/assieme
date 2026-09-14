@@ -682,6 +682,61 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     await pool().query(`delete from velia.jobs where id = $1`, [jobId]);
   });
 
+  it('il cliente menzionato nella domanda aggancia la conversazione prima del job, e il motore lo trova nel prompt', async () => {
+    /* 14/09/2026: il chip restava nel campo e toglierlo con la × staccava il
+       cliente, così la domanda dopo partiva senza. Ora il cliente viaggia con
+       la domanda: nessuna PATCH a parte che possa incrociarsi con l'invio. */
+    const cliente = (
+      await pool().query<{ id: string }>(
+        `insert into velia.clienti (tenant_id, nome) values ($1, 'Collaudo Menzione') returning id`,
+        [TENANT_COLLAUDO],
+      )
+    ).rows[0]!.id;
+    const conv = (await richiedi('POST', '/api/conversazioni', tokenAdmin, {})).json<Conversazione>();
+    try {
+      let prompt = '';
+      motore.copione = (r) => {
+        prompt = r.promptUtente;
+        return Promise.resolve({
+          testo:
+            `Nei documenti non c'è niente su di lui.\n\n${MARCATORE_CITAZIONI}\n` +
+            JSON.stringify({ citazioni: [], provenienze: [], nonSupportato: true }) +
+            '\n```',
+        });
+      };
+      const testo = 'Cosa sai su di lui, collaudo menzione?';
+      const stream = richiedi('POST', `/api/conversazioni/${conv.id}/messaggi`, tokenAdmin, {
+        testo,
+        documentiReferenziati: [],
+        clienteId: cliente,
+      });
+      await aspettaJob(testo);
+      /* Il job è in coda e non è ancora partito: la conversazione è già sua. */
+      const riga = await pool().query<{ cliente_id: string | null }>(
+        `select cliente_id from velia.conversazioni where id = $1`,
+        [conv.id],
+      );
+      expect(riga.rows[0]?.cliente_id).toBe(cliente);
+
+      await lavoraTutto();
+      expect((await stream).statusCode).toBe(200);
+      expect(prompt).toContain('La conversazione riguarda il cliente Collaudo Menzione');
+      const filo = (await richiedi('GET', `/api/conversazioni/${conv.id}/messaggi`, tokenAdmin)).json<Messaggio[]>();
+      expect(filo[0]?.cliente?.id).toBe(cliente);
+
+      /* Un cliente che non è dell'agenzia non aggancia niente. */
+      const estraneo = await richiedi('POST', `/api/conversazioni/${conv.id}/messaggi`, tokenAdmin, {
+        testo: 'E di questo?',
+        documentiReferenziati: [],
+        clienteId: '00000000-0000-4000-8000-000000000000',
+      });
+      expect(estraneo.statusCode).toBe(400);
+    } finally {
+      await richiedi('DELETE', `/api/conversazioni/${conv.id}`, tokenAdmin);
+      await pool().query(`delete from velia.clienti where id = $1`, [cliente]);
+    }
+  });
+
   it('DELETE: 204, messaggi in cascata, il documento allegato resta nell’Archivio Privato', async () => {
     const conv = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>();
     const allegato = conv.documentiInContesto.find((d) => d.archivio === 'privato')!;

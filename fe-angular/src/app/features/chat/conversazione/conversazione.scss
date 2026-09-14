@@ -258,6 +258,11 @@
   gap: var(--sp-2);
 }
 
+/* Il cliente sta sopra i documenti: è di chi si parla, prima di che cosa si guarda. */
+.contesto__elenco--cliente {
+  margin-bottom: var(--sp-2);
+}
+
 .contesto__doc {
   display: flex;
   border-radius: var(--radius-sm);

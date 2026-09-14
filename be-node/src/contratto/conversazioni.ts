@@ -443,6 +443,12 @@ export const schemaNuovoMessaggio = z.object({
    * basta, la scelta dell'agenzia resta com'è. Assente = quello dell'agenzia.
    */
   livello: z.string().min(1).optional(),
+  /**
+   * Il cliente menzionato con «@» in questa domanda (14/09/2026): aggancia
+   * la conversazione prima che il job parta. Assente = resta quello della
+   * conversazione.
+   */
+  clienteId: z.string().uuid().optional(),
 });
 
 export type NuovoMessaggio = z.infer<typeof schemaNuovoMessaggio>;
