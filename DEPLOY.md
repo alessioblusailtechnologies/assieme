@@ -5,20 +5,29 @@ Tre pezzi, tre posti:
 | Pezzo | Dove | Perché |
 |---|---|---|
 | Sito (Astro) | Cloudflare Pages | già lì |
-| App (Angular, `fe-angular/`) | **Render** Static Site `velia-app` (nel Blueprint), `app.sonovelia.it` | statica, gratis, stesso pannello di API e worker; Cloudflare Pages resta l'alternativa (§2) |
-| Backend (`be-node/`: API + worker) | **Render**, regione **Francoforte**, `api.sonovelia.it` (Blueprint `render.yaml` alla radice del repo; la guida Railway sotto resta come riferimento, i passi sono equivalenti) | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
-| Database e Storage | Supabase (già in cloud, progetto `hcxiloivukbdcfcugksg`) | invariato |
+| App (Angular, `fe-angular/`) | **Render** Static Site nel Blueprint, `app.sonovelia.it` (dev: `app-dev.sonovelia.it`) | statica, gratis, stesso pannello di API e worker; Cloudflare Pages resta l'alternativa (§2) |
+| Backend (`be-node/`: API + worker + sandbox) | **Render**, regione **Francoforte**, `api.sonovelia.it` (dev: `api-dev.sonovelia.it`; la guida Railway sotto resta come riferimento, i passi sono equivalenti) | processi sempre accesi, processo figlio dell'Agent SDK, stream SSE, disco per le workspace: niente serverless. Residenza UE (RNF-03) |
+| Database e Storage | Supabase: `hcxiloivukbdcfcugksg` per dev e locale, un progetto suo per la produzione (§4) | |
+
+Due ambienti, due Blueprint dallo stesso repo:
+
+| Ambiente | Ramo | File | Servizi | Domini |
+|---|---|---|---|---|
+| dev | `develop` | `render.yaml` | `velia-api`, `velia-worker`, `velia-sandbox`, `velia-app` | `api-dev.` / `app-dev.sonovelia.it` |
+| produzione | `main` | `render.prod.yaml` | gli stessi col suffisso `-prod` | `api.` / `app.sonovelia.it` |
+
+Un file per ambiente perché a ogni sync il Blueprint riscrive le variabili con `value:`: un indirizzo corretto a mano nel pannello tornerebbe quello del file.
 
 ---
 
 ## 1. Backend su Render (scelto il 25/08/2026)
 
-Il Blueprint `render.yaml` alla radice del repo definisce i due servizi dalla stessa immagine `be-node/Dockerfile`:
+Ogni Blueprint definisce API e worker dalla stessa immagine `be-node/Dockerfile`, più il runner della sandbox (§2b) e il sito dell'app (§2):
 
-1. Render → *New* → *Blueprint* → connetti il repo GitHub: legge `render.yaml` e crea **velia-api** (Web Service, Docker, health check `/api/salute`, piano Starter) e **velia-worker** (Background Worker, Docker, disco 5 GB su `/app/.velia-worker`, piano Standard: 2 GB di memoria per il processo figlio dell'Agent SDK). Regione Francoforte.
-2. Al primo *Apply* Render chiede i valori con `sync: false`: gli stessi di `be-node/.env` (Supabase, `DATABASE_URL` in **modalità sessione** porta 5432, chiavi Anthropic/HostYourAI, e per il worker `FLY_API_TOKEN` e `ANTHROPIC_API_KEY_SANDBOX`).
-3. *velia-api → Settings → Custom Domains*: `api.sonovelia.it` (Render dà il CNAME per Cloudflare DNS; proxy Cloudflare va bene, lo stream SSE manda un battito ogni pochi secondi).
-4. Deploy automatico a ogni push su `main`. Controllo: `curl https://api.sonovelia.it/api/salute`; nei log del worker «avviato, in ascolto sulla coda».
+1. Render → *New* → *Blueprint* → connetti il repo GitHub, scegli il ramo e il *Blueprint Path* (`render.yaml` per dev, `render.prod.yaml` per la produzione). Nascono l'API (Web Service, Docker, health check `/api/salute`, piano Starter) e il worker (Background Worker, Docker, disco 5 GB su `/app/.velia-worker`, piano Standard: 2 GB di memoria per il processo figlio dell'Agent SDK). Regione Francoforte.
+2. Al primo *Apply* Render chiede i valori con `sync: false`: Supabase (`DATABASE_URL` in **modalità sessione**, porta 5432), le chiavi Anthropic, Mistral e Resend, e per la sandbox la sua chiave Anthropic dedicata. Dopo la creazione la sync non li tocca più; le chiavi facoltative (DeepSeek, HostYourAI, AKI) si aggiungono dal pannello e la sync le conserva.
+3. *Custom Domains*: il file di produzione li dichiara (`domains`); Render dà il CNAME da mettere su Cloudflare DNS (proxy Cloudflare va bene, lo stream SSE manda un battito ogni pochi secondi).
+4. Deploy automatico a ogni push sul ramo del Blueprint. Controllo: `curl https://api.sonovelia.it/api/salute` (la `versione` è il commit deployato); nei log del worker «avviato, in ascolto sulla coda».
 
 Da sapere su Render: `PORT` la assegna lui (il server la legge); i piani gratuiti si addormentano e non hanno dischi, quindi non vanno bene né per l'API (SSE) né per il worker; il disco persistente fa sì che il worker non possa scalare a più istanze (e va bene così: la coda è una).
 
@@ -125,6 +134,103 @@ Prova dal locale: `npx tsx tools/collaudo-elaborata.ts pdf "<istruzioni>" [templ
 
 - **Segreti**: solo nelle variabili della piattaforma (Render/Railway), mai nell'immagine né nel repo. `.env` resta locale.
 - **CORS**: l'API accetta solo le origini in `CORS_ORIGINI`. Il token viaggia in `Authorization`, non nei cookie.
-- **Costi**: Render Starter (7 $) per l'API + Standard (25 $) per il worker + disco (~1 $); Pages gratis; Fly solo a consumo. I costi AI sono in `velia.consumi`, per tenant.
-- **Residenza dei dati**: Render Francoforte, Fly Amsterdam e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte).
-- **Aggiornare**: push su `main` → Render e Pages ricostruiscono. Le migrazioni prima, a mano.
+- **Costi**, per ambiente: Render Starter (7 $) per l'API + Standard (25 $) per il worker + disco (~1 $) + Pro (4 GB, ~85 $) per la sandbox; il sito statico è gratis; in produzione Supabase Pro (25 $). I costi AI sono in `velia.consumi`, per tenant.
+- **Residenza dei dati**: Render Francoforte e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte); DeepSeek, se la chiave c'è, in Cina.
+- **Aggiornare**: push su `develop` → dev, push su `main` → produzione. Le migrazioni prima, a mano, su **ciascuno** dei due progetti Supabase.
+
+---
+
+## 4. La produzione: il primo avvio
+
+Al 13/09/2026 la produzione non c'è: `api.sonovelia.it` e `app.sonovelia.it` non risolvono. L'ordine conta: database, chiavi, codice su `main`, Render, DNS.
+
+### 4.1 Supabase: un progetto suo
+
+Non quello di dev, per due ragioni che la configurazione non aggira:
+
+- la coda `lavori` è scritta per nome nelle funzioni SQL dei cron (agenti, memoria): sullo stesso database il worker dev la leggerebbe e lavorerebbe i job dei clienti col codice di `develop`;
+- nel progetto dev ci sono il tenant demo e gli utenti con la password demo.
+
+Piano Pro (backup giornalieri, niente pausa per inattività), regione UE. Poi:
+
+1. **Il ledger delle migrazioni.** Lo crea la CLI al primo push, quindi su un progetto nuovo può mancare. Nel SQL editor:
+   ```sql
+   create schema if not exists supabase_migrations;
+   create table if not exists supabase_migrations.schema_migrations (
+     version text primary key, statements text[], name text
+   );
+   ```
+2. **Le migrazioni**, tutte e in ordine. Le variabili della shell vincono su `be-node/.env` (`process.loadEnvFile` non sovrascrive quelle già presenti), quindi lo strumento di sempre si punta al progetto nuovo senza toccare il file. Da `be-node/`, in PowerShell:
+   ```powershell
+   $env:SUPABASE_PROJECT_REF = '<ref di produzione>'
+   $env:SUPABASE_ACCESS_TOKEN = '<token>'
+   foreach ($f in Get-ChildItem supabase/migrations/*.sql | Sort-Object Name) {
+     node tools/applica-migrazione.mjs $f.FullName
+     if ($LASTEXITCODE -ne 0) { break }
+   }
+   ```
+   Le migrazioni già registrate si saltano: dopo un errore il ciclo si rilancia così com'è.
+3. **La password di `velia_app`.** Se il ruolo non c'è, `20260807125900_ruolo_app.sql` lo crea con la password segnaposto degli ambienti effimeri. Subito dopo le migrazioni: `alter role velia_app with password '<password forte>';`. `DATABASE_URL` diventa `postgresql://velia_app.<ref>:<password>@<host del pooler>:5432/postgres`.
+4. **Il bucket `archivio`**, privato (*Storage → New bucket*): nessuna migrazione lo crea.
+5. **Auth**: *Site URL* `https://app.sonovelia.it`; iscrizioni pubbliche spente (gli utenti li crea l'API con la service role); SMTP personalizzato (Resend va bene) se si useranno gli inviti, vedi §4.6.
+6. **L'Archivio Pubblico si copia dal progetto dev**, non si ricarica dagli alberi locali. Dev è lo stato verificato: secondo sguardo fatto, test del catalogo sui totali, manifesto e righe coincidono. Gli alberi di `local-ingestion/` sono cartelle di lavoro di una macchina sola, fuori da git, divise in tre alberi e con lavori in corso: al 13/09/2026 quattro INDICE ritoccati dopo il caricamento e 20 file di set non ancora caricati. Ricaricare da lì porterebbe in produzione lavoro non verificato.
+   Al 13/09/2026 in dev: 354 documenti, 93 edizioni, 9 compagnie con documenti (12 in anagrafica), 10 rami; sotto `archivio-pubblico/` nel bucket 541 file per 208 MB. La copia, in quest'ordine:
+   - `velia.compagnie` e `velia.rami`, tutte le righe;
+   - `velia.documenti` con `archivio = 'pubblico'`, tutte le colonne così come sono;
+   - gli oggetti del bucket `archivio` sotto `archivio-pubblico/` (PDF, `.md`, INDICE).
+
+   Non si copiano gli oggetti `tenant/…` (i documenti privati del tenant demo) né `seed.sql`, che porta con sé il tenant demo; il glossario dei rischi viene dal codice. Lo strumento della copia è **da scrivere** (idempotente, confronto per eTag e peso, a secco per default). Dopo il primo avvio serve per ogni set nuovo: si carica in dev come oggi, poi si promuove in produzione con la copia.
+   **Mai** `tools/seed-utenti.mjs` in produzione: crea gli utenti demo con una password scritta nel codice.
+7. **Il primo tenant e il suo amministratore**, a mano: non c'è uno strumento. *Authentication → Add user* con email in minuscolo, password e *Auto Confirm*; poi:
+   ```sql
+   insert into velia.tenant (nome) values ('<ragione sociale>') returning id;
+
+   update auth.users
+      set raw_app_meta_data = raw_app_meta_data
+          || jsonb_build_object('tenant_id', '<id del tenant>', 'ruolo', 'amministratore')
+    where email = '<email>';
+
+   insert into velia.utenti (id, tenant_id, nome, cognome, email, ruolo)
+   select id, '<id del tenant>', '<nome>', '<cognome>', email, 'amministratore'
+     from auth.users where email = '<email>';
+   ```
+   Tenant e ruolo arrivano all'API dal JWT (`app_metadata`): un utente senza è respinto con 403. Il profilo nasce `invitato` e diventa `attivo` al primo accesso.
+
+### 4.2 Account e chiavi
+
+| Servizio | Cosa | Dove va |
+|---|---|---|
+| Anthropic | un workspace di produzione e due chiavi: una per API e worker, una per la sandbox con tetto di spesa | `ANTHROPIC_API_KEY` su api e worker; `ANTHROPIC_API_KEY` su `velia-sandbox-prod` |
+| Supabase | URL, anon key, service role key, `DATABASE_URL` | api e worker |
+| Mistral | una chiave: dettatura (api) e testimone OCR (worker) | api e worker |
+| Resend | una chiave, e il dominio `sonovelia.it` verificato | solo api |
+| DeepSeek, HostYourAI, AKI | facoltative, dal pannello | api e worker |
+
+`SUPABASE_JWT_SECRET` serve solo se il progetto usa le chiavi JWT legacy HS256: senza, l'API verifica i token col JWKS del progetto. Se il progetto dà solo le chiavi API nuove (`sb_publishable_…` / `sb_secret_…`), provarle prima dal locale, con le variabili nella shell: un login e una domanda.
+
+### 4.3 Codice e Render
+
+1. `develop` in `main`, con la CI `be` verde. Prima il merge e poi il Blueprint: un Blueprint creato su un `main` vecchio deploya il codice vecchio.
+2. *New → Blueprint* → questo repo, ramo `main`, *Blueprint Path* `render.prod.yaml`; i valori `sync: false` sono quelli di §4.2.
+3. Da qui ogni push su `main` va in produzione: le migrazioni sul progetto di produzione vanno applicate prima.
+
+### 4.4 DNS (Cloudflare, zona `sonovelia.it`)
+
+- `api` e `app`: i CNAME che Render mostra per `velia-api-prod` e `velia-app-prod`;
+- i record TXT (SPF, DKIM) che Resend dà per il mittente `noreply@sonovelia.it`;
+- `chat.sonovelia.it` **non** va nel DNS: è il dominio finto delle email degli ospiti, a cui nessuno scrive;
+- sul progetto Pages del sito, `APP_URL=https://app.sonovelia.it` e un nuovo build: finché è vuota il sito non mostra «Accedi».
+
+### 4.5 Collaudo
+
+1. `curl https://api.sonovelia.it/api/salute`: la `versione` è l'ultimo commit di `main`.
+2. Login dell'amministratore e una domanda in chat (log del worker: «avviato, in ascolto sulla coda»).
+3. Un documento caricato arriva a `pronto`.
+4. «Genera da modello» consegna il file; «Invia email» arriva; la dettatura trascrive.
+5. Un link `/p/…` e una chat cliente aprono `api.` e `app.sonovelia.it`, non i domini dev.
+6. Un controllo di disponibilità esterno su `/api/salute`.
+
+### 4.6 Buchi noti
+
+- **Inviti e password.** L'app ha solo il login con email e password: nessuna pagina accetta il link d'invito né recupera una password. Quando un amministratore invita un collega, Supabase manda un link che l'app non gestisce e l'utente resta senza password. Finché la pagina non c'è, la password la imposta chi ha la service role (Admin API, `auth.admin.updateUserById`).
+- **DeepSeek**: con la chiave, i documenti del livello Avanzato escono dall'UE.

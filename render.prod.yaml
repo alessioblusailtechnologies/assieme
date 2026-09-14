@@ -1,81 +1,87 @@
-# Blueprint Render di VELIA, ramo develop: ambiente DEV (api-dev / app-dev.sonovelia.it).
-# La produzione (api. / app.sonovelia.it, ramo main) ha il suo file,
-# render.prod.yaml: la sync riscrive i valori con `value:`, quindi un file
-# solo non può servire due ambienti.
+# Blueprint Render di VELIA, PRODUZIONE: api.sonovelia.it / app.sonovelia.it, ramo main.
 #
-# Un'immagine sola (be-node/Dockerfile) per API e worker, regione Francoforte (UE),
-# più il runner privato della sandbox documentale (DEPLOY.md §2b) e il sito
-# statico dell'app Angular.
+# Il gemello di render.yaml (l'ambiente dev, ramo develop): stessi servizi,
+# stessa immagine, valori di produzione. Due file e non uno perché a ogni
+# sync il Blueprint riscrive le variabili che hanno `value:`: un indirizzo
+# corretto a mano nel pannello tornerebbe quello del file, e i link ai
+# clienti finirebbero sull'ambiente di prova senza che nessuno se ne accorga.
 #
-# Render → New → Blueprint → questo repo: legge questo file e crea i servizi.
-# I segreti (sync: false) li chiede una volta nel pannello; il resto è qui.
+# Render → New → Blueprint → questo repo, ramo main, Blueprint Path
+# `render.prod.yaml`. I nomi hanno il suffisso -prod: con gli stessi nomi del
+# dev il Blueprint si aggancerebbe ai servizi dell'ambiente di prova.
+#
+# Le variabili `sync: false` Render le chiede solo alla creazione, e dopo non
+# le tocca più. Quelle facoltative non sono qui e si aggiungono dal pannello
+# (la sync conserva le variabili che il file non dichiara):
+#   - SUPABASE_JWT_SECRET, solo se il progetto usa le chiavi JWT legacy HS256;
+#     senza, l'API verifica i token col JWKS del progetto;
+#   - DEEPSEEK_API_KEY (livello Avanzato): server in Cina, i documenti escono
+#     dall'UE. In produzione è una scelta, non un default;
+#   - HOSTYOURAI_API_KEY, AKI_API_KEY.
+#
+# Supabase è un progetto suo, non quello di dev: DEPLOY.md §4.
 services:
   # --- API: HTTP pubblico, health check su /api/salute ---------------------
   - type: web
-    name: velia-api
+    name: velia-api-prod
     runtime: docker
     region: frankfurt
     plan: starter
+    branch: main
     rootDir: be-node
     dockerfilePath: ./Dockerfile
     dockerCommand: node dist/src/api/server.js
     healthCheckPath: /api/salute
-    autoDeploy: true
+    autoDeployTrigger: commit
+    domains:
+      - api.sonovelia.it
     envVars:
       - key: NODE_ENV
         value: production
       - key: LOG_LIVELLO
         value: info
       - key: CORS_ORIGINI
-        value: https://app-dev.sonovelia.it
-      # La radice dei link delle chat cliente: `<radice>/c/<token>`. Va
-      # scritta qui e non lasciata al default del codice, perché quel
-      # default punta a dev: in produzione manderebbe i clienti di
-      # un'agenzia sull'ambiente di prova, e nessuno se ne accorgerebbe
-      # finché non lo fa notare uno di loro.
+        value: https://app.sonovelia.it
+      # I link delle chat cliente, `<radice>/c/<token>`: il default del codice
+      # è l'ambiente dev.
       - key: BASE_LINK_CHAT
-        value: https://app-dev.sonovelia.it
-      # La radice dei link delle pagine condivise, `<radice>/p/<token>`: le
-      # serve questo servizio. Come per BASE_LINK_CHAT, su main va l'API di
-      # produzione, o i clienti finiscono sull'ambiente di prova.
+        value: https://app.sonovelia.it
+      # Le pagine condivise, `<radice>/p/<token>`: le serve questo servizio.
       - key: BASE_LINK_PAGINE
-        value: https://api-dev.sonovelia.it
+        value: https://api.sonovelia.it
       - key: MODELLO_MOTORE
         value: claude-opus-5
       - key: SUPABASE_URL
-        value: https://hcxiloivukbdcfcugksg.supabase.co
+        sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: SUPABASE_JWT_SECRET
-        sync: false
+      # Pooler in modalità sessione, porta 5432, utente velia_app.<ref>.
       - key: DATABASE_URL
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: HOSTYOURAI_API_KEY
-        sync: false
-      # Il livello Avanzato si sceglie solo se l'API vede la chiave del suo fornitore.
-      - key: DEEPSEEK_API_KEY
-        sync: false
+      # «Invia email»: senza, in produzione l'invio risponde 503.
       - key: RESEND_API_KEY
         sync: false
+      # La dettatura nel composer.
       - key: MISTRAL_API_KEY
         sync: false
 
   # --- Worker: nessuna porta, disco per la cache delle workspace -----------
   - type: worker
-    name: velia-worker
+    name: velia-worker-prod
     runtime: docker
     region: frankfurt
     plan: standard
+    branch: main
     rootDir: be-node
     dockerfilePath: ./Dockerfile
     dockerCommand: node dist/src/worker/main.js
-    autoDeploy: true
+    autoDeployTrigger: commit
     disk:
-      name: velia-worker-cache
+      name: velia-worker-cache-prod
       mountPath: /app/.velia-worker
       sizeGB: 5
     envVars:
@@ -87,62 +93,50 @@ services:
         value: claude-opus-5
       # Il link che lo strumento `condividi_link` del motore scrive in chat.
       - key: BASE_LINK_PAGINE
-        value: https://api-dev.sonovelia.it
+        value: https://api.sonovelia.it
       - key: CARTELLA_WORKER
         value: /app/.velia-worker
       - key: SUPABASE_URL
-        value: https://hcxiloivukbdcfcugksg.supabase.co
+        sync: false
       - key: SUPABASE_ANON_KEY
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: SUPABASE_JWT_SECRET
         sync: false
       - key: DATABASE_URL
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: HOSTYOURAI_API_KEY
-        sync: false
-      # Il livello Avanzato (DeepSeek diretta, finché AKI.IO non approva l'account).
-      - key: DEEPSEEK_API_KEY
-        sync: false
       # Il testimone OCR dell'ingestion visiva: senza, il controllo resta al
-      # solo layer di testo del PDF (che sulle scansioni è cieco).
+      # solo layer di testo del PDF, che sulle scansioni è cieco.
       - key: MISTRAL_API_KEY
         sync: false
       # Le email degli agenti (14/09/2026): le spedisce il worker, verso i
-      # destinatari del piano confermato. Senza, in produzione l'invio si rifiuta.
+      # destinatari del piano confermato. Senza, l'invio si rifiuta.
       - key: RESEND_API_KEY
         sync: false
-      # Generazione documenti da template: il runner della sandbox è il servizio
-      # privato velia-sandbox qui sotto (DEPLOY.md §2b), raggiunto sulla rete
-      # privata di Render col segreto condiviso.
       - key: SANDBOX_AVVIATORE
         value: render
       - key: SANDBOX_URL
         fromService:
-          name: velia-sandbox
+          name: velia-sandbox-prod
           type: pserv
           property: hostport
       - key: SANDBOX_TOKEN
         fromService:
-          name: velia-sandbox
+          name: velia-sandbox-prod
           type: pserv
           envVarKey: SANDBOX_TOKEN
 
   # --- Sandbox documentale: il runner sempre acceso, un job per volta -------
-  # Stessa immagine della sandbox (LibreOffice, Chromium, Python, Claude Code),
-  # senza namespace di rete (Render non dà NET_ADMIN): SANDBOX_RETE=aperta.
-  # Nessun database né Storage qui: solo la workspace del job corrente.
   - type: pserv
-    name: velia-sandbox
+    name: velia-sandbox-prod
     runtime: docker
     region: frankfurt
     plan: pro
+    branch: main
     rootDir: be-node/sandbox
     dockerfilePath: ./Dockerfile
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: PORT
         value: "10000"
@@ -150,25 +144,26 @@ services:
         value: aperta
       - key: SANDBOX_TOKEN
         generateValue: true
-      # La chiave che entra nel proxy del runner: dedicata, con tetto di spesa.
+      # Dedicata, in un workspace Anthropic suo, con tetto di spesa mensile.
       - key: ANTHROPIC_API_KEY
         sync: false
 
   # --- App Angular: sito statico, routing della SPA con la rewrite ---------
   - type: web
-    name: velia-app
+    name: velia-app-prod
     runtime: static
+    branch: main
     rootDir: fe-angular
-    # config.js si scrive al build dalla variabile: stesso codice, API diversa per ambiente
-    # (prod: api.sonovelia.it; dev, dal ramo develop: api-dev.sonovelia.it).
     buildCommand: npm ci && npx ng build && printf "window.veliaApiBase = '%s';\n" "$VELIA_API_BASE" > dist/fe-angular/browser/config.js
     staticPublishPath: dist/fe-angular/browser
-    autoDeploy: true
+    autoDeployTrigger: commit
+    domains:
+      - app.sonovelia.it
     envVars:
       - key: NODE_VERSION
         value: "24"
       - key: VELIA_API_BASE
-        value: https://api-dev.sonovelia.it/api
+        value: https://api.sonovelia.it/api
     routes:
       - type: rewrite
         source: /*
