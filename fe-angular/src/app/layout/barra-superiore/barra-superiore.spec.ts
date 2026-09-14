@@ -3,6 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 
 import { BarraSuperiore } from './barra-superiore';
+import { RICOMINCIA } from '@core/auth/ricomincia';
+import { TokenStore } from '@core/auth/token-store';
 import { Sessione } from '@core/models';
 
 const SESSIONE: Sessione = {
@@ -20,11 +22,17 @@ const SESSIONE: Sessione = {
 
 describe('BarraSuperiore', () => {
   let http: HttpTestingController;
+  let ricomincia: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
+    ricomincia = vi.fn();
     await TestBed.configureTestingModule({
       imports: [BarraSuperiore],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: RICOMINCIA, useValue: ricomincia },
+      ],
     }).compileComponents();
 
     http = TestBed.inject(HttpTestingController);
@@ -35,6 +43,7 @@ describe('BarraSuperiore', () => {
       .match(() => true)
       .filter((r) => !r.cancelled)
       .forEach((r) => r.flush(null));
+    localStorage.removeItem('velia.token');
   });
 
   async function monta(sessione: Sessione = SESSIONE) {
@@ -99,5 +108,18 @@ describe('BarraSuperiore', () => {
     const attributo = dom.querySelector('time')?.getAttribute('datetime') ?? '';
 
     expect(Number.isNaN(Date.parse(attributo))).toBe(false);
+  });
+
+  it('esci toglie il token e riparte da una pagina nuova sulla porta', async () => {
+    /* 14/09/2026: con la sola navigazione gli store tenevano i dati di chi
+       era uscito, e il successivo utente, anche di un altro tenant, li vedeva. */
+    const token = TestBed.inject(TokenStore);
+    token.imposta('accesso', 'aggiornamento');
+    const fixture = await monta();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.esci')?.click();
+
+    expect(token.tokenAccesso()).toBeUndefined();
+    expect(ricomincia).toHaveBeenCalledWith('/accesso');
   });
 });

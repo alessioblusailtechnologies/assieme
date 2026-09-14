@@ -1,4 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+
+import { RICOMINCIA } from './ricomincia';
 
 const CHIAVE = 'velia.token';
 const CHIAVE_OSPITE = 'velia.ospite';
@@ -38,6 +40,36 @@ export class TokenStore {
   readonly tokenAccesso = () => this.stato()?.accesso;
   readonly tokenAggiornamento = () => this.stato()?.aggiornamento;
   readonly tokenOspite = () => this.ospite();
+
+  constructor() {
+    /*
+     * Un'altra scheda ha toccato la sessione (14/09/2026).
+     *
+     * Se è lo stesso utente che ha rinnovato, si prendono i token nuovi: il
+     * rinnovo di Supabase ruota il token di aggiornamento, e quello tenuto
+     * qui non varrebbe più. Se invece è uscito, o è entrato qualcun altro,
+     * questa scheda ha ancora a schermo e in memoria i dati di prima: si
+     * riparte da una pagina nuova, come dopo un accesso.
+     *
+     * La scheda di una chat cliente non si tocca: la sua credenziale è il
+     * link, e la sessione dell'agenzia non la riguarda.
+     */
+    const ricomincia = inject(RICOMINCIA);
+    const ascolta = (evento: StorageEvent): void => {
+      /* `key` nullo: in un'altra scheda qualcuno ha svuotato lo storage. */
+      if (evento.key !== CHIAVE && evento.key !== null) return;
+      if (this.ospite()) return;
+
+      const nuovi = leggi();
+      if (utenteDel(nuovi?.accesso) === utenteDel(this.stato()?.accesso)) {
+        this.stato.set(nuovi);
+        return;
+      }
+      ricomincia('/');
+    };
+    window.addEventListener('storage', ascolta);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('storage', ascolta));
+  }
 
   impostaOspite(token: string): void {
     this.ospite.set(token);
@@ -111,6 +143,23 @@ function leggi(): TokenSalvati | undefined {
     if (!grezzo) return undefined;
     const valore = JSON.parse(grezzo) as TokenSalvati;
     return valore.accesso && valore.aggiornamento ? valore : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Di chi è il token d'accesso: il `sub` del JWT, letto e **non verificato**.
+ * Qui serve solo a capire se la persona è cambiata; chi è davvero lo decide
+ * il server, a ogni richiesta.
+ */
+function utenteDel(token: string | undefined): string | undefined {
+  try {
+    const carico = token?.split('.')[1];
+    if (!carico) return undefined;
+    const base64 = carico.replace(/-/g, '+').replace(/_/g, '/');
+    const imbottito = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
+    return (JSON.parse(atob(imbottito)) as { sub?: string }).sub;
   } catch {
     return undefined;
   }

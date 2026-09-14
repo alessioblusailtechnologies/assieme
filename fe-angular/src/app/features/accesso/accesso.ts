@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 
 import { AccessoApi } from '@core/auth/accesso-api';
-import { SessioneStore } from '@core/auth/sessione-store';
+import { RICOMINCIA } from '@core/auth/ricomincia';
 import { TokenStore } from '@core/auth/token-store';
 import { ErroreApi } from '@core/models';
 import { Bottone } from '@shared/ui/bottone/bottone';
@@ -16,8 +15,8 @@ import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
  *
  * Il piano FE aveva dichiarato l'autenticazione reale fuori perimetro; è
  * entrata come primo pezzo della Fase 1 del backend. Il patto di
- * `SessioneStore` regge: dopo il login si ricarica la sessione e il resto
- * dell'applicazione non sa nulla di token e credenziali.
+ * `SessioneStore` regge: dopo il login l'applicazione riparte, la sessione
+ * si carica col token nuovo e il resto non sa nulla di token e credenziali.
  */
 @Component({
   selector: 'app-accesso',
@@ -29,8 +28,7 @@ import { GrafoMemoria } from '@shared/ui/grafo-memoria/grafo-memoria';
 export class Accesso {
   private readonly api = inject(AccessoApi);
   private readonly token = inject(TokenStore);
-  private readonly sessione = inject(SessioneStore);
-  private readonly router = inject(Router);
+  private readonly ricomincia = inject(RICOMINCIA);
 
   readonly email = signal('');
   readonly password = signal('');
@@ -45,8 +43,11 @@ export class Accesso {
     this.api.accedi({ email: this.email().trim(), password: this.password() }).subscribe({
       next: (esito) => {
         this.token.imposta(esito.tokenAccesso, esito.tokenAggiornamento);
-        this.sessione.ricarica();
-        void this.router.navigateByUrl('/');
+        /* Una pagina nuova e non una navigazione: la memoria di questa scheda
+           può avere ancora i dati di chi è entrato prima, da qualunque porta
+           sia uscito — «Esci», sessione scaduta, un'altra scheda. `inCorso`
+           resta acceso: il pulsante non torna cliccabile mentre si riparte. */
+        this.ricomincia('/');
       },
       error: (err: unknown) => {
         this.inCorso.set(false);

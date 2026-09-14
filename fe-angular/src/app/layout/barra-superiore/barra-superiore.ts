@@ -9,9 +9,9 @@ import {
   signal,
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { Router } from '@angular/router';
 
 import { Icona } from '@shared/ui/icona/icona';
+import { RICOMINCIA } from '@core/auth/ricomincia';
 import { SessioneStore } from '@core/auth/sessione-store';
 import { TemaStore } from '@core/tema/tema-store';
 import { TokenStore } from '@core/auth/token-store';
@@ -287,7 +287,7 @@ export class BarraSuperiore {
   protected readonly sessione = inject(SessioneStore);
   protected readonly tema = inject(TemaStore);
   private readonly token = inject(TokenStore);
-  private readonly router = inject(Router);
+  private readonly ricomincia = inject(RICOMINCIA);
 
   protected readonly adesso = signal(new Date());
 
@@ -300,8 +300,9 @@ export class BarraSuperiore {
 
   protected esci(): void {
     this.token.pulisci();
-    this.sessione.ricarica();
-    void this.router.navigate(['/accesso']);
+    /* Via la pagina, non solo la rotta: finché la memoria non si azzera gli
+       store tengono i dati di chi esce (vedi `RICOMINCIA`). */
+    this.ricomincia('/accesso');
   }
 
   /**
