@@ -9,6 +9,7 @@ import {
   urlDocumentoGenerato,
   type AllegatoBozza,
   type BozzaEmail,
+  type DestinatarioBozza,
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
 import { consegnabile } from '../../contratto/formati.js';
@@ -46,6 +47,17 @@ export const NOME_TOOL_CONDIVIDI_LINK = `mcp__${NOME_SERVER}__condividi_link`;
 export const NOME_TOOL_CERCA_CLIENTI = `mcp__${NOME_SERVER}__cerca_clienti`;
 export const NOME_TOOL_SCHEDA_CLIENTE = `mcp__${NOME_SERVER}__scheda_cliente`;
 export const NOME_TOOL_PREPARA_EMAIL = `mcp__${NOME_SERVER}__prepara_email`;
+export const NOME_TOOL_INVIA_EMAIL = `mcp__${NOME_SERVER}__invia_email`;
+
+/** Un'email che un agente manda: il destinatario è già uno di quelli del piano. */
+export interface EmailDaMandare {
+  destinatario: DestinatarioBozza;
+  oggetto: string;
+  corpo: string;
+  allegati: AllegatoBozza[];
+}
+
+const descriviDestinatario = (d: DestinatarioBozza): string => (d.nome ? `${d.nome} <${d.a}>` : d.a);
 /** @deprecated nome storico */
 export const NOME_TOOL_DOCUMENTO = NOME_TOOL_ESPORTA_SUBITO;
 
@@ -100,13 +112,19 @@ export interface ContestoStrumenti {
    */
   clienti?: boolean;
   /**
-   * Le email (14/09/2026): il modello **prepara**, l'utente invia. `suBozza`
-   * deposita la bozza e la racconta al FE; `utenteId` è chi scrive, per
-   * risolvere «me». Assente = lo strumento `prepara_email` non c'è.
+   * Le email (14/09/2026). In chat il modello **prepara** e l'utente invia:
+   * `suBozza` deposita la bozza e la racconta al FE (`prepara_email`). Per
+   * un agente col piano confermato l'email parte subito, ma solo verso i
+   * destinatari del piano (`invio`, strumento `invia_email`). `utenteId` è
+   * chi scrive, per risolvere «me». Assente = nessuno strumento di email.
    */
   email?: {
     utenteId: string;
-    suBozza: (bozza: Omit<BozzaEmail, 'id' | 'stato'>) => Promise<BozzaEmail>;
+    suBozza?: (bozza: Omit<BozzaEmail, 'id' | 'stato'>) => Promise<BozzaEmail>;
+    invio?: {
+      destinatari: DestinatarioBozza[];
+      invia: (email: EmailDaMandare) => Promise<{ bozza: BozzaEmail; giaInviata: boolean }>;
+    };
   };
 }
 
@@ -137,6 +155,31 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       [contesto.conversazioneId],
     );
     return [...precedenti.rows.map((r) => r.documento), ...generati];
+  };
+
+  /** Gli allegati detti per nome, fra i documenti generati nella conversazione; o perché non si trovano. */
+  const allegatiPerNome = async (
+    nomi: string[] | undefined,
+  ): Promise<{ allegati: AllegatoBozza[] } | { errore: string }> => {
+    const allegati: AllegatoBozza[] = [];
+    if (!nomi?.length) return { allegati };
+    const tutti = await documentiDellaConversazione();
+    for (const cercato of nomi) {
+      const chiave = cercato.trim().toLowerCase();
+      const documento = tutti.filter((d) => d.nome.toLowerCase().includes(chiave)).at(-1);
+      if (!documento) {
+        const elenco = tutti.map((d) => `«${d.nome}»`).join(', ');
+        return {
+          errore: elenco
+            ? `nessun documento generato si chiama «${cercato}». Ci sono: ${elenco}.`
+            : 'in questa conversazione non c’è ancora nessun documento generato da allegare. Prima generalo, poi riprova.',
+        };
+      }
+      if (!allegati.some((a) => a.id === documento.id)) {
+        allegati.push({ id: documento.id, nome: documento.nome, formato: documento.formato });
+      }
+    }
+    return { allegati };
   };
 
   const esportaSubito = tool(
@@ -650,7 +693,8 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         .describe('I nomi dei documenti generati in questa conversazione da allegare, anche solo una parte del nome.'),
     },
     async (args) => {
-      if (!contesto.email) {
+      const suBozza = contesto.email?.suBozza;
+      if (!contesto.email || !suBozza) {
         return { content: [{ type: 'text', text: 'Qui non posso preparare email: dillo all’utente.' }], isError: true };
       }
       const esito = await risolviDestinatario(
@@ -662,35 +706,19 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
         return { content: [{ type: 'text', text: `Bozza non preparata. ${esito.motivo}` }], isError: true };
       }
 
-      const allegati: AllegatoBozza[] = [];
-      if (args.allegati?.length) {
-        const tutti = await documentiDellaConversazione();
-        for (const cercato of args.allegati) {
-          const chiave = cercato.trim().toLowerCase();
-          const documento = tutti.filter((d) => d.nome.toLowerCase().includes(chiave)).at(-1);
-          if (!documento) {
-            const elenco = tutti.map((d) => `«${d.nome}»`).join(', ');
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: elenco
-                    ? `Bozza non preparata: nessun documento generato si chiama «${cercato}». Ci sono: ${elenco}.`
-                    : 'Bozza non preparata: in questa conversazione non c’è ancora nessun documento generato da allegare. Prima generalo, poi prepara l’email.',
-                },
-              ],
-              isError: true,
-            };
-          }
-          if (!allegati.some((a) => a.id === documento.id)) {
-            allegati.push({ id: documento.id, nome: documento.nome, formato: documento.formato });
-          }
-        }
+      const trovati = await allegatiPerNome(args.allegati);
+      if ('errore' in trovati) {
+        return { content: [{ type: 'text', text: `Bozza non preparata: ${trovati.errore}` }], isError: true };
       }
 
       const { destinatario } = esito;
-      const bozza = await contesto.email.suBozza({ destinatario, oggetto: args.oggetto, corpo: args.corpo, allegati });
-      const chi = destinatario.nome ? `${destinatario.nome} <${destinatario.a}>` : destinatario.a;
+      const bozza = await suBozza({
+        destinatario,
+        oggetto: args.oggetto,
+        corpo: args.corpo,
+        allegati: trovati.allegati,
+      });
+      const chi = descriviDestinatario(destinatario);
       const conAllegati = bozza.allegati.length
         ? `, con ${bozza.allegati.length === 1 ? 'l’allegato' : 'gli allegati'} ${bozza.allegati.map((a) => `«${a.nome}»`).join(', ')}`
         : '';
@@ -705,13 +733,93 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  /**
+   * L'email di un agente (fase 4 di PIANO-AGENTI.md): parte subito, ma solo
+   * verso i destinatari del piano confermato, indicati per numero. Un altro
+   * indirizzo non si può nemmeno scrivere: lo strumento non ha il campo.
+   * Un tentativo ripetuto non la rimanda (lo controlla chi invia).
+   */
+  const inviaEmailTool = tool(
+    'invia_email',
+    [
+      'Invia subito un’email a nome dell’agenzia. Sei un agente con un piano confermato: puoi scrivere solo ai destinatari del piano, indicati per numero come nell’elenco del prompt di sistema, e a nessun altro.',
+      'Scrivi `corpo` per chi la riceve, in Markdown leggero: niente rimandi [n], niente blocco delle citazioni, niente firma (nome e agenzia li aggiungo io).',
+      'Per allegare un file prima generalo con gli strumenti dei documenti, poi passane il nome in `allegati`.',
+      'Manda ogni email una volta sola, e nell’esito di’ a chi è partita.',
+    ].join(' '),
+    {
+      destinatario: z
+        .number()
+        .int()
+        .min(1)
+        .max(20)
+        .describe('Il numero del destinatario nell’elenco dei destinatari del piano.'),
+      oggetto: z.string().min(1).max(200).describe('L’oggetto dell’email.'),
+      corpo: z.string().min(1).max(20_000).describe('Il testo dell’email in Markdown leggero, per chi la riceve.'),
+      allegati: z
+        .array(z.string().min(1).max(200))
+        .max(10)
+        .optional()
+        .describe('I nomi dei documenti generati in questa conversazione da allegare, anche solo una parte del nome.'),
+    },
+    async (args) => {
+      const invio = contesto.email?.invio;
+      if (!invio) {
+        return { content: [{ type: 'text', text: 'Qui non posso inviare email.' }], isError: true };
+      }
+      const destinatario = invio.destinatari[args.destinatario - 1];
+      if (!destinatario) {
+        const elenco = invio.destinatari.map((d, i) => `${i + 1}. ${descriviDestinatario(d)}`).join('; ');
+        return {
+          content: [
+            {
+              type: 'text',
+              text: elenco
+                ? `Il destinatario ${args.destinatario} non è nel piano. Puoi scrivere solo a: ${elenco}. Non inviare ad altri.`
+                : 'Il piano confermato non prevede email: non inviarne, e dillo nell’esito.',
+            },
+          ],
+          isError: true,
+        };
+      }
+      const trovati = await allegatiPerNome(args.allegati);
+      if ('errore' in trovati) {
+        return { content: [{ type: 'text', text: `Email non inviata: ${trovati.errore}` }], isError: true };
+      }
+      let esito;
+      try {
+        esito = await invio.invia({ destinatario, oggetto: args.oggetto, corpo: args.corpo, allegati: trovati.allegati });
+      } catch (errore) {
+        const motivo = errore instanceof Error ? errore.message : String(errore);
+        return {
+          content: [
+            { type: 'text', text: `Email non inviata: ${motivo.slice(0, 300)} Non riprovare da solo: dillo nell’esito.` },
+          ],
+          isError: true,
+        };
+      }
+      const chi = descriviDestinatario(esito.bozza.destinatario);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: esito.giaInviata
+              ? `L’email a ${chi} con questo oggetto era già partita in un tentativo precedente: non la rimando.`
+              : `Email inviata a ${chi}${esito.bozza.simulata ? ' (su questo ambiente l’invio è simulato)' : ''}.`,
+          },
+        ],
+      };
+    },
+  );
+
   const definizioni: DefinizioniStrumenti = [
     esportaSubito,
     ...(contesto.elaborata ? [esportazioneElaborata] : []),
     ...(contesto.pagine ? [condividiLink] : []),
     ...(contesto.suProposta ? [proponiAssegnazione] : []),
     ...(contesto.clienti ? [cercaClientiTool, schedaClienteTool] : []),
-    ...(contesto.email ? [preparaEmail] : []),
+    ...(contesto.email?.suBozza ? [preparaEmail] : []),
+    ...(contesto.email?.invio ? [inviaEmailTool] : []),
   ];
 
   return {
@@ -723,7 +831,8 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
       ...(contesto.suProposta ? [NOME_TOOL_PROPONI_ASSEGNAZIONE] : []),
       ...(contesto.clienti ? [NOME_TOOL_CERCA_CLIENTI, NOME_TOOL_SCHEDA_CLIENTE] : []),
-      ...(contesto.email ? [NOME_TOOL_PREPARA_EMAIL] : []),
+      ...(contesto.email?.suBozza ? [NOME_TOOL_PREPARA_EMAIL] : []),
+      ...(contesto.email?.invio ? [NOME_TOOL_INVIA_EMAIL] : []),
     ],
     generati,
     percorsi,

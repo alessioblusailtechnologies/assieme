@@ -177,7 +177,9 @@ export class ChatStore {
      sotto la voce Chat: qui lo si legge e lo si ricarica dopo le scritture. */
   private readonly storico = inject(StoricoConversazioni);
 
-  readonly conversazioni = this.storico.conversazioni;
+  /* Tutte, anche quelle delle esecuzioni degli agenti: «Continua in chat»
+     ne apre una, e la conversazione attiva si pesca da qui. */
+  readonly conversazioni = this.storico.tutte;
 
   /** I battiti che seguono l'ingestion degli allegati, per documento. */
   private readonly battitiIngestion = new Map<Id, ReturnType<typeof setInterval>>();

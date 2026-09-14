@@ -17,7 +17,8 @@ import {
   type RigaLog,
   type StatoPiano,
 } from '../../contratto/agenti.js';
-import type { Citazione } from '../../contratto/conversazioni.js';
+import type { BozzaEmail, Citazione, DocumentoGenerato } from '../../contratto/conversazioni.js';
+import { versoBozza, type RigaBozza } from '../conversazioni/rotte.js';
 import { ErroreApi } from '../../contratto/errori.js';
 import { leggiDatoDiPiattaforma } from '../../dati.js';
 import { conIdentita, type Identita } from '../../db/identita.js';
@@ -73,6 +74,7 @@ interface RigaEsecuzione {
   citazioni: Citazione[];
   log: RigaLog[];
   errore: string | null;
+  conversazione_id: string | null;
 }
 
 const E_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -90,7 +92,8 @@ const SQL_AGENTE = `
   from velia.agenti`;
 
 const SQL_ESECUZIONE = `
-  select id, agente_id, avviata_il, conclusa_il, modalita, stato, tentativi, output, citazioni, log, errore
+  select id, agente_id, avviata_il, conclusa_il, modalita, stato, tentativi, output, citazioni, log, errore,
+         conversazione_id
   from velia.agenti_esecuzioni`;
 
 /** La libreria dei predefiniti (RF-E-10): dato di piattaforma. */
@@ -462,7 +465,7 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
         `insert into velia.agenti_esecuzioni (agente_id, tenant_id, modalita, log)
          values ($1, $2, 'manuale', $3)
          returning id, agente_id, avviata_il, conclusa_il, modalita, stato, tentativi,
-                   output, citazioni, log, errore`,
+                   output, citazioni, log, errore, conversazione_id`,
         [
           agente.id,
           richiesta.identita.tenantId,
@@ -498,7 +501,7 @@ export function registraRotteAgenti(app: FastifyInstance, opzioni: OpzioniAgenti
   app.get<{ Params: { id: string; eid: string } }>('/api/agenti/:id/esecuzioni/:eid', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client) => {
       const esecuzione = await esecuzionePerId(client, richiesta.identita, richiesta.params.id, richiesta.params.eid);
-      return versoEsecuzione(esecuzione);
+      return versoEsecuzione(esecuzione, await prodottoDellEsecuzione(client, esecuzione));
     });
   });
 }
@@ -617,16 +620,51 @@ function versoRiepilogoEsecuzione(r: RigaEsecuzione): EsecuzioneRiepilogo {
     stato: r.stato,
     tentativi: r.tentativi,
     ...(r.errore && { errore: r.errore }),
+    ...(r.conversazione_id && { conversazioneId: r.conversazione_id }),
   };
 }
 
-function versoEsecuzione(r: RigaEsecuzione): EsecuzioneAgente {
+function versoEsecuzione(
+  r: RigaEsecuzione,
+  prodotto: { documenti: DocumentoGenerato[]; email: BozzaEmail[] } = { documenti: [], email: [] },
+): EsecuzioneAgente {
   return {
     ...versoRiepilogoEsecuzione(r),
     ...(r.output !== null && { output: r.output }),
     citazioni: r.citazioni,
     log: r.log,
+    documenti: prodotto.documenti,
+    email: prodotto.email,
   };
+}
+
+/**
+ * Che cosa ha prodotto l'esecuzione: i file della risposta nella sua
+ * conversazione, e le email partite. Le email si leggono dal registro per
+ * esecuzione e non dalla risposta: un'email spedita da un tentativo che poi
+ * è fallito è partita comunque, e va detto.
+ */
+async function prodottoDellEsecuzione(
+  client: pg.ClientBase,
+  r: RigaEsecuzione,
+): Promise<{ documenti: DocumentoGenerato[]; email: BozzaEmail[] }> {
+  if (!r.conversazione_id) return { documenti: [], email: [] };
+  const documenti = await client.query<{ documenti: DocumentoGenerato[] }>(
+    `select documenti from velia.messaggi
+      where conversazione_id = $1 and autore = 'assistente'
+      order by inviato_il, id limit 1`,
+    [r.conversazione_id],
+  );
+  const email = await client.query<RigaBozza>(
+    `select b.id, b.messaggio_id, b.destinatario_tipo, b.destinatario_id, b.destinatario_nome, b.a, b.oggetto,
+            b.corpo, b.allegati, b.stato, b.simulata, b.deciso_il
+       from velia.email_inviate i
+       join velia.email_bozze b on b.id = i.bozza_id
+      where i.esecuzione_id = $1
+      order by i.created_at`,
+    [r.id],
+  );
+  return { documenti: documenti.rows[0]?.documenti ?? [], email: email.rows.map(versoBozza) };
 }
 
 async function esecuzionePerId(

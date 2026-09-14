@@ -11,7 +11,7 @@ import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 
-import { Agente, Citazione, EsecuzioneAgente, StatoEsecuzione } from '@core/models';
+import { Agente, BozzaEmail, Citazione, DocumentoGenerato, EsecuzioneAgente, StatoEsecuzione } from '@core/models';
 import { AgentiApi } from '@core/api/agenti-api';
 import { Badge } from '@shared/ui/badge/badge';
 import { Bottone } from '@shared/ui/bottone/bottone';
@@ -28,6 +28,7 @@ import { Scheletro } from '@shared/ui/scheletro/scheletro';
 import { StatoVuoto } from '@shared/ui/stato-vuoto/stato-vuoto';
 import { StoricoConversazioni } from '@core/chat/storico-conversazioni';
 import { VisualizzatorePdf } from '@shared/ui/visualizzatore-pdf/visualizzatore-pdf';
+import { scaricaBlob } from '@shared/esportazione/scarica-blob';
 import { htmlRisposta } from '@shared/testi/testo-risposta';
 
 /** Ogni quanto si richiede l'esecuzione mentre lavora. */
@@ -194,6 +195,35 @@ export class EsecuzioneAgentePagina {
         },
         error: () => this.inAvvio.set(false),
       });
+  }
+
+  // --- Che cosa ha prodotto (14/09/2026) ----------------------------------
+
+  /** Un file dell'esecuzione: vive nella sua conversazione, e da lì si scarica. */
+  protected scaricaFile(documento: DocumentoGenerato): void {
+    const conversazioneId = this.esecuzione()?.conversazioneId;
+    if (!conversazioneId) return;
+    this.conversazioni.scaricaDocumento(conversazioneId, documento.id).subscribe({
+      next: (blob) => scaricaBlob(blob, `${documento.nome}.${documento.formato}`),
+      error: () =>
+        this.notifiche.aggiungi({
+          gravita: 'errore',
+          titolo: 'Il file non è arrivato',
+          dettaglio: 'Riprova fra poco.',
+        }),
+    });
+  }
+
+  /** A chi è partita, come lo si riconosce: il nome e l'indirizzo. */
+  protected destinatario(email: BozzaEmail): string {
+    const d = email.destinatario;
+    return d.nome ? `${d.nome} <${d.a}>` : d.a;
+  }
+
+  /** «Continua in chat»: la conversazione dell'esecuzione, dove si può chiedere ancora. */
+  protected continuaInChat(): void {
+    const conversazioneId = this.esecuzione()?.conversazioneId;
+    if (conversazioneId) void this.router.navigate(['/chat', conversazioneId]);
   }
 
   /**

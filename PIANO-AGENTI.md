@@ -104,19 +104,30 @@ interface PianoAgente {
 
 ### Fase 4 · L'esecuzione come conversazione
 
-- Migrazione: `conversazioni.agente_id`, `agenti_esecuzioni.conversazione_id`; il tick accoda solo i confermati.
-- Il job `agente` apre la conversazione e lavora il turno della chat; `invia_email` limitato ai destinatari del piano; lo stato dell'esecuzione segue il turno.
-- Lo storico delle chat esclude le conversazioni degli agenti.
-- FE: pagina dell'esecuzione con passi, esito, file ed email inviate; «Continua in chat».
+**Fatta il 14/09/2026** (migrazione `20260914160000_agenti_conversazioni.sql` applicata online).
+
+- Migrazione additiva: `conversazioni.agente_id` (si cancella con l'agente), `agenti_esecuzioni.conversazione_id`, `email_inviate.esecuzione_id`. Il tick accodava già solo i piani confermati dalla Fase 3.
+- Il job `agente` (`worker/agenti/gestore.ts`) controlla piano confermato e autore (avvio manuale: chi l'ha premuto; pianificato: chi ha creato l'agente), apre una volta sola la conversazione (condivisa, documenti dai riferimenti, cliente se la richiesta ne nomina uno), scrive il messaggio dell'utente (`messaggioDellEsecuzione`: richiesta leggibile più i passi del piano) e passa il turno al gestore della chat con `payload.agente`. Stessi strumenti, sandbox, clienti e citazioni della chat; consumi con origine `agente`; niente memoria. Il retry resta quello di prima, l'errore si legge da `eventi_job`.
+- `invia_email` (`worker/motore/strumenti.ts`) si monta solo per gli agenti: il destinatario è un numero della lista del piano (`destinatariDelPiano`), che il prompt (`regole.ts`) elenca; un indirizzo libero non esiste. `worker/agenti/email.ts` rilegge l'indirizzo in anagrafica al momento dell'invio, scarica gli allegati, firma con l'autore e registra la bozza `inviata` e la riga di `email_inviate` con l'esecuzione. È idempotente su esecuzione, destinatario e oggetto: un retry non rispedisce. In chat resta `prepara_email`.
+- Log dell'esecuzione: file prodotti, email inviate, un avviso se un'email del piano non è partita.
+- API: il dettaglio dell'esecuzione porta `conversazioneId`, i documenti generati e le email inviate. Storico chat, conversazioni del cliente e suggeritore escludono le conversazioni degli agenti.
+- FE: sulla pagina dell'esecuzione «File prodotti» (si scaricano dalla conversazione), «Email inviate» e «Continua in chat»; `StoricoConversazioni.conversazioni` esclude gli agenti, `tutte` li tiene per la chat aperta da lì.
+- Test: nuovo d'integrazione «l'esecuzione manda l'email solo ai destinatari del piano, e una volta sola»; suite BE completa 52 file / 509 test, FE build, lint e 271 test.
 
 ### Fase 5 · Collaudo e rifiniture
 
-- Collaudo col motore vero di un agente che legge, genera un PDF e lo manda all'utente.
-- Aggiornare i documenti di piano e la memoria.
+**Collaudo fatto il 14/09/2026** col motore vero sul dev stack locale, `EMAIL_INVIO=simulato`. Agente «Collaudo fase 4»: legge Km&Servizi Monopattini elettrici, prepara un PDF di una pagina con le tre franchigie o limiti principali, ciascuno con la sua pagina, e lo manda «a me» con oggetto «Franchigie Km&Servizi».
+
+- Piano con l'email a Marta Ferrero risolta; conferma; esecuzione completata in 81 s sul livello del tenant (Avanzato, `deepseek-flash`), consumi registrati con origine `agente`.
+- Prodotti: il PDF e l'email (simulata) a m.ferrero con il PDF allegato e l'oggetto chiesto; esito con tabella e 5 citazioni.
+- La conversazione dell'esecuzione non compare nella barra laterale; «Continua in chat» la apre con la risposta, il PDF e la scheda «Email simulata».
+- Rifiniture uscite dal collaudo: sulla pagina dell'esecuzione rimandi nel testo e tabelle non avevano gli stili della chat («Assicurazionep. 26», tabella senza righe), e il chip della citazione ripeteva «art.» quando il motore scrive già «Art. 2.6 - …» o una sezione. Corretti in `esecuzione-agente.scss` e `chip-citazione.ts` (il chip è condiviso: vale anche per chat e tabelle), e rilanciato il collaudo: completata in 48 s, stesso esito, pagina a posto.
+- Nell'esecuzione incollata dal committente durante la Fase 3 c'erano 12 avvisi «estratto non trovato» su un documento dal titolo mozzo («velia-le-funzionalit»): è l'ancoraggio delle citazioni, lo stesso della chat, e nel collaudo non si è ripresentato.
 
 ## Quello che resta aperto
 
-- Le variabili email (`RESEND_API_KEY`, `EMAIL_MITTENTE`) sul worker servono dalla Fase 4 e vanno messe anche su Render: `render.yaml` ha modifiche locali del committente non ancora committate.
+- `RESEND_API_KEY` sul **worker** di Render, dev e produzione: il worker gira con `NODE_ENV=production` e senza chiave l'email di un agente si rifiuta (l'esecuzione lo scrive nel log). Aggiunta come `sync: false` al worker in `render.yaml` e `render.prod.yaml`, che però hanno modifiche locali del committente non committate; il valore va inserito nel pannello di Render.
 - La produzione (progetto Supabase nuovo) riceverà queste migrazioni al primo avvio.
-- `20260914140000_agenti_via_i_campi.sql` va applicata quando il codice della Fase 3 è in esercizio su Render.
+- `20260914140000_agenti_via_i_campi.sql` applicata dopo il deploy della Fase 3 su Render dev.
+- Per «una tabella» il lettore del piano ha scelto da sé un PDF (collaudo della Fase 3): da tenere d'occhio.
 - I mock del front-end (`mocks/agenti.mjs`, `mocks/data/agenti*.json`) hanno ancora la forma di prima: gli agenti in sviluppo passano dal backend vero.

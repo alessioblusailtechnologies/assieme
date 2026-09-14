@@ -18,7 +18,9 @@ import type {
 import type { CorpoErroreApi } from '../src/contratto/errori.js';
 import type { EsitoAccesso } from '../src/contratto/sessione.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
+import type { Conversazione, Messaggio } from '../src/contratto/conversazioni.js';
 import { creaGestoreAgenti } from '../src/worker/agenti/gestore.js';
+import { creaGestoreInterrogazione } from '../src/worker/motore/gestore.js';
 import { lavoraUno } from '../src/worker/ciclo.js';
 import { gestori } from '../src/worker/gestori.js';
 import type { ArchivioFile } from '../src/worker/ingestion/archivio-file.js';
@@ -101,7 +103,9 @@ class InterpreteFinto implements InterpretePiano {
 /** Un motore a copione: legge dal prompt il path della prima fonte e risponde citandolo. */
 class MotoreFinto implements Motore {
   richieste: RichiestaMotore[] = [];
-  copione: (r: RichiestaMotore) => Partial<EsitoSessione> & { testo: string } = (r) => ({
+  copione: (
+    r: RichiestaMotore,
+  ) => (Partial<EsitoSessione> & { testo: string }) | Promise<Partial<EsitoSessione> & { testo: string }> = (r) => ({
     testo:
       'Nessuna scadenza critica: la polizza in fonte è regolare.\n\n' +
       '```velia-citazioni\n' +
@@ -113,10 +117,10 @@ class MotoreFinto implements Motore {
       '\n```',
   });
 
-  interroga(r: RichiestaMotore, _o: OsservatoreSessione): Promise<EsitoSessione> {
+  async interroga(r: RichiestaMotore, _o: OsservatoreSessione): Promise<EsitoSessione> {
     this.richieste.push(r);
-    const parziale = this.copione(r);
-    return Promise.resolve({
+    const parziale = await this.copione(r);
+    return {
       terminato: 'completato',
       modello: r.modello ?? 'finto',
       turni: 3,
@@ -125,11 +129,12 @@ class MotoreFinto implements Motore {
       token: { input: 100, output: 50, cacheLettura: 0, cacheScrittura: 0 },
       documentiLetti: [],
       ...parziale,
-    });
+    };
   }
 }
 
-const pathFonte = (r: RichiestaMotore): string => /- `([^`]+)` —/.exec(r.promptUtente)?.[1] ?? '';
+/* Il turno è quello della chat: i documenti del contesto stanno in fila come «- `path` - titolo». */
+const pathFonte = (r: RichiestaMotore): string => /- `([^`]+)` - /.exec(r.promptUtente)?.[1] ?? '';
 
 describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)', () => {
   const pool = () => poolDb();
@@ -183,6 +188,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     await pool().query(`delete from velia.agenti where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.jobs where tipo = 'agente' and tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.consumi where tenant_id = $1`, [TENANT_COLLAUDO]);
+    await pool().query(`delete from velia.email_inviate where tenant_id = $1`, [TENANT_COLLAUDO]);
     await pool().query(`delete from velia.documenti where id = $1`, [DOC_FONTE]);
   };
 
@@ -200,7 +206,10 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     idAdmin = accesso.json<EsitoAccesso>().sessione.utente.id;
     expect(tokenAdmin).toBeTruthy();
 
-    gestori.agente = creaGestoreAgenti({ motore, archivio, radice });
+    /* L'agente lavora col turno della chat: lo stesso gestore, col motore finto. */
+    gestori.agente = creaGestoreAgenti({
+      interrogazione: creaGestoreInterrogazione({ motore, archivio, radice, attesaAllegatiMs: 1000 }),
+    });
 
     const limiti = await pool().query<typeof limitiOriginali>(
       `select limite_agenti_attivi, limite_esecuzioni_concorrenti from velia.tenant where id = $1`,
@@ -326,13 +335,25 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     });
     const messaggi = finita.log.map((l) => l.messaggio).join(' | ');
     expect(messaggi).toContain('Esecuzione manuale avviata da Tea Collaudo.');
-    expect(messaggi).toContain('Raccolti i documenti della richiesta: 1 documento.');
+    expect(messaggi).toContain('Aperta la conversazione dell’esecuzione, con 1 documento della richiesta.');
 
-    /* Il prompt portava la richiesta leggibile e i passi del piano confermato. */
-    const prompt = motore.richieste.at(-1)!.promptUtente;
-    expect(prompt).toContain('Richiesta:\nControlla le scadenze di «Polizza flotta aziendale»');
-    expect(prompt).toContain('1. Legge la polizza della flotta');
-    expect(prompt).toContain('non puoi ancora produrre file né inviare email');
+    /* Il turno è quello della chat: la richiesta e il piano sono la domanda,
+       e le email si mandano solo ai destinatari del piano, per numero. */
+    const turno = motore.richieste.at(-1)!;
+    expect(turno.promptUtente).toContain('Controlla le scadenze di «Polizza flotta aziendale»');
+    expect(turno.promptUtente).toContain('1. Legge la polizza della flotta');
+    expect(turno.promptSistema).toContain(`1. Tea Collaudo <${EMAIL_ADMIN}>`);
+    expect(turno.strumenti?.nomi).toContain('mcp__velia__invia_email');
+    expect(turno.strumenti?.nomi).not.toContain('mcp__velia__prepara_email');
+
+    /* La conversazione dell'esecuzione: dell'agente, con domanda e risposta. */
+    expect(finita.conversazioneId).toBeTruthy();
+    const filo = await richiedi('GET', `/api/conversazioni/${finita.conversazioneId}/messaggi`);
+    expect(filo.json<Messaggio[]>().map((m) => m.autore)).toEqual(['utente', 'assistente']);
+    const elencoChat = await richiedi('GET', '/api/conversazioni');
+    expect(
+      elencoChat.json<{ elementi: Conversazione[] }>().elementi.find((c) => c.id === finita.conversazioneId)?.agente,
+    ).toEqual({ id: agenteId, nome: 'Controllo scadenze flotta' });
 
     const consumi = await pool().query<{ origine: string }>(`select origine from velia.consumi where tenant_id = $1`, [
       TENANT_COLLAUDO,
@@ -346,6 +367,46 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
       pianoStato: 'confermato',
       ultimaEsecuzione: { stato: 'completata' },
     });
+  });
+
+  it('l’esecuzione manda l’email solo ai destinatari del piano, e una volta sola', async () => {
+    const copione = motore.copione;
+    const esiti: string[] = [];
+    motore.copione = async (r) => {
+      const invia = r.strumenti!.definizioni!.find((d) => d.name === 'invia_email')!;
+      const testo = (x: Awaited<ReturnType<typeof invia.handler>>): string =>
+        x.content.map((c) => (c.type === 'text' ? c.text : '')).join('');
+      esiti.push(testo(await invia.handler({ destinatario: 2, oggetto: 'Esito', corpo: 'x' }, {})));
+      const email = { destinatario: 1, oggetto: 'Esito del controllo', corpo: 'La polizza è **regolare**.' };
+      esiti.push(testo(await invia.handler(email, {})));
+      esiti.push(testo(await invia.handler(email, {})));
+      return copione(r);
+    };
+    const avvio = await richiedi('POST', `/api/agenti/${agenteId}/esecuzioni`);
+    const id = avvio.json<EsecuzioneAgente>().id;
+    await aspettaJob(id);
+    await lavoraTutto();
+    motore.copione = copione;
+
+    expect(esiti[0]).toContain('non è nel piano');
+    expect(esiti[1]).toContain(`Email inviata a Tea Collaudo <${EMAIL_ADMIN}>`);
+    expect(esiti[2]).toContain('era già partita');
+
+    const finita = (await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni/${id}`)).json<EsecuzioneAgente>();
+    expect(finita.stato).toBe('completata');
+    expect(finita.email).toHaveLength(1);
+    expect(finita.email[0]).toMatchObject({
+      stato: 'inviata',
+      simulata: true,
+      oggetto: 'Esito del controllo',
+      destinatario: { tipo: 'utente', a: EMAIL_ADMIN },
+    });
+    expect(finita.log.map((l) => l.messaggio).join(' | ')).toContain(`Email inviata a ${EMAIL_ADMIN} (simulata).`);
+
+    const registro = await pool().query(`select origine, a, simulata from velia.email_inviate where esecuzione_id = $1`, [
+      id,
+    ]);
+    expect(registro.rows).toEqual([{ origine: 'agente', a: EMAIL_ADMIN, simulata: true }]);
   });
 
   it('RF-E-08: un esito che cita passaggi non verificabili è un’esecuzione fallita', async () => {
@@ -366,7 +427,7 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     const fallita = r.json<EsecuzioneAgente>();
     expect(fallita.stato).toBe('fallita');
     expect(fallita.tentativi).toBe(1); // un'allucinazione non si ritenta
-    expect(fallita.errore).toContain('verifica delle fonti');
+    expect(fallita.errore).toContain('non verificabili');
   });
 
   it('il retry si racconta: tre tentativi loggati, poi fallimento persistente (RF-E-11)', async () => {

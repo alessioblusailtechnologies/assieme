@@ -155,7 +155,7 @@ export function registraRotteClienti(app: FastifyInstance, opzioni: OpzioniClien
       const [conversazioni, chat, scadenze] = await Promise.all([
         client.query<{ id: string; titolo: string; updated_at: Date }>(
           `select id, titolo, updated_at from velia.conversazioni
-           where tenant_id = $1 and cliente_id = $2
+           where tenant_id = $1 and cliente_id = $2 and agente_id is null
            order by updated_at desc limit 20`,
           [tenantId, cliente.id],
         ),

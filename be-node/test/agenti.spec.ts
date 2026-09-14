@@ -14,7 +14,7 @@ import {
   type PianoAgente,
 } from '../src/contratto/agenti.js';
 import { leggiDatoDiPiattaforma } from '../src/dati.js';
-import { promptAgente } from '../src/worker/agenti/gestore.js';
+import { destinatariDelPiano, messaggioDellEsecuzione } from '../src/worker/agenti/gestore.js';
 
 /**
  * Il contratto degli agenti senza database (14/09/2026): la richiesta coi
@@ -149,25 +149,43 @@ describe('il piano', () => {
   });
 });
 
-describe('il prompt dell’esecuzione', () => {
-  it('porta la richiesta, i passi del piano confermato, i clienti e le fonti col tetto dichiarato', () => {
-    const prompt = promptAgente({
+describe('il messaggio dell’esecuzione', () => {
+  const MARTA = { tipo: 'utente' as const, id: 'u1', nome: 'Marta Ferrero', a: 'm@esempio.it' };
+
+  it('porta la richiesta, il piano confermato, i file e le email coi destinatari per numero', () => {
+    const testo = messaggioDellEsecuzione({
+      nome: 'Scadenze',
+      modalita: 'pianificata',
+      avviataIl: new Date('2026-09-14T07:00:00Z'),
       richiesta: 'Controlla le scadenze di «Rossi Mario».',
-      piano: { ...PIANO, file: [{ formato: 'pdf', descrizione: 'Elenco delle scadenze' }] },
-      fonti: Array.from({ length: 35 }, (_, i) => ({ path: `tenant/documenti/polizza/doc-${i}.md`, titolo: `Doc ${i}` })),
-      clienti: ['Rossi Mario'],
+      piano: {
+        ...PIANO,
+        file: [{ formato: 'xlsx', descrizione: 'La tabella' }],
+        email: [{ destinatario: MARTA, contenuto: 'La tabella.', allegati: ['La tabella'] }],
+      },
+      destinatari: [MARTA],
     });
-    expect(prompt).toContain('Richiesta:\nControlla le scadenze di «Rossi Mario».');
-    expect(prompt).toContain('1. Cerca le polizze del cliente');
-    expect(prompt).toContain('Clienti referenziati: Rossi Mario');
-    expect(prompt).toContain('Fonti documentali di questa esecuzione (35):');
-    expect(prompt).toContain('…e altri 5 documenti');
-    expect(prompt).toContain('non puoi ancora produrre file né inviare email');
-    expect(prompt).toContain('nessuna domanda di ritorno');
+    expect(testo.startsWith('Controlla le scadenze di «Rossi Mario».')).toBe(true);
+    expect(testo).toContain('Esecuzione pianificata dell’agente «Scadenze»');
+    expect(testo).toContain('14/09/2026');
+    expect(testo).toContain('09:00');
+    expect(testo).toContain('1. Cerca le polizze del cliente');
+    expect(testo).toContain('- XLSX: La tabella');
+    expect(testo).toContain('1. Marta Ferrero <m@esempio.it>: La tabella. Allegati: La tabella.');
   });
 
-  it('senza documenti manda a cercare negli archivi, invece di inventare', () => {
-    expect(promptAgente({ richiesta: 'X', piano: null, fonti: [], clienti: [] })).toContain('cercali negli archivi');
+  it('i destinatari si numerano una volta sola, e quelli non risolti non ci sono', () => {
+    expect(
+      destinatariDelPiano({
+        ...PIANO,
+        email: [
+          { destinatario: MARTA, contenuto: 'a', allegati: [] },
+          { destinatario: { ...MARTA, a: 'M@ESEMPIO.IT' }, contenuto: 'b', allegati: [] },
+          { destinatario: { tipo: 'non-risolto', richiesto: 'Bianchi', motivo: 'x' }, contenuto: 'c', allegati: [] },
+        ],
+      }),
+    ).toEqual([MARTA]);
+    expect(destinatariDelPiano(null)).toEqual([]);
   });
 });
 

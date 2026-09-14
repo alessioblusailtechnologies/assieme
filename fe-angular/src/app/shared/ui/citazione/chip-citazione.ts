@@ -108,7 +108,9 @@ export class ChipCitazione {
   protected readonly posizione = computed(() => {
     const p = this.citazione().posizione;
     const parti: string[] = [];
-    if (p.articolo) parti.push(`art. ${p.articolo}`);
+    /* «art.» solo davanti a un numero: il motore scrive anche «Art. 2.6 - …»
+       o una sezione («Sintesi dei limiti»), e lì il prefisso si ripeterebbe. */
+    if (p.articolo) parti.push(/^\d/.test(p.articolo) ? `art. ${p.articolo}` : p.articolo);
     else if (p.sezione) parti.push(p.sezione);
     parti.push(`p. ${p.pagina}`);
     return parti.join(' · ');

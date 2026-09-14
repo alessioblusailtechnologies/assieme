@@ -87,6 +87,73 @@
   padding: 1px 4px;
 }
 
+/* Tabelle e rimandi come nelle risposte della chat (bolla-messaggio.scss):
+   l'esito è una risposta del motore, e si legge allo stesso modo. */
+.esito ::ng-deep table {
+  width: 100%;
+  margin: 0 0 var(--sp-3);
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  line-height: 1.45;
+}
+
+.esito ::ng-deep th,
+.esito ::ng-deep td {
+  padding: var(--sp-1) var(--sp-2);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--c-line-soft);
+}
+
+.esito ::ng-deep th {
+  font-family: var(--f-mono);
+  font-size: var(--t-mono);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  background: var(--c-page-alt);
+  white-space: nowrap;
+}
+
+.esito ::ng-deep tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.esito ::ng-deep .rimando {
+  display: inline;
+  margin: 0 1px;
+  padding: 1px 7px;
+  border: 1px solid var(--c-line);
+  border-radius: var(--radius-pieno);
+  background: var(--c-surface);
+  color: var(--c-text-2);
+  font-size: var(--t-xs);
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  box-decoration-break: clone;
+  transition:
+    border-color var(--dur-fast) var(--ease-brand),
+    color var(--dur-fast) var(--ease-brand);
+}
+
+.esito ::ng-deep a.rimando:hover,
+.esito ::ng-deep a.rimando:focus-visible {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  text-decoration: none;
+}
+
+.esito ::ng-deep .rimando__pos {
+  margin-left: 5px;
+  font-family: var(--f-mono);
+  font-size: var(--t-mono-sm);
+  color: var(--c-text-3);
+}
+
 .citazioni {
   display: flex;
   flex-wrap: wrap;

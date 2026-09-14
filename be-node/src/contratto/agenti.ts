@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import type { Citazione, DestinatarioBozza, RiferimentoDocumento } from './conversazioni.js';
+import type {
+  BozzaEmail,
+  Citazione,
+  DestinatarioBozza,
+  DocumentoGenerato,
+  RiferimentoDocumento,
+} from './conversazioni.js';
 
 /**
  * Agenti (Modulo E, RF-E-01…E-13): lo specchio di
@@ -125,9 +131,15 @@ export interface EsecuzioneAgente {
   citazioni: Citazione[];
   log: RigaLog[];
   errore?: string;
+  /** La conversazione dell'esecuzione (fase 4): si prosegue in chat da lì. */
+  conversazioneId?: string;
+  /** I file prodotti, da scaricare dalla conversazione dell'esecuzione. */
+  documenti: DocumentoGenerato[];
+  /** Le email partite, verso i destinatari del piano. */
+  email: BozzaEmail[];
 }
 
-export type EsecuzioneRiepilogo = Omit<EsecuzioneAgente, 'output' | 'citazioni' | 'log'>;
+export type EsecuzioneRiepilogo = Omit<EsecuzioneAgente, 'output' | 'citazioni' | 'log' | 'documenti' | 'email'>;
 
 export interface AgenteRiepilogo {
   id: string;

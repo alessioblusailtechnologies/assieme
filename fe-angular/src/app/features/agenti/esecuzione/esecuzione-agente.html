@@ -68,11 +68,49 @@
         </div>
       }
 
+      @if (esecuzione.documenti.length) {
+        <p class="mono">File prodotti</p>
+        <div class="citazioni" aria-label="File prodotti">
+          @for (documento of esecuzione.documenti; track documento.id) {
+            <button uiBottone dimensione="piccolo" type="button" (click)="scaricaFile(documento)">
+              <ui-icon name="scarica" [size]="14" />
+              <span>{{ documento.nome }}</span>
+              <span class="mono">{{ documento.formato }}</span>
+            </button>
+          }
+        </div>
+      }
+
+      @if (esecuzione.email.length) {
+        <p class="mono">Email inviate</p>
+        <ul class="log" aria-label="Email inviate">
+          @for (email of esecuzione.email; track email.id) {
+            <li class="riga">
+              <ui-icon name="email" [size]="13" />
+              <span class="riga__messaggio">
+                A {{ destinatario(email) }}: «{{ email.oggetto }}»
+                @if (email.simulata) {
+                  (invio simulato)
+                }
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
       <div class="esito__azioni">
-        <button uiBottone type="button" (click)="approfondisciInChat()">
-          <ui-icon name="chat" [size]="15" />
-          <span>Approfondisci in chat</span>
-        </button>
+        @if (esecuzione.conversazioneId) {
+          <!-- La conversazione dell'esecuzione: domanda, risposta, file ed email, e si può chiedere ancora. -->
+          <button uiBottone type="button" (click)="continuaInChat()">
+            <ui-icon name="chat" [size]="15" />
+            <span>Continua in chat</span>
+          </button>
+        } @else {
+          <button uiBottone type="button" (click)="approfondisciInChat()">
+            <ui-icon name="chat" [size]="15" />
+            <span>Approfondisci in chat</span>
+          </button>
+        }
       </div>
     </section>
   } @else if (inLavoro()) {

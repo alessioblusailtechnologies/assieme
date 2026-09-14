@@ -186,7 +186,7 @@ export async function raccogliContesto(client: pg.ClientBase, identita: Identita
   );
   const temi = await client.query<{ titolo: string }>(
     `select titolo from velia.conversazioni
-     where autore_id = $1 and titolo <> 'Nuova conversazione'
+     where autore_id = $1 and titolo <> 'Nuova conversazione' and agente_id is null
      order by updated_at desc, id limit ${LIMITI.temi}`,
     [identita.utenteId],
   );

@@ -92,6 +92,11 @@ export interface Conversazione {
    * restringe, orienta.
    */
   cliente?: { id: string; nome: string };
+  /**
+   * L'agente di cui la conversazione è un'esecuzione (14/09/2026): non sta
+   * nello storico della chat, si apre dall'esecuzione e si prosegue da lì.
+   */
+  agente?: { id: string; nome: string };
   condivisa: boolean;
   autoreId: string;
   /**

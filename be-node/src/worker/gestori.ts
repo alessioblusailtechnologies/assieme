@@ -119,6 +119,33 @@ function estrattoreMemoria(): EstrattoreMotore {
   return estrattoreVero;
 }
 
+/** Il gestore della chat, costruito alla prima chiamata: lo usano la chat e gli agenti. */
+function gestoreInterrogazione(): GestoreJob {
+  if (!interrogazioneVera) {
+    const c = configurazione();
+    interrogazioneVera = creaGestoreInterrogazione({
+      motore: new MotoreAgentSdk({
+        modello: c.MODELLO_MOTORE,
+        maxTurni: c.MOTORE_MAX_TURNI,
+        budgetUsd: c.MOTORE_BUDGET_USD,
+        fornitori: fornitori(c),
+        silenzioMs: c.MOTORE_SILENZIO_MS,
+        ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+      }),
+      archivio: new ArchivioStorage(),
+      generatoreTitolo: new GeneratoreTitoloHaiku(),
+      estrattore: estrattoreMemoria(),
+      radice: resolve(c.CARTELLA_WORKER),
+      ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
+      ...(c.MOTORE_RIPRESA === 'si' && {
+        ripresaSessione: { esiste: (id: string) => getSessionInfo(id).then((s) => Boolean(s)) },
+      }),
+      baseLinkPagine: c.BASE_LINK_PAGINE,
+    });
+  }
+  return interrogazioneVera;
+}
+
 export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   ingestion: async (job, strumenti) => {
     if (!ingestionVera) {
@@ -153,46 +180,16 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
 
   /** Fase 3: il motore agentico (Agent SDK) sulla workspace del tenant. */
   interrogazione: async (job, strumenti) => {
-    if (!interrogazioneVera) {
-      const c = configurazione();
-      interrogazioneVera = creaGestoreInterrogazione({
-        motore: new MotoreAgentSdk({
-          modello: c.MODELLO_MOTORE,
-          maxTurni: c.MOTORE_MAX_TURNI,
-          budgetUsd: c.MOTORE_BUDGET_USD,
-          fornitori: fornitori(c),
-        silenzioMs: c.MOTORE_SILENZIO_MS,
-          ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
-        }),
-        archivio: new ArchivioStorage(),
-        generatoreTitolo: new GeneratoreTitoloHaiku(),
-        estrattore: estrattoreMemoria(),
-        radice: resolve(c.CARTELLA_WORKER),
-        ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
-        ...(c.MOTORE_RIPRESA === 'si' && { ripresaSessione: { esiste: (id) => getSessionInfo(id).then((s) => Boolean(s)) } }),
-        baseLinkPagine: c.BASE_LINK_PAGINE,
-      });
-    }
-    await interrogazioneVera(job, strumenti);
+    await gestoreInterrogazione()(job, strumenti);
   },
 
-  /** Fase 7: l'esecuzione di un agente — la stessa interrogazione, ingresso diverso. */
+  /**
+   * L'esecuzione di un agente. Dal 14/09/2026 (fase 4 di PIANO-AGENTI.md) è
+   * un turno della chat nella conversazione dell'esecuzione: lo stesso
+   * gestore, con file, sandbox, clienti ed email verso i destinatari del piano.
+   */
   agente: async (job, strumenti) => {
-    if (!agenteVero) {
-      const c = configurazione();
-      agenteVero = creaGestoreAgenti({
-        motore: new MotoreAgentSdk({
-          modello: c.MODELLO_MOTORE,
-          maxTurni: c.MOTORE_MAX_TURNI,
-          budgetUsd: c.MOTORE_BUDGET_USD,
-          fornitori: fornitori(c),
-        silenzioMs: c.MOTORE_SILENZIO_MS,
-          ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
-        }),
-        archivio: new ArchivioStorage(),
-        radice: resolve(c.CARTELLA_WORKER),
-      });
-    }
+    agenteVero ??= creaGestoreAgenti({ interrogazione: gestoreInterrogazione() });
     await agenteVero(job, strumenti);
   },
 

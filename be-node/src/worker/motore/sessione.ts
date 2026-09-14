@@ -11,6 +11,7 @@ import {
 import type { Tariffa } from '../../contratto/modelli.js';
 import { FiltroPensieri, FlussoTesto } from './flusso-testo.js';
 import { ambienteModello, costoATariffa, type ChiaviFornitori } from './fornitori.js';
+import type { StrumentiMotore } from './strumenti.js';
 
 /**
  * La sessione del motore (doc motore §2, piano §4.3): l'Agent SDK — lo
@@ -54,6 +55,8 @@ export interface RichiestaMotore {
   strumenti?: {
     server: McpSdkServerConfigWithInstance;
     nomi: string[];
+    /** Gli strumenti stessi, per chi non passa dall'SDK: i motori finti dei test. */
+    definizioni?: StrumentiMotore['definizioni'];
     /** Solo questi strumenti, niente lettura locale: la sessione documentale vive nella sandbox. */
     esclusivi?: boolean;
   };
@@ -482,6 +485,8 @@ export function etichettaAttivita(
       if (!a || /^(me|a me|io|me stess[oa])$/i.test(a)) return 'Preparo l’email';
       return `Preparo l’email per «${accorcia(a, 60)}»`;
     }
+    case 'mcp__velia__invia_email':
+      return 'Invio l’email';
     case 'mcp__velia__esegui':
     case 'mcp__velia__scrivi_file':
     case 'mcp__velia__leggi_file':

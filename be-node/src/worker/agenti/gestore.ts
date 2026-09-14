@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import type pg from 'pg';
 
 import { documentiDeiRiferimenti, idrataRiferimenti } from '../../agenti/riferimenti.js';
@@ -8,38 +10,30 @@ import {
   type RiferimentoRichiesta,
   type StatoPiano,
 } from '../../contratto/agenti.js';
-import { modelloDelTenant } from '../../contratto/modelli.js';
+import type { Citazione, DestinatarioBozza, DocumentoGenerato } from '../../contratto/conversazioni.js';
 import type { Job } from '../coda.js';
 import { ErroreNonRitentabile } from '../errori.js';
-import type { ArchivioFile } from '../ingestion/archivio-file.js';
-import { ancoraCitazioni } from '../motore/ancoraggio.js';
-import { caricaDna, catalogoArchivioPubblico, promptSistema } from '../motore/regole.js';
-import type { EsitoSessione, Motore } from '../motore/sessione.js';
-import { ErroreValidazione, separaBlocco, validaBlocco } from '../motore/validazione.js';
-import { materializzaWorkspace, type Workspace } from '../motore/workspace.js';
 
 /**
- * Il job `agente` (RF-E-02…E-13): la stessa interrogazione della chat con un
- * ingresso diverso.
+ * Il job `agente` (RF-E-02…E-13).
  *
- * Dal 14/09/2026 l'ingresso è la richiesta dell'agente, coi riferimenti
- * risolti AL MOMENTO dell'esecuzione (un documento eliminato non c'è più,
- * un prodotto porta i documenti della sua edizione), e i passi del piano
- * confermato. Un piano non confermato non parte. È un ponte: nella fase 4
- * di PIANO-AGENTI.md l'esecuzione diventa una conversazione lavorata dal
- * motore della chat, con i suoi file e le sue email.
+ * Dal 14/09/2026 (fase 4 di PIANO-AGENTI.md) un'esecuzione è una
+ * conversazione. Il worker ne apre una dell'agente, ci scrive come domanda
+ * la richiesta coi riferimenti risolti adesso e il piano confermato, e la
+ * fa lavorare dallo **stesso turno della chat**: archivi e clienti, file in
+ * qualsiasi formato, sandbox, citazioni validate; e le email, che partono
+ * subito ma solo verso i destinatari del piano. La conversazione non sta
+ * nello storico della chat: si apre dall'esecuzione e si prosegue da lì.
  *
- * L'esecuzione si racconta da sola (RF-E-06/11): il log cresce passo per
- * passo sulla riga che il FE interroga, i tentativi si contano, il
- * fallimento persistente arriva dopo tre. Le citazioni passano dalla stessa
- * validazione della chat (RF-E-08): un esito che cita passaggi non
- * verificabili è un'esecuzione fallita, non un documento consegnato.
+ * L'esecuzione si racconta da sola (RF-E-06/11): il log dice che cosa è
+ * successo, i tentativi si contano, il fallimento persistente arriva dopo
+ * tre. Un tentativo ripetuto riprende la stessa conversazione, e un'email
+ * già partita non riparte.
  */
 
 export interface DipendenzeAgenti {
-  motore: Motore;
-  archivio: ArchivioFile;
-  radice: string;
+  /** Il turno della chat: l'agente non ha un motore suo. */
+  interrogazione: (job: Job, strumenti: { db: pg.Pool }) => Promise<void>;
 }
 
 interface RigaLavoro {
@@ -47,6 +41,8 @@ interface RigaLavoro {
   stato: string;
   modalita: 'manuale' | 'pianificata';
   log: RigaLog[];
+  avviata_il: Date;
+  conversazione_id: string | null;
   agente_id: string;
   tenant_id: string;
   nome: string;
@@ -54,16 +50,12 @@ interface RigaLavoro {
   piano: PianoAgente | null;
   piano_stato: StatoPiano;
   creato_da: string | null;
-  modello_motore: string | null;
 }
 
 export interface DocumentoRisolto {
   id: string;
   titolo: string;
 }
-
-const NOTA_BUDGET =
-  '\n\n*(Esito parziale: il limite di ricerca previsto per una singola esecuzione è stato raggiunto.)*';
 
 export function creaGestoreAgenti(dip: DipendenzeAgenti) {
   return async function gestisciAgente(job: Job, strumenti: { db: pg.Pool }): Promise<void> {
@@ -74,19 +66,16 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
     }
 
     const r = await db.query<RigaLavoro>(
-      `select e.id as esecuzione_id, e.stato, e.modalita, e.log,
-              a.id as agente_id, a.tenant_id, a.nome, a.richiesta, a.piano, a.piano_stato,
-              a.creato_da, t.modello_motore
+      `select e.id as esecuzione_id, e.stato, e.modalita, e.log, e.avviata_il, e.conversazione_id,
+              a.id as agente_id, a.tenant_id, a.nome, a.richiesta, a.piano, a.piano_stato, a.creato_da
        from velia.agenti_esecuzioni e
        join velia.agenti a on a.id = e.agente_id
-       join velia.tenant t on t.id = a.tenant_id
        where e.id = $1`,
       [esecuzioneId],
     );
     const lavoro = r.rows[0];
     if (!lavoro) return; // agente o esecuzione eliminati: job orfano
     if (lavoro.stato === 'completata' || lavoro.stato === 'fallita') return; // già assestata
-    const modelloTenant = modelloDelTenant(lavoro.modello_motore);
 
     const log: RigaLog[] = [...lavoro.log];
     const annota = async (livello: RigaLog['livello'], messaggio: string): Promise<void> => {
@@ -96,19 +85,37 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
         JSON.stringify(log),
       ]);
     };
+    const nonAvviata = async (motivo: string, perLog: string): Promise<void> => {
+      await annota('errore', perLog);
+      await db.query(
+        `update velia.agenti_esecuzioni set stato = 'fallita', conclusa_il = now(), errore = $2 where id = $1`,
+        [esecuzioneId, motivo],
+      );
+    };
 
     /* Un piano non confermato non parte. API e tick lo impediscono già: qui
        arriva solo un'esecuzione accodata prima che la richiesta cambiasse. */
     if (lavoro.piano_stato !== 'confermato') {
-      await annota('errore', 'Il piano dell’agente non è confermato: esecuzione non avviata.');
-      await db.query(
-        `update velia.agenti_esecuzioni set stato = 'fallita', conclusa_il = now(), errore = $2 where id = $1`,
-        [esecuzioneId, 'Il piano dell’agente non è confermato: confermalo e riprova.'],
+      await nonAvviata(
+        'Il piano dell’agente non è confermato: confermalo e riprova.',
+        'Il piano dell’agente non è confermato: esecuzione non avviata.',
       );
       return;
     }
 
-    let workspace: Workspace | undefined;
+    /* Chi scrive la conversazione e firma le email: chi l'ha avviata a mano,
+       o chi ha creato l'agente se è partita da sola. */
+    const avviataDa = job.payload['utenteId'];
+    const autore =
+      lavoro.modalita === 'manuale' && typeof avviataDa === 'string' && avviataDa ? avviataDa : lavoro.creato_da;
+    if (!autore) {
+      await nonAvviata(
+        'Chi aveva creato l’agente non è più nell’agenzia: duplica l’agente e conferma la copia.',
+        'Nessuno a nome di cui lavorare: esecuzione non avviata.',
+      );
+      return;
+    }
+
     try {
       await db.query(
         `update velia.agenti_esecuzioni set stato = 'in-corso', tentativi = $2 where id = $1`,
@@ -127,97 +134,127 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
       } finally {
         client.release();
       }
-      const risolti = await documentiPronti(db, lavoro.tenant_id, documentiDeiRiferimenti(riferimenti));
-      const clienti = riferimenti.filter((x) => x.tipo === 'cliente');
-      await annota(
-        'info',
-        risolti.length
-          ? `Raccolti i documenti della richiesta: ${risolti.length === 1 ? '1 documento' : `${risolti.length} documenti`}.`
-          : 'La richiesta non indica documenti: l’agente li cerca negli archivi.',
+      const destinatari = destinatariDelPiano(lavoro.piano);
+
+      /* La conversazione nasce al primo tentativo; i successivi la riprendono. */
+      let conversazioneId = lavoro.conversazione_id;
+      if (!conversazioneId) {
+        const documenti = await documentiPronti(db, lavoro.tenant_id, documentiDeiRiferimenti(riferimenti));
+        const clienti = riferimenti.filter((x) => x.tipo === 'cliente');
+        const clienteId = clienti.length === 1 ? clienti[0]!.chiave : null;
+        const c = await db.query<{ id: string }>(
+          `insert into velia.conversazioni
+             (tenant_id, autore_id, titolo, documenti_in_contesto, cliente_id, agente_id, condivisa)
+           values ($1, $2, $3, $4, $5, $6, true)
+           returning id`,
+          [
+            lavoro.tenant_id,
+            autore,
+            titoloConversazione(lavoro.nome, lavoro.avviata_il),
+            documenti.map((d) => d.id),
+            clienteId,
+            lavoro.agente_id,
+          ],
+        );
+        conversazioneId = c.rows[0]!.id;
+        await db.query(
+          `insert into velia.messaggi
+             (conversazione_id, tenant_id, autore, utente_id, testo, documenti_referenziati, cliente_id)
+           values ($1, $2, 'utente', $3, $4, '{}', $5)`,
+          [
+            conversazioneId,
+            lavoro.tenant_id,
+            autore,
+            messaggioDellEsecuzione({
+              nome: lavoro.nome,
+              modalita: lavoro.modalita,
+              avviataIl: lavoro.avviata_il,
+              richiesta: testoLeggibile(lavoro.richiesta, riferimenti),
+              piano: lavoro.piano,
+              destinatari,
+            }),
+            clienteId,
+          ],
+        );
+        await db.query(`update velia.agenti_esecuzioni set conversazione_id = $2 where id = $1`, [
+          esecuzioneId,
+          conversazioneId,
+        ]);
+        await annota(
+          'info',
+          documenti.length
+            ? `Aperta la conversazione dell’esecuzione, con ${documenti.length === 1 ? '1 documento' : `${documenti.length} documenti`} della richiesta.`
+            : 'Aperta la conversazione dell’esecuzione: i documenti li cerca negli archivi.',
+        );
+      }
+
+      const domanda = await db.query<{ id: string; testo: string }>(
+        `select id, testo from velia.messaggi
+          where conversazione_id = $1 and autore = 'utente'
+          order by inviato_il, id limit 1`,
+        [conversazioneId],
       );
+      const messaggioUtente = domanda.rows[0];
+      if (!messaggioUtente) throw new ErroreNonRitentabile('la conversazione dell’esecuzione non ha più la sua domanda');
 
-      workspace = await materializzaWorkspace({
-        db,
-        archivio: dip.archivio,
-        tenantId: lavoro.tenant_id,
-        radice: dip.radice,
-        jobId: job.id,
-        contestoIds: risolti.map((d) => d.id),
-        /* Un cliente solo è quello di cui si parla: la sua scheda va su disco. */
-        ...(clienti.length === 1 && { clienteId: clienti[0]!.chiave }),
-      });
-
-      const fontiPrompt = risolti
-        .map((d) => {
-          const path = workspace!.perId.get(d.id);
-          return path ? { path, titolo: d.titolo } : undefined;
-        })
-        .filter((x): x is { path: string; titolo: string } => Boolean(x));
-
-      const ambiti = await ambitiDeiDocumenti(db, risolti.map((d) => d.id));
-      const dna = await caricaDna(db, lavoro.tenant_id, lavoro.creato_da, ambiti, workspace.perPath);
-
-      await annota('info', 'Interrogazione del modello e composizione dell’esito.');
-      const esito = await dip.motore.interroga(
+      const messaggioAssistenteId = randomUUID();
+      await annota('info', 'Il motore lavora sulla richiesta, come in chat.');
+      await dip.interrogazione(
         {
-          directory: workspace.directory,
-          titoloPer: (p) => workspace!.perPath.get(p)?.titolo,
-          ...(modelloTenant && { modello: modelloTenant }),
-          promptSistema: promptSistema(dna, { catalogo: catalogoArchivioPubblico(workspace.perPath) }),
-          promptUtente: promptAgente({
-            richiesta: testoLeggibile(lavoro.richiesta, riferimenti),
-            piano: lavoro.piano,
-            fonti: fontiPrompt,
-            clienti: clienti.map((c) => c.titolo),
-          }),
+          ...job,
+          tipo: 'interrogazione',
+          payload: {
+            conversazioneId,
+            messaggioUtenteId: messaggioUtente.id,
+            messaggioAssistenteId,
+            utenteId: autore,
+            testo: messaggioUtente.testo,
+            agente: { esecuzioneId, agenteId: lavoro.agente_id, nome: lavoro.nome, destinatari },
+          },
         },
-        { passo: () => Promise.resolve(), annullato: () => Promise.resolve(false) },
+        { db },
       );
-      await registraConsumi(db, lavoro.tenant_id, job.id, esito);
-      if (esito.terminato === 'errore' || esito.terminato === 'annullato') {
-        throw new Error(esito.errore ?? 'la sessione si è chiusa senza un risultato');
-      }
 
-      let output: string;
-      let citazioni: unknown[] = [];
-      if (esito.terminato === 'budget') {
-        output = separaBlocco(esito.testo).visibile + NOTA_BUDGET;
-        await annota('avviso', 'Limite di ricerca raggiunto: esito parziale, senza citazioni verificate.');
-      } else {
-        const { visibile, blocco, problemi } = separaBlocco(esito.testo);
-        if (!blocco) {
-          throw new ErroreNonRitentabile(`esito senza blocco di citazioni: ${problemi.join('; ')}`);
-        }
-        try {
-          const valido = validaBlocco(blocco, workspace.perPath, dna);
-          /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
-          const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
-          citazioni = ancorate.citazioni;
-          for (const a of ancorate.avvisi) await annota('avviso', a);
-        } catch (errore) {
-          const dettagli = errore instanceof ErroreValidazione ? errore.dettagli.join('; ') : String(errore);
-          throw new ErroreNonRitentabile(`l'esito citava passaggi non verificabili: ${dettagli}`);
-        }
-        output = visibile;
-      }
+      const risposta = await db.query<{ testo: string; citazioni: Citazione[]; documenti: DocumentoGenerato[] }>(
+        `select testo, citazioni, documenti from velia.messaggi where id = $1`,
+        [messaggioAssistenteId],
+      );
+      const esito = risposta.rows[0];
+      if (!esito) throw new ErroreNonRitentabile('il turno si è chiuso senza una risposta');
 
+      for (const d of esito.documenti ?? []) {
+        await annota('info', `File prodotto: «${d.nome}» (${d.formato.toUpperCase()}).`);
+      }
+      const inviate = await db.query<{ a: string; simulata: boolean }>(
+        `select a, simulata from velia.email_inviate where esecuzione_id = $1 order by created_at`,
+        [esecuzioneId],
+      );
+      for (const e of inviate.rows) {
+        await annota('info', `Email inviata a ${e.a}${e.simulata ? ' (simulata)' : ''}.`);
+      }
+      if (destinatari.length && !inviate.rowCount) {
+        await annota('avviso', 'Il piano prevedeva email, ma nessuna è partita: l’esito dice perché.');
+      }
       await annota(
         'info',
-        `Esito composto: ${citazioni.length === 1 ? '1 citazione' : `${citazioni.length} citazioni`}.`,
+        `Esito composto: ${esito.citazioni.length === 1 ? '1 citazione' : `${esito.citazioni.length} citazioni`}.`,
       );
       await db.query(
         `update velia.agenti_esecuzioni
-         set stato = 'completata', conclusa_il = now(), output = $2, citazioni = $3,
-             errore = null
+         set stato = 'completata', conclusa_il = now(), output = $2, citazioni = $3, errore = null
          where id = $1`,
-        [esecuzioneId, output, JSON.stringify(citazioni)],
+        [esecuzioneId, esito.testo, JSON.stringify(esito.citazioni)],
       );
     } catch (errore) {
       const definitivo = errore instanceof ErroreNonRitentabile || job.tentativi >= 3;
+      /* Il turno della chat, quando si ferma, lo dice con un evento scritto
+         per chi legge: si riusa quello, invece di inventarne un altro. */
+      const detto = await ultimoErrore(db, job.id).catch(() => undefined);
       const messaggio =
-        errore instanceof ErroreNonRitentabile
-          ? 'L’esito non ha superato la verifica delle fonti.'
-          : 'Il motore non ha risposto entro il tempo previsto.';
+        detto ??
+        (errore instanceof ErroreNonRitentabile
+          ? 'L’esecuzione si è interrotta.'
+          : 'Il motore non ha risposto entro il tempo previsto.');
       await annota('errore', definitivo ? `${messaggio} Esecuzione interrotta.` : messaggio).catch(
         () => undefined,
       );
@@ -242,8 +279,6 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
           .catch(() => undefined);
       }
       throw errore;
-    } finally {
-      await workspace?.rimuovi().catch(() => undefined);
     }
   };
 }
@@ -252,41 +287,72 @@ export function creaGestoreAgenti(dip: DipendenzeAgenti) {
 // Le parti pure e le letture
 // ---------------------------------------------------------------------------
 
-/** Il prompt dell'esecuzione: la richiesta, i passi del piano confermato, le fonti risolte. */
-export function promptAgente(r: {
+/** I destinatari del piano, una volta sola ciascuno e nell'ordine: il numero con cui il modello li indica. */
+export function destinatariDelPiano(piano: PianoAgente | null): DestinatarioBozza[] {
+  const visti = new Set<string>();
+  const destinatari: DestinatarioBozza[] = [];
+  for (const email of piano?.email ?? []) {
+    const d = email.destinatario;
+    if (d.tipo === 'non-risolto') continue;
+    const chiave = d.a.toLowerCase();
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    destinatari.push(d);
+  }
+  return destinatari;
+}
+
+const quando = (istante: Date): string =>
+  new Intl.DateTimeFormat('it-IT', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Europe/Rome',
+  }).format(istante);
+
+function titoloConversazione(nome: string, avviataIl: Date): string {
+  return `${nome}, ${quando(avviataIl)}`;
+}
+
+/**
+ * La domanda della conversazione dell'esecuzione: la richiesta come l'ha
+ * scritta l'agenzia, poi il piano confermato. Resta nella conversazione, e
+ * chi la apre dall'esecuzione legge esattamente che cosa è stato chiesto.
+ */
+export function messaggioDellEsecuzione(r: {
+  nome: string;
+  modalita: 'manuale' | 'pianificata';
+  avviataIl: Date;
   richiesta: string;
   piano: PianoAgente | null;
-  fonti: Array<{ path: string; titolo: string }>;
-  clienti: string[];
+  destinatari: DestinatarioBozza[];
 }): string {
   const parti = [
-    'Esegui questa richiesta, definita una volta e ripetuta nel tempo (sei un agente, non una conversazione: nessuna domanda di ritorno — se un dato manca, dichiaralo nell’esito).',
+    r.richiesta.trim(),
     '',
-    `Richiesta:\n${r.richiesta}`,
+    `Esecuzione ${r.modalita} dell’agente «${r.nome}», ${quando(r.avviataIl)}. Nessuno risponde a domande mentre lavori: se manca qualcosa, dillo nell’esito.`,
   ];
-  if (r.piano?.passi.length) {
+  const piano = r.piano;
+  if (piano?.passi.length) {
     parti.push('', 'Il piano confermato dall’agenzia, da seguire:');
-    r.piano.passi.forEach((p, i) => parti.push(`${i + 1}. ${p.titolo}${p.dettaglio ? `: ${p.dettaglio}` : ''}`));
+    piano.passi.forEach((p, i) => parti.push(`${i + 1}. ${p.titolo}${p.dettaglio ? `: ${p.dettaglio}` : ''}`));
   }
-  if (r.clienti.length) {
-    parti.push('', `Clienti referenziati: ${r.clienti.join(', ')} (le loro schede sono in \`tenant/clienti/\`).`);
+  if (piano?.file.length) {
+    parti.push('', 'File da preparare:');
+    for (const f of piano.file) parti.push(`- ${f.formato.toUpperCase()}: ${f.descrizione}`);
   }
-  if (r.fonti.length) {
-    const elenco = r.fonti.slice(0, 30);
-    parti.push('', `Fonti documentali di questa esecuzione (${r.fonti.length}):`);
-    for (const f of elenco) parti.push(`- \`${f.path}\` — ${f.titolo}`);
-    if (r.fonti.length > elenco.length) {
-      parti.push(`- …e altri ${r.fonti.length - elenco.length} documenti nelle stesse cartelle.`);
-    }
-    parti.push('Lavora su queste fonti; il resto della workspace è contesto consultabile se il task lo richiede.');
-  } else {
-    parti.push('', 'La richiesta non referenzia documenti: cercali negli archivi della workspace, partendo dagli `INDICE.md`.');
+  const email: string[] = [];
+  for (const e of piano?.email ?? []) {
+    const d = e.destinatario;
+    if (d.tipo === 'non-risolto') continue;
+    const numero = r.destinatari.findIndex((x) => x.a.toLowerCase() === d.a.toLowerCase()) + 1;
+    const chi = d.nome ? `${d.nome} <${d.a}>` : d.a;
+    email.push(`${numero}. ${chi}: ${e.contenuto}${e.allegati.length ? ` Allegati: ${e.allegati.join(', ')}.` : ''}`);
   }
-  if (r.piano && (r.piano.file.length || r.piano.email.length)) {
-    parti.push(
-      '',
-      'In questa esecuzione non puoi ancora produrre file né inviare email: scrivi nell’esito il contenuto che avrebbero avuto, e dichiaralo.',
-    );
+  if (email.length) {
+    parti.push('', 'Email da mandare con `invia_email`, indicando il destinatario per numero:', ...email);
   }
   return parti.join('\n');
 }
@@ -317,41 +383,13 @@ async function frasePartenza(db: pg.Pool, lavoro: RigaLavoro, job: Job): Promise
   return 'Esecuzione manuale avviata.';
 }
 
-async function ambitiDeiDocumenti(
-  db: pg.Pool,
-  ids: string[],
-): Promise<{ ramiIds: string[]; compagnieIds: string[] }> {
-  if (!ids.length) return { ramiIds: [], compagnieIds: [] };
-  const r = await db.query<{ ramo_id: string | null; compagnia_id: string | null }>(
-    `select distinct ramo_id, compagnia_id from velia.documenti where id = any($1)`,
-    [ids],
+/** L'ultimo errore che il turno della chat ha detto, se ne ha detto uno. */
+async function ultimoErrore(db: pg.Pool, jobId: string): Promise<string | undefined> {
+  const r = await db.query<{ messaggio: string | null }>(
+    `select dati->>'messaggio' as messaggio from velia.eventi_job
+      where job_id = $1 and tipo = 'errore'
+      order by id desc limit 1`,
+    [jobId],
   );
-  return {
-    ramiIds: [...new Set(r.rows.map((x) => x.ramo_id).filter((x): x is string => Boolean(x)))],
-    compagnieIds: [...new Set(r.rows.map((x) => x.compagnia_id).filter((x): x is string => Boolean(x)))],
-  };
-}
-
-async function registraConsumi(
-  db: pg.Pool,
-  tenantId: string,
-  jobId: string,
-  esito: EsitoSessione,
-): Promise<void> {
-  await db.query(
-    `insert into velia.consumi
-       (tenant_id, job_id, origine, modello, token_input, token_output,
-        token_cache_lettura, token_cache_scrittura, costo_usd)
-     values ($1, $2, 'agente', $3, $4, $5, $6, $7, $8)`,
-    [
-      tenantId,
-      jobId,
-      esito.modello,
-      esito.token.input,
-      esito.token.output,
-      esito.token.cacheLettura,
-      esito.token.cacheScrittura,
-      esito.costoUsd,
-    ],
-  );
+  return r.rows[0]?.messaggio ?? undefined;
 }

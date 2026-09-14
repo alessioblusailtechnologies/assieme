@@ -1,6 +1,6 @@
 import { Citazione } from './citazione';
 import { Id, IsoDateTime } from './comune';
-import type { DestinatarioBozza, RiferimentoDocumento } from './conversazione';
+import type { BozzaEmail, DestinatarioBozza, DocumentoGenerato, RiferimentoDocumento } from './conversazione';
 
 /**
  * Agenti (Modulo E): task AI definiti una volta ed eseguibili su richiesta o
@@ -145,6 +145,12 @@ export interface EsecuzioneAgente {
   /** Log sintetico (RF-E-06): passi svolti, non traccia di debug. */
   log: RigaLog[];
   errore?: string;
+  /** La conversazione dell'esecuzione (14/09/2026): «Continua in chat» apre questa. */
+  conversazioneId?: Id;
+  /** I file prodotti, da scaricare dalla conversazione dell'esecuzione. */
+  documenti: DocumentoGenerato[];
+  /** Le email partite, verso i destinatari del piano confermato. */
+  email: BozzaEmail[];
 }
 
 /** La riga dello storico (RF-E-06): l'esito pieno si apre da lì. */
@@ -157,6 +163,7 @@ export interface EsecuzioneRiepilogo {
   stato: StatoEsecuzione;
   tentativi: number;
   errore?: string;
+  conversazioneId?: Id;
 }
 
 export interface RigaLog {

@@ -3,11 +3,13 @@ import type pg from 'pg';
 import type {
   BozzaEmail,
   Citazione,
+  DestinatarioBozza,
   EsportazioneElaborata,
   EventoStream,
   Provenienza,
   PropostaArchivio,
 } from '../../contratto/conversazioni.js';
+import { inviaEmailDellAgente } from '../agenti/email.js';
 import { modelloDelLivello, modelloDelTenant, servitoDaAnthropic } from '../../contratto/modelli.js';
 import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
@@ -98,6 +100,21 @@ interface PayloadInterrogazione {
   esportazione?: EsportazioneElaborata;
   /** Il livello scelto nel composer per questo messaggio: vince su quello del tenant, solo qui. */
   livello?: string;
+  /**
+   * Il turno è l'esecuzione di un agente (fase 4 di PIANO-AGENTI.md): lo
+   * prepara il job `agente`, non la coda. Le email partono subito ma solo
+   * verso i destinatari del piano, la memoria non impara, i consumi sono
+   * dell'agente.
+   */
+  agente?: TurnoAgente;
+}
+
+export interface TurnoAgente {
+  esecuzioneId: string;
+  agenteId: string;
+  nome: string;
+  /** I destinatari del piano confermato, nell'ordine in cui il modello li indica per numero. */
+  destinatari: DestinatarioBozza[];
 }
 
 interface RigaConversazione {
@@ -172,7 +189,12 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     /* Il livello scelto nel composer vince su quello del tenant, per questo
        messaggio soltanto; undefined = il default di piattaforma. */
     const modelloTurno = modelloDelLivello(payload.livello) ?? modelloDelTenant(conversazione.modello_motore);
-    const origineConsumi = conversazione.chat_cliente_id ? ('chat-cliente' as const) : ('app' as const);
+    const agente = payload.agente;
+    const origineConsumi = agente
+      ? ('agente' as const)
+      : conversazione.chat_cliente_id
+        ? ('chat-cliente' as const)
+        : ('app' as const);
 
     const annullato = async (): Promise<boolean> => {
       const r = await db.query<{ stato: string }>(`select stato from velia.jobs where id = $1`, [job.id]);
@@ -430,39 +452,64 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           return proposta;
         },
         /*
-         * L'email si prepara, non si spedisce (14/09/2026): la bozza nasce
-         * `bozza`, e parte solo se l'utente clicca Invia, dall'API e con la
-         * sua identità.
+         * In chat l'email si prepara, non si spedisce (14/09/2026): la bozza
+         * nasce `bozza`, e parte solo se l'utente clicca Invia, dall'API e con
+         * la sua identità. Per un agente il clic è la conferma del piano:
+         * l'email parte subito, ma solo verso i destinatari che il piano
+         * confermato elenca, e un tentativo ripetuto non la rimanda.
          */
-        email: {
-          utenteId: payload.utenteId,
-          suBozza: async (b) => {
-            const oggetto = senzaTrattiniLunghi(b.oggetto);
-            const corpo = senzaTrattiniLunghi(b.corpo);
-            const r = await db.query<{ id: string }>(
-              `insert into velia.email_bozze
-                 (tenant_id, conversazione_id, messaggio_id, destinatario_tipo, destinatario_id,
-                  destinatario_nome, a, oggetto, corpo, allegati)
-               values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
-               returning id`,
-              [
-                tenantId,
-                payload.conversazioneId,
-                payload.messaggioAssistenteId,
-                b.destinatario.tipo,
-                b.destinatario.id ?? null,
-                b.destinatario.nome ?? null,
-                b.destinatario.a,
-                oggetto,
-                corpo,
-                JSON.stringify(b.allegati),
-              ],
-            );
-            const bozza: BozzaEmail = { id: r.rows[0]!.id, ...b, oggetto, corpo, stato: 'bozza' };
-            await emetti({ tipo: 'email', email: bozza });
-            return bozza;
-          },
-        },
+        email: agente
+          ? {
+              utenteId: payload.utenteId,
+              invio: {
+                destinatari: agente.destinatari,
+                invia: async (e) => {
+                  const esito = await inviaEmailDellAgente(
+                    db,
+                    dip.archivio,
+                    {
+                      tenantId,
+                      conversazioneId: payload.conversazioneId,
+                      messaggioId: payload.messaggioAssistenteId,
+                      esecuzioneId: agente.esecuzioneId,
+                      autoreId: payload.utenteId,
+                    },
+                    e,
+                  );
+                  if (!esito.giaInviata) await emetti({ tipo: 'email', email: esito.bozza });
+                  return esito;
+                },
+              },
+            }
+          : {
+              utenteId: payload.utenteId,
+              suBozza: async (b) => {
+                const oggetto = senzaTrattiniLunghi(b.oggetto);
+                const corpo = senzaTrattiniLunghi(b.corpo);
+                const r = await db.query<{ id: string }>(
+                  `insert into velia.email_bozze
+                     (tenant_id, conversazione_id, messaggio_id, destinatario_tipo, destinatario_id,
+                      destinatario_nome, a, oggetto, corpo, allegati)
+                   values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb)
+                   returning id`,
+                  [
+                    tenantId,
+                    payload.conversazioneId,
+                    payload.messaggioAssistenteId,
+                    b.destinatario.tipo,
+                    b.destinatario.id ?? null,
+                    b.destinatario.nome ?? null,
+                    b.destinatario.a,
+                    oggetto,
+                    corpo,
+                    JSON.stringify(b.allegati),
+                  ],
+                );
+                const bozza: BozzaEmail = { id: r.rows[0]!.id, ...b, oggetto, corpo, stato: 'bozza' };
+                await emetti({ tipo: 'email', email: bozza });
+                return bozza;
+              },
+            },
         richieste: {
           utente: [...storia.rows.filter((m) => m.autore === 'utente').map((m) => m.testo), payload.testo],
           agenzia: [...dna.istruzioni.map((i) => `${i.titolo} ${i.testo}`), ...dna.ricordi.map((r) => r.testo)],
@@ -537,12 +584,18 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
               modelli: modelliAgenzia.rows,
               conAssegnazione: true,
               conClienti: true,
-              conEmail: true,
+              ...(agente ? { emailAgente: { destinatari: agente.destinatari } } : { conEmail: true }),
               catalogo: catalogoArchivioPubblico(workspace.perPath),
             }),
         ...(perCliente
           ? {}
-          : { strumenti: { server: strumentiChat.server, nomi: strumentiChat.nomi } }),
+          : {
+              strumenti: {
+                server: strumentiChat.server,
+                nomi: strumentiChat.nomi,
+                definizioni: strumentiChat.definizioni,
+              },
+            }),
       };
       const osservatore = {
         passo: async (p: PassoSessione) => {
@@ -736,6 +789,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
          nessuno sorveglia, e ritrovarselo poi in una risposta a un
          collega. Se c'è qualcosa da ricordare, lo scrive l'agenzia. */
       if (
+        /* Nemmeno dall'esecuzione di un agente: nessuno ha parlato, e ciò che
+           c'è da imparare lo ha già scritto chi ha confermato il piano. */
+        !agente &&
         !conversazione.chat_cliente_id &&
         conversazione.memoria_attiva &&
         dip.estrattore &&
@@ -856,7 +912,7 @@ async function registraConsumi(
   esito: EsitoSessione,
   /* «Quanto mi costano i clienti» è una domanda diversa da «quanto mi costa
      l'agenzia», e con un link in mano a qualcun altro è la più urgente. */
-  origine: 'app' | 'chat-cliente' = 'app',
+  origine: 'app' | 'chat-cliente' | 'agente' = 'app',
 ): Promise<void> {
   await db.query(
     `insert into velia.consumi

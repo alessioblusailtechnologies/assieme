@@ -21,9 +21,14 @@ export class StoricoConversazioni {
 
   private readonly risorsa = httpResource<Paginato<Conversazione>>(() => this.api.urlElenco());
 
-  readonly conversazioni = computed(() =>
-    this.risorsa.hasValue() ? this.risorsa.value().elementi : [],
-  );
+  /** Tutte, comprese quelle delle esecuzioni degli agenti: la chat le apre per id. */
+  readonly tutte = computed(() => (this.risorsa.hasValue() ? this.risorsa.value().elementi : []));
+
+  /**
+   * Lo storico della chat (14/09/2026): la conversazione di un'esecuzione
+   * si apre dall'agente, e qui sarebbe rumore, una al giorno per agente.
+   */
+  readonly conversazioni = computed(() => this.tutte().filter((c) => !c.agente));
   readonly inCaricamento = this.risorsa.isLoading;
   readonly errore = this.risorsa.error;
 
@@ -39,7 +44,7 @@ export class StoricoConversazioni {
   /** Gli id delle conversazioni con una risposta in volo. */
   readonly inRisposta = computed<ReadonlySet<Id>>(() => {
     const ids = new Set(this.qui());
-    for (const c of this.conversazioni()) if (c.rispostaInCorso) ids.add(c.id);
+    for (const c of this.tutte()) if (c.rispostaInCorso) ids.add(c.id);
     return ids;
   });
 

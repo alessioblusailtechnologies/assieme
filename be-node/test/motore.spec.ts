@@ -543,6 +543,18 @@ describe('workspace e sessione, le parti pure', () => {
     expect(conChat).toContain('non dire mai che l’hai inviata');
   });
 
+  it('per un agente le email partono subito, ma solo ai destinatari del piano', () => {
+    const dna: DnaAgenzia = { istruzioni: [], riferimenti: [], ricordi: [] };
+    const conAgente = promptSistema(dna, {
+      emailAgente: { destinatari: [{ nome: 'Marta Ferrero', a: 'm@esempio.it' }, { a: 'ufficio@esempio.it' }] },
+    });
+    expect(conAgente).toContain('invia_email');
+    expect(conAgente).toContain('1. Marta Ferrero <m@esempio.it>');
+    expect(conAgente).toContain('2. ufficio@esempio.it');
+    expect(conAgente).not.toContain('prepara_email');
+    expect(promptSistema(dna, { emailAgente: { destinatari: [] } })).toContain('non prevede email');
+  });
+
   it('il prompt di ripresa: niente storia (è già nel contesto della sessione), contesto e domanda sì', () => {
     const conDocumenti = promptRipresa({
       documenti: [{ path: 'tenant/documenti/p/a.md', titolo: 'A', archivio: 'privato' }],

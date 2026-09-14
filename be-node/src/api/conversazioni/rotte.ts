@@ -100,6 +100,8 @@ interface RigaConversazione {
   documenti_in_contesto: string[];
   cliente_id: string | null;
   cliente_nome?: string | null;
+  /** L'agente di cui è un'esecuzione (14/09/2026); letto solo dove serve. */
+  agente_id?: string | null;
   condivisa: boolean;
   autore_id: string;
 }
@@ -159,7 +161,7 @@ export function registraRotteConversazioni(app: FastifyInstance, opzioni: Opzion
   app.get('/api/conversazioni', async (richiesta) => {
     return conIdentita(poolDb(), richiesta.identita, async (client): Promise<PaginaConversazioni> => {
       const righe = await client.query<RigaConversazione>(
-        `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id
+        `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id, agente_id
          from velia.conversazioni where tenant_id = $1 order by updated_at desc, id`,
         [richiesta.identita.tenantId],
       );
@@ -1200,7 +1202,7 @@ async function conversazionePerId(
   id: string,
 ): Promise<RigaConversazione> {
   const r = await client.query<RigaConversazione>(
-    `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id
+    `select id, titolo, created_at, updated_at, documenti_in_contesto, condivisa, autore_id, cliente_id, agente_id
      from velia.conversazioni where id = $1 and tenant_id = $2`,
     [id, identita.tenantId],
   );
@@ -1317,6 +1319,18 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
     for (const c of r.rows) clienti.set(c.id, c.nome);
   }
 
+  /* L'agente col suo nome: il front-end tiene fuori dallo storico le
+     conversazioni delle esecuzioni, e da una di loro sa tornare all'agente. */
+  const agenti = new Map<string, string>();
+  const idsAgenti = [...new Set(righe.map((r) => r.agente_id).filter((x): x is string => Boolean(x)))];
+  if (idsAgenti.length) {
+    const r = await client.query<{ id: string; nome: string }>(
+      `select id, nome from velia.agenti where id = any($1::uuid[])`,
+      [idsAgenti],
+    );
+    for (const a of r.rows) agenti.set(a.id, a.nome);
+  }
+
   const inCorso = await conversazioniInRisposta(righe.map((r) => r.id));
   return righe.map((r) => ({
     id: r.id,
@@ -1328,6 +1342,9 @@ async function idrata(client: pg.ClientBase, righe: RigaConversazione[]): Promis
       .filter((d): d is RiferimentoDocumento => Boolean(d)),
     ...(r.cliente_id && clienti.has(r.cliente_id)
       ? { cliente: { id: r.cliente_id, nome: clienti.get(r.cliente_id)! } }
+      : {}),
+    ...(r.agente_id && agenti.has(r.agente_id)
+      ? { agente: { id: r.agente_id, nome: agenti.get(r.agente_id)! } }
       : {}),
     condivisa: r.condivisa,
     autoreId: r.autore_id,
@@ -1407,7 +1424,7 @@ function versoMessaggio(r: RigaMessaggio): Messaggio {
 }
 
 /** Una bozza di email com'è in tabella: dalla query diretta, o da `to_jsonb` nell'elenco dei messaggi. */
-interface RigaBozza {
+export interface RigaBozza {
   id: string;
   messaggio_id: string;
   destinatario_tipo: DestinatarioBozza['tipo'];
@@ -1426,7 +1443,7 @@ interface RigaBozza {
 const COLONNE_BOZZA =
   'id, messaggio_id, destinatario_tipo, destinatario_id, destinatario_nome, a, oggetto, corpo, allegati, stato, simulata, deciso_il';
 
-function versoBozza(r: RigaBozza): BozzaEmail {
+export function versoBozza(r: RigaBozza): BozzaEmail {
   return {
     id: r.id,
     destinatario: {
