@@ -2193,6 +2193,78 @@
   "pathPdf": "archivio-pubblico/hdi/auto/e-mobility-hdi/ed-2026-07/originale.pdf"
  },
  {
+  "id": "doc-hdi-globale-casa-ed-2026-06-condizioni-di-assicurazione",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-casa",
+  "prodotto": "Globale Casa",
+  "titolo": "Condizioni di Assicurazione — HDI Globale Casa",
+  "tipologia": "condizioni-assicurazione",
+  "numeroPagine": 48,
+  "paginaInizio": 7,
+  "edizione": {
+   "id": "edz-globale-casa-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/condizioni-di-assicurazione.md",
+  "pathPdf": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-globale-casa-ed-2026-06-dip",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-casa",
+  "prodotto": "Globale Casa",
+  "titolo": "DIP Danni — HDI Globale Casa",
+  "tipologia": "dip",
+  "numeroPagine": 2,
+  "paginaInizio": 1,
+  "edizione": {
+   "id": "edz-globale-casa-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/dip.md",
+  "pathPdf": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-globale-casa-ed-2026-06-dip-aggiuntivo",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-casa",
+  "prodotto": "Globale Casa",
+  "titolo": "DIP Aggiuntivo Danni — HDI Globale Casa",
+  "tipologia": "dip-aggiuntivo",
+  "numeroPagine": 4,
+  "paginaInizio": 3,
+  "edizione": {
+   "id": "edz-globale-casa-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/dip-aggiuntivo.md",
+  "pathPdf": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/originale.pdf"
+ },
+ {
+  "id": "doc-hdi-globale-casa-ed-2026-06-second-opinion-veterinaria",
+  "compagniaId": "cmp-hdi",
+  "ramoId": "ram-casa",
+  "prodotto": "Globale Casa",
+  "titolo": "Second opinion veterinaria — HDI Globale Casa",
+  "tipologia": "altro",
+  "numeroPagine": 1,
+  "paginaInizio": 55,
+  "edizione": {
+   "id": "edz-globale-casa-2026-06",
+   "etichetta": "ed. 06/2026",
+   "validaDal": "2026-06-01",
+   "corrente": true
+  },
+  "pathMd": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/second-opinion-veterinaria.md",
+  "pathPdf": "archivio-pubblico/hdi/casa/globale-casa/ed-2026-06/originale.pdf"
+ },
+ {
   "id": "doc-hdi-natanti-hdi-ed-2026-06-condizioni-di-assicurazione",
   "compagniaId": "cmp-hdi",
   "ramoId": "ram-auto",

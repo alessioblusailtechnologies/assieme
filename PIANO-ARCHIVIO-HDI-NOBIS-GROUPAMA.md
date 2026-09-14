@@ -10,27 +10,34 @@ Zurich, Nobis, Groupama, HDI e Unipol**. L'archivio pubblico è condiviso:
 l'agente cerca i suoi prodotti, e dove non c'è nulla la risposta è «non
 lo so».
 
-Al 13/09/2026, dopo il lotto Unipol:
+Al 14/09/2026, chiuso il lotto HDI:
 
 | Compagnia | Rami | Prodotti | Doc | Pagine |
 |---|---|---|---|---|
 | UnipolSai | 8 | 25 | 138 | 2.827 |
 | Zurich | 5 | 16 | 51 | 1.124 |
 | Generali | 4 | 9 | 34 | 730 |
+| **HDI** | **5** | 10 | 33 | 445 |
 | **Nobis** | **1** (auto) | 8 | 60 | 591 |
-| **HDI** | **1** (auto) | 6 | 20 | 268 |
+| Allianz | 1 (auto) | 5 | 30 | 688 |
+| AXA | 1 (auto) | 6 | 22 | 542 |
 | **Groupama** | **1** (auto) | 5 | 15 | 336 |
+| Cattolica | 1 (auto) | 1 | 3 | 140 |
 
-Tre delle sei compagnie dell'agente rispondono **solo sull'auto**. Di
-Nobis, che è leader di mercato sul viaggio, in archivio non c'è una sola
-polizza viaggio. Questo piano copre quelle tre; Generali ha il suo,
-**PIANO-ARCHIVIO-GENERALI.md**.
+Totale: **386 documenti, 7.423 pagine**.
+
+Delle tre compagnie a un ramo solo, **HDI è uscita dal gruppo** il
+14/09/2026: ha cinque rami (auto, viaggi, cyber, infortuni, casa) ed è la
+terza dell'archivio per copertura. Restano Nobis e Groupama, che
+rispondono ancora **solo sull'auto**. Di Nobis, leader di mercato sul
+viaggio, in archivio non c'è una sola polizza viaggio. Generali ha il suo
+piano a parte, **PIANO-ARCHIVIO-GENERALI.md**.
 
 ## Il quadro, dopo il censimento
 
 | | Prodotti ingeribili | Pagine stimate | Forma di pubblicazione |
 |---|---|---|---|
-| HDI | 41 | ~1.350 | **sempre a pezzi: 3 file** (DIP + DIP aggiuntivo + Condizioni), da concatenare ogni volta |
+| HDI | 41, di cui **4 fatti** | ~1.350 | **sempre a pezzi: 3 file** (DIP + DIP aggiuntivo + Condizioni), da concatenare ogni volta |
 | Nobis | 41 | ~1.800 | **sempre set unico**, un PDF per prodotto |
 | Groupama | 83 | ~4.800 | **96% set unico**; a pezzi solo i tre previdenziali |
 
@@ -38,31 +45,48 @@ Nessuno dei tre siti è dietro challenge: si leggono con WebFetch, senza
 Chrome. **I numeri di pagine sono tutti stime**, perché nessuno dei tre
 espone il conteggio: sono calibrate sui set auto già in archivio (HDI
 22-65 pagine a set, Nobis ~13,5 KB per pagina dal `Content-Length`,
-Groupama 57-81 a set). Errore atteso ±25%.
+Groupama 57-81 a set). Errore atteso ±25%: **verificato sul lotto HDI,
+dove le quattro stime hanno sbagliato fino al 35% sul singolo set ma solo
+del 2% in aggregato** (180 stimate contro 177 vere).
 
 ## Stato
 
-Al 13/09/2026, lotto HDI in corso, un set per volta:
+**Lotto HDI: chiuso il 14/09/2026.** Quattro set, quattro rami nuovi, un
+commit per set. 177 pagine, ~6,0 milioni di token, catalogo da 373 a 386
+documenti.
 
-- [x] **# Viaggio Singolo** (ed. 06/2026, 36 pagine, 3 documenti): in
-  archivio, apre il ramo `viaggi` per HDI. Catalogo a 376 documenti.
-  Convenzioni del lotto in `lavorazione-visiva/convenzioni-hdi-viaggi.md`.
-  Costato ~1,05 M di token contro gli ~800 mila stimati: il di più sta
-  quasi tutto nell'INDICE (233 mila da solo) e nel secondo sguardo su
-  sedici pagine.
-- [x] **Rischi Informatici HDI** (ed. 06/2026, 32 pagine, 3 documenti): in
-  archivio il 14/09/2026, apre il ramo `cyber` per HDI, secondo prodotto
-  cyber del catalogo dopo Unipol Scudo Cyber. Catalogo a 379 documenti.
-  Costato ~0,97 M di token. Il secondo sguardo non ha corretto nulla: la
-  forma e quella dei set auto HDI, gia nota ai trascrittori.
-- [x] **Protezione Infortuni HDI** (ed. 06/2026, **54** pagine contro le ~40
-  stimate, 3 documenti): in archivio il 14/09/2026, apre il ramo
-  `infortuni` per HDI. Catalogo a 382 documenti. Costato ~1,9 M di token.
-  E il set piu ricco dei tre: quattro sezioni (Assistenza, Infortuni,
-  Invalidita Permanente da Malattia, Tutela Legale), 17 garanzie in una
-  matrice di composizione alle pagg. 9-10, sei franchigie e cinque tabelle
-  di valutazione.
-- [ ] Globale Casa (casa)
+| Set | Ramo aperto | Pagine (stimate → vere) | Token | Correzioni del secondo sguardo |
+|---|---|---|---|---|
+| **# Viaggio Singolo** | `viaggi` | 30 → **36** | ~1,05 M | 12 |
+| **Rischi Informatici HDI** | `cyber` | 35 → **32** | ~1,04 M | 0 |
+| **Protezione Infortuni HDI** | `infortuni` | 40 → **54** | ~1,95 M | 6 |
+| **Globale Casa** | `casa` | 75 → **55** | ~1,95 M | 4 |
+
+Convenzioni del lotto in `lavorazione-visiva/convenzioni-hdi.md` (esteso
+il 14/09) e `convenzioni-hdi-viaggi.md`.
+
+Fuori piano, nella stessa sessione: **riparati gli otto INDICE
+dell'archivio che erano rimasti senza la sezione `## Garanzie e rischi
+trattati`** (i due Scudo Cyber, i tre Focus, i due Contratto Base di
+Generali, Unica Servizi Telematici). Da 2,6-3,2 KB a 20-89 KB, 717 voci
+di garanzia aggiunte, ~2,0 M di token. Ora tutti e 66 gli INDICE hanno
+quella sezione. Restano da decidere una decina di correzioni al testo
+preesistente di quegli indici, segnalate e non applicate: vedi
+«Correzioni in sospeso» in fondo.
+
+### Prossimi lotti
+
+- [ ] **Nobis, primo lotto**: Filo diretto Tutela (`tutela`), Nobis
+  Viaggio Easy Completa (`viaggi`), Commercio su Misura (`imprese`),
+  Nobis Casa & Noi (`casa`). ~180 pagine stimate, **~6 M** al costo
+  misurato.
+- [ ] **Groupama, primo lotto a costo minimo**: Casa Senza Confini
+  (`casa`), Groupama Benessere InSalute (`salute`), Groupama Protezione
+  Infortuni (`infortuni`), Tutela Legale Famiglia (`tutela`). ~280 pagine
+  stimate, **~9,5 M**.
+- [ ] **Groupama, Agrirama e DinamicaBusiness 360**: ~280 pagine, **~9,5 M**.
+  Apre `agricoltura`, ramo nuovo per l'intero archivio: va deciso se
+  serve alla demo.
 
 ## Il primo lotto, compagnia per compagnia
 
@@ -70,24 +94,33 @@ Il criterio è uno solo: **quanti rami nuovi si aprono per token speso**.
 Un ramo scoperto è una risposta «non lo so» in demo; un secondo prodotto
 in un ramo già coperto è profondità, che serve dopo.
 
-### HDI - quattro rami in ~180 pagine
+### HDI - FATTO il 14/09/2026
 
-| Set | Ramo che apre | Pagine | Pagina prodotto (sotto `hdiassicurazioni.it/it/`) |
-|---|---|---|---|
-| **#Viaggio Singolo** (5771) | `viaggi` | ~30 | `privati/protezione-e-salute/viaggio-singolo` |
-| **Rischi Informatici HDI** (5881) | `cyber` | ~35 | `business/aziende/beni-e-attivita/rischi-informatici-hdi` |
-| **Protezione Infortuni HDI** (4291) | `infortuni` | ~40 | `privati/protezione-e-salute/protezione-infortuni-hdi` |
-| **Globale Casa** (5811) | `casa` | ~75 | `privati/casa-e-beni/globale-casa` |
+I quattro set sono in archivio: `viaggi`, `cyber`, `infortuni`, `casa`.
+Restano fuori, se un giorno servissero: **Professionista HDI Lex** (5892,
+~30 pagine), unico modo di aprire `tutela` in HDI perché per i privati la
+tutela legale è sempre una garanzia dentro altre polizze, e i buchi di
+mobilità elencati più sotto.
 
-Globale Casa da solo porta dentro RC vita privata, assistenza, tutela
-legale famiglia e animali, più un allegato «Second opinion veterinaria».
-Rischi Informatici mette HDI a confronto sul cyber, dove oggi c'è solo
-Unipol Scudo Cyber.
+Che cosa hanno portato dentro, oltre al ramo:
 
-Quinto passo, se serve: **Professionista HDI Lex** (5892, ~30 pagine) è
-l'**unico** modo di aprire `tutela` in HDI, perché per i privati la
-tutela legale è sempre una garanzia dentro altre polizze. Si scarica
-dalla stessa pagina di Professionista HDI.
+- **# Viaggio Singolo**: tre combinazioni predefinite Large/Medium/Small.
+  Nessuna garanzia infortuni, nonostante il Glossario definisca morte e
+  invalidità; spese mediche in Italia ferme a 1.000 euro anche in Large
+  contro 3.000.000 fuori Italia.
+- **Rischi Informatici HDI**: secondo cyber del catalogo, e primo
+  confronto possibile con Unipol Scudo Cyber. Due sezioni contro tre,
+  niente tutela legale, ma in più i Costi e spese PCI e la responsabilità
+  multimediale. Nessun importo nelle Condizioni: massimali e franchigie
+  stanno solo nel DIP Aggiuntivo.
+- **Protezione Infortuni HDI**: fino a 10 persone con un contratto, quattro
+  sezioni, 17 garanzie in una matrice di composizione, sei franchigie e
+  cinque tabelle di valutazione. La franchigia 3% assorbibile paga fino al
+  200% della somma assicurata: non è una franchigia, è un moltiplicatore.
+- **Globale Casa**: cinque sezioni. La sezione Incendio è **all risks
+  vera**, quindi l'elenco dei rischi coperti non esiste e va letto per
+  differenza dalle 32 esclusioni. **Nessuna copertura catastrofale in
+  nessuna forma**, a differenza di Unipol e Generali nello stesso ramo.
 
 ### Nobis - quattro rami in ~180 pagine
 
@@ -135,42 +168,65 @@ si sostituiscono gli ultimi due con **Agrirama** (~130) e
 
 ## L'ordine consigliato
 
-1. **HDI, primo lotto** (~180 pagine, ~4 M). Il rapporto rami/token
-   migliore dei tre, e sono quattro set piccoli: si chiude in mezza
-   sessione.
-2. **Nobis, primo lotto** (~180 pagine, ~4 M). Stesso costo, e porta in
-   archivio la gamma viaggio che manca a tutti.
-3. **Groupama, primo lotto a costo minimo** (~280 pagine, ~5,5 M).
-4. **Groupama, Agrirama e DinamicaBusiness 360** (~280 pagine, ~4,5 M).
-   Da qui in poi si sta aprendo `agricoltura`, che è un ramo nuovo per
-   l'intero archivio: va deciso se serve alla demo.
+1. ~~**HDI, primo lotto**~~ **fatto il 14/09/2026** (177 pagine, 6,0 M).
+2. **Nobis, primo lotto** (~180 pagine, ~6 M). Porta in archivio la gamma
+   viaggio che manca a tutti, ed è la compagnia più economica da ingerire
+   delle tre: set unico, un PDF per prodotto, nessuna concatenazione.
+3. **Groupama, primo lotto a costo minimo** (~280 pagine, ~9,5 M).
+4. **Groupama, Agrirama e DinamicaBusiness 360** (~280 pagine, ~9,5 M).
+   Da qui in poi si sta aprendo `agricoltura`, ramo nuovo per l'intero
+   archivio: va deciso se serve alla demo.
 
-Con i primi tre passi, **~640 pagine e circa 13,5 milioni di token**, le
-tre compagnie passano da un ramo a cinque ciascuna.
+Coi passi 2 e 3, **~460 pagine e circa 15,5 milioni di token**, anche
+Nobis e Groupama passano da un ramo a cinque.
 
 ## Quanto costa, e su che base
 
-I consumi misurati sul lotto Unipol e sui primi set Generali:
+**Numeri rifatti il 14/09/2026 sul lotto HDI**, che è il primo lotto
+misurato per intero set per set. I vecchi numeri, presi dal lotto Unipol,
+sottostimavano del 70%.
 
-| Dimensione del set | Token a pagina |
-|---|---|
-| grande (oltre 120 pagine) | 13-17 mila |
-| medio (50-120) | 19-24 mila |
-| piccolo (sotto 50) | 21-25 mila |
+| Set | Pagine | Trascrizione | Secondo sguardo | INDICE | Totale | Token a pagina |
+|---|---|---|---|---|---|---|
+| # Viaggio Singolo | 36 | 465 mila | 303 mila | 233 mila | ~1,05 M | 29 mila |
+| Rischi Informatici | 32 | 645 mila | 117 mila | 239 mila | ~1,04 M | 32 mila |
+| Protezione Infortuni | 54 | 1,25 M | 351 mila | 310 mila | ~1,95 M | 36 mila |
+| Globale Casa | 55 | 1,24 M | 330 mila | 342 mila | ~1,95 M | 35 mila |
 
-Sui set piccoli l'INDICE pesa un quarto del totale e **non si comprime**:
-sotto le ~40 pagine il costo per pagina non scende più. Vale la regola
-pratica: **pagine × 20 mila token**, con un pavimento di ~800 mila token
-a set.
+La regola pratica diventa **pagine × 34 mila token**, con un pavimento di
+**~1 milione a set**. Sotto le ~40 pagine il costo per pagina non scende
+più, perché l'INDICE pesa un quarto del totale e non si comprime.
 
-Il costo scende se in archivio c'è già un **gemello dello stesso ramo**
-da cui copiare taglio e tono dell'INDICE. Per questi tre lotti il gemello
-c'è quasi sempre, perché Unipol e Zurich coprono ormai otto rami fra
-loro: `viaggi` ha Zurich e Generali, `casa` ne ha sei, `tutela` ha Unipol
-e Generali, `cyber` ha Unipol, `imprese` ha Unipol. L'unico senza gemello
-è **agricoltura**.
+Perché il triplo della stima vecchia:
+
+- **il grassetto si misura**. In questi PDF il grassetto è **sintetico**:
+  nessun font Bold incorporato, quindi né `pdftohtml` né il nome del font
+  lo distinguono, e va misurato sullo spessore delle aste su un rendering
+  a 400-800 dpi. Farlo blocco per blocco ha portato la trascrizione da
+  ~13 a ~23 mila token a pagina. Toglierlo farebbe risparmiare un terzo
+  del lotto, ma il primo set ha mostrato sei celle marcate in grassetto
+  che erano solo sottolineate;
+- **l'INDICE è cresciuto di standard**. La mediana d'archivio è 46 KB;
+  quelli di questo lotto vanno da 54 a 115 KB. Costano 230-340 mila token
+  l'uno e non si comprimono;
+- **il secondo sguardo costa poco quando la trascrizione è buona**
+  (117 mila sul set cyber, zero correzioni) e caro quando c'è da guardare
+  (351 mila sul set infortuni). È il costo giusto da pagare: su quel set
+  ha trovato una frase riformulata invece che copiata.
+
+Il costo scende se in archivio c'è già un **gemello dello stesso ramo** da
+cui copiare taglio e tono dell'INDICE. Per i due lotti che restano il
+gemello c'è quasi sempre: `viaggi` ha ora quattro prodotti, `casa` sette,
+`tutela` due, `imprese` tre, `salute` due, `infortuni` quattro. L'unico
+senza gemello è **agricoltura**.
 
 Più 4 dollari ogni 1.000 pagine di Mistral OCR, che è il testimone.
+
+**Le stime di pagine del censimento sbagliano parecchio sul singolo set**
+(Protezione Infortuni 40 stimate contro 54 vere, Globale Casa 75 contro
+55), ma tengono in aggregato: 180 stimate contro 177 vere sul lotto. Per
+decidere se fare un set, va bene la stima; per dire quanto costa, il
+numero vero si sa solo dopo aver scaricato i pezzi.
 
 ## Come pubblicano, e dove sono le trappole
 
@@ -289,6 +345,74 @@ sezione «Cosa ha insegnato questo lotto». Le tre che pesano di più:
   inventati**, e vanno girati al secondo sguardo come domanda esplicita;
 - **un errore trovato una volta si previene**, mettendolo nel prompt del
   coordinatore, invece di ricorreggerlo a valle.
+
+## Cosa ha insegnato il lotto HDI
+
+Da mettere nel prompt dei coordinatori dei prossimi lotti, perché un
+errore trovato una volta si previene invece di ricorreggerlo a valle.
+
+- **I trascrittori normalizzano i refusi senza accorgersene.** Sul primo
+  set hanno scritto «franchigie» dove la pagina stampa «franchie», «subito»
+  dove stampa «subìto», «originariamente previsto» dove stampa
+  «originariamente Assicurato». Va detto esplicitamente nel prompt che i
+  refusi si copiano, accenti e parentesi spaiate comprese. Detto così, dal
+  secondo set in poi i trascrittori hanno cominciato a **segnalarli da
+  soli** nel loro report finale.
+- **Il guasto peggiore non è il refuso, è la parafrasi.** Sul set
+  infortuni una frase delle norme sui sinistri era stata riformulata
+  invece che copiata. Il testimone di fedeltà l'ha vista come sei parole
+  perse e una comparsa: quel profilo - **parole perse e comparse insieme
+  nella stessa pagina** - è il sintomo da girare sempre al secondo sguardo
+  come domanda esplicita.
+- **Il grassetto sintetico va misurato, e la misura va chiesta nel
+  prompt.** `pdftohtml -xml -fontfullname` qui non serve: non c'è un font
+  Bold. Si misura lo spessore delle aste su un rendering a 400-800 dpi
+  (regolare ~9 px a 800 dpi, grassetto 12-14). Senza questa istruzione il
+  primo set ha marcato in grassetto sei celle che erano sottolineate.
+- **I confini dei documenti li decidono i pezzi scaricati, non i piè di
+  pagina.** `mappa-set.mjs` ha sbagliato su tre set su quattro, mettendo
+  la copertina delle Condizioni dentro il DIP Aggiuntivo, perché la
+  copertina non porta piè. Siccome HDI pubblica sempre a pezzi, il numero
+  di pagine di ogni PDF scaricato è la verità: DIP 2, DIP Aggiuntivo 4,
+  il resto è il libretto.
+- **Le tabelle riepilogative possono essere immagini raster.** Nel set
+  viaggi la tabella dei tre livelli (pagg. 35-36) e le tre del DIP
+  Aggiuntivo non hanno layer di testo: `verifica-fedelta.mjs` le segnala
+  sempre come «numeri comparsi» e non può dire nulla. Lì l'unico giudice è
+  l'occhio su ritagli a 500 dpi o più, cella per cella.
+- **Un set vale anche per quello che non ha.** Le cose più utili
+  all'agente, in questo lotto, sono assenze: Globale Casa non ha
+  copertura catastrofale, # Viaggio Singolo non ha garanzia infortuni,
+  Rischi Informatici non ha tutela legale né un solo importo nelle
+  Condizioni. Vanno scritte nell'INDICE in una sezione apposita, o il
+  motore le deduce sbagliate.
+
+## Correzioni in sospeso sugli otto INDICE riparati
+
+Trovate riparandoli il 14/09/2026, **segnalate e non applicate**: toccano
+testo scritto in sessioni precedenti e la decisione è del committente.
+
+Errori di fatto (si correggono a colpo sicuro):
+
+- **Scudo Cyber ed. 07/2024**: pag. 60 è elencata fra le bianche, ma è il
+  retro di copertina e porta modello ed edizione del fascicolo.
+- **Unica Servizi Telematici**: due rimandi a pag. 88 che vanno a pag. 89
+  (informare i conducenti, divieto d'uso ai dipendenti).
+- **Focus Ufficio e Studi**: la sintesi della Sezione Furto comincia a
+  pag. 70, non a 71.
+- **Generali Contratto Base Autovetture**: la tabella dei documenti dà le
+  Condizioni come «ed. 04/2024», che è la data di ultimo aggiornamento
+  sulla copertina; il piè di ogni pagina stampa «Ed. 72025».
+- **Generali Contratto Base Motoveicoli**: il titolo della Parte III è
+  troncato e perde «e automaticamente prestate», cioè proprio il pezzo che
+  dice che la clausola non è opzionale.
+
+Difetto sistematico (vale su tutti e otto, è una riscrittura):
+
+- **I sinonimi sono parafrasi inventate**, non le diciture dei documenti.
+  Chi cerca con le parole stampate («Contratto base R.C. Motoveicoli»,
+  «Settore: MOTOVEICOLI», «SEZIONE DANNI DA RESPONSABILITÀ CIVILE VERSO
+  TERZI») non trova. Rifarli costa poco ma va fatto set per set.
 
 ## Decisioni prese, da non rimettere in discussione
 
