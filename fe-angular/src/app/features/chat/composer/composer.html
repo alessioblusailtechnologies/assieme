@@ -171,15 +171,20 @@
           type="button"
           class="campo__invia"
           (click)="invia()"
-          [disabled]="!store.bozza().trim()"
+          [disabled]="!store.bozza().trim() || !!attesaLettura()"
           aria-label="Invia il messaggio"
-          title="Invia (Invio)"
+          [title]="attesaLettura() ?? 'Invia (Invio)'"
         >
           <ui-icon name="invia" [size]="16" />
         </button>
       }
     </div>
   </div>
+
+  <!-- Perché l'invio aspetta: in chat entra solo ciò che è già letto. -->
+  @if (attesaLettura(); as avviso) {
+    <p class="composer__attesa" role="status">{{ avviso }}</p>
+  }
 
   <!-- La scelta del modo di caricamento: dove finisce il documento, e quanto bene viene letto. -->
   <ui-menu-azioni #menuAllega [voci]="vociAllega" />

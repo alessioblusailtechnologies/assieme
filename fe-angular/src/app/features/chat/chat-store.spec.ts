@@ -709,4 +709,72 @@ describe('ChatStore', () => {
     expect(store.elaborazioni().get('doc-priv-1')).toEqual({ stato: 'lavorazione' });
     expect(store.elaborazioni().has('doc-pub-1')).toBe(false);
   });
+
+  it('un allegato ancora in lettura tiene ferma la domanda; letto, entra nel contesto e la domanda parte', async () => {
+    /* 21/09/2026: in chat entra solo ciò che è pronto. Prima la domanda
+       partiva subito e aspettava in coda la fine della trascrizione. */
+    await avvia([conversazione('cnv-1')]);
+    store.apri('cnv-1');
+    await microtask();
+    http.expectOne('/api/conversazioni/cnv-1/messaggi').flush([]);
+
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      store.allega([new File(['%PDF'], 'polizza-rossi.pdf', { type: 'application/pdf' })], 'archivio');
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/allegati?modo=archivio')
+        .flush(
+          { id: 'doc-priv-9', titolo: 'polizza-rossi', archivio: 'privato', stato: 'in-coda' },
+          { status: 201, statusText: 'Created' },
+        );
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(store.riferimentiInAttesa().map((r) => r.id)).toEqual(['doc-priv-9']);
+      /* Nel contesto della conversazione non entra finché non è letto. */
+      expect(http.match((r) => r.url.includes('/contesto/'))).toHaveLength(0);
+
+      store.bozza.set('Che cosa dice?');
+      store.invia();
+      expect(http.match((r) => r.url === '/api/conversazioni/cnv-1/messaggi')).toHaveLength(0);
+      expect(store.bozza()).toBe('Che cosa dice?');
+
+      await vi.advanceTimersByTimeAsync(2000);
+      http.expectOne('/api/documenti-privati/doc-priv-9').flush({ stato: 'pronto' });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(store.riferimentiInAttesa()).toEqual([]);
+      expect(http.expectOne((r) => r.method === 'PUT' && r.url === '/api/conversazioni/cnv-1/contesto/doc-priv-9')).toBeTruthy();
+
+      store.invia();
+      const domanda = http.expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/cnv-1/messaggi');
+      expect(domanda.request.body).toMatchObject({ testo: 'Che cosa dice?', documentiReferenziati: ['doc-priv-9'] });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('un allegato che non si è potuto leggere tiene ferma la domanda finché non lo si toglie', async () => {
+    await avvia();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      store.allega([new File(['%PDF'], 'rotto.pdf', { type: 'application/pdf' })], 'archivio');
+      http
+        .expectOne((r) => r.method === 'POST' && r.url === '/api/conversazioni/allegati?modo=archivio')
+        .flush({ id: 'doc-priv-8', titolo: 'rotto', archivio: 'privato', stato: 'in-coda' }, { status: 201, statusText: 'Created' });
+      await vi.advanceTimersByTimeAsync(2000);
+      http.expectOne('/api/documenti-privati/doc-priv-8').flush({ stato: 'errore', erroreElaborazione: 'PDF illeggibile' });
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(store.elaborazioni().get('doc-priv-8')).toEqual({ stato: 'errore', messaggio: 'PDF illeggibile' });
+      store.bozza.set('Riassumilo');
+      store.invia();
+      expect(http.match((r) => r.method === 'POST' && r.url === '/api/conversazioni')).toHaveLength(0);
+
+      store.rimuoviRiferimento('doc-priv-8');
+      store.invia();
+      expect(http.match((r) => r.method === 'POST' && r.url === '/api/conversazioni')).toHaveLength(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

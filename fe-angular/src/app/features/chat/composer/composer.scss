@@ -19,6 +19,14 @@
   border-top-right-radius: 0;
 }
 
+/* Sotto il campo, piccolo: dice perché il pulsante d'invio è spento. */
+.composer__attesa {
+  margin: 0;
+  padding: 0 var(--sp-1);
+  font-size: var(--t-xs);
+  color: var(--c-text-3);
+}
+
 .campo__invia {
   border-radius: var(--radius-sm);
   flex: none;

@@ -3,15 +3,34 @@ import type pg from 'pg';
 import { configurazione } from '../config.js';
 
 /**
- * La coda pgmq unica dei lavori; il tipo sta nel job, il worker smista.
+ * Le code pgmq dei lavori; il tipo sta nel job, il worker smista.
  *
  * Il nome viene dalla configurazione (`CODA_LAVORI`, default `lavori`) per
  * poter dare allo sviluppo locale una coda sua: il database è uno solo, e
  * il worker dell'ambiente dev su Render altrimenti pesca dagli stessi job.
  * Si legge a ogni chiamata, non all'import, perché la configurazione si
  * valida al primo uso e i test la montano quando vogliono.
+ *
+ * Le corsie sono due dal 21/09/2026. La coda era una e il worker la
+ * lavorava un job alla volta nell'ordine d'arrivo: chi scriveva in chat
+ * dopo aver caricato un set informativo aspettava la fine della sua
+ * trascrizione, venti minuti per 130 pagine, e con tre caricamenti di
+ * fila un'ora. Ora le domande della chat vanno in una coda loro, che il
+ * worker pesca con cicli dedicati: un'ingestion lunga non le vede nemmeno.
+ * Gli agenti restano con i lavori: partono a orari fissi, anche a decine
+ * insieme, e davanti alla chat terrebbero ferma la stessa gente.
  */
-const coda = (): string => configurazione().CODA_LAVORI;
+export type Corsia = 'chat' | 'lavori';
+
+export function corsiaDelTipo(tipo: TipoJob): Corsia {
+  return tipo === 'interrogazione' ? 'chat' : 'lavori';
+}
+
+/** La coda della chat si chiama come quella dei lavori col suffisso `_chat` (vedi `CODA_LAVORI`). */
+export function nomeCoda(corsia: Corsia): string {
+  const base = configurazione().CODA_LAVORI;
+  return corsia === 'chat' ? `${base}_chat` : base;
+}
 
 export type TipoJob =
   | 'prova'
@@ -35,6 +54,8 @@ export interface Job {
 
 /** Un messaggio pescato dalla coda: il puntatore pgmq più la riga di dominio. */
 export interface MessaggioJob {
+  /** La coda da cui è stato pescato: conferme e visibilità vanno lì. */
+  coda: string;
   msgId: number;
   /** Quante volte è stato consegnato (1 alla prima): la base del retry. */
   consegne: number;
@@ -61,7 +82,7 @@ export async function accoda(
       [tipo, payload, opzioni.tenantId ?? null, opzioni.utenteId ?? null],
     );
     const jobId = inserito.rows[0]!.id;
-    await client.query('select pgmq.send($1, $2)', [coda(), JSON.stringify({ jobId })]);
+    await client.query('select pgmq.send($1, $2)', [nomeCoda(corsiaDelTipo(tipo)), JSON.stringify({ jobId })]);
     await client.query('commit');
     return jobId;
   } catch (errore) {
@@ -80,7 +101,9 @@ export async function accoda(
 export async function prossimo(
   db: pg.Pool,
   visibilitaSecondi = 60,
+  corsia: Corsia = 'lavori',
 ): Promise<MessaggioJob | undefined> {
+  const coda = nomeCoda(corsia);
   /* Un messaggio orfano (job cancellato) si archivia e si passa al
      successivo nello stesso giro: un orfano in testa alla coda non deve
      costare un tick di attesa ai job veri dietro di lui. */
@@ -89,10 +112,7 @@ export async function prossimo(
       msg_id: string;
       read_ct: number;
       message: { jobId: string };
-    }>('select msg_id, read_ct, message from pgmq.read($1, $2, 1)', [
-      coda(),
-      visibilitaSecondi,
-    ]);
+    }>('select msg_id, read_ct, message from pgmq.read($1, $2, 1)', [coda, visibilitaSecondi]);
     const messaggio = letti.rows[0];
     if (!messaggio) return undefined;
 
@@ -100,8 +120,8 @@ export async function prossimo(
       messaggio.message.jobId,
     ]);
     const job = righe.rows[0];
-    if (job) return { msgId: Number(messaggio.msg_id), consegne: messaggio.read_ct, job };
-    await archivia(db, Number(messaggio.msg_id));
+    if (job) return { coda, msgId: Number(messaggio.msg_id), consegne: messaggio.read_ct, job };
+    await archivia(db, coda, Number(messaggio.msg_id));
   }
   return undefined;
 }
@@ -113,8 +133,8 @@ export async function prossimo(
  * dev su Render, sulla stessa coda, ripeteva le risposte lunghe col suo
  * codice, e l'ultima scrittura vinceva).
  */
-export async function estendiVisibilita(db: pg.Pool, msgId: number, secondi: number): Promise<void> {
-  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [coda(), msgId, secondi]);
+export async function estendiVisibilita(db: pg.Pool, coda: string, msgId: number, secondi: number): Promise<void> {
+  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [coda, msgId, secondi]);
 }
 
 /**
@@ -124,13 +144,13 @@ export async function estendiVisibilita(db: pg.Pool, msgId: number, secondi: num
  * fallito non si aspetta che la finestra scada da sola — chi sta
  * aspettando una risposta in chat non ha motivo di pagare quel minuto.
  */
-export async function rimettiInCoda(db: pg.Pool, msgId: number, secondi: number): Promise<void> {
-  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [coda(), msgId, secondi]);
+export async function rimettiInCoda(db: pg.Pool, coda: string, msgId: number, secondi: number): Promise<void> {
+  await db.query('select pgmq.set_vt($1, $2::bigint, $3::int)', [coda, msgId, secondi]);
 }
 
 /** Toglie il messaggio dalla coda conservandolo nell'archivio pgmq. */
-export async function archivia(db: pg.Pool | pg.ClientBase, msgId: number): Promise<void> {
-  await db.query('select pgmq.archive($1, $2::bigint)', [coda(), msgId]);
+export async function archivia(db: pg.Pool | pg.ClientBase, coda: string, msgId: number): Promise<void> {
+  await db.query('select pgmq.archive($1, $2::bigint)', [coda, msgId]);
 }
 
 export async function aggiornaStatoJob(

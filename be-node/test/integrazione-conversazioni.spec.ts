@@ -275,7 +275,7 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     expect((await richiedi('PATCH', `/api/conversazioni/${convId}`, tokenOperatore, { titolo: 'X' })).statusCode).toBe(403);
   });
 
-  it('allegato: nasce nell’Archivio Privato, in coda di ingestion, referenziabile subito; il file si apre', async () => {
+  it('allegato: nasce nell’Archivio Privato, in coda di ingestion, non referenziabile finché non è letto; il file si apre', async () => {
     const { corpo, contentType } = multipart('polizza-rossi.pdf', await pdfDiProva());
     const r = await app.inject({ method: 'POST', url: '/api/conversazioni/allegati', headers: { authorization: `Bearer ${tokenAdmin}`, 'content-type': contentType }, payload: corpo });
     expect(r.statusCode).toBe(201);
@@ -287,9 +287,18 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     const job = await pool().query(`select 1 from velia.jobs where tipo = 'ingestion' and payload->>'documentoId' = $1`, [rif.id]);
     expect(job.rowCount).toBe(1);
 
-    const nelContesto = await richiedi('PUT', `/api/conversazioni/${convId}/contesto/${rif.id}`, tokenAdmin, {});
-    expect(nelContesto.statusCode).toBe(200);
-    expect(nelContesto.json<Conversazione>().documentiInContesto.map((d) => d.archivio)).toEqual(['pubblico', 'privato']);
+    /* Solo pronti, dal 21/09/2026: prima il proprio allegato si nominava
+       subito, perché l'ingestion stava in coda prima della domanda e il
+       worker faceva un job alla volta. Con la chat su una coda sua non è
+       più vero, e il composer aspetta la lettura. */
+    const presto = await richiedi('PUT', `/api/conversazioni/${convId}/contesto/${rif.id}`, tokenAdmin, {});
+    expect(presto.statusCode).toBe(409);
+    expect(presto.json<CorpoErroreApi>().codice).toBe('NON_PRONTO');
+    expect(presto.json<CorpoErroreApi>().messaggio).toContain('ancora in lettura');
+    const inDomanda = await richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: 'Che cosa dice?', documentiReferenziati: [rif.id] });
+    expect(inDomanda.statusCode).toBe(409);
+    const domande = await pool().query(`select 1 from velia.jobs where tipo = 'interrogazione' and payload->>'testo' = 'Che cosa dice?'`);
+    expect(domande.rowCount).toBe(0);
 
     const file = await richiedi('GET', `/api/documenti-privati/${rif.id}/file`, tokenAdmin);
     expect(file.statusCode).toBe(200);
@@ -344,7 +353,10 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
 
   it('la workspace: pubblico nell’albero dello Storage, allegato non pronto segnalato, INDICE generati', async () => {
     const contesto = (await richiedi('GET', `/api/conversazioni/${convId}`, tokenAdmin)).json<Conversazione>().documentiInContesto.map((d) => d.id);
-    const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_COLLAUDO, radice, jobId: 'prova-ws', contestoIds: contesto });
+    /* L'allegato ancora in coda nel contesto non ci può entrare dall'API: ci
+       si trova se è stato rilavorato dopo essere stato nominato. La
+       workspace deve saperlo dire lo stesso. */
+    const ws = await materializzaWorkspace({ db: pool(), archivio, tenantId: TENANT_COLLAUDO, radice, jobId: 'prova-ws', contestoIds: [...contesto, allegatoId!] });
     try {
       expect(ws.perId.get(docPubblicoId)).toBe(pathMdPubblico);
       const contenuto = await readFile(join(ws.directory, ...pathMdPubblico.split('/')), 'utf8');
@@ -375,6 +387,13 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     } finally {
       await ws.rimuovi();
     }
+  });
+
+  it('l’allegato, letto, entra nel contesto', async () => {
+    await lavoraTutto(); // l'ingestion finta: il .md compare e il documento è pronto
+    const nelContesto = await richiedi('PUT', `/api/conversazioni/${convId}/contesto/${allegatoId}`, tokenAdmin, {});
+    expect(nelContesto.statusCode).toBe(200);
+    expect(nelContesto.json<Conversazione>().documentiInContesto.map((d) => d.archivio)).toEqual(['pubblico', 'privato']);
   });
 
   it('messaggio → SSE: inizio, attività, testo, citazione, provenienza, fine; poi il messaggio è persistito con audit e consumi', async () => {

@@ -1229,16 +1229,14 @@ async function conversazionePerId(
 
 /**
  * Aggiunge documenti al contesto verificando che esistano e si possano
- * leggere (RLS), e che i privati siano pronti (409 NON_PRONTO). Idempotente.
+ * leggere (RLS), e che siano pronti (409 NON_PRONTO). Idempotente.
  *
- * L'eccezione è il documento che stai allegando adesso: dal 01/09/2026 anche
- * l'allegato del composer è un privato, e pretenderlo `pronto` vorrebbe dire
- * far aspettare la conversione prima di poter scrivere la domanda. Il proprio
- * documento in lavorazione si può quindi nominare: il job di ingestion sta in
- * coda **prima** di quello della risposta, e il worker lavora un job per
- * volta, quindi quando il motore apre la workspace il Markdown c'è. Resta
- * fermo ciò che è rotto (`errore`) e ciò che sta convertendo per qualcun
- * altro, dove l'attesa non la governi tu.
+ * Solo pronti, senza eccezioni, dal 21/09/2026. Prima il proprio allegato
+ * ancora in lettura si poteva nominare, perché il worker lavorava un job
+ * alla volta e l'ingestion stava in coda prima della domanda. Era proprio
+ * questo a tenere ferma la chat dietro le trascrizioni, e da quando la chat
+ * ha una coda sua non è più vero: la domanda partirebbe con un documento
+ * che il motore non trova. Il composer aspetta che l'allegato sia letto.
  */
 async function contestoValidato(
   client: pg.ClientBase,
@@ -1249,26 +1247,20 @@ async function contestoValidato(
   const contesto = [...attuale];
   for (const id of daAggiungere) {
     if (contesto.includes(id)) continue;
-    const r = await client.query<{
-      archivio: string;
-      stato: string;
-      titolo: string;
-      caricato_da: string | null;
-    }>(
-      `select archivio, stato, titolo, caricato_da from velia.documenti
+    const r = await client.query<{ stato: string; titolo: string }>(
+      `select stato, titolo from velia.documenti
        where id = $1 and (archivio = 'pubblico' or tenant_id = $2)`,
       [id, identita.tenantId],
     );
     const doc = r.rows[0];
     if (!doc) throw ErroreApi.nonTrovato('Documento inesistente.');
-    if (doc.archivio === 'privato' && doc.stato !== 'pronto') {
-      const inLavorazioneMia = doc.stato !== 'errore' && doc.caricato_da === identita.utenteId;
-      if (!inLavorazioneMia) {
-        throw ErroreApi.conflitto(
-          'NON_PRONTO',
-          `«${doc.titolo}» non è ancora elaborato: non può essere referenziato finché non è pronto.`,
-        );
-      }
+    if (doc.stato !== 'pronto') {
+      throw ErroreApi.conflitto(
+        'NON_PRONTO',
+        doc.stato === 'errore'
+          ? `«${doc.titolo}» non si è potuto leggere: non si può usare in chat.`
+          : `«${doc.titolo}» è ancora in lettura: si potrà usare in chat appena è pronto.`,
+      );
     }
     contesto.push(id);
   }

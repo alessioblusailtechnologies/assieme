@@ -4,7 +4,7 @@ import { configurazione, type Configurazione } from '../src/config.js';
 import { conIdentita } from '../src/db/identita.js';
 import { chiudiPool, creaClientDedicato, poolDb } from '../src/db/pool.js';
 import { lavoraUno } from '../src/worker/ciclo.js';
-import { accoda, type Job } from '../src/worker/coda.js';
+import { accoda, archivia, nomeCoda, prossimo, type Job, type MessaggioJob } from '../src/worker/coda.js';
 import { ascoltaEventi, type PuntatoreEvento } from '../src/worker/eventi.js';
 
 /**
@@ -136,6 +136,30 @@ describe.skipIf(!dbPronto)('integrazione col database', () => {
       expect(tipiRicevuti).toEqual(['inizio', 'avanzamento', 'avanzamento', 'fine']);
     } finally {
       await ferma();
+    }
+  });
+
+  it('la chat ha una coda sua: una domanda non aspetta i lavori accodati prima di lei', async () => {
+    /* 21/09/2026: con la coda unica una domanda scritta dopo tre caricamenti
+       aspettava tre trascrizioni. Ora il ciclo della chat la trova subito, e
+       quello dei lavori non la vede. */
+    const lavoro = await accoda(pool(), 'prova', { passi: 1 }, { tenantId: creati.tenantA! });
+    const domanda = await accoda(pool(), 'interrogazione', { conversazioneId: 'nessuna' }, { tenantId: creati.tenantA! });
+    const pescati: MessaggioJob[] = [];
+    try {
+      const dallaChat = await prossimo(pool(), 30, 'chat');
+      if (dallaChat) pescati.push(dallaChat);
+      expect(dallaChat?.job.id).toBe(domanda);
+      expect(dallaChat?.coda).toBe(nomeCoda('chat'));
+      expect(await prossimo(pool(), 30, 'chat')).toBeUndefined();
+
+      const daiLavori = await prossimo(pool(), 30, 'lavori');
+      if (daiLavori) pescati.push(daiLavori);
+      expect(daiLavori?.job.id).toBe(lavoro);
+      expect(daiLavori?.coda).toBe(nomeCoda('lavori'));
+    } finally {
+      for (const m of pescati) await archivia(pool(), m.coda, m.msgId);
+      await pool().query(`delete from velia.jobs where id = any($1)`, [[lavoro, domanda]]);
     }
   });
 

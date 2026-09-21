@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
@@ -59,8 +59,30 @@ export class StoricoConversazioni {
     });
   }
 
+  /**
+   * Una ricarica chiesta mentre un'altra è in volo non si perde (21/09/2026).
+   *
+   * `reload()` di una risorsa ignora la richiesta se sta già caricando, e
+   * in chat succede sempre: la creazione di una conversazione rilegge
+   * l'elenco e un attimo dopo parte la domanda, che scrive il contesto sul
+   * server. Se la prima lettura era ancora in corso, la seconda cadeva nel
+   * vuoto e restava l'elenco di prima della domanda, col contesto vuoto: chi
+   * usciva dalla chat e ci tornava non ritrovava i documenti. Ora si segna,
+   * e si rilegge appena la lettura in corso finisce.
+   */
+  private ricaricaInAttesa = false;
+
+  constructor() {
+    effect(() => {
+      const stato = this.risorsa.status();
+      if (stato === 'loading' || stato === 'reloading' || !this.ricaricaInAttesa) return;
+      this.ricaricaInAttesa = false;
+      untracked(() => this.risorsa.reload());
+    });
+  }
+
   ricarica(): void {
-    this.risorsa.reload();
+    if (!this.risorsa.reload()) this.ricaricaInAttesa = true;
   }
 
   /* Rinomina ed eliminazione vivono qui con l'elenco (RF-C-01): chi le

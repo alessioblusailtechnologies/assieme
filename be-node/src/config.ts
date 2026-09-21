@@ -176,8 +176,24 @@ const schemaAmbiente = z.object({
    * macchine smettono di darsi fastidio; la coda va creata una volta
    * (`select pgmq.create('lavori_locale')`). Senza la variabile resta
    * `lavori`, che è la coda di sempre: in produzione non cambia niente.
+   *
+   * Dal 21/09/2026 le domande della chat hanno una coda loro, che si chiama
+   * come questa col suffisso `_chat` (`lavori_chat`, `lavori_locale_chat`):
+   * il nome si ricava, così una macchina che ha spostato i lavori non può
+   * dimenticarsi di spostare anche la chat. Va creata insieme all'altra.
    */
   CODA_LAVORI: z.string().min(1).default('lavori'),
+  /**
+   * Quante domande della chat il worker lavora insieme (21/09/2026).
+   *
+   * La chat ha cicli suoi, che pescano solo dalla sua coda: un'ingestion di
+   * un set da 130 pagine dura venti minuti, e con un ciclo solo per tutto
+   * ogni domanda arrivata dopo aspettava la fine (visto sul tenant demo: la
+   * risposta prevista a un'ora dalla domanda). Più di uno perché due persone
+   * che scrivono insieme non si mettano in fila fra loro; ogni domanda è un
+   * processo del motore, quindi il numero si paga in memoria del worker.
+   */
+  CONCORRENZA_CHAT: z.coerce.number().int().min(1).max(8).default(2),
   MOTORE_MAX_TURNI: z.coerce.number().int().min(1).default(40),
   MOTORE_BUDGET_USD: z.coerce.number().positive().default(3),
   MOTORE_EFFORT: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).optional(),

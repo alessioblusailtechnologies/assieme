@@ -1,6 +1,6 @@
 import type pg from 'pg';
 
-import { aggiornaStatoJob, archivia, estendiVisibilita, prossimo, rimettiInCoda } from './coda.js';
+import { aggiornaStatoJob, archivia, estendiVisibilita, prossimo, rimettiInCoda, type Corsia, type Job } from './coda.js';
 import { ErroreNonRitentabile } from './errori.js';
 import { emettiEvento } from './eventi.js';
 import { gestori, type StrumentiJob } from './gestori.js';
@@ -12,6 +12,12 @@ export interface OpzioniCiclo {
   visibilitaSecondi?: number;
   /** Quanto aspetta un tentativo fallito prima di tornare pescabile. */
   ritentaTraSecondi?: number;
+  /**
+   * Da quale corsia pescare (21/09/2026). Il worker ne assegna una a ogni
+   * ciclo; senza, si prova prima la chat e poi i lavori, che è quello che
+   * vogliono i test quando vuotano tutto con un giro solo.
+   */
+  corsia?: Corsia;
 }
 
 /**
@@ -28,6 +34,37 @@ export interface OpzioniCiclo {
 const RITENTA_TRA_SECONDI = 2;
 
 /**
+ * Le domande di una stessa conversazione, una alla volta (21/09/2026).
+ *
+ * Da quando la chat ha più cicli, due domande della stessa conversazione
+ * (una rimasta in coda, la seconda scritta tornando sulla pagina) possono
+ * essere pescate insieme. Condividono la cartella di lavoro, che il motore
+ * rifà da capo a ogni domanda, e la sessione da riprendere: la seconda
+ * aspetta che la prima finisca, come quando il ciclo era uno solo. Il
+ * battito tiene intanto il messaggio fuori dalla coda, e se nell'attesa
+ * qualcuno la ferma il gestore se ne accorge appena parte.
+ */
+const inFilaPerConversazione = new Map<string, Promise<void>>();
+
+async function inFila(chiave: string | undefined, lavoro: () => Promise<void>): Promise<void> {
+  if (!chiave) return lavoro();
+  const precedente = inFilaPerConversazione.get(chiave) ?? Promise.resolve();
+  const questo = precedente.then(lavoro);
+  const turno = questo.catch(() => undefined);
+  inFilaPerConversazione.set(chiave, turno);
+  try {
+    await questo;
+  } finally {
+    if (inFilaPerConversazione.get(chiave) === turno) inFilaPerConversazione.delete(chiave);
+  }
+}
+
+function chiaveDiFila(job: Job): string | undefined {
+  const conversazione = job.payload['conversazioneId'];
+  return job.tipo === 'interrogazione' && typeof conversazione === 'string' ? conversazione : undefined;
+}
+
+/**
  * Lavora UN messaggio, se c'è. Restituisce true se ha lavorato qualcosa.
  *
  * Semantica at-least-once, quindi idempotenza prima di tutto: il gestore
@@ -39,13 +76,15 @@ const RITENTA_TRA_SECONDI = 2;
 export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promise<boolean> {
   const tentativiMassimi = opzioni.tentativiMassimi ?? 3;
   const visibilitaSecondi = opzioni.visibilitaSecondi ?? 60;
-  const messaggio = await prossimo(db, visibilitaSecondi);
+  const messaggio = opzioni.corsia
+    ? await prossimo(db, visibilitaSecondi, opzioni.corsia)
+    : ((await prossimo(db, visibilitaSecondi, 'chat')) ?? (await prossimo(db, visibilitaSecondi, 'lavori')));
   if (!messaggio) return false;
 
-  const { job, msgId, consegne } = messaggio;
+  const { job, coda, msgId, consegne } = messaggio;
 
   if (job.stato === 'annullato' || job.stato === 'completato' || job.stato === 'fallito') {
-    await archivia(db, msgId);
+    await archivia(db, coda, msgId);
     return true;
   }
 
@@ -54,7 +93,7 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
     await aggiornaStatoJob(db, job.id, 'fallito', {
       errore: `nessun gestore per il tipo '${job.tipo}'`,
     });
-    await archivia(db, msgId);
+    await archivia(db, coda, msgId);
     return true;
   }
 
@@ -69,12 +108,12 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
      agli altri consumer. Un battito mancato (rete) non è un errore: il
      prossimo lo recupera, e nel peggiore dei casi vale la regola di prima. */
   const battito = setInterval(
-    () => void estendiVisibilita(db, msgId, visibilitaSecondi).catch(() => undefined),
+    () => void estendiVisibilita(db, coda, msgId, visibilitaSecondi).catch(() => undefined),
     Math.max(5_000, Math.floor((visibilitaSecondi * 1000) / 3)),
   );
 
   try {
-    await gestore(job, strumenti);
+    await inFila(chiaveDiFila(job), () => gestore(job, strumenti));
     /* `completato` solo se nel frattempo nessuno l'ha annullato (l'API lo
        fa quando il client chiude lo stream): l'annullamento non si sovrascrive. */
     await db.query(
@@ -82,7 +121,7 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
        where id = $1 and stato = 'in-esecuzione'`,
       [job.id],
     );
-    await archivia(db, msgId);
+    await archivia(db, coda, msgId);
   } catch (errore) {
     const messaggioErrore = errore instanceof Error ? errore.message : String(errore);
     if (errore instanceof ErroreNonRitentabile || consegne >= tentativiMassimi) {
@@ -98,7 +137,7 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
       await emettiEvento(db, job.id, 'errore', {
         messaggio: 'Il lavoro si è interrotto per un problema tecnico. Riprova fra poco.',
       });
-      await archivia(db, msgId);
+      await archivia(db, coda, msgId);
     } else {
       /* Si ritenta: lo stato torna in-coda perché l'utente veda l'attesa, e
          il messaggio torna pescabile fra pochi secondi invece che allo
@@ -107,7 +146,7 @@ export async function lavoraUno(db: pg.Pool, opzioni: OpzioniCiclo = {}): Promis
         tentativi: consegne,
         errore: messaggioErrore,
       });
-      await rimettiInCoda(db, msgId, opzioni.ritentaTraSecondi ?? RITENTA_TRA_SECONDI);
+      await rimettiInCoda(db, coda, msgId, opzioni.ritentaTraSecondi ?? RITENTA_TRA_SECONDI);
       /* Il perché resta nei log del worker: il job lo dimentica appena un
          tentativo riesce (`errore = null`), e senza questa riga di un
          fallimento intermedio non resta traccia leggibile. */

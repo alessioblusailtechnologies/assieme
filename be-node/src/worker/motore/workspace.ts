@@ -1,6 +1,6 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
-import { access, copyFile, link, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, copyFile, link, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { join, posix } from 'node:path';
 
 import type pg from 'pg';
@@ -784,8 +784,8 @@ class Cache {
     if (m && m.versione === versione && !m.mancante && (await esiste(file))) return file;
     const contenuto = await this.archivio.scarica(percorso);
     await mkdir(this.radice, { recursive: true });
-    await writeFile(file, contenuto);
-    await writeFile(meta, JSON.stringify({ percorso, versione, scaricatoIl: Date.now() }), 'utf8');
+    await scriviIntero(file, contenuto);
+    await scriviIntero(meta, JSON.stringify({ percorso, versione, scaricatoIl: Date.now() }));
     return file;
   }
 
@@ -800,17 +800,35 @@ class Cache {
     await mkdir(this.radice, { recursive: true });
     try {
       const contenuto = await this.archivio.scarica(percorso);
-      await writeFile(file, contenuto);
-      await writeFile(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now() }), 'utf8');
+      await scriviIntero(file, contenuto);
+      await scriviIntero(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now() }));
       return file;
     } catch {
-      await writeFile(
-        meta,
-        JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now(), mancante: true }),
-        'utf8',
-      );
+      await scriviIntero(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now(), mancante: true }));
       return undefined;
     }
+  }
+}
+
+/**
+ * Un file della cache si scrive tutto intero o per niente (21/09/2026).
+ *
+ * Da quando le domande della chat girano in parallelo, e accanto a loro
+ * tabelle e agenti, una può collegare o copiare un file mentre un'altra lo
+ * sta riscaricando: riscritto sul posto, il primo troverebbe mezzo
+ * documento, e un hard link già fatto cambierebbe sotto i piedi al motore
+ * che lo sta leggendo. Scritto accanto e rinominato, chi aveva il vecchio
+ * lo tiene e chi arriva dopo trova il nuovo. Se il rinomino non riesce (un
+ * file aperto, su Windows) si scrive sul posto, come prima.
+ */
+async function scriviIntero(percorso: string, contenuto: string | Buffer): Promise<void> {
+  const provvisorio = `${percorso}.${randomUUID()}.tmp`;
+  await writeFile(provvisorio, contenuto);
+  try {
+    await rename(provvisorio, percorso);
+  } catch {
+    await writeFile(percorso, contenuto);
+    await rm(provvisorio, { force: true });
   }
 }
 

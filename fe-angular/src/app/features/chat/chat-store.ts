@@ -52,14 +52,23 @@ export interface StatoElaborazioneAllegato {
   messaggio?: string;
 }
 
-/** Ogni quanto si chiede al server se ha finito di leggere l'allegato. */
+/**
+ * Ogni quanto si chiede al server se ha finito di leggere l'allegato:
+ * spesso nei primi minuti, quando un documento breve è già pronto, poi con
+ * calma.
+ */
 const MS_ATTESA_INGESTION = 2000;
+const MS_ATTESA_INGESTION_LUNGA = 10_000;
+const MS_PRIMA_DEL_RITMO_LENTO = 2 * 60_000;
 
 /**
- * Oltre questo si smette di chiedere: un set di duecento pagine può
- * prendersi molto, ma un battito che non finisce mai è un battito rotto.
+ * Oltre questo si smette di chiedere: un battito che non finisce mai è un
+ * battito rotto. Un'ora e non più dieci minuti (21/09/2026): da quando la
+ * domanda non parte finché l'allegato non è letto, smettere di chiedere
+ * vorrebbe dire non sbloccare mai l'invio, e un set di 130 pagine ne
+ * prende venti.
  */
-const TETTO_ATTESA_MS = 10 * 60_000;
+const TETTO_ATTESA_MS = 60 * 60_000;
 
 /**
  * Un file allegato dal composer, nel tratto di strada fra la scelta e il
@@ -182,7 +191,7 @@ export class ChatStore {
   readonly conversazioni = this.storico.tutte;
 
   /** I battiti che seguono l'ingestion degli allegati, per documento. */
-  private readonly battitiIngestion = new Map<Id, ReturnType<typeof setInterval>>();
+  private readonly battitiIngestion = new Map<Id, ReturnType<typeof setTimeout>>();
 
   /** I documenti già seguiti fino in fondo: l'elenco può restare indietro. */
   private readonly letture = new Set<Id>();
@@ -206,7 +215,7 @@ export class ChatStore {
     });
 
     inject(DestroyRef).onDestroy(() => {
-      for (const battito of this.battitiIngestion.values()) clearInterval(battito);
+      for (const battito of this.battitiIngestion.values()) clearTimeout(battito);
       this.battitiIngestion.clear();
       /* Si esce dalla sezione: si smette di ascoltare, non di rispondere.
          Il motore prosegue e al ritorno ci si riaggancia. */
@@ -913,6 +922,19 @@ export class ChatStore {
   readonly elaborazioni = signal<Map<Id, StatoElaborazioneAllegato>>(new Map());
 
   /**
+   * I documenti della domanda che il server non ha ancora letto, o che non
+   * è riuscito a leggere (21/09/2026). Finché ce n'è uno il messaggio non
+   * parte: in chat entra solo ciò che è pronto, e il server lo rifiuterebbe
+   * comunque. Prima la domanda partiva subito e aspettava in coda la fine
+   * della trascrizione, che su un set lungo vuol dire venti minuti di
+   * risposta che non arriva, senza che si capisca perché.
+   */
+  readonly riferimentiInAttesa = computed(() => {
+    const elaborazioni = this.elaborazioni();
+    return this.riferimentiBozza().filter((r) => elaborazioni.has(r.id));
+  });
+
+  /**
    * L'anteprima delle immagini incollate, per documento.
    *
    * Di uno screenshot il nome non dice niente («Immagine incollata 9.05»):
@@ -964,9 +986,21 @@ export class ChatStore {
                arrivato benissimo. Quello che hai appena allegato si vede
                dove lo hai allegato, finché non mandi il messaggio. */
             this.aggiungiRiferimento(riferimento);
-            this.aggiungiAlContesto(riferimento);
-            /* L'allegato veloce arriva già pronto: non c'è niente da seguire. */
-            if (riferimento.stato !== 'pronto') this.segui(riferimento);
+            /* Nel contesto della conversazione entra solo ciò che è letto
+               (21/09/2026). L'allegato veloce arriva già pronto; quello che
+               va nell'archivio ci entra quando la lettura finisce, se nel
+               frattempo non è stato tolto dalla domanda. */
+            if (riferimento.stato === 'pronto') {
+              this.aggiungiAlContesto(riferimento);
+            } else {
+              this.segui(riferimento, () => {
+                if (!this.riferimentiBozza().some((r) => r.id === riferimento.id)) return;
+                this.riferimentiBozza.update((r) =>
+                  r.map((d) => (d.id === riferimento.id ? { ...d, stato: 'pronto' } : d)),
+                );
+                this.aggiungiAlContesto({ ...riferimento, stato: 'pronto' });
+              });
+            }
           });
         },
         error: (err: HttpErrorResponse) => {
@@ -1000,13 +1034,14 @@ export class ChatStore {
   /**
    * Segue l'ingestion di un documento appena allegato finché non è pronto.
    *
-   * Interroga la scheda del documento privato ogni paio di secondi, come fa
-   * la pagina di un'esecuzione di agente. Si ferma da sola: quando il
-   * documento è pronto (il chip torna normale), quando fallisce (il chip lo
-   * dice) o dopo `TETTO_ATTESA_MS`, che su un documento lunghissimo evita di
-   * interrogare il server per sempre.
+   * Interroga la scheda del documento privato ogni paio di secondi, poi ogni
+   * dieci, come fa la pagina di un'esecuzione di agente. Si ferma da sola:
+   * quando il documento è pronto (il chip torna normale e parte
+   * `quandoPronto`), quando fallisce (il chip lo dice) o dopo
+   * `TETTO_ATTESA_MS`, che su un documento lunghissimo evita di interrogare
+   * il server per sempre.
    */
-  private segui(riferimento: RiferimentoDocumento): void {
+  private segui(riferimento: RiferimentoDocumento, quandoPronto?: () => void): void {
     const id = riferimento.id;
     /* Due schede diverse per lo stesso stato: il documento privato ha la sua,
        l'allegato di conversazione ha la rotta dedicata. */
@@ -1015,13 +1050,16 @@ export class ChatStore {
         ? this.apiPrivati.urlDettaglio(id)
         : this.api.urlStatoAllegato(id);
     this.segna(id, { stato: 'lavorazione' });
-    const scadenza = Date.now() + TETTO_ATTESA_MS;
+    const inizio = Date.now();
 
-    const battito = setInterval(() => {
+    const chiedi = (): void => {
       this.http.get<StatoAllegato>(url).subscribe({
         next: (documento) => {
+          /* Fermato nel frattempo (uscita dalla chat): la risposta non conta più. */
+          if (!this.battitiIngestion.has(id)) return;
           if (documento.stato === 'pronto') {
             this.smettiDiSeguire(id);
+            quandoPronto?.();
             return;
           }
           if (documento.stato === 'errore') {
@@ -1033,14 +1071,20 @@ export class ChatStore {
             this.fermaBattito(id);
             return;
           }
-          if (Date.now() > scadenza) this.fermaBattito(id);
+          if (Date.now() - inizio > TETTO_ATTESA_MS) this.fermaBattito(id);
+          else programma();
         },
         /* Il documento non c'è più (eliminato altrove) o la rete è caduta:
            si smette di chiedere, il chip resta com'è. */
         error: () => this.fermaBattito(id),
       });
-    }, MS_ATTESA_INGESTION);
-    this.battitiIngestion.set(id, battito);
+    };
+    const programma = (): void => {
+      const attesa =
+        Date.now() - inizio < MS_PRIMA_DEL_RITMO_LENTO ? MS_ATTESA_INGESTION : MS_ATTESA_INGESTION_LUNGA;
+      this.battitiIngestion.set(id, setTimeout(chiedi, attesa));
+    };
+    programma();
   }
 
   private segna(id: Id, stato: StatoElaborazioneAllegato): void {
@@ -1049,7 +1093,7 @@ export class ChatStore {
 
   private fermaBattito(id: Id): void {
     const battito = this.battitiIngestion.get(id);
-    if (battito !== undefined) clearInterval(battito);
+    if (battito !== undefined) clearTimeout(battito);
     this.battitiIngestion.delete(id);
   }
 
@@ -1069,7 +1113,7 @@ export class ChatStore {
    */
   invia(): void {
     const testo = this.bozza().trim();
-    if (!testo || this.inRisposta()) return;
+    if (!testo || this.inRisposta() || this.riferimentiInAttesa().length) return;
 
     const riferimenti = this.riferimentiBozza();
     /* Il cliente menzionato è della domanda: parte con lei e lascia il campo. */
@@ -1129,7 +1173,6 @@ export class ChatStore {
     /* Il chip nella bolla appena inviata: quello menzionato, o quello che la
        conversazione ha già. Il server scrive lo stesso sul messaggio. */
     const cliente = menzionato ?? this.clienteConversazione();
-    const cambiaCliente = !!menzionato && menzionato.id !== this.clienteConversazione()?.id;
     const stream: StreamAttivo = {
       conversazioneId: id,
       utente: {
@@ -1159,10 +1202,13 @@ export class ChatStore {
       })
       .subscribe({
         next: (evento) => {
-          /* Un cliente nuovo per la conversazione: all'`inizio` il server l'ha
-             già agganciato, e il contesto lo mostra subito invece che a
-             risposta finita. */
-          if (evento.tipo === 'inizio' && cambiaCliente) this.storico.ricarica();
+          /* All'`inizio` il server ha già scritto la domanda: il contesto coi
+             documenti appena referenziati, il cliente menzionato, il titolo
+             provvisorio. L'elenco si rilegge qui e non solo a risposta finita
+             (21/09/2026): chi usciva dalla chat prima della fine ci tornava e
+             trovava la conversazione come l'aveva lasciata la creazione, col
+             contesto vuoto. */
+          if (evento.tipo === 'inizio') this.storico.ricarica();
           this.applica(evento);
         },
         error: () => {

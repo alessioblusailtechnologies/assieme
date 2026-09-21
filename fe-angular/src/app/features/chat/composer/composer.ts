@@ -393,9 +393,25 @@ export class Composer {
   }
 
   protected invia(): void {
-    if (this.store.inRisposta() || !this.store.bozza().trim()) return;
+    if (this.store.inRisposta() || !this.store.bozza().trim() || this.attesaLettura()) return;
     this.store.invia();
   }
+
+  /**
+   * Perché il messaggio non parte ancora (21/09/2026): un documento della
+   * domanda non è stato letto. In chat entra solo ciò che è pronto, e un
+   * pulsante spento senza spiegazione si scambia per un guasto.
+   */
+  protected readonly attesaLettura = computed(() => {
+    const inAttesa = this.store.riferimentiInAttesa();
+    if (!inAttesa.length) return undefined;
+    const elaborazioni = this.store.elaborazioni();
+    const fallito = inAttesa.find((r) => elaborazioni.get(r.id)?.stato === 'errore');
+    if (fallito) return `«${fallito.titolo}» non si è potuto leggere: toglilo dalla domanda per inviarla.`;
+    return inAttesa.length === 1
+      ? `Sto leggendo «${inAttesa[0]!.titolo}»: potrai inviare appena è pronto.`
+      : `Sto leggendo ${inAttesa.length} documenti: potrai inviare appena sono pronti.`;
+  });
 
   /** «Scrivi il prompt»: lo store riscrive la bozza; l'editor la segue da solo (effetto sopra). */
   protected scriviPrompt(): void {
