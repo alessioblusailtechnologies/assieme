@@ -278,8 +278,10 @@ const schemaAmbiente = z.object({
   /** Quanto il worker aspetta che il runner si liberi da un altro job (ms). */
   SANDBOX_ATTESA_MS: z.coerce.number().int().positive().default(10 * 60_000),
   /** Tetto di turni e di spesa per una sessione documentale (più alti della chat: guarda e corregge). */
-  SANDBOX_MAX_TURNI: z.coerce.number().int().min(1).default(60),
-  SANDBOX_BUDGET_USD: z.coerce.number().positive().default(4),
+  /* Larghi (21/09/2026): la sandbox è Claude Code senza limitazioni, e un
+     tetto stretto tagliava i lavori fatti bene. Fermano solo una sessione impazzita. */
+  SANDBOX_MAX_TURNI: z.coerce.number().int().min(1).default(200),
+  SANDBOX_BUDGET_USD: z.coerce.number().positive().default(10),
   /**
    * La chiave Anthropic che entra nella sandbox (dedicata, con tetto di
    * spesa, in un workspace suo). In locale può essere la stessa della chat:

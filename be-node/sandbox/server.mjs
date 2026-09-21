@@ -9,17 +9,19 @@
  *   GET  /elenco?dir=…                        → [{ path, byte, dir }]
  *   PUT  /archivio?dir=…    corpo zip         → 204 (estratto con unzip)
  *   POST /esegui            { cmd, timeoutMs, cwd } → { stdout, stderr, codice, scaduto }
- *   POST /sessione          { promptSistema, promptUtente, modello, fornitore, ripiego, maxTurni, maxGiri, budgetUsd, effort }
+ *   POST /sessione          { promptSistema, promptUtente, modello, fornitore, ripiego, maxTurni, budgetUsd, effort }
  *                           → text/event-stream di { i, e }: e = attivita | testo | consegna | fine
  *   GET  /sessione/eventi?da=N                → lo stesso stream dal numero N (riaggancio)
  *   DELETE /sessione                          → annulla la sessione in corso
  *   POST /reset                               → svuota /lavoro fra un job e l'altro (409 con sessione in corso)
  *
  * Ogni richiesta porta il token del job in `x-velia-token`. Le chiavi
- * (Anthropic e, dal 21/09/2026, DeepSeek) non sono qui: stanno nel processo `proxy.mjs` (utente `proxy`, nel
- * namespace principale con la rete). La CLI e i comandi del modello girano
- * come utente `lavoro` nel namespace isolato, che raggiunge solo il proxy
- * su 10.200.0.1:8787 (vedi avvio.sh e claude-lavoro). Il runner è root.
+ * (Anthropic e, dal 21/09/2026, DeepSeek) non sono qui: stanno nel processo `proxy.mjs` (utente `proxy`).
+ * La CLI e i comandi del modello girano come utente `lavoro`, con la rete
+ * del container: dal 21/09/2026 la sandbox è Claude Code senza limitazioni
+ * (rete, sotto-agenti, tutti gli strumenti). Il namespace isolato, che
+ * raggiunge solo il proxy su 10.200.0.1:8787, resta su richiesta
+ * (SANDBOX_RETE=isolata, vedi avvio.sh e claude-lavoro). Il runner è root.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
@@ -30,8 +32,6 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 
 import { createSdkMcpServer, query, tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
-
-import { contaGiri } from './giri.mjs';
 
 const PORTA = Number(process.env.PORT ?? process.env.PORTA ?? 8080);
 const PORTA_PROXY = 8787;
@@ -166,8 +166,6 @@ function json(res, stato, dati) {
 let sessioneInCorso; // { controllo, eventi: [{ i, e }], conclusa, ascoltatori: Set<res>, ultimoAscolto }
 const ASCOLTO_MAX_MS = 5 * 60 * 1000;
 
-const STRUMENTI = ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep', 'Skill', 'TodoWrite'];
-const VIETATI = ['WebFetch', 'WebSearch', 'Task', 'NotebookEdit', 'KillShell'];
 
 /** Un evento nel diario e a chi sta ascoltando: `{ i, e }`, il numero e l'evento. */
 function emettiSessione(s, evento) {
@@ -258,28 +256,33 @@ async function eseguiSessione(s, parametri) {
      può lasciare a zero il totale di fine sessione. */
   const contati = { input: 0, output: 0, cacheLettura: 0, cacheScrittura: 0 };
   let outputTurno = 0;
-  /* Il primo controllo e quattro correzioni, come dice il prompt: oltre, il render si rifiuta (giri.mjs). */
-  const giri = contaGiri(parametri.maxGiri ?? 5);
   try {
     const sdk = query({
       prompt: parametri.promptUtente,
       options: {
         cwd: RADICE,
-        /* La CLI parte dal wrapper: utente `lavoro`, namespace di rete isolato. */
+        /* La CLI parte dal wrapper: utente `lavoro` (e namespace isolato, se richiesto). */
         pathToClaudeCodeExecutable: '/opt/sandbox/claude-lavoro',
         model: parametri.modello,
         ...(parametri.effort && !terzo && { effort: parametri.effort }),
-        systemPrompt: parametri.promptSistema,
-        tools: STRUMENTI,
-        allowedTools: [...STRUMENTI, 'mcp__velia__consegna'],
-        disallowedTools: VIETATI,
+        /*
+         * Claude Code così com'è (21/09/2026, decisione del committente: prima
+         * la qualità, la sicurezza la darà l'infrastruttura). Il prompt di
+         * sistema è quello di Claude Code, e il worker ci aggiunge solo i fatti
+         * del lavoro (dove sono i file, come si consegna): nessuna regola di
+         * stile. Gli strumenti sono tutti i suoi, rete e sotto-agenti compresi.
+         */
+        systemPrompt: { type: 'preset', preset: 'claude_code', append: parametri.promptSistema },
+        tools: { type: 'preset', preset: 'claude_code' },
+        allowedTools: ['mcp__velia__consegna'],
         mcpServers: { velia: createSdkMcpServer({ name: 'velia', version: '1.0.0', tools: [consegna] }) },
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
-        maxTurns: parametri.maxTurni ?? 60,
-        ...(!terzo && { maxBudgetUsd: parametri.budgetUsd ?? 4 }),
+        /* Tetti larghi: non tagliano un lavoro fatto bene, fermano una sessione impazzita. */
+        maxTurns: parametri.maxTurni ?? 200,
+        ...(!terzo && { maxBudgetUsd: parametri.budgetUsd ?? 10 }),
         persistSession: false,
-        /* Le skill documentali stanno in /lavoro/.claude/skills: settingSources=project le carica. */
+        /* Le skill stanno in /lavoro/.claude/skills: settingSources=project le carica. */
         settingSources: ['project'],
         includePartialMessages: true,
         abortController: controllo,
@@ -295,18 +298,8 @@ async function eseguiSessione(s, parametri) {
             {
               hooks: [
                 async (input) => {
+                  /* Solo per raccontare all'utente che cosa succede: non nega niente. */
                   if (input.hook_event_name !== 'PreToolUse') return {};
-                  const rifiuto = giri.valuta(input.tool_name, input.tool_input);
-                  if (rifiuto) {
-                    console.log(`giri di controllo esauriti (${giri.giri}): rifiutato ${input.tool_name}`);
-                    return {
-                      hookSpecificOutput: {
-                        hookEventName: 'PreToolUse',
-                        permissionDecision: 'deny',
-                        permissionDecisionReason: rifiuto,
-                      },
-                    };
-                  }
                   emetti({ tipo: 'attivita', strumento: input.tool_name, input: input.tool_input ?? {} });
                   return {};
                 },

@@ -3,7 +3,6 @@ import { promisify } from 'node:util';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { contaGiri } from '../sandbox/giri.mjs';
 import { modelloSandbox } from '../src/worker/sandbox/esportazione.js';
 import { promptRichiesta, promptSandbox } from '../src/worker/sandbox/istruzioni.js';
 import { AvviatoreDocker, AvviatoreRemoto, Sandbox, interpretaVoce, motivoDocker } from '../src/worker/sandbox/sandbox.js';
@@ -34,62 +33,60 @@ describe('il prompt della sandbox', () => {
     intestazione,
   });
 
-  it('racconta strumenti, ciclo di lavoro e modello, con la sua riga «quando usarlo»', () => {
+  /*
+   * 21/09/2026: il prompt porta solo i fatti del lavoro. Le regole di stile e
+   * il ciclo prescritto trasformavano un volantino in una scheda tecnica.
+   */
+  it('dice dove sono i file, come si consegna e il modello scelto, con la sua riga «quando usarlo»', () => {
     const p = promptSandbox({
       modello: modello('agenzia'),
       formato: 'pdf',
       documenti: [{ path: '/lavoro/workspace/a.md', titolo: 'Condizioni', archivio: 'pubblico' }],
-      intestazioneAgenzia: { altoMm: 38, bassoMm: 22 },
     });
-    for (const atteso of ['pdftoppm', 'Read', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'soffice', 'chromium-headless', 'Per i preventivi RC Auto']) {
+    for (const atteso of ['PDF', '/lavoro/workspace/', '/lavoro/output/', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'Per i preventivi RC Auto', 'in italiano']) {
       expect(p).toContain(atteso);
     }
     expect(p).not.toMatch(/identit|template scelto|\/lavoro\/template/i);
-    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).toContain('Nessun modello scelto');
+    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).not.toContain('## Modello');
+  });
+
+  it('nessuna regola di stile, nessun ciclo prescritto, nessun limite', () => {
+    const p = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    for (const vietato of ['sobrio', 'professionale', 'senza perdere', 'pdftoppm', '60 dpi', 'correzioni', 'Niente trattini', 'Non usare mai la rete', 'merge_page', 'Fonti']) {
+      expect(p).not.toContain(vietato);
+    }
+  });
+
+  it('il marchio dell’agenzia lo integra la sandbox su ogni formato, salvo un modello «la sua»', () => {
+    const conCarta = promptSandbox({ modello: modello('agenzia', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    expect(conCarta).toContain('/lavoro/carta/');
+    expect(conCarta).toContain('La sua carta intestata no');
+    expect(conCarta).not.toMatch(/margin|fasce/i);
+    expect(promptSandbox({ formato: 'docx', documenti: [], cartaAgenzia: true })).toContain('/lavoro/carta/');
+    expect(promptSandbox({ formato: 'png', documenti: [] })).not.toContain('/lavoro/carta/');
+
+    const sua = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    expect(sua).toContain('sono quelli da tenere');
+    expect(sua).not.toContain('/lavoro/carta/');
+  });
+
+  it('una pagina web: tutto dentro il file, perché VELIA la serve con la rete chiusa', () => {
+    const p = promptSandbox({ formato: 'html', documenti: [] });
+    expect(p).toContain('rete chiusa');
+    expect(promptSandbox({ formato: 'pdf', documenti: [] })).not.toContain('rete chiusa');
+  });
+
+  it('la richiesta passa così com’è, e il materiale di partenza senza istruzioni su come trattarlo', () => {
     const r = promptRichiesta({ formato: 'docx', titolo: 'T', istruzioni: 'fai X', contenuto: '# ciao' });
     expect(r).toContain('DOCX');
     expect(r).toContain('fai X');
     expect(r).toContain('# ciao');
-  });
-
-  it('con l’intestazione dell’agenzia: fasce libere coi margini giusti, niente carta del modello', () => {
-    const p = promptSandbox({ modello: modello('agenzia', 'pdf'), formato: 'pdf', documenti: [], intestazioneAgenzia: { altoMm: 38, bassoMm: 22 } });
-    expect(p).toContain('li mette VELIA');
-    expect(p).toContain('margin: 38mm 20mm 22mm 20mm');
-    expect(p).toContain('si guarda, non si usa come sfondo');
-    expect(p).not.toContain('merge_page');
-    expect(p).not.toContain('col numero di pagina in calce');
-  });
-
-  it('con «la sua»: comanda il modello, e un PDF si usa come carta intestata', () => {
-    const p = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [] });
-    expect(p).toContain('sono quelli del modello');
-    expect(p).toContain('merge_page');
-    expect(p).not.toContain('li mette VELIA');
-    const word = promptSandbox({ modello: modello('sua'), formato: 'docx', documenti: [] });
-    expect(word).not.toContain('merge_page');
-  });
-
-  it('una pagina web: un file solo, niente rete, controllata a larghezza di telefono', () => {
-    const p = promptSandbox({ formato: 'html', documenti: [], cartaAgenzia: true });
-    expect(p).toContain('UN file HTML');
-    expect(p).toContain('## Pagina web (HTML)');
-    expect(p).toContain('--window-size=390');
-    expect(p).toContain('Nessuna risorsa esterna');
-    /* Il marchio lo mette la sandbox, coi materiali in /lavoro/carta/: VELIA qui non timbra. */
-    expect(p).toContain('/lavoro/carta/');
-    expect(p).toContain('Il marchio dell\'agenzia lo metti tu');
-    expect(p).not.toContain('li mette VELIA');
-    expect(p).not.toContain('## Immagine');
-  });
-
-  it('un’immagine ha le sue misure; senza carta niente sezione del marchio', () => {
-    const p = promptSandbox({ formato: 'png', documenti: [] });
-    expect(p).toContain('## Immagine');
-    expect(p).toContain('1080×1350');
-    expect(p).not.toContain('/lavoro/carta/');
-    expect(p).not.toContain('## Pagina web');
-    expect(promptRichiesta({ formato: 'png' })).toContain('Produci un file PNG.');
+    expect(r).not.toContain('senza perdere');
+    expect(promptRichiesta({ formato: 'png' })).toBe('File da produrre: PNG.');
+    /* Dalla chat, anche le parole dell'utente tali e quali: la richiesta l'ha scritta il motore. */
+    const daChat = promptRichiesta({ formato: 'pdf', istruzioni: 'Volantino A4 sul prodotto X', paroleUtente: 'mi fai un volantone per la rete' });
+    expect(daChat).toContain('«mi fai un volantone per la rete»');
+    expect(daChat.indexOf('volantone')).toBeLessThan(daChat.indexOf('Volantino A4'));
   });
 });
 
@@ -146,42 +143,6 @@ describe('il modello della sandbox segue il livello scelto', () => {
   it('senza scelta, o con un fornitore che la sandbox non raggiunge, resta quello di piattaforma', () => {
     expect(modelloSandbox(undefined, 'claude-opus-5')).toEqual({ modello: 'claude-opus-5', fornitore: 'anthropic' });
     expect(modelloSandbox('zai-org/GLM-5.2', 'claude-opus-5')).toEqual({ modello: 'claude-opus-5', fornitore: 'anthropic' });
-  });
-});
-
-describe('i giri di controllo della sandbox', () => {
-  const bash = (command: string) => ['Bash', { command }] as const;
-
-  it('un giro per ogni render dopo una modifica; altre pagine dello stesso file non contano', () => {
-    const g = contaGiri(5);
-    expect(g.valuta('Write', { file_path: '/lavoro/tmp/volantone.html' })).toBeUndefined();
-    expect(g.valuta(...bash('chromium-headless --print-to-pdf=/lavoro/tmp/v.pdf v.html && pdftoppm -png -r 60 /lavoro/tmp/v.pdf /lavoro/tmp/p'))).toBeUndefined();
-    expect(g.valuta(...bash('pdfinfo /lavoro/tmp/v.pdf'))).toBeUndefined();
-    expect(g.valuta(...bash('pdftoppm -png -r 60 -f 3 -l 3 /lavoro/tmp/v.pdf /lavoro/tmp/q'))).toBeUndefined();
-    expect(g.valuta('Read', { file_path: '/lavoro/tmp/p-1.png' })).toBeUndefined();
-    expect(g.giri).toBe(1);
-  });
-
-  it('al sesto giro il render si rifiuta, e il motivo dice di consegnare', () => {
-    /* Il volantino del 21/09/2026: dodici rigenerazioni per stare in due pagine. */
-    const g = contaGiri(5);
-    for (let i = 0; i < 5; i++) {
-      expect(g.valuta(...bash(`sed -i 's/12px/11px/' v.html && chromium-headless --print-to-pdf=v.pdf v.html && pdftoppm -png v.pdf p`))).toBeUndefined();
-    }
-    const rifiuto = g.valuta(...bash('sed -i "s/11px/10px/" v.html && pdftoppm -png v.pdf p'));
-    expect(rifiuto).toContain('consegna');
-    expect(g.giri).toBe(5);
-    /* Consegnare resta possibile. */
-    expect(g.valuta('mcp__velia__consegna', { path: '/lavoro/output/v.pdf', nome: 'Volantino' })).toBeUndefined();
-  });
-
-  it('guardare senza toccare non apre un giro nuovo', () => {
-    const g = contaGiri(1);
-    expect(g.valuta(...bash('pdftoppm -png v.pdf p'))).toBeUndefined();
-    expect(g.valuta(...bash('cd /lavoro/tmp && ls -la'))).toBeUndefined();
-    expect(g.valuta(...bash('pdftoppm -png -r 120 v.pdf alta'))).toBeUndefined();
-    expect(g.valuta('Edit', { file_path: 'v.html' })).toBeUndefined();
-    expect(g.valuta(...bash('pdftoppm -png v.pdf p'))).toContain('consegna');
   });
 });
 

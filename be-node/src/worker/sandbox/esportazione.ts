@@ -11,13 +11,13 @@ import {
   type DocumentoGenerato,
   type EventoStream,
 } from '../../contratto/conversazioni.js';
-import { consegnabile, mimeDi, timbrabile } from '../../contratto/formati.js';
+import { consegnabile, mimeDi } from '../../contratto/formati.js';
 import { vocePerSdk } from '../../contratto/modelli.js';
 import { cartaPerSandbox } from '../../generazione/carta.js';
 import { fasceDelTenant, modelloPerId, type RigaModello } from '../../generazione/catalogo.js';
 import { NOME_DOCUMENTO } from '../../generazione/generatore.js';
 import type { FasceDocumento } from '../../generazione/intestazione.js';
-import { misureFasce, senzaFasce, timbra } from '../../generazione/timbra.js';
+import { senzaFasce } from '../../generazione/timbra.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { costoATariffa } from '../motore/fornitori.js';
 import { etichettaAttivita, type EsitoSessione } from '../motore/sessione.js';
@@ -27,19 +27,20 @@ import { Sandbox, type AvviatoreSandbox, type FornitoreSandbox, type ParametriSe
 
 /**
  * «Genera da modello»: Claude Code dentro la sandbox documentale. Il worker
- * prepara la sandbox (workspace e modello di riferimento), avvia la
- * sessione nel container e ne ascolta lo stream; a ogni `consegna` ritira
- * il file, gli mette l'intestazione dell'agenzia se è il caso, lo porta
- * nello Storage e lo racconta al FE come `documento`, lo stesso canale di
- * «Esporta come». Alla fine la sandbox si distrugge.
+ * prepara la sandbox (workspace, modello di riferimento, carta
+ * dell'agenzia), avvia la sessione nel container e ne ascolta lo stream; a
+ * ogni `consegna` ritira il file, lo porta nello Storage e lo racconta al FE
+ * come `documento`, lo stesso canale di «Esporta come». Alla fine la
+ * sandbox si distrugge.
  *
- * L'intestazione (11/09/2026): con un modello «dell'agenzia», o senza
- * modello, la sandbox lascia libere le fasce e il worker ci stampa quelle
- * dell'agenzia dopo la consegna (`generazione/timbra.ts`); con un modello
- * «la sua» comanda il modello. Solo su PDF, Word ed Excel: dalla sera dello
- * stesso giorno la sandbox consegna qualsiasi formato, e su pagine web,
- * immagini e PowerPoint il marchio lo mette lei, coi loghi e i testi che
- * trova in `/lavoro/carta/` (`generazione/carta.ts`).
+ * Il marchio dell'agenzia (21/09/2026, decisione del committente): lo
+ * integra la sandbox su ogni formato, coi loghi, i testi e i colori che
+ * trova in `/lavoro/carta/` (`generazione/carta.ts`), dove e come serve al
+ * documento. Fino a quel giorno, su PDF, Word ed Excel, la sandbox lasciava
+ * vuote le fasce e il worker ci stampava l'intestazione dopo la consegna
+ * (`generazione/timbra.ts`, che resta per «Esporta come»): un vincolo di
+ * impaginazione che la qualità non si poteva permettere. Con un modello
+ * «la sua» comanda il modello, e la carta dell'agenzia non entra.
  *
  * Le chiavi del worker (db, Storage) non entrano nella sandbox; la chiave
  * Anthropic della sandbox è dedicata e sta dietro il proxy del runner.
@@ -56,6 +57,8 @@ export interface RichiestaElaborata {
   /** Il contenuto di partenza (la risposta da esportare), se c'è. */
   contenuto?: string | undefined;
   titolo?: string | undefined;
+  /** Dalla chat: il messaggio dell'utente tale e quale, oltre alla richiesta scritta dal motore. */
+  paroleUtente?: string | undefined;
   /** Il modello AI della sessione: quello del livello scelto (in chat o nelle impostazioni). */
   modello?: string | undefined;
 }
@@ -84,8 +87,6 @@ export interface OpzioniSessioneDocumentale {
   maxTurni: number;
   budgetUsd: number;
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | undefined;
-  /** I giri di controllo concessi; assente, quelli del runner (cinque). */
-  maxGiri?: number | undefined;
 }
 
 export interface DipendenzeElaborata {
@@ -130,11 +131,8 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
   } finally {
     client.release();
   }
-  /* Su PDF, Word ed Excel la carta la stampa il worker dopo la consegna, e
-     alla sandbox si dicono solo i margini da lasciare liberi. Sugli altri
-     formati il marchio lo mette la sandbox, coi materiali in /lavoro/carta/. */
-  const margini = fasce && timbrabile(formato) ? await misureFasce(fasce) : undefined;
-  const carta = fasce && !timbrabile(formato) ? cartaPerSandbox(fasce) : undefined;
+  /* Il marchio lo mette la sandbox, su ogni formato, coi materiali in /lavoro/carta/. */
+  const carta = fasce ? cartaPerSandbox(fasce) : undefined;
 
   /* 2. La sandbox, con dentro workspace e modello. */
   await dip.emetti({ tipo: 'attivita', etichetta: 'Preparo l’ambiente di lavoro' });
@@ -175,7 +173,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
           }),
         formato,
         documenti,
-        ...(margini && { intestazioneAgenzia: margini }),
         ...(carta && { cartaAgenzia: true }),
       }),
       promptUtente: promptRichiesta({
@@ -183,6 +180,7 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         ...(r.titolo && { titolo: r.titolo }),
         ...(r.istruzioni && { istruzioni: r.istruzioni }),
         ...(r.contenuto && { contenuto: r.contenuto }),
+        ...(r.paroleUtente && { paroleUtente: r.paroleUtente }),
       }),
       ...modelloSandbox(r.modello, dip.sessione.modello),
       /* Se la sandbox non ha la chiave del fornitore, il runner ripiega qui. */
@@ -190,7 +188,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
       maxTurni: dip.sessione.maxTurni,
       budgetUsd: dip.sessione.budgetUsd,
       ...(dip.sessione.effort && { effort: dip.sessione.effort }),
-      ...(dip.sessione.maxGiri && { maxGiri: dip.sessione.maxGiri }),
     };
 
     const controllo = new AbortController();
@@ -215,17 +212,7 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
           /* Il runner è un altro servizio: l'esclusione degli eseguibili si riapplica qui. */
           const consegnato = evento.formato.toLowerCase();
           if (!consegnabile(consegnato)) continue;
-          let byte = await sandbox.leggi(evento.path);
-          /* Si timbra solo dove la sandbox ha lasciato i margini: un PDF
-             consegnato insieme a una pagina web non li ha. */
-          if (fasce && margini && timbrabile(consegnato)) {
-            try {
-              byte = await timbra(byte, consegnato, fasce);
-            } catch (errore) {
-              /* Meglio il documento senza intestazione che nessun documento. */
-              console.warn(`[elaborata] intestazione non applicata a ${evento.nome}:`, errore instanceof Error ? errore.message : errore);
-            }
-          }
+          const byte = await sandbox.leggi(evento.path);
           const id = randomUUID();
           const percorso = percorsoDocumentoGenerato(r.tenantId, id, consegnato);
           await dip.archivio.carica(percorso, byte, mimeDi(consegnato));

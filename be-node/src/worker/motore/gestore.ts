@@ -325,6 +325,9 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 istruzioni: r.istruzioni,
                 contenuto: r.contenuto,
                 titolo: r.titolo,
+                /* Dalla chat la richiesta la scrive il motore: la sandbox riceve
+                   anche le parole dell'utente, tali e quali (21/09/2026). */
+                ...(daChat && { paroleUtente: payload.testo }),
                 /* Il livello scelto vale anche qui (21/09/2026): con «Avanzato»
                    il documento lo scrive DeepSeek, come la risposta. Dove la
                    sandbox non arriva, decide `modelloSandbox`. */

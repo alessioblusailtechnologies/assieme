@@ -1,14 +1,13 @@
 #!/bin/sh
 # Avvio della sandbox, da root:
-#  1. un network namespace `lavoro` senza rotta di default, collegato al
-#     namespace principale da un solo cavo virtuale (10.200.0.1 ↔ 10.200.0.2):
-#     è lì che girano Claude Code e il Bash del modello, e da lì si raggiunge
-#     SOLO il proxy della chiave. Niente Internet per costruzione, niente
-#     iptables, niente moduli del kernel che su Fly non ci sono.
-#     Dove i namespace non si possono creare (Render: niente NET_ADMIN) si
-#     parte con SANDBOX_RETE=aperta: CLI e comandi girano come utente
-#     `lavoro` ma con la rete del container. La chiave resta nel proxy, con
-#     un altro utente; è la rete in uscita del modello che non si può chiudere.
+#  1. la rete. Dal 21/09/2026 è APERTA per scelta: la sandbox è Claude Code
+#     senza limitazioni (font e librerie dalla rete, WebFetch, pacchetti), e
+#     la sicurezza la darà l'infrastruttura. CLI e comandi girano come utente
+#     `lavoro` con la rete del container; la chiave resta nel proxy, con un
+#     altro utente. Con SANDBOX_RETE=isolata si torna al namespace `lavoro`
+#     senza rotta di default, collegato al namespace principale da un solo
+#     cavo virtuale (10.200.0.1 ↔ 10.200.0.2): da lì si raggiunge SOLO il
+#     proxy della chiave (serve NET_ADMIN, che Render non dà).
 #  2. il proxy della chiave (utente `proxy`, namespace principale, con rete).
 #  3. le skill Anthropic nella workspace.
 #  4. il runner (root, namespace principale: deve entrare nel namespace
@@ -18,9 +17,9 @@ LOG=/tmp/avvio.log
 nota() { echo "$*"; echo "$*" >> "$LOG"; }
 : > "$LOG"
 
-if [ "${SANDBOX_RETE:-isolata}" = "aperta" ]; then
+if [ "${SANDBOX_RETE:-aperta}" = "aperta" ]; then
   SANDBOX_NETNS=0
-  nota "rete: APERTA (SANDBOX_RETE=aperta): nessun namespace, il modello ha la rete del container"
+  nota "rete: APERTA: nessun namespace, il modello ha la rete del container"
 elif ip netns add lavoro 2>>"$LOG"; then
   ip link add veth-root type veth peer name veth-lav
   ip link set veth-lav netns lavoro
@@ -32,7 +31,7 @@ elif ip netns add lavoro 2>>"$LOG"; then
   SANDBOX_NETNS=1
   nota "rete: namespace lavoro isolato (solo 10.200.0.1)"
 else
-  nota "rete: IMPOSSIBILE creare il namespace: la sandbox non parte (SANDBOX_RETE=aperta per rinunciare all'isolamento)"
+  nota "rete: IMPOSSIBILE creare il namespace: la sandbox non parte (togli SANDBOX_RETE=isolata per rinunciare all'isolamento)"
   exit 1
 fi
 export SANDBOX_NETNS

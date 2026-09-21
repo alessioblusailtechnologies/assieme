@@ -9,8 +9,7 @@
  *
  * `modello` come formato: quello del modello scelto. `--modello=<sdk>` è il
  * modello AI del livello (21/09/2026): con `deepseek-flash` la sandbox
- * lavora su DeepSeek, attraverso il suo proxy. `--giri=<n>` abbassa il tetto dei
- * giri di controllo, per vederlo scattare.
+ * lavora su DeepSeek, attraverso il suo proxy.
  *
  * Costa: una sessione documentale (da mezzo dollaro a un paio). I file
  * consegnati si salvano in local-ingestion/lavorazione e si tolgono dallo
@@ -35,8 +34,6 @@ const scelta = posizionali[0];
 const istruzioni = posizionali[1];
 const nomeModello = posizionali[2];
 const modelloAi = process.argv.find((a) => a.startsWith('--modello='))?.slice('--modello='.length);
-/* `--giri=<n>` (21/09/2026): per vedere il runner fermare i controlli senza aspettare un documento difficile. */
-const giri = process.argv.find((a) => a.startsWith('--giri='))?.slice('--giri='.length);
 /* Qualsiasi formato tranne gli eseguibili (11/09/2026): pdf, docx, html, png, csv… o «modello» per quello del modello. */
 if (!scelta || !(scelta === 'modello' || consegnabile(scelta)) || !istruzioni) {
   console.error('Uso: npx tsx tools/collaudo-elaborata.ts <estensione|modello> "<istruzioni>" [nome-modello]');
@@ -78,7 +75,6 @@ try {
         maxTurni: c.SANDBOX_MAX_TURNI,
         budgetUsd: c.SANDBOX_BUDGET_USD,
         ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
-        ...(giri && { maxGiri: Number(giri) }),
       },
       workspace: ws,
       emetti: (evento) => {

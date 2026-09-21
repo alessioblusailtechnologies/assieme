@@ -255,7 +255,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       'tranne i programmi eseguibili: PDF, Word, Excel, PowerPoint, una pagina web interattiva (HTML: indice, sezioni che',
       'si aprono, pensata per il telefono), un’immagine (PNG, JPG), CSV, ZIP… Con un `modello` apre il modello di',
       'riferimento dell’agenzia e ne conserva struttura e stili; senza, impagina da zero col marchio dell’agenzia.',
-      'Costa di più e ci mette uno o due minuti: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
+      'Costa di più e ci mette qualche minuto: usalo quando l’utente chiede un documento «fatto bene», «come quello»,',
       '«da consegnare», una proposta, un report impaginato, una presentazione, una pagina interattiva o un’immagine, o nomina',
       'un modello («sul modello X», «da modello»). Per un semplice «esportamelo in pdf» usa invece `esporta_subito`. Mai di',
       'tua iniziativa.',

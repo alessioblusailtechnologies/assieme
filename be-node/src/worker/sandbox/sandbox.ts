@@ -34,6 +34,7 @@ export interface VoceSandbox {
 export type FornitoreSandbox = 'anthropic' | 'deepseek';
 
 export interface ParametriSessione {
+  /** Ciò che si aggiunge al prompt di sistema di Claude Code: i fatti del lavoro (`istruzioni.ts`). */
   promptSistema: string;
   promptUtente: string;
   modello: string;
@@ -41,8 +42,6 @@ export interface ParametriSessione {
   fornitore?: FornitoreSandbox;
   /** Il modello Anthropic su cui ripiegare se la sandbox non ha la chiave di `fornitore`. */
   ripiego?: string;
-  /** Quanti giri di controllo il runner concede (`sandbox/giri.mjs`); assente, cinque. */
-  maxGiri?: number;
   maxTurni?: number;
   budgetUsd?: number;
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';

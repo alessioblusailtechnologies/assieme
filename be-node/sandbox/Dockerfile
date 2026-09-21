@@ -35,14 +35,20 @@ RUN mkdir -p /opt/strumenti && cd /opt/strumenti \
     && npm install --no-audit --no-fund docx exceljs pdf-lib docxtemplater pizzip marked \
     && npm cache clean --force
 
-# Le skill Anthropic per i documenti (anthropics/skills, Apache 2.0): il
-# know-how con cui Claude lavora DOCX, XLSX, PPTX e PDF. Copiate a ogni avvio
-# in /lavoro/.claude/skills, dove la CLI le carica come skill di progetto.
+# Le skill Anthropic (anthropics/skills): dal 21/09/2026 TUTTE, senza
+# esclusioni (decisione del committente: Claude Code puro e completo), non
+# più le sole docx/xlsx/pptx/pdf. Copiate a ogni avvio in
+# /lavoro/.claude/skills, dove la CLI le carica come skill di progetto: il
+# modello le apre solo quando servono.
 RUN mkdir -p /opt/skills && cd /tmp \
     && curl -fsSL https://github.com/anthropics/skills/archive/refs/heads/main.tar.gz -o skills.tgz \
     && tar -xzf skills.tgz \
-    && for s in docx xlsx pptx pdf; do cp -r skills-main/skills/$s /opt/skills/$s; done \
+    && cp -r skills-main/skills/. /opt/skills/ \
     && rm -rf skills.tgz skills-main
+
+# Le skill di VELIA: il know-how che prima stava nel prompt di sistema e
+# valeva solo per certi lavori (la carta intestata di un modello PDF).
+COPY skills/ /opt/skills/
 
 # Il runner: l'Agent SDK (porta con sé la CLI di Claude Code) e zod per il tool `consegna`.
 RUN mkdir -p /opt/sandbox && cd /opt/sandbox \
@@ -55,7 +61,6 @@ RUN printf '#!/bin/sh\nexec /usr/bin/chromium --headless=new --no-sandbox --disa
     && chmod +x /usr/local/bin/chromium-headless
 
 COPY server.mjs /opt/sandbox/server.mjs
-COPY giri.mjs /opt/sandbox/giri.mjs
 COPY proxy.mjs /opt/sandbox/proxy.mjs
 COPY avvio.sh /opt/sandbox/avvio.sh
 COPY claude-lavoro /opt/sandbox/claude-lavoro
@@ -67,5 +72,5 @@ WORKDIR /lavoro
 ENV HOME=/lavoro SANDBOX_RADICE=/lavoro PORTA=8080
 
 EXPOSE 8080
-# Parte da root per il firewall (solo Anthropic in uscita), poi cede a `lavoro`.
+# Parte da root (proxy delle chiavi, eventuale namespace isolato), poi cede a `lavoro`.
 CMD ["/opt/sandbox/avvio.sh"]
