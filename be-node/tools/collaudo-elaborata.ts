@@ -1,30 +1,31 @@
 /**
  * Collaudo di «Genera da modello» col motore VERO e la sandbox vera
- * (Docker in locale o Fly, secondo `SANDBOX_AVVIATORE` in .env): la
- * workspace del tenant demo, il modello di riferimento scelto (o nessuno),
- * una richiesta, e si guarda cosa consegna, intestazione dell'agenzia
- * compresa. Senza API né coda.
+ * (Docker in locale o Fly, secondo `SANDBOX_AVVIATORE` in .env): il
+ * tenant demo, il modello di riferimento scelto (o nessuno), una richiesta
+ * col suo contenuto, e si guarda cosa consegna, marchio dell'agenzia
+ * compreso. Senza API né coda.
  *
- *   npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-modello] [--modello=deepseek-flash]
+ *   npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-modello] [--modello=deepseek-flash] [--contenuto=file.md]
  *
  * `modello` come formato: quello del modello scelto. `--modello=<sdk>` è il
  * modello AI del livello (21/09/2026): con `deepseek-flash` la sandbox
- * lavora su DeepSeek, attraverso il suo proxy.
+ * lavora su DeepSeek, attraverso il suo proxy. `--contenuto=<file>` è il
+ * testo che in chat passerebbe il motore: dalla notte del 21/09/2026 la
+ * sandbox non ha i documenti del tenant, e senza contenuto ha la sola
+ * richiesta.
  *
  * Costa: una sessione documentale (da mezzo dollaro a un paio). I file
  * consegnati si salvano in local-ingestion/lavorazione e si tolgono dallo
  * Storage alla fine.
  */
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 import { configurazione } from '../src/config.js';
 import { consegnabile } from '../src/contratto/formati.js';
 import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { modelliDelTenant, scegliModello } from '../src/generazione/catalogo.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
-import { materializzaWorkspace } from '../src/worker/motore/workspace.js';
 import { eseguiEsportazioneElaborata } from '../src/worker/sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly } from '../src/worker/sandbox/sandbox.js';
 
@@ -34,6 +35,7 @@ const scelta = posizionali[0];
 const istruzioni = posizionali[1];
 const nomeModello = posizionali[2];
 const modelloAi = process.argv.find((a) => a.startsWith('--modello='))?.slice('--modello='.length);
+const fileContenuto = process.argv.find((a) => a.startsWith('--contenuto='))?.slice('--contenuto='.length);
 /* Qualsiasi formato tranne gli eseguibili (11/09/2026): pdf, docx, html, png, csv… o «modello» per quello del modello. */
 if (!scelta || !(scelta === 'modello' || consegnabile(scelta)) || !istruzioni) {
   console.error('Uso: npx tsx tools/collaudo-elaborata.ts <estensione|modello> "<istruzioni>" [nome-modello]');
@@ -48,14 +50,12 @@ const avviatore =
     : new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi, c.DEEPSEEK_API_KEY);
 console.log(`Sandbox: ${avviatore.nome} (${c.SANDBOX_IMMAGINE})`);
 
-const radice = await mkdtemp(join(tmpdir(), 'velia-collaudo-elab-'));
+const contenuto = fileContenuto ? await readFile(fileContenuto, 'utf8') : undefined;
+if (contenuto) console.log(`Contenuto: ${contenuto.length} caratteri da ${fileContenuto}`);
 const db = poolDb();
 const archivio = new ArchivioStorage();
 let percorsi: string[] = [];
 try {
-  const ws = await materializzaWorkspace({ db, archivio, tenantId: TENANT_DEMO, radice, jobId: 'collaudo-elab', contestoIds: [] });
-  console.log(`Workspace: ${ws.perPath.size} documenti`);
-
   let modelloId: string | undefined;
   if (nomeModello) {
     const trovato = scegliModello(await modelliDelTenant(db as never, TENANT_DEMO), nomeModello);
@@ -76,7 +76,6 @@ try {
         budgetUsd: c.SANDBOX_BUDGET_USD,
         ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
       },
-      workspace: ws,
       emetti: (evento) => {
         if (evento.tipo === 'attivita') console.log(`  · ${evento.etichetta}`);
         else if (evento.tipo === 'documento') console.log(`  ▣ documento: ${JSON.stringify(evento.documento)}`);
@@ -91,6 +90,7 @@ try {
       formato,
       modelloId,
       istruzioni,
+      ...(contenuto && { contenuto }),
       ...(modelloAi && { modello: modelloAi }),
     },
   );
@@ -109,9 +109,7 @@ try {
   if (!e.generati.length) console.log('  nessuno');
   console.log('\n=== MISURE ===');
   console.log(`modello ${e.esito.modello} · esito ${e.esito.terminato}${e.esito.errore ? ` (${e.esito.errore})` : ''} · turni ${e.esito.turni} · ${durata.toFixed(1)} s · ${e.esito.costoUsd.toFixed(4)} USD`);
-  await ws.rimuovi();
 } finally {
   if (percorsi.length) await archivio.elimina(percorsi).catch(() => undefined);
   await chiudiPool();
-  await rm(radice, { recursive: true, force: true });
 }

@@ -37,43 +37,42 @@ describe('il prompt della sandbox', () => {
    * 21/09/2026: il prompt porta solo i fatti del lavoro. Le regole di stile e
    * il ciclo prescritto trasformavano un volantino in una scheda tecnica.
    */
-  it('dice dove sono i file, come si consegna e il modello scelto, con la sua riga «quando usarlo»', () => {
-    const p = promptSandbox({
-      modello: modello('agenzia'),
-      formato: 'pdf',
-      documenti: [{ path: '/lavoro/workspace/a.md', titolo: 'Condizioni', archivio: 'pubblico' }],
-    });
-    for (const atteso of ['PDF', '/lavoro/workspace/', '/lavoro/output/', 'consegna', 'Proposta breve', '/lavoro/workspace/a.md', 'Per i preventivi RC Auto', 'in italiano']) {
+  it('dice da dove viene il contenuto, come si consegna e il modello scelto, con la sua riga «quando usarlo»', () => {
+    const p = promptSandbox({ modello: modello('agenzia'), formato: 'pdf' });
+    for (const atteso of ['PDF', '/lavoro/output/', 'consegna', 'Proposta breve', 'Per i preventivi RC Auto', 'in italiano']) {
       expect(p).toContain(atteso);
     }
+    /* Dalla notte del 21/09/2026 i documenti non entrano: il contenuto lo passa la chat. */
+    expect(p).not.toContain('/lavoro/workspace');
+    expect(p).toContain('i documenti qui non ci sono');
     expect(p).not.toMatch(/identit|template scelto|\/lavoro\/template/i);
-    expect(promptSandbox({ formato: 'xlsx', documenti: [] })).not.toContain('## Modello');
+    expect(promptSandbox({ formato: 'xlsx' })).not.toContain('## Modello');
   });
 
   it('nessuna regola di stile, nessun ciclo prescritto, nessun limite', () => {
-    const p = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    const p = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', cartaAgenzia: true });
     for (const vietato of ['sobrio', 'professionale', 'senza perdere', 'pdftoppm', '60 dpi', 'correzioni', 'Niente trattini', 'Non usare mai la rete', 'merge_page', 'Fonti']) {
       expect(p).not.toContain(vietato);
     }
   });
 
   it('il marchio dell’agenzia lo integra la sandbox su ogni formato, salvo un modello «la sua»', () => {
-    const conCarta = promptSandbox({ modello: modello('agenzia', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    const conCarta = promptSandbox({ modello: modello('agenzia', 'pdf'), formato: 'pdf', cartaAgenzia: true });
     expect(conCarta).toContain('/lavoro/carta/');
     expect(conCarta).toContain('La sua carta intestata no');
     expect(conCarta).not.toMatch(/margin|fasce/i);
-    expect(promptSandbox({ formato: 'docx', documenti: [], cartaAgenzia: true })).toContain('/lavoro/carta/');
-    expect(promptSandbox({ formato: 'png', documenti: [] })).not.toContain('/lavoro/carta/');
+    expect(promptSandbox({ formato: 'docx', cartaAgenzia: true })).toContain('/lavoro/carta/');
+    expect(promptSandbox({ formato: 'png' })).not.toContain('/lavoro/carta/');
 
-    const sua = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', documenti: [], cartaAgenzia: true });
+    const sua = promptSandbox({ modello: modello('sua', 'pdf'), formato: 'pdf', cartaAgenzia: true });
     expect(sua).toContain('sono quelli da tenere');
     expect(sua).not.toContain('/lavoro/carta/');
   });
 
   it('una pagina web: tutto dentro il file, perché VELIA la serve con la rete chiusa', () => {
-    const p = promptSandbox({ formato: 'html', documenti: [] });
+    const p = promptSandbox({ formato: 'html' });
     expect(p).toContain('rete chiusa');
-    expect(promptSandbox({ formato: 'pdf', documenti: [] })).not.toContain('rete chiusa');
+    expect(promptSandbox({ formato: 'pdf' })).not.toContain('rete chiusa');
   });
 
   it('la richiesta passa così com’è, e il materiale di partenza senza istruzioni su come trattarlo', () => {

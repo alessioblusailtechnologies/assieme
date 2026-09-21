@@ -1,9 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { readdir, readFile } from 'node:fs/promises';
-import { basename, join, relative, sep } from 'node:path';
+import { basename } from 'node:path';
 
 import type pg from 'pg';
-import PizZip from 'pizzip';
 
 import {
   percorsoDocumentoGenerato,
@@ -20,15 +18,14 @@ import type { FasceDocumento } from '../../generazione/intestazione.js';
 import { senzaFasce } from '../../generazione/timbra.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
 import { costoATariffa } from '../motore/fornitori.js';
-import { etichettaAttivita, type EsitoSessione } from '../motore/sessione.js';
-import type { Workspace } from '../motore/workspace.js';
+import type { EsitoSessione } from '../motore/sessione.js';
 import { promptRichiesta, promptSandbox } from './istruzioni.js';
 import { Sandbox, type AvviatoreSandbox, type FornitoreSandbox, type ParametriSessione } from './sandbox.js';
 
 /**
  * «Genera da modello»: Claude Code dentro la sandbox documentale. Il worker
- * prepara la sandbox (workspace, modello di riferimento, carta
- * dell'agenzia), avvia la sessione nel container e ne ascolta lo stream; a
+ * prepara la sandbox (modello di riferimento, carta dell'agenzia), avvia la
+ * sessione nel container col testo da impaginare e ne ascolta lo stream; a
  * ogni `consegna` ritira il file, lo porta nello Storage e lo racconta al FE
  * come `documento`, lo stesso canale di «Esporta come». Alla fine la
  * sandbox si distrugge.
@@ -41,6 +38,12 @@ import { Sandbox, type AvviatoreSandbox, type FornitoreSandbox, type ParametriSe
  * (`generazione/timbra.ts`, che resta per «Esporta come»): un vincolo di
  * impaginazione che la qualità non si poteva permettere. Con un modello
  * «la sua» comanda il modello, e la carta dell'agenzia non entra.
+ *
+ * I documenti del tenant (stessa notte): nella sandbox non entrano più. Il
+ * contenuto lo decide la chat, che legge i documenti con le sue regole
+ * (citazioni verificate), e lo passa in `contenuto`; la sandbox fa la forma.
+ * Con i documenti sotto mano Claude Code rifaceva la ricerca da capo: sul
+ * volantino del 21/09/2026, 40 passi e più di un minuto spesi due volte.
  *
  * Le chiavi del worker (db, Storage) non entrano nella sandbox; la chiave
  * Anthropic della sandbox è dedicata e sta dietro il proxy del runner.
@@ -94,7 +97,6 @@ export interface DipendenzeElaborata {
   archivio: ArchivioFile;
   avviatore: AvviatoreSandbox;
   sessione: OpzioniSessioneDocumentale;
-  workspace: Workspace;
   emetti: (evento: EventoStream) => Promise<unknown>;
   annullato: () => Promise<boolean>;
 }
@@ -134,14 +136,12 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
   /* Il marchio lo mette la sandbox, su ogni formato, coi materiali in /lavoro/carta/. */
   const carta = fasce ? cartaPerSandbox(fasce) : undefined;
 
-  /* 2. La sandbox, con dentro workspace e modello. */
+  /* 2. La sandbox, con dentro modello e carta: i documenti del tenant no. */
   await dip.emetti({ tipo: 'attivita', etichetta: 'Preparo l’ambiente di lavoro' });
   const sandbox = new Sandbox(await dip.avviatore.avvia(r.jobId));
   const generati: DocumentoGenerato[] = [];
   const percorsi: string[] = [];
   try {
-    await sandbox.caricaArchivio('workspace', await zipDirectory(dip.workspace.directory));
-
     let pathModello: string | undefined;
     if (modello) {
       const slug = modello.nome.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'modello';
@@ -154,11 +154,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
     await sandbox.esegui('mkdir -p /lavoro/output /lavoro/tmp');
 
     /* 3. La sessione di Claude Code, ascoltata evento per evento. */
-    const documenti = [...dip.workspace.perPath.entries()].map(([path, d]) => ({
-      path: `/lavoro/workspace/${path}`,
-      titolo: d.titolo,
-      archivio: d.archivio,
-    }));
     const parametri: ParametriSessione = {
       promptSistema: promptSandbox({
         ...(modello &&
@@ -172,7 +167,6 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
             },
           }),
         formato,
-        documenti,
         ...(carta && { cartaAgenzia: true }),
       }),
       promptUtente: promptRichiesta({
@@ -200,12 +194,11 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
       });
     }, 3000);
 
-    const titoloPer = (path: string) => dip.workspace.perPath.get(path)?.titolo;
     let esito: EsitoSessione | undefined;
     try {
       for await (const evento of sandbox.sessione(parametri, controllo.signal)) {
         if (evento.tipo === 'attivita') {
-          await dip.emetti({ tipo: 'attivita', etichetta: etichettaSandbox(evento.strumento, evento.input, titoloPer) });
+          await dip.emetti({ tipo: 'attivita', etichetta: etichettaSandbox(evento.strumento, evento.input) });
         } else if (evento.tipo === 'testo') {
           await dip.emetti({ tipo: 'testo', delta: evento.delta });
         } else if (evento.tipo === 'consegna') {
@@ -263,32 +256,22 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
 }
 
 /**
- * Le attività della sandbox a parole da utente: i tool di lettura con le
- * etichette della chat (i documenti per titolo), Bash con la descrizione
- * che Claude Code già scrive per l'utente, scritture e consegne per nome.
+ * Le attività della sandbox a parole da utente: Bash con la descrizione che
+ * Claude Code scrive per l'utente, letture, scritture e consegne per nome.
  */
-export function etichettaSandbox(
-  strumento: string,
-  input: Record<string, unknown>,
-  titoloPer: (pathRelativo: string) => string | undefined,
-): string {
+export function etichettaSandbox(strumento: string, input: Record<string, unknown>): string {
   const accorcia = (t: string, n: number) => (t.length <= n ? t : `${t.slice(0, n - 1).trimEnd()}…`);
   switch (strumento) {
     case 'Read': {
       const p = typeof input['file_path'] === 'string' ? input['file_path'] : '';
       if (/\.(png|jpe?g|webp)$/i.test(p)) return 'Controllo la pagina renderizzata';
       if (p.startsWith('/lavoro/modello/')) return 'Studio il modello';
-      if (p.startsWith('/lavoro/workspace/')) {
-        return etichettaAttivita('Read', { ...input, file_path: p.slice('/lavoro/workspace/'.length) }, '', titoloPer);
-      }
       return p ? `Leggo ${basename(p)}` : 'Leggo un file';
     }
     case 'Grep':
-    case 'Glob': {
-      const p = typeof input['path'] === 'string' ? input['path'] : '';
-      const rel = p.startsWith('/lavoro/workspace/') ? p.slice('/lavoro/workspace/'.length) : p.startsWith('/lavoro/workspace') ? '' : p;
-      return etichettaAttivita(strumento, { ...input, path: rel }, '', titoloPer);
-    }
+      return 'Cerco nei file di lavoro';
+    case 'Glob':
+      return 'Guardo quali file ci sono';
     case 'Bash': {
       const d = typeof input['description'] === 'string' ? input['description'].trim() : '';
       return d ? accorcia(d, 80) : 'Lavoro al documento';
@@ -309,18 +292,4 @@ export function etichettaSandbox(
     default:
       return 'Lavoro al documento';
   }
-}
-
-/** La workspace in uno zip: i file di testo che il motore legge, nella stessa struttura. */
-async function zipDirectory(radice: string): Promise<Buffer> {
-  const zip = new PizZip();
-  async function visita(cartella: string): Promise<void> {
-    for (const voce of await readdir(cartella, { withFileTypes: true })) {
-      const p = join(cartella, voce.name);
-      if (voce.isDirectory()) await visita(p);
-      else zip.file(relative(radice, p).split(sep).join('/'), await readFile(p));
-    }
-  }
-  await visita(radice);
-  return zip.generate({ type: 'nodebuffer', compression: 'DEFLATE' });
 }

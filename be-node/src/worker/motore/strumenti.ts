@@ -262,8 +262,9 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
       'Passa `modello` solo quando è chiaro che lo si vuole: l’utente lo nomina o chiede «il modello», una regola del DNA',
       'd’Agenzia lo prescrive, o la sua riga «quando usarlo» descrive proprio il documento chiesto. Mai solo perché c’è:',
       'nel dubbio omettilo.',
-      'Passa in `istruzioni` tutto ciò che il motore documentale deve sapere (cosa produrre, per chi, con quali dati e',
-      'da quali documenti della workspace) e in `contenuto` il testo di partenza già scritto, se c’è.',
+      'Il motore documentale NON vede i documenti né la conversazione: in `contenuto` passa tutto il testo e i dati che',
+      'il documento deve contenere, presi dai documenti che hai letto (cifre esatte, fonti con titolo e pagina); in',
+      '`istruzioni` cosa produrre e per chi.',
       'Dopo l’esito, chiudi con UNA riga: il documento è pronto sotto la risposta.',
     ].join(' '),
     {
@@ -279,7 +280,10 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
           'Il formato del file, come estensione: pdf, docx, xlsx, pptx, html (pagina web interattiva), png, jpg, csv, zip… Senza, quello del modello (o PDF).',
         ),
       istruzioni: z.string().min(1).max(4000).describe('Le istruzioni per il motore documentale.'),
-      contenuto: z.string().optional().describe('Il testo di partenza in Markdown, se già scritto.'),
+      contenuto: z
+        .string()
+        .optional()
+        .describe('Tutto il testo e i dati del documento, in Markdown, con le fonti: il motore documentale non ha altro.'),
       titolo: z.string().max(160).optional(),
     },
     async (args) => {

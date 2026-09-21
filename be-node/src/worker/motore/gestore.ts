@@ -306,7 +306,6 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 archivio: dip.archivio,
                 avviatore: dip.sandbox!.avviatore,
                 sessione: dip.sandbox!.sessione,
-                workspace: workspace!,
                 /* Chiamata dalla chat, la sandbox lavora dentro una risposta
                    che scrive il motore della chat: il suo testo è il
                    resoconto per lui (gli torna come esito del tool), e nella

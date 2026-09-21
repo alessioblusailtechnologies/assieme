@@ -14,6 +14,9 @@
  * Il marchio dell'agenzia (stessa data): lo integra la sandbox, coi
  * materiali in `/lavoro/carta/`, su ogni formato. VELIA non timbra più
  * dopo la consegna, e il documento non deve lasciare fasce vuote.
+ *
+ * I documenti del tenant non ci sono più (stessa notte): il contenuto lo
+ * decide la chat e arriva nel prompt utente (`promptRichiesta`).
  */
 
 export interface ContestoIstruzioni {
@@ -28,8 +31,6 @@ export interface ContestoIstruzioni {
   };
   /** L'estensione del file da produrre: qualsiasi, dall'11/09/2026 (eseguibili esclusi). */
   formato: string;
-  /** I documenti della workspace, per titolo, con path e archivio. */
-  documenti: Array<{ path: string; titolo: string; archivio: string }>;
   /** Loghi, testi e colori dell'agenzia in `/lavoro/carta/`. */
   cartaAgenzia?: boolean;
 }
@@ -42,8 +43,10 @@ export function promptSandbox(c: ContestoIstruzioni): string {
   );
 
   parti.push(`
-## I file
-- \`/lavoro/workspace/\`: i documenti della conversazione e degli archivi dell'agenzia, in Markdown fedele ai PDF originali, con le ancore di pagina \`[pag. N]\`.${
+## Il contenuto
+Il testo e i dati da mettere nel documento sono nella richiesta qui sotto: li ha presi dai documenti dell'agenzia il motore della chat, e i documenti qui non ci sono.
+
+## I file${
     c.modello ? `\n- \`${c.modello.path}\`: il modello di riferimento scelto dall'agenzia (vedi sotto).` : ''
   }${
     c.cartaAgenzia && !marchioDelModello
@@ -74,13 +77,6 @@ Mentre lavori, l'utente vede in chat la \`description\` dei comandi Bash: scrivi
     parti.push(`
 ## Modello di riferimento
 «${c.modello.nome}» (${c.modello.formato.toUpperCase()}), in \`${c.modello.path}\`.${quando}${marchio}`);
-  }
-
-  if (c.documenti.length) {
-    parti.push(`
-## Documenti nella workspace`);
-    for (const d of c.documenti.slice(0, 80)) parti.push(`- \`${d.path}\` - ${d.titolo} (${d.archivio})`);
-    if (c.documenti.length > 80) parti.push(`- … e altri ${c.documenti.length - 80}.`);
   }
 
   return parti.join('\n');

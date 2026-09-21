@@ -284,6 +284,13 @@ async function eseguiSessione(s, parametri) {
         persistSession: false,
         /* Le skill stanno in /lavoro/.claude/skills: settingSources=project le carica. */
         settingSources: ['project'],
+        /*
+         * Niente memoria automatica (22/09/2026). Ogni lavoro è a sé, e sul
+         * runner che resta acceso fra un job e l'altro (Render) la memoria
+         * scritta per un tenant l'avrebbe letta il job di un altro. Al primo
+         * collaudo senza workspace la sandbox chiudeva scrivendo MEMORY.md.
+         */
+        settings: { autoMemoryEnabled: false, autoDreamEnabled: false },
         includePartialMessages: true,
         abortController: controllo,
         env: {
@@ -384,6 +391,8 @@ const server = createServer(async (req, res) => {
         if (voce === '.claude') continue;
         await rm(join(RADICE, voce), { recursive: true, force: true });
       }
+      /* Di .claude restano le skill: quello che la CLI scrive per progetto (memoria, trascrizioni) no. */
+      await rm(join(RADICE, '.claude', 'projects'), { recursive: true, force: true });
       await mkdir(join(RADICE, 'output'), { recursive: true });
       spawnSync('chown', ['-R', 'lavoro:lavoro', RADICE]);
       res.writeHead(204).end();
