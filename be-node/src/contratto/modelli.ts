@@ -45,6 +45,14 @@ export interface Tariffa {
    * fa pagare un decimo. Senza, l'input in cache vale come quello nuovo.
    */
   cache?: number;
+  /**
+   * Quanto costa **mettere** in cache, dove costa più che rileggerla: su
+   * Anthropic la scrittura vale un quarto in più dell'input e la lettura un
+   * decimo, e sommare le due voci come se fossero la stessa cosa sbaglierebbe
+   * proprio dove i conti servono. I gateway terzi non la distinguono: senza
+   * questo campo la scrittura vale quanto la lettura, come prima.
+   */
+  cacheScrittura?: number;
 }
 
 /** Un modello di un fornitore terzo che il motore sa servire. */
@@ -162,6 +170,50 @@ export function catalogoLivelli(chiaviPresenti: Record<Exclude<Fornitore, 'anthr
 /** La voce del banco per un id SDK (undefined per i Claude e per gli esperimenti fuori banco). */
 export function vocePerSdk(sdk: string): ModelloServito | undefined {
   return MODELLI_SERVITI.find((m) => m.sdk === sdk);
+}
+
+/**
+ * Il listino Anthropic, in $ per milione di token (aggiornato il 19/09/2026).
+ *
+ * Il motore non ne ha bisogno — l'Agent SDK il costo di una sessione lo
+ * dichiara da sé — ma chi chiama l'API diretta no: l'ingestion riceve i
+ * token e basta, e senza un prezzo i suoi consumi resterebbero a zero.
+ * Lettura dalla cache un decimo dell'input, scrittura un quarto in più.
+ */
+const TARIFFE_ANTHROPIC: Record<string, Tariffa> = {
+  'claude-opus-5': { input: 5, output: 25, cache: 0.5, cacheScrittura: 6.25 },
+  'claude-sonnet-5': { input: 2, output: 10, cache: 0.2, cacheScrittura: 2.5 },
+  'claude-haiku-4-5': { input: 1, output: 5, cache: 0.1, cacheScrittura: 1.25 },
+};
+
+/**
+ * Il listino di un modello, chiunque lo serva: il banco dei fornitori terzi
+ * o Anthropic. `undefined` per un id che non conosciamo (un esperimento via
+ * .env), e chi chiama decide se vale zero o se è un errore.
+ */
+export function tariffaPerModello(sdk: string): Tariffa | undefined {
+  return vocePerSdk(sdk)?.tariffa ?? TARIFFE_ANTHROPIC[sdk];
+}
+
+/**
+ * Il costo di una manciata di token al listino di un modello.
+ *
+ * L'input ripetuto che il fornitore serve dalla cache ha un prezzo suo
+ * (Mistral: un decimo), e metterlo in cache ne ha un altro ancora dove il
+ * fornitore lo distingue. Dove la cache non esiste — HostYourAI non ne fa —
+ * i contatori stanno a zero e non cambia niente.
+ */
+export function costoATariffa(
+  token: { input: number; output: number; cacheLettura: number; cacheScrittura: number },
+  tariffa: Tariffa,
+): number {
+  const usd =
+    (token.input * tariffa.input +
+      token.cacheLettura * (tariffa.cache ?? tariffa.input) +
+      token.cacheScrittura * (tariffa.cacheScrittura ?? tariffa.cache ?? tariffa.input) +
+      token.output * tariffa.output) /
+    1_000_000;
+  return Math.round(usd * 1e6) / 1e6;
 }
 
 /**

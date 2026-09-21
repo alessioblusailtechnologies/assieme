@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { configurazione } from '../../config.js';
 import { TIPOLOGIE } from '../../contratto/documenti.js';
+import { segnaUso } from '../consumi.js';
 
 /** Una voce di tassonomia come la vede il classificatore: id e nome. */
 export interface VoceTassonomia {
@@ -123,6 +124,7 @@ export class ClassificatoreModello implements Classificatore {
         },
       ],
     });
+    segnaUso(this.modello, risposta.usage);
 
     const testo = risposta.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')

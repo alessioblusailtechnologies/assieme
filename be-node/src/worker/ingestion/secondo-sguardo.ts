@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { configurazione } from '../../config.js';
+import { segnaUso } from '../consumi.js';
 import { REGOLE_TRASCRIZIONE } from './convenzioni.js';
 
 /**
@@ -92,6 +93,8 @@ export class SecondoSguardoModello implements SecondoSguardo {
         },
       ],
     });
+
+    segnaUso(this.modello, risposta.usage);
 
     const testo = risposta.content
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')

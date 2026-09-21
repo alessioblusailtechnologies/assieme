@@ -33,8 +33,9 @@ const schemaAmbiente = z.object({
   /** Conversione documenti e motore agentico (Agent SDK). */
   ANTHROPIC_API_KEY: z.string().optional(),
   /**
-   * Il modello che legge i documenti in ingestion: conversione in Markdown e
-   * proposta di classificazione (01/09/2026, decisione del committente).
+   * Il modello dei giudizi dell'ingestion: la proposta di classificazione e
+   * il secondo sguardo sulle pagine segnalate (01/09/2026, decisione del
+   * committente).
    *
    * Era Haiku cablato nel codice, per la ragione scritta in
    * `VELIA-motore-agentico.md` §4 — la conversione è un costo fisso per
@@ -43,8 +44,29 @@ const schemaAmbiente = z.object({
    * chat, le tabelle e gli agenti, ognuno convinto della propria fonte.
    * Quindi Opus di default, e la scelta si cambia da qui senza toccare il
    * codice — come per il motore, la memoria e i suggerimenti.
+   *
+   * Dal 19/09/2026 non trascrive più: chi guarda le pagine segue il livello
+   * del tenant (vedi `MODELLO_LETTURA_VISIVA`). Qui resta chi **controlla**,
+   * uguale per tutti, sempre in un contesto separato da chi ha scritto; con
+   * Medio e Avanzato è anche un modello diverso.
    */
   MODELLO_INGESTION: z.string().default('claude-opus-5'),
+  /**
+   * Chi **guarda le pagine e le trascrive**, forzato per tutti i tenant.
+   *
+   * Vuoto (il caso normale, dal 21/09/2026) la trascrizione segue il livello
+   * che il tenant ha scelto nelle Impostazioni, come la chat: Medio Sonnet,
+   * Avanzato DeepSeek, Boost Opus; chi non ha scelto ha il default di
+   * piattaforma (`MODELLO_MOTORE`). Il 19/09 era `deepseek-flash` per tutti,
+   * e un'agenzia che teneva i suoi dati in Europa restando su Medio o Boost se
+   * li vedeva mandare in Cina lo stesso: per questo il committente l'ha
+   * legata al livello.
+   *
+   * Valorizzato, vince sul livello di chiunque: serve per un collaudo, o per
+   * togliere di mezzo un fornitore che non risponde senza toccare le scelte
+   * dei tenant (`claude-opus-5` riporta tutti su Anthropic).
+   */
+  MODELLO_LETTURA_VISIVA: z.string().min(1).optional(),
   /**
    * Il modello della **lettura rapida**: l'allegato di passaggio che l'utente
    * non vuole conservare (RF-C-02, modo `rapido`). Una passata sola, blocchi
@@ -57,6 +79,15 @@ const schemaAmbiente = z.object({
    * Non scrive mai il testo dell'archivio: dice soltanto dove guardare.
    */
   MODELLO_OCR: z.string().default('mistral-ocr-latest'),
+  /**
+   * Quante parole di scarto i testimoni tollerano prima di mandare una pagina
+   * al secondo sguardo. È la sensibilità della rete che sta sotto al
+   * trascrittore, e da quando a trascrivere può non essere Opus è il numero che
+   * decide quanto ci si fida: a 5 (la misura della skill) un refuso isolato
+   * passa, a 0 non passa niente e il secondo sguardo — che è la voce cara —
+   * gira su molte più pagine. I numeri si segnalano comunque, sempre.
+   */
+  TESTIMONI_PAROLE_TOLLERATE: z.coerce.number().int().min(0).default(5),
   /**
    * Il motore agentico (Fase 3). Modello e budget per job sono le decisioni
    * aperte 1 e 4 del doc motore: si misurano qui, non si cablano.

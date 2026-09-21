@@ -450,9 +450,31 @@ deterministica come fonte.
   documento). Il committente ribalta: la lettura è il pavimento di tutto, e
   una cifra sbagliata qui la ereditano chat, tabelle e agenti. Vale anche per
   la classificazione (RF-B-03).
+- **Chi trascrive segue il livello del tenant** (decisione del committente,
+  21/09/2026): il modello del livello scelto nelle Impostazioni, come la
+  chat — Medio Sonnet, Avanzato DeepSeek, Boost Opus; chi non ha scelto e i
+  pubblici hanno il default di piattaforma (`MODELLO_MOTORE`). Chi
+  **giudica** — classificazione e secondo sguardo — resta `MODELLO_INGESTION`
+  su Opus per tutti. Il 19/09 la trascrizione era passata a DeepSeek per
+  tutti, per il conto (0,0033 $ a pagina invece di 0,0429 $ di Opus, sulla
+  sola voce che cresce col numero di pagine); il 21/09 il committente l'ha
+  legata al livello, perché un'agenzia che resta su Medio o Boost per tenere
+  i dati in Europa non se li veda mandare in Cina dalla piattaforma.
+  `TrascrittoriPerModello` (`worker/ingestion/convertitore.ts`) tiene un
+  convertitore per modello; `MODELLO_LETTURA_VISIVA`, se valorizzato, forza
+  lo stesso per tutti (collaudi, un fornitore da togliere di mezzo).
+  DeepSeek non legge i PDF, quindi le pagine gli arrivano in PNG a 150 dpi,
+  una per chiamata (`worker/ingestion/rasterizza.ts`) — la variante promossa
+  dal collaudo del 12/09 in `PIANO-ARCHIVIO-UNIPOL.md`; le mezze pagine a 220
+  dpi erano state scartate. Sonnet e Opus leggono il PDF a blocchi di dieci.
+  Misura sulle stesse otto pagine AXA, confrontate col testo del PDF:
+  Sonnet 0,0172 $ a pagina senza errori di contenuto, DeepSeek 0,0033 $ con
+  una parola sbagliata («risultati» per «risulti»), Opus 0,0429 $.
 - **Blocchi da dieci pagine** (`worker/ingestion/gestore.ts`), non venti: chi
   trascrive a lungo comincia a riassumere, e ogni blocco è una chiamata a sé,
-  cioè un contesto fresco. Le regole con cui si guarda una pagina
+  cioè un contesto fresco. Quante pagine stiano in una chiamata lo dichiara
+  però il convertitore, non il gestore: dieci a chi legge il PDF, una a chi
+  guarda immagini. Le regole con cui si guarda una pagina
   (`REGOLE_TRASCRIZIONE`) sono quelle della skill, parola per parola: ordine
   di lettura delle due colonne dei DIP, testo dentro figure e box,
   sillabazione ricomposta, mai `#`, icone non trascritte.
@@ -485,6 +507,24 @@ deterministica come fonte.
 ~2 $ per un privato di 40 pagine, da ~1,10 $ a ~7,50 $ per un set pubblico di
 150. Una volta sola per documento, contro una citazione sbagliata che si
 eredita per sempre.
+
+**E dal 19/09/2026 si può finalmente vedere**: l'ingestion scrive in
+`velia.consumi` con origine `ingestion` (`worker/consumi.ts`), una riga per
+modello, il costo al listino — `contratto/modelli.ts` porta anche quello di
+Anthropic, perché qui non c'è l'Agent SDK a dichiararlo. La colonna
+`origine` prevedeva `'ingestion'` dalla prima migrazione e non era mai stata
+scritta: la voce più cara della piattaforma era l'unica che nessuno poteva
+misurare. Il contatore vive un job e si attacca alle chiamate con
+`AsyncLocalStorage`, così nessun ramo può dimenticarselo; si scrive anche se
+il job fallisce a metà, e se la scrittura dei conti non riesce non porta giù
+il documento. Misura del giro completo su otto pagine AXA (19/09/2026):
+0,0033 $ a pagina di trascrizione DeepSeek contro 0,0429 $ di Opus, e
+0,0211 $ a pagina di secondo sguardo su Opus — **per i tenant su Avanzato il
+controllore è la voce cara**, il che rende `TESTIMONI_PAROLE_TOLLERATE` il
+numero che decide il conto. Un falso allarme da togliere: i PDF che stampano
+il segno meno come U+2010 fanno segnalare la pagina per numeri «persi» che
+non lo sono (la tokenizzazione riconduce al trattino solo – e —), e ogni
+segnalazione è un secondo sguardo pagato.
 
 ### ⛔ Crediti (pricing) — **rimossi** (01/09/2026); costruiti il 25/08, fuori dalle fasi
 

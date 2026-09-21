@@ -51,6 +51,26 @@ export function promptBlocco(paginaIniziale: number, pagineTotali: number): stri
 }
 
 /**
+ * Lo stesso prompt per chi le pagine le riceve **come immagini**: non c'è
+ * nessun PDF allegato da cui dedurre dove comincia e dove finisce una
+ * pagina, quindi glielo si dice — un'immagine, una pagina, nell'ordine.
+ */
+export function promptBloccoImmagini(
+  paginaIniziale: number,
+  pagineTotali: number,
+  quante: number,
+): string {
+  const finale = paginaIniziale + quante - 1;
+  return (
+    `Trascrivi in Markdown ${quante === 1 ? "l'immagine allegata" : `le ${quante} immagini allegate`}: ` +
+    `${quante === 1 ? 'è una pagina' : 'sono pagine consecutive'} di un documento di ${pagineTotali} pagine, ` +
+    `${quante === 1 ? `la pagina ${paginaIniziale}` : `dalla ${paginaIniziale} alla ${finale}`} del PDF complessivo. ` +
+    `Un'immagine è una pagina intera: niente va cercato altrove. ` +
+    `Numera le ancore [pag. N] di conseguenza (la prima è [pag. ${paginaIniziale}]).`
+  );
+}
+
+/**
  * L'header di ogni documento convertito — il formato che il back-office
  * (`carica-archivio.mjs`) sa leggere e da cui estrae i metadati.
  */

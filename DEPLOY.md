@@ -56,7 +56,10 @@ Un'immagine sola (`be-node/Dockerfile`) e **due servizi** dallo stesso repo: il 
    | `DATABASE_URL` | pooler Supabase in **modalità sessione** (porta 5432) | il worker usa LISTEN/NOTIFY: non il transaction pooler |
    | `ANTHROPIC_API_KEY` | chiave Anthropic | segreto |
    | `HOSTYOURAI_API_KEY` | chiave HostYourAI (`hyai-…`) | opzionale: senza, GLM/Kimi restano schede |
-   | `DEEPSEEK_API_KEY` | chiave DeepSeek (`sk-…`) | opzionale: senza, il livello Avanzato si vede ma non si sceglie. Server in Cina: i documenti escono dall'UE |
+   | `DEEPSEEK_API_KEY` | chiave DeepSeek (`sk-…`) | serve al livello Avanzato: sull'api lo rende selezionabile, sul worker fa rispondere la chat **e dal 21/09/2026 trascrive i documenti** dei tenant su Avanzato. Senza, quei documenti finiscono in errore (gli altri no). Server in Cina: i documenti escono dall'UE |
+   | `MODELLO_LETTURA_VISIVA` | vuoto | di norma vuoto: chi trascrive segue il livello del tenant (Medio Sonnet, Avanzato DeepSeek, Boost Opus). Valorizzato forza lo stesso modello per tutti: `claude-opus-5` riporta tutto su Anthropic |
+   | `MODELLO_INGESTION` | `claude-opus-5` | default; chi classifica e chi ricontrolla le pagine segnalate |
+   | `TESTIMONI_PAROLE_TOLLERATE` | `5` | default; quante parole di scarto i testimoni lasciano passare prima del secondo sguardo |
    | `RESEND_API_KEY` | chiave Resend (`re_…`) | opzionale: senza, «Invia email» risponde 503 in produzione (in locale l'invio è simulato nel log) |
    | `EMAIL_MITTENTE` | `Velia <noreply@sonovelia.it>` | default; il dominio va verificato su Resend |
    | `MISTRAL_API_KEY` | chiave Mistral | opzionale: senza, la dettatura nel composer risponde 503 |
@@ -135,7 +138,7 @@ Prova dal locale: `npx tsx tools/collaudo-elaborata.ts pdf "<istruzioni>" [templ
 - **Segreti**: solo nelle variabili della piattaforma (Render/Railway), mai nell'immagine né nel repo. `.env` resta locale.
 - **CORS**: l'API accetta solo le origini in `CORS_ORIGINI`. Il token viaggia in `Authorization`, non nei cookie.
 - **Costi**, per ambiente: Render Starter (7 $) per l'API + Standard (25 $) per il worker + disco (~1 $) + Pro (4 GB, ~85 $) per la sandbox; il sito statico è gratis; in produzione Supabase Pro (25 $). I costi AI sono in `velia.consumi`, per tenant.
-- **Residenza dei dati**: Render Francoforte e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte); DeepSeek, se la chiave c'è, in Cina.
+- **Residenza dei dati**: Render Francoforte e Supabase in UE; Opus via API Anthropic diretta passa dagli USA (vedi la nota nel piano su Bedrock Francoforte); **DeepSeek, in Cina, vede la chat e ogni pagina dei documenti caricati dai tenant sul livello Avanzato** (dal 21/09/2026 la trascrizione segue il livello: chi resta su Medio o Boost non manda niente in Cina). È una scelta dell'agenzia, e la scheda del livello deve dirlo; appena c'è un instradamento europeo si cambia il modello dietro ad Avanzato in `contratto/modelli.ts`. Da sistemare prima della produzione: sub-responsabile nel registro dei trattamenti e informativa alle agenzie.
 - **Aggiornare**: push su `develop` → dev, push su `main` → produzione. Le migrazioni prima, a mano, su **ciascuno** dei due progetti Supabase.
 
 ---

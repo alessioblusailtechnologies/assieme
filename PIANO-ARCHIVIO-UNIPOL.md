@@ -432,10 +432,22 @@ che cambiano senso («congiunti» → «coniugi», «Indennizzo» → «Indennit
 «e» → «o»), refusi dello stampato normalizzati. Sono tutti errori che il
 testimone `--stretto` vede.
 
-**Proposta al committente, non ancora approvata**: DeepSeek trascrive le
-pagine mancanti, Claude fa solo il secondo sguardo sulle segnalate. Se
-approvata, il costo dei passi 2, 3 e 4 crolla. Se no, si va a occhio come
-finora.
+**Approvata dal committente il 19/09/2026, e portata nel prodotto**: DeepSeek
+trascrive, Claude fa solo il secondo sguardo sulle segnalate. Nel prodotto
+vale per i tenant sul livello Avanzato: dal 21/09 la trascrizione segue il
+livello scelto nelle Impostazioni (vedi `VELIA-piano-sviluppo-be.md`
+§Ingestion visiva). Per i lotti in sessione la proposta resta questa.
+
+Misura del giro completo su otto pagine di un set AXA, col prodotto vero e
+confrontata col testo del PDF: trascrizione 0,0033 $ a pagina contro 0,0429 $
+di Opus (tredici volte meno), tutti i numeri giusti. L'unico errore di
+contenuto è lo scarto di una parola sola — «l'abilitazione alla guida
+risultati scaduta» per «risulti scaduta» — e i testimoni non lo prendono,
+perché la tolleranza è cinque parole: ora è `TESTIMONI_PAROLE_TOLLERATE`, e
+abbassarla è la manopola per comprare certezza pagando secondi sguardi.
+Sulla tabella bonus/malus a due colonne i testimoni hanno segnalato la
+pagina per un falso allarme: il PDF stampa i segni meno come U+2010, che la
+tokenizzazione non riconduce al trattino.
 
 ## Decisioni prese, da non rimettere in discussione
 

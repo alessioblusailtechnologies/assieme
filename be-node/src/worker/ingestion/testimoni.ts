@@ -22,7 +22,19 @@ import { configurazione } from '../../config.js';
 
 /** Una riga di bordo che torna su tante pagine è cornice, non contenuto. */
 const PAGINE_DECORAZIONE = 3;
-/** Qualche parola di scarto è rumore (sillabazioni, simboli); oltre, è un buco. */
+/**
+ * Qualche parola di scarto è rumore (sillabazioni, simboli); oltre, è un buco.
+ *
+ * Quanto si può alzare l'asticella dipende da chi trascrive, ed è per questo
+ * che si passa da fuori (`TESTIMONI_PAROLE_TOLLERATE`). Misura del
+ * 19/09/2026, otto pagine di un set AXA confrontate col testo del PDF:
+ * DeepSeek, Sonnet e Opus hanno tutti i numeri. L'unico errore di contenuto
+ * è di DeepSeek ed è lo scarto di una parola sola — «l'abilitazione alla
+ * guida risultati scaduta» per «risulti scaduta» — che con cinque di
+ * tolleranza passa senza secondo sguardo. Abbassare la
+ * soglia manda più pagine al secondo sguardo, che è la voce cara: a 0 si
+ * paga la certezza, a 5 si paga poco e si accetta il refuso.
+ */
 const PAROLE_TOLLERATE = 5;
 /** Sotto questa soglia pdfjs non ha visto abbastanza per fare da testimone. */
 const CARATTERI_MINIMI = 40;
@@ -237,7 +249,10 @@ export interface PaginaDaGiudicare {
  *          tolleranza: la pagina va al secondo sguardo;
  * `ok`     nessuno scarto che conti.
  */
-export function giudica(pagine: PaginaDaGiudicare[]): GiudizioPagina[] {
+export function giudica(
+  pagine: PaginaDaGiudicare[],
+  paroleTollerate: number = PAROLE_TOLLERATE,
+): GiudizioPagina[] {
   const cornice = riconosciCornice(pagine);
 
   return pagine.map((p): GiudizioPagina => {
@@ -294,7 +309,7 @@ export function giudica(pagine: PaginaDaGiudicare[]): GiudizioPagina[] {
 
     let esito: EsitoPagina = 'ok';
     if (numeriCerti.length) esito = 'certo';
-    else if (numeriDubbi.length || paroleDistinte > PAROLE_TOLLERATE) esito = 'guarda';
+    else if (numeriDubbi.length || paroleDistinte > paroleTollerate) esito = 'guarda';
 
     const note: string[] = [];
     if (cieco) note.push('pdfjs cieco: giudica il solo OCR');
@@ -302,7 +317,7 @@ export function giudica(pagine: PaginaDaGiudicare[]): GiudizioPagina[] {
     if (p.ocr?.confidenza !== undefined) note.push(`conf. OCR ${p.ocr.confidenza.toFixed(2)}`);
     if (numeriCerti.length) note.push(`numeri certi: ${numeriCerti.slice(0, 10).join(' ')}`);
     if (numeriDubbi.length) note.push(`numeri da un solo testimone: ${numeriDubbi.slice(0, 10).join(' ')}`);
-    if (paroleDistinte > PAROLE_TOLLERATE) {
+    if (paroleDistinte > paroleTollerate) {
       note.push(`${paroleDistinte} parole perse: ${[...new Set(parolePerse)].slice(0, 12).join(' ')}`);
     }
     return { pagina: p.pagina, esito, note };

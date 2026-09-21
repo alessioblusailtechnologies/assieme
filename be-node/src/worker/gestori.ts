@@ -8,11 +8,12 @@ import { trascrittoreDallaConfigurazione } from '../trascrizione/voxtral.js';
 import { SceglitoreModello } from './archivio/modelli.js';
 import { creaGestoreAgenti } from './agenti/gestore.js';
 import type { Job } from './coda.js';
+import { contando, ContatoreConsumi, registraConsumi } from './consumi.js';
 import { emettiEvento } from './eventi.js';
 import { ArchivioStorage } from './ingestion/archivio-file.js';
 import { ClassificatoreModello } from './ingestion/classificatore.js';
 import { SecondoSguardoModello } from './ingestion/secondo-sguardo.js';
-import { ConvertitoreModello } from './ingestion/convertitore.js';
+import { ConvertitoreModello, TrascrittoriPerModello } from './ingestion/convertitore.js';
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { EstrattoreMotore } from './memoria/estrattore.js';
 import { creaGestoreMemoria } from './memoria/gestore.js';
@@ -161,11 +162,21 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
          Mistral quei documenti finiscono in errore, e il messaggio lo dice. */
       const avviatore = sandboxDocumentale(c)?.avviatore;
       const trascrittore = trascrittoreDallaConfigurazione();
+      /* Chi guarda le pagine segue il livello del tenant (21/09/2026: Medio
+         Sonnet, Avanzato DeepSeek, Boost Opus); chi le ricontrolla e chi le
+         classifica resta `MODELLO_INGESTION` per tutti. Il secondo sguardo
+         guarda sempre in un contesto separato da chi ha scritto. */
+      const trascrittori = new TrascrittoriPerModello({
+        forzato: c.MODELLO_LETTURA_VISIVA,
+        predefinito: c.MODELLO_MOTORE,
+      });
       ingestionVera = creaGestoreIngestion({
-        convertitore: new ConvertitoreModello(),
+        convertitore: trascrittori.per(undefined),
+        convertitorePer: (modelloTenant) => trascrittori.per(modelloTenant),
         convertitoreRapido: new ConvertitoreModello(c.MODELLO_INGESTION_RAPIDA),
         classificatore: new ClassificatoreModello(),
         secondoSguardo: new SecondoSguardoModello(),
+        paroleTollerate: c.TESTIMONI_PAROLE_TOLLERATE,
         archivio: new ArchivioStorage(),
         /* La domanda breve dell'intestazione. Gira sul modello economico
            (`MODELLO_INGESTION_RAPIDA`) perché è una scelta fra alternative
@@ -181,7 +192,15 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
         }),
       });
     }
-    await ingestionVera(job, strumenti);
+    /* I consumi dell'ingestion (RF-F-03): si contano qui, dove il job è
+       ancora tutto intero, e si scrivono comunque — un job fallito a metà ha
+       speso i token che ha speso. */
+    const contatore = new ContatoreConsumi();
+    try {
+      await contando(contatore, () => ingestionVera!(job, strumenti));
+    } finally {
+      await registraConsumi(strumenti.db, job.tenant_id, job.id, contatore);
+    }
   },
 
   /** Fase 3: il motore agentico (Agent SDK) sulla workspace del tenant. */

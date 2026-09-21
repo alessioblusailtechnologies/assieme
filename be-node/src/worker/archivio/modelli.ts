@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { configurazione } from '../../config.js';
 import type { Sceglitore } from '../../archivio/clienti.js';
+import { segnaUso } from '../consumi.js';
 
 /**
  * La domanda breve che l'ingestion fa al modello, e nessuna di più.
@@ -30,12 +31,14 @@ function modello(): string {
 }
 
 async function chiedi(system: string, testo: string, maxTokens = 300): Promise<string> {
+  const sdk = modello();
   const risposta = await client().messages.create({
-    model: modello(),
+    model: sdk,
     max_tokens: maxTokens,
     system,
     messages: [{ role: 'user', content: testo }],
   });
+  segnaUso(sdk, risposta.usage);
   return risposta.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map((b) => b.text)

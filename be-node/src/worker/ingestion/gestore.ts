@@ -19,6 +19,7 @@ import { leggiDocumento } from './lettura-visiva.js';
 import { contaPagine } from './pdf.js';
 import { ePngOJpeg, riconosciFormato } from './riconoscimento.js';
 import { mimeDi } from '../../contratto/formati.js';
+import { modelloDelTenant } from '../../contratto/modelli.js';
 import type { FormatoDocumento } from '../../contratto/documenti-privati.js';
 import { risolviCliente, type Sceglitore } from '../../archivio/clienti.js';
 import { etichetteDaAggiungere, etichetteProposte } from '../../archivio/etichette.js';
@@ -43,7 +44,14 @@ const PAGINE_PER_BLOCCO = 10;
 const PAGINE_PER_BLOCCO_RAPIDO = 20;
 
 export interface DipendenzeIngestion {
+  /** Chi trascrive quando non c'è una scelta per modello (i test, i pubblici senza tenant). */
   convertitore: Convertitore;
+  /**
+   * Chi trascrive per il modello del livello del tenant (21/09/2026);
+   * `undefined` = il tenant non ha scelto, e vale il default di piattaforma.
+   * Assente, trascrive sempre `convertitore`.
+   */
+  convertitorePer?: (modelloTenant: string | undefined) => Convertitore;
   archivio: ArchivioFile;
   /** Il passo 3 (classificazione): opzionale — senza, la proposta resta quella dell'upload. */
   classificatore?: Classificatore;
@@ -57,6 +65,12 @@ export interface DipendenzeIngestion {
   convertitoreRapido?: Convertitore;
   pagineNelBlocco?: number;
   pagineNelBloccoRapido?: number;
+  /**
+   * La sensibilità dei testimoni (`TESTIMONI_PAROLE_TOLLERATE`): quante
+   * parole di scarto lasciano passare prima di mandare una pagina al secondo
+   * sguardo. Conta da quando a trascrivere non è più il modello di casa.
+   */
+  paroleTollerate?: number | undefined;
   /* Il passo 3b, l'intestazione al cliente. Opzionale: senza `sceglitore`
      un contraente ambiguo non diventa un cliente, e il documento resta
      senza cliente — pronto, cercabile e citabile come tutti gli altri. */
@@ -216,6 +230,9 @@ interface RigaDaConvertire {
   percorso_origine: string | null;
   etichette: string[] | null;
   caricato_il: Date | null;
+  /* Il livello del tenant proprietario (RF-D-02): dal 21/09/2026 decide
+     anche chi trascrive. Null per i pubblici e per chi non ha scelto. */
+  modello_motore: string | null;
 }
 
 /**
@@ -231,8 +248,10 @@ interface RigaDaConvertire {
  * arrivo del messaggio riconverte e sovrascrive lo stesso .md.
  */
 export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
-  const pagineNelBlocco = dipendenze.pagineNelBlocco ?? PAGINE_PER_BLOCCO;
-  const pagineNelBloccoRapido = dipendenze.pagineNelBloccoRapido ?? PAGINE_PER_BLOCCO_RAPIDO;
+  const pagineNelBloccoRapido =
+    dipendenze.pagineNelBloccoRapido ??
+    dipendenze.convertitoreRapido?.pagineNelBlocco ??
+    PAGINE_PER_BLOCCO_RAPIDO;
 
   return async function gestisciIngestion(job: Job, strumenti: { db: pg.Pool }): Promise<void> {
     const { db } = strumenti;
@@ -250,15 +269,29 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
               d.formato, d.path_originale, d.path_pdf, d.path_md, d.edizione_valida_dal,
               d.classificazione_da_confermare, c.nome as compagnia_nome,
               r.nome as ramo_nome, d.cliente_id, d.percorso_origine, d.etichette,
-              d.caricato_il
+              d.caricato_il, t.modello_motore
        from velia.documenti d
        left join velia.compagnie c on c.id = d.compagnia_id
        left join velia.rami r on r.id = d.ramo_id
+       left join velia.tenant t on t.id = d.tenant_id
        where d.id = $1`,
       [documentoId],
     );
     const documento = righe.rows[0];
     if (!documento) throw new Error(`documento ${documentoId} inesistente`);
+
+    /* Chi trascrive (21/09/2026): il modello del livello che il tenant ha
+       scelto nelle Impostazioni, come per la chat. Un'agenzia che resta su
+       Medio o su Boost non vede i suoi documenti uscire dall'UE perché la
+       piattaforma ha deciso di risparmiare; la lettura rapida resta sua. */
+    const convertitore = rapido
+      ? (dipendenze.convertitoreRapido ?? dipendenze.convertitore)
+      : (dipendenze.convertitorePer?.(modelloDelTenant(documento.modello_motore)) ?? dipendenze.convertitore);
+    /* Quante pagine per chiamata lo sa chi trascrive: dieci a chi legge il
+       PDF, una a chi guarda immagini. La configurazione esplicita vince. */
+    const pagineNelBloccoScelte = rapido
+      ? pagineNelBloccoRapido
+      : (dipendenze.pagineNelBlocco ?? convertitore.pagineNelBlocco ?? PAGINE_PER_BLOCCO);
     /* `path_originale` è il file com'è stato caricato; sui documenti di
        prima del 01/09/2026 non c'è, ed erano tutti PDF. */
     const originale = documento.path_originale ?? documento.path_pdf;
@@ -347,10 +380,11 @@ export function creaGestoreIngestion(dipendenze: DipendenzeIngestion) {
            trascrizione e pagina non coincidono, il secondo sguardo torna solo
            su quelle. È il motore della skill `/ingest-visivo`. */
         const lettura = await leggiDocumento(pdf, totale, {
-          convertitore: (rapido ? dipendenze.convertitoreRapido : undefined) ?? dipendenze.convertitore,
+          convertitore,
           ...(!rapido && dipendenze.secondoSguardo && { secondoSguardo: dipendenze.secondoSguardo }),
           senzaTestimoni: rapido,
-          pagineNelBlocco: rapido ? pagineNelBloccoRapido : pagineNelBlocco,
+          paroleTollerate: dipendenze.paroleTollerate,
+          pagineNelBlocco: pagineNelBloccoScelte,
           avanzamento: async (a) => {
             await emettiEvento(db, job.id, 'ingestion-avanzamento', {
               documentoId,

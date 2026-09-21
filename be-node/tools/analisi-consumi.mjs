@@ -66,6 +66,39 @@ await q(
 );
 
 await q(
+  'Ingestion: costo per documento e per pagina',
+  `with per_job as (
+     select c.job_id, sum(c.costo_usd) as costo,
+            min(j.payload->>'documentoId') as documento_id
+       from velia.consumi c
+       join velia.jobs j on j.id = c.job_id
+      where c.created_at > now() - ($1 || ' days')::interval and c.origine = 'ingestion'
+      group by c.job_id)
+   select count(*) as documenti,
+          sum(d.numero_pagine) as pagine,
+          round(sum(p.costo), 2) as costo_usd,
+          round((sum(p.costo) / nullif(sum(d.numero_pagine), 0))::numeric, 5) as usd_a_pagina,
+          round(avg(p.costo)::numeric, 4) as medio_documento_usd,
+          round(max(p.costo), 3) as max_documento_usd
+     from per_job p
+     left join velia.documenti d on d.id = p.documento_id`,
+  [giorni],
+);
+
+await q(
+  'Ingestion: quanto pesa chi trascrive e quanto chi controlla',
+  `select modello,
+          count(*) as chiamate,
+          round(sum(costo_usd), 2) as costo_usd,
+          round(100 * sum(costo_usd) / nullif(sum(sum(costo_usd)) over (), 0), 1) as pct
+     from velia.consumi
+    where created_at > now() - ($1 || ' days')::interval and origine = 'ingestion'
+    group by modello
+    order by sum(costo_usd) desc`,
+  [giorni],
+);
+
+await q(
   'I 10 messaggi piu cari',
   `select c.job_id,
           round(sum(c.costo_usd), 3) as costo_usd,

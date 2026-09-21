@@ -105,6 +105,19 @@ const GATEWAY_ANTHROPIC = {
 } as const;
 
 /**
+ * Vero dove `input_tokens` comprende già i token serviti dalla cache. Chi
+ * somma i due contatori per contare i consumi deve saperlo, o su quel
+ * fornitore paga la cache due volte (misurato il 09/09/2026: 1,28 $
+ * dichiarati contro 0,44 $ veri). Oggi lo fa solo AKI.IO.
+ */
+export function usiInclusiviDi(sdk: string): boolean {
+  const fornitore = vocePerSdk(sdk)?.fornitore;
+  return fornitore !== undefined && fornitore in GATEWAY_ANTHROPIC
+    ? GATEWAY_ANTHROPIC[fornitore as keyof typeof GATEWAY_ANTHROPIC].usiInclusivi
+    : false;
+}
+
+/**
  * Chi parla il dialetto OpenAI, e in che cosa differisce. Sono le due
  * differenze viste dal vivo il 09/09/2026, non un'astrazione preventiva.
  */
@@ -144,18 +157,8 @@ export async function dimenticaAdattatori(): Promise<void> {
 }
 
 /**
- * Il costo di una sessione su un fornitore terzo, al listino del catalogo.
- * L'input ripetuto che il fornitore serve dalla cache ha un prezzo suo
- * (Mistral: un decimo); dove la cache non esiste — HostYourAI non ne fa —
- * i contatori stanno a zero e non cambia niente.
+ * Il costo di una sessione al listino del catalogo. Vive col listino
+ * (`contratto/modelli.ts`), perché dal 19/09/2026 non lo usa più solo il
+ * motore: anche l'ingestion, che chiama l'API diretta, si paga di lì.
  */
-export function costoATariffa(
-  token: { input: number; output: number; cacheLettura: number; cacheScrittura: number },
-  tariffa: Tariffa,
-): number {
-  const inCache = token.cacheLettura + token.cacheScrittura;
-  const usd =
-    (token.input * tariffa.input + inCache * (tariffa.cache ?? tariffa.input) + token.output * tariffa.output) /
-    1_000_000;
-  return Math.round(usd * 1e6) / 1e6;
-}
+export { costoATariffa } from '../../contratto/modelli.js';

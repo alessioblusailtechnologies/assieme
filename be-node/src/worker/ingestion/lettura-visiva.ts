@@ -67,6 +67,12 @@ export interface DipendenzeLettura {
    * secondo sguardo, che dai testimoni prende le pagine.
    */
   senzaTestimoni?: boolean;
+  /**
+   * Quante parole di scarto i testimoni tollerano prima di segnalare una
+   * pagina (`TESTIMONI_PAROLE_TOLLERATE`). Assente, vale la misura della
+   * skill.
+   */
+  paroleTollerate?: number | undefined;
   /** Per il log del job e la barra di avanzamento. */
   avanzamento?: (a: AvanzamentoLettura) => Promise<void>;
 }
@@ -118,7 +124,7 @@ export async function leggiDocumento(
   }
 
   const correzioni: string[] = [];
-  let giudizi = valuta(pagine, pdfjs, ocr, totale);
+  let giudizi = valuta(pagine, pdfjs, ocr, totale, dipendenze.paroleTollerate);
 
   if (dipendenze.secondoSguardo) {
     let campionate = [...campione(totale), ...daOcr];
@@ -152,7 +158,7 @@ export async function leggiDocumento(
       campionate = [];
       if (!corretteQuesteVolta) break;
       /* Qualcosa è cambiato: i testimoni rileggono, come nella skill. */
-      giudizi = valuta(pagine, pdfjs, ocr, totale);
+      giudizi = valuta(pagine, pdfjs, ocr, totale, dipendenze.paroleTollerate);
     }
   }
 
@@ -164,6 +170,7 @@ function valuta(
   pdfjs: Awaited<ReturnType<typeof leggiConPdfjs>>,
   ocr: LetturaOcr[] | undefined,
   totale: number,
+  paroleTollerate?: number,
 ): GiudizioPagina[] {
   return giudica(
     Array.from({ length: totale }, (_, i) => ({
@@ -172,6 +179,7 @@ function valuta(
       pdfjs: pdfjs[i] ?? { testo: '', righe: [], caratteri: 0 },
       ocr: ocr?.[i],
     })),
+    paroleTollerate,
   );
 }
 
@@ -221,12 +229,16 @@ async function trascriviTutto(
   const pagine: string[] = new Array<string>(totale);
   const rifiutate = new Set<number>();
   const daFare = blocchiDi(totale, dipendenze.pagineNelBlocco);
+  /* Quante chiamate insieme lo dice chi trascrive: a pagina singola i blocchi
+     sono dieci volte tanti, e tenerne in volo tre soli allungherebbe di
+     altrettanto l'attesa di un documento. */
+  const insieme = dipendenze.convertitore.blocchiInsieme ?? BLOCCHI_INSIEME;
   let fatte = 0;
 
   /* I blocchi corrono a gruppi: ognuno è una chiamata indipendente, e
      l'ordine in cui tornano non conta — ognuno scrive le sue pagine. */
-  for (let i = 0; i < daFare.length; i += BLOCCHI_INSIEME) {
-    const gruppo = daFare.slice(i, i + BLOCCHI_INSIEME);
+  for (let i = 0; i < daFare.length; i += insieme) {
+    const gruppo = daFare.slice(i, i + insieme);
     await Promise.all(
       gruppo.map(async ([da, a]) => {
         await trascriviBlocco(pdf, da, a, totale, pagine, rifiutate, dipendenze);
