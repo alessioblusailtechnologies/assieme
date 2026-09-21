@@ -14,6 +14,9 @@ RUN npm ci --no-audit --no-fund
 COPY tsconfig.json ./
 COPY src ./src
 COPY test ./test
+# Il contatore dei giri della sandbox (sandbox/giri.mjs) si prova dai test,
+# che la build compila: senza, tsc non trova il modulo e il deploy fallisce.
+COPY sandbox/giri.mjs sandbox/giri.d.mts ./sandbox/
 RUN npm run build
 
 # ---------- runtime: solo produzione ----------
