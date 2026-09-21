@@ -10,7 +10,7 @@ import type {
   PropostaArchivio,
 } from '../../contratto/conversazioni.js';
 import { inviaEmailDellAgente } from '../agenti/email.js';
-import { modelloDelLivello, modelloDelTenant, servitoDaAnthropic } from '../../contratto/modelli.js';
+import { modelloDelLivello, modelloDelTenant } from '../../contratto/modelli.js';
 import { trascriviConversazione, type MessaggioDaTrascrivere } from '../../generazione/filo.js';
 import { eseguiEsportazioneElaborata, type OpzioniSessioneDocumentale } from '../sandbox/esportazione.js';
 import type { AvviatoreSandbox } from '../sandbox/sandbox.js';
@@ -325,9 +325,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
                 istruzioni: r.istruzioni,
                 contenuto: r.contenuto,
                 titolo: r.titolo,
-                /* La sandbox ha solo la chiave Anthropic: un livello servito
-                   da un fornitore terzo lì usa il modello suo. */
-                modello: modelloTurno && servitoDaAnthropic(modelloTurno) ? modelloTurno : undefined,
+                /* Il livello scelto vale anche qui (21/09/2026): con «Avanzato»
+                   il documento lo scrive DeepSeek, come la risposta. Dove la
+                   sandbox non arriva, decide `modelloSandbox`. */
+                modello: modelloTurno,
               },
             );
             await registraConsumi(db, tenantId, job.id, e.esito, origineConsumi);

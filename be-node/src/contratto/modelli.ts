@@ -206,11 +206,7 @@ export function modelloDelLivello(livelloId: string | undefined): string | undef
   return livelloId ? LIVELLI.find((l) => l.id === livelloId)?.sdk : undefined;
 }
 
-/**
- * Vero per i modelli che si chiamano da Anthropic. La sandbox documentale
- * gira con la sola chiave Anthropic, dietro al suo proxy: un modello di un
- * fornitore terzo lì dentro non parte.
- */
+/** Vero per i modelli che si chiamano da Anthropic. */
 export function servitoDaAnthropic(sdk: string): boolean {
   return fornitoreDi(sdk) === 'anthropic';
 }

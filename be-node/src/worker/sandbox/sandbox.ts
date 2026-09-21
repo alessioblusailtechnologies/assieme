@@ -10,8 +10,9 @@ import { promisify } from 'node:util';
  * stream della sessione, ritira i documenti consegnati e la distrugge.
  *
  * Nel container entrano solo il token del job e la chiave Anthropic della
- * sandbox (dedicata, con tetto di spesa): il runner la tiene dietro un
- * proxy locale, il modello non la vede. Niente database, niente Storage.
+ * sandbox (dedicata, con tetto di spesa), più quella di DeepSeek dal
+ * 21/09/2026 per il livello «Avanzato»: il runner le tiene dietro un proxy
+ * locale, il modello non le vede. Niente database, niente Storage.
  */
 
 const eseguiFile = promisify(execFile);
@@ -29,10 +30,19 @@ export interface VoceSandbox {
   dir: boolean;
 }
 
+/** I fornitori che il proxy della sandbox sa raggiungere (21/09/2026). */
+export type FornitoreSandbox = 'anthropic' | 'deepseek';
+
 export interface ParametriSessione {
   promptSistema: string;
   promptUtente: string;
   modello: string;
+  /** Chi serve `modello`: il proxy della sandbox ci instrada la CLI. Assente: Anthropic. */
+  fornitore?: FornitoreSandbox;
+  /** Il modello Anthropic su cui ripiegare se la sandbox non ha la chiave di `fornitore`. */
+  ripiego?: string;
+  /** Quanti giri di controllo il runner concede (`sandbox/giri.mjs`); assente, cinque. */
+  maxGiri?: number;
   maxTurni?: number;
   budgetUsd?: number;
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
@@ -251,6 +261,8 @@ export class AvviatoreDocker implements AvviatoreSandbox {
   constructor(
     private readonly immagine: string,
     private readonly chiaveApi: string,
+    /** La chiave DeepSeek per il proxy, se il livello «Avanzato» deve girare anche qui (21/09/2026). */
+    private readonly chiaveDeepseek?: string,
   ) {}
 
   async avvia(jobId: string): Promise<SandboxAvviata> {
@@ -269,10 +281,18 @@ export class AvviatoreDocker implements AvviatoreSandbox {
           '--memory', '3g', '--cpus', '2',
           '-e', 'SANDBOX_TOKEN',
           '-e', 'ANTHROPIC_API_KEY',
+          ...(this.chiaveDeepseek ? ['-e', 'DEEPSEEK_API_KEY'] : []),
           '-p', '127.0.0.1:0:8080',
           this.immagine,
         ],
-        { env: { ...process.env, SANDBOX_TOKEN: token, ANTHROPIC_API_KEY: this.chiaveApi } },
+        {
+          env: {
+            ...process.env,
+            SANDBOX_TOKEN: token,
+            ANTHROPIC_API_KEY: this.chiaveApi,
+            ...(this.chiaveDeepseek && { DEEPSEEK_API_KEY: this.chiaveDeepseek }),
+          },
+        },
       );
     } catch (errore) {
       throw new Error(motivoDocker(errore, this.immagine), { cause: errore });
@@ -405,6 +425,8 @@ export interface OpzioniFly {
   immagine: string;
   regione: string;
   chiaveApi: string;
+  /** La chiave DeepSeek per il proxy (21/09/2026). */
+  chiaveDeepseek?: string;
   cpu?: number;
   memoriaMb?: number;
 }
@@ -431,7 +453,11 @@ export class AvviatoreFly implements AvviatoreSandbox {
       region: this.o.regione,
       config: {
         image: this.o.immagine,
-        env: { SANDBOX_TOKEN: token, ANTHROPIC_API_KEY: this.o.chiaveApi },
+        env: {
+          SANDBOX_TOKEN: token,
+          ANTHROPIC_API_KEY: this.o.chiaveApi,
+          ...(this.o.chiaveDeepseek && { DEEPSEEK_API_KEY: this.o.chiaveDeepseek }),
+        },
         guest: { cpu_kind: 'shared', cpus: this.o.cpu ?? 2, memory_mb: this.o.memoriaMb ?? 3072 },
         auto_destroy: true,
         restart: { policy: 'no' },

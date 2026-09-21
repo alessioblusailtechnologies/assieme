@@ -5,9 +5,12 @@
  * una richiesta, e si guarda cosa consegna, intestazione dell'agenzia
  * compresa. Senza API né coda.
  *
- *   npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-modello]
+ *   npx tsx tools/collaudo-elaborata.ts <pdf|docx|xlsx|pptx|modello> "Prepara una proposta di rinnovo RC Auto per il cliente Rossi …" [nome-modello] [--modello=deepseek-flash]
  *
- * `modello` come formato: quello del modello scelto.
+ * `modello` come formato: quello del modello scelto. `--modello=<sdk>` è il
+ * modello AI del livello (21/09/2026): con `deepseek-flash` la sandbox
+ * lavora su DeepSeek, attraverso il suo proxy. `--giri=<n>` abbassa il tetto dei
+ * giri di controllo, per vederlo scattare.
  *
  * Costa: una sessione documentale (da mezzo dollaro a un paio). I file
  * consegnati si salvano in local-ingestion/lavorazione e si tolgono dallo
@@ -27,9 +30,13 @@ import { eseguiEsportazioneElaborata } from '../src/worker/sandbox/esportazione.
 import { AvviatoreDocker, AvviatoreFly } from '../src/worker/sandbox/sandbox.js';
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
-const scelta = process.argv[2];
-const istruzioni = process.argv[3];
-const nomeModello = process.argv[4];
+const posizionali = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const scelta = posizionali[0];
+const istruzioni = posizionali[1];
+const nomeModello = posizionali[2];
+const modelloAi = process.argv.find((a) => a.startsWith('--modello='))?.slice('--modello='.length);
+/* `--giri=<n>` (21/09/2026): per vedere il runner fermare i controlli senza aspettare un documento difficile. */
+const giri = process.argv.find((a) => a.startsWith('--giri='))?.slice('--giri='.length);
 /* Qualsiasi formato tranne gli eseguibili (11/09/2026): pdf, docx, html, png, csv… o «modello» per quello del modello. */
 if (!scelta || !(scelta === 'modello' || consegnabile(scelta)) || !istruzioni) {
   console.error('Uso: npx tsx tools/collaudo-elaborata.ts <estensione|modello> "<istruzioni>" [nome-modello]');
@@ -41,7 +48,7 @@ const chiaveApi = c.ANTHROPIC_API_KEY_SANDBOX ?? c.ANTHROPIC_API_KEY ?? '';
 const avviatore =
   c.SANDBOX_AVVIATORE === 'fly' && c.FLY_API_TOKEN
     ? new AvviatoreFly({ token: c.FLY_API_TOKEN, app: c.FLY_APP_SANDBOX, immagine: c.SANDBOX_IMMAGINE, regione: c.FLY_REGIONE, chiaveApi })
-    : new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi);
+    : new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi, c.DEEPSEEK_API_KEY);
 console.log(`Sandbox: ${avviatore.nome} (${c.SANDBOX_IMMAGINE})`);
 
 const radice = await mkdtemp(join(tmpdir(), 'velia-collaudo-elab-'));
@@ -71,6 +78,7 @@ try {
         maxTurni: c.SANDBOX_MAX_TURNI,
         budgetUsd: c.SANDBOX_BUDGET_USD,
         ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+        ...(giri && { maxGiri: Number(giri) }),
       },
       workspace: ws,
       emetti: (evento) => {
@@ -80,7 +88,15 @@ try {
       },
       annullato: () => Promise.resolve(false),
     },
-    { tenantId: TENANT_DEMO, conversazioneId: '00000000-0000-4000-8000-00000000c021', jobId: 'collaudo-elab', formato, modelloId, istruzioni },
+    {
+      tenantId: TENANT_DEMO,
+      conversazioneId: '00000000-0000-4000-8000-00000000c021',
+      jobId: 'collaudo-elab',
+      formato,
+      modelloId,
+      istruzioni,
+      ...(modelloAi && { modello: modelloAi }),
+    },
   );
   percorsi = e.percorsi;
   const durata = (Date.now() - inizio) / 1000;

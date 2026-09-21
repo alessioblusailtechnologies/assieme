@@ -73,7 +73,12 @@ function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
   const chiaveApi = c.ANTHROPIC_API_KEY_SANDBOX ?? c.ANTHROPIC_API_KEY;
   if (!chiaveApi) return undefined;
   let avviatore: AvviatoreSandbox | undefined;
-  if (c.SANDBOX_AVVIATORE === 'docker') avviatore = new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi);
+  /* Col livello «Avanzato» la sandbox lavora con DeepSeek (21/09/2026): la
+     sua chiave entra nel proxy come quella Anthropic. Sul runner di Render
+     sta invece sul servizio. */
+  if (c.SANDBOX_AVVIATORE === 'docker') {
+    avviatore = new AvviatoreDocker(c.SANDBOX_IMMAGINE, chiaveApi, c.DEEPSEEK_API_KEY);
+  }
   /* Il runner fisso su Render (29/08/2026): la chiave Anthropic sta sul servizio, non passa da qui. */
   if (c.SANDBOX_AVVIATORE === 'render' && c.SANDBOX_URL && c.SANDBOX_TOKEN) {
     avviatore = new AvviatoreRemoto({ url: c.SANDBOX_URL, token: c.SANDBOX_TOKEN, attesaMs: c.SANDBOX_ATTESA_MS });
@@ -85,6 +90,7 @@ function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
       immagine: c.SANDBOX_IMMAGINE,
       regione: c.FLY_REGIONE,
       chiaveApi,
+      ...(c.DEEPSEEK_API_KEY && { chiaveDeepseek: c.DEEPSEEK_API_KEY }),
     });
   }
   if (!avviatore) return undefined;

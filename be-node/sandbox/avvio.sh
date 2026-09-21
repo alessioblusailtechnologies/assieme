@@ -37,17 +37,23 @@ else
 fi
 export SANDBOX_NETNS
 
-# Il proxy della chiave, con la chiave; poi la chiave sparisce dall'ambiente.
-if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
-  su -s /bin/sh proxy -c "ANTHROPIC_API_KEY='$ANTHROPIC_API_KEY' PORTA_PROXY=8787 exec node /opt/sandbox/proxy.mjs" >> "$LOG" 2>&1 &
-  SANDBOX_CHIAVE=1
-  nota "proxy: avviato"
+# Il proxy delle chiavi, con le chiavi; poi le chiavi spariscono dall'ambiente.
+# Dal 21/09/2026 anche DeepSeek: la sandbox segue il livello dell'agenzia.
+# SANDBOX_FORNITORI dice al runner chi il proxy sa raggiungere.
+SANDBOX_FORNITORI=""
+[ -n "${ANTHROPIC_API_KEY:-}" ] && SANDBOX_FORNITORI="anthropic"
+[ -n "${DEEPSEEK_API_KEY:-}" ] && SANDBOX_FORNITORI="$SANDBOX_FORNITORI deepseek"
+SANDBOX_FORNITORI=$(echo $SANDBOX_FORNITORI)
+if [ -n "$SANDBOX_FORNITORI" ]; then
+  su -s /bin/sh proxy -c "ANTHROPIC_API_KEY='${ANTHROPIC_API_KEY:-}' DEEPSEEK_API_KEY='${DEEPSEEK_API_KEY:-}' DEEPSEEK_BASE_URL='${DEEPSEEK_BASE_URL:-}' PORTA_PROXY=8787 exec node /opt/sandbox/proxy.mjs" >> "$LOG" 2>&1 &
+  nota "proxy: avviato per $SANDBOX_FORNITORI"
 else
-  SANDBOX_CHIAVE=0
   nota "proxy: nessuna chiave"
 fi
-unset ANTHROPIC_API_KEY
-export SANDBOX_CHIAVE
+# SANDBOX_CHIAVE resta per chi guarda /salute: è la chiave Anthropic.
+case " $SANDBOX_FORNITORI " in *" anthropic "*) SANDBOX_CHIAVE=1 ;; *) SANDBOX_CHIAVE=0 ;; esac
+unset ANTHROPIC_API_KEY DEEPSEEK_API_KEY
+export SANDBOX_CHIAVE SANDBOX_FORNITORI
 
 # Le skill Anthropic come skill di progetto della workspace.
 mkdir -p /lavoro/.claude/skills

@@ -55,6 +55,7 @@ RUN printf '#!/bin/sh\nexec /usr/bin/chromium --headless=new --no-sandbox --disa
     && chmod +x /usr/local/bin/chromium-headless
 
 COPY server.mjs /opt/sandbox/server.mjs
+COPY giri.mjs /opt/sandbox/giri.mjs
 COPY proxy.mjs /opt/sandbox/proxy.mjs
 COPY avvio.sh /opt/sandbox/avvio.sh
 COPY claude-lavoro /opt/sandbox/claude-lavoro

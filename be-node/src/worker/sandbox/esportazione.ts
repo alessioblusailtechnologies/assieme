@@ -12,16 +12,18 @@ import {
   type EventoStream,
 } from '../../contratto/conversazioni.js';
 import { consegnabile, mimeDi, timbrabile } from '../../contratto/formati.js';
+import { vocePerSdk } from '../../contratto/modelli.js';
 import { cartaPerSandbox } from '../../generazione/carta.js';
 import { fasceDelTenant, modelloPerId, type RigaModello } from '../../generazione/catalogo.js';
 import { NOME_DOCUMENTO } from '../../generazione/generatore.js';
 import type { FasceDocumento } from '../../generazione/intestazione.js';
 import { misureFasce, senzaFasce, timbra } from '../../generazione/timbra.js';
 import type { ArchivioFile } from '../ingestion/archivio-file.js';
+import { costoATariffa } from '../motore/fornitori.js';
 import { etichettaAttivita, type EsitoSessione } from '../motore/sessione.js';
 import type { Workspace } from '../motore/workspace.js';
 import { promptRichiesta, promptSandbox } from './istruzioni.js';
-import { Sandbox, type AvviatoreSandbox, type ParametriSessione } from './sandbox.js';
+import { Sandbox, type AvviatoreSandbox, type FornitoreSandbox, type ParametriSessione } from './sandbox.js';
 
 /**
  * «Genera da modello»: Claude Code dentro la sandbox documentale. Il worker
@@ -54,8 +56,27 @@ export interface RichiestaElaborata {
   /** Il contenuto di partenza (la risposta da esportare), se c'è. */
   contenuto?: string | undefined;
   titolo?: string | undefined;
-  /** Il modello AI della sessione, se il livello della chat ne chiede uno. */
+  /** Il modello AI della sessione: quello del livello scelto (in chat o nelle impostazioni). */
   modello?: string | undefined;
+}
+
+/**
+ * Chi lavora nella sandbox (21/09/2026): il modello del livello scelto
+ * dall'agenzia, come nella chat. Fino a oggi la sandbox aveva solo la chiave
+ * Anthropic, e col livello «Avanzato» (DeepSeek) un'esportazione girava su
+ * Opus, il modello di piattaforma: più cara di «Boost». Ora il suo proxy
+ * raggiunge anche DeepSeek. Gli altri fornitori terzi del banco non ci
+ * arrivano (parlano un altro dialetto, o nessun livello li usa): per loro,
+ * e senza una scelta, resta il modello di piattaforma.
+ */
+export function modelloSandbox(
+  scelto: string | undefined,
+  piattaforma: string,
+): { modello: string; fornitore: FornitoreSandbox } {
+  if (!scelto) return { modello: piattaforma, fornitore: 'anthropic' };
+  const fornitore = vocePerSdk(scelto)?.fornitore ?? 'anthropic';
+  if (fornitore === 'anthropic' || fornitore === 'deepseek') return { modello: scelto, fornitore };
+  return { modello: piattaforma, fornitore: 'anthropic' };
 }
 
 export interface OpzioniSessioneDocumentale {
@@ -63,6 +84,8 @@ export interface OpzioniSessioneDocumentale {
   maxTurni: number;
   budgetUsd: number;
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' | undefined;
+  /** I giri di controllo concessi; assente, quelli del runner (cinque). */
+  maxGiri?: number | undefined;
 }
 
 export interface DipendenzeElaborata {
@@ -161,10 +184,13 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
         ...(r.istruzioni && { istruzioni: r.istruzioni }),
         ...(r.contenuto && { contenuto: r.contenuto }),
       }),
-      modello: r.modello ?? dip.sessione.modello,
+      ...modelloSandbox(r.modello, dip.sessione.modello),
+      /* Se la sandbox non ha la chiave del fornitore, il runner ripiega qui. */
+      ripiego: dip.sessione.modello,
       maxTurni: dip.sessione.maxTurni,
       budgetUsd: dip.sessione.budgetUsd,
       ...(dip.sessione.effort && { effort: dip.sessione.effort }),
+      ...(dip.sessione.maxGiri && { maxGiri: dip.sessione.maxGiri }),
     };
 
     const controllo = new AbortController();
@@ -217,6 +243,12 @@ export async function eseguiEsportazioneElaborata(dip: DipendenzeElaborata, r: R
           await dip.emetti({ tipo: 'documento', documento });
         } else if (evento.tipo === 'fine') {
           esito = { ...evento.esito, documentiLetti: [] };
+          /* Un modello di un fornitore terzo non è nel listino dell'SDK: il
+             costo si rifà dai token alla tariffa del catalogo, come in chat.
+             Vale il modello che ha lavorato davvero, non quello chiesto: il
+             runner può aver ripiegato. */
+          const voce = vocePerSdk(esito.modello);
+          if (voce) esito = { ...esito, costoUsd: costoATariffa(esito.token, voce.tariffa) };
         }
       }
     } catch (errore) {

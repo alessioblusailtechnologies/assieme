@@ -9,14 +9,14 @@
  *   GET  /elenco?dir=…                        → [{ path, byte, dir }]
  *   PUT  /archivio?dir=…    corpo zip         → 204 (estratto con unzip)
  *   POST /esegui            { cmd, timeoutMs, cwd } → { stdout, stderr, codice, scaduto }
- *   POST /sessione          { promptSistema, promptUtente, modello, maxTurni, budgetUsd, effort }
+ *   POST /sessione          { promptSistema, promptUtente, modello, fornitore, ripiego, maxTurni, maxGiri, budgetUsd, effort }
  *                           → text/event-stream di { i, e }: e = attivita | testo | consegna | fine
  *   GET  /sessione/eventi?da=N                → lo stesso stream dal numero N (riaggancio)
  *   DELETE /sessione                          → annulla la sessione in corso
  *   POST /reset                               → svuota /lavoro fra un job e l'altro (409 con sessione in corso)
  *
- * Ogni richiesta porta il token del job in `x-velia-token`. La chiave
- * Anthropic non è qui: sta nel processo `proxy.mjs` (utente `proxy`, nel
+ * Ogni richiesta porta il token del job in `x-velia-token`. Le chiavi
+ * (Anthropic e, dal 21/09/2026, DeepSeek) non sono qui: stanno nel processo `proxy.mjs` (utente `proxy`, nel
  * namespace principale con la rete). La CLI e i comandi del modello girano
  * come utente `lavoro` nel namespace isolato, che raggiunge solo il proxy
  * su 10.200.0.1:8787 (vedi avvio.sh e claude-lavoro). Il runner è root.
@@ -31,10 +31,21 @@ import { basename, dirname, join, resolve, sep } from 'node:path';
 import { createSdkMcpServer, query, tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 
+import { contaGiri } from './giri.mjs';
+
 const PORTA = Number(process.env.PORT ?? process.env.PORTA ?? 8080);
 const PORTA_PROXY = 8787;
 const TOKEN = process.env.SANDBOX_TOKEN ?? '';
 const CHIAVE = process.env.SANDBOX_CHIAVE === '1';
+/*
+ * I fornitori che il proxy sa raggiungere (avvio.sh), dal 21/09/2026: la
+ * sandbox segue il livello scelto dall'agenzia, e con «Avanzato» il modello
+ * è di DeepSeek. Senza la variabile (un'immagine avviata a mano) vale la
+ * sola chiave Anthropic, come prima.
+ */
+const FORNITORI = new Set(
+  (process.env.SANDBOX_FORNITORI ?? (CHIAVE ? 'anthropic' : '')).split(' ').filter(Boolean),
+);
 /* Il namespace di rete isolato c'è (Docker con NET_ADMIN, Fly) o no (Render): lo dice avvio.sh. */
 const NETNS = process.env.SANDBOX_NETNS !== '0';
 const RADICE = resolve(process.env.SANDBOX_RADICE ?? '/lavoro');
@@ -239,6 +250,16 @@ async function eseguiSessione(s, parametri) {
   spawnSync('chown', ['-R', 'lavoro:lavoro', RADICE]);
   let testo = '';
   let esito;
+  /* Un fornitore terzo: niente `effort`, e niente tetto di spesa dell'SDK,
+     che conta al listino di Anthropic e su un altro fornitore scatta a caso
+     (lo stesso motivo del motore della chat). Resta il tetto dei turni. */
+  const terzo = Boolean(parametri.fornitore && parametri.fornitore !== 'anthropic');
+  /* I token contati dagli eventi grezzi, turno per turno: un gateway terzo
+     può lasciare a zero il totale di fine sessione. */
+  const contati = { input: 0, output: 0, cacheLettura: 0, cacheScrittura: 0 };
+  let outputTurno = 0;
+  /* Il primo controllo e quattro correzioni, come dice il prompt: oltre, il render si rifiuta (giri.mjs). */
+  const giri = contaGiri(parametri.maxGiri ?? 5);
   try {
     const sdk = query({
       prompt: parametri.promptUtente,
@@ -247,7 +268,7 @@ async function eseguiSessione(s, parametri) {
         /* La CLI parte dal wrapper: utente `lavoro`, namespace di rete isolato. */
         pathToClaudeCodeExecutable: '/opt/sandbox/claude-lavoro',
         model: parametri.modello,
-        ...(parametri.effort && { effort: parametri.effort }),
+        ...(parametri.effort && !terzo && { effort: parametri.effort }),
         systemPrompt: parametri.promptSistema,
         tools: STRUMENTI,
         allowedTools: [...STRUMENTI, 'mcp__velia__consegna'],
@@ -256,7 +277,7 @@ async function eseguiSessione(s, parametri) {
         permissionMode: 'bypassPermissions',
         allowDangerouslySkipPermissions: true,
         maxTurns: parametri.maxTurni ?? 60,
-        maxBudgetUsd: parametri.budgetUsd ?? 4,
+        ...(!terzo && { maxBudgetUsd: parametri.budgetUsd ?? 4 }),
         persistSession: false,
         /* Le skill documentali stanno in /lavoro/.claude/skills: settingSources=project le carica. */
         settingSources: ['project'],
@@ -264,7 +285,8 @@ async function eseguiSessione(s, parametri) {
         abortController: controllo,
         env: {
           ...process.env,
-          ANTHROPIC_BASE_URL: URL_PROXY,
+          /* Il proxy sceglie il fornitore dal percorso: DeepSeek sta sotto `/deepseek`. */
+          ANTHROPIC_BASE_URL: terzo ? `${URL_PROXY}/${parametri.fornitore}` : URL_PROXY,
           ANTHROPIC_API_KEY: 'velia-sandbox',
           HOME: RADICE,
         },
@@ -274,6 +296,17 @@ async function eseguiSessione(s, parametri) {
               hooks: [
                 async (input) => {
                   if (input.hook_event_name !== 'PreToolUse') return {};
+                  const rifiuto = giri.valuta(input.tool_name, input.tool_input);
+                  if (rifiuto) {
+                    console.log(`giri di controllo esauriti (${giri.giri}): rifiutato ${input.tool_name}`);
+                    return {
+                      hookSpecificOutput: {
+                        hookEventName: 'PreToolUse',
+                        permissionDecision: 'deny',
+                        permissionDecisionReason: rifiuto,
+                      },
+                    };
+                  }
                   emetti({ tipo: 'attivita', strumento: input.tool_name, input: input.tool_input ?? {} });
                   return {};
                 },
@@ -288,6 +321,17 @@ async function eseguiSessione(s, parametri) {
       if (m.type === 'stream_event' && m.parent_tool_use_id === null) {
         const e = m.event;
         if (e.type === 'content_block_delta' && e.delta.type === 'text_delta') testo += e.delta.text;
+        if (e.type === 'message_start') {
+          const u = e.message.usage ?? {};
+          contati.input += u.input_tokens ?? 0;
+          contati.cacheLettura += u.cache_read_input_tokens ?? 0;
+          contati.cacheScrittura += u.cache_creation_input_tokens ?? 0;
+          outputTurno = 0;
+        }
+        if (e.type === 'message_delta' && e.usage?.output_tokens) {
+          contati.output += Math.max(0, e.usage.output_tokens - outputTurno);
+          outputTurno = e.usage.output_tokens;
+        }
       } else if (m.type === 'result') {
         esito = {
           terminato: m.subtype === 'success' ? 'completato' : m.subtype === 'error_max_turns' || m.subtype === 'error_max_budget_usd' ? 'budget' : 'errore',
@@ -296,11 +340,13 @@ async function eseguiSessione(s, parametri) {
           turni: m.num_turns,
           durataMs: m.duration_ms,
           costoUsd: m.total_cost_usd,
+          /* Il totale dell'SDK comprende tutto; dove un gateway lo lascia a
+             zero valgono i conti fatti sugli eventi. */
           token: {
-            input: m.usage.input_tokens,
-            output: m.usage.output_tokens,
-            cacheLettura: m.usage.cache_read_input_tokens,
-            cacheScrittura: m.usage.cache_creation_input_tokens,
+            input: Math.max(m.usage.input_tokens ?? 0, contati.input),
+            output: Math.max(m.usage.output_tokens ?? 0, contati.output),
+            cacheLettura: Math.max(m.usage.cache_read_input_tokens ?? 0, contati.cacheLettura),
+            cacheScrittura: Math.max(m.usage.cache_creation_input_tokens ?? 0, contati.cacheScrittura),
           },
           modello: parametri.modello,
         };
@@ -332,7 +378,7 @@ async function eseguiSessione(s, parametri) {
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? '/', 'http://sandbox');
-    if (url.pathname === '/salute') return json(res, 200, { pronto: true, chiave: CHIAVE, rete: NETNS ? 'isolata' : 'aperta' });
+    if (url.pathname === '/salute') return json(res, 200, { pronto: true, chiave: CHIAVE, fornitori: [...FORNITORI], rete: NETNS ? 'isolata' : 'aperta' });
     if (req.headers['x-velia-token'] !== TOKEN) return json(res, 401, { errore: 'token' });
 
     /* Il runner che resta acceso fra un job e l'altro (Render): prima di un
@@ -357,11 +403,22 @@ const server = createServer(async (req, res) => {
       return json(res, 200, await esegui(richiesta));
     }
     if (req.method === 'POST' && url.pathname === '/sessione') {
-      const parametri = JSON.parse((await corpo(req)).toString('utf8') || '{}');
+      let parametri = JSON.parse((await corpo(req)).toString('utf8') || '{}');
       if (!parametri.promptUtente || !parametri.promptSistema || !parametri.modello) {
         return json(res, 400, { errore: 'promptSistema, promptUtente e modello sono obbligatori' });
       }
-      if (!CHIAVE) return json(res, 500, { errore: 'la sandbox non ha una chiave Anthropic' });
+      const fornitore = parametri.fornitore ?? 'anthropic';
+      if (!FORNITORI.has(fornitore)) {
+        /* Il fornitore del livello non ha la chiave qui (il servizio è stato
+           aggiornato prima di avere la variabile): meglio il documento col
+           modello di ripiego che nessun documento. L'esito dice quale
+           modello ha lavorato davvero, e il worker lo scrive nei consumi. */
+        if (!parametri.ripiego || !FORNITORI.has('anthropic')) {
+          return json(res, 500, { errore: `la sandbox non ha una chiave per ${fornitore}` });
+        }
+        console.warn(`nessuna chiave per ${fornitore}: la sessione gira su ${parametri.ripiego}`);
+        parametri = { ...parametri, modello: parametri.ripiego, fornitore: 'anthropic' };
+      }
       return sessione(req, res, parametri);
     }
     if (req.method === 'GET' && url.pathname === '/sessione/eventi') {
@@ -416,4 +473,4 @@ const server = createServer(async (req, res) => {
 });
 
 await mkdir(RADICE, { recursive: true });
-server.listen(PORTA, '0.0.0.0', () => console.log(`sandbox pronta su :${PORTA}, radice ${RADICE}, chiave ${CHIAVE ? 'nel proxy' : 'ASSENTE'}`));
+server.listen(PORTA, '0.0.0.0', () => console.log(`sandbox pronta su :${PORTA}, radice ${RADICE}, fornitori nel proxy: ${[...FORNITORI].join(', ') || 'NESSUNO'}`));

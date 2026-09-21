@@ -153,6 +153,10 @@ services:
       # La chiave che entra nel proxy del runner: dedicata, con tetto di spesa.
       - key: ANTHROPIC_API_KEY
         sync: false
+      # Dal 21/09/2026 anche DeepSeek: col livello «Avanzato» i documenti li
+      # scrive lui. Senza, la sandbox ripiega sul modello di piattaforma.
+      - key: DEEPSEEK_API_KEY
+        sync: false
 
   # --- App Angular: sito statico, routing della SPA con la rewrite ---------
   - type: web

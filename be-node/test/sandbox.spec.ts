@@ -3,6 +3,8 @@ import { promisify } from 'node:util';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
+import { contaGiri } from '../sandbox/giri.mjs';
+import { modelloSandbox } from '../src/worker/sandbox/esportazione.js';
 import { promptRichiesta, promptSandbox } from '../src/worker/sandbox/istruzioni.js';
 import { AvviatoreDocker, AvviatoreRemoto, Sandbox, interpretaVoce, motivoDocker } from '../src/worker/sandbox/sandbox.js';
 
@@ -133,6 +135,56 @@ describe.skipIf(!(await dockerConImmagine()))('la sandbox Docker vera', () => {
  * Il perché di un `docker run` fallito, come arriva in chat: leggibile, e
  * senza mai la riga di comando (che un tempo portava le variabili d'ambiente).
  */
+describe('il modello della sandbox segue il livello scelto', () => {
+  /* 21/09/2026: col livello «Avanzato» un'esportazione girava su Opus, il
+     modello di piattaforma, perché la sandbox aveva solo la chiave Anthropic. */
+  it('un Claude va com’è, DeepSeek passa dal suo instradamento', () => {
+    expect(modelloSandbox('claude-sonnet-5', 'claude-opus-5')).toEqual({ modello: 'claude-sonnet-5', fornitore: 'anthropic' });
+    expect(modelloSandbox('deepseek-flash', 'claude-opus-5')).toEqual({ modello: 'deepseek-flash', fornitore: 'deepseek' });
+  });
+
+  it('senza scelta, o con un fornitore che la sandbox non raggiunge, resta quello di piattaforma', () => {
+    expect(modelloSandbox(undefined, 'claude-opus-5')).toEqual({ modello: 'claude-opus-5', fornitore: 'anthropic' });
+    expect(modelloSandbox('zai-org/GLM-5.2', 'claude-opus-5')).toEqual({ modello: 'claude-opus-5', fornitore: 'anthropic' });
+  });
+});
+
+describe('i giri di controllo della sandbox', () => {
+  const bash = (command: string) => ['Bash', { command }] as const;
+
+  it('un giro per ogni render dopo una modifica; altre pagine dello stesso file non contano', () => {
+    const g = contaGiri(5);
+    expect(g.valuta('Write', { file_path: '/lavoro/tmp/volantone.html' })).toBeUndefined();
+    expect(g.valuta(...bash('chromium-headless --print-to-pdf=/lavoro/tmp/v.pdf v.html && pdftoppm -png -r 60 /lavoro/tmp/v.pdf /lavoro/tmp/p'))).toBeUndefined();
+    expect(g.valuta(...bash('pdfinfo /lavoro/tmp/v.pdf'))).toBeUndefined();
+    expect(g.valuta(...bash('pdftoppm -png -r 60 -f 3 -l 3 /lavoro/tmp/v.pdf /lavoro/tmp/q'))).toBeUndefined();
+    expect(g.valuta('Read', { file_path: '/lavoro/tmp/p-1.png' })).toBeUndefined();
+    expect(g.giri).toBe(1);
+  });
+
+  it('al sesto giro il render si rifiuta, e il motivo dice di consegnare', () => {
+    /* Il volantino del 21/09/2026: dodici rigenerazioni per stare in due pagine. */
+    const g = contaGiri(5);
+    for (let i = 0; i < 5; i++) {
+      expect(g.valuta(...bash(`sed -i 's/12px/11px/' v.html && chromium-headless --print-to-pdf=v.pdf v.html && pdftoppm -png v.pdf p`))).toBeUndefined();
+    }
+    const rifiuto = g.valuta(...bash('sed -i "s/11px/10px/" v.html && pdftoppm -png v.pdf p'));
+    expect(rifiuto).toContain('consegna');
+    expect(g.giri).toBe(5);
+    /* Consegnare resta possibile. */
+    expect(g.valuta('mcp__velia__consegna', { path: '/lavoro/output/v.pdf', nome: 'Volantino' })).toBeUndefined();
+  });
+
+  it('guardare senza toccare non apre un giro nuovo', () => {
+    const g = contaGiri(1);
+    expect(g.valuta(...bash('pdftoppm -png v.pdf p'))).toBeUndefined();
+    expect(g.valuta(...bash('cd /lavoro/tmp && ls -la'))).toBeUndefined();
+    expect(g.valuta(...bash('pdftoppm -png -r 120 v.pdf alta'))).toBeUndefined();
+    expect(g.valuta('Edit', { file_path: 'v.html' })).toBeUndefined();
+    expect(g.valuta(...bash('pdftoppm -png v.pdf p'))).toContain('consegna');
+  });
+});
+
 describe('motivoDocker', () => {
   const comando = 'Command failed: docker run -d --rm -e SANDBOX_TOKEN -e ANTHROPIC_API_KEY velia-sandbox';
 
