@@ -37,7 +37,7 @@ import {
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreTitolo } from './titolista.js';
-import { avvisiEsposizione, avvisiRimandi, ErroreValidazione, haRimandi, separaBlocco, validaBlocco } from './validazione.js';
+import { avvisiEsposizione, avvisiRimandi, haRimandi, separaBlocco, togliRimandi, validaBlocco } from './validazione.js';
 import { cartellaCliente, materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
@@ -685,20 +685,33 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
          * Quel che si difende è l'invariante vero, «nessuna affermazione
          * senza fonte»: si scarta il turno solo se il testo richiama fonti
          * numerate che nessun blocco sostiene.
+         *
+         * Con un documento generato nel turno (22/09/2026), però, il turno
+         * non si scarta mai: il file non dipende dalle citazioni della chat,
+         * e buttarlo voleva dire buttare minuti di sandbox. Si salva la
+         * risposta senza i rimandi che non reggono, e non se ne dice niente
+         * all'utente (il FE a risposta finita i rimandi senza fonte li
+         * nasconde già): l'audit lo sa.
          */
+        const conDocumenti = strumentiChat.generati.length > 0;
         if (!blocco && haRimandi(testoFinale)) {
-          await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
-          await emetti({
-            tipo: 'errore',
-            messaggio: 'La risposta richiama fonti che non ha dichiarato ed è stata scartata. Riprova a inviare la domanda.',
-          });
-          throw new ErroreNonRitentabile(problemi.join('; '));
-        }
-        if (!blocco) {
+          if (!conDocumenti) {
+            await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
+            await emetti({
+              tipo: 'errore',
+              messaggio: 'La risposta richiama fonti che non ha dichiarato ed è stata scartata. Riprova a inviare la domanda.',
+            });
+            throw new ErroreNonRitentabile(problemi.join('; '));
+          }
+          testoFinale = togliRimandi(testoFinale);
+          avvisi = [...problemi, 'rimandi tolti dal testo: blocco mancante, turno tenuto per il documento generato'];
+        } else if (!blocco) {
           avvisi = problemi;
         } else {
           try {
             const valido = validaBlocco(blocco, workspace.perPath, dna);
+            /* Le citazioni scartate non lasciano numeri morti nel messaggio salvato. */
+            if (valido.rimandiScartati.length) testoFinale = togliRimandi(testoFinale, valido.rimandiScartati);
             /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */
             const ancorate = await ancoraCitazioni(workspace.directory, valido.citazioni, workspace.perPath);
             citazioni = ancorate.citazioni;
@@ -711,13 +724,18 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
               ...avvisiRimandi(testoFinale, citazioni),
             ];
           } catch (errore) {
-            await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
-            await emetti({
-              tipo: 'errore',
-              messaggio: 'La risposta citava passaggi non verificabili ed è stata scartata. Riprova a inviare la domanda.',
-            });
-            const dettagli = errore instanceof ErroreValidazione ? errore.dettagli.join('; ') : String(errore);
-            throw new ErroreNonRitentabile(`validazione fallita: ${dettagli}`);
+            /* Un guasto (non una citazione falsa: quelle si scartano una per una). */
+            if (!conDocumenti) {
+              await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
+              await emetti({
+                tipo: 'errore',
+                messaggio: 'La risposta non si è potuta verificare ed è stata scartata. Riprova a inviare la domanda.',
+              });
+              throw new ErroreNonRitentabile(`validazione fallita: ${String(errore)}`);
+            }
+            testoFinale = togliRimandi(testoFinale);
+            citazioni = [];
+            avvisi = [`validazione fallita, turno tenuto per il documento generato: ${String(errore)}`];
           }
         }
         for (const c of citazioni) await emetti({ tipo: 'citazione', citazione: c });

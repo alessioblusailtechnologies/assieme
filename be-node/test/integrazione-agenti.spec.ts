@@ -409,7 +409,12 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     expect(registro.rows).toEqual([{ origine: 'agente', a: EMAIL_ADMIN, simulata: true }]);
   });
 
-  it('RF-E-08: un esito che cita passaggi non verificabili è un’esecuzione fallita', async () => {
+  /*
+   * RF-E-08 rivisto il 22/09/2026 (decisione del committente sulla chat, che
+   * gli agenti condividono): una citazione non verificabile si scarta da
+   * sola e l'esecuzione arriva in fondo, senza quella fonte.
+   */
+  it('RF-E-08: una citazione non verificabile si scarta, l’esecuzione arriva in fondo senza quella fonte', async () => {
     const copione = motore.copione;
     motore.copione = (r) => ({
       testo: `Inventato.\n\n\`\`\`velia-citazioni\n${JSON.stringify({
@@ -424,10 +429,9 @@ describe.skipIf(!pronto)('agenti col progetto Supabase (lettore e motore finti)'
     motore.copione = copione;
 
     const r = await richiedi('GET', `/api/agenti/${agenteId}/esecuzioni/${avvio.json<EsecuzioneAgente>().id}`);
-    const fallita = r.json<EsecuzioneAgente>();
-    expect(fallita.stato).toBe('fallita');
-    expect(fallita.tentativi).toBe(1); // un'allucinazione non si ritenta
-    expect(fallita.errore).toContain('non verificabili');
+    const finita = r.json<EsecuzioneAgente>();
+    expect(finita.stato).toBe('completata');
+    expect(finita.citazioni).toEqual([]);
   });
 
   it('il retry si racconta: tre tentativi loggati, poi fallimento persistente (RF-E-11)', async () => {

@@ -7,12 +7,12 @@ import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/moto
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
-  ErroreValidazione,
   haRimandi,
   limiteInoltro,
   margineMarcatore,
   normalizzaPath,
   separaBlocco,
+  togliRimandi,
   validaBlocco,
 } from '../src/worker/motore/validazione.js';
 import { percorsoNellaWorkspace, slug, type DocumentoWorkspace } from '../src/worker/motore/workspace.js';
@@ -281,22 +281,37 @@ describe('validaBlocco', () => {
     expect(esito.avvisi.some((a) => a.includes('ric-ignoto'))).toBe(true);
   });
 
-  it('un file inesistente o una pagina oltre la fine fanno fallire la risposta', () => {
-    expect(() =>
-      validaBlocco({ citazioni: [{ file: 'inventato.md', pagina: 1, estratto: 'x' }], provenienze: [], nonSupportato: false }, perPath, dnaVuoto),
-    ).toThrow(ErroreValidazione);
-    let catturato: unknown;
-    try {
-      validaBlocco(
-        { citazioni: [{ file: 'archivio-pubblico/unipolsai/auto/km/ed-2022-11/dip.md', pagina: 11, estratto: 'x' }], provenienze: [], nonSupportato: false },
-        perPath,
-        dnaVuoto,
-      );
-    } catch (e) {
-      catturato = e;
-    }
-    expect(catturato).toBeInstanceOf(ErroreValidazione);
-    expect((catturato as ErroreValidazione).dettagli[0]).toMatch(/pag\. 11 .*citabile \(10\)/);
+  /*
+   * 22/09/2026: fino a qui facevano fallire l'intera risposta, e con lei il
+   * volantino generato nel turno (un percorso con gli id di due copie fusi).
+   * Ora si scarta la sola citazione, e il suo numero si toglie dal testo.
+   */
+  it('un file inesistente o una pagina oltre la fine scartano la sola citazione, non la risposta', () => {
+    const esito = validaBlocco(
+      {
+        citazioni: [
+          { file: 'archivio-pubblico/unipolsai/auto/km/ed-2022-11/dip.md', pagina: 4, estratto: 'Franchigia € 200' },
+          { file: 'tenant/documenti/altro/circolare--doc-priv-82dee6dc16094a4.md', pagina: 1, estratto: 'x' },
+          { file: 'archivio-pubblico/unipolsai/auto/km/ed-2022-11/dip.md', pagina: 11, estratto: 'y' },
+        ],
+        provenienze: [],
+        nonSupportato: false,
+      },
+      perPath,
+      dnaVuoto,
+    );
+    expect(esito.citazioni).toHaveLength(1);
+    expect(esito.citazioni[0]?.rimandi).toEqual([1]);
+    expect(esito.rimandiScartati).toEqual([2, 3]);
+    expect(esito.avvisi.some((a) => /file inesistente.*82dee6dc16094a4/.test(a))).toBe(true);
+    expect(esito.avvisi.some((a) => /pag\. 11 .*citabile \(10\)/.test(a))).toBe(true);
+  });
+
+  it('togliRimandi toglie i numeri scartati (o tutti) con lo spazio davanti, e lascia gli altri', () => {
+    const testo = 'Franchigia di € 200 [1], scoperto del 10% [2][3]. Vedi anche [12].';
+    expect(togliRimandi(testo, [2, 3])).toBe('Franchigia di € 200 [1], scoperto del 10%. Vedi anche [12].');
+    expect(togliRimandi(testo)).toBe('Franchigia di € 200, scoperto del 10%. Vedi anche.');
+    expect(togliRimandi('l’edizione [2026] e la lettera [a]', [1])).toBe('l’edizione [2026] e la lettera [a]');
   });
 
   it('una pagina sotto la prima riparte da 1, con avviso, e la citazione resta valida', () => {

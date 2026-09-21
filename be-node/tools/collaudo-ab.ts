@@ -29,7 +29,7 @@ import { chiudiPool, poolDb } from '../src/db/pool.js';
 import { ArchivioStorage } from '../src/worker/ingestion/archivio-file.js';
 import { caricaDna, catalogoArchivioPubblico, promptSistema, promptUtente } from '../src/worker/motore/regole.js';
 import { MotoreAgentSdk } from '../src/worker/motore/sessione.js';
-import { ErroreValidazione, separaBlocco, validaBlocco } from '../src/worker/motore/validazione.js';
+import { separaBlocco, validaBlocco } from '../src/worker/motore/validazione.js';
 import { materializzaWorkspace } from '../src/worker/motore/workspace.js';
 
 const TENANT_DEMO = '11111111-1111-4111-8111-111111111111';
@@ -129,13 +129,10 @@ try {
       let citazioni = 0, nonSupportato: boolean | null = null, validazione = '';
       if (!blocco) validazione = `blocco mancante: ${problemi.join('; ')}`;
       else {
-        try {
-          const v = validaBlocco(blocco, ws.perPath, dna);
-          citazioni = v.citazioni.length; nonSupportato = v.nonSupportato; validazione = v.avvisi.join('; ') || 'ok';
-        } catch (e) {
-          const dettagli = e instanceof ErroreValidazione ? e.dettagli : [];
-          validazione = `FALLITA: ${e instanceof Error ? e.message : String(e)}${dettagli.length ? ' — ' + dettagli.join('; ') : ''}`;
-        }
+        /* Dal 22/09/2026 una citazione non verificabile si scarta da sola: lo dicono gli avvisi. */
+        const v = validaBlocco(blocco, ws.perPath, dna);
+        citazioni = v.citazioni.length; nonSupportato = v.nonSupportato;
+        validazione = `${v.rimandiScartati.length ? `SCARTATE ${v.rimandiScartati.length} - ` : ''}${v.avvisi.join('; ') || 'ok'}`;
       }
       const m: Misura = { modello: v.etichetta, domanda, testo: visibile, secondi, usd: esito.costoUsd, turni: esito.turni, terminato: esito.terminato, token: esito.token, documenti: esito.documentiLetti, citazioni, nonSupportato, validazione };
       misure.push(m);

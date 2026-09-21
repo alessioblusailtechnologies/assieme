@@ -554,25 +554,27 @@ describe.skipIf(!pronto)('chat col progetto Supabase (motore finto)', () => {
     trascrizioni.clear();
   });
 
-  it('messaggio vuoto → 400; una risposta con citazioni inventate → evento errore, niente messaggio, job fallito', async () => {
+  /* 22/09/2026: una citazione inventata non fa più cadere la risposta: si scarta lei, col suo rimando. */
+  it('messaggio vuoto → 400; una citazione inventata si scarta col suo rimando, la risposta resta', async () => {
     expect((await richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: '  ', documentiReferenziati: [] })).statusCode).toBe(400);
 
     motore.copione = () =>
       Promise.resolve({
-        testo: `Inventato.\n\n${MARCATORE_CITAZIONI}\n${JSON.stringify({ citazioni: [{ file: 'archivio-pubblico/inventato.md', pagina: 3, estratto: 'x' }], provenienze: [], nonSupportato: false })}\n\`\`\``,
+        testo: `Inventato [1].\n\n${MARCATORE_CITAZIONI}\n${JSON.stringify({ citazioni: [{ file: 'archivio-pubblico/inventato.md', pagina: 3, estratto: 'x' }], provenienze: [], nonSupportato: false })}\n\`\`\``,
       });
     const prima = (await richiedi('GET', `/api/conversazioni/${convId}/messaggi`, tokenAdmin)).json<Messaggio[]>().length;
     const stream = richiedi('POST', `/api/conversazioni/${convId}/messaggi`, tokenAdmin, { testo: 'Seconda domanda', documentiReferenziati: [] });
     await aspettaJob('Seconda domanda');
     await lavoraTutto();
     const eventi = eventiDa((await stream).body);
-    const ultimo = eventi.at(-1);
-    expect(ultimo?.tipo).toBe('errore');
-    expect((ultimo as Extract<EventoStream, { tipo: 'errore' }>).messaggio).toContain('non verificabili');
+    expect(eventi.at(-1)?.tipo).toBe('fine');
+    expect(eventi.some((e) => e.tipo === 'citazione' || e.tipo === 'errore')).toBe(false);
     const dopo = (await richiedi('GET', `/api/conversazioni/${convId}/messaggi`, tokenAdmin)).json<Messaggio[]>();
-    expect(dopo.length).toBe(prima + 1); // solo la domanda
+    expect(dopo.length).toBe(prima + 2);
+    /* Il rimando della citazione scartata non resta nel testo salvato. */
+    expect(dopo.at(-1)).toMatchObject({ autore: 'assistente', testo: 'Inventato.', citazioni: [] });
     const job = await pool().query<{ stato: string }>(`select stato from velia.jobs where tipo = 'interrogazione' and payload->>'testo' = 'Seconda domanda'`);
-    expect(job.rows[0]?.stato).toBe('fallito');
+    expect(job.rows[0]?.stato).toBe('completato');
   });
 
   it('non-supportato e budget: dichiarati, persistiti; e un job annullato non persiste la risposta', { timeout: 40_000 }, async () => {

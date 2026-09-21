@@ -52,16 +52,6 @@ export const schemaBlocco = z.object({
 
 export type BloccoCitazioni = z.infer<typeof schemaBlocco>;
 
-export class ErroreValidazione extends Error {
-  constructor(
-    messaggio: string,
-    readonly dettagli: string[] = [],
-  ) {
-    super(messaggio);
-    this.name = 'ErroreValidazione';
-  }
-}
-
 /**
  * Separa il testo visibile dal blocco finale. Il blocco può mancare (il
  * modello non l'ha scritto): è un errore di validazione, non un testo.
@@ -123,13 +113,20 @@ export interface EsitoValidazione {
   nonSupportato: boolean;
   /** Citazioni scartate e altri avvisi: finiscono nell'audit, non all'utente. */
   avvisi: string[];
+  /** I numeri dei rimandi le cui citazioni sono state scartate: vanno tolti dal testo (`togliRimandi`). */
+  rimandiScartati: number[];
 }
 
 /**
  * Dal blocco alle forme del contratto. Una citazione verso un file che non
  * esiste nella workspace, o verso una pagina oltre la fine, è un'allucinazione:
- * fa fallire la risposta (RF-D-08: la citazione è inderogabile, e una
- * citazione falsa è peggio di nessuna).
+ * non arriva all'utente (RF-D-08: una citazione falsa è peggio di nessuna).
+ *
+ * Fino al 22/09/2026 faceva fallire l'intera risposta, e con lei i file
+ * che la risposta aveva generato: un volantino di quattro minuti è finito
+ * nel cestino perché DeepSeek aveva fuso nel percorso di una circolare gli
+ * identificativi delle sue due copie. Decisione del committente: si scarta
+ * la sola citazione, se ne toglie il rimando dal testo, e il resto resta.
  */
 export function validaBlocco(
   blocco: BloccoCitazioni,
@@ -137,7 +134,7 @@ export function validaBlocco(
   dna: DnaAgenzia,
 ): EsitoValidazione {
   const avvisi: string[] = [];
-  const errori: string[] = [];
+  const rimandiScartati: number[] = [];
   const citazioni: Citazione[] = [];
   /* Per chiave di passaggio: un doppione nel blocco non produce una seconda
      citazione, ma il suo numero resta valido come rimando alla prima. */
@@ -156,7 +153,8 @@ export function validaBlocco(
        vale come citazione del documento, che è lo stesso. */
     const doc = perPath.get(path) ?? perPath.get(path.replace(/\.(png|jpe?g)$/i, '.md'));
     if (!doc) {
-      errori.push(`citazione verso un file inesistente nella workspace: ${c.file}`);
+      avvisi.push(`citazione scartata, file inesistente nella workspace: ${c.file}`);
+      rimandiScartati.push(rimando);
       continue;
     }
     /* Sotto la prima pagina non c'è niente da citare: si riparte da 1 e
@@ -168,9 +166,10 @@ export function validaBlocco(
       );
     }
     if (doc.paginaMassima !== null && pagina > doc.paginaMassima) {
-      errori.push(
-        `citazione a pag. ${pagina} di «${doc.titolo}», oltre l'ultima pagina citabile (${doc.paginaMassima})`,
+      avvisi.push(
+        `citazione scartata, pag. ${pagina} di «${doc.titolo}» oltre l'ultima pagina citabile (${doc.paginaMassima})`,
       );
+      rimandiScartati.push(rimando);
       continue;
     }
     const chiave = `${doc.id}|${pagina}|${c.estratto}`;
@@ -196,8 +195,6 @@ export function validaBlocco(
     citazioni.push(citazione);
   }
 
-  if (errori.length) throw new ErroreValidazione('citazioni non verificabili', errori);
-
   /* Le provenienze non hanno rimandi nel testo: il FE le mostra nel loro
      accordion, in coda al messaggio. Un doppione nel blocco non si ripete. */
   const provenienze: Provenienza[] = [];
@@ -215,7 +212,18 @@ export function validaBlocco(
     avvisi.push('risposta senza citazioni e senza dichiarazione di non copertura');
   }
 
-  return { citazioni, provenienze, nonSupportato: blocco.nonSupportato, avvisi };
+  return { citazioni, provenienze, nonSupportato: blocco.nonSupportato, avvisi, rimandiScartati };
+}
+
+/**
+ * Il testo senza i rimandi indicati (tutti, senza elenco): quelli delle
+ * citazioni scartate non devono restare nel messaggio salvato, né nella
+ * copia che il FE fa con le fonti per esteso. Lo spazio davanti se ne va
+ * col rimando, così «500 € [3].» diventa «500 €.».
+ */
+export function togliRimandi(testo: string, numeri?: number[]): string {
+  const via = numeri && new Set(numeri);
+  return testo.replace(/ ?\[(\d{1,2})\]/g, (tutto, n: string) => (!via || via.has(Number(n)) ? '' : tutto));
 }
 
 /**
