@@ -1,3 +1,10 @@
+import { execFile } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
+
 import { Sandbox, type AvviatoreSandbox } from './sandbox.js';
 
 /**
@@ -34,5 +41,43 @@ export async function inPdfConLibreOffice(
     return await sandbox.leggi('conversione/documento.pdf');
   } finally {
     await sandbox.chiudi().catch(() => undefined);
+  }
+}
+
+const eseguiFile = promisify(execFile);
+
+/**
+ * La stessa conversione col LibreOffice della macchina del worker, senza
+ * container (22/09/2026, `LIBREOFFICE`): il worker di prova che gira come
+ * una sessione di Claude Code su questa macchina non ha Docker. Ogni
+ * conversione ha il suo profilo, così non si blocca su un LibreOffice già
+ * aperto (anche da Claude Code, che lo usa per i suoi documenti).
+ */
+export async function inPdfConLibreOfficeLocale(soffice: string, contenuto: Buffer, estensione: string): Promise<Buffer> {
+  const est = /^\.[a-z0-9]{1,10}$/i.test(estensione) ? estensione.toLowerCase() : '.bin';
+  const cartella = await mkdtemp(join(tmpdir(), 'velia-conversione-'));
+  try {
+    const file = join(cartella, `documento${est}`);
+    await writeFile(file, contenuto);
+    await eseguiFile(
+      soffice,
+      [
+        `-env:UserInstallation=${pathToFileURL(join(cartella, 'profilo')).href}`,
+        '--headless',
+        '--convert-to',
+        'pdf',
+        '--outdir',
+        cartella,
+        file,
+      ],
+      { timeout: TEMPO_CONVERSIONE_MS },
+    );
+    try {
+      return await readFile(join(cartella, 'documento.pdf'));
+    } catch {
+      throw new Error('soffice: nessun PDF prodotto');
+    }
+  } finally {
+    await rm(cartella, { recursive: true, force: true }).catch(() => undefined);
   }
 }

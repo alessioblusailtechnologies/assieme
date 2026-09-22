@@ -1,4 +1,4 @@
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { basename, delimiter, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import {
   query,
@@ -113,7 +113,19 @@ export interface OpzioniMotoreSdk {
    * job «in esecuzione» per sempre. Default 3 minuti.
    */
   silenzioMs?: number;
+  /**
+   * Claude Code così com'è (22/09/2026, `MOTORE_CHAT=claude-code`): il suo
+   * prompt di sistema (quello della richiesta va in coda) e tutti i suoi
+   * strumenti, nessun permesso da chiedere, nessun tetto di turni, di spesa
+   * o di silenzio, e le impostazioni della macchina. L'unico confine è la
+   * directory di lavoro, che contiene solo ciò che il tenant può leggere.
+   * `path`: cartelle da mettere in testa al PATH dei suoi comandi.
+   */
+  completo?: { path?: string | undefined };
 }
+
+/** Dopo quanto un ragionamento o uno strumento ancora in scrittura si annunciano all'utente. */
+const ATTESA_ANNUNCIO_MS = 3000;
 
 export class MotoreAgentSdk implements Motore {
   constructor(private readonly opzioni: OpzioniMotoreSdk) {}
@@ -126,10 +138,49 @@ export class MotoreAgentSdk implements Motore {
     const controllo = new AbortController();
     const documentiLetti: string[] = [];
     let annullato = false;
+    const completo = this.opzioni.completo;
+
+    /* I passi verso l'utente, uno dopo l'altro: da qui passano anche gli
+       annunci che partono da un timer, e non devono scavalcare gli altri. */
+    let ultimaEtichetta: string | undefined;
+    let catena: Promise<void> = Promise.resolve();
+    const passo = (p: PassoSessione): Promise<void> => {
+      if (p.tipo === 'attivita') ultimaEtichetta = p.etichetta;
+      const questo = catena.then(() => osservatore.passo(p));
+      catena = questo.catch(() => undefined);
+      return questo;
+    };
+
+    /*
+     * Il modello mentre lavora (22/09/2026). L'utente vedeva un passo solo a
+     * strumento scritto per intero o a testo lungo: il ragionamento non si
+     * vedeva, né lo strumento mentre il modello lo scriveva. Sulla prima
+     * domanda vera di Claude Code, DeepSeek ha scritto un'email dentro
+     * `prepara_email` per 41 secondi davanti a «Sto preparando la risposta».
+     * Ora, se un ragionamento o la scrittura di uno strumento durano più di
+     * `ATTESA_ANNUNCIO_MS`, lo si dice: «Ci sto ragionando», o il passo dello
+     * strumento. Sotto quella soglia non si annuncia niente, così i passi
+     * rapidi (una ricerca, una lettura) non raddoppiano.
+     */
+    const annunciati = new Map<string, string>();
+    let annuncio: ReturnType<typeof setTimeout> | undefined;
+    const fermaAnnuncio = () => {
+      if (annuncio) clearTimeout(annuncio);
+      annuncio = undefined;
+    };
+    const annuncia = (etichetta: string, strumento?: string, idStrumento?: string) => {
+      fermaAnnuncio();
+      annuncio = setTimeout(() => {
+        annuncio = undefined;
+        if (etichetta === ultimaEtichetta) return;
+        if (idStrumento) annunciati.set(idStrumento, etichetta);
+        void passo({ tipo: 'attivita', etichetta, ...(strumento && { strumento }) }).catch(() => undefined);
+      }, ATTESA_ANNUNCIO_MS);
+    };
 
     /* Il testo, turno per turno: cosa vede l'utente e cosa legge il
        validatore lo decide `FlussoTesto` (pura, provata a parte). */
-    const flusso = new FlussoTesto((p) => osservatore.passo(p));
+    const flusso = new FlussoTesto(passo);
     /* Dai gateway terzi il ragionamento può arrivare dentro al testo
        (`[THINK]…[/THINK]`): all'utente non deve arrivare. */
     const pensieri = fornitore.terzo ? new FiltroPensieri() : undefined;
@@ -149,7 +200,7 @@ export class MotoreAgentSdk implements Motore {
       }
       const argomenti = (input.tool_input ?? {}) as Record<string, unknown>;
       const percorso = percorsoRichiesto(input.tool_name, argomenti);
-      if (percorso !== undefined && !dentro(radice, percorso)) {
+      if (!completo && percorso !== undefined && !dentro(radice, percorso)) {
         return {
           hookSpecificOutput: {
             hookEventName: 'PreToolUse',
@@ -159,46 +210,62 @@ export class MotoreAgentSdk implements Motore {
           },
         };
       }
-      if (input.tool_name === 'Read' && percorso !== undefined) {
+      if (input.tool_name === 'Read' && percorso !== undefined && dentro(radice, percorso)) {
         const rel = relativoPosix(radice, percorso);
         if (!documentiLetti.includes(rel)) documentiLetti.push(rel);
       }
-      await osservatore.passo({
-        tipo: 'attivita',
-        etichetta: etichettaAttivita(input.tool_name, argomenti, radice, richiesta.titoloPer),
-        strumento: input.tool_name,
-        dettaglio: argomenti,
-      });
+      /* Lo strumento è scritto: l'annuncio non serve più, e se è già uscito
+         con le stesse parole non si ripete. */
+      fermaAnnuncio();
+      const etichetta = etichettaAttivita(input.tool_name, argomenti, radice, richiesta.titoloPer);
+      if (annunciati.get(input.tool_use_id) !== etichetta) {
+        await passo({ tipo: 'attivita', etichetta, strumento: input.tool_name, dettaglio: argomenti });
+      }
       return {};
     };
 
     /* `tools` è il set dei tool integrati; quelli MCP (il server `velia`)
        entrano da `allowedTools`, così non chiedono mai un permesso. */
+    const modo: Options = completo
+      ? {
+          /* Claude Code così com'è: il suo prompt, i suoi strumenti, le
+             impostazioni della macchina (senza `settingSources` le carica
+             tutte, come la CLI). Da qui in poi niente chiede un permesso. */
+          systemPrompt: { type: 'preset', preset: 'claude_code', append: richiesta.promptSistema },
+          tools: { type: 'preset', preset: 'claude_code' },
+          allowedTools: richiesta.strumenti?.nomi ?? [],
+          permissionMode: 'bypassPermissions',
+          allowDangerouslySkipPermissions: true,
+        }
+      : {
+          systemPrompt: richiesta.promptSistema,
+          tools: richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob'],
+          allowedTools: [
+            ...(richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob']),
+            ...(richiesta.strumenti?.nomi ?? []),
+          ],
+          disallowedTools: ['Bash', 'Write', 'Edit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Skill'],
+          permissionMode: 'default',
+          maxTurns: this.opzioni.maxTurni,
+          /* Il tetto di spesa dell'SDK conta i token al listino di Anthropic:
+             su un fornitore terzo non è il nostro conto e scatta a caso — GLM
+             5.3, che al listino AKI stava a 0,14 $ e 0,30 $ sulle prime due
+             domande, alla terza è stato fermato a «$3» (09/09/2026). Lì il
+             tetto resta quello dei turni, e la spesa vera la calcola
+             `costoATariffa` dai token. */
+          ...(!fornitore.terzo && { maxBudgetUsd: this.opzioni.budgetUsd }),
+          settingSources: [],
+        };
+    const env = completo?.path ? conPath(fornitore.env ?? process.env, completo.path) : fornitore.env;
     const opzioni: Options = {
       cwd: radice,
       model: modello,
-      ...(fornitore.env && { env: fornitore.env }),
+      ...(env && { env }),
       ...(this.opzioni.effort && !fornitore.terzo && { effort: this.opzioni.effort }),
-      systemPrompt: richiesta.promptSistema,
-      tools: richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob'],
-      allowedTools: [
-        ...(richiesta.strumenti?.esclusivi ? [] : ['Read', 'Grep', 'Glob']),
-        ...(richiesta.strumenti?.nomi ?? []),
-      ],
+      ...modo,
       ...(richiesta.strumenti && { mcpServers: { velia: richiesta.strumenti.server } }),
-      disallowedTools: ['Bash', 'Write', 'Edit', 'NotebookEdit', 'WebFetch', 'WebSearch', 'Task', 'Skill'],
-      permissionMode: 'default',
-      maxTurns: this.opzioni.maxTurni,
-      /* Il tetto di spesa dell'SDK conta i token al listino di Anthropic:
-         su un fornitore terzo non è il nostro conto e scatta a caso — GLM
-         5.3, che al listino AKI stava a 0,14 $ e 0,30 $ sulle prime due
-         domande, alla terza è stato fermato a «$3» (09/09/2026). Lì il
-         tetto resta quello dei turni, e la spesa vera la calcola
-         `costoATariffa` dai token. */
-      ...(!fornitore.terzo && { maxBudgetUsd: this.opzioni.budgetUsd }),
       persistSession: richiesta.sessione?.persisti ?? false,
       ...(richiesta.sessione?.riprendi && { resume: richiesta.sessione.riprendi }),
-      settingSources: [],
       includePartialMessages: true,
       abortController: controllo,
       hooks: { PreToolUse: [{ hooks: [hookPreTool] }] },
@@ -213,7 +280,9 @@ export class MotoreAgentSdk implements Motore {
     let ultimoSegnale = Date.now();
     let silenzio = false;
     const sentinella = setInterval(() => {
-      if (!silenzio && Date.now() - ultimoSegnale > silenzioMs) {
+      /* Claude Code completo non ha tetto di silenzio: un comando lungo
+         (LibreOffice, un sotto-agente) non manda eventi finché lavora. */
+      if (!completo && !silenzio && Date.now() - ultimoSegnale > silenzioMs) {
         silenzio = true;
         controllo.abort();
         return;
@@ -270,6 +339,18 @@ export class MotoreAgentSdk implements Motore {
             }
             outputTurno = u.output_tokens ?? 0;
             flusso.inizioTurno();
+          } else if (evento.type === 'content_block_start') {
+            /* Che cosa comincia a scrivere il modello: se ci mette, lo si dice. */
+            const blocco = evento.content_block;
+            if (blocco.type === 'thinking' || blocco.type === 'redacted_thinking') {
+              annuncia('Ci sto ragionando');
+            } else if (blocco.type === 'tool_use') {
+              annuncia(etichettaAttivita(blocco.name, {}, radice, richiesta.titoloPer), blocco.name, blocco.id);
+            } else {
+              fermaAnnuncio();
+            }
+          } else if (evento.type === 'content_block_stop') {
+            fermaAnnuncio();
           } else if (evento.type === 'content_block_delta' && evento.delta.type === 'text_delta') {
             const testo = pensieri ? pensieri.filtra(evento.delta.text) : evento.delta.text;
             if (testo) await flusso.delta(testo);
@@ -332,6 +413,7 @@ export class MotoreAgentSdk implements Motore {
       }
     } finally {
       clearInterval(sentinella);
+      fermaAnnuncio();
     }
 
     if (!esito) {
@@ -437,6 +519,15 @@ function relativoPosix(radice: string, percorso: string): string {
   return relative(resolve(radice), assolutoIn(radice, percorso)).split(sep).join('/');
 }
 
+/** L'ambiente con `cartelle` in testa al PATH (su Windows la chiave si scrive `Path`). */
+function conPath(ambiente: NodeJS.ProcessEnv | Record<string, string>, cartelle: string): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [k, v] of Object.entries(ambiente)) if (v !== undefined) env[k] = v;
+  const chiave = Object.keys(env).find((k) => k.toUpperCase() === 'PATH') ?? 'PATH';
+  env[chiave] = env[chiave] ? `${cartelle}${delimiter}${env[chiave]}` : cartelle;
+  return env;
+}
+
 /**
  * Le etichette che l'utente legge mentre il motore lavora: parlano di
  * documenti e ricerche, mai di file, indici o sintassi — quelli sono
@@ -469,6 +560,10 @@ export function etichettaAttivita(
       const cosa = documento(input['file_path']);
       if (cosa.indice) return 'Consulto l’indice dell’archivio';
       const oltre = typeof input['offset'] === 'number' && input['offset'] > 1;
+      /* Con Claude Code completo si leggono anche le skill e i file che produce. */
+      const rel = typeof input['file_path'] === 'string' ? relativoPosix(radice, input['file_path']) : '';
+      if (!cosa.titolo && /^(\.\.\/|\.claude\/)/.test(rel)) return 'Consulto le istruzioni di lavoro';
+      if (!cosa.titolo && rel.startsWith('output/')) return 'Controllo il risultato';
       if (!cosa.titolo) return oltre ? 'Continuo a leggere' : 'Leggo un documento';
       return `${oltre ? 'Continuo a leggere' : 'Leggo'} «${cosa.titolo}»`;
     }
@@ -489,15 +584,51 @@ export function etichettaAttivita(
       return 'Invio l’email';
     case 'mcp__velia__esegui':
     case 'mcp__velia__scrivi_file':
-    case 'mcp__velia__leggi_file':
-    case 'mcp__velia__consegna': {
+    case 'mcp__velia__leggi_file': {
       /* Nella sandbox il modello dice lui cosa sta facendo (`nota`), a parole da utente. */
       const nota = typeof input['nota'] === 'string' ? accorcia(input['nota'], 80) : '';
       if (nota) return nota;
       if (tool === 'mcp__velia__leggi_file') return 'Controllo il risultato';
-      if (tool === 'mcp__velia__consegna') return 'Consegno il documento';
       return 'Lavoro al documento';
     }
+    case 'mcp__velia__consegna': {
+      const nome = typeof input['nome'] === 'string' ? accorcia(input['nome'], 60) : '';
+      return nome ? `Consegno «${nome}»` : 'Consegno il documento';
+    }
+    /* Gli altri strumenti di Claude Code completo (MOTORE_CHAT=claude-code). */
+    case 'Bash': {
+      /* La descrizione che Claude Code scrive per chi guarda: è già a parole da utente. */
+      const descrizione = typeof input['description'] === 'string' ? input['description'].trim() : '';
+      return descrizione ? accorcia(descrizione, 80) : 'Lavoro alla risposta';
+    }
+    case 'Write':
+    case 'Edit':
+    case 'NotebookEdit': {
+      const file = typeof input['file_path'] === 'string' ? basename(input['file_path']) : '';
+      return file ? `Scrivo ${accorcia(file, 60)}` : 'Scrivo un file di lavoro';
+    }
+    case 'WebSearch': {
+      const ricerca = typeof input['query'] === 'string' ? accorcia(input['query'], 60) : '';
+      return ricerca ? `Cerco sul web «${ricerca}»` : 'Cerco sul web';
+    }
+    case 'WebFetch': {
+      let sito = '';
+      try {
+        sito = typeof input['url'] === 'string' ? new URL(input['url']).hostname : '';
+      } catch {
+        /* Un indirizzo che non si legge: resta la frase generica. */
+      }
+      return sito ? `Leggo una pagina di ${sito}` : 'Leggo una pagina web';
+    }
+    case 'Task':
+    case 'Agent': {
+      const compito = typeof input['description'] === 'string' ? accorcia(input['description'], 70) : '';
+      return compito ? `Affido a un aiutante: ${compito}` : 'Affido una parte del lavoro a un aiutante';
+    }
+    case 'Skill':
+      return 'Consulto le istruzioni di lavoro';
+    case 'TodoWrite':
+      return 'Organizzo il lavoro';
     default:
       return 'Sto lavorando alla risposta';
   }

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { resolve } from 'node:path';
 
 import { z } from 'zod';
 
@@ -306,6 +307,25 @@ export function eMappa(path: string): boolean {
 }
 
 /** Path come li scrive il modello → chiave della workspace (posix, relativo). */
+/**
+ * Le citazioni col path assoluto di un file della workspace, riportate al
+ * path relativo che il validatore conosce (22/09/2026). Claude Code completo
+ * cita volentieri il file col path con cui l'ha aperto: assoluto, e da Git
+ * Bash anche nella forma `/c/Users/…`. Fuori dalla workspace non si tocca
+ * niente: la citazione resta com'è e il validatore la scarta.
+ */
+export function citazioniNellaWorkspace(blocco: BloccoCitazioni, directory: string): BloccoCitazioni {
+  const confronto = (p: string) => (process.platform === 'win32' ? p.toLowerCase() : p);
+  const radice = `${normalizzaPath(resolve(directory))}/`;
+  return {
+    ...blocco,
+    citazioni: blocco.citazioni.map((c) => {
+      const file = normalizzaPath(c.file.replace(/^\/([a-zA-Z])\//, '$1:/'));
+      return confronto(file).startsWith(confronto(radice)) ? { ...c, file: file.slice(radice.length) } : c;
+    }),
+  };
+}
+
 export function normalizzaPath(p: string): string {
   return p
     .replace(/\\/g, '/')

@@ -22,6 +22,7 @@ import type { EstrattoreRicordi } from '../memoria/estrattore.js';
 import { apprendi } from '../memoria/gestore.js';
 import { AccorpatoreTesto } from './accorpatore.js';
 import { ancoraCitazioni } from './ancoraggio.js';
+import { domandaEsportazione, preparaArea, promptSistemaClaudeCode, promptUtenteClaudeCode } from './claude-code.js';
 import { DiarioPassi } from './diario-passi.js';
 import { senzaTrattiniLunghi } from './flusso-testo.js';
 import {
@@ -37,7 +38,15 @@ import {
 import type { EsitoSessione, Motore, PassoSessione } from './sessione.js';
 import { creaStrumentiMotore, type StrumentiMotore } from './strumenti.js';
 import type { GeneratoreTitolo } from './titolista.js';
-import { avvisiEsposizione, avvisiRimandi, haRimandi, separaBlocco, togliRimandi, validaBlocco } from './validazione.js';
+import {
+  avvisiEsposizione,
+  avvisiRimandi,
+  citazioniNellaWorkspace,
+  haRimandi,
+  separaBlocco,
+  togliRimandi,
+  validaBlocco,
+} from './validazione.js';
 import { cartellaCliente, materializzaWorkspace, type Workspace } from './workspace.js';
 
 /**
@@ -71,6 +80,13 @@ export interface DipendenzeInterrogazione {
    * richiesta esplicita risponde che non è disponibile.
    */
   sandbox?: { avviatore: AvviatoreSandbox; sessione: OpzioniSessioneDocumentale };
+  /**
+   * Claude Code così com'è al posto del motore e della sandbox (22/09/2026,
+   * `MOTORE_CHAT=claude-code`): il suo motore, la sua cartella (fuori dal
+   * repository) e le skill. Vale per la chat dell'agenzia e per gli agenti;
+   * una chat cliente resta sul motore di sempre.
+   */
+  claudeCode?: { motore: Motore; radice: string; skill: () => Promise<string> };
   /**
    * La ripresa di sessione fra un messaggio e l'altro: `esiste` dice se la
    * trascrizione di una sessione SDK è ancora su questo disco. Senza, ogni
@@ -190,6 +206,13 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
        messaggio soltanto; undefined = il default di piattaforma. */
     const modelloTurno = modelloDelLivello(payload.livello) ?? modelloDelTenant(conversazione.modello_motore);
     const agente = payload.agente;
+    /* Claude Code completo, dove c'è: mai per una chat cliente, che parla con
+       chi sta fuori dall'agenzia. */
+    const cc = conversazione.chat_cliente_id ? undefined : dip.claudeCode;
+    const motore = cc?.motore ?? dip.motore;
+    /* La sessione si riprende solo se è nata sullo stesso motore: il prefisso
+       tiene separate quelle di Claude Code da quelle di sempre. */
+    const modelloSessione = cc ? `claude-code:${modelloTurno ?? ''}` : modelloTurno;
     const origineConsumi = agente
       ? ('agente' as const)
       : conversazione.chat_cliente_id
@@ -204,11 +227,17 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
     await aspettaAllegati(db, conversazione.documenti_in_contesto, attesaAllegati, emetti, annullato);
     if (await annullato()) return;
 
-    /* Il passo si racconta solo se c'è qualcosa da raccogliere: per un
-       saluto senza documenti non c'è nessun «preparo» da mostrare. */
-    if (conversazione.documenti_in_contesto.length) {
-      await emetti({ tipo: 'attivita', etichetta: 'Raccolgo i documenti della conversazione' });
-    }
+    /* Un passo subito, sempre (22/09/2026). Fino al primo segnale del
+       modello passano 6-8 secondi (la cartella del tenant, l'avvio del
+       motore, il suo primo turno), e senza allegati l'utente li passava
+       davanti a «Sto preparando la risposta» immobile: prima il passo si
+       raccontava solo quando c'erano documenti da raccogliere. */
+    await emetti({
+      tipo: 'attivita',
+      etichetta: conversazione.documenti_in_contesto.length
+        ? 'Raccolgo i documenti della conversazione'
+        : 'Apro l’archivio',
+    });
     let workspace: Workspace | undefined;
     let strumentiChat: StrumentiMotore | undefined;
     /* Una risposta che non arriva al messaggio non lascia file orfani nello Storage. */
@@ -218,8 +247,10 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         db,
         archivio: dip.archivio,
         tenantId,
-        radice: dip.radice,
+        radice: cc?.radice ?? dip.radice,
         jobId: job.id,
+        /* Claude Code può scrivere: le sue modifiche restano nella sua cartella. */
+        ...(cc && { copie: true }),
         /* La stessa directory da un messaggio all'altro: la ripresa di sessione la richiede. */
         cartella: payload.conversazioneId,
         contestoIds: conversazione.documenti_in_contesto,
@@ -231,6 +262,15 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
            con i recapiti e le scadenze che nei documenti non ci sono. */
         ...(conversazione.cliente_id && { clienteId: conversazione.cliente_id }),
       });
+      const area = cc
+        ? await preparaArea({
+            db,
+            archivio: dip.archivio,
+            tenantId,
+            directory: workspace.directory,
+            skill: await cc.skill(),
+          })
+        : undefined;
 
       /* Si riprende solo se la trascrizione è ancora su questo disco (altro
          host, disco ripulito: no) e se è nata con lo stesso modello: da
@@ -238,7 +278,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
          un fornitore riletta da un altro si porta dietro firme di
          ragionamento che quello non riconosce, e la cache comunque non vale.
          Il job pieno resta il piano B, sempre. */
-      const stessoModello = (conversazione.sessione_sdk_modello ?? undefined) === modelloTurno;
+      const stessoModello = (conversazione.sessione_sdk_modello ?? undefined) === modelloSessione;
       const riprendi =
         dip.ripresaSessione &&
         conversazione.sessione_sdk &&
@@ -289,7 +329,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       );
       /* «Genera da modello» (sandbox documentale), sia dal pulsante sia
          a parole: la stessa funzione, con la workspace già materializzata. */
-      const elaborata = dip.sandbox
+      const elaborata = dip.sandbox && !cc
         ? async (
             r: {
               formato?: string | undefined;
@@ -338,7 +378,26 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           }
         : undefined;
 
-      if (payload.esportazione) {
+      /* Con Claude Code il pulsante «Genera da modello» è un messaggio come un
+         altro, nella stessa sessione: niente sandbox, il file lo fa lui. */
+      let domanda = payload.testo;
+      if (payload.esportazione && cc) {
+        const e = payload.esportazione;
+        const risposta =
+          e.ambito !== 'conversazione' && e.messaggioId
+            ? await db.query<{ testo: string }>(
+                `select testo from velia.messaggi where id = $1 and conversazione_id = $2 and autore = 'assistente'`,
+                [e.messaggioId, payload.conversazioneId],
+              )
+            : undefined;
+        domanda = domandaEsportazione(
+          e,
+          area?.modelli.find((m) => m.id === e.modelloId),
+          risposta?.rows[0]?.testo,
+        );
+      }
+
+      if (payload.esportazione && !cc) {
         /* Il job È un'esportazione: niente risposta del motore di chat. */
         const richiesta = payload.esportazione;
         if (!elaborata) {
@@ -426,6 +485,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         /* Gli strumenti sui clienti escono dalla directory e interrogano il
            database: per l'agenzia, mai per una chat cliente. */
         ...(conversazione.chat_cliente_id ? {} : { clienti: true }),
+        /* Con Claude Code i file li fa lui: `consegna` li porta all'utente. */
+        ...(cc && { consegna: { radice: workspace.directory } }),
         /*
          * Il riordino proposto si deposita e si racconta, non si esegue. La
          * riga nasce `proposta`: diventerà `applicata` solo se qualcuno
@@ -555,7 +616,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
       const contestoPrompt = {
         documenti: contesto.map(({ path, titolo, archivio }) => ({ path, titolo, archivio })),
         mancanti: workspace.mancanti.map(({ titolo, motivo }) => ({ titolo, motivo })),
-        domanda: payload.testo,
+        domanda,
         ...(agganciato && {
           cliente: {
             nome: agganciato.nome,
@@ -583,13 +644,19 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         ...(modelloTurno && { modello: modelloTurno }),
         promptSistema: perCliente
           ? promptSistemaCliente(conversazione.chat_istruzioni)
-          : promptSistema(dna, {
-              modelli: modelliAgenzia.rows,
-              conAssegnazione: true,
-              conClienti: true,
-              ...(agente ? { emailAgente: { destinatari: agente.destinatari } } : { conEmail: true }),
-              catalogo: catalogoArchivioPubblico(workspace.perPath),
-            }),
+          : cc && area
+            ? promptSistemaClaudeCode({
+                dna,
+                area,
+                ...(agente && { emailAgente: { destinatari: agente.destinatari } }),
+              })
+            : promptSistema(dna, {
+                modelli: modelliAgenzia.rows,
+                conAssegnazione: true,
+                conClienti: true,
+                ...(agente ? { emailAgente: { destinatari: agente.destinatari } } : { conEmail: true }),
+                catalogo: catalogoArchivioPubblico(workspace.perPath),
+              }),
         ...(perCliente
           ? {}
           : {
@@ -614,31 +681,38 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         },
         annullato,
       };
+      const storiaPrompt = storia.rows.map(({ autore, testo }) => ({ autore, testo }));
       const richiestaPiena = () => ({
         ...richiestaBase,
-        promptUtente: promptUtente({ ...contestoPrompt, storia: storia.rows.map(({ autore, testo }) => ({ autore, testo })) }),
+        promptUtente: cc
+          ? promptUtenteClaudeCode({ ...contestoPrompt, storia: storiaPrompt })
+          : promptUtente({ ...contestoPrompt, storia: storiaPrompt }),
         ...(dip.ripresaSessione && { sessione: { persisti: true } }),
       });
 
       let esito: EsitoSessione;
       if (riprendi) {
-        esito = await dip.motore.interroga(
-          { ...richiestaBase, promptUtente: promptRipresa(contestoPrompt), sessione: { persisti: true, riprendi } },
+        esito = await motore.interroga(
+          {
+            ...richiestaBase,
+            promptUtente: cc ? promptUtenteClaudeCode(contestoPrompt) : promptRipresa(contestoPrompt),
+            sessione: { persisti: true, riprendi },
+          },
           osservatore,
         );
         /* Una ripresa che muore prima del primo turno (trascrizione corrotta,
            SDK che non la ritrova) non deve costare la risposta: job pieno. */
         if (esito.terminato === 'errore' && esito.turni === 0 && !esito.testo) {
           await registraConsumi(db, tenantId, job.id, esito, origineConsumi);
-          esito = await dip.motore.interroga(richiestaPiena(), osservatore);
+          esito = await motore.interroga(richiestaPiena(), osservatore);
         }
       } else {
-        esito = await dip.motore.interroga(richiestaPiena(), osservatore);
+        esito = await motore.interroga(richiestaPiena(), osservatore);
       }
       if (esito.sessioneId && esito.terminato !== 'errore') {
         await db.query(
           `update velia.conversazioni set sessione_sdk = $2, sessione_sdk_modello = $3, sessione_sdk_al = now() where id = $1`,
-          [payload.conversazioneId, esito.sessioneId, modelloTurno ?? null],
+          [payload.conversazioneId, esito.sessioneId, modelloSessione ?? null],
         );
       }
 
@@ -670,6 +744,8 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
         avvisi = [`budget raggiunto: ${esito.errore ?? ''}`];
         await emetti({ tipo: 'non-supportato' });
       } else {
+        /* Anche Claude Code completo chiude col blocco delle citazioni, e si
+           verifica allo stesso modo (22/09/2026). */
         const { visibile, blocco, problemi } = separaBlocco(esito.testo);
         testoFinale = senzaTrattiniLunghi(visibile);
         /*
@@ -709,7 +785,7 @@ export function creaGestoreInterrogazione(dip: DipendenzeInterrogazione) {
           avvisi = problemi;
         } else {
           try {
-            const valido = validaBlocco(blocco, workspace.perPath, dna);
+            const valido = validaBlocco(citazioniNellaWorkspace(blocco, workspace.directory), workspace.perPath, dna);
             /* Le citazioni scartate non lasciano numeri morti nel messaggio salvato. */
             if (valido.rimandiScartati.length) testoFinale = togliRimandi(testoFinale, valido.rimandiScartati);
             /* La pagina la decide l'ancora sotto cui sta l'estratto, non il modello. */

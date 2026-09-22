@@ -17,11 +17,12 @@ export const MARCATORE_CITAZIONI = '```velia-citazioni';
 
 /**
  * Il blocco che il validatore legge (`validazione.ts`), e per questo ha una
- * definizione sola: lo chiedono sia le regole per l'agenzia sia quelle per
- * il cliente, e due copie che divergono vorrebbero dire risposte scartate
- * senza che nessuno capisca perché.
+ * definizione sola: lo chiedono le regole per l'agenzia, quelle per il
+ * cliente e il prompt di Claude Code completo (`claude-code.ts`), e due copie
+ * che divergono vorrebbero dire risposte scartate senza che nessuno capisca
+ * perché.
  */
-const BLOCCO_FINALE = `## Il blocco finale, obbligatorio
+export const BLOCCO_FINALE = `## Il blocco finale, obbligatorio
 
 Dopo la risposta, come ULTIMA cosa, scrivi un blocco di codice con linguaggio \`velia-citazioni\` contenente un solo oggetto JSON:
 

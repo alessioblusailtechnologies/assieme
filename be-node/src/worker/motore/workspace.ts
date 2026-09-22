@@ -161,6 +161,13 @@ export interface OpzioniWorkspace {
    * directory.
    */
   chatClienteId?: string;
+  /**
+   * Copie invece di hard link verso la cache (22/09/2026). Servono quando
+   * chi lavora nella directory può scrivere (Claude Code completo): un
+   * documento modificato attraverso il link cambierebbe nella cache, e da
+   * lì nelle workspace di tutti, pubblico compreso.
+   */
+  copie?: boolean;
 }
 
 /** Quanto a lungo ci si fida di un INDICE.md in cache (non ha una riga di catalogo). */
@@ -277,7 +284,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       : percorsoNellaWorkspace(riga);
     try {
       const origine = await cache.file(originale ?? riga.path_md!, riga.updated_at.toISOString());
-      await collega(origine, join(directory, ...relativo.split('/')));
+      await collega(origine, join(directory, ...relativo.split('/')), opzioni.copie);
     } catch (errore) {
       mancanti.push({
         id: riga.id,
@@ -298,7 +305,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       const percorsoImmagine = relativo.replace(/\.md$/i, estensione);
       try {
         const origine = await cache.file(riga.path_originale, riga.updated_at.toISOString());
-        await collega(origine, join(directory, ...percorsoImmagine.split('/')));
+        await collega(origine, join(directory, ...percorsoImmagine.split('/')), opzioni.copie);
         immagine = percorsoImmagine;
       } catch {
         immagine = null;
@@ -315,7 +322,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
       if (estensione.toLowerCase() !== '.md') {
         try {
           const origine = await cache.file(riga.path_originale, riga.updated_at.toISOString());
-          await collega(origine, join(directory, ...relativo.replace(/\.md$/i, estensione).split('/')));
+          await collega(origine, join(directory, ...relativo.replace(/\.md$/i, estensione).split('/')), opzioni.copie);
         } catch {
           /* senza l'originale resta la scheda */
         }
@@ -346,7 +353,7 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
   for (const cartella of cartellePubbliche) {
     const percorso = `${cartella}/INDICE.md`;
     const origine = await cache.fileConTtl(percorso, TTL_INDICI_MS);
-    if (origine) await collega(origine, join(directory, ...percorso.split('/')));
+    if (origine) await collega(origine, join(directory, ...percorso.split('/')), opzioni.copie);
   }
 
   /* Il glossario dei rischi viene dal codice, non dallo Storage: è sapere
@@ -752,8 +759,9 @@ function schedaCliente(c: ClienteWorkspace, documenti: Array<[string, DocumentoW
 
 
 /** Hard link se il filesystem lo permette (stesso volume), altrimenti copia. */
-async function collega(origine: string, destinazione: string): Promise<void> {
+async function collega(origine: string, destinazione: string, copia = false): Promise<void> {
   await mkdir(join(destinazione, '..'), { recursive: true });
+  if (copia) return copyFile(origine, destinazione);
   try {
     await link(origine, destinazione);
   } catch {

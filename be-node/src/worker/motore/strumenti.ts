@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { basename, extname, isAbsolute, relative, resolve } from 'node:path';
 
 import { createSdkMcpServer, tool, type McpSdkServerConfigWithInstance } from '@anthropic-ai/claude-agent-sdk';
 import type pg from 'pg';
@@ -12,7 +14,7 @@ import {
   type DestinatarioBozza,
   type DocumentoGenerato,
 } from '../../contratto/conversazioni.js';
-import { consegnabile } from '../../contratto/formati.js';
+import { consegnabile, mimeDi } from '../../contratto/formati.js';
 import { FORMATI_GENERAZIONE } from '../../contratto/template.js';
 import { risolviDestinatario } from '../../email/destinatari.js';
 import { fasceDelTenant, modelliDelTenant, modelloChiesto, scegliModello } from '../../generazione/catalogo.js';
@@ -48,6 +50,7 @@ export const NOME_TOOL_CERCA_CLIENTI = `mcp__${NOME_SERVER}__cerca_clienti`;
 export const NOME_TOOL_SCHEDA_CLIENTE = `mcp__${NOME_SERVER}__scheda_cliente`;
 export const NOME_TOOL_PREPARA_EMAIL = `mcp__${NOME_SERVER}__prepara_email`;
 export const NOME_TOOL_INVIA_EMAIL = `mcp__${NOME_SERVER}__invia_email`;
+export const NOME_TOOL_CONSEGNA = `mcp__${NOME_SERVER}__consegna`;
 
 /** Un'email che un agente manda: il destinatario è già uno di quelli del piano. */
 export interface EmailDaMandare {
@@ -111,6 +114,14 @@ export interface ContestoStrumenti {
    * tenant — il contesto ce l'ha già.
    */
   clienti?: boolean;
+  /**
+   * Claude Code nella workspace (`MOTORE_CHAT=claude-code`, 22/09/2026): i
+   * file li fa lui, e `consegna` li porta dalla sua cartella di lavoro
+   * all'utente, come il tool omonimo della sandbox. Quando c'è prende il
+   * posto di `esporta_subito`: la via deterministica non serve a chi il
+   * documento lo sa fare da sé.
+   */
+  consegna?: { radice: string };
   /**
    * Le email (14/09/2026). In chat il modello **prepara** e l'utente invia:
    * `suBozza` deposita la bozza e la racconta al FE (`prepara_email`). Per
@@ -817,8 +828,59 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     },
   );
 
+  const consegna = tool(
+    'consegna',
+    'Consegna un file all’utente: lo trova sotto la risposta, da scaricare, col nome che gli dai. Qualsiasi formato (PDF, Word, Excel, PowerPoint, pagina HTML, immagine, CSV, ZIP…) tranne i programmi eseguibili. Chiamalo a lavoro finito e controllato, una volta per file.',
+    {
+      path: z.string().min(1).describe('Il file, relativo alla cartella di lavoro (di solito sotto `output/`) o assoluto.'),
+      nome: z.string().min(1).max(160).describe('Il nome con cui l’utente lo vedrà.'),
+    },
+    async (a) => {
+      const errore = (text: string) => ({ content: [{ type: 'text' as const, text }], isError: true });
+      const radice = resolve(contesto.consegna!.radice);
+      const file = resolve(radice, a.path);
+      const rel = relative(radice, file);
+      if (rel.startsWith('..') || isAbsolute(rel)) return errore('Il file da consegnare deve stare nella cartella di lavoro.');
+      const formato = extname(file).slice(1).toLowerCase();
+      if (!/^[a-z0-9]{1,10}$/.test(formato)) {
+        return errore(`Il file «${basename(file)}» non ha un’estensione: dagliene una che dica il formato (es. .pdf, .html, .png).`);
+      }
+      if (!consegnabile(formato)) return errore(`I programmi eseguibili («.${formato}») non si consegnano.`);
+      let byte: Buffer;
+      try {
+        byte = await readFile(file);
+      } catch {
+        return errore(`File inesistente: ${a.path}.`);
+      }
+      if (!byte.length) return errore('Il file è vuoto.');
+      if (byte.length > 100 * 1024 * 1024) return errore('Il file supera i 100 MB: alleggeriscilo (immagini compresse, meno pagine) o dividilo.');
+
+      const id = randomUUID();
+      const percorso = percorsoDocumentoGenerato(contesto.tenantId, id, formato);
+      await contesto.archivio.carica(percorso, byte, mimeDi(formato));
+      percorsi.push(percorso);
+      const documento: DocumentoGenerato = {
+        id,
+        /* Il nome a volte arriva con l'estensione, che nel download si raddoppierebbe. */
+        nome: a.nome.replace(new RegExp(`\\.${formato}$`, 'i'), '').trim() || a.nome,
+        formato,
+        url: urlDocumentoGenerato(contesto.conversazioneId, id),
+      };
+      generati.push(documento);
+      await contesto.suDocumento(documento);
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Consegnato «${documento.nome}» (${formato.toUpperCase()}, ${Math.round(byte.length / 1024)} KB): l’utente lo trova sotto la risposta.`,
+          },
+        ],
+      };
+    },
+  );
+
   const definizioni: DefinizioniStrumenti = [
-    esportaSubito,
+    contesto.consegna ? consegna : esportaSubito,
     ...(contesto.elaborata ? [esportazioneElaborata] : []),
     ...(contesto.pagine ? [condividiLink] : []),
     ...(contesto.suProposta ? [proponiAssegnazione] : []),
@@ -831,7 +893,7 @@ export function creaStrumentiMotore(contesto: ContestoStrumenti): StrumentiMotor
     server: createSdkMcpServer({ name: NOME_SERVER, version: '1.0.0', tools: definizioni }),
     definizioni,
     nomi: [
-      NOME_TOOL_ESPORTA_SUBITO,
+      contesto.consegna ? NOME_TOOL_CONSEGNA : NOME_TOOL_ESPORTA_SUBITO,
       ...(contesto.elaborata ? [NOME_TOOL_ELABORATA] : []),
       ...(contesto.pagine ? [NOME_TOOL_CONDIVIDI_LINK] : []),
       ...(contesto.suProposta ? [NOME_TOOL_PROPONI_ASSEGNAZIONE] : []),

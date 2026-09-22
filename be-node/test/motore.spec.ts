@@ -1,3 +1,5 @@
+import { join, resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { titoloDaMessaggio } from '../src/contratto/conversazioni.js';
@@ -7,6 +9,7 @@ import { dentro, etichettaAttivita, semplificaPattern } from '../src/worker/moto
 import { ripulisciTitolo } from '../src/worker/motore/titolista.js';
 import {
   avvisiEsposizione,
+  citazioniNellaWorkspace,
   haRimandi,
   limiteInoltro,
   margineMarcatore,
@@ -366,6 +369,33 @@ describe('validaBlocco', () => {
   it('normalizzaPath accetta backslash, ./ e / iniziali', () => {
     expect(normalizzaPath('.\\tenant\\x.md')).toBe('tenant/x.md');
     expect(normalizzaPath('/archivio-pubblico/a.md')).toBe('archivio-pubblico/a.md');
+  });
+
+  it('citazioniNellaWorkspace riporta al relativo i path assoluti della workspace, e solo quelli', () => {
+    const radice = resolve('ws-prova');
+    const cita = (file: string) => ({ file, pagina: 3, estratto: 'x' });
+    const blocco = citazioniNellaWorkspace(
+      {
+        citazioni: [
+          cita(join(radice, 'archivio-pubblico', 'a.md')),
+          cita('tenant/x.md'),
+          cita(resolve('altrove', 'b.md')),
+        ],
+        provenienze: [],
+        nonSupportato: false,
+      },
+      radice,
+    );
+    expect(blocco.citazioni.map((c) => c.file)).toEqual([
+      'archivio-pubblico/a.md',
+      'tenant/x.md',
+      resolve('altrove', 'b.md'),
+    ]);
+    if (process.platform === 'win32') {
+      /* Da Git Bash: `/c/Users/…` è `C:/Users/…`. */
+      const bash = `/${radice[0]!.toLowerCase()}/${radice.slice(3).replace(/\\/g, '/')}/tenant/y.md`;
+      expect(citazioniNellaWorkspace({ citazioni: [cita(bash)], provenienze: [], nonSupportato: false }, radice).citazioni[0]!.file).toBe('tenant/y.md');
+    }
   });
 });
 

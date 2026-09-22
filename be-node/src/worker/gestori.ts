@@ -1,4 +1,5 @@
-import { resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { getSessionInfo } from '@anthropic-ai/claude-agent-sdk';
 import type pg from 'pg';
@@ -17,11 +18,12 @@ import { ConvertitoreModello, TrascrittoriPerModello } from './ingestion/convert
 import { creaGestoreIngestion } from './ingestion/gestore.js';
 import { EstrattoreMotore } from './memoria/estrattore.js';
 import { creaGestoreMemoria } from './memoria/gestore.js';
+import { skillClaudeCode } from './motore/claude-code.js';
 import { creaGestoreInterrogazione } from './motore/gestore.js';
 import type { ChiaviFornitori } from './motore/fornitori.js';
 import { MotoreAgentSdk } from './motore/sessione.js';
 import { creaGestoreAnteprimaModello } from './sandbox/anteprima.js';
-import { inPdfConLibreOffice } from './sandbox/conversione.js';
+import { inPdfConLibreOffice, inPdfConLibreOfficeLocale } from './sandbox/conversione.js';
 import type { OpzioniSessioneDocumentale } from './sandbox/esportazione.js';
 import { AvviatoreDocker, AvviatoreFly, AvviatoreRemoto, type AvviatoreSandbox } from './sandbox/sandbox.js';
 import { GeneratoreTitoloHaiku } from './motore/titolista.js';
@@ -107,6 +109,22 @@ function sandboxDocumentale(c: ReturnType<typeof configurazione>) {
   return sandboxVera;
 }
 
+/**
+ * Da Office a PDF, per l'ingestion e per le anteprime dei modelli: col
+ * LibreOffice di questa macchina quando `LIBREOFFICE` lo indica (22/09/2026,
+ * il worker di prova che gira come una sessione di Claude Code, senza
+ * Docker), altrimenti con quello della sandbox. Senza nessuno dei due, niente.
+ */
+function convertitorePdf(
+  c: ReturnType<typeof configurazione>,
+): ((contenuto: Buffer, estensione: string, jobId: string) => Promise<Buffer>) | undefined {
+  const soffice = c.LIBREOFFICE;
+  if (soffice) return (contenuto, estensione) => inPdfConLibreOfficeLocale(soffice, contenuto, estensione);
+  const avviatore = sandboxDocumentale(c)?.avviatore;
+  if (!avviatore) return undefined;
+  return (contenuto, estensione, jobId) => inPdfConLibreOffice(avviatore, jobId, contenuto, estensione);
+}
+
 /** La memoria (Fase 8) usa lo stesso motore della chat ma col suo modello (MODELLO_MEMORIA): pochi turni, nessun documento. */
 function estrattoreMemoria(): EstrattoreMotore {
   if (!estrattoreVero) {
@@ -126,6 +144,27 @@ function estrattoreMemoria(): EstrattoreMotore {
   return estrattoreVero;
 }
 
+/**
+ * Claude Code così com'è al posto del motore della chat e della sandbox
+ * (22/09/2026, `MOTORE_CHAT=claude-code`): nessun tetto di turni né di
+ * spesa, e una cartella sua fuori dal repository.
+ */
+function claudeCodeCompleto(c: ReturnType<typeof configurazione>) {
+  const radice = resolve(c.CLAUDE_CODE_CARTELLA ?? join(homedir(), 'velia-claude-code'));
+  return {
+    motore: new MotoreAgentSdk({
+      modello: c.MODELLO_MOTORE,
+      maxTurni: c.MOTORE_MAX_TURNI,
+      budgetUsd: c.MOTORE_BUDGET_USD,
+      fornitori: fornitori(c),
+      ...(c.MOTORE_EFFORT && { effort: c.MOTORE_EFFORT }),
+      completo: { path: c.CLAUDE_CODE_PATH },
+    }),
+    radice,
+    skill: () => skillClaudeCode(radice),
+  };
+}
+
 /** Il gestore della chat, costruito alla prima chiamata: lo usano la chat e gli agenti. */
 function gestoreInterrogazione(): GestoreJob {
   if (!interrogazioneVera) {
@@ -143,7 +182,10 @@ function gestoreInterrogazione(): GestoreJob {
       generatoreTitolo: new GeneratoreTitoloHaiku(),
       estrattore: estrattoreMemoria(),
       radice: resolve(c.CARTELLA_WORKER),
-      ...(sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
+      /* Con Claude Code i documenti li fa lui: la sandbox non serve. */
+      ...(c.MOTORE_CHAT === 'claude-code'
+        ? { claudeCode: claudeCodeCompleto(c) }
+        : sandboxDocumentale(c) && { sandbox: sandboxDocumentale(c)! }),
       ...(c.MOTORE_RIPRESA === 'si' && {
         ripresaSessione: { esiste: (id: string) => getSessionInfo(id).then((s) => Boolean(s)) },
       }),
@@ -158,9 +200,10 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
     if (!ingestionVera) {
       const c = configurazione();
       /* Fase 3 di PIANO-LINK-E-FORMATI.md: Office col LibreOffice della
-         sandbox, audio e video con Voxtral. Senza sandbox o senza chiave
-         Mistral quei documenti finiscono in errore, e il messaggio lo dice. */
-      const avviatore = sandboxDocumentale(c)?.avviatore;
+         sandbox (o della macchina), audio e video con Voxtral. Senza
+         LibreOffice o senza chiave Mistral quei documenti finiscono in
+         errore, e il messaggio lo dice. */
+      const inPdf = convertitorePdf(c);
       const trascrittore = trascrittoreDallaConfigurazione();
       /* Chi guarda le pagine segue il livello del tenant (21/09/2026: Medio
          Sonnet, Avanzato DeepSeek, Boost Opus); chi le ricontrolla e chi le
@@ -182,10 +225,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
            (`MODELLO_INGESTION_RAPIDA`) perché è una scelta fra alternative
            già ristrette, non lettura di documenti. */
         sceglitore: new SceglitoreModello(),
-        ...(avviatore && {
-          inPdfDaOffice: (contenuto: Buffer, estensione: string, jobId: string) =>
-            inPdfConLibreOffice(avviatore, jobId, contenuto, estensione),
-        }),
+        ...(inPdf && { inPdfDaOffice: inPdf }),
         ...(trascrittore && {
           trascrivi: (audio: { byte: Buffer; tipo: string; nome: string }) =>
             trascrittore.trascrivi(audio, { tempoMassimoMs: 10 * 60_000 }),
@@ -242,7 +282,7 @@ export const gestori: Partial<Record<Job['tipo'], GestoreJob>> = {
   'anteprima-modello': async (job, strumenti) => {
     anteprimaVera ??= creaGestoreAnteprimaModello({
       archivio: new ArchivioStorage(),
-      avviatore: sandboxDocumentale(configurazione())?.avviatore,
+      inPdf: convertitorePdf(configurazione()),
     });
     await anteprimaVera(job, strumenti);
   },

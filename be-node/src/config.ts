@@ -241,6 +241,29 @@ const schemaAmbiente = z.object({
    * deve tenere un job «in esecuzione» per sempre.
    */
   MOTORE_SILENZIO_MS: z.coerce.number().int().positive().default(180_000),
+  /**
+   * Chi risponde in chat (22/09/2026, prova del committente). `sdk` è il
+   * motore di sempre: Read/Grep/Glob, citazioni verificate, la sandbox per i
+   * file. `claude-code` è Claude Code così com'è, sulla workspace del
+   * tenant: tutti i suoi strumenti, le skill, la rete, nessun tetto, le
+   * impostazioni della macchina; i file li fa lui e li consegna da sé, senza
+   * sandbox. Vale per la chat dell'agenzia e per gli agenti; la chat
+   * cliente resta sul motore di sempre.
+   */
+  MOTORE_CHAT: z.enum(['sdk', 'claude-code']).default('sdk'),
+  /**
+   * Dove lavora Claude Code: fuori dal repository, perché da dentro vedrebbe
+   * git e la memoria di chi sviluppa VELIA. Default `~/velia-claude-code`.
+   */
+  CLAUDE_CODE_CARTELLA: z.string().optional(),
+  /** Cartelle in testa al PATH dei comandi di Claude Code (Python, LibreOffice), separate come nel PATH. */
+  CLAUDE_CODE_PATH: z.string().optional(),
+  /**
+   * Il `soffice` di questa macchina (22/09/2026). Quando c'è, le conversioni
+   * da Office a PDF (ingestion, anteprime dei modelli) lo usano invece del
+   * LibreOffice della sandbox: il worker di prova gira senza Docker.
+   */
+  LIBREOFFICE: z.string().optional(),
   /** Dove il worker materializza workspace e cache dei documenti. */
   CARTELLA_WORKER: z.string().default('.velia-worker'),
   /** In locale; in produzione la porta la assegna la piattaforma in `PORT` (vedi server.ts). */
