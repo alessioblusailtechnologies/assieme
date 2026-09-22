@@ -229,11 +229,19 @@ export class BollaMessaggio {
     this.sceltaPassi.set(aperto);
   }
 
-  /** Da chiuso deve già dire quanto è costato: «14 passaggi · 1 min 47 s». */
+  /**
+   * Da chiuso deve già dire quanto è costato: «14 passaggi · 1 min 47 s».
+   *
+   * Mentre il motore lavora il tempo sale insieme al passo aperto (22/09/2026).
+   * Prima contava solo i passi chiusi: durante un passo lungo la testata
+   * restava ferma, mentre la riga del passo sotto contava i secondi.
+   */
   protected readonly riepilogoPassi = computed(() => {
     const passi = this.passi();
     const quanti = passi.length === 1 ? '1 passaggio' : `${passi.length} passaggi`;
-    const totale = passi.reduce((somma, p) => somma + (p.durataMs ?? 0), 0);
+    const chiusi = passi.reduce((somma, p) => somma + (p.durataMs ?? 0), 0);
+    const aperto = this.passoInCorso();
+    const totale = chiusi + (aperto ? Math.max(0, this.adesso() - Date.parse(aperto.istante)) : 0);
     return totale ? `${quanti} · ${durataBreve(totale)}` : quanti;
   });
 

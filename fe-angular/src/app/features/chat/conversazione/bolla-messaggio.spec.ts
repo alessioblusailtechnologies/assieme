@@ -77,6 +77,23 @@ describe('BollaMessaggio · i passi del motore', () => {
     expect(dom.querySelector('.passi .testata')?.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('mentre lavora il tempo della testata comprende il passo aperto', async () => {
+    /* Un passo chiuso da 5 s e uno aperto da 10 s: la testata dice 15 s, non 5. */
+    const adesso = Date.now();
+    const fixture = await monta(
+      risposta(
+        [
+          { etichetta: 'Leggo le condizioni', istante: new Date(adesso - 15_000).toISOString(), durataMs: 5_000 },
+          { etichetta: 'Preparo l’email', istante: new Date(adesso - 10_000).toISOString() },
+        ],
+        true,
+      ),
+    );
+    const dom = fixture.nativeElement as HTMLElement;
+    expect(dom.querySelector('.passi .riepilogo')?.textContent?.trim()).toBe('2 passaggi · 15 s');
+    fixture.destroy();
+  });
+
   it('da chiuso dice già quanti passi e quanto tempo', async () => {
     const dom = (await monta(risposta(PASSI, false))).nativeElement as HTMLElement;
 
