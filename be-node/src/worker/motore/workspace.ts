@@ -173,6 +173,9 @@ export interface OpzioniWorkspace {
 /** Quanto a lungo ci si fida di un INDICE.md in cache (non ha una riga di catalogo). */
 const TTL_INDICI_MS = 60 * 60 * 1000;
 
+/** Quanti INDICE.md si scaricano insieme, al massimo, in tutto il worker. */
+const INDICI_IN_PARALLELO = 16;
+
 /**
  * Che cosa entra nella directory che il motore può leggere: **il confine**.
  *
@@ -350,11 +353,16 @@ export async function materializzaWorkspace(opzioni: OpzioniWorkspace): Promise<
     }
   }
 
-  for (const cartella of cartellePubbliche) {
-    const percorso = `${cartella}/INDICE.md`;
-    const origine = await cache.fileConTtl(percorso, TTL_INDICI_MS);
-    if (origine) await collega(origine, join(directory, ...percorso.split('/')), opzioni.copie);
-  }
+  /* Sono più di duecento, e uno dopo l'altro costavano 28 secondi di
+     «Apro l'archivio» al primo messaggio dopo ogni ora (22/09/2026): ora
+     insieme, e i download col tetto di `conPosto`. */
+  await Promise.all(
+    [...cartellePubbliche].map(async (cartella) => {
+      const percorso = `${cartella}/INDICE.md`;
+      const origine = await cache.fileConTtl(percorso, TTL_INDICI_MS);
+      if (origine) await collega(origine, join(directory, ...percorso.split('/')), opzioni.copie);
+    }),
+  );
 
   /* Il glossario dei rischi viene dal codice, non dallo Storage: è sapere
      sul mestiere, non sull'archivio, e non cambia quando entra una
@@ -770,11 +778,39 @@ async function collega(origine: string, destinazione: string, copia = false): Pr
 }
 
 /**
+ * I rinfreschi in corso, per file della cache: con quattro domande insieme
+ * lo stesso indice scaduto si scarica una volta sola. Sta fuori dalla
+ * `Cache` perché di `Cache` ne nasce una per job, come i posti qui sotto.
+ */
+const rinfreschi = new Map<string, Promise<string | undefined>>();
+
+/**
+ * Gli INDICE.md che si scaricano insieme, in tutto il processo: scaduti,
+ * si riscaricano dietro senza che nessuno li aspetti, e senza un tetto
+ * partirebbero tutti e duecento nello stesso istante.
+ */
+let indiciInScaricamento = 0;
+const inAttesaDiPosto: Array<() => void> = [];
+
+async function conPosto<T>(fn: () => Promise<T>): Promise<T> {
+  if (indiciInScaricamento < INDICI_IN_PARALLELO) indiciInScaricamento++;
+  else await new Promise<void>((avanti) => inAttesaDiPosto.push(avanti));
+  try {
+    return await fn();
+  } finally {
+    /* Il posto passa di mano a chi aspetta, senza tornare libero in mezzo. */
+    const prossimo = inAttesaDiPosto.shift();
+    if (prossimo) prossimo();
+    else indiciInScaricamento--;
+  }
+}
+
+/**
  * La cache dei file dello Storage sul disco del worker, per path. Ogni
  * voce porta la versione con cui è stata scaricata: quella del catalogo
  * per i documenti, l'età per gli indici.
  */
-class Cache {
+export class Cache {
   constructor(
     private readonly radice: string,
     private readonly archivio: ArchivioFile,
@@ -797,24 +833,59 @@ class Cache {
     return file;
   }
 
-  /** Come `file`, ma per ciò che non ha una versione: si rinfresca per età, e l'assenza si ricorda. */
+  /**
+   * Come `file`, ma per ciò che non ha una versione: si rinfresca per età, e
+   * l'assenza si ricorda.
+   *
+   * Scaduta, la copia che c'è si serve subito e si riscarica dietro
+   * (22/09/2026): il messaggio che capitava dopo l'ora pagava per tutti gli
+   * indici, e un indice cambia solo quando entra un set, quindi un
+   * messaggio in più con quello vecchio non toglie niente. Si aspetta il
+   * download solo quando in cache non c'è niente.
+   */
   async fileConTtl(percorso: string, ttlMs: number): Promise<string | undefined> {
     const { file, meta } = this.voce(percorso);
     const m = await leggiMeta(meta);
-    if (m && Date.now() - m.scaricatoIl < ttlMs) {
-      if (m.mancante) return undefined;
-      if (await esiste(file)) return file;
+    if (m) {
+      const presente = !m.mancante && (await esiste(file));
+      if (m.mancante || presente) {
+        if (Date.now() - m.scaricatoIl >= ttlMs) {
+          this.rinfresca(percorso).catch(() => {
+            /* il prossimo messaggio riprova */
+          });
+        }
+        return presente ? file : undefined;
+      }
     }
-    await mkdir(this.radice, { recursive: true });
-    try {
-      const contenuto = await this.archivio.scarica(percorso);
-      await scriviIntero(file, contenuto);
-      await scriviIntero(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now() }));
-      return file;
-    } catch {
-      await scriviIntero(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now(), mancante: true }));
-      return undefined;
+    return this.rinfresca(percorso);
+  }
+
+  private rinfresca(percorso: string): Promise<string | undefined> {
+    const { file, meta } = this.voce(percorso);
+    let inCorso = rinfreschi.get(file);
+    if (!inCorso) {
+      inCorso = (async () => {
+        await mkdir(this.radice, { recursive: true });
+        try {
+          const contenuto = await conPosto(() => this.archivio.scarica(percorso));
+          await scriviIntero(file, contenuto);
+          await scriviIntero(meta, JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now() }));
+          return file;
+        } catch {
+          /* Un errore di rete non si distingue da un indice che non c'è:
+             la copia che si aveva resta per un'altra ora, invece di
+             sparire dalla workspace. */
+          const aveva = await esiste(file);
+          await scriviIntero(
+            meta,
+            JSON.stringify({ percorso, versione: 'ttl', scaricatoIl: Date.now(), ...(!aveva && { mancante: true }) }),
+          );
+          return aveva ? file : undefined;
+        }
+      })().finally(() => rinfreschi.delete(file));
+      rinfreschi.set(file, inCorso);
     }
+    return inCorso;
   }
 }
 
